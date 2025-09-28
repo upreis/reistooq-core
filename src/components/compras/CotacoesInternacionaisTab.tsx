@@ -2,6 +2,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { SessionStorageManager } from '@/utils/sessionStorageManager';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { 
+  validateCotacoes, 
+  sanitizeProduto, 
+  calculateCotacaoTotals, 
+  validateProdutoData,
+  type CotacaoInternacional as CotacaoInternacionalType,
+  type ProdutoCotacao as ProdutoCotacaoType
+} from '@/utils/cotacaoTypeGuards';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -78,52 +86,12 @@ const cotacaoSchema = z.object({
   observacoes: z.string().max(1000, { message: "Observações devem ter no máximo 1000 caracteres" })
 });
 
-interface ProdutoCotacao {
-  id: string;
-  sku: string;
-  nome: string;
-  imagem?: string;
-  material: string;
-  package_qtd: number; // Quantidade por embalagem
-  preco_unitario: number;
-  unidade_medida: string;
-  pcs_ctn: number; // Peças por caixa master
-  qtd_caixas_pedido: number;
-  peso_unitario_g: number;
-  largura_cm: number;
-  altura_cm: number;
-  comprimento_cm: number;
-  // Campos calculados
-  peso_total_kg?: number;
-  cbm_unitario?: number;
-  cbm_total?: number;
-  quantidade_total?: number;
-  valor_total?: number;
-}
-
-interface CotacaoInternacional {
-  id?: string;
-  numero_cotacao: string;
-  descricao: string;
-  pais_origem: string;
-  moeda_origem: string;
-  fator_multiplicador: number;
-  data_abertura: string;
-  data_fechamento?: string;
-  status: 'rascunho' | 'aberta' | 'fechada' | 'cancelada';
-  observacoes: string;
-  produtos: ProdutoCotacao[];
-  // Totais gerais
-  total_peso_kg?: number;
-  total_cbm?: number;
-  total_quantidade?: number;
-  total_valor_origem?: number;
-  total_valor_usd?: number;
-  total_valor_brl?: number;
-}
+// Usar tipos do utilitário para evitar duplicação
+type CotacaoInternacional = CotacaoInternacionalType;
+type ProdutoCotacao = ProdutoCotacaoType;
 
 interface CotacoesInternacionaisTabProps {
-  cotacoes?: CotacaoInternacional[];
+  cotacoes: CotacaoInternacional[];
   onRefresh: () => void;
 }
 
@@ -198,7 +166,7 @@ const useCurrencyRates = () => {
 };
 
 export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps> = ({
-  cotacoes = [],
+  cotacoes,
   onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -304,32 +272,34 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
   const { createCotacaoInternacional, updateCotacaoInternacional, deleteCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
 
-  // Funções para seleção múltipla de cotações
-  const toggleSelectMode = () => {
+  // CORREÇÃO: Funções memoizadas para seleção múltipla
+  const toggleSelectMode = useCallback(() => {
     setIsSelectMode(!isSelectMode);
     if (isSelectMode) {
       setSelectedCotacoes([]);
     }
-  };
+  }, [isSelectMode]);
 
-  const selectCotacao = (cotacaoId: string) => {
+  const selectCotacao = useCallback((cotacaoId: string) => {
     if (selectedCotacoes.includes(cotacaoId)) {
       setSelectedCotacoes(selectedCotacoes.filter(id => id !== cotacaoId));
     } else {
       setSelectedCotacoes([...selectedCotacoes, cotacaoId]);
     }
-  };
+  }, [selectedCotacoes]);
 
-  const selectAllCotacoes = () => {
-    const allCotacaoIds = filteredCotacoes.map(c => c.id!).filter(Boolean);
+  const selectAllCotacoes = useCallback(() => {
+    // Usar validatedCotacoes que será definido depois, ou cotacoes diretamente
+    if (!Array.isArray(cotacoes)) return;
+    const allCotacaoIds = cotacoes.map(c => c.id!).filter(Boolean);
     setSelectedCotacoes(allCotacaoIds);
-  };
+  }, [cotacoes]);
 
-  const clearSelection = () => {
+  const clearSelection = useCallback(() => {
     setSelectedCotacoes([]);
-  };
+  }, []);
 
-  const deleteSelectedCotacoes = async () => {
+  const deleteSelectedCotacoes = useCallback(async () => {
     if (selectedCotacoes.length === 0) return;
     
     try {
@@ -345,27 +315,39 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       setIsSelectMode(false);
       onRefresh();
     } catch (error) {
+      const errorDetails = ErrorHandler.capture(error, {
+        component: 'CotacoesInternacionaisTab',
+        action: 'delete_selected_cotacoes'
+      });
+      
       toast({
         title: "Erro ao excluir cotações",
-        description: "Não foi possível excluir as cotações selecionadas.",
+        description: ErrorHandler.getUserMessage(errorDetails),
         variant: "destructive",
       });
     }
-  };
+  }, [selectedCotacoes, deleteCotacaoInternacional, toast, onRefresh]);
 
-  // CORREÇÃO: Memoizar filtros para evitar re-renders desnecessários
+  // CORREÇÃO: Memoizar filtros com validação de props usando type guards
+  const validatedCotacoes = useMemo(() => {
+    return validateCotacoes(cotacoes);
+  }, [cotacoes]);
+
   const filteredCotacoes = useMemo(() => {
-    if (!searchTerm.trim()) return cotacoes;
+    if (!searchTerm.trim()) return validatedCotacoes;
     
     const searchLower = searchTerm.toLowerCase();
-    return cotacoes.filter(cotacao => 
-      cotacao.numero_cotacao?.toLowerCase().includes(searchLower) ||
-      cotacao.descricao?.toLowerCase().includes(searchLower)
-    );
-  }, [cotacoes, searchTerm]);
+    return validatedCotacoes.filter(cotacao => {
+      const numero = cotacao.numero_cotacao || '';
+      const descricao = cotacao.descricao || '';
+      
+      return numero.toLowerCase().includes(searchLower) ||
+             descricao.toLowerCase().includes(searchLower);
+    });
+  }, [validatedCotacoes, searchTerm]);
 
-  // Funções para modal de comparação de imagens
-  const openImageComparisonModal = (
+  // CORREÇÃO: Funções memoizadas para modal de comparação
+  const openImageComparisonModal = useCallback((
     imagemPrincipal: string,
     imagemFornecedor: string,
     observacoes: string,
@@ -378,9 +360,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       observacoes,
       produtoInfo
     });
-  };
+  }, []);
 
-  const closeImageComparisonModal = () => {
+  const closeImageComparisonModal = useCallback(() => {
     setImageComparisonModal({
       isOpen: false,
       imagemPrincipal: '',
@@ -388,7 +370,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       observacoes: '',
       produtoInfo: undefined
     });
-  };
+  }, []);
 
   const saveObservacoes = useCallback((rowIndex: number, observacoes: string) => {
     setProductData(prevData => {
@@ -438,7 +420,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         peso_unitario_g: 0,
         largura_cm: 0,
         altura_cm: 0,
-        comprimento_cm: 0
+        comprimento_cm: 0,
+        // CORREÇÃO: Adicionar campos obrigatórios com valores padrão
+        peso_total_kg: 0,
+        cbm_unitario: 0,
+        cbm_total: 0,
+        quantidade_total: product.quantidade || 1,
+        valor_total: (product.preco_custo || 0) * (product.quantidade || 1)
       };
       
       try {
@@ -555,15 +543,34 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     };
   }, [produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates]);
 
-  const adicionarProduto = () => {
+  const adicionarProduto = useCallback(() => {
     try {
-      // Validação com zod
-      const produtoValidado = produtoSchema.parse(produtoTemp);
+      // CORREÇÃO: Validação mais robusta antes de adicionar produto
+      const validationResult = validateProdutoData(produtoTemp);
+      
+      if (!validationResult.isValid) {
+        toast({
+          title: "Dados inválidos",
+          description: validationResult.errors.join(', '),
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Mostrar warnings se houver
+      if (validationResult.warnings.length > 0) {
+        toast({
+          title: "Atenção",
+          description: validationResult.warnings.join(', '),
+          variant: "default",
+        });
+      }
 
-      const novoProduto: ProdutoCotacao = {
-        id: Date.now().toString(),
-        ...produtoValidado
-      };
+      // Usar função de sanitização para garantir dados consistentes
+      const novoProduto = sanitizeProduto({
+        ...produtoTemp,
+        id: Date.now().toString()
+      });
 
       setProdutos([...produtos, novoProduto]);
       setProdutoTemp({
@@ -586,19 +593,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         description: `${novoProduto.nome} foi adicionado à cotação`
       });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: "Erro de validação",
-          description: error.issues[0].message,
-          variant: "destructive"
-        });
-      }
+      const errorDetails = ErrorHandler.capture(error, {
+        component: 'CotacoesInternacionaisTab',
+        action: 'adicionar_produto'
+      });
+      
+      toast({
+        title: "Erro ao adicionar produto",
+        description: ErrorHandler.getUserMessage(errorDetails),
+        variant: "destructive",
+      });
     }
-  };
+  }, [produtoTemp, produtos, toast]);
 
-  const removerProduto = (id: string) => {
+  const removerProduto = useCallback((id: string) => {
     setProdutos(produtos.filter(p => p.id !== id));
-  };
+  }, [produtos]);
 
   const resetForm = () => {
     setDadosBasicos({
