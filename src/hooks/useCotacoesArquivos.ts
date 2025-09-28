@@ -379,6 +379,12 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Arquivos ORDENADOS (versão robusta):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       console.log('🎯 [DEBUG] Estratégia de ordenação aplicada para imagens não fixas nas células');
       
+      // DEPURAÇÃO COMPLETA: LOG DETALHADO ANTES DO PROCESSAMENTO
+      console.log('🔍 [AUDIT] INÍCIO DO MAPEAMENTO DE IMAGENS');
+      console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
+      console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
+      console.log('📊 [AUDIT] Range da planilha:', `${range.s.r}-${range.e.r} (${range.e.r - range.s.r} linhas de dados)`);
+      
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
         const imageBlob = await zipData.files[mediaFile].async('blob');
@@ -400,7 +406,9 @@ export function useCotacoesArquivos() {
         const proporcaoImagensPorLinha = todosArquivosImagem.length / totalLinhasDados;
         const imagensPorLinha = proporcaoImagensPorLinha > 1.5 ? 2 : 1;
         
-        console.log(`🧮 [DEBUG] Total imagens: ${todosArquivosImagem.length}, Total linhas: ${totalLinhasDados}, Proporção: ${proporcaoImagensPorLinha.toFixed(2)}, Imagens por linha: ${imagensPorLinha}`);
+        // LOG INDIVIDUAL POR IMAGEM
+        console.log(`🔍 [AUDIT] Processando imagem ${i}/${todosArquivosImagem.length-1}: ${mediaFile}`);
+        console.log(`🧮 [AUDIT] Total imagens: ${todosArquivosImagem.length}, Total linhas: ${totalLinhasDados}, Proporção: ${proporcaoImagensPorLinha.toFixed(2)}, Imagens por linha: ${imagensPorLinha}`);
         
         let linhaDados, coluna;
         if (imagensPorLinha === 2) {
@@ -417,7 +425,7 @@ export function useCotacoesArquivos() {
         
         // Verificar se não excede o número de linhas de dados
         if (linhaDados >= totalLinhasDados) {
-          console.warn(`⚠️ [DEBUG] Imagem ${i} excede linhas de dados (${totalLinhasDados}), pulando...`);
+          console.warn(`⚠️ [AUDIT] ERRO: Imagem ${i} excede linhas de dados (${totalLinhasDados}), pulando...`);
           continue;
         }
         
@@ -431,7 +439,9 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Modo: ${imagensPorLinha} img/linha, Tamanho: ${imageBlob.size} bytes`);
+        // LOG FINAL DE CONFIRMAÇÃO
+        console.log(`✅ [AUDIT] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Modo: ${imagensPorLinha} img/linha, Tamanho: ${imageBlob.size} bytes`);
+        console.log(`🎯 [AUDIT] MAPEAMENTO: img[${i}] → dados[${linhaDados}] → excel[${linhaExcel}] → coluna[${coluna}]`);
       }
       
     } catch (zipError) {
