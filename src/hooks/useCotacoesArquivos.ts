@@ -135,13 +135,13 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const lerArquivoComImagens = (file: File): Promise<{dados: any[], imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]}> => {
+  const lerArquivoComImagens = (file: File): Promise<{dados: any[], imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]}> => {
     return new Promise(async (resolve, reject) => {
       try {
         console.log('🔍 [DEBUG] Iniciando leitura do arquivo:', file.name);
         
         let dados: any[] = [];
-        let imagens: {nome: string, blob: Blob, linha: number, coluna: string}[] = [];
+        let imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[] = [];
 
         if (file.name.endsWith('.csv')) {
           // Processar CSV (sem imagens)
@@ -176,7 +176,7 @@ export function useCotacoesArquivos() {
   const processarExcelComImagens = async (
     file: File, 
     dados: any[], 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]
   ) => {
     try {
       // Método 1: Usar XLSX para dados básicos
@@ -288,7 +288,7 @@ export function useCotacoesArquivos() {
 
   const extrairImagensDoZip = async (
     file: File, 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[],
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
     worksheet: any
   ) => {
     try {
@@ -390,37 +390,52 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO: Mapeamento baseado na alternância entre colunas B e C
-        // Dados começam na linha 2 (linha 1 = cabeçalho)
-        const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
-        
-        // ESTRATÉGIA: Assumir que as imagens vêm em pares (B2+C2, B3+C3, etc.)
-        // Imagem par (0,2,4...) = coluna B (IMAGEM)  
-        // Imagem ímpar (1,3,5...) = coluna C (IMAGEM_FORNECEDOR)
-        
-        const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
-        const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2
-        
-        // Alternar entre colunas B e C conforme posição no Excel
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
-        
-        // Verificar se não excede o número de linhas de dados
-        if (linhaDados >= totalLinhasDados) {
-          console.warn(`⚠️ [DEBUG] Imagem ${i} excede linhas de dados (${totalLinhasDados}), pulando...`);
-          continue;
+      // CORREÇÃO POR SKU: Mapear imagens baseado nos SKUs das linhas do Excel
+      // Primeiro, extrair todos os SKUs das linhas de dados
+      const skusExcel = [];
+      for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para pular cabeçalho
+        const cellAddress = XLSX.utils.encode_cell({ r: R, c: 0 }); // Assumindo que SKU está na coluna A (índice 0)
+        const cell = worksheet[cellAddress];
+        const sku = cell ? cell.v : '';
+        if (sku) {
+          skusExcel.push({ sku: String(sku), linhaExcel: R + 1, linhaDados: R - range.s.r - 1 });
         }
-        
-        const extensao = mediaFile.split('.').pop() || 'png';
-        const nomeImagem = `${coluna.toLowerCase()}_linha_${linhaExcel}_${i}.${extensao}`;
-        
-        imagens.push({
-          nome: nomeImagem,
-          blob: imageBlob,
-          linha: linhaExcel,
-          coluna: coluna
-        });
-        
-        console.log(`✅ [DEBUG] MAPEAMENTO CORRETO: Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna} (B=${i%2===0?'SIM':'NÃO'}, C=${i%2===1?'SIM':'NÃO'}), Tamanho: ${imageBlob.size} bytes`);
+      }
+      
+      console.log('📊 [DEBUG] SKUs extraídos do Excel:', skusExcel);
+      
+      // ESTRATÉGIA: Mapear imagens em pares por linha (B2+C2, B3+C3, etc.)
+      // Imagem par (0,2,4...) = coluna B (IMAGEM)  
+      // Imagem ímpar (1,3,5...) = coluna C (IMAGEM_FORNECEDOR)
+      
+      const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
+      const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2
+      
+      // Encontrar o SKU correspondente a esta linha
+      const skuInfo = skusExcel.find(item => item.linhaExcel === linhaExcel);
+      const skuAssociado = skuInfo ? skuInfo.sku : `LINHA_${linhaExcel}`;
+      
+      // Alternar entre colunas B e C conforme posição no Excel
+      const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+      
+      // Verificar se não excede o número de linhas de dados
+      if (linhaDados >= skusExcel.length) {
+        console.warn(`⚠️ [DEBUG] Imagem ${i} excede linhas de dados (${skusExcel.length}), pulando...`);
+        continue;
+      }
+      
+      const extensao = mediaFile.split('.').pop() || 'png';
+      const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
+      
+      imagens.push({
+        nome: nomeImagem,
+        blob: imageBlob,
+        linha: linhaExcel,
+        coluna: coluna,
+        sku: skuAssociado // ⭐ CHAVE: Associar imagem ao SKU
+      });
+      
+      console.log(`✅ [DEBUG] MAPEAMENTO POR SKU: Imagem ${i}: arquivo="${mediaFile}" → SKU="${skuAssociado}", Linha Excel ${linhaExcel}, Coluna ${coluna}, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
@@ -440,7 +455,7 @@ export function useCotacoesArquivos() {
 
   const extrairImagensFallback = async (
     file: File, 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]
   ) => {
     console.log('🔄 [DEBUG] Usando método fallback para extrair imagens...');
     
@@ -452,11 +467,12 @@ export function useCotacoesArquivos() {
       // Estimar número de imagens baseado no tamanho (heurística)
       const estimatedImages = Math.min(Math.floor(fileSize / (50 * 1024)), 50); // Max 50 imagens
       
-      // Criar imagens de placeholder/dummy para cada linha estimada
-      for (let i = 0; i < estimatedImages; i++) {
-        const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
-        const linha = linhaDados + 2; // +2 porque dados começam na linha 2
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Alternar entre colunas
+        // Criar imagens de placeholder/dummy para cada linha estimada
+        for (let i = 0; i < estimatedImages; i++) {
+          const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
+          const linha = linhaDados + 2; // +2 porque dados começam na linha 2
+          const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Alternar entre colunas
+          const skuEstimado = `PLACEHOLDER_${linha}`; // SKU estimado para placeholder
         
         // Criar um blob de imagem vazio como placeholder
         const canvas = document.createElement('canvas');
@@ -515,7 +531,7 @@ export function useCotacoesArquivos() {
 
   const extrairImagensAlternativo = async (
     file: File, 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]
   ) => {
     try {
       console.log('🔄 [DEBUG] Tentando método alternativo de extração...');
@@ -597,8 +613,8 @@ export function useCotacoesArquivos() {
     }
   };
 
-  const uploadImagensExtraidas = async (imagens: {nome: string, blob: Blob, linha: number, coluna: string}[], cotacaoId: string, organizationId: string) => {
-    const imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
+  const uploadImagensExtraidas = async (imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[], cotacaoId: string, organizationId: string) => {
+    const imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
     
     for (const imagem of imagens) {
       try {
@@ -690,41 +706,60 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = []): any[] => {
+  const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
     console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
     console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
     
     return dados.map((linha, index) => {
       try {
-        // Buscar imagens para esta linha (linha no Excel começa do 1, mas nosso array do 0)
+        // CORREÇÃO: Associar imagens baseado no SKU, não na posição
+        const skuProduto = linha.SKU || linha.sku || `PROD-${index + 1}`;
+        
+        // Buscar imagens pelo SKU primeiro, senão pela linha do Excel como fallback
         const linhaExcel = index + 2; // +2 porque o cabeçalho está na linha 1 e dados começam na 2
         
         const imagemPrincipal = imagensUpload.find(img => 
-          img.linha === linhaExcel && (
+          // Prioridade 1: Buscar por SKU
+          (img.sku && img.sku === skuProduto && (
+            img.coluna === 'IMAGEM' || 
+            (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
+          )) ||
+          // Fallback: Buscar por linha (método antigo)
+          (!img.sku && img.linha === linhaExcel && (
             img.coluna === 'IMAGEM' || 
             img.coluna === 'B' || // Coluna B geralmente é IMAGEM
             (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
-          )
+          ))
         );
+        
         const imagemFornecedor = imagensUpload.find(img => 
-          img.linha === linhaExcel && (
+          // Prioridade 1: Buscar por SKU
+          (img.sku && img.sku === skuProduto && (
+            img.coluna === 'IMAGEM_FORNECEDOR' || 
+            img.coluna === 'IMAGEM FORNECEDOR' ||
+            img.coluna.includes('FORNECEDOR')
+          )) ||
+          // Fallback: Buscar por linha (método antigo)
+          (!img.sku && img.linha === linhaExcel && (
             img.coluna === 'IMAGEM_FORNECEDOR' || 
             img.coluna === 'IMAGEM FORNECEDOR' ||
             img.coluna === 'C' || // Coluna C geralmente é IMAGEM FORNECEDOR
             img.coluna.includes('FORNECEDOR')
-          )
+          ))
         );
 
-         console.log(`🔍 [AUDIT] MAPEAMENTO CORRIGIDO - Produto ${index}: linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+         console.log(`🔍 [AUDIT] MAPEAMENTO POR SKU - Produto ${index}: SKU="${skuProduto}", linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
          
-         // Log detalhado para auditoria do mapeamento
-         console.log(`🔍 [AUDIT] DETALHES CORREÇÃO Linha ${index} (Excel ${linhaExcel}):`, {
+         // Log detalhado para auditoria do mapeamento por SKU
+         console.log(`🔍 [AUDIT] DETALHES MAPEAMENTO SKU "${skuProduto}" (linha ${index}):`, {
+           skuProduto: skuProduto,
            imagemPrincipal: imagemPrincipal?.url,
            imagemFornecedor: imagemFornecedor?.url,
-           sku: linha.SKU || linha.sku,
-           colunasDisponiveis: imagensUpload.filter(img => img.linha === linhaExcel).map(img => img.coluna),
-           todasImagensDisponiveis: imagensUpload.map(img => ({ linha: img.linha, coluna: img.coluna, nome: img.nome })),
-           mapeamentoEsperado: `Produto ${index} deve usar imagem da linha Excel ${linhaExcel}`
+           imagemPrincipalSku: imagemPrincipal?.sku,
+           imagemFornecedorSku: imagemFornecedor?.sku,
+           metodoBusca: imagemPrincipal?.sku ? 'por SKU' : 'por linha (fallback)',
+           todasImagensComSku: imagensUpload.filter(img => img.sku === skuProduto).map(img => ({ sku: img.sku, coluna: img.coluna, nome: img.nome })),
+           todasImagensDisponiveis: imagensUpload.map(img => ({ sku: img.sku, linha: img.linha, coluna: img.coluna, nome: img.nome })),
          });
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
