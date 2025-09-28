@@ -444,13 +444,11 @@ export function useCotacoesArquivos() {
               continue;
             }
             
-            // 🚨 CORREÇÃO DEFINITIVA: Mapear por ordem sequencial, não por posição local
-            // Se é a primeira imagem desta linha → IMAGEM
-            // Se é a segunda imagem desta linha → IMAGEM_FORNECEDOR
-            const coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+            // 🚨 CORREÇÃO: Usar nome correto da coluna
+            const coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM FORNECEDOR';  // ✅ Com espaço!
             
             const extensao = mediaFile.split('.').pop() || 'png';
-            const nomeImagem = `${sku}_${coluna.toLowerCase()}_linha${linhaExcel}_img${imagemIndex}.${extensao}`;
+            const nomeImagem = `${sku}_${coluna.replace(' ', '_').toLowerCase()}_linha${linhaExcel}_img${imagemIndex}.${extensao}`;
             
             imagens.push({
               nome: nomeImagem,
@@ -697,15 +695,13 @@ export function useCotacoesArquivos() {
         const imagemPrincipal = imagensUpload.find(img => 
           img.linha === linhaExcel && (
             img.coluna === 'IMAGEM' || 
-            img.coluna === 'B' || // Coluna B geralmente é IMAGEM
             (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
           )
         );
         const imagemFornecedor = imagensUpload.find(img => 
           img.linha === linhaExcel && (
-            img.coluna === 'IMAGEM_FORNECEDOR' || 
-            img.coluna === 'IMAGEM FORNECEDOR' ||
-            img.coluna === 'C' || // Coluna C geralmente é IMAGEM FORNECEDOR
+            img.coluna === 'IMAGEM FORNECEDOR' ||  // ✅ CORRETO: Com espaço
+            img.coluna === 'IMAGEM_FORNECEDOR' ||  // ✅ Manter compatibilidade
             img.coluna.includes('FORNECEDOR')
           )
         );
