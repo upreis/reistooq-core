@@ -390,20 +390,19 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO CRÍTICA: Mapeamento sequencial linha por linha
+        // CORREÇÃO FINAL: Mapeamento 1:1 - cada imagem vai para uma linha específica
         // Dados começam na linha 2 (linha 1 = cabeçalho)
-        // Cada imagem corresponde a uma linha de dados diferente
+        // Cada imagem extraída corresponde a UMA linha de dados diferente
         const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
         
-        // CORREÇÃO: Mapeamento correto das colunas
-        // Primeira imagem vai para IMAGEM (coluna B), segunda para IMAGEM_FORNECEDOR (coluna C)
-        const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
+        // CORREÇÃO: Mapeamento sequencial 1:1
+        // Imagem 0 → linha 2, Imagem 1 → linha 3, etc.
+        const linhaDados = i; // Cada imagem vai para uma linha diferente
         const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2 (linha 1 = cabeçalho)
         
-        // CORREÇÃO DEFINITIVA: Alternar corretamente entre colunas
-        // i par (0,2,4...) = IMAGEM (coluna B)
-        // i ímpar (1,3,5...) = IMAGEM_FORNECEDOR (coluna C)
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+        // CORREÇÃO: Determinar coluna baseada no contexto do Excel
+        // Por padrão, colocar na coluna IMAGEM primeiro
+        const coluna = 'IMAGEM';
         
         // Verificar se não excede o número de linhas de dados
         if (linhaDados >= totalLinhasDados) {
@@ -421,7 +420,7 @@ export function useCotacoesArquivos() {
           coluna: coluna
         });
         
-        console.log(`✅ [DEBUG] CORREÇÃO: Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Total linhas dados: ${totalLinhasDados}, Tamanho: ${imageBlob.size} bytes`);
+        console.log(`✅ [DEBUG] CORREÇÃO FINAL: Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, Mapeamento 1:1, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
@@ -455,9 +454,9 @@ export function useCotacoesArquivos() {
       
       // Criar imagens de placeholder/dummy para cada linha estimada
       for (let i = 0; i < estimatedImages; i++) {
-        const linhaDados = Math.floor(i / 2); // Duas imagens por linha
+        const linhaDados = i; // Uma imagem por linha
         const linha = linhaDados + 2; // +2 porque dados começam na linha 2
-        const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Alternar colunas corretamente
+        const coluna = 'IMAGEM'; // Usar sempre coluna IMAGEM como padrão
         
         // Criar um blob de imagem vazio como placeholder
         const canvas = document.createElement('canvas');
