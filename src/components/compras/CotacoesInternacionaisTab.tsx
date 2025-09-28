@@ -1323,9 +1323,36 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          {/* Botões de seleção múltipla quando não há cotação selecionada */}
+          {!selectedCotacao && isSelectMode && selectedCotacoes.length > 0 && (
+            <>
+              <Button variant="destructive" onClick={deleteSelectedCotacoes} size="sm">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir ({selectedCotacoes.length})
+              </Button>
+              <Button variant="outline" onClick={selectAllCotacoes} size="sm">
+                Selecionar Todos
+              </Button>
+              <Button variant="outline" onClick={clearSelection} size="sm">
+                Limpar Seleção
+              </Button>
+            </>
+          )}
+          
+          {/* Botão de modo de seleção quando não há cotação selecionada */}
+          {!selectedCotacao && (
+            <Button 
+              variant={isSelectMode ? "default" : "outline"} 
+              onClick={toggleSelectMode}
+              size="sm"
+            >
+              {isSelectMode ? 'Cancelar Seleção' : 'Selecionar'}
+            </Button>
+          )}
+          
           {selectedCotacao && (
-            <Button variant="outline" onClick={() => setSelectedCotacao(null)}>
+            <Button variant="outline" onClick={() => setSelectedCotacao(null)} size="sm">
               Voltar aos Cards
             </Button>
           )}
@@ -1334,11 +1361,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             onClick={updateRates} 
             className="gap-2"
             disabled={ratesLoading}
+            size="sm"
           >
             <RefreshCw className={`h-4 w-4 ${ratesLoading ? 'animate-spin' : ''}`} />
             {ratesLoading ? 'Atualizando...' : 'Atualizar Cotações'}
           </Button>
-          <Button className="gap-2" onClick={() => { resetForm(); setShowModal(true); }}>
+          <Button className="gap-2" onClick={() => { resetForm(); setShowModal(true); }} size="sm">
             <Plus className="h-4 w-4" />
             Nova Cotação Internacional
           </Button>
