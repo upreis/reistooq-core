@@ -10,6 +10,8 @@ import {
   type CotacaoInternacional as CotacaoInternacionalType,
   type ProdutoCotacao as ProdutoCotacaoType
 } from '@/utils/cotacaoTypeGuards';
+import { useSecureCotacoes } from '@/hooks/useSecureCotacoes';
+import { validateFileUpload, sanitizeInput, logSecurityEvent } from '@/utils/inputValidation';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +57,8 @@ import {
 import { CurrencyService } from "@/services/currencyService";
 import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
-import { useToast } from "@/hooks/use-toast";
+import { useToastFeedback } from '@/hooks/useToastFeedback';
+import { useCompatibleToast } from '@/utils/toastUtils';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -132,7 +135,7 @@ const useCurrencyRates = () => {
   const [rates, setRates] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const { toast } = useToast();
+  const { toast } = useCompatibleToast();
 
   const updateRates = async () => {
     try {
@@ -141,10 +144,7 @@ const useCurrencyRates = () => {
       setRates(newRates);
       setLastUpdate(newRates.lastUpdate);
       
-      toast({
-        title: "Cotações atualizadas",
-        description: "Cotações de moedas atualizadas com sucesso!"
-      });
+      toast({ title: "Cotações atualizadas", description: "Cotações de moedas atualizadas com sucesso!" });
     } catch (error) {
       console.error('Erro ao atualizar cotações:', error);
       toast({
@@ -232,7 +232,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
   
   // Hook do toast
-  const { toast } = useToast();
+  const { toast } = useCompatibleToast();
   
   // Tipos de contêineres disponíveis
   const CONTAINER_TYPES = {
@@ -270,7 +270,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
 
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
-  const { createCotacaoInternacional, updateCotacaoInternacional, deleteCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
+  const { getCotacoesInternacionais } = useCotacoesInternacionais();
+  const { 
+    secureCreateCotacao, 
+    secureUpdateCotacao, 
+    secureDeleteCotacao, 
+    loading: saveLoading 
+  } = useSecureCotacoes();
 
   // CORREÇÃO: Funções memoizadas para seleção múltipla
   const toggleSelectMode = useCallback(() => {
@@ -303,13 +309,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     if (selectedCotacoes.length === 0) return;
     
     try {
-      const promises = selectedCotacoes.map(id => deleteCotacaoInternacional(id));
+      const promises = selectedCotacoes.map(id => secureDeleteCotacao(id));
       await Promise.all(promises);
       
-      toast({
-        title: "Cotações excluídas!",
-        description: `${selectedCotacoes.length} cotação(ões) excluída(s) com sucesso.`,
-      });
+      toast({ title: "Cotações excluídas!", description: `${selectedCotacoes.length} cotação(ões) excluída(s) com sucesso.` });
       
       setSelectedCotacoes([]);
       setIsSelectMode(false);
@@ -320,13 +323,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         action: 'delete_selected_cotacoes'
       });
       
-      toast({
-        title: "Erro ao excluir cotações",
-        description: ErrorHandler.getUserMessage(errorDetails),
-        variant: "destructive",
-      });
+      toast({ title: "Erro ao excluir cotações", description: ErrorHandler.getUserMessage(errorDetails), variant: "destructive" });
     }
-  }, [selectedCotacoes, deleteCotacaoInternacional, toast, onRefresh]);
+  }, [selectedCotacoes, secureDeleteCotacao, toast, onRefresh]);
 
   // CORREÇÃO: Memoizar filtros com validação de props usando type guards
   const validatedCotacoes = useMemo(() => {
@@ -446,10 +445,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     // Mostrar feedback dos resultados
     if (produtosAdicionados.length > 0) {
-      toast({
-        title: "Produtos adicionados!",
-        description: `${produtosAdicionados.length} produto(s) adicionado(s) à cotação.`,
-      });
+      toast({ title: "Produtos adicionados!", description: `${produtosAdicionados.length} produto(s) adicionado(s) à cotação.` });
     }
     
     if (produtosDuplicados.length > 0) {
@@ -665,9 +661,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
       // Salvar no banco de dados
       if (editingCotacao?.id) {
-        await updateCotacaoInternacional(editingCotacao.id, cotacaoCompleta);
+        await secureUpdateCotacao(editingCotacao.id, cotacaoCompleta);
       } else {
-        await createCotacaoInternacional(cotacaoCompleta);
+        await secureCreateCotacao(cotacaoCompleta);
       }
 
       toast({
