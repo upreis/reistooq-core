@@ -206,6 +206,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  
+  // Estados para seleção múltipla de cotações
+  const [selectedCotacoes, setSelectedCotacoes] = useState<string[]>([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
   const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>("1");
   const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
   const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
@@ -338,7 +342,62 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
 
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
-  const { createCotacaoInternacional, updateCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
+  const { createCotacaoInternacional, updateCotacaoInternacional, deleteCotacaoInternacional, loading: saveLoading } = useCotacoesInternacionais();
+
+  // Funções para seleção múltipla de cotações
+  const toggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    if (isSelectMode) {
+      setSelectedCotacoes([]);
+    }
+  };
+
+  const selectCotacao = (cotacaoId: string) => {
+    if (selectedCotacoes.includes(cotacaoId)) {
+      setSelectedCotacoes(selectedCotacoes.filter(id => id !== cotacaoId));
+    } else {
+      setSelectedCotacoes([...selectedCotacoes, cotacaoId]);
+    }
+  };
+
+  const selectAllCotacoes = () => {
+    const allCotacaoIds = filteredCotacoes.map(c => c.id!).filter(Boolean);
+    setSelectedCotacoes(allCotacaoIds);
+  };
+
+  const clearSelection = () => {
+    setSelectedCotacoes([]);
+  };
+
+  const deleteSelectedCotacoes = async () => {
+    if (selectedCotacoes.length === 0) return;
+    
+    try {
+      const promises = selectedCotacoes.map(id => deleteCotacaoInternacional(id));
+      await Promise.all(promises);
+      
+      toast({
+        title: "Cotações excluídas!",
+        description: `${selectedCotacoes.length} cotação(ões) excluída(s) com sucesso.`,
+      });
+      
+      setSelectedCotacoes([]);
+      setIsSelectMode(false);
+      onRefresh();
+    } catch (error) {
+      toast({
+        title: "Erro ao excluir cotações",
+        description: "Não foi possível excluir as cotações selecionadas.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Filtrar cotações
+  const filteredCotacoes = cotacoes.filter(cotacao => 
+    cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Funções para modal de comparação de imagens
   const openImageComparisonModal = (
@@ -1303,13 +1362,39 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
           {/* Cotações Grid - Cards Layout */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {cotacoes
-              .filter(cotacao => 
-                cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((cotacao) => (
-                <Card key={cotacao.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedCotacao(cotacao)}>
+            {filteredCotacoes.map((cotacao) => (
+                <Card 
+                  key={cotacao.id} 
+                  className={`relative cursor-pointer hover:shadow-md transition-all ${
+                    isSelectMode 
+                      ? selectedCotacoes.includes(cotacao.id!) 
+                        ? 'ring-2 ring-primary bg-primary/5' 
+                        : 'hover:ring-1 hover:ring-border'
+                      : ''
+                  }`}
+                  onClick={(e) => {
+                    if (isSelectMode) {
+                      e.stopPropagation();
+                      selectCotacao(cotacao.id!);
+                    } else {
+                      setSelectedCotacao(cotacao);
+                    }
+                  }}
+                >
+                  {isSelectMode && (
+                    <div className="absolute top-2 left-2 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedCotacoes.includes(cotacao.id!)}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          selectCotacao(cotacao.id!);
+                        }}
+                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                      />
+                    </div>
+                  )}
+                  
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-lg">{cotacao.numero_cotacao}</CardTitle>
@@ -1344,21 +1429,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       </div>
                     </div>
                     
-                    <div className="flex gap-2 pt-2">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Eye className="h-4 w-4 mr-1" />
-                        Ver Produtos
-                      </Button>
-                    </div>
+                    {!isSelectMode && (
+                      <div className="flex gap-2 pt-2">
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver Produtos
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
           </div>
 
-          {cotacoes.filter(cotacao => 
-            cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-          ).length === 0 && (
+          {filteredCotacoes.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <FileText className="h-12 w-12 text-muted-foreground mb-4" />
