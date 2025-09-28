@@ -88,7 +88,8 @@ export function useCotacoesArquivos() {
           nome_arquivo: file.name,
           tipo_arquivo: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'excel' : 'csv',
           url_arquivo: urlData.publicUrl,
-          status: 'pendente'
+          status: 'pendente',
+          organization_id: organizationId
         }])
         .select()
         .single();
