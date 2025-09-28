@@ -59,7 +59,11 @@ export function useCotacoesArquivos() {
 
       // Gerar nome único para o arquivo
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `${cotacaoId}_${timestamp}_${file.name}`;
+      // Sanitizar nome do arquivo removendo caracteres especiais
+      const sanitizedFileName = file.name
+        .replace(/[^a-zA-Z0-9._-]/g, '_') // Substituir caracteres especiais por underscore
+        .replace(/_{2,}/g, '_'); // Substituir múltiplos underscores por um só
+      const fileName = `${cotacaoId}_${timestamp}_${sanitizedFileName}`;
       const filePath = `${organizationId}/${cotacaoId}/${fileName}`;
 
       // Upload do arquivo para o storage
