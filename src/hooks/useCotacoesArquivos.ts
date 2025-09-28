@@ -379,11 +379,17 @@ export function useCotacoesArquivos() {
       console.log('📊 [DEBUG] Arquivos ORDENADOS (versão robusta):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       console.log('🎯 [DEBUG] Estratégia de ordenação aplicada para imagens não fixas nas células');
       
-      // DEPURAÇÃO COMPLETA: LOG DETALHADO ANTES DO PROCESSAMENTO
       console.log('🔍 [AUDIT] INÍCIO DO MAPEAMENTO DE IMAGENS');
       console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
       console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
       console.log('📊 [AUDIT] Range da planilha:', `${range.s.r}-${range.e.r} (${range.e.r - range.s.r} linhas de dados)`);
+      
+      // CORREÇÃO FUNDAMENTAL: Calcular estratégia ANTES do loop
+      const totalLinhasDados = range.e.r - range.s.r;
+      const imagensPorLinha = Math.round(todosArquivosImagem.length / totalLinhasDados);
+      const estrategiaFinal = imagensPorLinha <= 1 ? 1 : 2;
+      
+      console.log(`🎯 [AUDIT] ESTRATÉGIA GLOBAL: ${todosArquivosImagem.length} imagens ÷ ${totalLinhasDados} linhas = ${imagensPorLinha} → estratégia final: ${estrategiaFinal} img/linha`);
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -395,23 +401,12 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO DEFINITIVA: Detectar corretamente o padrão de distribuição das imagens
-        const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
-        
-        // NOVA LÓGICA: Analise as duas primeiras imagens para detectar o padrão
-        // Se temos pelo menos 2 imagens, vamos assumir que são 2 por linha (IMAGEM + IMAGEM_FORNECEDOR)
-        // Se temos menos que o dobro das linhas, então é 1 imagem por linha
-        
-        // Calcular estratégia baseada na proporção real de imagens vs linhas
-        const proporcaoImagensPorLinha = todosArquivosImagem.length / totalLinhasDados;
-        const imagensPorLinha = proporcaoImagensPorLinha > 1.5 ? 2 : 1;
-        
-        // LOG INDIVIDUAL POR IMAGEM
+        // LOG INDIVIDUAL POR IMAGEM  
         console.log(`🔍 [AUDIT] Processando imagem ${i}/${todosArquivosImagem.length-1}: ${mediaFile}`);
-        console.log(`🧮 [AUDIT] Total imagens: ${todosArquivosImagem.length}, Total linhas: ${totalLinhasDados}, Proporção: ${proporcaoImagensPorLinha.toFixed(2)}, Imagens por linha: ${imagensPorLinha}`);
         
         let linhaDados, coluna;
-        if (imagensPorLinha === 2) {
+        
+        if (estrategiaFinal === 2) {
           // Modo 2 imagens por linha: IMAGEM (índices pares) e IMAGEM_FORNECEDOR (índices ímpares)
           linhaDados = Math.floor(i / 2);
           coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
@@ -440,7 +435,7 @@ export function useCotacoesArquivos() {
         });
         
         // LOG FINAL DE CONFIRMAÇÃO
-        console.log(`✅ [AUDIT] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Modo: ${imagensPorLinha} img/linha, Tamanho: ${imageBlob.size} bytes`);
+        console.log(`✅ [AUDIT] Imagem ${i}: arquivo="${mediaFile}" → Linha Excel ${linhaExcel}, Coluna ${coluna}, LinhaDados ${linhaDados}, Estratégia: ${estrategiaFinal} img/linha, Tamanho: ${imageBlob.size} bytes`);
         console.log(`🎯 [AUDIT] MAPEAMENTO: img[${i}] → dados[${linhaDados}] → excel[${linhaExcel}] → coluna[${coluna}]`);
       }
       
