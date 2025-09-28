@@ -1,5 +1,7 @@
 // src/components/compras/CotacoesInternacionaisTab.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { SessionStorageManager } from '@/utils/sessionStorageManager';
+import { ErrorHandler } from '@/utils/errorHandler';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -205,11 +207,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [editingCotacao, setEditingCotacao] = useState<CotacaoInternacional | null>(null);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  
   // Estados para seleção múltipla de cotações
   const [selectedCotacoes, setSelectedCotacoes] = useState<string[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
+  
+  // Estados para seleção de produtos na tabela
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  
+  // Estados para divisores e multiplicadores com valores padrão
   const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>("1");
   const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
   const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
@@ -218,67 +223,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
   const [productData, setProductData] = useState<any[]>(() => {
-    // Tentar recuperar dados do sessionStorage
-    try {
-      const savedData = sessionStorage.getItem('cotacao-produtos');
-      if (savedData) {
-        const data = JSON.parse(savedData);
-        
-        // Filtrar dados inválidos de forma mais rigorosa
-        const cleanedData = data
-          .filter((product: any) => {
-            // Remover produtos com SKU inválido ou vazio
-            if (!product.sku || product.sku.trim() === '') return false;
-            // Remover produtos órfãos como PROD-29
-            if (product.sku === 'PROD-29') return false;
-            // Remover produtos PROD-* sem nome ou nome vazio
-            if (product.sku.startsWith('PROD-') && (!product.nome_produto || product.nome_produto.trim() === '')) return false;
-            return true;
-          })
-          .map((product: any) => ({
-            ...product,
-            imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-            imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-          }));
-        
-        // Se houve limpeza, atualizar o sessionStorage
-        if (cleanedData.length !== data.length) {
-          console.log(`🧹 Removidos ${data.length - cleanedData.length} itens inválidos incluindo PROD-29`);
-          sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedData));
-        }
-        
-        return cleanedData;
-      }
-      return [];
-    } catch {
-      return [];
-    }
+    // CORREÇÃO: Usar o novo gerenciador de sessionStorage
+    return SessionStorageManager.loadProducts();
   });
   const [hasImportedData, setHasImportedData] = useState(() => {
-    try {
-      const savedData = sessionStorage.getItem('cotacao-produtos');
-      return savedData ? JSON.parse(savedData).length > 0 : false;
-    } catch {
-      return false;
-    }
+    const products = SessionStorageManager.loadProducts();
+    return products.length > 0;
   });
   
   // Estado para moeda selecionada no resumo
   const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
-    try {
-      return sessionStorage.getItem('cotacao-selected-currency') || 'CNY';
-    } catch {
-      return 'CNY';
-    }
+    return SessionStorageManager.loadCurrency('CNY');
   });
   
   // Estado para tipo de contêiner selecionado com persistência
   const [selectedContainer, setSelectedContainer] = useState<string>(() => {
-    try {
-      return sessionStorage.getItem('cotacao-selected-container') || '20';
-    } catch {
-      return '20';
-    }
+    return SessionStorageManager.loadContainer('20');
   });
   
   // Estado para dialog de importação
@@ -393,11 +353,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Filtrar cotações
-  const filteredCotacoes = cotacoes.filter(cotacao => 
-    cotacao.numero_cotacao?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cotacao.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // CORREÇÃO: Memoizar filtros para evitar re-renders desnecessários
+  const filteredCotacoes = useMemo(() => {
+    if (!searchTerm.trim()) return cotacoes;
+    
+    const searchLower = searchTerm.toLowerCase();
+    return cotacoes.filter(cotacao => 
+      cotacao.numero_cotacao?.toLowerCase().includes(searchLower) ||
+      cotacao.descricao?.toLowerCase().includes(searchLower)
+    );
+  }, [cotacoes, searchTerm]);
 
   // Funções para modal de comparação de imagens
   const openImageComparisonModal = (
@@ -425,28 +390,26 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     });
   };
 
-  const saveObservacoes = (rowIndex: number, observacoes: string) => {
+  const saveObservacoes = useCallback((rowIndex: number, observacoes: string) => {
     setProductData(prevData => {
       const newData = [...prevData];
       if (newData[rowIndex]) {
         newData[rowIndex] = { ...newData[rowIndex], obs: observacoes };
       }
       
-      // Salvar no sessionStorage
-      try {
-        const cleanedProducts = newData.map(product => ({
-          ...product,
-          imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-        }));
-        sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
-      } catch (error) {
-        console.warn('Erro ao salvar no sessionStorage:', error);
+      // CORREÇÃO: Usar o novo gerenciador de sessionStorage
+      const { error } = ErrorHandler.withErrorHandlingSync(
+        () => SessionStorageManager.saveProducts(newData),
+        { component: 'CotacoesInternacionaisTab', action: 'save_observacoes' }
+      );
+      
+      if (error) {
+        console.warn('Erro ao salvar observações:', error.message);
       }
       
       return newData;
     });
-  };
+  }, []);
 
   // Handler para produtos selecionados do seletor avançado
   const handleProductSelectorConfirm = (selectedProducts: any[]) => {
@@ -740,15 +703,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Funções para seleção de produtos na tabela Excel
   const handleSelectProduct = (productId: string, checked: boolean) => {
-    console.log('🔘 [DEBUG] Selecionando produto:', { productId, checked, currentSelected: selectedProducts });
+    console.log('🔘 [DEBUG] Selecionando produto:', { productId, checked, currentSelected: selectedProductIds });
     if (checked) {
-      setSelectedProducts(prev => {
+      setSelectedProductIds(prev => {
         const newSelected = [...prev, productId];
         console.log('✅ [DEBUG] Produtos selecionados após adicionar:', newSelected);
         return newSelected;
       });
     } else {
-      setSelectedProducts(prev => {
+      setSelectedProductIds(prev => {
         const newSelected = prev.filter(id => id !== productId);
         console.log('❌ [DEBUG] Produtos selecionados após remover:', newSelected);
         return newSelected;
@@ -759,24 +722,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       // Usar displayProducts em vez de selectedCotacao.produtos
-      setSelectedProducts(displayProducts.map((_, index) => index.toString()));
+      setSelectedProductIds(displayProducts.map((_, index) => index.toString()));
     } else {
-      setSelectedProducts([]);
+      setSelectedProductIds([]);
     }
   };
 
   // Função para excluir produtos selecionados
   const handleDeleteSelectedProducts = () => {
-    if (selectedProducts.length === 0) return;
+    if (selectedProductIds.length === 0) return;
     
     // Filtrar produtos que não estão selecionados
     const updatedProducts = displayProducts.filter((_, index) => 
-      !selectedProducts.includes(index.toString())
+      !selectedProductIds.includes(index.toString())
     );
     
     // Atualizar o estado
     setProductData(updatedProducts);
-    setSelectedProducts([]);
+    setSelectedProductIds([]);
     
     // CRITICAL: Marcar que dados foram importados/editados para não voltar ao mock
     setHasImportedData(true);
@@ -795,7 +758,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     toast({
       title: "Produtos excluídos",
-      description: `${selectedProducts.length} produto(s) foram excluídos com sucesso.`,
+      description: `${selectedProductIds.length} produto(s) foram excluídos com sucesso.`,
     });
   };
 
@@ -1615,14 +1578,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 <div className="flex items-center justify-between">
                   <CardTitle>Produtos da Cotação</CardTitle>
                   <div className="flex gap-2">
-                    {selectedProducts.length > 0 && (
+                    {selectedProductIds.length > 0 && (
                       <Button 
                         variant="destructive" 
                         size="sm"
                         onClick={handleDeleteSelectedProducts}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Excluir Selecionados ({selectedProducts.length})
+                        Excluir Selecionados ({selectedProductIds.length})
                       </Button>
                     )}
                     <Button 
@@ -1657,7 +1620,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <TableHead className="w-[50px] h-12 text-center">
                          <input 
                            type="checkbox"
-                           checked={selectedProducts.length === displayProducts.length && displayProducts.length > 0}
+                           checked={selectedProductIds.length === displayProducts.length && displayProducts.length > 0}
                            onChange={(e) => handleSelectAll(e.target.checked)}
                            className="rounded"
                          />
@@ -1800,7 +1763,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                           <TableCell className="text-center py-3">
                            <input 
                              type="checkbox"
-                             checked={selectedProducts.includes(index.toString())}
+                             checked={selectedProductIds.includes(index.toString())}
                              onChange={(e) => handleSelectProduct(index.toString(), e.target.checked)}
                              className="rounded"
                            />
