@@ -2615,9 +2615,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       
       {/* Dialog de Importação */}
       <CotacaoImportDialog
-        isOpen={showImportDialog}
-        onClose={() => setShowImportDialog(false)}
-        cotacao={{ id: 'COT-INT-2025-742759', numero: 'COT-INT-2025-742759', organization_id: 'org-1' }}
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        cotacao={null}
         onImportSuccess={handleImportSuccess}
       />
       

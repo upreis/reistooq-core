@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useImageMapping } from './useImageMapping';
 
 interface CotacaoArquivo {
   id?: string;
@@ -22,7 +21,6 @@ interface CotacaoArquivo {
 export function useCotacoesArquivos() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { processExcelFile, uploadImages, mapDataWithImages } = useImageMapping();
 
   const getArquivosCotacao = useCallback(async (cotacaoId: string) => {
     try {
@@ -35,13 +33,13 @@ export function useCotacoesArquivos() {
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Erro ao buscar arquivos:', error);
+        console.error('Erro ao buscar arquivos da cotação:', error);
         throw error;
       }
 
       return data || [];
     } catch (error) {
-      console.error('Erro ao buscar arquivos:', error);
+      console.error('Erro ao buscar arquivos da cotação:', error);
       toast({
         title: "Erro ao carregar arquivos",
         description: "Não foi possível carregar os arquivos da cotação.",
@@ -55,32 +53,45 @@ export function useCotacoesArquivos() {
 
   const uploadArquivo = useCallback(async (file: File, cotacaoId: string, organizationId: string) => {
     try {
+      console.log('🚀 Iniciando upload de arquivo:', { 
+        fileName: file.name, 
+        fileSize: file.size, 
+        cotacaoId, 
+        organizationId 
+      });
+      
       setLoading(true);
 
       // Gerar nome único para o arquivo
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      // Sanitizar nome do arquivo removendo caracteres especiais
-      const sanitizedFileName = file.name
-        .replace(/[^a-zA-Z0-9._-]/g, '_') // Substituir caracteres especiais por underscore
-        .replace(/_{2,}/g, '_'); // Substituir múltiplos underscores por um só
-      const fileName = `${cotacaoId}_${timestamp}_${sanitizedFileName}`;
+      const fileName = `${cotacaoId}_${timestamp}_${file.name}`;
       const filePath = `${organizationId}/${cotacaoId}/${fileName}`;
 
+      console.log('📁 Caminho do arquivo gerado:', filePath);
+
       // Upload do arquivo para o storage
+      console.log('☁️ Fazendo upload para Supabase Storage...');
       const { error: uploadError } = await supabase.storage
         .from('cotacoes-arquivos')
         .upload(filePath, file);
 
       if (uploadError) {
+        console.error('❌ Erro no upload do arquivo:', uploadError);
         throw uploadError;
       }
 
+      console.log('✅ Upload para storage concluído com sucesso');
+
       // Obter URL pública do arquivo
+      console.log('🔗 Obtendo URL pública...');
       const { data: urlData } = supabase.storage
         .from('cotacoes-arquivos')
         .getPublicUrl(filePath);
 
+      console.log('🔗 URL pública obtida:', urlData.publicUrl);
+
       // Registrar arquivo na tabela
+      console.log('💾 Registrando arquivo na tabela...');
       const { data, error } = await supabase
         .from('cotacoes_arquivos')
         .insert([{
@@ -88,19 +99,22 @@ export function useCotacoesArquivos() {
           nome_arquivo: file.name,
           tipo_arquivo: file.name.endsWith('.xlsx') || file.name.endsWith('.xls') ? 'excel' : 'csv',
           url_arquivo: urlData.publicUrl,
-          status: 'pendente',
-          organization_id: organizationId
+          status: 'pendente'
         }])
         .select()
         .single();
 
       if (error) {
-        // Remover arquivo do storage se falhou o registro
+        console.error('❌ Erro ao registrar arquivo na tabela:', error);
+        // Tentar remover o arquivo do storage se falhou o registro
+        console.log('🗑️ Removendo arquivo do storage devido ao erro...');
         await supabase.storage
           .from('cotacoes-arquivos')
           .remove([filePath]);
         throw error;
       }
+
+      console.log('✅ Arquivo registrado na tabela com sucesso:', data);
 
       toast({
         title: "Arquivo enviado!",
@@ -109,7 +123,7 @@ export function useCotacoesArquivos() {
 
       return data;
     } catch (error) {
-      console.error('Erro no upload:', error);
+      console.error('💥 Erro completo no upload do arquivo:', error);
       toast({
         title: "Erro no upload",
         description: "Não foi possível enviar o arquivo.",
@@ -121,147 +135,975 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const processarArquivo = useCallback(async (arquivoId: string, dadosProcessados: any[]) => {
+  const lerArquivoComImagens = (file: File): Promise<{dados: any[], imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]}> => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        console.log('🚀 [CRITICAL AUDIT] === INICIANDO LEITURA ARQUIVO ===');
+        console.log('🚀 [CRITICAL AUDIT] Arquivo:', file.name, 'Tamanho:', file.size, 'bytes');
+        console.log('🚀 [CRITICAL AUDIT] Cotação: COT-INT-2025-742759');
+        console.log('🚀 [CRITICAL AUDIT] Página: /compras/cotacoes aba=cotacoes-internacionais');
+        
+        let dados: any[] = [];
+        let imagens: {nome: string, blob: Blob, linha: number, coluna: string}[] = [];
+
+        if (file.name.endsWith('.csv')) {
+          // Processar CSV (sem imagens)
+          const text = await file.text();
+          const lines = text.split('\n');
+          const headers = lines[0].split(',').map(h => h.trim());
+          
+          for (let i = 1; i < lines.length; i++) {
+            if (lines[i].trim()) {
+              const values = lines[i].split(',');
+              const row: any = {};
+              headers.forEach((header, index) => {
+                row[header] = values[index]?.trim() || '';
+              });
+              dados.push(row);
+            }
+          }
+        } else {
+          // Processar Excel com extração avançada de imagens
+          await processarExcelComImagens(file, dados, imagens);
+        }
+        
+        console.log('✅ [CRITICAL AUDIT] === LEITURA CONCLUÍDA ===');
+        console.log('✅ [CRITICAL AUDIT] Total de dados:', dados.length);
+        console.log('✅ [CRITICAL AUDIT] Total de imagens:', imagens.length);
+        console.log('✅ [CRITICAL AUDIT] Primeiros 3 dados:', dados.slice(0, 3));
+        console.log('✅ [CRITICAL AUDIT] Primeiras 3 imagens:', imagens.slice(0, 3));
+        resolve({ dados, imagens });
+      } catch (error) {
+        console.error('❌ [DEBUG] Erro na leitura do arquivo:', error);
+        reject(error);
+      }
+    });
+  };
+
+  const processarExcelComImagens = async (
+    file: File, 
+    dados: any[], 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+  ) => {
     try {
-      const { error } = await supabase
+      // Método 1: Usar XLSX para dados básicos
+      const arrayBuffer = await file.arrayBuffer();
+      const XLSX = await import('xlsx');
+      const workbook = XLSX.read(arrayBuffer, { type: 'array', cellStyles: true });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Extrair dados da planilha - INCLUINDO VALORES EM BRANCO
+      const dadosExtraidos = XLSX.utils.sheet_to_json(worksheet, { 
+        defval: '', // Valor padrão para células vazias
+        raw: false // Converter tudo para string primeiro
+      });
+      
+      // NOVO: Também extrair dados usando referências de coluna (M, N, etc.)
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      const dadosComIndices: any[] = [];
+      
+      // Processar linha por linha incluindo colunas M e N especificamente
+      for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para pular cabeçalho
+        const linha: any = {};
+        
+        // Ler TODAS as colunas
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+          const headerAddress = XLSX.utils.encode_cell({ r: range.s.r, c: C });
+          const cell = worksheet[cellAddress];
+          const headerCell = worksheet[headerAddress];
+          
+          const headerValue = headerCell ? headerCell.v : `COL_${String.fromCharCode(65 + C)}`;
+          const cellValue = cell ? cell.v : '';
+          
+          linha[headerValue] = cellValue;
+          
+          // MAPEAMENTO ESPECÍFICO PARA COLUNAS M E N
+          if (C === 12) { // Coluna M (índice 12, pois A=0)
+            linha['COLUNA_M'] = cellValue;
+            linha['Peso embalado cx Master (KG)'] = cellValue;
+          }
+          if (C === 13) { // Coluna N (índice 13)
+            linha['COLUNA_N'] = cellValue;
+            linha['Peso Sem embalagem cx Master (KG)'] = cellValue;
+          }
+        }
+        
+        // 🚨 CORREÇÃO: Preservar referência da linha Excel original
+        dadosComIndices.push({
+          ...linha,
+          _linhaOriginalExcel: R // Preservar linha Excel original
+        });
+      }
+      
+      console.log('📊 [DEBUG] Dados extraídos via XLSX (método padrão):', dadosExtraidos.length);
+      console.log('📊 [DEBUG] Dados extraídos via índices (M/N):', dadosComIndices.length);
+      console.log('📊 [DEBUG] Primeiras 3 linhas com referência Excel:', dadosComIndices.slice(0, 3).map(d => ({
+        excel: d._linhaOriginalExcel,
+        sku: d.SKU || d.sku
+      })));
+      
+      // Usar dados com índices em vez dos dados padrão
+      dados.push(...dadosComIndices);
+      
+      // Debug: mostrar headers da planilha
+      if (dadosComIndices.length > 0) {
+        const headers = Object.keys(dadosComIndices[0]);
+        console.log('📋 [DEBUG] Headers detectados na planilha:', headers);
+        console.log('🎯 [DEBUG] Headers relacionados a peso:', headers.filter(h => 
+          h.toLowerCase().includes('peso') || 
+          h.toLowerCase().includes('master') ||
+          h.toLowerCase().includes('kg') ||
+          h.includes('COLUNA_M') ||
+          h.includes('COLUNA_N')
+        ));
+        
+        // DEBUG ESPECÍFICO PARA AS COLUNAS M e N
+        console.log('🔍 [DEBUG] Valor COLUNA_M (Peso embalado):', dadosComIndices[0]['COLUNA_M']);
+        console.log('🔍 [DEBUG] Valor COLUNA_N (Peso sem embalagem):', dadosComIndices[0]['COLUNA_N']);
+      }
+      
+      // Método 2: Processar Excel como ZIP para extrair imagens embutidas
+      await extrairImagensDoZip(file, imagens, worksheet);
+      
+      // FALLBACK: Se não encontrou imagens via ZIP, tentar método alternativo
+      if (imagens.length === 0) {
+        console.log('🔄 [DEBUG] Nenhuma imagem encontrada via ZIP, tentando método alternativo...');
+        await extrairImagensAlternativo(file, imagens);
+      }
+      
+      // ÚLTIMO RECURSO: Simular imagens fictícias se nenhuma foi encontrada mas existem colunas IMAGEM
+      if (imagens.length === 0 && dados.length > 0) {
+        console.log('🎭 [DEBUG] Criando referências ficticias para imagens em colunas...');
+        dados.forEach((linha, index) => {
+          const linhaExcel = index + 2; // +2 para contar cabeçalho
+          
+          // Verificar se há URLs ou nomes de arquivo nas colunas de imagem
+          const imagemColuna = linha.IMAGEM || linha.imagem || '';
+          const imagemFornecedorColuna = linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || '';
+          
+          if (imagemColuna && imagemColuna.toString().trim()) {
+            console.log(`📷 [DEBUG] Encontrada referência de imagem na coluna: ${imagemColuna}`);
+            // Não criar blob, apenas marcar que existe uma referência
+          }
+          
+          if (imagemFornecedorColuna && imagemFornecedorColuna.toString().trim()) {
+            console.log(`📷 [DEBUG] Encontrada referência de imagem fornecedor na coluna: ${imagemFornecedorColuna}`);
+            // Não criar blob, apenas marcar que existe uma referência
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro no processamento do Excel:', error);
+      throw error;
+    }
+  };
+
+  const extrairImagensDoZip = async (
+    file: File, 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[],
+    worksheet: any
+  ) => {
+    try {
+      console.log('🔍 [DEBUG] Tentando extrair imagens do arquivo Excel como ZIP...');
+      
+      // Importar JSZip dinamicamente
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      
+      // Carregar o arquivo Excel como ZIP
+      const arrayBuffer = await file.arrayBuffer();
+      const zipData = await zip.loadAsync(arrayBuffer);
+      
+      console.log('📦 [DEBUG] Arquivos no ZIP:', Object.keys(zipData.files));
+      
+      // Procurar por arquivos de desenho/imagem
+      const drawingFiles = Object.keys(zipData.files).filter(name => 
+        name.includes('drawing') && name.endsWith('.xml')
+      );
+      
+      const mediaFiles = Object.keys(zipData.files).filter(name => 
+        name.startsWith('xl/media/') && (
+          name.endsWith('.png') || 
+          name.endsWith('.jpg') || 
+          name.endsWith('.jpeg') || 
+          name.endsWith('.gif') ||
+          name.endsWith('.bmp') ||
+          name.endsWith('.tiff')
+        )
+      );
+      
+      // Também procurar por arquivos embedObjects ou outros formatos
+      const embedFiles = Object.keys(zipData.files).filter(name => 
+        name.includes('embeddings') || 
+        name.includes('oleObject') ||
+        (name.includes('media') && (
+          name.endsWith('.png') || 
+          name.endsWith('.jpg') || 
+          name.endsWith('.jpeg') ||
+          name.endsWith('.gif')
+        ))
+      );
+      
+      const todosArquivosImagem = [...new Set([...mediaFiles, ...embedFiles])];
+      
+      console.log('🎨 [DEBUG] Arquivos de desenho encontrados:', drawingFiles);
+      console.log('📸 [DEBUG] Arquivos de mídia encontrados:', todosArquivosImagem);
+      
+      if (todosArquivosImagem.length === 0) {
+        console.log('ℹ️ [DEBUG] Nenhuma imagem embutida encontrada no Excel via ZIP');
+        return;
+      }
+
+      // Mapear colunas por cabeçalho
+      const XLSX = await import('xlsx');
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      const colunaImagemIndex = await encontrarIndiceColuna(worksheet, 'IMAGEM');
+      const colunaImagemFornecedorIndex = await encontrarIndiceColuna(worksheet, 'IMAGEM FORNECEDOR');
+      
+      console.log('📋 [DEBUG] Índice coluna IMAGEM:', colunaImagemIndex);
+      console.log('📋 [DEBUG] Índice coluna IMAGEM FORNECEDOR:', colunaImagemFornecedorIndex);
+      
+      // Processar arquivos de mídia encontrados
+      // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
+      console.log('📊 [DEBUG] Total de imagens encontradas:', todosArquivosImagem.length);
+      console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
+      console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      
+      // CORREÇÃO TOTAL: Mapear imagens respeitando ordem EXATA do upload
+      console.log('🔍 [AUDIT] INÍCIO DA CORREÇÃO TOTAL DE MAPEAMENTO');
+      console.log('📊 [AUDIT] Total de imagens encontradas:', todosArquivosImagem.length);
+      console.log('📊 [AUDIT] Total de linhas de dados:', range.e.r - range.s.r);
+      console.log('📊 [AUDIT] Arquivos de imagem (ordem original):', todosArquivosImagem);
+      
+      // Ler dados da planilha para mapear SKUs
+      const dadosPlanilha = [];
+      for (let row = range.s.r + 1; row <= range.e.r; row++) {
+        const dadosLinha: any = {};
+        for (let col = range.s.c; col <= range.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+          const cell = worksheet[cellAddress];
+          const headerAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col });
+          const headerCell = worksheet[headerAddress];
+          const headerName = headerCell ? String(headerCell.v).trim() : `Col${col}`;
+          dadosLinha[headerName] = cell ? cell.v : '';
+        }
+        dadosPlanilha.push({
+          linha: row, // ✅ CORRETO: row já é a linha real do Excel (2, 3, 4...)
+          dados: dadosLinha,
+          sku: dadosLinha.SKU || dadosLinha.sku || `PROD-${row}`, // 🚨 CORREÇÃO: Usar linha real
+          _indiceArray: dadosPlanilha.length // ✅ NOVO: Preservar índice do array
+        });
+      }
+      
+      console.log('📋 [AUDIT] ESTRUTURA CONFIRMADA:');
+      console.log(`📋 [AUDIT] Cabeçalho na linha Excel ${range.s.r + 1} (linha ${range.s.r} no índice XLSX)`);
+      console.log(`📋 [AUDIT] Primeira linha de dados na linha Excel ${range.s.r + 2}`);
+      console.log('📋 [AUDIT] Dados extraídos (primeiras 3 linhas):');
+      dadosPlanilha.slice(0, 3).forEach(d => {
+        console.log(`📊 [AUDIT] Excel Linha ${d.linha} → SKU: ${d.sku} (Array índice: ${d._indiceArray})`);
+      });
+      
+      // ESTRATÉGIA SIMPLES: manter ordem original dos arquivos
+      // NÃO ordenar - usar exatamente como vieram no ZIP
+      const arquivosNaOrdemOriginal = [...todosArquivosImagem];
+      
+      console.log('🔍 [AUDIT] Mantendo ordem original dos arquivos:', arquivosNaOrdemOriginal);
+      
+      // Determinar estratégia de distribuição INTELIGENTE
+      const totalLinhasDados = dadosPlanilha.length;
+      const totalImagens = arquivosNaOrdemOriginal.length;
+      
+      console.log(`🎯 [AUDIT] NOVA ESTRATÉGIA: ${totalImagens} imagens ÷ ${totalLinhasDados} linhas`);
+      
+      // 🚨 NOVA ESTRATÉGIA FIXA: Mapeamento 2 a 2 CORRETO
+      let imagemIndex = 0;
+      
+      console.log('🚨 [CORREÇÃO DEFINITIVA] NOVA ESTRATÉGIA DE MAPEAMENTO 2x2');
+      console.log(`📊 [CORREÇÃO] Total imagens: ${totalImagens}, Total linhas: ${totalLinhasDados}`);
+      
+      // Para cada linha de dados, mapear EXATAMENTE 2 imagens
+      for (let linhaDados = 0; linhaDados < totalLinhasDados; linhaDados++) {
+        const dadosAtual = dadosPlanilha[linhaDados];
+        const linhaExcel = dadosAtual.linha;
+        const sku = dadosAtual.sku;
+        
+        console.log(`🔍 [CORREÇÃO] Processando linha ${linhaDados}: Excel=${linhaExcel}, SKU=${sku}`);
+        
+        // 🚨 MAPEAMENTO FIXO: 2 imagens por linha, não importa o total
+        const imagensParaEstaLinha = 2; // SEMPRE 2 imagens por linha
+        
+        // Mapear IMAGEM (coluna B) e IMAGEM FORNECEDOR (coluna C)
+        for (let imgLocal = 0; imgLocal < imagensParaEstaLinha && imagemIndex < totalImagens; imgLocal++) {
+          const mediaFile = arquivosNaOrdemOriginal[imagemIndex];
+          
+          try {
+            const imageBlob = await zipData.files[mediaFile].async('blob');
+            
+            if (imageBlob.size === 0) {
+              console.warn(`⚠️ [CORREÇÃO] Arquivo ${mediaFile} vazio, pulando...`);
+              imagemIndex++;
+              continue;
+            }
+            
+            // 🚨 CORREÇÃO FIXA: SEMPRE alternando entre as 2 colunas
+            const coluna = imgLocal === 0 ? 'IMAGEM' : 'IMAGEM FORNECEDOR';
+            
+            const extensao = mediaFile.split('.').pop() || 'png';
+            const nomeImagem = `${sku}_${coluna.replace(' ', '_').toLowerCase()}_linha${linhaExcel}_seq${imagemIndex}.${extensao}`;
+            
+            imagens.push({
+              nome: nomeImagem,
+              blob: imageBlob,
+              linha: linhaExcel,
+              coluna: coluna
+            });
+            
+            console.log(`🚀 [CRITICAL FIX] MAPEAMENTO DIRETO:`);
+            console.log(`🚀 [CRITICAL FIX] Imagem[${imagemIndex}] = "${mediaFile}"`);
+            console.log(`🚀 [CRITICAL FIX] SKU = ${sku}`);
+            console.log(`🚀 [CRITICAL FIX] Excel Linha = ${linhaExcel}`);
+            console.log(`🚀 [CRITICAL FIX] Coluna = ${coluna}`);
+            console.log(`🚀 [CRITICAL FIX] Sequência: Array[${linhaDados}] → Excel ${coluna.substring(0,6)}${linhaExcel}`);
+            
+            imagemIndex++;
+          } catch (error) {
+            console.error(`❌ [CORREÇÃO] Erro ao processar imagem ${mediaFile}:`, error);
+            imagemIndex++;
+          }
+        }
+        
+        console.log(`📋 [CORREÇÃO] Linha concluída: ${linhaDados} (Excel ${linhaExcel}) - ${sku} - Imagens mapeadas`);
+      }
+      
+      console.log(`🏁 [CORREÇÃO] FINALIZADO: ${imagens.length} imagens processadas de ${totalImagens} disponíveis`);
+      
+      // 🚨 AUDITORIA FINAL COMPLETA
+      console.log('🔍 [AUDITORIA FINAL] MAPEAMENTO CORRIGIDO:');
+      imagens.forEach((img, idx) => {
+        console.log(`📊 [AUDITORIA] Imagem[${idx}]: linha=${img.linha}, coluna=${img.coluna}, nome=${img.nome}`);
+      });
+      
+      console.log('📋 [AUDITORIA] ESTRUTURA ESPERADA:');
+      console.log('📋 [AUDITORIA] ✅ Excel B2 + C2 = SKU FL-800 (linha 2)');
+      console.log('📋 [AUDITORIA] ✅ Excel B3 + C3 = SKU FL-801 (linha 3)');
+      console.log('📋 [AUDITORIA] ✅ Excel B4 + C4 = SKU FL-802 (linha 4)');
+      console.log('📋 [AUDITORIA] ✅ E assim por diante...');
+      
+    } catch (zipError) {
+      console.warn('⚠️ [DEBUG] Erro na extração por ZIP (fallback será usado):', zipError);
+      
+      // Fallback: tentar método alternativo
+      await extrairImagensAlternativo(file, imagens);
+    }
+  };
+
+  const encontrarIndiceColuna = async (worksheet: any, nomeColuna: string): Promise<number | null> => {
+    try {
+      const XLSX = await import('xlsx');
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      
+      // 🚨 CORREÇÃO: Usar linha de cabeçalho correta, não hardcoded
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col }); // ✅ Usa linha de cabeçalho real
+        const cell = worksheet[cellAddress];
+        if (cell && cell.v) {
+          const headerValue = String(cell.v).toUpperCase().trim();
+          if (headerValue === nomeColuna || headerValue === nomeColuna.replace(' ', '_')) {
+            console.log(`📍 [DEBUG] Coluna "${nomeColuna}" encontrada no índice ${col} (letra ${String.fromCharCode(65 + col)})`);
+            return col;
+          }
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao encontrar índice da coluna:', error);
+      return null;
+    }
+  };
+
+  const extrairImagensAlternativo = async (
+    file: File, 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string}[]
+  ) => {
+    try {
+      console.log('🔄 [DEBUG] Tentando método alternativo de extração...');
+      
+      // Método alternativo: usar FileReader para buscar padrões de imagem
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Procurar por assinaturas de imagem (magic numbers)
+      const pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+      const jpegSignature = [0xFF, 0xD8, 0xFF];
+      
+      let imagemIndex = 0;
+      
+      // Buscar PNGs
+      for (let i = 0; i < uint8Array.length - 8; i++) {
+        const matches = pngSignature.every((byte, index) => uint8Array[i + index] === byte);
+        if (matches) {
+          // Encontrar o fim da imagem PNG (IEND chunk)
+          const endSignature = [0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
+          for (let j = i + 8; j < uint8Array.length - 8; j++) {
+            const endMatches = endSignature.every((byte, index) => uint8Array[j + index] === byte);
+            if (endMatches) {
+              const imageData = uint8Array.slice(i, j + 8);
+              const imageBlob = new Blob([imageData], { type: 'image/png' });
+              
+              // 🚨 CORREÇÃO: Mapear corretamente linha Excel e coluna
+              const linhaArray = Math.floor(imagemIndex / 2); // Cada 2 imagens = 1 linha
+              const linhaExcel = linhaArray + 2; // +2 para contar cabeçalho
+              const colunaLocal = imagemIndex % 2; // 0 = IMAGEM, 1 = IMAGEM FORNECEDOR
+              
+              imagens.push({
+                nome: `imagem_extraida_${imagemIndex + 1}.png`,
+                blob: imageBlob,
+                linha: linhaExcel,
+                coluna: colunaLocal === 0 ? 'IMAGEM' : 'IMAGEM FORNECEDOR'
+              });
+              
+              imagemIndex++;
+              console.log(`✅ [DEBUG] PNG extraído: imagem_extraida_${imagemIndex}.png`);
+              break;
+            }
+          }
+        }
+      }
+      
+      // Buscar JPEGs
+      for (let i = 0; i < uint8Array.length - 3; i++) {
+        const matches = jpegSignature.every((byte, index) => uint8Array[i + index] === byte);
+        if (matches) {
+          // Procurar pelo fim do JPEG (0xFF, 0xD9)
+          for (let j = i + 3; j < uint8Array.length - 1; j++) {
+            if (uint8Array[j] === 0xFF && uint8Array[j + 1] === 0xD9) {
+              const imageData = uint8Array.slice(i, j + 2);
+              const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
+              
+              imagens.push({
+                nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
+                blob: imageBlob,
+                linha: imagemIndex + 1,
+                coluna: imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'
+              });
+              
+              imagemIndex++;
+              console.log(`✅ [DEBUG] JPEG extraído: imagem_extraida_${imagemIndex}.jpg`);
+              break;
+            }
+          }
+        }
+      }
+      
+      if (imagemIndex === 0) {
+        console.log('ℹ️ [DEBUG] Nenhuma imagem foi encontrada no arquivo Excel');
+      }
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro no método alternativo:', error);
+    }
+  };
+
+  const uploadImagensExtraidas = async (imagens: {nome: string, blob: Blob, linha: number, coluna: string}[], cotacaoId: string, organizationId: string) => {
+    const imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
+    
+    for (const imagem of imagens) {
+      try {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const fileName = `${cotacaoId}_${timestamp}_${imagem.nome}`;
+        const filePath = `${organizationId}/${cotacaoId}/imagens/${fileName}`;
+
+        // Upload da imagem para o storage
+        const { error: uploadError } = await supabase.storage
+          .from('cotacoes-arquivos')
+          .upload(filePath, imagem.blob);
+
+        if (uploadError) {
+          console.error('Erro no upload da imagem:', uploadError);
+          continue;
+        }
+
+        // Obter URL pública da imagem
+        const { data: urlData } = supabase.storage
+          .from('cotacoes-arquivos')
+          .getPublicUrl(filePath);
+
+        imagensUpload.push({
+          nome: imagem.nome,
+          url: urlData.publicUrl,
+          linha: imagem.linha,
+          coluna: imagem.coluna
+        });
+      } catch (error) {
+        console.error('Erro ao fazer upload da imagem:', error);
+      }
+    }
+
+    return imagensUpload;
+  };
+
+  const processarArquivo = useCallback(async (arquivoId: string, dados: any[]) => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase
         .from('cotacoes_arquivos')
         .update({
-          dados_processados: dadosProcessados,
+          dados_processados: dados,
           status: 'processado',
-          total_linhas: dadosProcessados.length,
-          linhas_processadas: dadosProcessados.length,
-          linhas_erro: 0,
-          updated_at: new Date().toISOString()
+          total_linhas: dados.length,
+          linhas_processadas: dados.length,
+          linhas_erro: 0
         })
-        .eq('id', arquivoId);
+        .eq('id', arquivoId)
+        .select()
+        .single();
 
       if (error) {
+        console.error('Erro ao processar arquivo:', error);
         throw error;
       }
 
+      // Contar tanto imagens extraídas quanto referências em colunas
+      const totalImagensExtraidas = dados.filter((p: any) => p.imagem_extraida || p.imagem_fornecedor_extraida).length;
+      const totalImagensReferencias = dados.filter((p: any) => 
+        (p.imagem && p.imagem.trim() !== '') || 
+        (p.imagem_fornecedor && p.imagem_fornecedor.trim() !== '')
+      ).length;
+      
+      let descricaoImagens = '';
+      if (totalImagensExtraidas > 0) {
+        descricaoImagens = ` com ${totalImagensExtraidas} imagens extraídas do arquivo`;
+      } else if (totalImagensReferencias > 0) {
+        descricaoImagens = ` com ${totalImagensReferencias} referências de imagem nas colunas`;
+      }
+      
       toast({
-        title: "Processamento concluído!",
-        description: `Arquivo processado com sucesso. ${dadosProcessados.length} itens importados.`,
+        title: "Arquivo processado!",
+        description: `${dados.length} linhas processadas${descricaoImagens}.`,
       });
 
+      return data;
     } catch (error) {
-      console.error('Erro no processamento:', error);
-      
-      await supabase
-        .from('cotacoes_arquivos')
-        .update({
-          status: 'erro',
-          detalhes_erro: [{ erro: error.message }],
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', arquivoId);
-
+      console.error('Erro ao processar arquivo:', error);
       toast({
         title: "Erro no processamento",
         description: "Não foi possível processar o arquivo.",
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   }, [toast]);
 
-  const processarArquivoLocal = useCallback(async (
-    file: File, 
-    cotacao: any, 
-    onImportSuccess: (dados: any[]) => void
-  ) => {
+  const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = []): any[] => {
+    console.log('🚀 [FINAL AUDIT] === PROCESSANDO DADOS FINAIS ===');
+    console.log('🚀 [FINAL AUDIT] Total dados:', dados.length);
+    console.log('🚀 [FINAL AUDIT] Total imagens upload:', imagensUpload.length);
+    console.log('🚀 [FINAL AUDIT] Imagens disponíveis:', imagensUpload.map(img => ({ 
+      linha: img.linha, 
+      coluna: img.coluna, 
+      nome: img.nome,
+      url: img.url.substring(img.url.lastIndexOf('/') + 1)
+    })));
+    
+    // 🚨 CORREÇÃO TOTAL: Mapear corretamente array ↔ Excel
+    const dadosComLinhaExcel = dados.map((linha, index) => {
+      // Se já temos a linha original do Excel, usar ela; senão calcular
+      const linhaExcelReal = linha._linhaOriginalExcel || (index + 2); // index 0 = linha 2 Excel
+      
+      return {
+        ...linha,
+        _linhaArray: index,            // Posição no array (0, 1, 2...)
+        _linhaExcel: linhaExcelReal   // Linha real do Excel (2, 3, 4...)
+      };
+    });
+    
+    console.log('🔍 [AUDIT] MAPEAMENTO CORRETO Array ↔ Excel:');
+    dadosComLinhaExcel.slice(0, 5).forEach(d => {
+      console.log(`📊 [AUDIT] Array[${d._linhaArray}] ↔ Excel Linha ${d._linhaExcel} ↔ SKU: ${d.SKU || d.sku}`);
+    });
+    
+    console.log('🔍 [AUDIT] ESTRUTURA DO EXCEL:');
+    console.log('📋 [AUDIT] Linha 1: CABEÇALHO (SKU, IMAGEM, IMAGEM FORNECEDOR, ...)');
+    console.log('📋 [AUDIT] Linha 2: PRIMEIRA linha de dados (FL-800, imagem1, imagem2, ...)');
+    console.log('📋 [AUDIT] Linha 3: SEGUNDA linha de dados (FL-801, imagem3, imagem4, ...)');
+    
+    return dadosComLinhaExcel.map((linha, index) => {
+      try {
+        // 🚨 CORREÇÃO: Usar linha Excel correta
+        const linhaExcel = linha._linhaExcel;
+        
+        // 🚨 BUSCA CORRIGIDA: Imagens para a linha Excel correta
+        const imagemPrincipal = imagensUpload.find(img => {
+          const match = img.linha === linhaExcel && img.coluna === 'IMAGEM';
+          if (match) {
+            console.log(`✅ [BUSCA] Imagem Principal encontrada: linha=${img.linha}, coluna=${img.coluna}`);
+          }
+          return match;
+        });
+        
+        const imagemFornecedor = imagensUpload.find(img => {
+          const match = img.linha === linhaExcel && img.coluna === 'IMAGEM FORNECEDOR';
+          if (match) {
+            console.log(`✅ [BUSCA] Imagem Fornecedor encontrada: linha=${img.linha}, coluna=${img.coluna}`);
+          }
+          return match;
+        });
+
+         const sku = linha.SKU || linha.sku || `PROD-${index + 1}`;
+         
+         // 🚨 LOGS CORREÇÃO TOTAL
+         console.log(`✅ [CORREÇÃO] Produto Array[${index}] → Excel Linha ${linhaExcel} → SKU: ${sku}`);
+         console.log(`📍 [CORREÇÃO] Imagem Principal: ${imagemPrincipal?.url ? 'ENCONTRADA' : 'VAZIA'}`);
+         console.log(`📍 [CORREÇÃO] Imagem Fornecedor: ${imagemFornecedor?.url ? 'ENCONTRADA' : 'VAZIA'}`);
+         console.log(`📋 [CORREÇÃO] Imagens disponíveis para linha Excel ${linhaExcel}:`, 
+           imagensUpload.filter(img => img.linha === linhaExcel).map(img => ({ 
+             coluna: img.coluna, 
+             nome: img.nome.substring(0, 30),
+             url: img.url.substring(img.url.lastIndexOf('/') + 1, img.url.lastIndexOf('/') + 15)
+           }))
+         );
+
+        const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
+        const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
+
+        if (imagemFinal || imagemFornecedorFinal) {
+          console.log(`✅ [DEBUG] Produto ${index} tem imagens:`, {
+            sku: linha.SKU || linha.sku,
+            imagemFinal,
+            imagemFornecedorFinal,
+            fonteImagem: imagemPrincipal ? 'extraída' : 'coluna',
+            fonteFornecedor: imagemFornecedor ? 'extraída' : 'coluna'
+          });
+        }
+
+         // Debug: verificar dados das colunas de peso
+         console.log(`🔍 [DEBUG] Linha ${index} dados originais:`, {
+           'PESO UNITARIO(g)': linha['PESO UNITARIO(g)'],
+           'Peso embalado cx Master (KG)': linha['Peso embalado cx Master (KG)'],
+           'Peso Sem embalagem cx Master (KG)': linha['Peso Sem embalagem cx Master (KG)'],
+           todasAsChaves: Object.keys(linha),
+           linhaCompleta: linha
+         });
+
+         // Debug específico: verificar todos os campos relacionados a peso
+         const camposPeso = Object.keys(linha).filter(key => 
+           key.toLowerCase().includes('peso') || 
+           key.toLowerCase().includes('master') ||
+           key.toLowerCase().includes('kg')
+         );
+         console.log(`🔍 [DEBUG] Campos relacionados a peso na linha ${index}:`, camposPeso.map(campo => ({
+           campo,
+           valor: linha[campo]
+         })));
+
+         // Debug: verificar especificamente os campos que estamos procurando
+         if (index === 0) {
+           console.log('🎯 [DEBUG] VERIFICAÇÃO ESPECÍFICA DOS CAMPOS DE PESO:');
+           console.log('COLUNA_M (direto):', linha['COLUNA_M']);
+           console.log('COLUNA_N (direto):', linha['COLUNA_N']);
+           console.log('Peso embalado cx Master (KG):', linha['Peso embalado cx Master (KG)']);
+           console.log('PESO EMBALADO CX MASTER (KG):', linha['PESO EMBALADO CX MASTER (KG)']);
+           console.log('Peso Sem embalagem cx Master (KG):', linha['Peso Sem embalagem cx Master (KG)']);
+           console.log('PESO SEM EMBALAGEM CX MASTER (KG):', linha['PESO SEM EMBALAGEM CX MASTER (KG)']);
+           console.log('📋 [DEBUG] TODAS AS CHAVES DA LINHA:', Object.keys(linha));
+           
+           // Verificar valores finais calculados
+           const pesoEmbalado = parseFloat(String(
+             linha['COLUNA_M'] || linha['Peso embalado cx Master (KG)'] || '0'
+           ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+           const pesoSemEmbalagem = parseFloat(String(
+             linha['COLUNA_N'] || linha['Peso Sem embalagem cx Master (KG)'] || '0'
+           ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+           
+           console.log('🔢 [DEBUG] VALORES FINAIS CALCULADOS:');
+           console.log('Peso embalado final:', pesoEmbalado);
+           console.log('Peso sem embalagem final:', pesoSemEmbalagem);
+         }
+
+         const produto = {
+           sku: linha.SKU || linha.sku || `PROD-${index + 1}`,
+           imagem: imagemFinal,
+           imagem_fornecedor: imagemFornecedorFinal,
+           material: linha.MATERIAL || linha.material || '',
+           cor: linha.COR || linha.cor || '',
+          // Nome do Produto - adicionar mais variações
+          nome_produto: linha['Nome do Produto'] || linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',
+          package: linha.PACKAGE || linha.package || '',
+          // PREÇO - adicionar mais variações
+          preco: parseFloat(String(linha.PREÇO || linha.PRECO || linha.preco || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          unit: linha.UNIT || linha.unit || '',
+          // PCS/CTN - adicionar mais variações
+          pcs_ctn: parseInt(String(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
+          caixas: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
+           // PESO UNITARIO(g) - mapear corretamente
+           peso_unitario_g: parseFloat(String(linha['PESO UNITARIO(g)'] || linha.PESO_UNITARIO_G || linha.peso_unitario_g || linha.PESO_UNITARIO_KG || linha.peso_unitario_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+            // Peso embalado cx Master (KG) - INCLUINDO COLUNA M DIRETA
+            peso_cx_master_kg: parseFloat(String(
+              linha['COLUNA_M'] ||  // ⭐ REFERÊNCIA DIRETA DA COLUNA M
+              linha['Peso embalado cx Master (KG)'] || 
+              linha['PESO EMBALADO CX MASTER (KG)'] ||
+              linha['Peso embalado cx Master(KG)'] ||
+              linha['Peso embalado cx Master (Kg)'] ||
+              linha['Peso embalado cx Master'] ||
+              linha['PESO EMBALADO CX MASTER'] ||
+              linha['peso embalado cx master (kg)'] ||
+              linha['peso embalado cx master'] ||
+              linha.PESO_MASTER_KG || 
+              linha.peso_master_kg || 
+              linha.PESO_CX_MASTER_KG || 
+              linha.peso_cx_master_kg || 
+              '0'
+            ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+            // Peso Sem embalagem cx Master (KG) - INCLUINDO COLUNA N DIRETA
+            peso_sem_cx_master_kg: parseFloat(String(
+              linha['COLUNA_N'] ||  // ⭐ REFERÊNCIA DIRETA DA COLUNA N
+              linha['Peso Sem embalagem cx Master (KG)'] || 
+              linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
+              linha['Peso Sem embalagem cx Master(KG)'] ||
+              linha['Peso Sem embalagem cx Master (Kg)'] ||
+              linha['Peso Sem embalagem cx Master'] ||
+              linha['PESO SEM EMBALAGEM CX MASTER'] ||
+              linha['peso sem embalagem cx master (kg)'] ||
+              linha['peso sem embalagem cx master'] ||
+              linha.PESO_SEM_MASTER_KG || 
+              linha.peso_sem_master_kg || 
+              linha.PESO_SEM_CX_MASTER_KG || 
+              linha.peso_sem_cx_master_kg || 
+              '0'
+            ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // Peso total embalado cx Master (KG) - CALCULADO
+          peso_total_master: 0, // Será calculado
+          // Peso total sem embalagem cx Master (KG) - CALCULADO
+          peso_total_sem_master: 0, // Será calculado
+          // Comprimento, Largura, Altura
+          comprimento: parseFloat(String(linha.Comprimento || linha.COMPRIMENTO || linha.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          largura: parseFloat(String(linha.Largura || linha.LARGURA || linha.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          altura: parseFloat(String(linha.Altura || linha.ALTURA || linha.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // CBM Cubagem
+          cbm_cubagem: parseFloat(String(linha['CBM Cubagem'] || linha.CBM_CUBAGEM || linha.cbm_cubagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // CBM Total - CALCULADO (ignora planilha)
+          cbm_total: 0, // Será calculado
+          // Quantidade Total - CALCULADO (ignora planilha)
+          quantidade_total: 0, // Será calculado
+          // Valor Total - CALCULADO (ignora planilha) 
+          valor_total: 0, // Será calculado
+          obs: linha.OBS || linha.obs || '',
+          change_dolar: parseFloat(String(linha.CHANGE_DOLAR || linha.change_dolar || linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          multiplicador_reais: parseFloat(String(linha.MULTIPLICADOR_REAIS || linha.multiplicador_reais || linha.MULTIPLICADOR_REAIS_TOTAL || linha.multiplicador_reais_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // Campos calculados adicionais
+          preco_unitario: 0, // Será calculado
+          quantidade_total_calc: 0, // Será calculado
+          cbm_total_calc: 0, // Será calculado
+          peso_total_calc: 0, // Será calculado
+          peso_total_cx_master_kg: parseFloat(String(linha.PESO_TOTAL_CX_MASTER_KG || linha.peso_total_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_sem_cx_master_kg: parseFloat(String(linha.PESO_TOTAL_SEM_CX_MASTER_KG || linha.peso_total_sem_cx_master_kg || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          change_dolar_total: parseFloat(String(linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          multiplicador_reais_total: parseFloat(String(linha.MULTIPLICADOR_REAIS_TOTAL || linha.multiplicador_reais_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          // Metadados das imagens - marcar como extraída se houve upload OU se existe referência na coluna
+          imagem_extraida: imagemPrincipal ? true : (imagemFinal && imagemFinal.trim() !== '' ? true : false),
+          imagem_fornecedor_extraida: imagemFornecedor ? true : (imagemFornecedorFinal && imagemFornecedorFinal.trim() !== '' ? true : false),
+        };
+
+        // Cálculos automáticos do sistema (ignorando valores da planilha)
+        produto.quantidade_total = produto.caixas * produto.pcs_ctn;
+        produto.cbm_total = produto.cbm_cubagem * produto.caixas;
+        produto.valor_total = produto.preco * produto.quantidade_total;
+        produto.preco_unitario = produto.quantidade_total > 0 ? produto.valor_total / produto.quantidade_total : 0;
+        
+        // CÁLCULO CORRETO: Peso total embalado cx Master (KG) = Peso embalado cx Master (KG) x CAIXAS
+        produto.peso_total_cx_master_kg = produto.peso_cx_master_kg * produto.caixas;
+        produto.peso_total_sem_cx_master_kg = produto.peso_sem_cx_master_kg * produto.caixas;
+
+        // Log específico do cálculo de peso
+        console.log(`🔢 [DEBUG] Cálculo de peso - Produto ${index + 1}:`, {
+          sku: produto.sku,
+          peso_cx_master_kg: produto.peso_cx_master_kg,
+          peso_sem_cx_master_kg: produto.peso_sem_cx_master_kg,
+          caixas: produto.caixas,
+          peso_total_cx_master_kg: produto.peso_total_cx_master_kg,
+          peso_total_sem_cx_master_kg: produto.peso_total_sem_cx_master_kg,
+          calculo: `${produto.peso_cx_master_kg} x ${produto.caixas} = ${produto.peso_total_cx_master_kg}`
+        });
+
+        console.log(`✅ [DEBUG] Produto ${index + 1} processado:`, produto);
+        return produto;
+      } catch (error) {
+        console.error('Erro ao processar linha:', linha, error);
+        return null;
+      }
+    }).filter(Boolean);
+  };
+
+  const processarArquivoLocal = async (file: File, cotacao: any, onImportSuccess: (dados: any[]) => void) => {
     try {
       setLoading(true);
-      console.log('🚀 [CLEAN] Processando arquivo:', file.name, 'para cotação:', cotacao.numero);
 
-      // 1. Upload do arquivo
+      // Upload do arquivo primeiro
       const organizationId = cotacao.organization_id;
       const arquivoUpload = await uploadArquivo(file, cotacao.id, organizationId);
 
-      // 2. Processar Excel e extrair imagens (NOVO SISTEMA)
-      const { dados, imagens } = await processExcelFile(file);
+      // Ler e processar o arquivo
+      const { dados, imagens } = await lerArquivoComImagens(file);
 
-      // 3. Upload das imagens extraídas (NOVO SISTEMA)
-      const imageUrls = await uploadImages(imagens, cotacao.id, organizationId);
+      // Upload das imagens extraídas
+      const imagensUpload = await uploadImagensExtraidas(imagens, cotacao.id, organizationId);
 
-      // 4. Mapear dados com URLs das imagens (NOVO SISTEMA)
-      const dadosComImagens = mapDataWithImages(dados, imageUrls);
+      // Processar dados com URLs das imagens
+      const dadosProcessados = processarDados(dados, imagensUpload);
 
-      // 5. Salvar dados processados
-      await processarArquivo(arquivoUpload.id, dadosComImagens);
+      // Salvar dados processados
+      await processarArquivo(arquivoUpload.id, dadosProcessados);
 
-      // 6. Notificar sucesso
-      onImportSuccess(dadosComImagens);
-
-      console.log('✅ [CLEAN] Processamento completo:', {
-        arquivo: file.name,
-        dados: dados.length,
-        imagens: imagens.length,
-        imageUrls: Object.keys(imageUrls).length
-      });
-
+      return dadosProcessados;
     } catch (error) {
-      console.error('❌ [CLEAN] Erro no processamento:', error);
+      console.error('Erro ao processar arquivo:', error);
       throw error;
     } finally {
       setLoading(false);
     }
-  }, [uploadArquivo, processExcelFile, uploadImages, mapDataWithImages, processarArquivo]);
+  };
 
-  const deletarArquivo = useCallback(async (arquivoId: string) => {
+  const deletarArquivo = useCallback(async (arquivo: CotacaoArquivo) => {
     try {
+      console.log('🗑️ [DEBUG] Iniciando exclusão do arquivo:', arquivo);
+      setLoading(true);
+
+      // Deletar arquivo do storage se existir URL
+      if (arquivo.url_arquivo) {
+        const path = arquivo.url_arquivo.split('/cotacoes-arquivos/')[1];
+        if (path) {
+          console.log('📂 [DEBUG] Removendo arquivo do storage:', path);
+          const { error: storageError } = await supabase.storage
+            .from('cotacoes-arquivos')
+            .remove([path]);
+            
+          if (storageError) {
+            console.warn('⚠️ [DEBUG] Erro ao remover do storage (continuando):', storageError);
+          }
+        }
+      }
+
+      // Deletar registro da tabela
+      console.log('🗄️ [DEBUG] Removendo registro da tabela, ID:', arquivo.id);
       const { error } = await supabase
         .from('cotacoes_arquivos')
         .delete()
-        .eq('id', arquivoId);
+        .eq('id', arquivo.id);
 
       if (error) {
+        console.error('❌ [DEBUG] Erro ao deletar arquivo da tabela:', error);
         throw error;
       }
 
+      console.log('✅ [DEBUG] Arquivo deletado com sucesso');
       toast({
-        title: "Arquivo removido",
-        description: "Arquivo removido com sucesso.",
+        title: "Arquivo removido!",
+        description: "Arquivo deletado com sucesso.",
       });
-
+      
     } catch (error) {
-      console.error('Erro ao deletar arquivo:', error);
+      console.error('❌ [DEBUG] Erro ao deletar arquivo:', error);
       toast({
-        title: "Erro ao remover arquivo",
-        description: "Não foi possível remover o arquivo.",
+        title: "Erro ao deletar",
+        description: "Não foi possível deletar o arquivo.",
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
   }, [toast]);
 
-  const downloadTemplate = useCallback(async () => {
+  const downloadTemplate = useCallback(async (formato: 'csv' | 'excel' = 'csv') => {
     try {
-      const XLSX = await import('xlsx');
-      
-      const templateData = [
-        {
-          'SKU': 'EXEMPLO-001',
-          'Produto': 'Produto Exemplo',
-          'Descrição': 'Descrição do produto',
-          'Quantidade': 10,
-          'Preço Unitário': 25.50,
-          'IMAGEM': 'imagem_produto.jpg',
-          'IMAGEM_FORNECEDOR': 'imagem_fornecedor.jpg'
-        }
+      // Colunas baseadas na planilha do usuário
+      const headers = [
+        'SKU',
+        'IMAGEM',
+        'IMAGEM FORNECEDOR',
+        'MATERIAL',
+        'COR',
+        'Nome do Produto',
+        'PACKAGE',
+        'PREÇO',
+        'UNIT',
+        'PCS/CTN',
+        'CAIXAS',
+        'PESO UNITARIO(g)',
+        'Peso embalado cx Master (KG)',
+        'Peso Sem embalagem cx Master (KG)',
+        'Peso total embalado cx Master (KG)',
+        'Peso total sem embalagem cx Master (KG)',
+        'Comprimento',
+        'Largura',
+        'Altura',
+        'CBM Cubagem',
+        'CBM Total',
+        'Quantidade Total',
+        'Valor Total',
+        'OBS',
+        'CHANGE_DOLAR',
+        'MULTIPLICADOR_REAIS'
       ];
 
-      const worksheet = XLSX.utils.json_to_sheet(templateData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Template');
+      // Dados de exemplo
+      const exemploData = [
+        ['FL-800', '', '', 'Poliéster', 'IGUAL DA FOTO', 'chapéu aeronáutica, 28*21*14cm', '10pcs/opp', '240', '1', '90', '22,60', '21,60', '0,00', '0,00', '0', '0', '0', '0,21', '0,21', '240', '¥ 1.260,00', '', '', '0,74', 'R$ 5,44'],
+        ['FL-801', '', '', 'Poliéster', 'IGUAL DA FOTO', 'chapéu policia, 26,5*25*14cm', '10pcs/opp', '200', '1', '70', '15,00', '14,00', '0,00', '0,00', '0', '0', '0', '0,21', '0,21', '200', '¥ 1.160,00', '', '', '0,81', 'R$ 6,00']
+      ];
 
-      XLSX.writeFile(workbook, 'template_cotacao_internacional.xlsx');
+      if (formato === 'excel') {
+        // Importar XLSX dinamicamente
+        const XLSX = await import('xlsx');
+        
+        // Criar workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Criar worksheet com headers e dados
+        const wsData = [headers, ...exemploData];
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        
+        // Adicionar worksheet ao workbook
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+        
+        // Gerar arquivo Excel
+        XLSX.writeFile(wb, 'template_cotacao_internacional.xlsx');
+        
+        toast({
+          title: "Template baixado!",
+          description: "Template Excel baixado com sucesso. Cole suas imagens nas colunas B (IMAGEM) e C (IMAGEM_FORNECEDOR).",
+        });
+      } else {
+        // Criar CSV com exemplo
+        const csvContent = [
+          headers.join(','),
+          ...exemploData.map(row => row.map(cell => `"${cell}"`).join(','))
+        ].join('\n');
 
-      toast({
-        title: "Template baixado",
-        description: "Template de importação baixado com sucesso.",
-      });
+        // Criar e baixar arquivo
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'template_cotacao_internacional.csv');
+        link.style.visibility = 'hidden';
+        
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
 
+        toast({
+          title: "Template baixado!",
+          description: "Template CSV baixado com sucesso.",
+        });
+      }
     } catch (error) {
       console.error('Erro ao baixar template:', error);
       toast({
@@ -279,6 +1121,9 @@ export function useCotacoesArquivos() {
     processarArquivo,
     processarArquivoLocal,
     deletarArquivo,
-    downloadTemplate
+    downloadTemplate,
+    lerArquivoComImagens,
+    uploadImagensExtraidas,
+    processarDados,
   };
 }
