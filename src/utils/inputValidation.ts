@@ -45,7 +45,18 @@ export const cotacaoInternacionalSchema = z.object({
   observacoes: z.string()
     .trim()
     .max(1000, "Observações devem ter no máximo 1000 caracteres")
-    .optional()
+    .optional(),
+
+  // Campos obrigatórios do banco de dados
+  produtos: z.array(z.any()).min(1, "Pelo menos um produto é obrigatório"),
+  
+  // Campos opcionais de totais
+  total_peso_kg: z.number().optional(),
+  total_cbm: z.number().optional(), 
+  total_quantidade: z.number().optional(),
+  total_valor_origem: z.number().optional(),
+  total_valor_usd: z.number().optional(),
+  total_valor_brl: z.number().optional()
 });
 
 export const produtoCotacaoSchema = z.object({
