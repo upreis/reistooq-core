@@ -389,22 +389,26 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // CORREÇÃO FINAL ROBUSTA: Mapeamento baseado no total de linhas de dados
-        // Para imagens não fixas nas células, usamos mapeamento sequencial mais inteligente
+        // CORREÇÃO DEFINITIVA: Detectar corretamente o padrão de distribuição das imagens
         const totalLinhasDados = range.e.r - range.s.r; // Total de linhas com dados (excluindo cabeçalho)
         
-        // Estratégia de mapeamento: 
-        // - Se tivermos 2 imagens por linha: pares (img0,img1 = linha 1; img2,img3 = linha 2)
-        // - Se tivermos 1 imagem por linha: sequencial (img0 = linha 1; img1 = linha 2)
-        const imagensPorLinha = todosArquivosImagem.length <= totalLinhasDados ? 1 : 2;
+        // NOVA LÓGICA: Analise as duas primeiras imagens para detectar o padrão
+        // Se temos pelo menos 2 imagens, vamos assumir que são 2 por linha (IMAGEM + IMAGEM_FORNECEDOR)
+        // Se temos menos que o dobro das linhas, então é 1 imagem por linha
+        
+        // Calcular estratégia baseada na proporção real de imagens vs linhas
+        const proporcaoImagensPorLinha = todosArquivosImagem.length / totalLinhasDados;
+        const imagensPorLinha = proporcaoImagensPorLinha > 1.5 ? 2 : 1;
+        
+        console.log(`🧮 [DEBUG] Total imagens: ${todosArquivosImagem.length}, Total linhas: ${totalLinhasDados}, Proporção: ${proporcaoImagensPorLinha.toFixed(2)}, Imagens por linha: ${imagensPorLinha}`);
         
         let linhaDados, coluna;
         if (imagensPorLinha === 2) {
-          // Modo 2 imagens por linha (IMAGEM + IMAGEM_FORNECEDOR)
+          // Modo 2 imagens por linha: IMAGEM (índices pares) e IMAGEM_FORNECEDOR (índices ímpares)
           linhaDados = Math.floor(i / 2);
           coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
         } else {
-          // Modo 1 imagem por linha (apenas IMAGEM)
+          // Modo 1 imagem por linha: todas vão para IMAGEM
           linhaDados = i;
           coluna = 'IMAGEM';
         }
