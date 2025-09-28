@@ -384,13 +384,20 @@ export function useCotacoesArquivos() {
           dadosLinha[headerName] = cell ? cell.v : '';
         }
         dadosPlanilha.push({
-          linha: row,
+          linha: row, // ✅ CORRETO: row já é a linha real do Excel (2, 3, 4...)
           dados: dadosLinha,
-          sku: dadosLinha.SKU || dadosLinha.sku || `PROD-${row-1}`
+          sku: dadosLinha.SKU || dadosLinha.sku || `PROD-${row}`, // 🚨 CORREÇÃO: Usar linha real
+          _indiceArray: dadosPlanilha.length // ✅ NOVO: Preservar índice do array
         });
       }
       
-      console.log('📋 [AUDIT] Dados extraídos:', dadosPlanilha.map(d => ({ linha: d.linha, sku: d.sku })));
+      console.log('📋 [AUDIT] ESTRUTURA CONFIRMADA:');
+      console.log(`📋 [AUDIT] Cabeçalho na linha Excel ${range.s.r + 1} (linha ${range.s.r} no índice XLSX)`);
+      console.log(`📋 [AUDIT] Primeira linha de dados na linha Excel ${range.s.r + 2}`);
+      console.log('📋 [AUDIT] Dados extraídos (primeiras 3 linhas):');
+      dadosPlanilha.slice(0, 3).forEach(d => {
+        console.log(`📊 [AUDIT] Excel Linha ${d.linha} → SKU: ${d.sku} (Array índice: ${d._indiceArray})`);
+      });
       
       // ESTRATÉGIA SIMPLES: manter ordem original dos arquivos
       // NÃO ordenar - usar exatamente como vieram no ZIP
@@ -482,12 +489,14 @@ export function useCotacoesArquivos() {
       const XLSX = await import('xlsx');
       const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
       
+      // 🚨 CORREÇÃO: Usar linha de cabeçalho correta, não hardcoded
       for (let col = range.s.c; col <= range.e.c; col++) {
-        const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+        const cellAddress = XLSX.utils.encode_cell({ r: range.s.r, c: col }); // ✅ Usa linha de cabeçalho real
         const cell = worksheet[cellAddress];
         if (cell && cell.v) {
           const headerValue = String(cell.v).toUpperCase().trim();
           if (headerValue === nomeColuna || headerValue === nomeColuna.replace(' ', '_')) {
+            console.log(`📍 [DEBUG] Coluna "${nomeColuna}" encontrada no índice ${col} (letra ${String.fromCharCode(65 + col)})`);
             return col;
           }
         }
@@ -674,18 +683,27 @@ export function useCotacoesArquivos() {
     console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
     console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
     
-    // 🚨 CORREÇÃO: Mapear array de dados para suas linhas Excel correspondentes
-    const dadosComLinhaExcel = dados.map((linha, index) => ({
-      ...linha,
-      _linhaArray: index,
-      _linhaExcel: (linha._linhaOriginalExcel || (index + 2)) // Usar linha original se disponível
-    }));
+    // 🚨 CORREÇÃO TOTAL: Mapear corretamente array ↔ Excel
+    const dadosComLinhaExcel = dados.map((linha, index) => {
+      // Se já temos a linha original do Excel, usar ela; senão calcular
+      const linhaExcelReal = linha._linhaOriginalExcel || (index + 2); // index 0 = linha 2 Excel
+      
+      return {
+        ...linha,
+        _linhaArray: index,            // Posição no array (0, 1, 2...)
+        _linhaExcel: linhaExcelReal   // Linha real do Excel (2, 3, 4...)
+      };
+    });
     
-    console.log('🔍 [AUDIT] Mapeamento array → Excel:', dadosComLinhaExcel.slice(0, 3).map(d => ({
-      array: d._linhaArray,
-      excel: d._linhaExcel,
-      sku: d.SKU || d.sku
-    })));
+    console.log('🔍 [AUDIT] MAPEAMENTO CORRETO Array ↔ Excel:');
+    dadosComLinhaExcel.slice(0, 5).forEach(d => {
+      console.log(`📊 [AUDIT] Array[${d._linhaArray}] ↔ Excel Linha ${d._linhaExcel} ↔ SKU: ${d.SKU || d.sku}`);
+    });
+    
+    console.log('🔍 [AUDIT] ESTRUTURA DO EXCEL:');
+    console.log('📋 [AUDIT] Linha 1: CABEÇALHO (SKU, IMAGEM, IMAGEM FORNECEDOR, ...)');
+    console.log('📋 [AUDIT] Linha 2: PRIMEIRA linha de dados (FL-800, imagem1, imagem2, ...)');
+    console.log('📋 [AUDIT] Linha 3: SEGUNDA linha de dados (FL-801, imagem3, imagem4, ...)');
     
     return dadosComLinhaExcel.map((linha, index) => {
       try {
