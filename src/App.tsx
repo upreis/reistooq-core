@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -102,10 +102,11 @@ function App() {
             <AuthProvider>
             <MobileProvider>
               <SidebarUIProvider>
-                <InactivityTracker />
-                <Toaster />
-                <Sonner />
-                <Routes>
+                <BrowserRouter>
+                  <InactivityTracker />
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
                   {/* Rota pública para redefinição de senha */}
@@ -296,7 +297,8 @@ function App() {
                   
                   {/* Catch all */}
                   <Route path="*" element={<NotFound />} />
-                </Routes>
+                  </Routes>
+                </BrowserRouter>
               </SidebarUIProvider>
             </MobileProvider>
           </AuthProvider>
