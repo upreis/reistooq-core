@@ -1,4 +1,4 @@
-// src/utils/excelImageExtractor.ts - VERSÃO CORRIGIDA PARA POSICIONAMENTO
+// src/utils/excelImageExtractor.ts - VERSÃO COM MAPEAMENTO PRECISO DE RELACIONAMENTOS
 
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
@@ -21,11 +21,12 @@ interface PosicaoImagem {
   linha: number;
   coluna: number;
   nomeArquivo: string;
+  rId?: string;
 }
 
-// FUNÇÃO PRINCIPAL - EXTRAÇÃO POR POSICIONAMENTO XML
+// FUNÇÃO PRINCIPAL - EXTRAÇÃO POR POSICIONAMENTO XML COM MAPEAMENTO PRECISO
 export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosicionada[]> => {
-  console.log('🔍 [XML] Iniciando extração por posicionamento XML...');
+  console.log('🔍 [XML] Iniciando extração por posicionamento XML com mapeamento preciso...');
   
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -54,33 +55,33 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
       return [];
     }
 
+    // 4. EXTRAIR MAPEAMENTO DE RELACIONAMENTOS (MELHORIA IMPLEMENTADA)
+    const mapeamentoRels = await extrairMapeamentoRelacionamentos(zip);
+    
+    // 5. EXTRAIR XML DE DRAWINGS
     const drawingsXml = await drawingsFile.async('text');
     
-    // 4. EXTRAIR IMAGENS E INDEXAR POR NOME E ORDEM
+    // 6. EXTRAIR IMAGENS E INDEXAR POR NOME
     const imagensDisponiveis = new Map<string, Uint8Array>();
-    const imagensOrdenadas: string[] = [];
     
     for (const [filename, file] of Object.entries(mediaFolder.files)) {
       if (filename.match(/\.(png|jpg|jpeg)$/i)) {
         const imagemDados = await file.async('uint8array');
         imagensDisponiveis.set(filename, imagemDados);
-        imagensOrdenadas.push(filename);
       }
     }
     
-    // Ordenar por nome para ter ordem consistente
-    imagensOrdenadas.sort();
-    console.log(`📸 [XML] ${imagensDisponiveis.size} imagens encontradas: ${imagensOrdenadas.join(', ')}`);
+    console.log(`📸 [XML] ${imagensDisponiveis.size} imagens encontradas: ${Array.from(imagensDisponiveis.keys()).join(', ')}`);
 
-    // 5. PROCESSAR XML PARA EXTRAIR POSIÇÕES DAS IMAGENS
-    const posicoesImagens = extrairPosicoesDoXML(drawingsXml, imagensOrdenadas);
+    // 7. PROCESSAR XML PARA EXTRAIR POSIÇÕES DAS IMAGENS COM MAPEAMENTO PRECISO
+    const posicoesImagens = extrairPosicoesDoXML(drawingsXml, mapeamentoRels);
     console.log(`🎯 [XML] ${posicoesImagens.length} posições de imagens encontradas no XML`);
 
-    // 6. MAPEAR IMAGENS POR POSIÇÃO REAL
+    // 8. MAPEAR IMAGENS POR POSIÇÃO REAL
     const imagensFinais: ImagemPosicionada[] = [];
     
     for (const posicao of posicoesImagens) {
-      const { linha, coluna, nomeArquivo } = posicao;
+      const { linha, coluna, nomeArquivo, rId } = posicao;
       
       // Verifica se a linha está dentro do range de dados
       if (linha < 2 || linha > ultimaLinhaComDados) {
@@ -112,16 +113,52 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
         sku: sku
       });
 
-      console.log(`📸 [XML] Linha ${linha}, Coluna ${coluna} → SKU: ${sku} → ${nomeImagem} ✅`);
+      console.log(`📸 [XML] Linha ${linha}, Coluna ${coluna}, rId: ${rId} → SKU: ${sku} → ${nomeImagem} ✅`);
     }
 
-    console.log(`✅ [XML] ${imagensFinais.length} imagens processadas por posicionamento XML`);
+    console.log(`✅ [XML] ${imagensFinais.length} imagens processadas por posicionamento XML preciso`);
     return imagensFinais;
 
   } catch (error) {
-    console.error('❌ [SEQUENCIAL] Erro na extração:', error);
+    console.error('❌ [XML] Erro na extração:', error);
     throw error;
   }
+};
+
+// NOVA FUNÇÃO - EXTRAIR MAPEAMENTO DE RELACIONAMENTOS (MELHORIA IMPLEMENTADA)
+const extrairMapeamentoRelacionamentos = async (zip: any): Promise<Map<string, string>> => {
+  console.log('🔗 [RELS] Extraindo mapeamento de relacionamentos...');
+  
+  const mapeamento = new Map<string, string>();
+  
+  try {
+    const relsFile = zip.file('xl/_rels/drawings/drawing1.xml.rels');
+    if (!relsFile) {
+      console.log('⚠️ [RELS] Arquivo drawing1.xml.rels não encontrado, usando fallback sequencial');
+      return mapeamento;
+    }
+    
+    const relsContent = await relsFile.async('text');
+    
+    // Padrão que captura os relacionamentos: <Relationship Id="rId1" Type="..." Target="../media/image1.png"/>
+    const padraoRel = /<Relationship\s+Id="([^"]+)"\s+Type="[^"]*"\s+Target="\.\.\/media\/([^"]+)"/g;
+    
+    let match;
+    while ((match = padraoRel.exec(relsContent)) !== null) {
+      const rId = match[1]; // ex: "rId1"
+      const nomeArquivo = match[2]; // ex: "image1.png"
+      
+      mapeamento.set(rId, nomeArquivo);
+      console.log(`🔗 [RELS] Mapeamento: ${rId} → ${nomeArquivo}`);
+    }
+    
+    console.log(`✅ [RELS] ${mapeamento.size} relacionamentos mapeados`);
+    
+  } catch (error) {
+    console.error('❌ [RELS] Erro ao extrair relacionamentos:', error);
+  }
+  
+  return mapeamento;
 };
 
 // FUNÇÃO AUXILIAR - DETERMINAR ÚLTIMA LINHA COM DADOS
@@ -138,9 +175,9 @@ const determinarUltimaLinhaComDados = (dados: any[][]): number => {
   return 2;
 };
 
-// FUNÇÃO AUXILIAR - EXTRAIR POSIÇÕES DO XML DE DRAWINGS
-const extrairPosicoesDoXML = (xmlContent: string, imagensOrdenadas: string[]): PosicaoImagem[] => {
-  console.log('🔍 [XML] Iniciando parse do XML de drawings...');
+// FUNÇÃO AUXILIAR - EXTRAIR POSIÇÕES DO XML COM MAPEAMENTO PRECISO (MELHORADA)
+const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, string>): PosicaoImagem[] => {
+  console.log('🔍 [XML] Iniciando parse do XML de drawings com mapeamento preciso...');
   
   const posicoes: PosicaoImagem[] = [];
   
@@ -148,6 +185,7 @@ const extrairPosicoesDoXML = (xmlContent: string, imagensOrdenadas: string[]): P
     // Parse básico do XML para encontrar elementos xdr:twoCellAnchor
     const twoCellAnchorRegex = /<xdr:twoCellAnchor[^>]*>([\s\S]*?)<\/xdr:twoCellAnchor>/g;
     let match;
+    let indiceSequencial = 0; // Para fallback quando não há mapeamento
     
     while ((match = twoCellAnchorRegex.exec(xmlContent)) !== null) {
       const anchorContent = match[1];
@@ -167,31 +205,38 @@ const extrairPosicoesDoXML = (xmlContent: string, imagensOrdenadas: string[]): P
       const coluna = parseInt(colMatch[1]) + 1; // +1 porque XML usa índice 0
       const linha = parseInt(rowMatch[1]) + 1;  // +1 porque XML usa índice 0
       
-      // Usar imagem da lista ordenada baseada na posição sequencial
-      // Como as imagens no XML aparecem na mesma ordem que na pasta media
-      const indiceImagem = posicoes.length;
+      // MELHORIA: Extrair rId do XML e usar mapeamento preciso
+      const embedMatch = /<a:blip\s+r:embed="([^"]+)"/.exec(anchorContent);
       let nomeArquivo = '';
+      let rId = '';
       
-      if (indiceImagem < imagensOrdenadas.length) {
-        nomeArquivo = imagensOrdenadas[indiceImagem];
-      } else {
-        // Fallback: tentar extrair do XML mesmo assim
-        const embedMatch = /<a:blip\s+r:embed="([^"]+)"/.exec(anchorContent);
-        if (embedMatch) {
-          const embedId = embedMatch[1];
-          nomeArquivo = `image${embedId.replace(/\D/g, '')}.png`;
+      if (embedMatch && mapeamentoRels.size > 0) {
+        // MÉTODO PRECISO: Usar mapeamento de relacionamentos
+        rId = embedMatch[1];
+        const arquivoMapeado = mapeamentoRels.get(rId);
+        
+        if (arquivoMapeado) {
+          nomeArquivo = arquivoMapeado;
+          console.log(`🎯 [XML] Mapeamento preciso: ${rId} → ${nomeArquivo}`);
         } else {
-          nomeArquivo = `image${indiceImagem + 1}.png`;
+          console.log(`⚠️ [XML] rId ${rId} não encontrado no mapeamento, usando fallback`);
+          nomeArquivo = `image${indiceSequencial + 1}.png`;
         }
+      } else {
+        // FALLBACK: Usar ordem sequencial (método anterior)
+        nomeArquivo = `image${indiceSequencial + 1}.png`;
+        console.log(`⚠️ [XML] Usando fallback sequencial: ${nomeArquivo}`);
       }
       
       posicoes.push({
         linha,
         coluna,
-        nomeArquivo
+        nomeArquivo,
+        rId
       });
       
-      console.log(`🎯 [XML] Encontrada imagem na linha ${linha}, coluna ${coluna} → ${nomeArquivo}`);
+      console.log(`🎯 [XML] Encontrada imagem na linha ${linha}, coluna ${coluna} → ${nomeArquivo} (rId: ${rId})`);
+      indiceSequencial++;
     }
     
     console.log(`✅ [XML] Total de ${posicoes.length} posições extraídas do XML`);
