@@ -447,19 +447,41 @@ export function useCotacoesArquivos() {
         imagem_fornecedor: ''
       };
       
-      // ASSOCIAÇÃO DE IMAGENS POR SKU
-      const imagensPorSku = imagensUpload.filter(img => 
-        img.sku && img.sku === produtoMapeado.sku
-      );
+      // ASSOCIAÇÃO PRIORITÁRIA DE IMAGENS POR SKU
+      console.log(`🔍 [AUDIT] Produto ${index + 1}: sku=${produtoMapeado.sku}`);
+      
+      // 1ª PRIORIDADE: Associação por SKU (sistema completo)
+      const imagensPorSku = imagensUpload.filter(img => {
+        const skuMatch = img.sku && img.sku.toLowerCase() === produtoMapeado.sku.toLowerCase();
+        console.log(`🔍 [SKU_CHECK] Comparando imagem sku="${img.sku}" com produto sku="${produtoMapeado.sku}" = ${skuMatch}`);
+        return skuMatch;
+      });
       
       if (imagensPorSku.length > 0) {
         produtoMapeado.imagem = imagensPorSku[0].url;
         if (imagensPorSku[1]) {
           produtoMapeado.imagem_fornecedor = imagensPorSku[1].url;
         }
-        console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorSku.length} imagem(ns) associada(s) por SKU`);
+        console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorSku.length} imagem(ns) associada(s) por SKU MATCH`);
       } else {
-        console.log(`📝 [SKU_SYSTEM] Produto ${produtoMapeado.sku}: Sem imagens associadas`);
+        // 2ª PRIORIDADE: Associação por linha (fallback para imagens embutidas)
+        const imagensPorLinha = imagensUpload.filter(img => img.linha === (index + 2)); // +2 porque linha 1 = header
+        
+        if (imagensPorLinha.length > 0) {
+          produtoMapeado.imagem = imagensPorLinha[0].url;
+          if (imagensPorLinha[1]) {
+            produtoMapeado.imagem_fornecedor = imagensPorLinha[1].url;
+          }
+          console.log(`✅ [LINHA_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorLinha.length} imagem(ns) associada(s) por linha ${index + 2}`);
+        } else {
+          console.log(`❌ [NO_MATCH] Produto ${produtoMapeado.sku}: Nenhuma imagem encontrada (nem por SKU nem por linha)`);
+        }
+      }
+      
+      // Debug adicional
+      console.log(`🔍 [AUDIT] Produto ${index + 1}: imagem=${produtoMapeado.imagem ? 'DEFINIDA' : 'VAZIA'}`);
+      if (produtoMapeado.imagem) {
+        console.log(`🔍 [AUDIT] Produto ${index + 1}: imagem=${produtoMapeado.imagem.substring(0, 100)}...`);
       }
       
       return produtoMapeado;

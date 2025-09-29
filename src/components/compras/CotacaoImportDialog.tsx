@@ -127,35 +127,33 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
       setProgressoUpload(50);
 
-      // Processar imagens se houver
+      // Processar imagens se houver - UPLOAD PARA STORAGE
       let imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
       if (imagens.length > 0) {
-        console.log('🖼️ [SKU_SYSTEM] Convertendo imagens processadas para Data URLs...');
+        console.log('🔄 [SKU_SYSTEM] FAZENDO UPLOAD das imagens para storage...');
         
-        imagensUpload = await Promise.all(
-          imagens.map(async (img, index) => {
-            console.log(`🔄 [SKU_SYSTEM] Convertendo imagem ${index + 1}: SKU=${img.sku}, linha=${img.linha}`);
-            
-            // Converter blob para data URL para persistir
-            const reader = new FileReader();
-            const dataUrl = await new Promise<string>((resolve) => {
-              reader.onload = () => resolve(reader.result as string);
-              reader.readAsDataURL(img.blob);
-            });
-            
-            return {
-              nome: img.nome,
-              url: dataUrl,
-              linha: img.linha,
-              coluna: img.coluna,
-              sku: img.sku
-            };
-          })
-        );
+        // Debug: Verificar SKUs das imagens antes do upload
+        imagens.forEach((img, idx) => {
+          console.log(`🔍 [DEBUG] Imagem ${idx + 1}: nome=${img.nome}, sku=${img.sku}, linha=${img.linha}`);
+        });
         
-        console.log(`✅ [SKU_SYSTEM] ${imagensUpload.length} imagens convertidas com sucesso!`);
+        const imagensParaUpload = imagens.map(img => ({
+          nome: img.nome,
+          blob: img.blob,
+          linha: img.linha,
+          coluna: img.coluna,
+          sku: img.sku  // CRÍTICO: Preservar SKU da imagem
+        }));
+        
+        imagensUpload = await uploadImagensExtraidas(imagensParaUpload, cotacao.id, cotacao.organization_id);
+        console.log('✅ [SKU_SYSTEM] Upload concluído! Imagens com URLs:', imagensUpload.length);
+        
+        // Debug: Verificar resultado do upload
+        imagensUpload.forEach((img, idx) => {
+          console.log(`🔍 [DEBUG] Upload ${idx + 1}: sku=${img.sku}, url=${img.url ? 'VÁLIDA' : 'INVÁLIDA'}`);
+        });
       } else {
-        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para converter');
+        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para upload');
       }
       setProgressoUpload(70);
 
