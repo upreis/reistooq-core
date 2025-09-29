@@ -69,11 +69,18 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
     
     for (let linha = 2; linha <= ultimaLinhaComDados; linha++) {
       const indiceImagem = linha - 2; // Linha 2 = imagem índice 0
+      const sku = extrairSkuDaLinha(dados, linha);
       
+      // Verifica se existe SKU na linha (linha com dados)
+      if (!sku) {
+        console.log(`⚠️ [SEQUENCIAL] Linha ${linha}: sem SKU, pulando linha`);
+        continue;
+      }
+      
+      // Verifica se existe imagem correspondente na posição sequencial
       if (indiceImagem < imagensRaw.length) {
         const imagem = imagensRaw[indiceImagem];
-        const sku = extrairSkuDaLinha(dados, linha);
-        const nomeImagem = sku ? `${sku}.png` : `LINHA_${linha}.png`;
+        const nomeImagem = `${sku}.png`;
         
         imagensFinais.push({
           nome: nomeImagem,
@@ -83,9 +90,11 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
           sku: sku
         });
 
-        console.log(`📸 [SEQUENCIAL] Linha ${linha} → SKU: ${sku || 'SEM_SKU'} → ${nomeImagem}`);
+        console.log(`📸 [SEQUENCIAL] Linha ${linha} → SKU: ${sku} → ${nomeImagem} ✅`);
       } else {
-        console.log(`⚠️ [SEQUENCIAL] Linha ${linha}: sem imagem correspondente (${indiceImagem + 1}ª imagem não existe)`);
+        // Linha tem SKU mas não tem imagem correspondente - PULA sem adicionar imagem
+        console.log(`⚠️ [SEQUENCIAL] Linha ${linha} → SKU: ${sku} → SEM IMAGEM (faltam ${(indiceImagem + 1) - imagensRaw.length} imagens)`);
+        // NÃO adiciona nada ao array, deixa a linha sem imagem
       }
     }
 
