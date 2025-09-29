@@ -325,7 +325,13 @@ export function useCotacoesArquivos() {
   const processarDados = useCallback((dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
     console.log('🔄 [DADOS] Iniciando mapeamento de campos do Excel');
     console.log('🔍 [DADOS] Dados brutos recebidos:', dados.slice(0, 2)); // Primeiros 2 produtos para debug
-    console.log('🖼️ [DADOS] Imagens recebidas:', imagensUpload.length);
+    console.log('🖼️ [DADOS] Imagens recebidas para associação:', imagensUpload.length);
+    console.log('🖼️ [DADOS] Detalhes das imagens:', imagensUpload.map(img => ({
+      nome: img.nome,
+      sku: img.sku,
+      linha: img.linha,
+      hasUrl: !!img.url
+    })));
     
     return dados.map((item, index) => {
       // MAPEAMENTO DOS CAMPOS DO TEMPLATE PARA O FORMATO ESPERADO
@@ -352,16 +358,24 @@ export function useCotacoesArquivos() {
         pcs_ctn: Number(item.pcs_ctn || item.PCS_CTN) || 0,
         caixas: Number(item.caixas || item.Caixas || item.CAIXAS) || 1,
         
-        // Associar imagens pela linha
+        // Campos de imagem INICIALMENTE vazios
         imagem: '',
         imagem_fornecedor: ''
       };
       
-      // Associar imagens pela linha (linha do Excel = index + 2, pois linha 1 é cabeçalho)
-      const imagensAssociadas = imagensUpload.filter(img => {
-        // Tentar associar por linha OU por SKU
-        return img.linha === index + 2 || (img.sku && img.sku === produtoMapeado.sku);
-      });
+      console.log(`🔍 [DADOS] Processando produto ${index}: SKU="${produtoMapeado.sku}"`);
+      
+      // ASSOCIAÇÃO DE IMAGENS: Por SKU PRIMEIRO, depois por linha
+      const imagensPorSku = imagensUpload.filter(img => 
+        img.sku && img.sku === produtoMapeado.sku
+      );
+      
+      const imagensPorLinha = imagensUpload.filter(img => 
+        img.linha === index + 2 // linha do Excel (considerando cabeçalho)
+      );
+      
+      // Usar por SKU preferencialmente, senão por linha
+      const imagensAssociadas = imagensPorSku.length > 0 ? imagensPorSku : imagensPorLinha;
       
       if (imagensAssociadas.length > 0) {
         // Primeira imagem como principal
@@ -371,12 +385,12 @@ export function useCotacoesArquivos() {
           produtoMapeado.imagem_fornecedor = imagensAssociadas[1].url;
         }
         
-        console.log(`🖼️ [DADOS] Produto ${produtoMapeado.sku}: ${imagensAssociadas.length} imagem(ns) associada(s)`);
+        console.log(`✅ [DADOS] Produto ${produtoMapeado.sku}: ${imagensAssociadas.length} imagem(ns) associada(s) por ${imagensPorSku.length > 0 ? 'SKU' : 'linha'}`);
+        console.log(`📷 [DADOS] URLs das imagens: principal=${!!produtoMapeado.imagem}, fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
       } else {
-        console.log(`⚠️ [DADOS] Produto ${produtoMapeado.sku}: Nenhuma imagem associada`);
+        console.log(`⚠️ [DADOS] Produto ${produtoMapeado.sku}: Nenhuma imagem associada (linha Excel: ${index + 2})`);
       }
       
-      console.log(`✅ [DADOS] Produto mapeado: ${produtoMapeado.sku} - ${produtoMapeado.nome_produto}`);
       return produtoMapeado;
     });
   }, []);

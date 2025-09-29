@@ -128,11 +128,15 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       setProgressoUpload(50);
 
       // Converter imagens para Data URLs para persistir além do reload
-      let imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
+      let imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
       if (imagens.length > 0) {
         console.log('☁️ Convertendo imagens para Data URLs...');
+        console.log('🔍 [DEBUG] Imagens recebidas do lerArquivoComImagens:', imagens);
+        
         imagensUpload = await Promise.all(
           imagens.map(async (img, index) => {
+            console.log(`🔄 [DEBUG] Convertendo imagem ${index}: SKU=${img.sku}, linha=${img.linha}`);
+            
             // Converter blob para data URL para persistir
             const reader = new FileReader();
             const dataUrl = await new Promise<string>((resolve) => {
@@ -140,15 +144,33 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
               reader.readAsDataURL(img.blob);
             });
             
-            return {
-              nome: `imagem-${index}.png`,
+            const imagemProcessada = {
+              nome: img.nome || `imagem-${img.sku || index}.png`,
               url: dataUrl,
               linha: img.linha,
-              coluna: img.coluna
+              coluna: img.coluna || 'IMAGEM',
+              sku: img.sku // CRUCIAL: Preservar SKU para associação
             };
+            
+            console.log(`✅ [DEBUG] Imagem ${index} convertida:`, {
+              nome: imagemProcessada.nome,
+              linha: imagemProcessada.linha,
+              sku: imagemProcessada.sku,
+              urlLength: dataUrl.length
+            });
+            
+            return imagemProcessada;
           })
         );
         console.log('✅ Imagens convertidas para Data URLs:', imagensUpload.length);
+        console.log('🔍 [DEBUG] Resultado imagensUpload:', imagensUpload.map(img => ({
+          nome: img.nome,
+          sku: img.sku,
+          linha: img.linha,
+          hasUrl: !!img.url
+        })));
+      } else {
+        console.warn('⚠️ [DEBUG] Nenhuma imagem extraída do arquivo!');
       }
       setProgressoUpload(70);
 
