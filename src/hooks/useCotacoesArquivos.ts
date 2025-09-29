@@ -26,43 +26,61 @@ interface CotacaoArquivo {
   updated_at?: string;
 }
 
-// Função auxiliar para detectar imagem na célula
-const temImagemNacelula = (cell: any): boolean => {
-  try {
-    return cell?.model?.value?.richText || 
-           cell?.model?.value?.formula || 
-           (cell?.value && typeof cell.value === 'object');
-  } catch (error) {
-    return false;
+// FUNÇÃO PARA EXTRAIR SKU DO NOME DA IMAGEM
+const extrairSKUDoNome = (nomeImagem: string): string | null => {
+  if (!nomeImagem) return null;
+  
+  // Remover extensão do arquivo
+  const nomeSemExtensao = nomeImagem.replace(/\.(jpg|jpeg|png|gif|bmp|webp)$/i, '');
+  
+  // Padrões de SKU suportados
+  const padroes = [
+    /^(CMD-\d+)/i,           // CMD-16.jpg, CMD-34.jpg
+    /^(FL-\d+)/i,            // FL-803.jpg
+    /^([A-Z]{2,4}-\d+)/i,    // Padrão geral: XX-123, XXX-456, XXXX-789
+    /^([A-Z]+\d+)/i,         // SKU123, PROD456
+  ];
+  
+  for (const padrao of padroes) {
+    const match = nomeSemExtensao.match(padrao);
+    if (match) {
+      const sku = match[1].toUpperCase();
+      console.log(`🎯 [SKU_EXTRACT] Nome: ${nomeImagem} → SKU: ${sku}`);
+      return sku;
+    }
   }
+  
+  console.log(`⚠️ [SKU_EXTRACT] Não foi possível extrair SKU de: ${nomeImagem}`);
+  return null;
 };
 
-// FUNÇÃO PARA DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
-const detectarPosicaoImagem = (worksheet: any, mediaFile: string, index: number) => {
+// FUNÇÃO PARA DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL (via ExcelJS)
+const detectarPosicaoImagemReal = (worksheet: any, imagemIndex: number) => {
   try {
-    // Iterar pelas células para encontrar onde a imagem está
-    for (let rowNum = 2; rowNum <= worksheet?.rowCount; rowNum++) {
-      const row = worksheet.getRow(rowNum);
-      if (!row) continue;
-      
-      // Verificar coluna B (IMAGEM)
-      const cellB = row.getCell(2);
-      if (cellB?.model?.value?.hyperlink || temImagemNacelula(cellB)) {
-        return { linha: rowNum, coluna: 'IMAGEM' };
-      }
-      
-      // Verificar coluna C (IMAGEM_FORNECEDOR)  
-      const cellC = row.getCell(3);
-      if (cellC?.model?.value?.hyperlink || temImagemNacelula(cellC)) {
-        return { linha: rowNum, coluna: 'IMAGEM_FORNECEDOR' };
+    // MÉTODO 1: Usar worksheet.getImages() do ExcelJS (se disponível)
+    if (worksheet.getImages && typeof worksheet.getImages === 'function') {
+      const images = worksheet.getImages();
+      if (images && images[imagemIndex]) {
+        const img = images[imagemIndex];
+        
+        // ExcelJS fornece informações de posição da imagem
+        // range.tl = top-left corner da imagem
+        const linha = img.range?.tl?.row || (imagemIndex + 2);
+        const col = img.range?.tl?.col || 1; // 0=A, 1=B, 2=C
+        const coluna = col === 1 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+        
+        console.log(`📍 [POSITION] Imagem ${imagemIndex + 1} detectada: linha=${linha}, coluna=${coluna}`);
+        return { linha, coluna };
       }
     }
   } catch (error) {
-    console.warn('Erro ao detectar posição da imagem:', error);
+    console.warn('⚠️ [POSITION] Erro ao detectar posição via ExcelJS:', error);
   }
   
-  // Fallback: usar ordem sequencial apenas se não encontrar
-  return { linha: index + 2, coluna: 'IMAGEM' };
+  // FALLBACK: Usar ordem sequencial (uma imagem por linha)
+  const linhaFallback = imagemIndex + 2; // +2 porque linha 1 = header
+  console.log(`📍 [POSITION] Fallback: Imagem ${imagemIndex + 1} → linha ${linhaFallback}`);
+  return { linha: linhaFallback, coluna: 'IMAGEM' };
 };
 
 export function useCotacoesArquivos() {
@@ -297,14 +315,17 @@ export function useCotacoesArquivos() {
                   const blob = await zipFile.async('blob');
                   
                   // DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
-                  const imagemInfo = detectarPosicaoImagem(worksheet, mediaFile, i);
+                  const imagemInfo = detectarPosicaoImagemReal(worksheet, i);
+                  
+                  // EXTRAIR SKU DO NOME DO ARQUIVO
+                  const skuExtraido = extrairSKUDoNome(mediaFile);
                   
                   imagensEmbutidas.push({
-                    nome: `imagem_excel_${i + 1}.jpg`,
+                    nome: skuExtraido ? `${skuExtraido}.jpg` : `imagem_excel_${i + 1}.jpg`,
                     blob: blob,
                     linha: imagemInfo.linha,
                     coluna: imagemInfo.coluna,
-                    sku: null
+                    sku: skuExtraido
                   });
                   
                   console.log(`📷 [SKU_SYSTEM] Imagem ${i + 1} extraída: ${mediaFile}`);
@@ -365,13 +386,19 @@ export function useCotacoesArquivos() {
         });
         
         // Mapear para formato esperado
-        const imagensZip = resultado.imagensProcessadas.map(img => ({
-          nome: img.arquivoRenomeado,
-          blob: img.blob,
-          linha: img.linha,
-          coluna: 'IMAGEM',
-          sku: img.sku
-        }));
+        const imagensZip = resultado.imagensProcessadas.map(img => {
+          // Extrair SKU do nome original do arquivo também
+          const skuDoNome = extrairSKUDoNome(img.arquivoOriginal);
+          const skuFinal = img.sku || skuDoNome;
+          
+          return {
+            nome: img.arquivoOriginal, // Manter nome original para extração de SKU
+            blob: img.blob,
+            linha: img.linha,
+            coluna: 'IMAGEM',
+            sku: skuFinal
+          };
+        });
         
         imagens = [...imagens, ...imagensZip];
       }
@@ -495,29 +522,62 @@ export function useCotacoesArquivos() {
       console.log(`  - Imagens encontradas: ${imagensUpload.length}`);
       
       imagensUpload.forEach((img, i) => {
-        console.log(`  - Imagem ${i + 1}: SKU=${img.sku}, Linha=${img.linha}, Coluna=${img.coluna}`);
+        console.log(`  - Imagem ${i + 1}: Nome=${img.nome}, SKU=${img.sku}, Linha=${img.linha}, Coluna=${img.coluna}`);
       });
       
-      // VALIDAÇÃO DUPLA: POSIÇÃO + SKU
+      // ====== PRIORIDADE 1: ASSOCIAÇÃO POR NOME DE ARQUIVO ======
+      const imagensPorNome = imagensUpload.filter(img => {
+        if (!img.nome) return false;
+        
+        // Extrair SKU do nome do arquivo
+        const skuFromName = extrairSKUDoNome(img.nome);
+        const skuProduto = produtoMapeado.sku.toUpperCase().trim();
+        
+        if (skuFromName) {
+          const match = skuFromName === skuProduto || 
+                       skuFromName.replace(/[-_]/g, '') === skuProduto.replace(/[-_]/g, '');
+          
+          if (match) {
+            console.log(`🎯 MATCH PERFEITO POR NOME: ${img.nome} → SKU ${skuProduto}`);
+            return true;
+          }
+        }
+        return false;
+      });
+      
+      // Se encontrou por nome, usar essa associação e pular o resto
+      if (imagensPorNome.length > 0) {
+        imagensPorNome.forEach(img => {
+          if (img.coluna === 'IMAGEM') {
+            produtoMapeado.imagem = img.url;
+          } else if (img.coluna === 'IMAGEM_FORNECEDOR') {
+            produtoMapeado.imagem_fornecedor = img.url;
+          }
+        });
+        console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: ${imagensPorNome.length} imagem(ns) associada(s) por NOME DE ARQUIVO`);
+        
+        // Debug adicional
+        if (produtoMapeado.imagem) {
+          console.log(`🔍 [AUDIT] Produto ${index + 1}: imagem=${produtoMapeado.imagem.substring(0, 100)}...`);
+        }
+        
+        return produtoMapeado;
+      }
+      
+      // ====== PRIORIDADE 2: ASSOCIAÇÃO POR SKU (FLEXÍVEL) ======
       const imagensPorSku = imagensUpload.filter(img => {
         if (!img.sku || !produtoMapeado.sku) return false;
         
         const skuImagem = img.sku.toUpperCase().trim();
         const skuProduto = produtoMapeado.sku.toUpperCase().trim();
-        const linhaEsperada = index + 2;
         
-        // Comparações de SKU
+        // Comparações de SKU (flexível - sem exigir linha exata)
         const skuMatch = skuImagem === skuProduto || 
                         skuImagem.replace(/[-_]/g, '') === skuProduto.replace(/[-_]/g, '');
-        const linhaMatch = img.linha === linhaEsperada;
         
-        // Priorizar match de SKU, mas validar linha também
-        if (skuMatch && linhaMatch) {
-          console.log(`✅ MATCH PERFEITO: SKU=${img.sku} na linha correta ${img.linha}`);
+        if (skuMatch) {
+          console.log(`✅ MATCH POR SKU: ${img.sku} → Produto ${skuProduto} (linha ${img.linha})`);
           return true;
-        } else if (skuMatch && !linhaMatch) {
-          console.warn(`⚠️ SKU correto mas linha errada: ${img.sku} esperado linha ${linhaEsperada}, encontrado ${img.linha}`);
-          return false; // Rejeitar se linha não bate
         }
         
         return false;
