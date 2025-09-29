@@ -651,9 +651,31 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         return;
       }
 
+      // Converter produtos importados para o formato da interface ProdutoCotacao
+      const produtosFormatados = totaisGerais.produtos.map((p: any) => ({
+        id: p.id || `prod-${Date.now()}-${Math.random()}`,
+        sku: p.sku || '',
+        nome: p.nome_produto || p.nome || '',
+        material: p.material || '',
+        package_qtd: p.pcs_ctn || 1,
+        preco_unitario: p.preco || p.preco_unitario || 0,
+        unidade_medida: p.unit || p.unidade_medida || 'PCS',
+        pcs_ctn: p.pcs_ctn || 1,
+        qtd_caixas_pedido: p.caixas || p.qtd_caixas_pedido || 1,
+        peso_unitario_g: p.peso_unitario_g || 0,
+        largura_cm: p.largura || p.largura_cm || 0,
+        altura_cm: p.altura || p.altura_cm || 0,
+        comprimento_cm: p.comprimento || p.comprimento_cm || 0,
+        peso_total_kg: p.peso_total_kg || 0,
+        cbm_unitario: p.cbm_unitario || 0,
+        cbm_total: p.cbm_total || 0,
+        quantidade_total: p.quantidade_total || 0,
+        valor_total: p.valor_total || 0
+      }));
+
       const cotacaoCompleta: CotacaoInternacional = {
         ...dadosBasicos,
-        produtos,
+        produtos: produtosFormatados,
         ...totaisGerais
       };
 
