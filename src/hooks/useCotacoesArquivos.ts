@@ -920,58 +920,55 @@ export function useCotacoesArquivos() {
           arquivo: mediaFile,
           nomeImagem: imageName,
           estratégiaUsada: estrategiaUsada,
-          posiçãoEncontrada: position ? `Linha ${position.row + 2}, Coluna ${position.col + 1}` : 'NÃO ENCONTRADA',
+          posiçãoEncontrada: position ? `Linha ${position.row + 2}, Coluna ${position.col + 1}` : 'REJEITADA',
+          skuEncontrado: skuEncontrado || 'N/A',
           índiceLoop: i,
           totalPosições: imagePositions.size
         });
         
         let linhaExcel, coluna, skuAssociado;
         
-        if (position) {
-          // MAPEAMENTO PRECISO: Usar posição do XML
-          linhaExcel = position.row + 2; // +2 porque row 0 = linha 1, e linha 1 = cabeçalho
-          
-          // Determinar tipo de coluna baseada na posição
-          if (position.col === 1) { // Coluna B
-            coluna = 'IMAGEM';
-          } else if (position.col === 2) { // Coluna C  
-            coluna = 'IMAGEM_FORNECEDOR';
-          } else {
-            coluna = 'IMAGEM'; // Default
-          }
-          
-          // Buscar SKU da linha correspondente
+        // MAPEAMENTO PRECISO: Usar posição válida (não há mais fallback)
+        linhaExcel = position.row + 2; // +2 porque row 0 = linha 1, e linha 1 = cabeçalho
+        
+        // Determinar tipo de coluna baseada na posição
+        if (position.col === 1) { // Coluna B
+          coluna = 'IMAGEM';
+        } else if (position.col === 2) { // Coluna C  
+          coluna = 'IMAGEM_FORNECEDOR';
+        } else {
+          coluna = 'IMAGEM'; // Default
+        }
+        
+        // Buscar SKU da linha correspondente (ou usar o já encontrado por filename)
+        if (skuEncontrado) {
+          skuAssociado = skuEncontrado;
+        } else {
           const skuAddress = XLSX.utils.encode_cell({ r: position.row + 1, c: 0 });
           const skuCell = worksheet[skuAddress];
           skuAssociado = skuCell?.v ? String(skuCell.v) : `LINHA_${linhaExcel}`;
-          
-          console.log(`🎯 [DEBUG] MAPEAMENTO XML PRECISO CONFIRMADO:`, {
-            arquivo: mediaFile,
-            estratégia: estrategiaUsada,
-            posicaoXML: `Linha ${position.row + 2}, Coluna ${position.col + 1}`,
-            célula: `${String.fromCharCode(65 + position.col)}${linhaExcel}`,
-            skuEncontrado: skuAssociado,
-            tipoColuna: coluna
-          });
-          
-          console.log(`✅ [DEBUG] MAPEAMENTO CONFIRMADO: "${mediaFile}" → Célula ${String.fromCharCode(65 + position.col)}${linhaExcel} → SKU "${skuAssociado}"`);
-          
-        } else {
-          // FALLBACK: Mapeamento sequencial com logs detalhados
-          linhaExcel = i + 2;
-          coluna = 'IMAGEM';
-          skuAssociado = `FALLBACK_${linhaExcel}`;
-          
-          console.log(`⚠️ [DEBUG] USANDO FALLBACK SEQUENCIAL:`, {
-            arquivo: mediaFile,
-            motivoFallback: 'Posição XML não encontrada',
-            índiceSequencial: i,
-            linhaCalculada: linhaExcel,
-            skuFallback: skuAssociado
-          });
-          
-          console.log(`⚠️ [DEBUG] FALLBACK CONFIRMADO: "${mediaFile}" → Linha Sequencial ${linhaExcel} → SKU "${skuAssociado}"`);
         }
+        
+        // VALIDAÇÃO CRUZADA: Verificar se imagem corresponde ao SKU da linha
+        const correspondenciaValida = validarCorrespondenciaImagemSKU(mediaFile, skuAssociado);
+        if (!correspondenciaValida) {
+          console.warn(`⚠️ [DEBUG] POSSÍVEL MISMATCH: ${mediaFile} ↔ ${skuAssociado}`);
+          // Adicionar à lista de correções pendentes
+          adicionarCorrecaoPendente(mediaFile, skuAssociado, linhaExcel);
+        }
+        
+        console.log(`🎯 [DEBUG] MAPEAMENTO PRECISO CONFIRMADO:`, {
+          arquivo: mediaFile,
+          estratégia: estrategiaUsada,
+          posicaoFinal: `Linha ${position.row + 2}, Coluna ${position.col + 1}`,
+          célula: `${String.fromCharCode(65 + position.col)}${linhaExcel}`,
+          skuFinal: skuAssociado,
+          tipoColuna: coluna,
+          correspondenciaValida
+        });
+        
+        console.log(`✅ [DEBUG] MAPEAMENTO CONFIRMADO: "${mediaFile}" → Célula ${String.fromCharCode(65 + position.col)}${linhaExcel} → SKU "${skuAssociado}"`);
+      
         
         const extensao = mediaFile.split('.').pop() || 'png';
         const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_xml.${extensao}`;
