@@ -398,13 +398,13 @@ export function useCotacoesArquivos() {
         // MAPEAMENTO SIMPLES: Imagem sequencial para linha sequencial
         const linhaExcel = i + 2; // Linha 2, 3, 4... (linha 1 = cabeçalho)
         
-        // Buscar SKU diretamente pelo índice da linha de dados na planilha
-        const skuAddress = XLSX.utils.encode_cell({ r: i + 1, c: 0 }); // +1 para pular cabeçalho
+        // CORREÇÃO: Buscar SKU na linha correta considerando o range
+        const skuAddress = XLSX.utils.encode_cell({ r: range.s.r + 1 + i, c: 0 }); // range.s.r + 1 = primeira linha de dados
         const skuCell = worksheet[skuAddress];
         const skuAssociado = skuCell ? String(skuCell.v) : `LINHA_${linhaExcel}`;
         const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
         
-        console.log(`✅ [DEBUG] MAPEAMENTO DIRETO: Imagem ${i} → Linha Excel ${linhaExcel} → SKU "${skuAssociado}"`);
+        console.log(`✅ [DEBUG] MAPEAMENTO CORRIGIDO: Imagem ${i} → Linha Excel ${linhaExcel} → Endereço ${skuAddress} → SKU "${skuAssociado}"`);
         
         const extensao = mediaFile.split('.').pop() || 'png';
         const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
