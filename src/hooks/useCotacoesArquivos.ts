@@ -944,8 +944,6 @@ export function useCotacoesArquivos() {
         });
         
         console.log(`✅ [DEBUG] Imagem mapeada via XML: "${mediaFile}" → SKU "${skuAssociado}", Linha ${linhaExcel}, Coluna ${coluna}`);
-      }
-      
     } catch (error) {
       console.error('❌ [SKU_SYSTEM] ERRO no processamento individual por SKU:', error);
       throw error;
@@ -953,23 +951,21 @@ export function useCotacoesArquivos() {
   };
 
   const extrairImagensAlternativo = async (
+    file: File, 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]
+  ) => {
+    try {
+      console.log('🔄 [DEBUG] Tentando método alternativo de extração...');
       
-      // P4.3: Sistema de alertas inteligentes
-      const alerts = {
-        critical: [] as string[],
-        warning: [] as string[],
-        info: [] as string[]
-      };
+      // Método alternativo: usar FileReader para buscar padrões de imagem
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
       
-      // Verificar taxa de sucesso crítica
-      if (performanceMetrics.taxaSucesso < 80) {
-        alerts.critical.push(`Taxa de sucesso baixa: ${performanceMetrics.taxaSucesso.toFixed(1)}%`);
-      }
+      // Procurar por assinaturas de imagem (magic numbers)
+      const pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+      const jpegSignature = [0xFF, 0xD8, 0xFF];
       
-      // Verificar uso excessivo de fallback
-      if (performanceMetrics.usoFallback > performanceMetrics.totalImagensProcessadas * 0.3) {
-        alerts.warning.push(`Uso excessivo de fallback: ${performanceMetrics.usoFallback} de ${performanceMetrics.totalImagensProcessadas} imagens`);
-      }
+      let imagemIndex = 0;
       
       // Verificar mapeamentos críticos
       if (!imagens.find(img => img.sku?.includes('FL-62'))) {
