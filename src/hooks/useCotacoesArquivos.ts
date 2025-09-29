@@ -1407,11 +1407,12 @@ export function useCotacoesArquivos() {
           finalDocumentation,
           userNotification,
           recoveryPointId
-    } catch (error) {
-      console.error('❌ [SKU_SYSTEM] ERRO no processamento individual por SKU:', error);
-      throw error;
-    }
-  };
+        };
+      } catch (error) {
+        console.error('❌ [SKU_SYSTEM] ERRO no processamento individual por SKU:', error);
+        throw error;
+      }
+  }, [supabase.storage]);
 
   const uploadImagensExtraidas = useCallback(async (
     imagensExtraidas: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
@@ -1497,10 +1498,6 @@ export function useCotacoesArquivos() {
               imagemIndex++;
               console.log(`✅ [DEBUG] PNG extraído: imagem_extraida_${imagemIndex}.png`);
               break;
-            }
-          }
-        }
-      }
       
       // Buscar JPEGs
       for (let i = 0; i < uint8Array.length - 3; i++) {
@@ -1512,13 +1509,11 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 2);
               const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
               
-  const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
-              
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
                 blob: imageBlob,
-                 linha: linha,
-                 coluna: coluna
+                linha: linha,
+                coluna: coluna
               });
               
               imagemIndex++;
@@ -1533,47 +1528,14 @@ export function useCotacoesArquivos() {
         console.log('ℹ️ [DEBUG] Nenhuma imagem foi encontrada no arquivo Excel');
       }
       
-    } catch (error) {
-      console.error('❌ [DEBUG] Erro no método alternativo:', error);
-    }
+    return imagens;
   };
 
-  const uploadImagensExtraidas = async (imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[], cotacaoId: string, organizationId: string) => {
-    const imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
-    
-    for (const imagem of imagens) {
-      try {
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        const fileName = `${cotacaoId}_${timestamp}_${imagem.nome}`;
-        const filePath = `${organizationId}/${cotacaoId}/imagens/${fileName}`;
-
-        // Upload da imagem para o storage
-        const { error: uploadError } = await supabase.storage
-          .from('cotacoes-arquivos')
-          .upload(filePath, imagem.blob);
-
-        if (uploadError) {
-          console.error('Erro no upload da imagem:', uploadError);
-          continue;
-        }
-
-        // Obter URL pública da imagem
-        const { data: urlData } = supabase.storage
-          .from('cotacoes-arquivos')
-          .getPublicUrl(filePath);
-
-        imagensUpload.push({
-          nome: imagem.nome,
-          url: urlData.publicUrl,
-          linha: imagem.linha,
-          coluna: imagem.coluna
-        });
-      } catch (error) {
-        console.error('Erro ao fazer upload da imagem:', error);
-      }
-    }
-
-    return imagensUpload;
+  const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
+    return dados.map((item, index) => ({
+      ...item,
+      imagens: imagensUpload.filter(img => img.linha === index + 2) // +2 porque geralmente linha 1 é cabeçalho
+    }));
   };
 
   const processarArquivo = useCallback(async (arquivoId: string, dados: any[]) => {
