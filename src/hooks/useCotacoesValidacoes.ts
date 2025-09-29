@@ -93,36 +93,47 @@ export const validarEstruturaExcel = async (worksheet: any): Promise<ValidacaoEx
   };
 };
 
-// MAPEAR IMAGENS POR SKU NO FILENAME
+// MAPEAR IMAGENS POR SKU NO FILENAME (USANDO ARRAY PARA DUPLICATAS)
 export const mapearImagensPorSKU = async (
   mediaFiles: string[], 
   worksheet: any
 ): Promise<ResultadoMapeamentoSKU> => {
-  console.log('🎯 [MAPEAMENTO] Iniciando mapeamento por SKU...');
+  console.log('🎯 [MAPEAMENTO] Iniciando mapeamento por SKU com suporte a duplicatas...');
   
   const mapeamentos: MapeamentoSKU[] = [];
   let mapeados = 0;
   let rejeitados = 0;
   
-  // Extrair todos os SKUs válidos e suas linhas
-  const skusWorksheet = new Map<string, number>();
+  // USAR ARRAY PARA PERMITIR SKUS DUPLICADOS (MultiMap)
+  const skusWorksheet = new Map<string, number[]>();
   Object.keys(worksheet).forEach(cellKey => {
     const match = cellKey.match(/^A(\d+)$/);
     if (match) {
       const linha = parseInt(match[1]);
       if (linha > 1) { // Pular cabeçalho
         const skuCell = worksheet[cellKey];
-        const sku = skuCell?.v ? String(skuCell.v).trim() : '';
+        const sku = skuCell?.v ? String(skuCell.v).trim().toUpperCase() : '';
         if (sku) {
-          skusWorksheet.set(sku, linha);
+          // USAR ARRAY PARA SUPORTAR MÚLTIPLAS LINHAS COM MESMO SKU
+          if (!skusWorksheet.has(sku)) {
+            skusWorksheet.set(sku, []);
+          }
+          skusWorksheet.get(sku)!.push(linha);
         }
       }
     }
   });
   
-  console.log(`📋 [MAPEAMENTO] SKUs no Excel: ${skusWorksheet.size}`);
+  console.log(`📋 [MAPEAMENTO] SKUs no Excel: ${skusWorksheet.size} únicos`);
   
-  // Processar cada imagem
+  // Log de SKUs duplicados
+  skusWorksheet.forEach((linhas, sku) => {
+    if (linhas.length > 1) {
+      console.warn(`⚠️ [MAPEAMENTO] SKU DUPLICADO: "${sku}" nas linhas [${linhas.join(', ')}]`);
+    }
+  });
+  
+  // Processar cada imagem individualmente
   mediaFiles.forEach((mediaFile, index) => {
     const skuExtraido = extrairSKUDoFilename(mediaFile);
     const nomeArquivo = mediaFile.split('/').pop() || mediaFile;
@@ -130,7 +141,10 @@ export const mapearImagensPorSKU = async (
     console.log(`🔍 [MAPEAMENTO] ${index + 1}/${mediaFiles.length}: "${nomeArquivo}" → SKU: "${skuExtraido || 'NÃO ENCONTRADO'}"`);
     
     if (skuExtraido && skusWorksheet.has(skuExtraido)) {
-      const linha = skusWorksheet.get(skuExtraido)!;
+      const linhas = skusWorksheet.get(skuExtraido)!;
+      // Para SKUs duplicados, usar primeira linha disponível
+      const linha = linhas[0];
+      
       mapeamentos.push({
         sku: skuExtraido,
         linha,
@@ -138,7 +152,7 @@ export const mapearImagensPorSKU = async (
         arquivo: mediaFile
       });
       mapeados++;
-      console.log(`✅ [MAPEAMENTO] SUCESSO: ${nomeArquivo} → SKU ${skuExtraido} → Linha ${linha}`);
+      console.log(`✅ [MAPEAMENTO] SUCESSO: ${nomeArquivo} → SKU ${skuExtraido} → Linha ${linha}${linhas.length > 1 ? ` (${linhas.length} duplicatas)` : ''}`);
     } else {
       rejeitados++;
       console.warn(`❌ [MAPEAMENTO] REJEITADO: ${nomeArquivo} - SKU "${skuExtraido}" não encontrado no Excel`);
@@ -146,15 +160,18 @@ export const mapearImagensPorSKU = async (
   });
   
   // Identificar SKUs sem imagem
-  skusWorksheet.forEach((linha, sku) => {
+  skusWorksheet.forEach((linhas, sku) => {
     const temImagem = mapeamentos.some(m => m.sku === sku);
     if (!temImagem) {
-      mapeamentos.push({
-        sku,
-        linha,
-        temImagem: false
+      // Para SKUs duplicados sem imagem, criar entrada para cada linha
+      linhas.forEach(linha => {
+        mapeamentos.push({
+          sku,
+          linha,
+          temImagem: false
+        });
+        console.log(`⚠️ [MAPEAMENTO] SKU SEM IMAGEM: ${sku} (Linha ${linha})`);
       });
-      console.log(`⚠️ [MAPEAMENTO] SKU SEM IMAGEM: ${sku} (Linha ${linha})`);
     }
   });
   

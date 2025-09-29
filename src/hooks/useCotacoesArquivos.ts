@@ -837,146 +837,97 @@ export function useCotacoesArquivos() {
         }))
       });
       
-      // Buscar arquivos de imagem com ordenação determinística
-      const mediaFilesRaw = Object.keys(zipData.files).filter(name => 
+      // Buscar arquivos de imagem SEM ordenação sequencial
+      const mediaFiles = Object.keys(zipData.files).filter(name => 
         name.startsWith('xl/media/') && (
           name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
           name.endsWith('.gif') || name.endsWith('.bmp')
         )
       );
       
-      // NOVA ESTRATÉGIA: MAPEAMENTO BASEADO EM SKU NO FILENAME
-      const mapeamentoPorSKU = await mapearImagensPorSKU(mediaFilesRaw, worksheet);
-      console.log(`🎯 [DEBUG] Mapeamento por SKU concluído: ${mapeamentoPorSKU.mapeados} de ${mediaFilesRaw.length} imagens`);
+      console.log(`📸 [SKU_SYSTEM] Encontrados ${mediaFiles.length} arquivos de imagem para processamento individual`);
       
-      // CORREÇÃO CRÍTICA: Ordenação determinística por nome/número
-      const mediaFiles = mediaFilesRaw.sort((a, b) => {
-        // Extrair números dos nomes: image1.png, image2.png, etc.
-        const numA = parseInt(a.match(/(\d+)/)?.[0] || '0');
-        const numB = parseInt(b.match(/(\d+)/)?.[0] || '0');
-        
-        // Se ambos têm números, ordenar por número
-        if (numA !== 0 && numB !== 0) {
-          return numA - numB;
-        }
-        
-        // Senão, ordenação alfabética
-        return a.localeCompare(b);
+      // NOVA ESTRATÉGIA: PROCESSAMENTO INDIVIDUAL POR SKU
+      const { useImagemSKUProcessor } = await import('./useImagemSKUProcessor');
+      const { construirMapaSkuLinhas, processarImagensIndividualmente, obterEstatisticas } = useImagemSKUProcessor();
+      
+      // Construir mapa SKU → Linhas (com suporte a duplicatas)
+      construirMapaSkuLinhas(worksheet);
+      const stats = obterEstatisticas();
+      console.log('📊 [SKU_SYSTEM] Estatísticas do mapeamento:', stats);
+      
+      // Processar imagens individualmente
+      const resultadoProcessamento = await processarImagensIndividualmente(zipData, mediaFiles);
+      
+      console.log('🎯 [SKU_SYSTEM] Resultado do processamento:', {
+        processadas: resultadoProcessamento.processadas.length,
+        rejeitadas: resultadoProcessamento.rejeitadas.length,
+        renomeadas: resultadoProcessamento.renomeadas,
+        erros: resultadoProcessamento.erros.length
       });
       
-      console.log('📸 [DEBUG] AUDITORIA ORDEM DE IMAGENS:');
-      console.log('🔍 [DEBUG] ORDEM ORIGINAL Object.keys():', mediaFilesRaw);
-      console.log('✅ [DEBUG] ORDEM APÓS SORT DETERMINÍSTICO:', mediaFiles);
-      console.log('🎯 [DEBUG] MAPEAMENTO ESPERADO:');
-      mediaFiles.forEach((file, index) => {
-        const imageName = file.split('/').pop() || file;
-        console.log(`  ${index}: ${imageName} → Linha Excel ${index + 2}`);
-      });
-      
-      // Mapear colunas do Excel
+      // PROCESSAR CADA IMAGEM INDIVIDUALMENTE (SEM LOOP SEQUENCIAL)
       const XLSX = await import('xlsx');
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
       
-      for (let i = 0; i < mediaFiles.length; i++) {
-        const mediaFile = mediaFiles[i];
-        const imageBlob = await zipData.files[mediaFile].async('blob');
+      // Processar apenas imagens que foram mapeadas com sucesso
+      for (const imagemProcessada of resultadoProcessamento.processadas) {
+        console.log(`🔧 [SKU_SYSTEM] Processando: ${imagemProcessada.arquivoRenomeado} → Linha ${imagemProcessada.linha}`);
         
-        if (imageBlob.size === 0) {
-          console.warn(`⚠️ [DEBUG] Arquivo ${mediaFile} está vazio`);
+        // Determinar coluna (sempre IMAGEM por padrão)
+        const coluna = 'IMAGEM';
+        const linhaExcel = imagemProcessada.linha;
+        
+        console.log(`🎯 [SKU_SYSTEM] INSERINDO: ${imagemProcessada.arquivoRenomeado} → SKU ${imagemProcessada.sku} → Linha ${linhaExcel} → Coluna ${coluna}`);
+        
+        // Validação final do SKU
+        const skuAddress = XLSX.utils.encode_cell({ r: imagemProcessada.linha - 1, c: 0 });
+        const skuCell = worksheet[skuAddress];
+        const skuPlanilha = skuCell?.v ? String(skuCell.v).trim().toUpperCase() : '';
+        
+        if (skuPlanilha !== imagemProcessada.sku) {
+          console.error(`❌ [SKU_SYSTEM] ERRO DE VALIDAÇÃO: SKU planilha "${skuPlanilha}" ≠ SKU extraído "${imagemProcessada.sku}"`);
+          adicionarCorrecaoPendente(imagemProcessada.arquivoOriginal, skuPlanilha, linhaExcel);
           continue;
         }
         
-        // Buscar posição da imagem no XML (estratégias múltiplas)
-        const imageName = mediaFile.split('/').pop()?.replace(/\.[^.]+$/, '') || '';
-        let position: { row: number; col: number } | undefined;
-        let estrategiaUsada = '';
-        let skuEncontrado: string | undefined; // Declarar variável corretamente
+        // Inserir imagem processada na posição correta
+        const excelRowNum = linhaExcel;
         
-        // ESTRATÉGIA 1 (PRIORIDADE): BUSCAR POR SKU NO FILENAME
-        const skuNoFilename = extrairSKUDoFilename(mediaFile);
-        if (skuNoFilename) {
-          const mapeamentoSKU = mapeamentoPorSKU.mapeamentos.find(m => m.sku === skuNoFilename);
-          if (mapeamentoSKU) {
-            position = { row: mapeamentoSKU.linha - 2, col: 1 }; // Coluna B por padrão
-            estrategiaUsada = `sku_filename: ${skuNoFilename}`;
-            skuEncontrado = mapeamentoSKU.sku;
-            console.log(`✅ [DEBUG] MAPEAMENTO POR SKU: ${mediaFile} → SKU ${skuNoFilename} → Linha ${mapeamentoSKU.linha}`);
-          }
-        }
-        
-        // ESTRATÉGIA 2: XML (se não encontrou por SKU)
-        if (!position && imagePositions.has(mediaFile)) {
-          position = imagePositions.get(mediaFile);
-          estrategiaUsada = 'xml_completo';
-        }
-        
-        // ESTRATÉGIA 3: Nome do arquivo (XML)
-        if (!position) {
-          for (const [key, pos] of imagePositions.entries()) {
-            if (key.includes(imageName) && imageName.length > 0) {
-              position = pos;
-              estrategiaUsada = `xml_nome: ${key}`;
-              break;
-            }
-          }
-        }
-        
-        // ESTRATÉGIA 4: NÃO USAR FALLBACK SEQUENCIAL - PULAR IMAGEM
-        if (!position) {
-          console.warn(`❌ [DEBUG] IMAGEM REJEITADA - Sem mapeamento válido: ${mediaFile}`);
-          continue; // PULAR esta imagem, não forçar mapeamento
-        }
-        
-        console.log(`🔍 [DEBUG] ANÁLISE DETALHADA - Arquivo ${i}:`, {
-          arquivo: mediaFile,
-          nomeImagem: imageName,
-          estratégiaUsada: estrategiaUsada,
-          posiçãoEncontrada: position ? `Linha ${position.row + 2}, Coluna ${position.col + 1}` : 'REJEITADA',
-          skuEncontrado: skuEncontrado || 'N/A',
-          índiceLoop: i,
-          totalPosições: imagePositions.size
+        console.log(`📊 [SKU_SYSTEM] INSERINDO IMAGEM:`, {
+          arquivoOriginal: imagemProcessada.arquivoOriginal,
+          arquivoRenomeado: imagemProcessada.arquivoRenomeado,
+          linhaPlanilha: excelRowNum,
+          colunaTipo: coluna,
+          skuValidado: imagemProcessada.sku,
+          tamanhoBlob: `${Math.round(imagemProcessada.blob.size / 1024)}KB`
         });
         
-        let linhaExcel, coluna, skuAssociado;
+        // Criar arquivo com nome baseado em SKU
+        const imageFile = new File([imagemProcessada.blob], imagemProcessada.arquivoRenomeado, { type: 'image/jpeg' });
         
-        // MAPEAMENTO PRECISO: Usar posição válida (não há mais fallback)
-        linhaExcel = position.row + 2; // +2 porque row 0 = linha 1, e linha 1 = cabeçalho
-        
-        // Determinar tipo de coluna baseada na posição
-        if (position.col === 1) { // Coluna B
-          coluna = 'IMAGEM';
-        } else if (position.col === 2) { // Coluna C  
-          coluna = 'IMAGEM_FORNECEDOR';
-        } else {
-          coluna = 'IMAGEM'; // Default
-        }
-        
-        // Buscar SKU da linha correspondente (ou usar o já encontrado por filename)
-        if (skuEncontrado) {
-          skuAssociado = skuEncontrado;
-        } else {
-          const skuAddress = XLSX.utils.encode_cell({ r: position.row + 1, c: 0 });
-          const skuCell = worksheet[skuAddress];
-          skuAssociado = skuCell?.v ? String(skuCell.v) : `LINHA_${linhaExcel}`;
-        }
-        
-        // VALIDAÇÃO CRUZADA: Verificar se imagem corresponde ao SKU da linha
-        const correspondenciaValida = validarCorrespondenciaImagemSKU(mediaFile, skuAssociado);
-        if (!correspondenciaValida) {
-          console.warn(`⚠️ [DEBUG] POSSÍVEL MISMATCH: ${mediaFile} ↔ ${skuAssociado}`);
-          // Adicionar à lista de correções pendentes
-          adicionarCorrecaoPendente(mediaFile, skuAssociado, linhaExcel);
-        }
-        
-        console.log(`🎯 [DEBUG] MAPEAMENTO PRECISO CONFIRMADO:`, {
-          arquivo: mediaFile,
-          estratégia: estrategiaUsada,
-          posicaoFinal: `Linha ${position.row + 2}, Coluna ${position.col + 1}`,
-          célula: `${String.fromCharCode(65 + position.col)}${linhaExcel}`,
-          skuFinal: skuAssociado,
-          tipoColuna: coluna,
-          correspondenciaValida
+        imagens.push({
+          nome: imagemProcessada.arquivoRenomeado,
+          blob: imagemProcessada.blob,
+          linha: excelRowNum,
+          coluna: coluna,
+          sku: imagemProcessada.sku
         });
+        
+        try {
+          console.log(`✅ [SKU_SYSTEM] INSERÇÃO CONCLUÍDA: ${imagemProcessada.arquivoRenomeado} → Linha ${excelRowNum} [${coluna}]`);
+        } catch (error) {
+          console.error(`❌ [SKU_SYSTEM] Erro ao inserir ${imagemProcessada.arquivoRenomeado}:`, error);
+        }
+      }
+      
+      // Log final de imagens rejeitadas
+      if (resultadoProcessamento.rejeitadas.length > 0) {
+        console.warn(`⚠️ [SKU_SYSTEM] IMAGENS REJEITADAS (${resultadoProcessamento.rejeitadas.length}):`, resultadoProcessamento.rejeitadas);
+      }
+      
+      if (resultadoProcessamento.erros.length > 0) {
+        console.error(`❌ [SKU_SYSTEM] ERROS DE PROCESSAMENTO (${resultadoProcessamento.erros.length}):`, resultadoProcessamento.erros);
+      }
         
         console.log(`✅ [DEBUG] MAPEAMENTO CONFIRMADO: "${mediaFile}" → Célula ${String.fromCharCode(65 + position.col)}${linhaExcel} → SKU "${skuAssociado}"`);
       
