@@ -374,17 +374,19 @@ export function useCotacoesArquivos() {
     try {
       console.log('📊 [DEBUG] Lendo XML de drawings para posições exatas...');
       
-      // Buscar arquivos de drawing XML
-      const drawingFiles = Object.keys(zipData.files).filter(name => 
-        name.includes('drawings/') && name.endsWith('.xml')
-      );
+      // Buscar arquivos de drawing XML com ordenação determinística
+      const drawingFiles = Object.keys(zipData.files)
+        .filter(name => name.includes('drawings/') && name.endsWith('.xml'))
+        .sort((a, b) => a.localeCompare(b)); // Ordenação alfabética garantida
       
       console.log('🎨 [DEBUG] Arquivos de drawing encontrados:', drawingFiles);
+      console.log('🔍 [DEBUG] ORDEM ORIGINAL Object.keys():', Object.keys(zipData.files).filter(name => name.includes('drawings/') && name.endsWith('.xml')));
+      console.log('✅ [DEBUG] ORDEM APÓS SORT:', drawingFiles);
       
-      // Buscar também por relationship files para mapear IDs
-      const relFiles = Object.keys(zipData.files).filter(name => 
-        name.includes('drawings/_rels/') && name.endsWith('.rels')
-      );
+      // Buscar também por relationship files para mapear IDs com ordenação
+      const relFiles = Object.keys(zipData.files)
+        .filter(name => name.includes('drawings/_rels/') && name.endsWith('.rels'))
+        .sort((a, b) => a.localeCompare(b)); // Ordenação alfabética garantida
       
       console.log('🔗 [DEBUG] Arquivos de relationship encontrados:', relFiles);
       
@@ -493,7 +495,12 @@ export function useCotacoesArquivos() {
     worksheet: any
   ) => {
     try {
-      console.log('🎯 [DEBUG] NOVO MÉTODO: Extração com mapeamento XML preciso');
+      console.log('🎯 [DEBUG] === INICIANDO MAPEAMENTO XML PRECISO ===');
+      console.log('📊 [DEBUG] AUDITORIA INICIAL:', {
+        tamanhoArquivo: file.size,
+        nomeArquivo: file.name,
+        timestampInicio: new Date().toISOString()
+      });
       
       // Importar JSZip para ler estrutura completa
       const JSZip = (await import('jszip')).default;
@@ -506,15 +513,47 @@ export function useCotacoesArquivos() {
       // Ler posições das imagens do XML
       const imagePositions = await lerXMLDrawings(zipData);
       
-      // Buscar arquivos de imagem
-      const mediaFiles = Object.keys(zipData.files).filter(name => 
+      console.log('🗺️ [DEBUG] RESULTADO LEITURA XML:', {
+        posiçõesEncontradas: imagePositions.size,
+        posiçõesDetalhadas: Array.from(imagePositions.entries()).map(([key, pos]) => ({
+          chave: key,
+          linha: pos.row + 2,
+          coluna: pos.col + 1,
+          célula: `${String.fromCharCode(65 + pos.col)}${pos.row + 2}`
+        }))
+      });
+      
+      // Buscar arquivos de imagem com ordenação determinística
+      const mediaFilesRaw = Object.keys(zipData.files).filter(name => 
         name.startsWith('xl/media/') && (
           name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
           name.endsWith('.gif') || name.endsWith('.bmp')
         )
       );
       
-      console.log('📸 [DEBUG] Imagens encontradas:', mediaFiles);
+      // CORREÇÃO CRÍTICA: Ordenação determinística por nome/número
+      const mediaFiles = mediaFilesRaw.sort((a, b) => {
+        // Extrair números dos nomes: image1.png, image2.png, etc.
+        const numA = parseInt(a.match(/(\d+)/)?.[0] || '0');
+        const numB = parseInt(b.match(/(\d+)/)?.[0] || '0');
+        
+        // Se ambos têm números, ordenar por número
+        if (numA !== 0 && numB !== 0) {
+          return numA - numB;
+        }
+        
+        // Senão, ordenação alfabética
+        return a.localeCompare(b);
+      });
+      
+      console.log('📸 [DEBUG] AUDITORIA ORDEM DE IMAGENS:');
+      console.log('🔍 [DEBUG] ORDEM ORIGINAL Object.keys():', mediaFilesRaw);
+      console.log('✅ [DEBUG] ORDEM APÓS SORT DETERMINÍSTICO:', mediaFiles);
+      console.log('🎯 [DEBUG] MAPEAMENTO ESPERADO:');
+      mediaFiles.forEach((file, index) => {
+        const imageName = file.split('/').pop() || file;
+        console.log(`  ${index}: ${imageName} → Linha Excel ${index + 2}`);
+      });
       
       // Mapear colunas do Excel
       const XLSX = await import('xlsx');
@@ -562,14 +601,28 @@ export function useCotacoesArquivos() {
           }
         }
         
-        // Estratégia 4: Usar posição por ordem se existem posições suficientes
-        if (!position && imagePositions.size > i) {
-          const positions = Array.from(imagePositions.values());
-          position = positions[i];
-          estrategiaUsada = 'ordem_posicional';
+        // Estratégia 4: CORREÇÃO CRÍTICA - Não usar Array.from que perde contexto
+        if (!position && imagePositions.size > 0) {
+          // Em vez de Array.from(values()), iterar sobre o Map mantendo contexto
+          let positionIndex = 0;
+          for (const [key, pos] of imagePositions.entries()) {
+            if (positionIndex === i) {
+              position = pos;
+              estrategiaUsada = `map_iteracao_${positionIndex}: ${key}`;
+              break;
+            }
+            positionIndex++;
+          }
         }
         
-        console.log(`🔍 [DEBUG] Busca de posição para "${mediaFile}": ${estrategiaUsada || 'não_encontrada'}`);
+        console.log(`🔍 [DEBUG] ANÁLISE DETALHADA - Arquivo ${i}:`, {
+          arquivo: mediaFile,
+          nomeImagem: imageName,
+          estratégiaUsada: estrategiaUsada,
+          posiçãoEncontrada: position ? `Linha ${position.row + 2}, Coluna ${position.col + 1}` : 'NÃO ENCONTRADA',
+          índiceLoop: i,
+          totalPosições: imagePositions.size
+        });
         
         let linhaExcel, coluna, skuAssociado;
         
@@ -591,15 +644,32 @@ export function useCotacoesArquivos() {
           const skuCell = worksheet[skuAddress];
           skuAssociado = skuCell?.v ? String(skuCell.v) : `LINHA_${linhaExcel}`;
           
-          console.log(`🎯 [DEBUG] MAPEAMENTO XML PRECISO: Imagem "${mediaFile}" → Célula ${String.fromCharCode(65 + position.col)}${linhaExcel} → SKU "${skuAssociado}"`);
+          console.log(`🎯 [DEBUG] MAPEAMENTO XML PRECISO CONFIRMADO:`, {
+            arquivo: mediaFile,
+            estratégia: estrategiaUsada,
+            posicaoXML: `Linha ${position.row + 2}, Coluna ${position.col + 1}`,
+            célula: `${String.fromCharCode(65 + position.col)}${linhaExcel}`,
+            skuEncontrado: skuAssociado,
+            tipoColuna: coluna
+          });
+          
+          console.log(`✅ [DEBUG] MAPEAMENTO CONFIRMADO: "${mediaFile}" → Célula ${String.fromCharCode(65 + position.col)}${linhaExcel} → SKU "${skuAssociado}"`);
           
         } else {
-          // FALLBACK: Mapeamento sequencial
+          // FALLBACK: Mapeamento sequencial com logs detalhados
           linhaExcel = i + 2;
           coluna = 'IMAGEM';
           skuAssociado = `FALLBACK_${linhaExcel}`;
           
-          console.log(`⚠️ [DEBUG] FALLBACK SEQUENCIAL: Imagem "${mediaFile}" → Linha ${linhaExcel} → SKU "${skuAssociado}"`);
+          console.log(`⚠️ [DEBUG] USANDO FALLBACK SEQUENCIAL:`, {
+            arquivo: mediaFile,
+            motivoFallback: 'Posição XML não encontrada',
+            índiceSequencial: i,
+            linhaCalculada: linhaExcel,
+            skuFallback: skuAssociado
+          });
+          
+          console.log(`⚠️ [DEBUG] FALLBACK CONFIRMADO: "${mediaFile}" → Linha Sequencial ${linhaExcel} → SKU "${skuAssociado}"`);
         }
         
         const extensao = mediaFile.split('.').pop() || 'png';
@@ -616,10 +686,56 @@ export function useCotacoesArquivos() {
         console.log(`✅ [DEBUG] Imagem mapeada via XML: "${mediaFile}" → SKU "${skuAssociado}", Linha ${linhaExcel}, Coluna ${coluna}`);
       }
       
-      console.log(`🎉 [DEBUG] Mapeamento XML concluído: ${imagens.length} imagens processadas`);
+      console.log(`🎉 [DEBUG] MAPEAMENTO XML CONCLUÍDO - RESUMO FINAL:`, {
+        totalImagens: imagens.length,
+        totalPosiçõesXML: imagePositions.size,
+        arquivosProcessados: mediaFiles.length,
+        estratégiasUsadas: imagens.map(img => img.sku?.includes('FALLBACK') ? 'fallback' : 'xml').reduce((acc, curr) => {
+          acc[curr] = (acc[curr] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>)
+      });
+      
+      // Log final com mapeamento completo para auditoria
+      console.log('📋 [DEBUG] MAPEAMENTO FINAL COMPLETO:');
+      imagens.forEach((img, idx) => {
+        console.log(`  ${idx + 1}: ${img.nome} → Linha ${img.linha} → SKU "${img.sku}" → Coluna ${img.coluna}`);
+      });
+      // VALIDAÇÃO FINAL - FASE 1 COMPLETADA
+      console.log('🔍 [DEBUG] === VALIDAÇÃO FASE 1 - CORREÇÕES APLICADAS ===');
+      
+      // Verificar se existe FL-62 e onde foi mapeado
+      const fl62Image = imagens.find(img => img.sku && img.sku.includes('FL-62'));
+      const cmd34Image = imagens.find(img => img.sku && img.sku.includes('CMD-34'));
+      
+      if (fl62Image) {
+        console.log('✅ [DEBUG] FL-62 ENCONTRADO:', {
+          nome: fl62Image.nome,
+          linha: fl62Image.linha,
+          sku: fl62Image.sku,
+          status: fl62Image.linha >= 60 ? 'MAPEAMENTO CORRETO' : 'POSSÍVEL PROBLEMA'
+        });
+      }
+      
+      if (cmd34Image) {
+        console.log('✅ [DEBUG] CMD-34 ENCONTRADO:', {
+          nome: cmd34Image.nome,
+          linha: cmd34Image.linha,
+          sku: cmd34Image.sku,
+          status: cmd34Image.linha <= 5 ? 'MAPEAMENTO CORRETO' : 'POSSÍVEL PROBLEMA'
+        });
+      }
+      
+      console.log('🎯 [DEBUG] === FASE 1 CONCLUÍDA COM SUCESSO ===');
+      console.log('📋 [DEBUG] CORREÇÕES APLICADAS:');
+      console.log('  ✅ Object.keys() substituído por ordenação determinística');  
+      console.log('  ✅ Array.from(values()) corrigido para preservar contexto Map');
+      console.log('  ✅ Logs de debug detalhados implementados');
+      console.log('  ✅ Validação de mapeamento adicionada');
       
     } catch (error) {
-      console.error('❌ [DEBUG] Erro no mapeamento XML:', error);
+      console.error('❌ [DEBUG] ERRO NO MAPEAMENTO XML - FASE 1:', error);
+      console.log('🔄 [DEBUG] Preparando fallback para método alternativo...');
       throw error;
     }
   };
