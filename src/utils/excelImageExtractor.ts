@@ -50,67 +50,42 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
 
     const drawingsXml = await drawingsFile.async('text');
     
-    // 4. COLETAR TODAS AS IMAGENS E ORDENAR POR NOME DE ARQUIVO
+    // 4. COLETAR TODAS AS IMAGENS
     const imagensRaw: { filename: string; dados: Uint8Array; ordem: number }[] = [];
+    let ordem = 0;
     
-    const files = Object.entries(mediaFolder.files)
-      .filter(([filename]) => filename.match(/\.(png|jpg|jpeg)$/i))
-      .sort(([a], [b]) => a.localeCompare(b)); // Ordenar por nome do arquivo
-    
-    for (let i = 0; i < files.length; i++) {
-      const [filename, file] = files[i];
-      const imagemDados = await file.async('uint8array');
-      imagensRaw.push({ filename, dados: imagemDados, ordem: i });
+    for (const [filename, file] of Object.entries(mediaFolder.files)) {
+      if (filename.match(/\.(png|jpg|jpeg)$/i)) {
+        const imagemDados = await file.async('uint8array');
+        imagensRaw.push({ filename, dados: imagemDados, ordem });
+        ordem++;
+      }
     }
     
     console.log(`📸 [SEQUENCIAL] ${imagensRaw.length} imagens encontradas`);
 
-    // 5. DETECTAR IMAGENS DUPLICADAS COMPARANDO DADOS BINÁRIOS
-    const hashesImagens = new Map<string, number[]>(); // hash -> array de índices
-    
-    for (let i = 0; i < imagensRaw.length; i++) {
-      const hash = gerarHashImagem(imagensRaw[i].dados);
-      if (!hashesImagens.has(hash)) {
-        hashesImagens.set(hash, []);
-      }
-      hashesImagens.get(hash)!.push(i);
-    }
-
-    // 6. PROCESSAR SEQUENCIALMENTE DA LINHA 2 ATÉ A ÚLTIMA
+    // 5. PROCESSAR SEQUENCIALMENTE DA LINHA 2 ATÉ A ÚLTIMA
     const imagensFinais: ImagemPosicionada[] = [];
-    const imagensUtilizadas = new Set<number>(); // Índices de imagens já utilizadas
     
     for (let linha = 2; linha <= ultimaLinhaComDados; linha++) {
       const indiceImagem = linha - 2; // Linha 2 = imagem índice 0
-      const sku = extrairSkuDaLinha(dados, linha);
       
-      if (indiceImagem < imagensRaw.length && !imagensUtilizadas.has(indiceImagem)) {
+      if (indiceImagem < imagensRaw.length) {
         const imagem = imagensRaw[indiceImagem];
-        const hash = gerarHashImagem(imagem.dados);
-        const indicesDuplicados = hashesImagens.get(hash) || [];
-        
-        // Se a imagem é duplicada, pular esta linha
-        if (indicesDuplicados.length > 1) {
-          console.log(`⚠️ [SEQUENCIAL] Linha ${linha} → SKU: ${sku || 'SEM_SKU'} → Imagem duplicada detectada, pulando...`);
-          continue;
-        }
-        
+        const sku = extrairSkuDaLinha(dados, linha);
         const nomeImagem = sku ? `${sku}.png` : `LINHA_${linha}.png`;
         
         imagensFinais.push({
           nome: nomeImagem,
           dados: imagem.dados,
           linha: linha,
-          coluna: 2,
+          coluna: 2, // Assumindo coluna B (índice 2)
           sku: sku
         });
 
-        imagensUtilizadas.add(indiceImagem);
         console.log(`📸 [SEQUENCIAL] Linha ${linha} → SKU: ${sku || 'SEM_SKU'} → ${nomeImagem}`);
-      } else if (indiceImagem < imagensRaw.length && imagensUtilizadas.has(indiceImagem)) {
-        console.log(`⚠️ [SEQUENCIAL] Linha ${linha} → SKU: ${sku || 'SEM_SKU'} → Imagem já utilizada, pulando...`);
       } else {
-        console.log(`⚠️ [SEQUENCIAL] Linha ${linha} → SKU: ${sku || 'SEM_SKU'} → Sem imagem correspondente`);
+        console.log(`⚠️ [SEQUENCIAL] Linha ${linha}: sem imagem correspondente (${indiceImagem + 1}ª imagem não existe)`);
       }
     }
 
@@ -211,22 +186,4 @@ const uint8ArrayToBase64 = (dados: Uint8Array): string => {
     binary += String.fromCharCode(dados[i]);
   }
   return btoa(binary);
-};
-
-// FUNÇÃO PARA GERAR HASH SIMPLES DE UMA IMAGEM
-const gerarHashImagem = (dados: Uint8Array): string => {
-  // Gera um hash simples baseado no tamanho e primeiros/últimos bytes
-  const tamanho = dados.length;
-  const inicio = dados.slice(0, Math.min(100, tamanho));
-  const fim = dados.slice(Math.max(0, tamanho - 100));
-  
-  let hash = tamanho.toString();
-  for (let i = 0; i < inicio.length; i++) {
-    hash += inicio[i].toString(16);
-  }
-  for (let i = 0; i < fim.length; i++) {
-    hash += fim[i].toString(16);
-  }
-  
-  return hash;
 };
