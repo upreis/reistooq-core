@@ -17,9 +17,15 @@ interface ImagemProcessada {
   url: string;
 }
 
-// FUNÇÃO PRINCIPAL - EXTRAÇÃO SEQUENCIAL LINHA POR LINHA
+interface PosicaoImagem {
+  linha: number;
+  coluna: number;
+  nomeArquivo: string;
+}
+
+// FUNÇÃO PRINCIPAL - EXTRAÇÃO POR POSICIONAMENTO XML
 export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosicionada[]> => {
-  console.log('🔍 [SEQUENCIAL] Iniciando extração sequencial linha por linha...');
+  console.log('🔍 [XML] Iniciando extração por posicionamento XML...');
   
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -33,72 +39,83 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
     
     // 2. DETERMINAR ÚLTIMA LINHA COM DADOS
     const ultimaLinhaComDados = determinarUltimaLinhaComDados(dados);
-    console.log(`📊 [SEQUENCIAL] Dados: ${dados.length} linhas, última com dados: ${ultimaLinhaComDados}`);
+    console.log(`📊 [XML] Dados: ${dados.length} linhas, última com dados: ${ultimaLinhaComDados}`);
 
-    // 3. EXTRAIR IMAGENS E SUAS POSIÇÕES
+    // 3. EXTRAIR IMAGENS DA PASTA MEDIA
     const mediaFolder = zip.folder('xl/media');
     if (!mediaFolder) {
-      console.log('❌ [SEQUENCIAL] Pasta de mídia não encontrada');
+      console.log('❌ [XML] Pasta de mídia não encontrada');
       return [];
     }
 
     const drawingsFile = zip.file('xl/drawings/drawing1.xml');
     if (!drawingsFile) {
-      console.log('❌ [SEQUENCIAL] Arquivo de desenhos não encontrado');
+      console.log('❌ [XML] Arquivo de desenhos não encontrado');
       return [];
     }
 
     const drawingsXml = await drawingsFile.async('text');
     
-    // 4. COLETAR TODAS AS IMAGENS
-    const imagensRaw: { filename: string; dados: Uint8Array; ordem: number }[] = [];
-    let ordem = 0;
+    // 4. EXTRAIR IMAGENS E INDEXAR POR NOME E ORDEM
+    const imagensDisponiveis = new Map<string, Uint8Array>();
+    const imagensOrdenadas: string[] = [];
     
     for (const [filename, file] of Object.entries(mediaFolder.files)) {
       if (filename.match(/\.(png|jpg|jpeg)$/i)) {
         const imagemDados = await file.async('uint8array');
-        imagensRaw.push({ filename, dados: imagemDados, ordem });
-        ordem++;
+        imagensDisponiveis.set(filename, imagemDados);
+        imagensOrdenadas.push(filename);
       }
     }
     
-    console.log(`📸 [SEQUENCIAL] ${imagensRaw.length} imagens encontradas`);
+    // Ordenar por nome para ter ordem consistente
+    imagensOrdenadas.sort();
+    console.log(`📸 [XML] ${imagensDisponiveis.size} imagens encontradas: ${imagensOrdenadas.join(', ')}`);
 
-    // 5. PROCESSAR SEQUENCIALMENTE DA LINHA 2 ATÉ A ÚLTIMA
+    // 5. PROCESSAR XML PARA EXTRAIR POSIÇÕES DAS IMAGENS
+    const posicoesImagens = extrairPosicoesDoXML(drawingsXml, imagensOrdenadas);
+    console.log(`🎯 [XML] ${posicoesImagens.length} posições de imagens encontradas no XML`);
+
+    // 6. MAPEAR IMAGENS POR POSIÇÃO REAL
     const imagensFinais: ImagemPosicionada[] = [];
     
-    for (let linha = 2; linha <= ultimaLinhaComDados; linha++) {
-      const indiceImagem = linha - 2; // Linha 2 = imagem índice 0
-      const sku = extrairSkuDaLinha(dados, linha);
+    for (const posicao of posicoesImagens) {
+      const { linha, coluna, nomeArquivo } = posicao;
       
-      // Verifica se existe SKU na linha (linha com dados)
-      if (!sku) {
-        console.log(`⚠️ [SEQUENCIAL] Linha ${linha}: sem SKU, pulando linha`);
+      // Verifica se a linha está dentro do range de dados
+      if (linha < 2 || linha > ultimaLinhaComDados) {
+        console.log(`⚠️ [XML] Imagem na linha ${linha} fora do range de dados (2-${ultimaLinhaComDados})`);
         continue;
       }
       
-      // Verifica se existe imagem correspondente na posição sequencial
-      if (indiceImagem < imagensRaw.length) {
-        const imagem = imagensRaw[indiceImagem];
-        const nomeImagem = `${sku}.png`;
-        
-        imagensFinais.push({
-          nome: nomeImagem,
-          dados: imagem.dados,
-          linha: linha,
-          coluna: 2, // Assumindo coluna B (índice 2)
-          sku: sku
-        });
-
-        console.log(`📸 [SEQUENCIAL] Linha ${linha} → SKU: ${sku} → ${nomeImagem} ✅`);
-      } else {
-        // Linha tem SKU mas não tem imagem correspondente - PULA sem adicionar imagem
-        console.log(`⚠️ [SEQUENCIAL] Linha ${linha} → SKU: ${sku} → SEM IMAGEM (faltam ${(indiceImagem + 1) - imagensRaw.length} imagens)`);
-        // NÃO adiciona nada ao array, deixa a linha sem imagem
+      // Extrai SKU da linha correspondente
+      const sku = extrairSkuDaLinha(dados, linha);
+      if (!sku) {
+        console.log(`⚠️ [XML] Linha ${linha}: sem SKU, pulando imagem ${nomeArquivo}`);
+        continue;
       }
+      
+      // Verifica se a imagem existe
+      const dadosImagem = imagensDisponiveis.get(nomeArquivo);
+      if (!dadosImagem) {
+        console.log(`❌ [XML] Imagem ${nomeArquivo} não encontrada na pasta media`);
+        continue;
+      }
+      
+      const nomeImagem = `${sku}.png`;
+      
+      imagensFinais.push({
+        nome: nomeImagem,
+        dados: dadosImagem,
+        linha: linha,
+        coluna: coluna,
+        sku: sku
+      });
+
+      console.log(`📸 [XML] Linha ${linha}, Coluna ${coluna} → SKU: ${sku} → ${nomeImagem} ✅`);
     }
 
-    console.log(`✅ [SEQUENCIAL] ${imagensFinais.length} imagens processadas sequencialmente`);
+    console.log(`✅ [XML] ${imagensFinais.length} imagens processadas por posicionamento XML`);
     return imagensFinais;
 
   } catch (error) {
@@ -121,8 +138,70 @@ const determinarUltimaLinhaComDados = (dados: any[][]): number => {
   return 2;
 };
 
-// FUNÇÃO AUXILIAR - EXTRAIR POSIÇÃO ÚNICA (removida - não mais necessária)
-// A nova abordagem sequencial não depende mais do mapeamento XML de posições
+// FUNÇÃO AUXILIAR - EXTRAIR POSIÇÕES DO XML DE DRAWINGS
+const extrairPosicoesDoXML = (xmlContent: string, imagensOrdenadas: string[]): PosicaoImagem[] => {
+  console.log('🔍 [XML] Iniciando parse do XML de drawings...');
+  
+  const posicoes: PosicaoImagem[] = [];
+  
+  try {
+    // Parse básico do XML para encontrar elementos xdr:twoCellAnchor
+    const twoCellAnchorRegex = /<xdr:twoCellAnchor[^>]*>([\s\S]*?)<\/xdr:twoCellAnchor>/g;
+    let match;
+    
+    while ((match = twoCellAnchorRegex.exec(xmlContent)) !== null) {
+      const anchorContent = match[1];
+      
+      // Extrair posição "from" (onde a imagem começa)
+      const fromMatch = /<xdr:from>([\s\S]*?)<\/xdr:from>/.exec(anchorContent);
+      if (!fromMatch) continue;
+      
+      const fromContent = fromMatch[1];
+      
+      // Extrair coluna e linha
+      const colMatch = /<xdr:col>(\d+)<\/xdr:col>/.exec(fromContent);
+      const rowMatch = /<xdr:row>(\d+)<\/xdr:row>/.exec(fromContent);
+      
+      if (!colMatch || !rowMatch) continue;
+      
+      const coluna = parseInt(colMatch[1]) + 1; // +1 porque XML usa índice 0
+      const linha = parseInt(rowMatch[1]) + 1;  // +1 porque XML usa índice 0
+      
+      // Usar imagem da lista ordenada baseada na posição sequencial
+      // Como as imagens no XML aparecem na mesma ordem que na pasta media
+      const indiceImagem = posicoes.length;
+      let nomeArquivo = '';
+      
+      if (indiceImagem < imagensOrdenadas.length) {
+        nomeArquivo = imagensOrdenadas[indiceImagem];
+      } else {
+        // Fallback: tentar extrair do XML mesmo assim
+        const embedMatch = /<a:blip\s+r:embed="([^"]+)"/.exec(anchorContent);
+        if (embedMatch) {
+          const embedId = embedMatch[1];
+          nomeArquivo = `image${embedId.replace(/\D/g, '')}.png`;
+        } else {
+          nomeArquivo = `image${indiceImagem + 1}.png`;
+        }
+      }
+      
+      posicoes.push({
+        linha,
+        coluna,
+        nomeArquivo
+      });
+      
+      console.log(`🎯 [XML] Encontrada imagem na linha ${linha}, coluna ${coluna} → ${nomeArquivo}`);
+    }
+    
+    console.log(`✅ [XML] Total de ${posicoes.length} posições extraídas do XML`);
+    return posicoes;
+    
+  } catch (error) {
+    console.error('❌ [XML] Erro ao processar XML:', error);
+    return [];
+  }
+};
 
 // FUNÇÃO AUXILIAR - EXTRAIR SKU DA LINHA (COLUNA A)
 const extrairSkuDaLinha = (dados: any[][], linha: number): string | null => {
