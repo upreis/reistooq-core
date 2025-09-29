@@ -367,23 +367,13 @@ export function useCotacoesArquivos() {
       // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
       console.log('📊 [DEBUG] Total de imagens encontradas no ZIP:', todosArquivosImagem.length);
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
-      console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem natural do ZIP):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
-      // IMPORTANTE: Ordenar arquivos para garantir a sequência correta
-      // Os arquivos podem vir em ordem aleatória do ZIP
-      todosArquivosImagem.sort((a, b) => {
-        // Extrair números dos nomes dos arquivos para ordenação
-        const numA = parseInt(a.match(/\d+/)?.[0] || '0');
-        const numB = parseInt(b.match(/\d+/)?.[0] || '0');
-        return numA - numB;
-      });
+      console.log('📊 [DEBUG] Mapeamento direto sequencial iniciado - ORDEM NATURAL DO ZIP');
       
-      console.log('📊 [DEBUG] Arquivos ORDENADOS:', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
-      console.log('📊 [DEBUG] Mapeamento direto sequencial iniciado');
-      
-      // CORREÇÃO SIMPLES E DIRETA: Mapeamento 1:1 sequencial
-      // Primeira imagem → Linha 2 do Excel → Primeiro produto
-      // Segunda imagem → Linha 3 do Excel → Segundo produto, etc.
+      // CORREÇÃO FINAL: Mapeamento 1:1 sequencial SEM ORDENAÇÃO
+      // Mantém a ordem exata do ZIP que reflete a ordem real do Excel
+      // Se célula do Excel está vazia, linha do sistema também fica vazia
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -395,16 +385,26 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-        // MAPEAMENTO SIMPLES: Imagem sequencial para linha sequencial
+        // MAPEAMENTO DIRETO: Ordem natural do ZIP = Ordem real do Excel
         const linhaExcel = i + 2; // Linha 2, 3, 4... (linha 1 = cabeçalho)
         
-        // CORREÇÃO: Buscar SKU na linha correta considerando o range
-        const skuAddress = XLSX.utils.encode_cell({ r: range.s.r + 1 + i, c: 0 }); // range.s.r + 1 = primeira linha de dados
-        const skuCell = worksheet[skuAddress];
-        const skuAssociado = skuCell ? String(skuCell.v) : `LINHA_${linhaExcel}`;
-        const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
+        // Verificar se realmente existe dados nesta linha no Excel
+        const skuAddress = XLSX.utils.encode_cell({ r: range.s.r + 1 + i, c: 0 });
+        const imagemAddress = XLSX.utils.encode_cell({ r: range.s.r + 1 + i, c: colunaImagemIndex || 1 });
         
-        console.log(`✅ [DEBUG] MAPEAMENTO CORRIGIDO: Imagem ${i} → Linha Excel ${linhaExcel} → Endereço ${skuAddress} → SKU "${skuAssociado}"`);
+        const skuCell = worksheet[skuAddress];
+        const imagemCell = worksheet[imagemAddress];
+        
+        // Se não há SKU nesta linha, pular (linha vazia no Excel)
+        if (!skuCell || !skuCell.v) {
+          console.log(`⚠️ [DEBUG] Linha ${linhaExcel} está vazia no Excel, pulando imagem ${i}`);
+          continue;
+        }
+        
+        const skuAssociado = String(skuCell.v);
+        const coluna = 'IMAGEM';
+        
+        console.log(`✅ [DEBUG] MAPEAMENTO NATURAL: Imagem ${i} → Linha Excel ${linhaExcel} → SKU "${skuAssociado}" → Célula ${imagemAddress}`);
         
         const extensao = mediaFile.split('.').pop() || 'png';
         const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
@@ -449,7 +449,7 @@ export function useCotacoesArquivos() {
       // Estimar número de imagens baseado no tamanho (heurística)
       const estimatedImages = Math.min(Math.floor(fileSize / (50 * 1024)), 50); // Max 50 imagens
       
-        // CORREÇÃO: Criar imagens de placeholder apenas para coluna IMAGEM por enquanto
+        // CORREÇÃO: Criar imagens de placeholder SEM reordenação - ordem natural para coluna IMAGEM
         for (let i = 0; i < estimatedImages; i++) {
           const linha = i + 2; // Cada imagem vai para uma linha sequencial (começando linha 2)
           const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
@@ -539,9 +539,9 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 8);
               const imageBlob = new Blob([imageData], { type: 'image/png' });
               
-               // CORREÇÃO: Mapear sequencialmente para coluna IMAGEM apenas
-               const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
-               const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
+        // CORREÇÃO: Mapear sequencialmente SEM reordenação - ordem natural
+        const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
+        const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
               
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.png`,
@@ -568,7 +568,7 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 2);
               const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
               
-               // CORREÇÃO: Mapear sequencialmente para coluna IMAGEM apenas
+               // CORREÇÃO: Mapear sequencialmente SEM reordenação - ordem natural
                const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
                const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
               
