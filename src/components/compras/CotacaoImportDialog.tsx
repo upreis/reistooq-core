@@ -197,6 +197,11 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
 
       // Processando produto local com DEBUG
       console.log('⚙️ Processando dados e associando imagens...');
+      console.log('🔍 [DEBUG_CRITICAL] Antes de chamar processarDados:');
+      console.log('🔍 [DEBUG_CRITICAL] - Total dados:', dados.length);
+      console.log('🔍 [DEBUG_CRITICAL] - Total imagensUpload:', imagensUpload.length);
+      console.log('🔍 [DEBUG_CRITICAL] - Primeira imagem:', imagensUpload[0]);
+      
       let dadosProcessados = [];
       
       try {
