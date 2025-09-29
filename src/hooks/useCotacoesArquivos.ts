@@ -448,12 +448,25 @@ export function useCotacoesArquivos() {
       };
       
       // ASSOCIAÇÃO PRIORITÁRIA DE IMAGENS POR SKU
-      console.log(`🔍 [AUDIT] Produto ${index + 1}: sku=${produtoMapeado.sku}`);
+      console.log(`🔍 [AUDIT] Produto ${index + 1}: sku="${produtoMapeado.sku}"`);
       
-      // 1ª PRIORIDADE: Associação por SKU (sistema completo)
+      // 1ª PRIORIDADE: Associação por SKU (sistema melhorado)
       const imagensPorSku = imagensUpload.filter(img => {
-        const skuMatch = img.sku && img.sku.toLowerCase() === produtoMapeado.sku.toLowerCase();
-        console.log(`🔍 [SKU_CHECK] Comparando imagem sku="${img.sku}" com produto sku="${produtoMapeado.sku}" = ${skuMatch}`);
+        if (!img.sku || !produtoMapeado.sku) return false;
+        
+        const skuImagem = img.sku.toUpperCase().trim();
+        const skuProduto = produtoMapeado.sku.toUpperCase().trim();
+        
+        // Comparações múltiplas para diferentes formatos
+        const matches = [
+          skuImagem === skuProduto,                           // Exata
+          skuImagem.replace(/[-_]/g, '') === skuProduto.replace(/[-_]/g, ''), // Sem separadores
+          skuImagem.includes(skuProduto),                     // SKU produto contido na imagem
+          skuProduto.includes(skuImagem),                     // SKU imagem contido no produto
+        ];
+        
+        const skuMatch = matches.some(match => match);
+        console.log(`🔍 [SKU_CHECK] Imagem="${skuImagem}" vs Produto="${skuProduto}" = ${skuMatch}`);
         return skuMatch;
       });
       

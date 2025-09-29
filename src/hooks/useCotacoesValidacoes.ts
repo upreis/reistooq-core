@@ -193,19 +193,37 @@ export const mapearImagensPorSKU = async (
 export const extrairSKUDoFilename = (filename: string): string | null => {
   const nomeArquivo = filename.split('/').pop() || filename;
   
-  // Padrões para extrair SKU do filename
+  // Remove extensão do arquivo (.jpg, .png, .jpeg, etc.)
+  const nomeBase = nomeArquivo.replace(/\.[^/.]+$/, "");
+  
+  console.log(`🔍 [EXTRAÇÃO] Processando arquivo: "${nomeArquivo}" → base: "${nomeBase}"`);
+  
+  // Padrões melhorados para extrair SKU (ordem de prioridade)
   const padroes = [
-    /^([A-Z]{2,4}-\d+)/i,           // CMD-433, FL-62, IC-22
-    /([A-Z]{2,4}-\d+)/i,           // Qualquer lugar no nome
-    /^(\w{2,10}-\d+)/i,            // Padrão genérico XXXX-123
-    /(\w{2,10}-\d+)/i              // Padrão genérico em qualquer posição
+    // 1. SKU simples no início (SKU123, PROD001, etc.)
+    /^([A-Z0-9]{3,15})$/i,
+    
+    // 2. SKU com hífen/underscore (SKU-123, PROD_001, CMD-433)
+    /^([A-Z]{2,4}[-_]\d+)/i,
+    
+    // 3. SKU no início antes de separador (SKU123-foto, PROD001_img)
+    /^([A-Z0-9]{3,15})[-_.]/i,
+    
+    // 4. Padrão clássico em qualquer lugar (CMD-433, FL-62)
+    /([A-Z]{2,4}-\d+)/i,
+    
+    // 5. Padrão alfanumérico genérico
+    /^([A-Z0-9]{2,10})/i,
+    
+    // 6. Qualquer combinação de letras e números no início
+    /^([A-Z]+\d+)/i
   ];
   
   for (const padrao of padroes) {
-    const match = nomeArquivo.match(padrao);
+    const match = nomeBase.match(padrao);
     if (match) {
-      const sku = match[1].toUpperCase();
-      console.log(`🔍 [EXTRAÇÃO] "${nomeArquivo}" → SKU: "${sku}"`);
+      const sku = match[1].toUpperCase().replace(/[-_]/g, '-'); // Normalizar separadores
+      console.log(`✅ [EXTRAÇÃO] "${nomeArquivo}" → SKU encontrado: "${sku}"`);
       return sku;
     }
   }
