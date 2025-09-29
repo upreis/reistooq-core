@@ -1,12 +1,18 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import React from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 // Verificação de segurança para React
-if (!React || typeof React.useState !== 'function') {
-  console.error('🚨 CRITICAL: React or useState not available!', { React: typeof React, useState: typeof React?.useState });
-  throw new Error('React not properly loaded');
+if (!React || typeof React.useState !== 'function' || typeof React.useEffect !== 'function' || typeof React.useContext !== 'function' || typeof React.createContext !== 'function') {
+  console.error('🚨 CRITICAL: React hooks not available!', { 
+    React: typeof React, 
+    useState: typeof React?.useState,
+    useEffect: typeof React?.useEffect,
+    useContext: typeof React?.useContext,
+    createContext: typeof React?.createContext
+  });
+  // Não lançar erro aqui para permitir fallback
 }
 
 interface AuthContextType {
@@ -18,7 +24,7 @@ interface AuthContextType {
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = React.createContext<AuthContextType>({
   user: null,
   session: null,
   signIn: async () => ({ error: new Error('AuthContext não inicializado') }),
@@ -27,16 +33,17 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   console.log('🔧 AuthProvider: Starting render...', { 
     React: typeof React, 
-    useState: typeof useState,
+    useState: typeof React?.useState,
+    useEffect: typeof React?.useEffect,
     children: !!children 
   });
 
   // Verificação adicional de segurança antes de usar hooks
-  if (typeof useState !== 'function') {
-    console.error('🚨 useState não está disponível no AuthProvider!');
+  if (!React || typeof React.useState !== 'function' || typeof React.useEffect !== 'function') {
+    console.error('🚨 React hooks não estão disponíveis no AuthProvider!');
     return (
       <div style={{
         minHeight: '100vh',
@@ -48,8 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         fontFamily: 'system-ui, sans-serif'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <h1>🚨 Erro de Hook</h1>
-          <p>useState não está disponível</p>
+          <h1>🚨 Erro de Hook no Auth</h1>
+          <p>React hooks não estão disponíveis</p>
           <button onClick={() => window.location.reload()}>Recarregar</button>
         </div>
       </div>
@@ -57,13 +64,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   try {
-    const [user, setUser] = useState<User | null>(null);
-    const [session, setSession] = useState<Session | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [user, setUser] = React.useState<User | null>(null);
+    const [session, setSession] = React.useState<Session | null>(null);
+    const [loading, setLoading] = React.useState(true);
 
     console.log('🔧 AuthProvider: State initialized successfully');
 
-    useEffect(() => {
+    React.useEffect(() => {
       console.log('🔧 AuthProvider: useEffect starting...');
       // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -189,7 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
+  const context = React.useContext(AuthContext);
   if (context === undefined) {
     console.warn('useAuth usado fora do AuthProvider - usando valores padrão');
     return {

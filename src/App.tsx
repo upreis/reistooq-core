@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,14 +15,15 @@ import FullLayout from "@/layouts/full/FullLayout";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
 
-// Verificação crítica de React
+// Verificação crítica de React - antes de importar outros módulos
+console.log('🔧 React check:', { React: typeof React, ReactUseEffect: typeof React?.useEffect });
+
 if (!React || typeof React.useEffect !== 'function') {
-  console.error('🚨 CRITICAL: React or useEffect not available in App!', { 
+  console.error('🚨 CRITICAL: React or React.useEffect not available!', { 
     React: typeof React, 
-    useEffect: typeof React?.useEffect,
-    useEffectImport: typeof useEffect
+    ReactUseEffect: typeof React?.useEffect
   });
-  throw new Error('React not properly loaded in App component');
+  // Não lançar erro aqui para permitir que o componente seja renderizado com fallback
 }
 
 // Import pages
@@ -78,9 +79,9 @@ const queryClient = new QueryClient({
 function App() {
   console.log('🔧 App component rendering...');
   
-  // Verificação crítica de hooks do React
-  if (typeof useEffect !== 'function') {
-    console.error('🚨 useEffect não está disponível no App component!');
+  // Verificação crítica de React no início da função
+  if (!React || typeof React.useEffect !== 'function') {
+    console.error('🚨 React não está disponível no App component!');
     return (
       <div style={{
         minHeight: '100vh',
@@ -92,8 +93,8 @@ function App() {
         fontFamily: 'system-ui, sans-serif'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <h1>🚨 Erro Crítico de Hook</h1>
-          <p>useEffect não está disponível</p>
+          <h1>🚨 Erro Crítico do React</h1>
+          <p>React ou React.useEffect não está disponível</p>
           <button 
             onClick={() => window.location.reload()}
             style={{
@@ -113,11 +114,11 @@ function App() {
     );
   }
   
-  console.log('🔧 React hooks available:', { useEffect: typeof useEffect });
+  console.log('🔧 React hooks available:', { useEffect: typeof React.useEffect });
   
-  // Validar configuração na inicialização - com proteção adicional
+  // Usar React.useEffect ao invés de useEffect destructurado
   try {
-    useEffect(() => {
+    React.useEffect(() => {
       console.log('🔧 App useEffect running...');
       // Simplificado para evitar problemas de inicialização
       if (typeof validateConfig === 'function') {
@@ -133,7 +134,7 @@ function App() {
       }
     }, []);
   } catch (hookError) {
-    console.error('🚨 Error setting up useEffect:', hookError);
+    console.error('🚨 Error setting up React.useEffect:', hookError);
     return (
       <div style={{
         minHeight: '100vh',
@@ -145,7 +146,7 @@ function App() {
         fontFamily: 'system-ui, sans-serif'
       }}>
         <div style={{ textAlign: 'center' }}>
-          <h1>🚨 Erro no useEffect</h1>
+          <h1>🚨 Erro no React.useEffect</h1>
           <p>{hookError?.toString()}</p>
           <button 
             onClick={() => window.location.reload()}
