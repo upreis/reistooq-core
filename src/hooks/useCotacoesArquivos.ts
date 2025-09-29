@@ -211,16 +211,75 @@ export function useCotacoesArquivos() {
         console.log('📄 [SKU_SYSTEM] Arquivo Excel simples detectado (sem ZIP)');
       }
       
-      // Processar dados do Excel
+      // Processar dados do Excel E EXTRAIR IMAGENS EMBUTIDAS
       const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
       const worksheet = workbook.getWorksheet(1);
       
       const dados: any[] = [];
+      let imagensEmbutidas: any[] = [];
+      
       if (worksheet) {
+        // EXTRAIR IMAGENS EMBUTIDAS DO EXCEL
+        console.log('🖼️ [SKU_SYSTEM] Procurando imagens embutidas no Excel...');
+        
+        try {
+          // MÉTODO 1: Tentar usar ExcelJS getImages (pode não existir em todas as versões)
+          if (worksheet.getImages && typeof worksheet.getImages === 'function') {
+            const images = worksheet.getImages();
+            console.log(`📸 [SKU_SYSTEM] Método ExcelJS: ${images.length} imagens encontradas`);
+            
+            images.forEach((image: any, index: number) => {
+              // Processar imagens via ExcelJS
+              console.log(`🖼️ [SKU_SYSTEM] Processando imagem ${index + 1} via ExcelJS`);
+            });
+          } else {
+            console.log('⚠️ [SKU_SYSTEM] Método ExcelJS não disponível, tentando extração manual...');
+          }
+          
+          // MÉTODO 2: Extração manual via ZIP do Excel
+          if (zip && imagensEmbutidas.length === 0) {
+            console.log('🔍 [SKU_SYSTEM] Procurando imagens na estrutura interna do Excel ZIP...');
+            
+            // Excel armazena imagens em xl/media/
+            const xlMediaFiles = Object.keys(zip.files).filter(filename => 
+              filename.startsWith('xl/media/') && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename)
+            );
+            
+            if (xlMediaFiles.length > 0) {
+              console.log(`📁 [SKU_SYSTEM] ${xlMediaFiles.length} imagens encontradas em xl/media/`);
+              
+              for (let i = 0; i < xlMediaFiles.length; i++) {
+                const mediaFile = xlMediaFiles[i];
+                const zipFile = zip.files[mediaFile];
+                
+                if (zipFile) {
+                  const blob = await zipFile.async('blob');
+                  const linha = i + 2; // Assumir que imagens correspondem às linhas sequencialmente
+                  
+                  imagensEmbutidas.push({
+                    nome: `imagem_excel_${i + 1}.jpg`,
+                    blob: blob,
+                    linha: linha,
+                    coluna: 'IMAGEM',
+                    sku: null
+                  });
+                  
+                  console.log(`📷 [SKU_SYSTEM] Imagem ${i + 1} extraída: ${mediaFile}`);
+                }
+              }
+            } else {
+              console.log('📝 [SKU_SYSTEM] Nenhuma imagem encontrada na estrutura xl/media/');
+            }
+          }
+        } catch (error) {
+          console.log('⚠️ [SKU_SYSTEM] Erro ao extrair imagens embutidas:', error);
+          console.log('💡 [SKU_SYSTEM] Dica: Para melhor suporte a imagens, salve o Excel como ZIP com imagens nomeadas por SKU');
+        }
+        
         // CONSTRUIR MAPA SKU → LINHAS se houver imagens
-        if (mediaFiles.length > 0) {
+        if (imagensEmbutidas.length > 0 || mediaFiles.length > 0) {
           console.log('🗺️ [SKU_SYSTEM] Construindo mapa SKU → Linhas para processamento de imagens');
           skuProcessor.construirMapaSkuLinhas(worksheet);
         }
@@ -250,28 +309,53 @@ export function useCotacoesArquivos() {
       
       console.log('✅ [SKU_SYSTEM] Dados do Excel extraídos:', dados.length);
       
-      // Processar imagens SE HOUVER
+      // PROCESSAR IMAGENS (ZIP + Embutidas)
       let imagens: any[] = [];
+      
+      // 1. Processar imagens do ZIP se houver
       if (zip && mediaFiles.length > 0) {
-        console.log('🖼️ [SKU_SYSTEM] Processando imagens por SKU...');
+        console.log('🖼️ [SKU_SYSTEM] Processando imagens do ZIP por SKU...');
         const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
         
-        console.log('✅ [SKU_SYSTEM] Processamento de imagens concluído:', {
+        console.log('✅ [SKU_SYSTEM] Processamento de imagens ZIP concluído:', {
           imagensProcessadas: resultado.imagensProcessadas.length,
           rejeitadas: resultado.rejeitadas.length,
           renomeadas: resultado.renomeadasCount
         });
         
         // Mapear para formato esperado
-        imagens = resultado.imagensProcessadas.map(img => ({
+        const imagensZip = resultado.imagensProcessadas.map(img => ({
           nome: img.arquivoRenomeado,
           blob: img.blob,
           linha: img.linha,
           coluna: 'IMAGEM',
           sku: img.sku
         }));
-      } else {
-        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para processar');
+        
+        imagens = [...imagens, ...imagensZip];
+      }
+      
+      // 2. Processar imagens embutidas do Excel
+      if (imagensEmbutidas.length > 0) {
+        console.log('🖼️ [SKU_SYSTEM] Associando imagens embutidas do Excel por linha...');
+        
+        // Associar SKUs às imagens embutidas baseado na linha
+        const imagensComSku = imagensEmbutidas.map(img => {
+          // Encontrar SKU da linha correspondente
+          const produtoData = dados[img.linha - 2]; // -2 porque linha 1 = cabeçalho, linha 2 = dados[0]
+          const sku = produtoData?.SKU || produtoData?.sku || `PROD-${img.linha}`;
+          
+          return {
+            nome: `${sku}-embutida.jpg`,
+            blob: img.blob,
+            linha: img.linha,
+            coluna: img.coluna,
+            sku: sku
+          };
+        });
+        
+        console.log(`✅ [SKU_SYSTEM] ${imagensComSku.length} imagens embutidas associadas por linha`);
+        imagens = [...imagens, ...imagensComSku];
       }
       
       return { dados, imagens };
