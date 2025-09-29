@@ -26,6 +26,36 @@ interface CotacaoArquivo {
   updated_at?: string;
 }
 
+// Função auxiliar para detectar imagem na célula
+const temImagemNacelula = (cell: any): boolean => {
+  return cell.model?.value?.richText || 
+         cell.model?.value?.formula || 
+         (cell.value && typeof cell.value === 'object');
+};
+
+// FUNÇÃO PARA DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
+const detectarPosicaoImagem = (worksheet: any, mediaFile: string, index: number) => {
+  // Iterar pelas células para encontrar onde a imagem está
+  for (let rowNum = 2; rowNum <= worksheet.rowCount; rowNum++) {
+    const row = worksheet.getRow(rowNum);
+    
+    // Verificar coluna B (IMAGEM)
+    const cellB = row.getCell(2);
+    if (cellB.model?.value?.hyperlink || temImagemNacelula(cellB)) {
+      return { linha: rowNum, coluna: 'IMAGEM' };
+    }
+    
+    // Verificar coluna C (IMAGEM_FORNECEDOR)  
+    const cellC = row.getCell(3);
+    if (cellC.model?.value?.hyperlink || temImagemNacelula(cellC)) {
+      return { linha: rowNum, coluna: 'IMAGEM_FORNECEDOR' };
+    }
+  }
+  
+  // Fallback: usar ordem sequencial apenas se não encontrar
+  return { linha: index + 2, coluna: 'IMAGEM' };
+};
+
 export function useCotacoesArquivos() {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -256,13 +286,15 @@ export function useCotacoesArquivos() {
                 
                 if (zipFile) {
                   const blob = await zipFile.async('blob');
-                  const linha = i + 2; // Assumir que imagens correspondem às linhas sequencialmente
+                  
+                  // DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
+                  const imagemInfo = detectarPosicaoImagem(worksheet, mediaFile, i);
                   
                   imagensEmbutidas.push({
                     nome: `imagem_excel_${i + 1}.jpg`,
                     blob: blob,
-                    linha: linha,
-                    coluna: 'IMAGEM',
+                    linha: imagemInfo.linha,
+                    coluna: imagemInfo.coluna,
                     sku: null
                   });
                   
@@ -447,37 +479,55 @@ export function useCotacoesArquivos() {
         imagem_fornecedor: ''
       };
       
-      // ASSOCIAÇÃO PRIORITÁRIA DE IMAGENS POR SKU
-      console.log(`🔍 [AUDIT] Produto ${index + 1}: sku="${produtoMapeado.sku}"`);
+      // LOGS DETALHADOS PARA DEBUG
+      console.log(`🔍 AUDIT: Produto ${index + 1}:`);
+      console.log(`  - SKU: ${produtoMapeado.sku}`);
+      console.log(`  - Linha Excel: ${index + 2}`);
+      console.log(`  - Imagens encontradas: ${imagensUpload.length}`);
       
-      // 1ª PRIORIDADE: Associação por SKU (sistema melhorado)
+      imagensUpload.forEach((img, i) => {
+        console.log(`  - Imagem ${i + 1}: SKU=${img.sku}, Linha=${img.linha}, Coluna=${img.coluna}`);
+      });
+      
+      // VALIDAÇÃO DUPLA: POSIÇÃO + SKU
       const imagensPorSku = imagensUpload.filter(img => {
         if (!img.sku || !produtoMapeado.sku) return false;
         
         const skuImagem = img.sku.toUpperCase().trim();
         const skuProduto = produtoMapeado.sku.toUpperCase().trim();
+        const linhaEsperada = index + 2;
         
-        // Comparações múltiplas para diferentes formatos
-        const matches = [
-          skuImagem === skuProduto,                           // Exata
-          skuImagem.replace(/[-_]/g, '') === skuProduto.replace(/[-_]/g, ''), // Sem separadores
-          skuImagem.includes(skuProduto),                     // SKU produto contido na imagem
-          skuProduto.includes(skuImagem),                     // SKU imagem contido no produto
-        ];
+        // Comparações de SKU
+        const skuMatch = skuImagem === skuProduto || 
+                        skuImagem.replace(/[-_]/g, '') === skuProduto.replace(/[-_]/g, '');
+        const linhaMatch = img.linha === linhaEsperada;
         
-        const skuMatch = matches.some(match => match);
-        console.log(`🔍 [SKU_CHECK] Imagem="${skuImagem}" vs Produto="${skuProduto}" = ${skuMatch}`);
-        return skuMatch;
+        // Priorizar match de SKU, mas validar linha também
+        if (skuMatch && linhaMatch) {
+          console.log(`✅ MATCH PERFEITO: SKU=${img.sku} na linha correta ${img.linha}`);
+          return true;
+        } else if (skuMatch && !linhaMatch) {
+          console.warn(`⚠️ SKU correto mas linha errada: ${img.sku} esperado linha ${linhaEsperada}, encontrado ${img.linha}`);
+          return false; // Rejeitar se linha não bate
+        }
+        
+        return false;
       });
       
+      console.log(`  - Matches por SKU: ${imagensPorSku.length}`);
+      
+      // SEPARAR COLUNAS CORRETAMENTE
       if (imagensPorSku.length > 0) {
-        produtoMapeado.imagem = imagensPorSku[0].url;
-        if (imagensPorSku[1]) {
-          produtoMapeado.imagem_fornecedor = imagensPorSku[1].url;
-        }
+        imagensPorSku.forEach(img => {
+          if (img.coluna === 'IMAGEM') {
+            produtoMapeado.imagem = img.url;
+          } else if (img.coluna === 'IMAGEM_FORNECEDOR') {
+            produtoMapeado.imagem_fornecedor = img.url;
+          }
+        });
         console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorSku.length} imagem(ns) associada(s) por SKU MATCH`);
       } else {
-        // 2ª PRIORIDADE: Associação por linha (fallback para imagens embutidas)
+        // 2ª PRIORIDADE: Associação por linha (fallback apenas para casos especiais)
         const imagensPorLinha = imagensUpload.filter(img => img.linha === (index + 2)); // +2 porque linha 1 = header
         
         if (imagensPorLinha.length > 0) {
