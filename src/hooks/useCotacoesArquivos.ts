@@ -192,11 +192,26 @@ export function useCotacoesArquivos() {
     file: File
   ) => {
     try {
-      console.log('🎯 [SIMPLE] Iniciando processamento básico de arquivo');
+      console.log('🎯 [SKU_SYSTEM] Iniciando processamento completo com extração de imagens');
       
       const arrayBuffer = await file.arrayBuffer();
       
-      // SIMPLIFICADO: Processar apenas dados do Excel sem imagens por enquanto
+      // Verificar se é arquivo ZIP (com imagens) ou Excel simples
+      let zip: any = null;
+      let mediaFiles: string[] = [];
+      
+      try {
+        const JSZip = (await import('jszip')).default;
+        zip = await JSZip.loadAsync(arrayBuffer);
+        mediaFiles = Object.keys(zip.files).filter(filename => 
+          /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename) && !filename.startsWith('__MACOSX/')
+        );
+        console.log(`📁 [SKU_SYSTEM] Arquivo ZIP detectado: ${mediaFiles.length} imagens encontradas`);
+      } catch (error) {
+        console.log('📄 [SKU_SYSTEM] Arquivo Excel simples detectado (sem ZIP)');
+      }
+      
+      // Processar dados do Excel
       const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
@@ -204,6 +219,12 @@ export function useCotacoesArquivos() {
       
       const dados: any[] = [];
       if (worksheet) {
+        // CONSTRUIR MAPA SKU → LINHAS se houver imagens
+        if (mediaFiles.length > 0) {
+          console.log('🗺️ [SKU_SYSTEM] Construindo mapa SKU → Linhas para processamento de imagens');
+          skuProcessor.construirMapaSkuLinhas(worksheet);
+        }
+        
         const headers: string[] = [];
         const headerRow = worksheet.getRow(1);
         headerRow.eachCell((cell, colNumber) => {
@@ -227,16 +248,39 @@ export function useCotacoesArquivos() {
         }
       }
       
-      console.log('✅ [SIMPLE] Dados extraídos:', dados.length);
+      console.log('✅ [SKU_SYSTEM] Dados do Excel extraídos:', dados.length);
       
-      // SIMPLIFICADO: Retornar apenas dados sem imagens por enquanto
-      return { dados, imagens: [] };
+      // Processar imagens SE HOUVER
+      let imagens: any[] = [];
+      if (zip && mediaFiles.length > 0) {
+        console.log('🖼️ [SKU_SYSTEM] Processando imagens por SKU...');
+        const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
+        
+        console.log('✅ [SKU_SYSTEM] Processamento de imagens concluído:', {
+          imagensProcessadas: resultado.imagensProcessadas.length,
+          rejeitadas: resultado.rejeitadas.length,
+          renomeadas: resultado.renomeadasCount
+        });
+        
+        // Mapear para formato esperado
+        imagens = resultado.imagensProcessadas.map(img => ({
+          nome: img.arquivoRenomeado,
+          blob: img.blob,
+          linha: img.linha,
+          coluna: 'IMAGEM',
+          sku: img.sku
+        }));
+      } else {
+        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para processar');
+      }
+      
+      return { dados, imagens };
       
     } catch (error) {
-      console.error('❌ [SIMPLE] ERRO no processamento:', error);
+      console.error('❌ [SKU_SYSTEM] ERRO no processamento:', error);
       throw error;
     }
-  }, []);
+  }, [skuProcessor]);
 
   const uploadImagensExtraidas = useCallback(async (
     imagensExtraidas: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
@@ -296,28 +340,44 @@ export function useCotacoesArquivos() {
   }, []);
 
   const processarDados = useCallback((dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
-    console.log('🔄 [SIMPLE] Processamento básico de dados');
-    console.log('🔍 [SIMPLE] Recebidos:', dados.length, 'produtos');
+    console.log('🔄 [SKU_SYSTEM] Processamento completo de dados com imagens');
+    console.log('📊 [SKU_SYSTEM] Dados recebidos:', dados.length);
+    console.log('🖼️ [SKU_SYSTEM] Imagens para associação:', imagensUpload.length);
     
     return dados.map((item, index) => {
-      // MAPEAMENTO SIMPLES DOS CAMPOS
+      // Mapeamento de campos
       const produtoMapeado = {
-        // Campos originais
         ...item,
-        
-        // Mapeamento básico
         sku: item.SKU || item.sku || `PROD-${index + 1}`,
         nome_produto: item.PRODUTO || item.produto || item.nome_produto || '',
         preco: Number(item.PRECO_UNITARIO || item.preco_unitario || item.preco) || 0,
         quantidade: Number(item.QUANTIDADE || item.quantidade) || 1,
         valor_total: Number(item.PRECO_TOTAL || item.preco_total || item.valor_total) || 0,
-        
-        // Campos vazios por enquanto
+        material: item.material || item.Material || '',
+        cor: item.cor || item.Cor || item.COR || '',
+        package: item.package || item.Package || item.PACKAGE || '',
+        unit: item.unit || item.Unit || item.UNIT || 'pc',
+        pcs_ctn: Number(item.pcs_ctn || item.PCS_CTN) || 0,
+        caixas: Number(item.caixas || item.Caixas || item.CAIXAS) || 1,
         imagem: '',
         imagem_fornecedor: ''
       };
       
-      console.log(`✅ [SIMPLE] Produto ${index + 1}: ${produtoMapeado.sku} - ${produtoMapeado.nome_produto}`);
+      // ASSOCIAÇÃO DE IMAGENS POR SKU
+      const imagensPorSku = imagensUpload.filter(img => 
+        img.sku && img.sku === produtoMapeado.sku
+      );
+      
+      if (imagensPorSku.length > 0) {
+        produtoMapeado.imagem = imagensPorSku[0].url;
+        if (imagensPorSku[1]) {
+          produtoMapeado.imagem_fornecedor = imagensPorSku[1].url;
+        }
+        console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorSku.length} imagem(ns) associada(s) por SKU`);
+      } else {
+        console.log(`📝 [SKU_SYSTEM] Produto ${produtoMapeado.sku}: Sem imagens associadas`);
+      }
+      
       return produtoMapeado;
     });
   }, []);

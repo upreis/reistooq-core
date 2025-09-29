@@ -127,14 +127,36 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
       setProgressoUpload(50);
 
-      // Converter imagens para Data URLs para persistir além do reload
+      // Processar imagens se houver
       let imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
       if (imagens.length > 0) {
-        console.log('☁️ [SIMPLE] Processando', imagens.length, 'imagens...');
-        // SIMPLIFICADO: Pular processamento de imagens por enquanto
-        imagensUpload = [];
+        console.log('🖼️ [SKU_SYSTEM] Convertendo imagens processadas para Data URLs...');
+        
+        imagensUpload = await Promise.all(
+          imagens.map(async (img, index) => {
+            console.log(`🔄 [SKU_SYSTEM] Convertendo imagem ${index + 1}: SKU=${img.sku}, linha=${img.linha}`);
+            
+            // Converter blob para data URL para persistir
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(img.blob);
+            });
+            
+            return {
+              nome: img.nome,
+              url: dataUrl,
+              linha: img.linha,
+              coluna: img.coluna,
+              sku: img.sku
+            };
+          })
+        );
+        
+        console.log(`✅ [SKU_SYSTEM] ${imagensUpload.length} imagens convertidas com sucesso!`);
+      } else {
+        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para converter');
       }
-      console.log('✅ [SIMPLE] Sem processamento de imagens por enquanto');
       setProgressoUpload(70);
 
       // Processando produto local com DEBUG
