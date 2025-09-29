@@ -145,7 +145,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           sku: img.sku  // CRÍTICO: Preservar SKU da imagem
         }));
         
-        imagensUpload = await uploadImagensExtraidas(imagensParaUpload, cotacao.id, cotacao.organization_id);
+        imagensUpload = await uploadImagensExtraidas(imagensParaUpload, cotacaoId, organizationId);
         console.log('✅ [SKU_SYSTEM] Upload concluído! Imagens com URLs:', imagensUpload.length);
         
         // Debug: Verificar resultado do upload
