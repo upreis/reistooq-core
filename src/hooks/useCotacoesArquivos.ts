@@ -411,63 +411,194 @@ export function useCotacoesArquivos() {
         }
       }
       
+      // P2.1: Processar cada arquivo de drawing com validação aprimorada
       for (const drawingFile of drawingFiles) {
         try {
           const xmlContent = await zipData.files[drawingFile].async('string');
           console.log(`📄 [DEBUG] Processando ${drawingFile}...`);
           
-          // Parser XML simples para extrair posições
+          // P2.2: Parser XML com validação de erro
           const parser = new DOMParser();
           const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
           
-          // Buscar elementos anchor que definem posições (múltiplos namespaces)
-          const anchors = xmlDoc.querySelectorAll('xdr\\:twoCellAnchor, twoCellAnchor, anchor');
+          // Validar se o XML foi parseado corretamente
+          const parserError = xmlDoc.querySelector('parsererror');
+          if (parserError) {
+            console.warn(`⚠️ [DEBUG] Erro de parsing XML em ${drawingFile}:`, parserError.textContent);
+            continue;
+          }
           
-          console.log(`🔍 [DEBUG] Encontrados ${anchors.length} anchors no XML`);
+          // P2.3: Suporte a múltiplos namespaces XML
+          const namespaceSelectors = [
+            'xdr\\:twoCellAnchor',
+            'twoCellAnchor', 
+            'a\\:twoCellAnchor',
+            'r\\:twoCellAnchor',
+            'w\\:twoCellAnchor',
+            'anchor'
+          ];
+          
+          let anchors: NodeListOf<Element> | null = null;
+          let usedSelector = '';
+          
+          for (const selector of namespaceSelectors) {
+            const foundAnchors = xmlDoc.querySelectorAll(selector);
+            if (foundAnchors.length > 0) {
+              anchors = foundAnchors;
+              usedSelector = selector;
+              break;
+            }
+          }
+          
+          if (!anchors || anchors.length === 0) {
+            console.warn(`⚠️ [DEBUG] Nenhum anchor encontrado em ${drawingFile} usando nenhum dos seletores`);
+            continue;
+          }
+          
+          console.log(`🔍 [DEBUG] Encontrados ${anchors.length} anchors no XML usando seletor: ${usedSelector}`);
           
           anchors.forEach((anchor, index) => {
             try {
-              // Extrair posição "from" (célula inicial)
-              const fromElement = anchor.querySelector('xdr\\:from, from');
-              if (fromElement) {
-                const colElement = fromElement.querySelector('xdr\\:col, col');
-                const rowElement = fromElement.querySelector('xdr\\:row, row');
-                
-                if (colElement && rowElement) {
-                  const col = parseInt(colElement.textContent || '0');
-                  const row = parseInt(rowElement.textContent || '0');
-                  
-                  // Buscar referência da imagem (várias estratégias)
-                  let imageRef = '';
-                  
-                  // Estratégia 1: Buscar blip com r:embed
-                  const blipElement = anchor.querySelector('a\\:blip, blip');
-                  if (blipElement) {
-                    const embed = blipElement.getAttribute('r:embed') || 
-                                  blipElement.getAttribute('embed');
-                    if (embed) {
-                      imageRef = embed;
-                      console.log(`📍 [DEBUG] Encontrado embed ID: ${embed}`);
-                    }
+              // P2.4: Buscar elementos 'from' com múltiplos namespaces
+              const fromSelectors = ['xdr\\:from', 'from', 'a\\:from', 'r\\:from'];
+              let fromElement: Element | null = null;
+              
+              for (const selector of fromSelectors) {
+                fromElement = anchor.querySelector(selector);
+                if (fromElement) break;
+              }
+              
+              if (!fromElement) {
+                console.warn(`⚠️ [DEBUG] Elemento 'from' não encontrado no anchor ${index}`);
+                return;
+              }
+              
+              // P2.5: Buscar col e row com múltiplos namespaces
+              const colSelectors = ['xdr\\:col', 'col', 'a\\:col', 'r\\:col'];
+              const rowSelectors = ['xdr\\:row', 'row', 'a\\:row', 'r\\:row'];
+              
+              let colElement: Element | null = null;
+              let rowElement: Element | null = null;
+              
+              for (const selector of colSelectors) {
+                colElement = fromElement.querySelector(selector);
+                if (colElement) break;
+              }
+              
+              for (const selector of rowSelectors) {
+                rowElement = fromElement.querySelector(selector);
+                if (rowElement) break;
+              }
+              
+              if (!colElement || !rowElement) {
+                console.warn(`⚠️ [DEBUG] Elementos col/row não encontrados no anchor ${index}`);
+                return;
+              }
+              
+              const col = parseInt(colElement.textContent || '0');
+              const row = parseInt(rowElement.textContent || '0');
+              
+              // P2.6: Validar valores de posição
+              if (isNaN(col) || isNaN(row) || col < 0 || row < 0) {
+                console.warn(`⚠️ [DEBUG] Posição inválida no anchor ${index}: col=${col}, row=${row}`);
+                return;
+              }
+              
+              // P2.7: Estratégias aprimoradas para encontrar referência da imagem
+              let imageRef = '';
+              let strategyUsed = '';
+              
+              // Estratégia 1: Buscar blip com múltiplos namespaces
+              const blipSelectors = ['a\\:blip', 'blip', 'xdr\\:blip', 'r\\:blip'];
+              let blipElement: Element | null = null;
+              
+              for (const selector of blipSelectors) {
+                blipElement = anchor.querySelector(selector);
+                if (blipElement) break;
+              }
+              
+              if (blipElement) {
+                const embedAttrs = ['r:embed', 'embed', 'a:embed', 'xdr:embed'];
+                for (const attr of embedAttrs) {
+                  const embed = blipElement.getAttribute(attr);
+                  if (embed) {
+                    imageRef = embed;
+                    strategyUsed = `blip-${attr}`;
+                    console.log(`📍 [DEBUG] Encontrado embed ID: ${embed} usando ${strategyUsed}`);
+                    break;
                   }
-                  
-                  // Estratégia 2: Se não encontrou embed, usar índice
-                  if (!imageRef) {
-                    imageRef = `image_${index}`;
-                  }
-                  
-                  // Buscar arquivo real da imagem se temos mapeamento
-                  const realImageFile = imageIdToFile.get(imageRef);
-                  const finalRef = realImageFile || imageRef;
-                  
-                  imagePositions.set(finalRef, { row, col });
-                  
-                  const cellName = String.fromCharCode(65 + col) + (row + 2);
-                  console.log(`📍 [DEBUG] Imagem "${finalRef}" mapeada para célula ${cellName} (Linha ${row + 2}, Coluna ${col + 1})`);
                 }
               }
+              
+              // Estratégia 2: Buscar por elementos pic ou shape
+              if (!imageRef) {
+                const picSelectors = ['xdr\\:pic', 'pic', 'a\\:pic', 'r\\:pic'];
+                for (const selector of picSelectors) {
+                  const picElement = anchor.querySelector(selector);
+                  if (picElement) {
+                    const nvPicPrSelectors = ['xdr\\:nvPicPr', 'nvPicPr', 'a\\:nvPicPr'];
+                    for (const nvSelector of nvPicPrSelectors) {
+                      const nvPicPr = picElement.querySelector(nvSelector);
+                      if (nvPicPr) {
+                        const cNvPrSelectors = ['xdr\\:cNvPr', 'cNvPr', 'a\\:cNvPr'];
+                        for (const cNvSelector of cNvPrSelectors) {
+                          const cNvPr = nvPicPr.querySelector(cNvSelector);
+                          if (cNvPr) {
+                            const name = cNvPr.getAttribute('name') || cNvPr.getAttribute('title');
+                            if (name) {
+                              imageRef = name;
+                              strategyUsed = `pic-name-${selector}`;
+                              console.log(`📍 [DEBUG] Encontrado nome da imagem: ${name} usando ${strategyUsed}`);
+                              break;
+                            }
+                          }
+                        }
+                        if (imageRef) break;
+                      }
+                    }
+                    if (imageRef) break;
+                  }
+                }
+              }
+              
+              // Estratégia 3: Buscar por atributos de identificação no anchor
+              if (!imageRef) {
+                const nameAttr = anchor.getAttribute('name') || anchor.getAttribute('id');
+                if (nameAttr) {
+                  imageRef = nameAttr;
+                  strategyUsed = 'anchor-attr';
+                  console.log(`📍 [DEBUG] Usando atributo do anchor: ${nameAttr}`);
+                }
+              }
+              
+              // Estratégia 4: Usar índice como fallback final
+              if (!imageRef) {
+                imageRef = `image_${index}`;
+                strategyUsed = 'index-fallback';
+                console.log(`📍 [DEBUG] Usando fallback index: ${imageRef}`);
+              }
+              
+              // P2.8: Buscar arquivo real da imagem com validação
+              const realImageFile = imageIdToFile.get(imageRef);
+              const finalRef = realImageFile || imageRef;
+              
+              // P2.9: Validar se a posição já existe (detectar duplicatas)
+              if (imagePositions.has(finalRef)) {
+                console.warn(`⚠️ [DEBUG] Posição duplicada detectada para ${finalRef}. Sobrescrevendo...`);
+              }
+              
+              imagePositions.set(finalRef, { row, col });
+              
+              const cellName = String.fromCharCode(65 + col) + (row + 2);
+              console.log(`📍 [DEBUG] Imagem "${finalRef}" mapeada para célula ${cellName} (Linha ${row + 2}, Coluna ${col + 1}) - Estratégia: ${strategyUsed}`);
+              
+              // P2.10: Log específico para casos problemáticos
+              if (finalRef.includes('FL-62') || finalRef.includes('CMD-34')) {
+                console.log(`🎯 [DEBUG] ATENÇÃO - Mapeamento crítico: ${finalRef} → ${cellName}`);
+              }
+              
             } catch (anchorError) {
-              console.warn('⚠️ [DEBUG] Erro ao processar anchor:', anchorError);
+              console.error(`❌ [DEBUG] Erro ao processar anchor ${index}:`, anchorError);
             }
           });
           
