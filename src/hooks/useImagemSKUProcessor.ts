@@ -16,9 +16,9 @@ export interface SKULinhaMapping {
 }
 
 export interface ProcessamentoResult {
-  processadas: ImagemProcessada[];
+  imagensProcessadas: ImagemProcessada[];
   rejeitadas: string[];
-  renomeadas: number;
+  renomeadasCount: number;
   erros: string[];
 }
 
@@ -56,24 +56,20 @@ export class ImagemSKUProcessor {
     
     this.skuLinhasMap.clear();
     
-    Object.keys(worksheet).forEach(cellKey => {
-      const match = cellKey.match(/^A(\d+)$/);
-      if (match) {
-        const linha = parseInt(match[1]);
-        if (linha > 1) { // Pular cabeçalho
-          const skuCell = worksheet[cellKey];
-          const sku = skuCell?.v ? String(skuCell.v).trim().toUpperCase() : '';
-          
-          if (sku) {
-            // USAR ARRAY PARA PERMITIR SKUS DUPLICADOS
-            if (!this.skuLinhasMap.has(sku)) {
-              this.skuLinhasMap.set(sku, []);
-            }
-            this.skuLinhasMap.get(sku)!.push(linha);
-          }
+    // Iterar pelas linhas da worksheet do ExcelJS
+    for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+      const row = worksheet.getRow(rowNumber);
+      const skuCell = row.getCell(1); // Coluna A (primeira coluna)
+      const sku = skuCell.value ? String(skuCell.value).trim().toUpperCase() : '';
+      
+      if (sku) {
+        // USAR ARRAY PARA PERMITIR SKUS DUPLICADOS
+        if (!this.skuLinhasMap.has(sku)) {
+          this.skuLinhasMap.set(sku, []);
         }
+        this.skuLinhasMap.get(sku)!.push(rowNumber);
       }
-    });
+    }
     
     console.log(`📊 [SKU_PROCESSOR] Mapa construído: ${this.skuLinhasMap.size} SKUs únicos`);
     
@@ -191,15 +187,15 @@ export class ImagemSKUProcessor {
     }
     
     const resultado: ProcessamentoResult = {
-      processadas,
+      imagensProcessadas: processadas,
       rejeitadas,
-      renomeadas,
+      renomeadasCount: renomeadas,
       erros
     };
     
     console.log(`🎯 [SKU_PROCESSOR] Processamento concluído:`, {
       totalImagens: mediaFiles.length,
-      processadas: processadas.length,
+      imagensProcessadas: processadas.length,
       rejeitadas: rejeitadas.length,
       renomeadas,
       erros: erros.length

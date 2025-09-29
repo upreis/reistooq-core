@@ -204,16 +204,7 @@ export function useCotacoesArquivos() {
       
       console.log(`📁 [SKU_SYSTEM] Encontrados ${mediaFiles.length} arquivos de imagem`);
       
-      // Processar imagens usando o objeto ZIP processado
-      const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
-      
-      console.log('✅ [SKU_SYSTEM] Processamento concluído:', {
-        processadas: resultado.imagensProcessadas.length,
-        rejeitadas: resultado.rejeitadas.length,
-        renomeadas: resultado.renomeadasCount
-      });
-      
-      // Processar dados do Excel também
+      // Processar dados do Excel PRIMEIRO para construir mapa SKU
       const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
@@ -221,6 +212,9 @@ export function useCotacoesArquivos() {
       
       const dados: any[] = [];
       if (worksheet) {
+        // CONSTRUIR MAPA SKU → LINHAS antes de processar imagens
+        skuProcessor.construirMapaSkuLinhas(worksheet);
+        
         const headers: string[] = [];
         const headerRow = worksheet.getRow(1);
         headerRow.eachCell((cell, colNumber) => {
@@ -244,8 +238,17 @@ export function useCotacoesArquivos() {
         }
       }
       
+      // Processar imagens DEPOIS com o mapa SKU construído
+      const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
+      
+      console.log('✅ [SKU_SYSTEM] Processamento concluído:', {
+        imagensProcessadas: resultado.imagensProcessadas.length,
+        rejeitadas: resultado.rejeitadas.length,
+        renomeadas: resultado.renomeadasCount
+      });
+      
       // Retornar dados e imagens processadas no formato esperado
-      const imagens = resultado.processadas.map(img => ({
+      const imagens = resultado.imagensProcessadas.map(img => ({
         nome: img.arquivoRenomeado,
         blob: img.blob,
         linha: img.linha,
