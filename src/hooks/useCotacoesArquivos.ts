@@ -695,55 +695,33 @@ export function useCotacoesArquivos() {
     
     return dados.map((linha, index) => {
       try {
-        // CORREÇÃO: Associar imagens baseado no SKU, não na posição
         const skuProduto = linha.SKU || linha.sku || `PROD-${index + 1}`;
         
-        // Buscar imagens pelo SKU primeiro, senão pela linha do Excel como fallback
-        const linhaExcel = index + 2; // +2 porque o cabeçalho está na linha 1 e dados começam na 2
-        
+        // CORREÇÃO DEFINITIVA: Mapeamento sequencial direto por posição
+        // A i-ésima linha de dados deve ter a i-ésima imagem do array
         const imagemPrincipal = imagensUpload.find(img => 
-          // Prioridade 1: Buscar por SKU
-          (img.sku && img.sku === skuProduto && (
-            img.coluna === 'IMAGEM' || 
-            (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
-          )) ||
-          // Fallback: Buscar por linha (método antigo)
-          (!img.sku && img.linha === linhaExcel && (
-            img.coluna === 'IMAGEM' || 
-            img.coluna === 'B' || // Coluna B geralmente é IMAGEM
-            (img.coluna.includes('IMAGEM') && !img.coluna.includes('FORNECEDOR'))
-          ))
+          img.coluna === 'IMAGEM' && 
+          imagensUpload.filter(i => i.coluna === 'IMAGEM').indexOf(img) === index
         );
         
         const imagemFornecedor = imagensUpload.find(img => 
-          // Prioridade 1: Buscar por SKU
-          (img.sku && img.sku === skuProduto && (
-            img.coluna === 'IMAGEM_FORNECEDOR' || 
-            img.coluna === 'IMAGEM FORNECEDOR' ||
-            img.coluna.includes('FORNECEDOR')
-          )) ||
-          // Fallback: Buscar por linha (método antigo)
-          (!img.sku && img.linha === linhaExcel && (
-            img.coluna === 'IMAGEM_FORNECEDOR' || 
-            img.coluna === 'IMAGEM FORNECEDOR' ||
-            img.coluna === 'C' || // Coluna C geralmente é IMAGEM FORNECEDOR
-            img.coluna.includes('FORNECEDOR')
-          ))
+          (img.coluna === 'IMAGEM_FORNECEDOR' || img.coluna === 'IMAGEM FORNECEDOR') && 
+          imagensUpload.filter(i => i.coluna === 'IMAGEM_FORNECEDOR' || i.coluna === 'IMAGEM FORNECEDOR').indexOf(img) === index
         );
 
-         console.log(`🔍 [AUDIT] MAPEAMENTO POR SKU - Produto ${index}: SKU="${skuProduto}", linha Excel ${linhaExcel}, imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+        console.log(`🔍 [AUDIT] MAPEAMENTO SEQUENCIAL - Linha ${index}: SKU="${skuProduto}", imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
          
-         // Log detalhado para auditoria do mapeamento por SKU
-         console.log(`🔍 [AUDIT] DETALHES MAPEAMENTO SKU "${skuProduto}" (linha ${index}):`, {
-           skuProduto: skuProduto,
-           imagemPrincipal: imagemPrincipal?.url,
-           imagemFornecedor: imagemFornecedor?.url,
-           imagemPrincipalSku: imagemPrincipal?.sku,
-           imagemFornecedorSku: imagemFornecedor?.sku,
-           metodoBusca: imagemPrincipal?.sku ? 'por SKU' : 'por linha (fallback)',
-           todasImagensComSku: imagensUpload.filter(img => img.sku === skuProduto).map(img => ({ sku: img.sku, coluna: img.coluna, nome: img.nome })),
-           todasImagensDisponiveis: imagensUpload.map(img => ({ sku: img.sku, linha: img.linha, coluna: img.coluna, nome: img.nome })),
-         });
+        // Log detalhado para auditoria do mapeamento sequencial
+        console.log(`🔍 [AUDIT] DETALHES MAPEAMENTO SEQUENCIAL "${skuProduto}" (posição ${index}):`, {
+          skuProduto: skuProduto,
+          posicaoNaLista: index,
+          imagemPrincipal: imagemPrincipal?.url,
+          imagemFornecedor: imagemFornecedor?.url,
+          metodoBusca: 'sequencial por posição',
+          imagensDisponiveis: imagensUpload.length,
+          imagensPrincipais: imagensUpload.filter(i => i.coluna === 'IMAGEM').length,
+          imagensFornecedor: imagensUpload.filter(i => i.coluna === 'IMAGEM_FORNECEDOR' || i.coluna === 'IMAGEM FORNECEDOR').length,
+        });
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
         const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
