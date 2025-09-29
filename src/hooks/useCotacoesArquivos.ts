@@ -607,7 +607,177 @@ export function useCotacoesArquivos() {
         }
       }
       
-      console.log(`✅ [DEBUG] Total de posições mapeadas: ${imagePositions.size}`);
+      // P3.1: SISTEMA DE RECUPERAÇÃO AUTOMÁTICA E VALIDAÇÃO
+      console.log(`📊 [DEBUG] === INICIANDO FASE 3: VALIDAÇÃO E RECUPERAÇÃO ===`);
+      
+      // P3.2: Análise da qualidade do mapeamento
+      const mappingQuality = {
+        totalMapped: imagePositions.size,
+        hasValidPositions: 0,
+        hasDuplicatePositions: 0,
+        positionMap: new Map<string, string[]>(),
+        invalidPositions: [] as string[],
+        missingCritical: [] as string[]
+      };
+      
+      // Validar qualidade de cada posição mapeada
+      imagePositions.forEach((pos, key) => {
+        const cellName = String.fromCharCode(65 + pos.col) + (pos.row + 2);
+        
+        // Verificar se posição é válida
+        if (pos.col >= 0 && pos.row >= 0 && pos.col < 26 && pos.row < 1000) {
+          mappingQuality.hasValidPositions++;
+        } else {
+          mappingQuality.invalidPositions.push(`${key} → ${cellName}`);
+        }
+        
+        // Detectar duplicatas de posição
+        const existing = mappingQuality.positionMap.get(cellName) || [];
+        existing.push(key);
+        mappingQuality.positionMap.set(cellName, existing);
+        
+        if (existing.length > 1) {
+          mappingQuality.hasDuplicatePositions++;
+        }
+      });
+      
+      // P3.3: Verificar mapeamentos críticos
+      const criticalMappings = ['FL-62', 'CMD-34', 'CMD-16'];
+      criticalMappings.forEach(critical => {
+        let found = false;
+        imagePositions.forEach((pos, key) => {
+          if (key.includes(critical)) {
+            found = true;
+            const cellName = String.fromCharCode(65 + pos.col) + (pos.row + 2);
+            console.log(`🎯 [DEBUG] Mapeamento crítico encontrado: ${critical} → ${key} → ${cellName}`);
+          }
+        });
+        if (!found) {
+          mappingQuality.missingCritical.push(critical);
+        }
+      });
+      
+      console.log(`📊 [DEBUG] AUDITORIA DE QUALIDADE:`, mappingQuality);
+      
+      // P3.4: SISTEMA DE FALLBACK SEQUENCIAL
+      if (imagePositions.size === 0 || mappingQuality.hasValidPositions < imagePositions.size * 0.8) {
+        console.log(`🔄 [DEBUG] Qualidade insuficiente. Ativando fallback sequencial...`);
+        
+        // P1.2: Ordenar arquivos media numericamente/alfabeticamente
+        const mediaFiles = Object.keys(zipData.files)
+          .filter(fileName => fileName.includes('xl/media/') && /\.(png|jpg|jpeg|gif|bmp|webp)$/i.test(fileName))
+          .sort((a, b) => {
+            // Ordenação numérica para padrões como image1.png, image2.png
+            const numA = parseInt(a.match(/(\d+)/)?.[1] || '0');
+            const numB = parseInt(b.match(/(\d+)/)?.[1] || '0');
+            if (numA !== numB) return numA - numB;
+            // Fallback para ordenação alfabética
+            return a.localeCompare(b);
+          });
+        
+        console.log(`📁 [DEBUG] Ordem final dos arquivos media:`, mediaFiles);
+        
+        // Mapear sequencialmente
+        mediaFiles.forEach((mediaFile, index) => {
+          const row = index;
+          const col = 3; // Coluna D (índice 3)
+          const cellName = String.fromCharCode(65 + col) + (row + 2);
+          
+          imagePositions.set(mediaFile, { row, col });
+          console.log(`🔄 [DEBUG] Fallback sequencial: ${mediaFile} → ${cellName}`);
+        });
+      }
+      
+      // P3.5: SISTEMA DE CORREÇÃO AUTOMÁTICA
+      if (mappingQuality.hasDuplicatePositions > 0) {
+        console.log(`🔧 [DEBUG] Corrigindo ${mappingQuality.hasDuplicatePositions} duplicatas...`);
+        
+        mappingQuality.positionMap.forEach((images, cellName) => {
+          if (images.length > 1) {
+            console.log(`🔧 [DEBUG] Duplicata na célula ${cellName}:`, images);
+            
+            // Manter a primeira imagem na posição original
+            const firstImage = images[0];
+            console.log(`✅ [DEBUG] Mantendo ${firstImage} na posição original ${cellName}`);
+            
+            // Realocar as outras imagens para posições adjacentes
+            images.slice(1).forEach((duplicateImage, offset) => {
+              const originalPos = imagePositions.get(duplicateImage);
+              if (originalPos) {
+                const newRow = originalPos.row + offset + 1;
+                const newCol = originalPos.col;
+                const newCellName = String.fromCharCode(65 + newCol) + (newRow + 2);
+                
+                imagePositions.set(duplicateImage, { row: newRow, col: newCol });
+                console.log(`🔧 [DEBUG] Realocando ${duplicateImage} para ${newCellName}`);
+              }
+            });
+          }
+        });
+      }
+      
+      // P3.6: SISTEMA DE VALIDAÇÃO FINAL
+      console.log(`🔍 [DEBUG] === VALIDAÇÃO FINAL ===`);
+      const finalValidation = {
+        totalMappings: imagePositions.size,
+        validMappings: 0,
+        criticalMappingsFound: 0,
+        positionCollisions: 0
+      };
+      
+      const finalPositionCheck = new Set<string>();
+      
+      imagePositions.forEach((pos, key) => {
+        const cellName = String.fromCharCode(65 + pos.col) + (pos.row + 2);
+        
+        if (pos.col >= 0 && pos.row >= 0) {
+          finalValidation.validMappings++;
+        }
+        
+        if (criticalMappings.some(critical => key.includes(critical))) {
+          finalValidation.criticalMappingsFound++;
+        }
+        
+        if (finalPositionCheck.has(cellName)) {
+          finalValidation.positionCollisions++;
+        } else {
+          finalPositionCheck.add(cellName);
+        }
+      });
+      
+      console.log(`✅ [DEBUG] VALIDAÇÃO FINAL:`, finalValidation);
+      
+      // P3.7: LOG ESPECÍFICO PARA CASOS CRÍTICOS
+      console.log(`🎯 [DEBUG] === VERIFICAÇÃO DE CASOS CRÍTICOS ===`);
+      const fl62Mapping = Array.from(imagePositions.entries()).find(([key]) => key.includes('FL-62'));
+      const cmd34Mapping = Array.from(imagePositions.entries()).find(([key]) => key.includes('CMD-34'));
+      const cmd16Mapping = Array.from(imagePositions.entries()).find(([key]) => key.includes('CMD-16'));
+      
+      if (fl62Mapping) {
+        const [key, pos] = fl62Mapping;
+        const cellName = String.fromCharCode(65 + pos.col) + (pos.row + 2);
+        console.log(`🎯 [DEBUG] FL-62 encontrado: ${key} → ${cellName}`);
+      } else {
+        console.warn(`⚠️ [DEBUG] FL-62 NÃO ENCONTRADO no mapeamento final!`);
+      }
+      
+      if (cmd34Mapping) {
+        const [key, pos] = cmd34Mapping;
+        const cellName = String.fromCharCode(65 + pos.col) + (pos.row + 2);
+        console.log(`🎯 [DEBUG] CMD-34 encontrado: ${key} → ${cellName}`);
+      } else {
+        console.warn(`⚠️ [DEBUG] CMD-34 NÃO ENCONTRADO no mapeamento final!`);
+      }
+      
+      if (cmd16Mapping) {
+        const [key, pos] = cmd16Mapping;
+        const cellName = String.fromCharCode(65 + pos.col) + (pos.row + 2);
+        console.log(`🎯 [DEBUG] CMD-16 encontrado: ${key} → ${cellName}`);
+      } else {
+        console.warn(`⚠️ [DEBUG] CMD-16 NÃO ENCONTRADO no mapeamento final!`);
+      }
+      
+      console.log(`✅ [DEBUG] Total de posições mapeadas após Fase 3: ${imagePositions.size}`);
       imagePositions.forEach((pos, key) => {
         console.log(`🗺️ [DEBUG] ${key} → ${String.fromCharCode(65 + pos.col)}${pos.row + 2}`);
       });
