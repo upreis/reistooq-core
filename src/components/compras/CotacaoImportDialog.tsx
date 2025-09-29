@@ -127,33 +127,46 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
       setProgressoUpload(50);
 
-      // Processar imagens se houver - UPLOAD PARA STORAGE
+      // Processar imagens se houver - CONVERTER PARA DATA URLs (sem storage)
       let imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
       if (imagens.length > 0) {
-        console.log('🔄 [SKU_SYSTEM] FAZENDO UPLOAD das imagens para storage...');
+        console.log('🔄 [SKU_SYSTEM] CONVERTENDO imagens para Data URLs (modo local)...');
         
-        // Debug: Verificar SKUs das imagens antes do upload
+        // Debug: Verificar SKUs das imagens antes da conversão
         imagens.forEach((img, idx) => {
           console.log(`🔍 [DEBUG] Imagem ${idx + 1}: nome=${img.nome}, sku=${img.sku}, linha=${img.linha}`);
         });
         
-        const imagensParaUpload = imagens.map(img => ({
-          nome: img.nome,
-          blob: img.blob,
-          linha: img.linha,
-          coluna: img.coluna,
-          sku: img.sku  // CRÍTICO: Preservar SKU da imagem
-        }));
+        // Converter para Data URLs (sem Supabase storage)
+        imagensUpload = await Promise.all(
+          imagens.map(async (img, index) => {
+            console.log(`🔄 [SKU_SYSTEM] Convertendo imagem ${index + 1}: SKU=${img.sku}, linha=${img.linha}`);
+            
+            // Converter blob para data URL para persistir
+            const reader = new FileReader();
+            const dataUrl = await new Promise<string>((resolve) => {
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(img.blob);
+            });
+            
+            return {
+              nome: img.nome,
+              url: dataUrl,
+              linha: img.linha,
+              coluna: img.coluna,
+              sku: img.sku  // CRÍTICO: Preservar SKU da imagem
+            };
+          })
+        );
         
-        imagensUpload = await uploadImagensExtraidas(imagensParaUpload, cotacaoId, organizationId);
-        console.log('✅ [SKU_SYSTEM] Upload concluído! Imagens com URLs:', imagensUpload.length);
+        console.log('✅ [SKU_SYSTEM] Conversão concluída! Imagens com Data URLs:', imagensUpload.length);
         
-        // Debug: Verificar resultado do upload
+        // Debug: Verificar resultado da conversão
         imagensUpload.forEach((img, idx) => {
-          console.log(`🔍 [DEBUG] Upload ${idx + 1}: sku=${img.sku}, url=${img.url ? 'VÁLIDA' : 'INVÁLIDA'}`);
+          console.log(`🔍 [DEBUG] Conversão ${idx + 1}: sku=${img.sku}, url=${img.url ? 'VÁLIDA' : 'INVÁLIDA'}`);
         });
       } else {
-        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para upload');
+        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para conversão');
       }
       setProgressoUpload(70);
 
