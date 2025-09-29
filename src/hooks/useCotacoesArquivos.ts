@@ -375,6 +375,10 @@ export function useCotacoesArquivos() {
       // Mantém a ordem exata do ZIP que reflete a ordem real do Excel
       // Se célula do Excel está vazia, linha do sistema também fica vazia
       
+      // FORÇAR RECARGA: Adicionar timestamp para evitar cache
+      const timestamp = Date.now();
+      console.log(`📊 [DEBUG] FORÇANDO RECARGA - Timestamp: ${timestamp}`);
+      
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
         const imageBlob = await zipData.files[mediaFile].async('blob');
