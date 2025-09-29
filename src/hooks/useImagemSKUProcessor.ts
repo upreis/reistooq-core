@@ -139,7 +139,7 @@ export class ImagemSKUProcessor {
 
   // PROCESSAR TODAS AS IMAGENS INDEPENDENTEMENTE
   public async processarImagensIndividualmente(
-    zipData: any, 
+    zip: any, 
     mediaFiles: string[]
   ): Promise<ProcessamentoResult> {
     
@@ -155,8 +155,16 @@ export class ImagemSKUProcessor {
       const mediaFile = mediaFiles[i];
       
       try {
+        // Verificar se o arquivo existe no ZIP
+        const zipFile = zip.files[mediaFile];
+        if (!zipFile) {
+          console.warn(`⚠️ [SKU_PROCESSOR] Arquivo não encontrado no ZIP: ${mediaFile}`);
+          rejeitadas.push(mediaFile);
+          continue;
+        }
+        
         // Extrair blob da imagem
-        const imageBlob = await zipData.files[mediaFile].async('blob');
+        const imageBlob = await zipFile.async('blob');
         
         if (imageBlob.size === 0) {
           console.warn(`⚠️ [SKU_PROCESSOR] Arquivo vazio: ${mediaFile}`);

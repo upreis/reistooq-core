@@ -194,7 +194,6 @@ export function useCotacoesArquivos() {
       console.log('🎯 [SKU_SYSTEM] Iniciando processamento individual por SKU');
       
       const arrayBuffer = await file.arrayBuffer();
-      const zipData = new Uint8Array(arrayBuffer);
       
       // Extrair lista de arquivos de imagem do ZIP
       const JSZip = (await import('jszip')).default;
@@ -205,8 +204,8 @@ export function useCotacoesArquivos() {
       
       console.log(`📁 [SKU_SYSTEM] Encontrados ${mediaFiles.length} arquivos de imagem`);
       
-      // Processar imagens sem worksheet (será extraído automaticamente)
-      const resultado = await skuProcessor.processarImagensIndividualmente(zipData, mediaFiles);
+      // Processar imagens usando o objeto ZIP processado
+      const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
       
       console.log('✅ [SKU_SYSTEM] Processamento concluído:', {
         processadas: resultado.imagensProcessadas.length,
@@ -246,8 +245,8 @@ export function useCotacoesArquivos() {
       }
       
       // Retornar dados e imagens processadas no formato esperado
-      const imagens = resultado.imagensProcessadas.map(img => ({
-        nome: img.nomeRenomeado,
+      const imagens = resultado.processadas.map(img => ({
+        nome: img.arquivoRenomeado,
         blob: img.blob,
         linha: img.linha,
         coluna: 'IMAGEM',
