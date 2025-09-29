@@ -693,34 +693,38 @@ export function useCotacoesArquivos() {
     console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
     console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
     
+    // SEPARAR imagens por coluna e manter ordem original
+    const imagensPrincipais = imagensUpload.filter(img => img.coluna === 'IMAGEM');
+    const imagensFornecedor = imagensUpload.filter(img => 
+      img.coluna === 'IMAGEM_FORNECEDOR' || img.coluna === 'IMAGEM FORNECEDOR'
+    );
+
+    console.log('🔍 [AUDIT] ARRAYS SEPARADOS:', {
+      imagensPrincipais: imagensPrincipais.length,
+      imagensFornecedor: imagensFornecedor.length,
+      ordenImagensPrincipais: imagensPrincipais.map((img, idx) => `${idx}: ${img.nome}`),
+      ordenImagensFornecedor: imagensFornecedor.map((img, idx) => `${idx}: ${img.nome}`)
+    });
+    
     return dados.map((linha, index) => {
       try {
         const skuProduto = linha.SKU || linha.sku || `PROD-${index + 1}`;
         
-        // CORREÇÃO DEFINITIVA: Mapeamento sequencial direto por posição
-        // A i-ésima linha de dados deve ter a i-ésima imagem do array
-        const imagemPrincipal = imagensUpload.find(img => 
-          img.coluna === 'IMAGEM' && 
-          imagensUpload.filter(i => i.coluna === 'IMAGEM').indexOf(img) === index
-        );
-        
-        const imagemFornecedor = imagensUpload.find(img => 
-          (img.coluna === 'IMAGEM_FORNECEDOR' || img.coluna === 'IMAGEM FORNECEDOR') && 
-          imagensUpload.filter(i => i.coluna === 'IMAGEM_FORNECEDOR' || i.coluna === 'IMAGEM FORNECEDOR').indexOf(img) === index
-        );
+        // MAPEAMENTO SUPER SIMPLES: 1:1 direto por índice
+        const imagemPrincipal = imagensPrincipais[index] || null;
+        const imagemFornecedor = imagensFornecedor[index] || null;
 
-        console.log(`🔍 [AUDIT] MAPEAMENTO SEQUENCIAL - Linha ${index}: SKU="${skuProduto}", imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+        console.log(`🔍 [AUDIT] MAPEAMENTO DIRETO - Linha ${index}: SKU="${skuProduto}", imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
          
-        // Log detalhado para auditoria do mapeamento sequencial
-        console.log(`🔍 [AUDIT] DETALHES MAPEAMENTO SEQUENCIAL "${skuProduto}" (posição ${index}):`, {
+        // Log detalhado para auditoria do mapeamento direto
+        console.log(`🔍 [AUDIT] DETALHES MAPEAMENTO DIRETO "${skuProduto}" (posição ${index}):`, {
           skuProduto: skuProduto,
           posicaoNaLista: index,
           imagemPrincipal: imagemPrincipal?.url,
+          imagemPrincipalNome: imagemPrincipal?.nome,
           imagemFornecedor: imagemFornecedor?.url,
-          metodoBusca: 'sequencial por posição',
-          imagensDisponiveis: imagensUpload.length,
-          imagensPrincipais: imagensUpload.filter(i => i.coluna === 'IMAGEM').length,
-          imagensFornecedor: imagensUpload.filter(i => i.coluna === 'IMAGEM_FORNECEDOR' || i.coluna === 'IMAGEM FORNECEDOR').length,
+          imagemFornecedorNome: imagemFornecedor?.nome,
+          metodoBusca: 'mapeamento direto por índice [index]',
         });
 
         const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
