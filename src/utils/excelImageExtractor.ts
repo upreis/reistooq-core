@@ -17,150 +17,103 @@ interface ImagemProcessada {
   url: string;
 }
 
-// FUNÇÃO PRINCIPAL - EXTRAÇÃO ORDENADA POR LINHA
+// FUNÇÃO PRINCIPAL - EXTRAÇÃO SEQUENCIAL LINHA POR LINHA
 export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosicionada[]> => {
-  console.log('🔍 [ORDEM] Iniciando extração de imagens com ordenação sequencial...');
+  console.log('🔍 [SEQUENCIAL] Iniciando extração sequencial linha por linha...');
   
   try {
     const arrayBuffer = await file.arrayBuffer();
     const zip = new JSZip();
     await zip.loadAsync(arrayBuffer);
 
-    // 1. EXTRAIR DADOS DA PLANILHA PARA CORRELAÇÃO
+    // 1. EXTRAIR DADOS DA PLANILHA PARA DETERMINAR RANGE
     const workbook = XLSX.read(arrayBuffer);
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const dados = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
     
-    console.log('📊 [ORDEM] Dados da planilha carregados:', dados.length, 'linhas');
+    // 2. DETERMINAR ÚLTIMA LINHA COM DADOS
+    const ultimaLinhaComDados = determinarUltimaLinhaComDados(dados);
+    console.log(`📊 [SEQUENCIAL] Dados: ${dados.length} linhas, última com dados: ${ultimaLinhaComDados}`);
 
-    // 2. EXTRAIR TODAS AS POSIÇÕES DAS IMAGENS
+    // 3. EXTRAIR IMAGENS E SUAS POSIÇÕES
+    const mediaFolder = zip.folder('xl/media');
+    if (!mediaFolder) {
+      console.log('❌ [SEQUENCIAL] Pasta de mídia não encontrada');
+      return [];
+    }
+
     const drawingsFile = zip.file('xl/drawings/drawing1.xml');
     if (!drawingsFile) {
-      console.log('❌ [ORDEM] Arquivo de desenhos não encontrado');
+      console.log('❌ [SEQUENCIAL] Arquivo de desenhos não encontrado');
       return [];
     }
 
     const drawingsXml = await drawingsFile.async('text');
-    console.log('📐 [ORDEM] Arquivo de desenhos carregado');
-
-    // 3. LER TODAS AS IMAGENS DO ARQUIVO
-    const mediaFolder = zip.folder('xl/media');
-    if (!mediaFolder) {
-      console.log('❌ [ORDEM] Pasta de mídia não encontrada');
-      return [];
-    }
-
-    // 4. EXTRAIR POSIÇÕES E CRIAR MAPA IMAGEM → LINHA
-    const imagensRaw: { filename: string; dados: Uint8Array; index: number }[] = [];
-    let index = 0;
+    
+    // 4. COLETAR TODAS AS IMAGENS
+    const imagensRaw: { filename: string; dados: Uint8Array; ordem: number }[] = [];
+    let ordem = 0;
     
     for (const [filename, file] of Object.entries(mediaFolder.files)) {
       if (filename.match(/\.(png|jpg|jpeg)$/i)) {
         const imagemDados = await file.async('uint8array');
-        imagensRaw.push({ filename, dados: imagemDados, index });
-        index++;
+        imagensRaw.push({ filename, dados: imagemDados, ordem });
+        ordem++;
       }
     }
     
-    console.log(`📸 [ORDEM] ${imagensRaw.length} imagens encontradas no arquivo`);
+    console.log(`📸 [SEQUENCIAL] ${imagensRaw.length} imagens encontradas`);
 
-    // 5. MAPEAR POSIÇÕES DAS IMAGENS NO XML
-    const posicoesImagens = extrairTodasPosicoesImagens(drawingsXml);
-    console.log(`📍 [ORDEM] ${posicoesImagens.length} posições detectadas no XML`);
-
-    // 6. COMBINAR IMAGENS COM POSIÇÕES E ORDENAR POR LINHA
-    const imagensComPosicao: Array<{
-      dados: Uint8Array;
-      linha: number;
-      coluna: number;
-      filename: string;
-      index: number;
-    }> = [];
-
-    imagensRaw.forEach((img, i) => {
-      const posicao = posicoesImagens[i] || { linha: i + 2, coluna: 2 }; // fallback sequencial
-      
-      imagensComPosicao.push({
-        dados: img.dados,
-        linha: posicao.linha,
-        coluna: posicao.coluna,
-        filename: img.filename,
-        index: img.index
-      });
-    });
-
-    // 7. ORDENAR POR LINHA (B2, B3, B4, ...)
-    imagensComPosicao.sort((a, b) => a.linha - b.linha);
-    console.log('🔢 [ORDEM] Imagens ordenadas por linha');
-
-    // 8. PROCESSAR SEQUENCIALMENTE E NOMEAR COM SKU DA COLUNA A
+    // 5. PROCESSAR SEQUENCIALMENTE DA LINHA 2 ATÉ A ÚLTIMA
     const imagensFinais: ImagemPosicionada[] = [];
     
-    imagensComPosicao.forEach((img, ordemIndex) => {
-      // Extrair SKU da célula A da mesma linha
-      const sku = extrairSkuDaLinha(dados, img.linha);
-      const nomeImagem = sku ? `${sku}.png` : `LINHA_${img.linha}.png`;
+    for (let linha = 2; linha <= ultimaLinhaComDados; linha++) {
+      const indiceImagem = linha - 2; // Linha 2 = imagem índice 0
       
-      imagensFinais.push({
-        nome: nomeImagem,
-        dados: img.dados,
-        linha: img.linha,
-        coluna: img.coluna,
-        sku: sku
-      });
+      if (indiceImagem < imagensRaw.length) {
+        const imagem = imagensRaw[indiceImagem];
+        const sku = extrairSkuDaLinha(dados, linha);
+        const nomeImagem = sku ? `${sku}.png` : `LINHA_${linha}.png`;
+        
+        imagensFinais.push({
+          nome: nomeImagem,
+          dados: imagem.dados,
+          linha: linha,
+          coluna: 2, // Assumindo coluna B (índice 2)
+          sku: sku
+        });
 
-      console.log(`📸 [ORDEM] ${ordemIndex + 1}. Linha ${img.linha} → SKU: ${sku || 'SEM_SKU'} → ${nomeImagem}`);
-    });
+        console.log(`📸 [SEQUENCIAL] Linha ${linha} → SKU: ${sku || 'SEM_SKU'} → ${nomeImagem}`);
+      } else {
+        console.log(`⚠️ [SEQUENCIAL] Linha ${linha}: sem imagem correspondente (${indiceImagem + 1}ª imagem não existe)`);
+      }
+    }
 
-    console.log(`✅ [ORDEM] ${imagensFinais.length} imagens processadas em ordem sequencial`);
+    console.log(`✅ [SEQUENCIAL] ${imagensFinais.length} imagens processadas sequencialmente`);
     return imagensFinais;
 
   } catch (error) {
-    console.error('❌ [ORDEM] Erro na extração:', error);
+    console.error('❌ [SEQUENCIAL] Erro na extração:', error);
     throw error;
   }
 };
 
-// FUNÇÃO AUXILIAR - EXTRAIR TODAS AS POSIÇÕES DAS IMAGENS
-const extrairTodasPosicoesImagens = (drawingsXml: string): { linha: number; coluna: number }[] => {
-  try {
-    console.log('🔍 [XML] Extraindo todas as posições das imagens do XML...');
-    
-    // Regex para encontrar posições das imagens no XML
-    const positionRegex = /<xdr:from>.*?<xdr:col>(\d+)<\/xdr:col>.*?<xdr:row>(\d+)<\/xdr:row>/gs;
-    const matches = [...drawingsXml.matchAll(positionRegex)];
-    
-    const posicoes = matches.map((match, index) => {
-      const coluna = parseInt(match[1]) + 1; // +1 porque Excel é 1-indexed
-      const linha = parseInt(match[2]) + 1;
-      
-      console.log(`📍 [XML] Imagem ${index + 1}: Linha ${linha}, Coluna ${coluna}`);
-      return { linha, coluna };
-    });
-    
-    console.log(`✅ [XML] ${posicoes.length} posições extraídas com sucesso`);
-    return posicoes;
-    
-  } catch (error) {
-    console.warn('⚠️ [XML] Erro ao extrair posições, usando fallback sequencial:', error);
-    return [];
+// FUNÇÃO AUXILIAR - DETERMINAR ÚLTIMA LINHA COM DADOS
+const determinarUltimaLinhaComDados = (dados: any[][]): number => {
+  // Procura a última linha que contém pelo menos um valor não vazio
+  for (let i = dados.length - 1; i >= 0; i--) {
+    const linha = dados[i];
+    if (linha && linha.some(celula => celula !== null && celula !== undefined && String(celula).trim() !== '')) {
+      return i + 2; // +2 porque: índice 0 = linha 1 do Excel, +1 para linha real
+    }
   }
+  
+  // Se não encontrar dados, assume pelo menos a linha 2 (primeira linha após cabeçalho)
+  return 2;
 };
 
-// FUNÇÃO AUXILIAR - EXTRAIR POSIÇÃO ÚNICA (mantida para compatibilidade)
-const extrairPosicaoDaImagem = (drawingsXml: string, index: number): { linha: number; coluna: number } => {
-  const todasPosicoes = extrairTodasPosicoesImagens(drawingsXml);
-  
-  if (todasPosicoes[index]) {
-    return todasPosicoes[index];
-  }
-  
-  // Fallback: sequencial começando na linha 2 (após cabeçalho)
-  return { 
-    linha: index + 2,
-    coluna: 2 // Coluna B
-  };
-};
+// FUNÇÃO AUXILIAR - EXTRAIR POSIÇÃO ÚNICA (removida - não mais necessária)
+// A nova abordagem sequencial não depende mais do mapeamento XML de posições
 
 // FUNÇÃO AUXILIAR - EXTRAIR SKU DA LINHA (COLUNA A)
 const extrairSkuDaLinha = (dados: any[][], linha: number): string | null => {
