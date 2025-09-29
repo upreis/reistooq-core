@@ -28,28 +28,37 @@ interface CotacaoArquivo {
 
 // Função auxiliar para detectar imagem na célula
 const temImagemNacelula = (cell: any): boolean => {
-  return cell.model?.value?.richText || 
-         cell.model?.value?.formula || 
-         (cell.value && typeof cell.value === 'object');
+  try {
+    return cell?.model?.value?.richText || 
+           cell?.model?.value?.formula || 
+           (cell?.value && typeof cell.value === 'object');
+  } catch (error) {
+    return false;
+  }
 };
 
 // FUNÇÃO PARA DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
 const detectarPosicaoImagem = (worksheet: any, mediaFile: string, index: number) => {
-  // Iterar pelas células para encontrar onde a imagem está
-  for (let rowNum = 2; rowNum <= worksheet.rowCount; rowNum++) {
-    const row = worksheet.getRow(rowNum);
-    
-    // Verificar coluna B (IMAGEM)
-    const cellB = row.getCell(2);
-    if (cellB.model?.value?.hyperlink || temImagemNacelula(cellB)) {
-      return { linha: rowNum, coluna: 'IMAGEM' };
+  try {
+    // Iterar pelas células para encontrar onde a imagem está
+    for (let rowNum = 2; rowNum <= worksheet?.rowCount; rowNum++) {
+      const row = worksheet.getRow(rowNum);
+      if (!row) continue;
+      
+      // Verificar coluna B (IMAGEM)
+      const cellB = row.getCell(2);
+      if (cellB?.model?.value?.hyperlink || temImagemNacelula(cellB)) {
+        return { linha: rowNum, coluna: 'IMAGEM' };
+      }
+      
+      // Verificar coluna C (IMAGEM_FORNECEDOR)  
+      const cellC = row.getCell(3);
+      if (cellC?.model?.value?.hyperlink || temImagemNacelula(cellC)) {
+        return { linha: rowNum, coluna: 'IMAGEM_FORNECEDOR' };
+      }
     }
-    
-    // Verificar coluna C (IMAGEM_FORNECEDOR)  
-    const cellC = row.getCell(3);
-    if (cellC.model?.value?.hyperlink || temImagemNacelula(cellC)) {
-      return { linha: rowNum, coluna: 'IMAGEM_FORNECEDOR' };
-    }
+  } catch (error) {
+    console.warn('Erro ao detectar posição da imagem:', error);
   }
   
   // Fallback: usar ordem sequencial apenas se não encontrar
