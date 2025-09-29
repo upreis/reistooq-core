@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCotacoesArquivos } from "@/hooks/useCotacoesArquivos";
 import { useToast } from "@/hooks/use-toast";
+import { extrairImagensDoExcel, converterImagensParaDataURL } from '@/utils/excelImageExtractor';
 import * as XLSX from 'xlsx';
 
 interface CotacaoImportDialogProps {
@@ -121,91 +122,55 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('✅ Upload simulado concluído:', arquivoUpload);
       setProgressoUpload(30);
 
-      // Ler arquivo com extração de imagens
-      console.log('📖 Lendo arquivo com extração de imagens...');
-      const { dados, imagens } = await lerArquivoComImagens(file);
-      console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
+      // PASSO 1: Extrair dados normais
+      console.log('📊 [POSIÇÃO] PASSO 1: Extraindo dados da planilha...');
+      const dados = await lerArquivo(file);
+      console.log('📊 [POSIÇÃO] Dados extraídos:', dados.length, 'produtos');
+      setProgressoUpload(30);
+      
+      // PASSO 2: Extrair imagens por posição
+      console.log('📸 [POSIÇÃO] PASSO 2: Extraindo imagens por posicionamento...');
+      const imagensExtraidas = await extrairImagensDoExcel(file);
+      console.log('📸 [POSIÇÃO] Imagens extraídas:', imagensExtraidas.length);
       setProgressoUpload(50);
-
-      // Processar imagens se houver - CONVERTER PARA DATA URLs (sem storage)
-      let imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
-      if (imagens.length > 0) {
-        console.log('🔄 [SKU_SYSTEM] CONVERTENDO imagens para Data URLs (modo local)...');
-        console.log(`📊 [VALIDAÇÃO] Total de ${imagens.length} imagens encontradas para processamento`);
-        
-        // Validação prévia: verificar quais imagens têm SKU válido
-        const imagensComSku = imagens.filter(img => img.sku);
-        const imagensSemSku = imagens.filter(img => !img.sku);
-        
-        console.log(`✅ [VALIDAÇÃO] ${imagensComSku.length} imagens com SKU identificado`);
-        console.log(`⚠️ [VALIDAÇÃO] ${imagensSemSku.length} imagens sem SKU (serão associadas por posição)`);
-        
-        // Debug detalhado: Verificar SKUs das imagens antes da conversão
-        imagens.forEach((img, idx) => {
-          const status = img.sku ? '✅ SKU OK' : '⚠️ SEM SKU';
-          console.log(`🔍 [DEBUG] Imagem ${idx + 1}: nome="${img.nome}", sku="${img.sku}", linha=${img.linha} ${status}`);
-        });
-        
-        // Converter para Data URLs (sem Supabase storage)
-        imagensUpload = await Promise.all(
-          imagens.map(async (img, index) => {
-            console.log(`🔄 [SKU_SYSTEM] Convertendo imagem ${index + 1}: SKU=${img.sku}, linha=${img.linha}`);
-            
-            // Converter blob para data URL para persistir
-            const reader = new FileReader();
-            const dataUrl = await new Promise<string>((resolve) => {
-              reader.onload = () => resolve(reader.result as string);
-              reader.readAsDataURL(img.blob);
-            });
-            
-            return {
-              nome: img.nome,
-              url: dataUrl,
-              linha: img.linha,
-              coluna: img.coluna,
-              sku: img.sku  // CRÍTICO: Preservar SKU da imagem
-            };
-          })
+      
+      // PASSO 3: Converter para Data URL
+      console.log('🔄 [POSIÇÃO] PASSO 3: Convertendo imagens...');
+      const imagensProcessadas = await converterImagensParaDataURL(imagensExtraidas);
+      console.log('🔄 [POSIÇÃO] Imagens processadas:', imagensProcessadas.length);
+      setProgressoUpload(70);
+      
+      // DEBUG DETALHADO
+      console.log('🎯 [POSIÇÃO] MAPEAMENTO FINAL:');
+      imagensProcessadas.forEach((img, i) => {
+        console.log(`  ${i + 1}. SKU: ${img.sku} → Imagem: ${img.nome}`);
+      });
+      
+      // CORRELACIONAR IMAGENS COM PRODUTOS
+      console.log('🔗 [POSIÇÃO] CORRELACIONANDO IMAGENS COM PRODUTOS...');
+      const produtosComImagens = dados.map(produto => {
+        const imagemProduto = imagensProcessadas.find(img => 
+          img.sku === produto.sku || img.sku === String(produto.sku) ||
+          img.sku === produto.SKU || img.sku === String(produto.SKU)
         );
         
-        console.log('✅ [SKU_SYSTEM] Conversão concluída! Imagens com Data URLs:', imagensUpload.length);
-        
-        // Estatísticas de processamento
-        const imagensComSkuFinal = imagensUpload.filter(img => img.sku);
-        const imagensSemSkuFinal = imagensUpload.filter(img => !img.sku);
-        
-        console.log(`📊 [ESTATÍSTICAS] Processamento concluído:`);
-        console.log(`   ✅ ${imagensComSkuFinal.length} imagens com SKU (associação automática)`);
-        console.log(`   ⚠️ ${imagensSemSkuFinal.length} imagens sem SKU (associação por posição)`);
-        
-        // Debug: Verificar resultado da conversão
-        imagensUpload.forEach((img, idx) => {
-          const urlStatus = img.url ? 'VÁLIDA' : 'INVÁLIDA';
-          const skuStatus = img.sku ? `SKU="${img.sku}"` : 'SEM_SKU';
-          console.log(`🔍 [DEBUG] Conversão ${idx + 1}: ${skuStatus}, url=${urlStatus}`);
-        });
-        
-        // Mostrar toast com estatísticas
-        toast({
-          title: "Imagens processadas com sucesso",
-          description: `${imagensComSkuFinal.length} com SKU automático, ${imagensSemSkuFinal.length} por posição`,
-        });
-      } else {
-        console.log('📝 [SKU_SYSTEM] Nenhuma imagem para conversão');
-      }
-      setProgressoUpload(70);
-
-      // Processando produto local com DEBUG
-      console.log('⚙️ Processando dados e associando imagens...');
-      console.log('🔍 [DEBUG_CRITICAL] Antes de chamar processarDados:');
-      console.log('🔍 [DEBUG_CRITICAL] - Total dados:', dados.length);
-      console.log('🔍 [DEBUG_CRITICAL] - Total imagensUpload:', imagensUpload.length);
-      console.log('🔍 [DEBUG_CRITICAL] - Primeira imagem:', imagensUpload[0]);
+        return {
+          ...produto,
+          imagem: imagemProduto?.url || '',
+          imagem_fornecedor: '',
+          nomeImagem: imagemProduto?.nome || ''
+        };
+      });
       
-      let dadosProcessados = [];
+      console.log('✅ [POSIÇÃO] CORRELAÇÃO CONCLUÍDA!');
+      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => p.imagem).length} produtos com imagem`);
+      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => !p.imagem).length} produtos sem imagem`);
+      setProgressoUpload(80);
+      
+      let dadosProcessados = produtosComImagens;
       
       try {
-        dadosProcessados = processarDados(dados, imagensUpload);
+        dadosProcessados = produtosComImagens;
         console.log('✅ Dados processados com sucesso:', { 
           totalProdutos: dadosProcessados.length,
           campos: dadosProcessados[0] ? Object.keys(dadosProcessados[0]) : [],
