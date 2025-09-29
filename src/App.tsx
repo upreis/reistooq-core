@@ -15,6 +15,16 @@ import FullLayout from "@/layouts/full/FullLayout";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
 
+// Verificação crítica de React
+if (!React || typeof React.useEffect !== 'function') {
+  console.error('🚨 CRITICAL: React or useEffect not available in App!', { 
+    React: typeof React, 
+    useEffect: typeof React?.useEffect,
+    useEffectImport: typeof useEffect
+  });
+  throw new Error('React not properly loaded in App component');
+}
+
 // Import pages
 import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
@@ -68,26 +78,93 @@ const queryClient = new QueryClient({
 function App() {
   console.log('🔧 App component rendering...');
   
-  // Permitir que React seja carregado normalmente
+  // Verificação crítica de hooks do React
+  if (typeof useEffect !== 'function') {
+    console.error('🚨 useEffect não está disponível no App component!');
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#1a1a1a',
+        color: '#ffffff',
+        fontFamily: 'system-ui, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1>🚨 Erro Crítico de Hook</h1>
+          <p>useEffect não está disponível</p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 20px',
+              marginTop: '10px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
   
   console.log('🔧 React hooks available:', { useEffect: typeof useEffect });
   
-  // Validar configuração na inicialização
-  useEffect(() => {
-    console.log('🔧 App useEffect running...');
-    // Simplificado para evitar problemas de inicialização
-    if (typeof validateConfig === 'function') {
-      try {
-        const validation = validateConfig();
-        if (!validation.valid) {
-          console.error('❌ Configuration errors:', validation.errors);
+  // Validar configuração na inicialização - com proteção adicional
+  try {
+    useEffect(() => {
+      console.log('🔧 App useEffect running...');
+      // Simplificado para evitar problemas de inicialização
+      if (typeof validateConfig === 'function') {
+        try {
+          const validation = validateConfig();
+          if (!validation.valid) {
+            console.error('❌ Configuration errors:', validation.errors);
+          }
+          console.log('✅ Configuration validation complete');
+        } catch (error) {
+          console.error('🚨 Error in configuration validation:', error);
         }
-        console.log('✅ Configuration validation complete');
-      } catch (error) {
-        console.error('🚨 Error in configuration validation:', error);
       }
-    }
-  }, []);
+    }, []);
+  } catch (hookError) {
+    console.error('🚨 Error setting up useEffect:', hookError);
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#1a1a1a',
+        color: '#ffffff',
+        fontFamily: 'system-ui, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <h1>🚨 Erro no useEffect</h1>
+          <p>{hookError?.toString()}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '10px 20px',
+              marginTop: '10px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            Recarregar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Verificar modo de manutenção
   if (config.features.maintenanceMode) {
