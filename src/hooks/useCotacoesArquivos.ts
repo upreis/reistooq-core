@@ -249,13 +249,14 @@ export function useCotacoesArquivos() {
         console.log('🔍 [DEBUG] Valor COLUNA_N (Peso sem embalagem):', dadosComIndices[0]['COLUNA_N']);
       }
       
-      // Método 2: Processar Excel como ZIP para extrair imagens embutidas
-      await extrairImagensDoZip(file, imagens, worksheet);
+      // Método 2: SISTEMA SIMPLIFICADO - Usar diretamente método sequencial
+      console.log('📊 [DEBUG] USANDO EXTRAÇÃO DIRETA SEQUENCIAL - SEM JSZip');
+      await extrairImagensAlternativo(file, imagens);
       
-      // FALLBACK: Se não encontrou imagens via ZIP, tentar método alternativo
+      // FALLBACK: Se falhou, tentar último recurso
       if (imagens.length === 0) {
-        console.log('🔄 [DEBUG] Nenhuma imagem encontrada via ZIP, tentando método alternativo...');
-        await extrairImagensAlternativo(file, imagens);
+        console.log('🔄 [DEBUG] Método alternativo falhou, tentando fallback...');
+        await extrairImagensFallback(file, imagens);
       }
       
       // ÚLTIMO RECURSO: Simular imagens fictícias se nenhuma foi encontrada mas existem colunas IMAGEM
@@ -283,159 +284,6 @@ export function useCotacoesArquivos() {
     } catch (error) {
       console.error('❌ [DEBUG] Erro no processamento do Excel:', error);
       throw error;
-    }
-  };
-
-  const extrairImagensDoZip = async (
-    file: File, 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
-    worksheet: any
-  ) => {
-    try {
-      console.log('🔍 [DEBUG] Tentando extrair imagens do arquivo Excel como ZIP...');
-      
-      // CORREÇÃO: Importar JSZip de forma mais robusta
-      let JSZip: any;
-      try {
-        JSZip = (await import('jszip')).default;
-        if (!JSZip) {
-          // Fallback para import nomeado
-          const jsZipModule = await import('jszip');
-          JSZip = jsZipModule.default || jsZipModule;
-        }
-      } catch (importError) {
-        console.warn('⚠️ [DEBUG] Falha no import dinâmico do JSZip:', importError);
-        throw new Error('JSZip module not available');
-      }
-      
-      const zip = new JSZip();
-      
-      // Carregar o arquivo Excel como ZIP
-      const arrayBuffer = await file.arrayBuffer();
-      const zipData = await zip.loadAsync(arrayBuffer);
-      
-      console.log('📦 [DEBUG] Arquivos no ZIP:', Object.keys(zipData.files));
-      
-      // Procurar por arquivos de desenho/imagem
-      const drawingFiles = Object.keys(zipData.files).filter(name => 
-        name.includes('drawing') && name.endsWith('.xml')
-      );
-      
-      const mediaFiles = Object.keys(zipData.files).filter(name => 
-        name.startsWith('xl/media/') && (
-          name.endsWith('.png') || 
-          name.endsWith('.jpg') || 
-          name.endsWith('.jpeg') || 
-          name.endsWith('.gif') ||
-          name.endsWith('.bmp') ||
-          name.endsWith('.tiff')
-        )
-      );
-      
-      // Também procurar por arquivos embedObjects ou outros formatos
-      const embedFiles = Object.keys(zipData.files).filter(name => 
-        name.includes('embeddings') || 
-        name.includes('oleObject') ||
-        (name.includes('media') && (
-          name.endsWith('.png') || 
-          name.endsWith('.jpg') || 
-          name.endsWith('.jpeg') ||
-          name.endsWith('.gif')
-        ))
-      );
-      
-      const todosArquivosImagem = [...new Set([...mediaFiles, ...embedFiles])];
-      
-      console.log('🎨 [DEBUG] Arquivos de desenho encontrados:', drawingFiles);
-      console.log('📸 [DEBUG] Arquivos de mídia encontrados:', todosArquivosImagem);
-      
-      if (todosArquivosImagem.length === 0) {
-        console.log('ℹ️ [DEBUG] Nenhuma imagem embutida encontrada no Excel via ZIP');
-        return;
-      }
-
-      // Mapear colunas por cabeçalho
-      const XLSX = await import('xlsx');
-      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
-      const colunaImagemIndex = await encontrarIndiceColuna(worksheet, 'IMAGEM');
-      const colunaImagemFornecedorIndex = await encontrarIndiceColuna(worksheet, 'IMAGEM FORNECEDOR');
-      
-      console.log('📋 [DEBUG] Índice coluna IMAGEM:', colunaImagemIndex);
-      console.log('📋 [DEBUG] Índice coluna IMAGEM FORNECEDOR:', colunaImagemFornecedorIndex);
-      
-      // Processar arquivos de mídia encontrados
-      // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
-      console.log('📊 [DEBUG] Total de imagens encontradas no ZIP:', todosArquivosImagem.length);
-      console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
-      console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem natural do ZIP):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
-      
-      console.log('📊 [DEBUG] Mapeamento direto sequencial iniciado - ORDEM NATURAL DO ZIP');
-      
-      // CORREÇÃO FINAL: Mapeamento 1:1 sequencial SEM ORDENAÇÃO
-      // Mantém a ordem exata do ZIP que reflete a ordem real do Excel
-      // Se célula do Excel está vazia, linha do sistema também fica vazia
-      
-      // FORÇAR RECARGA: Adicionar timestamp para evitar cache
-      const timestamp = Date.now();
-      console.log(`📊 [DEBUG] FORÇANDO RECARGA - Timestamp: ${timestamp}`);
-      
-      for (let i = 0; i < todosArquivosImagem.length; i++) {
-        const mediaFile = todosArquivosImagem[i];
-        const imageBlob = await zipData.files[mediaFile].async('blob');
-        
-        // Verificar se o blob tem conteúdo válido
-        if (imageBlob.size === 0) {
-          console.warn(`⚠️ [DEBUG] Arquivo ${mediaFile} está vazio, pulando...`);
-          continue;
-        }
-        
-        // MAPEAMENTO DIRETO: Ordem natural do ZIP = Ordem real do Excel
-        const linhaExcel = i + 2; // Linha 2, 3, 4... (linha 1 = cabeçalho)
-        
-        // Verificar se realmente existe dados nesta linha no Excel
-        const skuAddress = XLSX.utils.encode_cell({ r: range.s.r + 1 + i, c: 0 });
-        const imagemAddress = XLSX.utils.encode_cell({ r: range.s.r + 1 + i, c: colunaImagemIndex || 1 });
-        
-        const skuCell = worksheet[skuAddress];
-        const imagemCell = worksheet[imagemAddress];
-        
-        // Se não há SKU nesta linha, pular (linha vazia no Excel)
-        if (!skuCell || !skuCell.v) {
-          console.log(`⚠️ [DEBUG] Linha ${linhaExcel} está vazia no Excel, pulando imagem ${i}`);
-          continue;
-        }
-        
-        const skuAssociado = String(skuCell.v);
-        const coluna = 'IMAGEM';
-        
-        console.log(`✅ [DEBUG] MAPEAMENTO NATURAL: Imagem ${i} → Linha Excel ${linhaExcel} → SKU "${skuAssociado}" → Célula ${imagemAddress}`);
-        
-        const extensao = mediaFile.split('.').pop() || 'png';
-        const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
-        
-        imagens.push({
-          nome: nomeImagem,
-          blob: imageBlob,
-          linha: linhaExcel,
-          coluna: coluna,
-          sku: skuAssociado
-        });
-        
-        console.log(`📷 [DEBUG] IMAGEM MAPEADA: "${mediaFile}" → SKU "${skuAssociado}", Linha ${linhaExcel}, Tamanho: ${imageBlob.size} bytes`);
-      }
-      
-    } catch (zipError) {
-      console.warn('⚠️ [DEBUG] Erro na extração por ZIP (fallback será usado):', zipError);
-      
-      // CORREÇÃO: Fallback mais robusto com diferentes estratégias
-      try {
-        await extrairImagensAlternativo(file, imagens);
-      } catch (alternativeError) {
-        console.warn('⚠️ [DEBUG] Método alternativo também falhou:', alternativeError);
-        
-        // Último recurso: simular extração baseada em padrões do arquivo
-        await extrairImagensFallback(file, imagens);
-      }
     }
   };
 
@@ -695,52 +543,43 @@ export function useCotacoesArquivos() {
 
   const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
     console.log('🔍 [DEBUG] Processando dados:', { totalDados: dados.length, totalImagens: imagensUpload.length });
-    console.log('🔍 [DEBUG] Imagens disponíveis:', imagensUpload);
+    console.log('🔍 [DEBUG] SISTEMA SIMPLIFICADO - SEM FILTROS DE SEPARAÇÃO');
+    console.log('🔍 [DEBUG] Imagens disponíveis (ordem original):', imagensUpload);
     
-    // SEPARAR imagens por coluna e manter ordem original
-    const imagensPrincipais = imagensUpload.filter(img => img.coluna === 'IMAGEM');
-    const imagensFornecedor = imagensUpload.filter(img => 
-      img.coluna === 'IMAGEM_FORNECEDOR' || img.coluna === 'IMAGEM FORNECEDOR'
-    );
-
-    console.log('🔍 [AUDIT] ARRAYS SEPARADOS:', {
-      imagensPrincipais: imagensPrincipais.length,
-      imagensFornecedor: imagensFornecedor.length,
-      ordenImagensPrincipais: imagensPrincipais.map((img, idx) => `${idx}: ${img.nome}`),
-      ordenImagensFornecedor: imagensFornecedor.map((img, idx) => `${idx}: ${img.nome}`)
-    });
+    // REMOVER FILTROS QUE EMBARALHAM A ORDEM
+    // Usar mapeamento direto 1:1 sem separar por tipo de coluna
+    console.log('🔍 [AUDIT] MAPEAMENTO DIRETO SEM FILTROS - Ordem preservada do upload');
     
     return dados.map((linha, index) => {
       try {
         const skuProduto = linha.SKU || linha.sku || `PROD-${index + 1}`;
         
-        // MAPEAMENTO SUPER SIMPLES: 1:1 direto por índice
-        const imagemPrincipal = imagensPrincipais[index] || null;
-        const imagemFornecedor = imagensFornecedor[index] || null;
+        // MAPEAMENTO DIRETO: Usar posição exata sem filtros
+        const imagemDisponivel = imagensUpload[index] || null;
 
-        console.log(`🔍 [AUDIT] MAPEAMENTO DIRETO - Linha ${index}: SKU="${skuProduto}", imagem=${imagemPrincipal?.url ? 'encontrada' : 'não encontrada'}, imagem_fornecedor=${imagemFornecedor?.url ? 'encontrada' : 'não encontrada'}`);
+        console.log(`🔍 [AUDIT] MAPEAMENTO SIMPLIFICADO - Linha ${index}: SKU="${skuProduto}", imagem=${imagemDisponivel?.url ? 'encontrada' : 'não encontrada'}`);
          
         // Log detalhado para auditoria do mapeamento direto
         console.log(`🔍 [AUDIT] DETALHES MAPEAMENTO DIRETO "${skuProduto}" (posição ${index}):`, {
           skuProduto: skuProduto,
           posicaoNaLista: index,
-          imagemPrincipal: imagemPrincipal?.url,
-          imagemPrincipalNome: imagemPrincipal?.nome,
-          imagemFornecedor: imagemFornecedor?.url,
-          imagemFornecedorNome: imagemFornecedor?.nome,
-          metodoBusca: 'mapeamento direto por índice [index]',
+          imagemDisponivel: imagemDisponivel?.url,
+          imagemDisponivelNome: imagemDisponivel?.nome,
+          imagemDisponivelColuna: imagemDisponivel?.coluna,
+          metodoBusca: 'mapeamento direto 1:1 por índice [index] SEM FILTROS',
         });
 
-        const imagemFinal = imagemPrincipal?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
-        const imagemFornecedorFinal = imagemFornecedor?.url || linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '';
+        // Usar a imagem disponível ou dados da planilha
+        const imagemFinal = imagemDisponivel?.url || linha.IMAGEM || linha.imagem || linha['IMAGEM '] || '';
+        const imagemFornecedorFinal = imagemDisponivel?.coluna === 'IMAGEM FORNECEDOR' ? imagemDisponivel.url : (linha['IMAGEM FORNECEDOR'] || linha.IMAGEM_FORNECEDOR || linha.imagem_fornecedor || linha['IMAGEM_FORNECEDOR '] || '');
 
         if (imagemFinal || imagemFornecedorFinal) {
           console.log(`✅ [DEBUG] Produto ${index} tem imagens:`, {
             sku: linha.SKU || linha.sku,
             imagemFinal,
             imagemFornecedorFinal,
-            fonteImagem: imagemPrincipal ? 'extraída' : 'coluna',
-            fonteFornecedor: imagemFornecedor ? 'extraída' : 'coluna'
+            fonteImagem: imagemDisponivel ? 'extraída' : 'coluna',
+            colunaImagem: imagemDisponivel?.coluna || 'planilha'
           });
         }
 
@@ -868,8 +707,8 @@ export function useCotacoesArquivos() {
           change_dolar_total: parseFloat(String(linha.CHANGE_DOLAR_TOTAL || linha.change_dolar_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           multiplicador_reais_total: parseFloat(String(linha.MULTIPLICADOR_REAIS_TOTAL || linha.multiplicador_reais_total || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           // Metadados das imagens - marcar como extraída se houve upload OU se existe referência na coluna
-          imagem_extraida: imagemPrincipal ? true : (imagemFinal && imagemFinal.trim() !== '' ? true : false),
-          imagem_fornecedor_extraida: imagemFornecedor ? true : (imagemFornecedorFinal && imagemFornecedorFinal.trim() !== '' ? true : false),
+          imagem_extraida: imagemDisponivel?.coluna === 'IMAGEM' ? true : (imagemFinal && imagemFinal.trim() !== '' ? true : false),
+          imagem_fornecedor_extraida: imagemDisponivel?.coluna === 'IMAGEM FORNECEDOR' ? true : (imagemFornecedorFinal && imagemFornecedorFinal.trim() !== '' ? true : false),
         };
 
         // Cálculos automáticos do sistema (ignorando valores da planilha)
