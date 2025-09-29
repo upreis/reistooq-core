@@ -249,13 +249,19 @@ export function useCotacoesArquivos() {
         console.log('🔍 [DEBUG] Valor COLUNA_N (Peso sem embalagem):', dadosComIndices[0]['COLUNA_N']);
       }
       
-      // Método 2: SISTEMA SIMPLIFICADO - Usar diretamente método sequencial
-      console.log('📊 [DEBUG] USANDO EXTRAÇÃO DIRETA SEQUENCIAL - SEM JSZip');
-      await extrairImagensAlternativo(file, imagens);
+      // Método 2: NOVO - Usar mapeamento XML preciso
+      console.log('🎯 [DEBUG] USANDO NOVO MÉTODO: Mapeamento XML com posições exatas');
+      await extrairImagensComPosicaoXML(file, imagens, worksheet);
       
-      // FALLBACK: Se falhou, tentar último recurso
+      // FALLBACK: Se não conseguiu via XML, usar método alternativo
       if (imagens.length === 0) {
-        console.log('🔄 [DEBUG] Método alternativo falhou, tentando fallback...');
+        console.log('🔄 [DEBUG] XML falhou, tentando método alternativo...');
+        await extrairImagensAlternativo(file, imagens);
+      }
+      
+      // ÚLTIMO RECURSO: Se ainda não tem imagens, usar fallback
+      if (imagens.length === 0) {
+        console.log('🔄 [DEBUG] Método alternativo falhou, usando fallback final...');
         await extrairImagensFallback(file, imagens);
       }
       
@@ -359,6 +365,262 @@ export function useCotacoesArquivos() {
     } catch (error) {
       console.error('Erro ao encontrar índice da coluna:', error);
       return null;
+    }
+  };
+
+  const lerXMLDrawings = async (zipData: any): Promise<Map<string, {row: number, col: number}>> => {
+    const imagePositions = new Map<string, {row: number, col: number}>();
+    
+    try {
+      console.log('📊 [DEBUG] Lendo XML de drawings para posições exatas...');
+      
+      // Buscar arquivos de drawing XML
+      const drawingFiles = Object.keys(zipData.files).filter(name => 
+        name.includes('drawings/') && name.endsWith('.xml')
+      );
+      
+      console.log('🎨 [DEBUG] Arquivos de drawing encontrados:', drawingFiles);
+      
+      // Buscar também por relationship files para mapear IDs
+      const relFiles = Object.keys(zipData.files).filter(name => 
+        name.includes('drawings/_rels/') && name.endsWith('.rels')
+      );
+      
+      console.log('🔗 [DEBUG] Arquivos de relationship encontrados:', relFiles);
+      
+      // Mapear IDs de imagens para arquivos
+      const imageIdToFile = new Map<string, string>();
+      for (const relFile of relFiles) {
+        try {
+          const relContent = await zipData.files[relFile].async('string');
+          const relDoc = new DOMParser().parseFromString(relContent, 'text/xml');
+          const relationships = relDoc.querySelectorAll('Relationship');
+          
+          relationships.forEach((rel) => {
+            const id = rel.getAttribute('Id');
+            const target = rel.getAttribute('Target');
+            if (id && target && target.includes('media/')) {
+              imageIdToFile.set(id, target.replace('../', 'xl/'));
+              console.log(`🔗 [DEBUG] Mapeamento ID: ${id} → ${target}`);
+            }
+          });
+        } catch (relError) {
+          console.warn(`⚠️ [DEBUG] Erro ao processar ${relFile}:`, relError);
+        }
+      }
+      
+      for (const drawingFile of drawingFiles) {
+        try {
+          const xmlContent = await zipData.files[drawingFile].async('string');
+          console.log(`📄 [DEBUG] Processando ${drawingFile}...`);
+          
+          // Parser XML simples para extrair posições
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlContent, 'text/xml');
+          
+          // Buscar elementos anchor que definem posições (múltiplos namespaces)
+          const anchors = xmlDoc.querySelectorAll('xdr\\:twoCellAnchor, twoCellAnchor, anchor');
+          
+          console.log(`🔍 [DEBUG] Encontrados ${anchors.length} anchors no XML`);
+          
+          anchors.forEach((anchor, index) => {
+            try {
+              // Extrair posição "from" (célula inicial)
+              const fromElement = anchor.querySelector('xdr\\:from, from');
+              if (fromElement) {
+                const colElement = fromElement.querySelector('xdr\\:col, col');
+                const rowElement = fromElement.querySelector('xdr\\:row, row');
+                
+                if (colElement && rowElement) {
+                  const col = parseInt(colElement.textContent || '0');
+                  const row = parseInt(rowElement.textContent || '0');
+                  
+                  // Buscar referência da imagem (várias estratégias)
+                  let imageRef = '';
+                  
+                  // Estratégia 1: Buscar blip com r:embed
+                  const blipElement = anchor.querySelector('a\\:blip, blip');
+                  if (blipElement) {
+                    const embed = blipElement.getAttribute('r:embed') || 
+                                  blipElement.getAttribute('embed');
+                    if (embed) {
+                      imageRef = embed;
+                      console.log(`📍 [DEBUG] Encontrado embed ID: ${embed}`);
+                    }
+                  }
+                  
+                  // Estratégia 2: Se não encontrou embed, usar índice
+                  if (!imageRef) {
+                    imageRef = `image_${index}`;
+                  }
+                  
+                  // Buscar arquivo real da imagem se temos mapeamento
+                  const realImageFile = imageIdToFile.get(imageRef);
+                  const finalRef = realImageFile || imageRef;
+                  
+                  imagePositions.set(finalRef, { row, col });
+                  
+                  const cellName = String.fromCharCode(65 + col) + (row + 2);
+                  console.log(`📍 [DEBUG] Imagem "${finalRef}" mapeada para célula ${cellName} (Linha ${row + 2}, Coluna ${col + 1})`);
+                }
+              }
+            } catch (anchorError) {
+              console.warn('⚠️ [DEBUG] Erro ao processar anchor:', anchorError);
+            }
+          });
+          
+        } catch (xmlError) {
+          console.warn(`⚠️ [DEBUG] Erro ao processar ${drawingFile}:`, xmlError);
+        }
+      }
+      
+      console.log(`✅ [DEBUG] Total de posições mapeadas: ${imagePositions.size}`);
+      imagePositions.forEach((pos, key) => {
+        console.log(`🗺️ [DEBUG] ${key} → ${String.fromCharCode(65 + pos.col)}${pos.row + 2}`);
+      });
+      
+      return imagePositions;
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro ao ler XML de drawings:', error);
+      return new Map();
+    }
+  };
+
+  const extrairImagensComPosicaoXML = async (
+    file: File, 
+    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
+    worksheet: any
+  ) => {
+    try {
+      console.log('🎯 [DEBUG] NOVO MÉTODO: Extração com mapeamento XML preciso');
+      
+      // Importar JSZip para ler estrutura completa
+      const JSZip = (await import('jszip')).default;
+      const zip = new JSZip();
+      
+      // Carregar arquivo como ZIP
+      const arrayBuffer = await file.arrayBuffer();
+      const zipData = await zip.loadAsync(arrayBuffer);
+      
+      // Ler posições das imagens do XML
+      const imagePositions = await lerXMLDrawings(zipData);
+      
+      // Buscar arquivos de imagem
+      const mediaFiles = Object.keys(zipData.files).filter(name => 
+        name.startsWith('xl/media/') && (
+          name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
+          name.endsWith('.gif') || name.endsWith('.bmp')
+        )
+      );
+      
+      console.log('📸 [DEBUG] Imagens encontradas:', mediaFiles);
+      
+      // Mapear colunas do Excel
+      const XLSX = await import('xlsx');
+      const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+      
+      for (let i = 0; i < mediaFiles.length; i++) {
+        const mediaFile = mediaFiles[i];
+        const imageBlob = await zipData.files[mediaFile].async('blob');
+        
+        if (imageBlob.size === 0) {
+          console.warn(`⚠️ [DEBUG] Arquivo ${mediaFile} está vazio`);
+          continue;
+        }
+        
+        // Buscar posição da imagem no XML (estratégias múltiplas)
+        const imageName = mediaFile.split('/').pop()?.replace(/\.[^.]+$/, '') || '';
+        let position = null;
+        let estrategiaUsada = '';
+        
+        // Estratégia 1: Buscar por arquivo completo
+        if (imagePositions.has(mediaFile)) {
+          position = imagePositions.get(mediaFile);
+          estrategiaUsada = 'arquivo_completo';
+        }
+        
+        // Estratégia 2: Buscar por nome sem extensão
+        if (!position) {
+          for (const [key, pos] of imagePositions.entries()) {
+            if (key.includes(imageName) && imageName.length > 0) {
+              position = pos;
+              estrategiaUsada = `nome_arquivo: ${key}`;
+              break;
+            }
+          }
+        }
+        
+        // Estratégia 3: Buscar por índice sequencial
+        if (!position) {
+          for (const [key, pos] of imagePositions.entries()) {
+            if (key.includes(`image${i}`) || key.includes(`rId${i + 1}`) || key.includes(i.toString())) {
+              position = pos;
+              estrategiaUsada = `indice_sequencial: ${key}`;
+              break;
+            }
+          }
+        }
+        
+        // Estratégia 4: Usar posição por ordem se existem posições suficientes
+        if (!position && imagePositions.size > i) {
+          const positions = Array.from(imagePositions.values());
+          position = positions[i];
+          estrategiaUsada = 'ordem_posicional';
+        }
+        
+        console.log(`🔍 [DEBUG] Busca de posição para "${mediaFile}": ${estrategiaUsada || 'não_encontrada'}`);
+        
+        let linhaExcel, coluna, skuAssociado;
+        
+        if (position) {
+          // MAPEAMENTO PRECISO: Usar posição do XML
+          linhaExcel = position.row + 2; // +2 porque row 0 = linha 1, e linha 1 = cabeçalho
+          
+          // Determinar tipo de coluna baseada na posição
+          if (position.col === 1) { // Coluna B
+            coluna = 'IMAGEM';
+          } else if (position.col === 2) { // Coluna C  
+            coluna = 'IMAGEM_FORNECEDOR';
+          } else {
+            coluna = 'IMAGEM'; // Default
+          }
+          
+          // Buscar SKU da linha correspondente
+          const skuAddress = XLSX.utils.encode_cell({ r: position.row + 1, c: 0 });
+          const skuCell = worksheet[skuAddress];
+          skuAssociado = skuCell?.v ? String(skuCell.v) : `LINHA_${linhaExcel}`;
+          
+          console.log(`🎯 [DEBUG] MAPEAMENTO XML PRECISO: Imagem "${mediaFile}" → Célula ${String.fromCharCode(65 + position.col)}${linhaExcel} → SKU "${skuAssociado}"`);
+          
+        } else {
+          // FALLBACK: Mapeamento sequencial
+          linhaExcel = i + 2;
+          coluna = 'IMAGEM';
+          skuAssociado = `FALLBACK_${linhaExcel}`;
+          
+          console.log(`⚠️ [DEBUG] FALLBACK SEQUENCIAL: Imagem "${mediaFile}" → Linha ${linhaExcel} → SKU "${skuAssociado}"`);
+        }
+        
+        const extensao = mediaFile.split('.').pop() || 'png';
+        const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_xml.${extensao}`;
+        
+        imagens.push({
+          nome: nomeImagem,
+          blob: imageBlob,
+          linha: linhaExcel,
+          coluna: coluna,
+          sku: skuAssociado
+        });
+        
+        console.log(`✅ [DEBUG] Imagem mapeada via XML: "${mediaFile}" → SKU "${skuAssociado}", Linha ${linhaExcel}, Coluna ${coluna}`);
+      }
+      
+      console.log(`🎉 [DEBUG] Mapeamento XML concluído: ${imagens.length} imagens processadas`);
+      
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro no mapeamento XML:', error);
+      throw error;
     }
   };
 
