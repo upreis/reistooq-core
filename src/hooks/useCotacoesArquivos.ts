@@ -946,67 +946,13 @@ export function useCotacoesArquivos() {
         console.log(`✅ [DEBUG] Imagem mapeada via XML: "${mediaFile}" → SKU "${skuAssociado}", Linha ${linhaExcel}, Coluna ${coluna}`);
       }
       
-      console.log(`🎉 [DEBUG] MAPEAMENTO XML CONCLUÍDO - RESUMO FINAL:`, {
-        totalImagens: imagens.length,
-        totalPosiçõesXML: imagePositions.size,
-        arquivosProcessados: mediaFiles.length,
-        estratégiasUsadas: imagens.map(img => img.sku?.includes('FALLBACK') ? 'fallback' : 'xml').reduce((acc, curr) => {
-          acc[curr] = (acc[curr] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>)
-      });
-      
-      // Log final com mapeamento completo para auditoria
-      console.log('📋 [DEBUG] MAPEAMENTO FINAL COMPLETO:');
-      imagens.forEach((img, idx) => {
-        console.log(`  ${idx + 1}: ${img.nome} → Linha ${img.linha} → SKU "${img.sku}" → Coluna ${img.coluna}`);
-      });
-      // VALIDAÇÃO FINAL - FASE 1 COMPLETADA
-      console.log('🔍 [DEBUG] === VALIDAÇÃO FASE 1 - CORREÇÕES APLICADAS ===');
-      
-      // Verificar se existe FL-62 e onde foi mapeado
-      const fl62Image = imagens.find(img => img.sku && img.sku.includes('FL-62'));
-      const cmd34Image = imagens.find(img => img.sku && img.sku.includes('CMD-34'));
-      
-      if (fl62Image) {
-        console.log('✅ [DEBUG] FL-62 ENCONTRADO:', {
-          nome: fl62Image.nome,
-          linha: fl62Image.linha,
-          sku: fl62Image.sku,
-          status: fl62Image.linha >= 60 ? 'MAPEAMENTO CORRETO' : 'POSSÍVEL PROBLEMA'
-        });
-      }
-      
-      if (cmd34Image) {
-        console.log('✅ [DEBUG] CMD-34 ENCONTRADO:', {
-          nome: cmd34Image.nome,
-          linha: cmd34Image.linha,
-          sku: cmd34Image.sku,
-          status: cmd34Image.linha <= 5 ? 'MAPEAMENTO CORRETO' : 'POSSÍVEL PROBLEMA'
-        });
-      }
-      
-      console.log('🎯 [DEBUG] === FASE 1 CONCLUÍDA COM SUCESSO ===');
-      console.log('📋 [DEBUG] CORREÇÕES APLICADAS:');
-      console.log('  ✅ Object.keys() substituído por ordenação determinística');  
-      console.log('  ✅ Array.from(values()) corrigido para preservar contexto Map');
-      console.log('  ✅ Logs de debug detalhados implementados');
-      console.log('  ✅ Validação de mapeamento adicionada');
-      
-      // P4.1: SISTEMA DE MONITORAMENTO CONTÍNUO E FEEDBACK
-      console.log(`📊 [DEBUG] === INICIANDO FASE 4: MONITORAMENTO E FEEDBACK ===`);
-      
-      // P4.2: Análise de performance e estatísticas
-      const performanceMetrics = {
-        tempoProcessamento: Date.now() - new Date(new Date().toISOString().split('T')[0]).getTime(),
-        taxaSucesso: (imagens.length / mediaFiles.length) * 100,
-        totalImagensProcessadas: imagens.length,
-        totalImagensEsperadas: mediaFiles.length,
-        usoXML: imagens.filter(img => !img.sku?.includes('FALLBACK')).length,
-        usoFallback: imagens.filter(img => img.sku?.includes('FALLBACK')).length
-      };
-      
-      console.log(`📈 [DEBUG] MÉTRICAS DE PERFORMANCE:`, performanceMetrics);
+    } catch (error) {
+      console.error('❌ [SKU_SYSTEM] ERRO no processamento individual por SKU:', error);
+      throw error;
+    }
+  };
+
+  const extrairImagensAlternativo = async (
       
       // P4.3: Sistema de alertas inteligentes
       const alerts = {
