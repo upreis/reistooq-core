@@ -1,6 +1,13 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  validarEstruturaExcel, 
+  mapearImagensPorSKU, 
+  extrairSKUDoFilename,
+  validarCorrespondenciaImagemSKU,
+  adicionarCorrecaoPendente
+} from './useCotacoesValidacoes';
 
 interface CotacaoArquivo {
   id?: string;
@@ -796,11 +803,17 @@ export function useCotacoesArquivos() {
     worksheet: any
   ) => {
     try {
-      console.log('🎯 [DEBUG] === INICIANDO MAPEAMENTO XML PRECISO ===');
+      // P5.X: VALIDAÇÕES PRÉ-UPLOAD OBRIGATÓRIAS
+      const validacaoPreUpload = await validarEstruturaExcel(worksheet);
+      if (!validacaoPreUpload.sucesso) {
+        throw new Error(`Upload bloqueado: ${validacaoPreUpload.erros.join(', ')}`);
+      }
+      
       console.log('📊 [DEBUG] AUDITORIA INICIAL:', {
         tamanhoArquivo: file.size,
         nomeArquivo: file.name,
-        timestampInicio: new Date().toISOString()
+        timestampInicio: new Date().toISOString(),
+        estrategiaImplementada: 'Mapeamento por SKU + Validações Rigorosas'
       });
       
       // Importar JSZip para ler estrutura completa
@@ -828,6 +841,13 @@ export function useCotacoesArquivos() {
       const mediaFilesRaw = Object.keys(zipData.files).filter(name => 
         name.startsWith('xl/media/') && (
           name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg') ||
+          name.endsWith('.gif') || name.endsWith('.bmp')
+        )
+      );
+      
+      // NOVA ESTRATÉGIA: MAPEAMENTO BASEADO EM SKU NO FILENAME
+      const mapeamentoPorSKU = await mapearImagensPorSKU(mediaFilesRaw, worksheet);
+      console.log(`🎯 [DEBUG] Mapeamento por SKU concluído: ${mapeamentoPorSKU.mapeados} de ${mediaFilesRaw.length} imagens`);
           name.endsWith('.gif') || name.endsWith('.bmp')
         )
       );
@@ -871,49 +891,43 @@ export function useCotacoesArquivos() {
         
         // Buscar posição da imagem no XML (estratégias múltiplas)
         const imageName = mediaFile.split('/').pop()?.replace(/\.[^.]+$/, '') || '';
-        let position = null;
+        let position: { row: number; col: number } | undefined;
         let estrategiaUsada = '';
+        let skuEncontrado: string | undefined; // Declarar variável corretamente
         
-        // Estratégia 1: Buscar por arquivo completo
-        if (imagePositions.has(mediaFile)) {
-          position = imagePositions.get(mediaFile);
-          estrategiaUsada = 'arquivo_completo';
+        // ESTRATÉGIA 1 (PRIORIDADE): BUSCAR POR SKU NO FILENAME
+        const skuNoFilename = extrairSKUDoFilename(mediaFile);
+        if (skuNoFilename) {
+          const mapeamentoSKU = mapeamentoPorSKU.mapeamentos.find(m => m.sku === skuNoFilename);
+          if (mapeamentoSKU) {
+            position = { row: mapeamentoSKU.linha - 2, col: 1 }; // Coluna B por padrão
+            estrategiaUsada = `sku_filename: ${skuNoFilename}`;
+            skuEncontrado = mapeamentoSKU.sku;
+            console.log(`✅ [DEBUG] MAPEAMENTO POR SKU: ${mediaFile} → SKU ${skuNoFilename} → Linha ${mapeamentoSKU.linha}`);
+          }
         }
         
-        // Estratégia 2: Buscar por nome sem extensão
+        // ESTRATÉGIA 2: XML (se não encontrou por SKU)
+        if (!position && imagePositions.has(mediaFile)) {
+          position = imagePositions.get(mediaFile);
+          estrategiaUsada = 'xml_completo';
+        }
+        
+        // ESTRATÉGIA 3: Nome do arquivo (XML)
         if (!position) {
           for (const [key, pos] of imagePositions.entries()) {
             if (key.includes(imageName) && imageName.length > 0) {
               position = pos;
-              estrategiaUsada = `nome_arquivo: ${key}`;
+              estrategiaUsada = `xml_nome: ${key}`;
               break;
             }
           }
         }
         
-        // Estratégia 3: Buscar por índice sequencial
+        // ESTRATÉGIA 4: NÃO USAR FALLBACK SEQUENCIAL - PULAR IMAGEM
         if (!position) {
-          for (const [key, pos] of imagePositions.entries()) {
-            if (key.includes(`image${i}`) || key.includes(`rId${i + 1}`) || key.includes(i.toString())) {
-              position = pos;
-              estrategiaUsada = `indice_sequencial: ${key}`;
-              break;
-            }
-          }
-        }
-        
-        // Estratégia 4: CORREÇÃO CRÍTICA - Não usar Array.from que perde contexto
-        if (!position && imagePositions.size > 0) {
-          // Em vez de Array.from(values()), iterar sobre o Map mantendo contexto
-          let positionIndex = 0;
-          for (const [key, pos] of imagePositions.entries()) {
-            if (positionIndex === i) {
-              position = pos;
-              estrategiaUsada = `map_iteracao_${positionIndex}: ${key}`;
-              break;
-            }
-            positionIndex++;
-          }
+          console.warn(`❌ [DEBUG] IMAGEM REJEITADA - Sem mapeamento válido: ${mediaFile}`);
+          continue; // PULAR esta imagem, não forçar mapeamento
         }
         
         console.log(`🔍 [DEBUG] ANÁLISE DETALHADA - Arquivo ${i}:`, {
