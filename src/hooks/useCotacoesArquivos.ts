@@ -848,9 +848,6 @@ export function useCotacoesArquivos() {
       // NOVA ESTRATÉGIA: MAPEAMENTO BASEADO EM SKU NO FILENAME
       const mapeamentoPorSKU = await mapearImagensPorSKU(mediaFilesRaw, worksheet);
       console.log(`🎯 [DEBUG] Mapeamento por SKU concluído: ${mapeamentoPorSKU.mapeados} de ${mediaFilesRaw.length} imagens`);
-          name.endsWith('.gif') || name.endsWith('.bmp')
-        )
-      );
       
       // CORREÇÃO CRÍTICA: Ordenação determinística por nome/número
       const mediaFiles = mediaFilesRaw.sort((a, b) => {
