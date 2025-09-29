@@ -390,39 +390,54 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-      // CORREÇÃO POR SKU: Mapear imagens baseado nos SKUs das linhas do Excel
-      // Primeiro, extrair todos os SKUs das linhas de dados
-      const skusExcel = [];
+      // CORREÇÃO: Primeiro mapear APENAS as células que realmente contêm dados na coluna B (IMAGEM)
+      // Extrair informações de todas as linhas com dados
+      const linhasComDados = [];
       for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para pular cabeçalho
-        const cellAddress = XLSX.utils.encode_cell({ r: R, c: 0 }); // Assumindo que SKU está na coluna A (índice 0)
-        const cell = worksheet[cellAddress];
-        const sku = cell ? cell.v : '';
-        if (sku) {
-          skusExcel.push({ sku: String(sku), linhaExcel: R + 1, linhaDados: R - range.s.r - 1 });
+        const skuAddress = XLSX.utils.encode_cell({ r: R, c: 0 }); // Coluna A = SKU
+        const imagemAddress = XLSX.utils.encode_cell({ r: R, c: colunaImagemIndex || 1 }); // Coluna B = IMAGEM
+        
+        const skuCell = worksheet[skuAddress];
+        const imagemCell = worksheet[imagemAddress];
+        
+        const sku = skuCell ? String(skuCell.v) : '';
+        const temImagem = imagemCell && imagemCell.v; // Verifica se há conteúdo na célula de imagem
+        
+        if (sku) { // Se há SKU na linha
+          linhasComDados.push({
+            sku: sku,
+            linhaExcel: R + 1, // Linha no Excel (1-indexed)
+            linhaDados: R - range.s.r - 1, // Índice nos dados (0-indexed)
+            temImagemB: !!temImagem, // Se tem conteúdo na coluna B
+            processadaImagemB: false // Flag para controle de processamento
+          });
         }
       }
       
-      console.log('📊 [DEBUG] SKUs extraídos do Excel:', skusExcel);
+      console.log('📊 [DEBUG] Linhas com dados extraídas:', linhasComDados);
+      console.log('📊 [DEBUG] Total de imagens encontradas no ZIP:', todosArquivosImagem.length);
       
-      // ESTRATÉGIA: Mapear imagens em pares por linha (B2+C2, B3+C3, etc.)
-      // Imagem par (0,2,4...) = coluna B (IMAGEM)  
-      // Imagem ímpar (1,3,5...) = coluna C (IMAGEM_FORNECEDOR)
+      // FOCO: Mapear apenas para coluna B (IMAGEM) por enquanto
+      // Contar quantas linhas devem ter imagem na coluna B
+      const linhasComImagemB = linhasComDados.filter(linha => linha.temImagemB);
+      console.log('📊 [DEBUG] Linhas que devem ter imagem na coluna B:', linhasComImagemB.length);
       
-      const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
-      const linhaExcel = linhaDados + 2; // +2 porque dados começam na linha 2
+      // Se temos mais imagens do que linhas esperadas na coluna B, assumir que as extras são da coluna C
+      if (todosArquivosImagem.length > linhasComImagemB.length) {
+        console.log('📊 [DEBUG] Detectadas imagens para ambas as colunas B e C');
+      }
       
-      // Encontrar o SKU correspondente a esta linha
-      const skuInfo = skusExcel.find(item => item.linhaExcel === linhaExcel);
-      const skuAssociado = skuInfo ? skuInfo.sku : `LINHA_${linhaExcel}`;
+      // Mapear imagem atual para a linha correspondente na coluna B
+      const linhaAlvo = linhasComImagemB[Math.min(i, linhasComImagemB.length - 1)];
       
-      // Alternar entre colunas B e C conforme posição no Excel
-      const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
-      
-      // Verificar se não excede o número de linhas de dados
-      if (linhaDados >= skusExcel.length) {
-        console.warn(`⚠️ [DEBUG] Imagem ${i} excede linhas de dados (${skusExcel.length}), pulando...`);
+      if (!linhaAlvo) {
+        console.warn(`⚠️ [DEBUG] Não há linha alvo para imagem ${i}, pulando...`);
         continue;
       }
+      
+      const linhaExcel = linhaAlvo.linhaExcel;
+      const skuAssociado = linhaAlvo.sku;
+      const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
       
       const extensao = mediaFile.split('.').pop() || 'png';
       const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
@@ -467,11 +482,10 @@ export function useCotacoesArquivos() {
       // Estimar número de imagens baseado no tamanho (heurística)
       const estimatedImages = Math.min(Math.floor(fileSize / (50 * 1024)), 50); // Max 50 imagens
       
-        // Criar imagens de placeholder/dummy para cada linha estimada
+        // CORREÇÃO: Criar imagens de placeholder apenas para coluna IMAGEM por enquanto
         for (let i = 0; i < estimatedImages; i++) {
-          const linhaDados = Math.floor(i / 2); // Duas imagens por linha de dados
-          const linha = linhaDados + 2; // +2 porque dados começam na linha 2
-          const coluna = i % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR'; // Alternar entre colunas
+          const linha = i + 2; // Cada imagem vai para uma linha sequencial (começando linha 2)
+          const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
           const skuEstimado = `PLACEHOLDER_${linha}`; // SKU estimado para placeholder
         
         // Criar um blob de imagem vazio como placeholder
@@ -558,14 +572,15 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 8);
               const imageBlob = new Blob([imageData], { type: 'image/png' });
               
-              const linhaDados = Math.floor(imagemIndex / 2);
-              const coluna = imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+               // CORREÇÃO: Mapear sequencialmente para coluna IMAGEM apenas
+               const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
+               const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
               
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.png`,
                 blob: imageBlob,
-                linha: linhaDados + 2, // +2 porque dados começam na linha 2
-                coluna: coluna // CORREÇÃO: Alternar entre colunas corretamente
+                 linha: linha,
+                 coluna: coluna
               });
               
               imagemIndex++;
@@ -586,14 +601,15 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 2);
               const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
               
-              const linhaDados = Math.floor(imagemIndex / 2);
-              const coluna = imagemIndex % 2 === 0 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+               // CORREÇÃO: Mapear sequencialmente para coluna IMAGEM apenas
+               const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
+               const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
               
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
                 blob: imageBlob,
-                linha: linhaDados + 2, // +2 porque dados começam na linha 2
-                coluna: coluna // CORREÇÃO: Alternar entre colunas corretamente
+                 linha: linha,
+                 coluna: coluna
               });
               
               imagemIndex++;
