@@ -106,7 +106,7 @@ export function useCotacoesArquivos() {
         description: "Arquivo enviado com sucesso",
       });
 
-      return data;
+      return data as CotacaoArquivo;
     } catch (error) {
       console.error('Erro ao fazer upload do arquivo:', error);
       toast({
@@ -120,9 +120,14 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const deletarArquivo = useCallback(async (arquivoId: string, filePath?: string) => {
+  const deletarArquivo = useCallback(async (arquivo: string | CotacaoArquivo, filePath?: string) => {
     try {
       setLoading(true);
+
+      const arquivoId = typeof arquivo === 'string' ? arquivo : arquivo.id;
+      if (!arquivoId) {
+        throw new Error('ID do arquivo não encontrado');
+      }
 
       if (filePath) {
         const { error: deleteError } = await supabase.storage
@@ -162,7 +167,7 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const downloadTemplate = useCallback(() => {
+  const downloadTemplate = useCallback((formato?: 'csv' | 'excel') => {
     const headers = [
       'SKU', 'PRODUTO', 'DESCRICAO', 'PRECO_UNITARIO', 'QUANTIDADE', 
       'PRECO_TOTAL', 'CATEGORIA', 'FORNECEDOR', 'OBSERVACOES'
@@ -183,8 +188,7 @@ export function useCotacoesArquivos() {
   }, []);
 
   const lerArquivoComImagens = useCallback(async (
-    file: File,
-    worksheet: any
+    file: File
   ) => {
     try {
       console.log('🎯 [SKU_SYSTEM] Iniciando processamento individual por SKU');
@@ -201,7 +205,7 @@ export function useCotacoesArquivos() {
       
       console.log(`📁 [SKU_SYSTEM] Encontrados ${mediaFiles.length} arquivos de imagem`);
       
-      // Usar o processador SKU para mapear e renomear imagens
+      // Processar imagens sem worksheet (será extraído automaticamente)
       const resultado = await skuProcessor.processarImagensIndividualmente(zipData, mediaFiles);
       
       console.log('✅ [SKU_SYSTEM] Processamento concluído:', {
@@ -210,14 +214,47 @@ export function useCotacoesArquivos() {
         renomeadas: resultado.renomeadasCount
       });
       
-      // Retornar imagens processadas no formato esperado
-      return resultado.imagensProcessadas.map(img => ({
+      // Processar dados do Excel também
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(arrayBuffer);
+      const worksheet = workbook.getWorksheet(1);
+      
+      const dados: any[] = [];
+      if (worksheet) {
+        const headers: string[] = [];
+        const headerRow = worksheet.getRow(1);
+        headerRow.eachCell((cell, colNumber) => {
+          headers[colNumber - 1] = cell.value?.toString() || `Coluna${colNumber}`;
+        });
+
+        for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
+          const row = worksheet.getRow(rowNumber);
+          const rowData: any = {};
+          
+          row.eachCell((cell, colNumber) => {
+            const header = headers[colNumber - 1];
+            if (header) {
+              rowData[header] = cell.value;
+            }
+          });
+          
+          if (Object.keys(rowData).length > 0) {
+            dados.push(rowData);
+          }
+        }
+      }
+      
+      // Retornar dados e imagens processadas no formato esperado
+      const imagens = resultado.imagensProcessadas.map(img => ({
         nome: img.nomeRenomeado,
         blob: img.blob,
         linha: img.linha,
         coluna: 'IMAGEM',
         sku: img.sku
       }));
+      
+      return { dados, imagens };
       
     } catch (error) {
       console.error('❌ [SKU_SYSTEM] ERRO no processamento individual por SKU:', error);
