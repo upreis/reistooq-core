@@ -170,11 +170,12 @@ export function useCotacoesArquivos() {
   const downloadTemplate = useCallback((formato?: 'csv' | 'excel') => {
     const headers = [
       'SKU', 'PRODUTO', 'DESCRICAO', 'PRECO_UNITARIO', 'QUANTIDADE', 
-      'PRECO_TOTAL', 'CATEGORIA', 'FORNECEDOR', 'OBSERVACOES'
+      'PRECO_TOTAL', 'CATEGORIA', 'FORNECEDOR', 'OBSERVACOES',
+      'MATERIAL', 'COR', 'PACKAGE', 'UNIT', 'PCS_CTN', 'CAIXAS'
     ];
 
     const csvContent = headers.join(',') + '\n' + 
-      'EXEMPLO-001,Produto Exemplo,Descrição do produto,10.50,2,21.00,Categoria A,Fornecedor XYZ,Observações aqui';
+      'EXEMPLO-001,Produto Exemplo,Descrição do produto,10.50,2,21.00,Categoria A,Fornecedor XYZ,Observações aqui,Plástico,Azul,Caixa,pc,12,5';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -322,10 +323,62 @@ export function useCotacoesArquivos() {
   }, []);
 
   const processarDados = useCallback((dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
-    return dados.map((item, index) => ({
-      ...item,
-      imagens: imagensUpload.filter(img => img.linha === index + 2) // +2 porque geralmente linha 1 é cabeçalho
-    }));
+    console.log('🔄 [DADOS] Iniciando mapeamento de campos do Excel');
+    console.log('🔍 [DADOS] Dados brutos recebidos:', dados.slice(0, 2)); // Primeiros 2 produtos para debug
+    console.log('🖼️ [DADOS] Imagens recebidas:', imagensUpload.length);
+    
+    return dados.map((item, index) => {
+      // MAPEAMENTO DOS CAMPOS DO TEMPLATE PARA O FORMATO ESPERADO
+      const produtoMapeado = {
+        // Campos originais preservados
+        ...item,
+        
+        // Mapeamento correto dos campos do template
+        sku: item.SKU || item.sku || `PROD-${index + 1}`,
+        nome_produto: item.PRODUTO || item.produto || item.nome_produto || '',
+        descricao: item.DESCRICAO || item.descricao || '',
+        preco: Number(item.PRECO_UNITARIO || item.preco_unitario || item.preco) || 0,
+        quantidade: Number(item.QUANTIDADE || item.quantidade) || 1,
+        valor_total: Number(item.PRECO_TOTAL || item.preco_total || item.valor_total) || 0,
+        categoria: item.CATEGORIA || item.categoria || '',
+        fornecedor: item.FORNECEDOR || item.fornecedor || '',
+        obs: item.OBSERVACOES || item.observacoes || item.obs || '',
+        
+        // Campos específicos do sistema
+        material: item.material || item.Material || '',
+        cor: item.cor || item.Cor || item.COR || '',
+        package: item.package || item.Package || item.PACKAGE || '',
+        unit: item.unit || item.Unit || item.UNIT || 'pc',
+        pcs_ctn: Number(item.pcs_ctn || item.PCS_CTN) || 0,
+        caixas: Number(item.caixas || item.Caixas || item.CAIXAS) || 1,
+        
+        // Associar imagens pela linha
+        imagem: '',
+        imagem_fornecedor: ''
+      };
+      
+      // Associar imagens pela linha (linha do Excel = index + 2, pois linha 1 é cabeçalho)
+      const imagensAssociadas = imagensUpload.filter(img => {
+        // Tentar associar por linha OU por SKU
+        return img.linha === index + 2 || (img.sku && img.sku === produtoMapeado.sku);
+      });
+      
+      if (imagensAssociadas.length > 0) {
+        // Primeira imagem como principal
+        produtoMapeado.imagem = imagensAssociadas[0].url;
+        // Segunda imagem como fornecedor (se houver)
+        if (imagensAssociadas[1]) {
+          produtoMapeado.imagem_fornecedor = imagensAssociadas[1].url;
+        }
+        
+        console.log(`🖼️ [DADOS] Produto ${produtoMapeado.sku}: ${imagensAssociadas.length} imagem(ns) associada(s)`);
+      } else {
+        console.log(`⚠️ [DADOS] Produto ${produtoMapeado.sku}: Nenhuma imagem associada`);
+      }
+      
+      console.log(`✅ [DADOS] Produto mapeado: ${produtoMapeado.sku} - ${produtoMapeado.nome_produto}`);
+      return produtoMapeado;
+    });
   }, []);
 
   const processarArquivo = useCallback(async (arquivoId: string, dados: any[]) => {

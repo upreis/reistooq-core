@@ -152,11 +152,33 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       }
       setProgressoUpload(70);
 
-      // Processar dados associando com imagens
+      // Processando produto local com DEBUG
       console.log('⚙️ Processando dados e associando imagens...');
-      const dadosProcessados = processarDados(dados, imagensUpload);
-      console.log('✅ Dados processados:', { totalProdutos: dadosProcessados.length });
-      console.log('🔍 Primeiro produto com imagens:', dadosProcessados.find(p => p.imagem || p.imagem_fornecedor));
+      let dadosProcessados = [];
+      
+      try {
+        dadosProcessados = processarDados(dados, imagensUpload);
+        console.log('✅ Dados processados com sucesso:', { 
+          totalProdutos: dadosProcessados.length,
+          campos: dadosProcessados[0] ? Object.keys(dadosProcessados[0]) : [],
+          primeiroSku: dadosProcessados[0]?.sku,
+          primeiroNome: dadosProcessados[0]?.nome_produto,
+          temImagem: !!dadosProcessados[0]?.imagem
+        });
+      } catch (error) {
+        console.error('❌ Erro no processamento de dados:', error);
+        // Fallback para dados básicos se houver erro no mapeamento
+        dadosProcessados = dados.map((item, index) => ({
+          id: `fallback-${index}`,
+          sku: item.SKU || item.sku || `PROD-${index + 1}`,
+          nome_produto: item.PRODUTO || item.produto || `Produto ${index + 1}`,
+          preco: Number(item.PRECO_UNITARIO || item.preco) || 0,
+          quantidade: Number(item.QUANTIDADE || item.quantidade) || 1,
+          valor_total: Number(item.PRECO_TOTAL || item.valor_total) || 0,
+          imagem: '',
+          imagem_fornecedor: ''
+        }));
+      }
       setProgressoUpload(90);
 
       // Simular salvamento de dados
