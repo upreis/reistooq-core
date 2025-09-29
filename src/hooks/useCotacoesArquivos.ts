@@ -950,49 +950,25 @@ export function useCotacoesArquivos() {
     }
   };
 
-  const extrairImagensAlternativo = async (
-    file: File, 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]
-  ) => {
+  const lerArquivoComImagens = useCallback(async (file: File) => {
+  const lerArquivoComImagens = useCallback(async (file: File) => {
+    setLoading(true);
     try {
-      console.log('🔄 [DEBUG] Tentando método alternativo de extração...');
-      
-      // Método alternativo: usar FileReader para buscar padrões de imagem
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      // Procurar por assinaturas de imagem (magic numbers)
-      const pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-      const jpegSignature = [0xFF, 0xD8, 0xFF];
-      
-      let imagemIndex = 0;
-      
-      // Verificar mapeamentos críticos
-      if (!imagens.find(img => img.sku?.includes('FL-62'))) {
-        alerts.critical.push('Imagem FL-62 não encontrada no mapeamento final');
-      }
-      
-      if (!imagens.find(img => img.sku?.includes('CMD-34'))) {
-        alerts.critical.push('Imagem CMD-34 não encontrada no mapeamento final');
-      }
-      
-      if (!imagens.find(img => img.sku?.includes('CMD-16'))) {
-        alerts.warning.push('Imagem CMD-16 não encontrada no mapeamento final');
-      }
-      
-      // P4.4: Relatório de qualidade detalhado
-      const qualityReport = {
-        mappingAccuracy: performanceMetrics.taxaSucesso,
-        xmlParsingSuccess: imagePositions.size > 0,
-        fallbackUsage: (performanceMetrics.usoFallback / performanceMetrics.totalImagensProcessadas) * 100,
-        criticalMappings: {
-          fl62: Boolean(imagens.find(img => img.sku?.includes('FL-62'))),
-          cmd34: Boolean(imagens.find(img => img.sku?.includes('CMD-34'))),
-          cmd16: Boolean(imagens.find(img => img.sku?.includes('CMD-16')))
-        },
-        duplicateDetection: imagePositions.size !== new Set(Array.from(imagePositions.values()).map(p => `${p.col}-${p.row}`)).size,
-        recommendedActions: [] as string[]
-      };
+      console.log('📂 [DEBUG] Iniciando leitura do arquivo:', file.name);
+      const dados = await extrairDadosExcel(file);
+      return dados;
+    } catch (error) {
+      console.error('❌ [DEBUG] Erro na leitura:', error);
+      toast({
+        title: "Erro ao processar arquivo",
+        description: "Não foi possível processar o arquivo.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
       
       // P4.5: Sistema de recomendações inteligentes
       if (qualityReport.fallbackUsage > 30) {
@@ -1431,49 +1407,83 @@ export function useCotacoesArquivos() {
           finalDocumentation,
           userNotification,
           recoveryPointId
-        };
-        console.log(`💾 [DEBUG] Resultados salvos em window.imageMapperResults para acesso da interface`);
-      } catch (error) {
-        console.warn(`⚠️ [DEBUG] Erro ao salvar resultados no window:`, error);
-      }
-      
     } catch (error) {
-      console.error('❌ [DEBUG] ERRO NO MAPEAMENTO XML - FASE 4:', error);
-      console.log('🔄 [DEBUG] Preparando fallback para método alternativo...');
+      console.error('❌ [SKU_SYSTEM] ERRO no processamento individual por SKU:', error);
       throw error;
     }
   };
 
-  const extrairImagensAlternativo = async (
-    file: File, 
-    imagens: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[]
+  const uploadImagensExtraidas = useCallback(async (
+    imagensExtraidas: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
+    folder = 'cotacoes'
   ) => {
+    setLoading(true);
     try {
-      console.log('🔄 [DEBUG] Tentando método alternativo de extração...');
+      console.log(`🔄 [UPLOAD] Iniciando upload de ${imagensExtraidas.length} imagens...`);
       
-      // Método alternativo: usar FileReader para buscar padrões de imagem
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
+      if (imagensExtraidas.length === 0) {
+        throw new Error('Nenhuma imagem foi encontrada para upload');
+      }
+
+      const imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
       
-      // Procurar por assinaturas de imagem (magic numbers)
-      const pngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
-      const jpegSignature = [0xFF, 0xD8, 0xFF];
+      for (const [index, imagem] of imagensExtraidas.entries()) {
+        try {
+          const fileName = `${folder}/${Date.now()}_${index}_${imagem.nome}`;
+          console.log(`📤 [UPLOAD] Fazendo upload ${index + 1}/${imagensExtraidas.length}: ${fileName}`);
+          
+          const { data, error } = await supabase.storage
+            .from('cotacoes-images')
+            .upload(fileName, imagem.blob);
+          
+          if (error) {
+            console.error(`❌ [UPLOAD] Erro no arquivo ${imagem.nome}:`, error);
+            continue; // Continue com próxima imagem mesmo se uma falhar
+          }
+
+          const { data: urlData } = supabase.storage
+            .from('cotacoes-images')
+            .getPublicUrl(fileName);
+
+          imagensUpload.push({
+            nome: imagem.nome,
+            url: urlData.publicUrl,
+            linha: imagem.linha,
+            coluna: imagem.coluna,
+            sku: imagem.sku
+          });
+          
+          console.log(`✅ [UPLOAD] Sucesso ${index + 1}/${imagensExtraidas.length}: ${fileName}`);
+        } catch (uploadError) {
+          console.error(`❌ [UPLOAD] Erro no arquivo ${imagem.nome}:`, uploadError);
+        }
+      }
       
-      let imagemIndex = 0;
+      const totalImagensReferencias = imagensUpload.length;
+      let descricaoImagens = '';
       
-      // Buscar PNGs
-      for (let i = 0; i < uint8Array.length - 8; i++) {
-        const matches = pngSignature.every((byte, index) => uint8Array[i + index] === byte);
-        if (matches) {
-          // Encontrar o fim da imagem PNG (IEND chunk)
-          const endSignature = [0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
-          for (let j = i + 8; j < uint8Array.length - 8; j++) {
-            const endMatches = endSignature.every((byte, index) => uint8Array[j + index] === byte);
-            if (endMatches) {
-              const imageData = uint8Array.slice(i, j + 8);
-              const imageBlob = new Blob([imageData], { type: 'image/png' });
-              
-        // CORREÇÃO: Mapear sequencialmente SEM reordenação - ordem natural
+      if (totalImagensReferencias > 0) {
+        descricaoImagens = ` com ${totalImagensReferencias} referências de imagem nas colunas`;
+      }
+      
+      toast({
+        title: "Upload concluído!",
+        description: `${totalImagensReferencias} imagens enviadas${descricaoImagens}.`,
+      });
+
+      return imagensUpload;
+    } catch (error) {
+      console.error('Erro no upload das imagens:', error);
+      toast({
+        title: "Erro no upload",
+        description: "Não foi possível enviar as imagens.",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
         const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
         const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
               
@@ -1502,9 +1512,7 @@ export function useCotacoesArquivos() {
               const imageData = uint8Array.slice(i, j + 2);
               const imageBlob = new Blob([imageData], { type: 'image/jpeg' });
               
-               // CORREÇÃO: Mapear sequencialmente SEM reordenação - ordem natural
-               const linha = imagemIndex + 2; // Cada imagem vai para uma linha sequencial
-               const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
+  const processarDados = (dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
               
               imagens.push({
                 nome: `imagem_extraida_${imagemIndex + 1}.jpg`,
