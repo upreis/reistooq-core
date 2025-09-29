@@ -226,19 +226,21 @@ export function useCotacoesArquivos() {
 
   const downloadTemplate = useCallback((formato?: 'csv' | 'excel') => {
     const headers = [
-      'SKU', 'PRODUTO', 'DESCRICAO', 'PRECO_UNITARIO', 'QUANTIDADE', 
-      'PRECO_TOTAL', 'CATEGORIA', 'FORNECEDOR', 'OBSERVACOES',
-      'MATERIAL', 'COR', 'PACKAGE', 'UNIT', 'PCS_CTN', 'CAIXAS'
+      'SKU', 'Material', 'Cor', 'Nome do Produto', 'Package', 'Preço', 'Unid.', 
+      'PCS/CTN', 'Caixas', 'Peso Unit. (g)', 'Peso Emb. Master (KG)', 
+      'Peso S/ Emb. Master (KG)', 'Peso Total Emb. (KG)', 'Peso Total S/ Emb. (KG)',
+      'Comp. (cm)', 'Larg. (cm)', 'Alt. (cm)', 'CBM Cubagem', 'CBM Total', 
+      'Qtd. Total', 'Valor Total', 'Obs.'
     ];
 
     const csvContent = headers.join(',') + '\n' + 
-      'EXEMPLO-001,Produto Exemplo,Descrição do produto,10.50,2,21.00,Categoria A,Fornecedor XYZ,Observações aqui,Plástico,Azul,Caixa,pc,12,5';
+      'CMD-001,Plástico,Azul,Produto Exemplo,Caixa 12un,10.50,pc,12,5,250,1.2,10.8,6.0,54.0,15.0,10.0,8.0,0.0012,0.006,60,630.00,Produto de exemplo para cotação';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', 'template_cotacao.csv');
+    link.setAttribute('download', 'template_cotacao_completo.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();

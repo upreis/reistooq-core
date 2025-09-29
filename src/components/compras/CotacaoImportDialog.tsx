@@ -170,26 +170,68 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       let dadosProcessados = produtosComImagens;
       
       try {
-        dadosProcessados = produtosComImagens;
-        console.log('✅ Dados processados com sucesso:', { 
+        // MAPEAR TODOS OS CAMPOS DO EXCEL PARA ESTRUTURA COMPLETA
+        dadosProcessados = produtosComImagens.map((item, index) => ({
+          id: `produto-${index}`,
+          
+          // CAMPOS BÁSICOS
+          sku: item.SKU || item.sku || `PROD-${index + 1}`,
+          material: item.Material || item.material || '',
+          cor: item.Cor || item.cor || '',
+          nome_produto: item['Nome do Produto'] || item.PRODUTO || item.produto || `Produto ${index + 1}`,
+          package: item.Package || item.package || '',
+          
+          // PREÇOS E QUANTIDADES
+          preco_unitario: Number(item.Preço || item.PRECO_UNITARIO || item.preco || 0),
+          unidade: item['Unid.'] || item.UNIT || item.unidade || 'un',
+          pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
+          caixas: Number(item.Caixas || item.caixas || 0),
+          quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
+          valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
+          
+          // PESOS (EM GRAMAS E QUILOS)
+          peso_unitario_g: Number(item['Peso Unit. (g)'] || item.peso_unitario || 0),
+          peso_embalagem_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_embalagem || 0),
+          peso_sem_embalagem_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || 0),
+          peso_total_embalagem_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_bruto || 0),
+          peso_total_sem_embalagem_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_liquido || 0),
+          
+          // DIMENSÕES (EM CENTÍMETROS)
+          comprimento_cm: Number(item['Comp. (cm)'] || item.comprimento || 0),
+          largura_cm: Number(item['Larg. (cm)'] || item.largura || 0),
+          altura_cm: Number(item['Alt. (cm)'] || item.altura || 0),
+          
+          // CUBAGEM
+          cbm_cubagem: Number(item['CBM Cubagem'] || item.cbm_unitario || 0),
+          cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
+          
+          // OBSERVAÇÕES E IMAGENS
+          observacoes: item['Obs.'] || item.OBSERVACOES || item.observacoes || '',
+          
+          // CAMPOS DE IMAGEM
+          imagem: item.imagem || '',
+          imagem_fornecedor: item.imagem_fornecedor || '',
+          nomeImagem: item.nomeImagem || ''
+        }));
+
+        console.log('✅ Dados processados com TODOS os campos:', { 
           totalProdutos: dadosProcessados.length,
-          campos: dadosProcessados[0] ? Object.keys(dadosProcessados[0]) : [],
-          primeiroSku: dadosProcessados[0]?.sku,
-          primeiroNome: dadosProcessados[0]?.nome_produto,
-          temImagem: !!dadosProcessados[0]?.imagem
+          camposExemplo: dadosProcessados[0] ? Object.keys(dadosProcessados[0]) : [],
+          primeiroItem: dadosProcessados[0]
         });
+        
       } catch (error) {
-        console.error('❌ Erro no processamento de dados:', error);
-        // Fallback para dados básicos se houver erro no mapeamento
-        dadosProcessados = dados.map((item, index) => ({
+        console.error('❌ Erro no processamento de dados completos:', error);
+        // Fallback mais robusto mantendo estrutura mínima
+        dadosProcessados = produtosComImagens.map((item, index) => ({
           id: `fallback-${index}`,
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
-          nome_produto: item.PRODUTO || item.produto || `Produto ${index + 1}`,
-          preco: Number(item.PRECO_UNITARIO || item.preco) || 0,
-          quantidade: Number(item.QUANTIDADE || item.quantidade) || 1,
-          valor_total: Number(item.PRECO_TOTAL || item.valor_total) || 0,
-          imagem: '',
-          imagem_fornecedor: ''
+          nome_produto: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,
+          preco_unitario: Number(item.Preço || item.preco || 0),
+          quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
+          valor_total: Number(item['Valor Total'] || item.valor_total || 0),
+          imagem: item.imagem || '',
+          imagem_fornecedor: item.imagem_fornecedor || ''
         }));
       }
       setProgressoUpload(90);
