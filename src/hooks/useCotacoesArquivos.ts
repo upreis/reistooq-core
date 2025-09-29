@@ -365,7 +365,7 @@ export function useCotacoesArquivos() {
       
       // Processar arquivos de mídia encontrados
       // CORREÇÃO DEFINITIVA: Mapear diretamente pela posição no array de dados
-      console.log('📊 [DEBUG] Total de imagens encontradas:', todosArquivosImagem.length);
+      console.log('📊 [DEBUG] Total de imagens encontradas no ZIP:', todosArquivosImagem.length);
       console.log('📊 [DEBUG] Total de linhas de dados esperadas:', range.e.r - range.s.r);
       console.log('📊 [DEBUG] Arquivos de imagem encontrados (ordem):', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
       
@@ -379,6 +379,11 @@ export function useCotacoesArquivos() {
       });
       
       console.log('📊 [DEBUG] Arquivos ORDENADOS:', todosArquivosImagem.map((img, idx) => `${idx}: ${img}`));
+      console.log('📊 [DEBUG] Mapeamento direto sequencial iniciado');
+      
+      // CORREÇÃO SIMPLES E DIRETA: Mapeamento 1:1 sequencial
+      // Primeira imagem → Linha 2 do Excel → Primeiro produto
+      // Segunda imagem → Linha 3 do Excel → Segundo produto, etc.
       
       for (let i = 0; i < todosArquivosImagem.length; i++) {
         const mediaFile = todosArquivosImagem[i];
@@ -390,67 +395,29 @@ export function useCotacoesArquivos() {
           continue;
         }
         
-      // CORREÇÃO: Primeiro mapear APENAS as células que realmente contêm dados na coluna B (IMAGEM)
-      // Extrair informações de todas as linhas com dados
-      const linhasComDados = [];
-      for (let R = range.s.r + 1; R <= range.e.r; ++R) { // +1 para pular cabeçalho
-        const skuAddress = XLSX.utils.encode_cell({ r: R, c: 0 }); // Coluna A = SKU
-        const imagemAddress = XLSX.utils.encode_cell({ r: R, c: colunaImagemIndex || 1 }); // Coluna B = IMAGEM
+        // MAPEAMENTO SIMPLES: Imagem sequencial para linha sequencial
+        const linhaExcel = i + 2; // Linha 2, 3, 4... (linha 1 = cabeçalho)
         
+        // Buscar SKU diretamente pelo índice da linha de dados na planilha
+        const skuAddress = XLSX.utils.encode_cell({ r: i + 1, c: 0 }); // +1 para pular cabeçalho
         const skuCell = worksheet[skuAddress];
-        const imagemCell = worksheet[imagemAddress];
+        const skuAssociado = skuCell ? String(skuCell.v) : `LINHA_${linhaExcel}`;
+        const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
         
-        const sku = skuCell ? String(skuCell.v) : '';
-        const temImagem = imagemCell && imagemCell.v; // Verifica se há conteúdo na célula de imagem
+        console.log(`✅ [DEBUG] MAPEAMENTO DIRETO: Imagem ${i} → Linha Excel ${linhaExcel} → SKU "${skuAssociado}"`);
         
-        if (sku) { // Se há SKU na linha
-          linhasComDados.push({
-            sku: sku,
-            linhaExcel: R + 1, // Linha no Excel (1-indexed)
-            linhaDados: R - range.s.r - 1, // Índice nos dados (0-indexed)
-            temImagemB: !!temImagem, // Se tem conteúdo na coluna B
-            processadaImagemB: false // Flag para controle de processamento
-          });
-        }
-      }
-      
-      console.log('📊 [DEBUG] Linhas com dados extraídas:', linhasComDados);
-      console.log('📊 [DEBUG] Total de imagens encontradas no ZIP:', todosArquivosImagem.length);
-      
-      // FOCO: Mapear apenas para coluna B (IMAGEM) por enquanto
-      // Contar quantas linhas devem ter imagem na coluna B
-      const linhasComImagemB = linhasComDados.filter(linha => linha.temImagemB);
-      console.log('📊 [DEBUG] Linhas que devem ter imagem na coluna B:', linhasComImagemB.length);
-      
-      // Se temos mais imagens do que linhas esperadas na coluna B, assumir que as extras são da coluna C
-      if (todosArquivosImagem.length > linhasComImagemB.length) {
-        console.log('📊 [DEBUG] Detectadas imagens para ambas as colunas B e C');
-      }
-      
-      // Mapear imagem atual para a linha correspondente na coluna B
-      const linhaAlvo = linhasComImagemB[Math.min(i, linhasComImagemB.length - 1)];
-      
-      if (!linhaAlvo) {
-        console.warn(`⚠️ [DEBUG] Não há linha alvo para imagem ${i}, pulando...`);
-        continue;
-      }
-      
-      const linhaExcel = linhaAlvo.linhaExcel;
-      const skuAssociado = linhaAlvo.sku;
-      const coluna = 'IMAGEM'; // FOCO: Apenas coluna B por enquanto
-      
-      const extensao = mediaFile.split('.').pop() || 'png';
-      const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
-      
-      imagens.push({
-        nome: nomeImagem,
-        blob: imageBlob,
-        linha: linhaExcel,
-        coluna: coluna,
-        sku: skuAssociado // ⭐ CHAVE: Associar imagem ao SKU
-      });
-      
-      console.log(`✅ [DEBUG] MAPEAMENTO POR SKU: Imagem ${i}: arquivo="${mediaFile}" → SKU="${skuAssociado}", Linha Excel ${linhaExcel}, Coluna ${coluna}, Tamanho: ${imageBlob.size} bytes`);
+        const extensao = mediaFile.split('.').pop() || 'png';
+        const nomeImagem = `${skuAssociado}_${coluna.toLowerCase()}_${i}.${extensao}`;
+        
+        imagens.push({
+          nome: nomeImagem,
+          blob: imageBlob,
+          linha: linhaExcel,
+          coluna: coluna,
+          sku: skuAssociado
+        });
+        
+        console.log(`📷 [DEBUG] IMAGEM MAPEADA: "${mediaFile}" → SKU "${skuAssociado}", Linha ${linhaExcel}, Tamanho: ${imageBlob.size} bytes`);
       }
       
     } catch (zipError) {
