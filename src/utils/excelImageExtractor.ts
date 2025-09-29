@@ -27,6 +27,7 @@ interface PosicaoImagem {
 // FUNÇÃO PRINCIPAL - EXTRAÇÃO POR POSICIONAMENTO XML COM MAPEAMENTO PRECISO
 export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosicionada[]> => {
   console.log('🔍 [XML] Iniciando extração por posicionamento XML com mapeamento preciso...');
+  console.log('📁 [XML] Arquivo:', file.name, 'Tamanho:', file.size, 'bytes');
   
   try {
     const arrayBuffer = await file.arrayBuffer();
@@ -67,14 +68,17 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
     for (const [filename, file] of Object.entries(mediaFolder.files)) {
       if (filename.match(/\.(png|jpg|jpeg)$/i)) {
         const imagemDados = await file.async('uint8array');
-        imagensDisponiveis.set(filename, imagemDados);
+        // Usar apenas o nome do arquivo (sem path completo)
+        const nomeArquivoLimpo = filename.split('/').pop() || filename;
+        imagensDisponiveis.set(nomeArquivoLimpo, imagemDados);
+        console.log(`📁 [MEDIA] Arquivo encontrado: "${filename}" → key: "${nomeArquivoLimpo}"`);
       }
     }
     
     console.log(`📸 [XML] ${imagensDisponiveis.size} imagens encontradas: ${Array.from(imagensDisponiveis.keys()).join(', ')}`);
 
     // 7. PROCESSAR XML PARA EXTRAIR POSIÇÕES DAS IMAGENS COM MAPEAMENTO PRECISO
-    const posicoesImagens = extrairPosicoesDoXML(drawingsXml, mapeamentoRels);
+    const posicoesImagens = extrairPosicoesDoXML(drawingsXml, mapeamentoRels, imagensDisponiveis);
     console.log(`🎯 [XML] ${posicoesImagens.length} posições de imagens encontradas no XML`);
 
     // 8. MAPEAR IMAGENS POR POSIÇÃO REAL
@@ -96,8 +100,26 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
         continue;
       }
       
-      // Verifica se a imagem existe
-      const dadosImagem = imagensDisponiveis.get(nomeArquivo);
+      // DEBUG: Verificar se a imagem existe (com debug adicional)
+      console.log(`🔍 [XML] Procurando imagem: "${nomeArquivo}" nas disponíveis: [${Array.from(imagensDisponiveis.keys()).join(', ')}]`);
+      
+      let dadosImagem = imagensDisponiveis.get(nomeArquivo);
+      
+      // FALLBACK: Se não encontrar com o nome exato, tentar diferentes variações
+      if (!dadosImagem) {
+        console.log(`⚠️ [XML] Imagem "${nomeArquivo}" não encontrada, tentando fallbacks...`);
+        
+        // Tentar sem extensão
+        const nomeBase = nomeArquivo.replace(/\.[^.]+$/, '');
+        for (const [key, value] of imagensDisponiveis.entries()) {
+          if (key.includes(nomeBase) || nomeBase.includes(key.replace(/\.[^.]+$/, ''))) {
+            console.log(`🎯 [XML] FALLBACK: Usando "${key}" para "${nomeArquivo}"`);
+            dadosImagem = value;
+            break;
+          }
+        }
+      }
+      
       if (!dadosImagem) {
         console.log(`❌ [XML] Imagem ${nomeArquivo} não encontrada na pasta media`);
         continue;
@@ -140,6 +162,9 @@ const extrairMapeamentoRelacionamentos = async (zip: any): Promise<Map<string, s
     
     const relsContent = await relsFile.async('text');
     
+    console.log('📄 [RELS] Conteúdo do arquivo drawing1.xml.rels:');
+    console.log(relsContent.substring(0, 500) + '...');
+    
     // Padrão que captura os relacionamentos: <Relationship Id="rId1" Type="..." Target="../media/image1.png"/>
     const padraoRel = /<Relationship\s+Id="([^"]+)"\s+Type="[^"]*"\s+Target="\.\.\/media\/([^"]+)"/g;
     
@@ -176,7 +201,7 @@ const determinarUltimaLinhaComDados = (dados: any[][]): number => {
 };
 
 // FUNÇÃO AUXILIAR - EXTRAIR POSIÇÕES DO XML COM MAPEAMENTO PRECISO (MELHORADA)
-const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, string>): PosicaoImagem[] => {
+const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, string>, imagensDisponiveis?: Map<string, Uint8Array>): PosicaoImagem[] => {
   console.log('🔍 [XML] Iniciando parse do XML de drawings com mapeamento preciso...');
   
   const posicoes: PosicaoImagem[] = [];
@@ -219,8 +244,24 @@ const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, st
           nomeArquivo = arquivoMapeado;
           console.log(`🎯 [XML] Mapeamento preciso: ${rId} → ${nomeArquivo}`);
         } else {
-          console.log(`⚠️ [XML] rId ${rId} não encontrado no mapeamento, usando fallback`);
-          nomeArquivo = `image${indiceSequencial + 1}.png`;
+          console.log(`⚠️ [XML] rId ${rId} não encontrado no mapeamento, tentando fallbacks...`);
+          // Tentar variações do rId
+          const variacoes = [`image${rId.replace('rId', '')}.png`, `image${indiceSequencial + 1}.png`, `image${indiceSequencial + 1}.jpg`];
+          
+          let encontrado = false;
+          for (const variacao of variacoes) {
+            if (imagensDisponiveis?.has(variacao)) {
+              nomeArquivo = variacao;
+              console.log(`🎯 [XML] FALLBACK encontrado: ${variacao}`);
+              encontrado = true;
+              break;
+            }
+          }
+          
+          if (!encontrado) {
+            nomeArquivo = `image${indiceSequencial + 1}.png`;
+            console.log(`⚠️ [XML] Usando fallback final: ${nomeArquivo}`);
+          }
         }
       } else {
         // FALLBACK: Usar ordem sequencial (método anterior)
@@ -304,12 +345,24 @@ export const converterImagensParaDataURL = async (imagens: ImagemPosicionada[]):
 
 // FUNÇÕES AUXILIARES
 const detectarTipoImagem = (dados: Uint8Array): string => {
-  const header = Array.from(dados.slice(0, 4)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const header = Array.from(dados.slice(0, 8)).map(b => b.toString(16).padStart(2, '0')).join('');
   
-  if (header.startsWith('89504e47')) return 'image/png';
-  if (header.startsWith('ffd8ffe')) return 'image/jpeg';
-  if (header.startsWith('47494638')) return 'image/gif';
+  console.log(`🔍 [MIME] Header detectado: ${header}`);
   
+  if (header.startsWith('89504e47')) {
+    console.log('🖼️ [MIME] Detectado: PNG');
+    return 'image/png';
+  }
+  if (header.startsWith('ffd8ff')) { // Corrigido: JPEG pode ter diferentes variações
+    console.log('🖼️ [MIME] Detectado: JPEG');
+    return 'image/jpeg';
+  }
+  if (header.startsWith('47494638')) {
+    console.log('🖼️ [MIME] Detectado: GIF');
+    return 'image/gif';
+  }
+  
+  console.log('🖼️ [MIME] Usando default: PNG');
   return 'image/png'; // Default
 };
 
