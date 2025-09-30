@@ -140,15 +140,33 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('🔄 [POSIÇÃO] Imagens processadas:', imagensProcessadas.length);
       setProgressoUpload(70);
       
-      // DEBUG DETALHADO
-      console.log('🎯 [POSIÇÃO] MAPEAMENTO FINAL:');
-      imagensProcessadas.forEach((img, i) => {
-        console.log(`  ${i + 1}. SKU: ${img.sku} → Imagem: ${img.nome}`);
+      // DEBUG DETALHADO POR TIPO
+      const imagensPrincipais = imagensProcessadas.filter(img => img.tipoColuna === 'IMAGEM');
+      const imagensFornecedor = imagensProcessadas.filter(img => img.tipoColuna === 'IMAGEM_FORNECEDOR');
+      
+      console.log('🎯 [AUDITORIA] DISTRIBUIÇÃO DE IMAGENS:');
+      console.log(`  📊 Total: ${imagensProcessadas.length} imagens`);
+      console.log(`  📸 Coluna B (IMAGEM): ${imagensPrincipais.length} imagens`);
+      console.log(`  🏭 Coluna C (IMAGEM_FORNECEDOR): ${imagensFornecedor.length} imagens`);
+      
+      console.log('\n🎯 [AUDITORIA] DETALHES DAS IMAGENS PRINCIPAIS (COLUNA B):');
+      imagensPrincipais.slice(0, 3).forEach((img, i) => {
+        console.log(`  ${i + 1}. SKU: ${img.sku} | Nome: ${img.nome} | Tipo: ${img.tipoColuna} | Linha: ${img.linha}`);
+      });
+      
+      console.log('\n🎯 [AUDITORIA] DETALHES DAS IMAGENS FORNECEDOR (COLUNA C):');
+      imagensFornecedor.slice(0, 3).forEach((img, i) => {
+        console.log(`  ${i + 1}. SKU: ${img.sku} | Nome: ${img.nome} | Tipo: ${img.tipoColuna} | Linha: ${img.linha}`);
       });
       
       // CORRELACIONAR IMAGENS COM PRODUTOS (SEPARANDO POR TIPO)
-      console.log('🔗 [POSIÇÃO] CORRELACIONANDO IMAGENS COM PRODUTOS...');
-      const produtosComImagens = dados.map(produto => {
+      console.log('\n🔗 [AUDITORIA] CORRELACIONANDO IMAGENS COM PRODUTOS...');
+      console.log(`📊 Total de produtos: ${dados.length}`);
+      console.log(`📸 Total de imagens disponíveis: ${imagensProcessadas.length}`);
+      
+      const produtosComImagens = dados.map((produto, idx) => {
+        const skuProduto = produto.sku || produto.SKU;
+        
         // Buscar imagem principal (coluna B)
         const imagemPrincipal = imagensProcessadas.find(img => 
           (img.sku === produto.sku || img.sku === String(produto.sku) ||
@@ -163,6 +181,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           img.tipoColuna === 'IMAGEM_FORNECEDOR'
         );
         
+        // Log apenas dos primeiros 3 produtos para não sobrecarregar console
+        if (idx < 3) {
+          console.log(`\n🔍 [CORRELAÇÃO] Produto ${idx + 1}:`)
+          console.log(`  - SKU: ${skuProduto}`);
+          console.log(`  - Imagem Principal (B): ${imagemPrincipal ? '✅ ENCONTRADA' : '❌ NÃO ENCONTRADA'}`);
+          if (imagemPrincipal) console.log(`    → Nome: ${imagemPrincipal.nome}`);
+          console.log(`  - Imagem Fornecedor (C): ${imagemFornecedor ? '✅ ENCONTRADA' : '❌ NÃO ENCONTRADA'}`);
+          if (imagemFornecedor) console.log(`    → Nome: ${imagemFornecedor.nome}`);
+        }
+        
         return {
           ...produto,
           imagem: imagemPrincipal?.url || '',
@@ -171,10 +199,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         };
       });
       
-      console.log('✅ [POSIÇÃO] CORRELAÇÃO CONCLUÍDA!');
-      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => p.imagem).length} produtos com imagem principal (coluna B)`);
-      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => p.imagem_fornecedor).length} produtos com imagem fornecedor (coluna C)`);
-      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => !p.imagem && !p.imagem_fornecedor).length} produtos sem imagens`);
+      const comImagemPrincipal = produtosComImagens.filter(p => p.imagem).length;
+      const comImagemFornecedor = produtosComImagens.filter(p => p.imagem_fornecedor).length;
+      const semImagens = produtosComImagens.filter(p => !p.imagem && !p.imagem_fornecedor).length;
+      
+      console.log('\n✅ [AUDITORIA] ==================== RESULTADO FINAL ====================');
+      console.log(`📊 Total de produtos processados: ${produtosComImagens.length}`);
+      console.log(`📸 Produtos com imagem principal (coluna B): ${comImagemPrincipal} (${(comImagemPrincipal/produtosComImagens.length*100).toFixed(1)}%)`);
+      console.log(`🏭 Produtos com imagem fornecedor (coluna C): ${comImagemFornecedor} (${(comImagemFornecedor/produtosComImagens.length*100).toFixed(1)}%)`);
+      console.log(`⚠️ Produtos sem imagens: ${semImagens} (${(semImagens/produtosComImagens.length*100).toFixed(1)}%)`);
+      console.log('================================================================\n');
       setProgressoUpload(80);
       
       let dadosProcessados = produtosComImagens;
