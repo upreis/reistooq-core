@@ -9,6 +9,7 @@ import {
   adicionarCorrecaoPendente
 } from './useCotacoesValidacoes';
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
+import { processarExcelCorrigido } from '@/utils/excelImageMapper';
 
 interface CotacaoArquivo {
   id?: string;
@@ -271,115 +272,44 @@ export function useCotacoesArquivos() {
         console.log('📄 [SKU_SYSTEM] Arquivo Excel simples detectado (sem ZIP)');
       }
       
-      // Processar dados do Excel E EXTRAIR IMAGENS EMBUTIDAS
+      // ============================================================
+      // SOLUÇÃO MANUS: EXTRAIR IMAGENS COM COORDENADAS XML REAIS
+      // ============================================================
+      console.log('🚀 [MANUS] Usando solução Manus para extração de imagens por coordenadas XML...');
+      
+      let imagensEmbutidas: any[] = [];
+      
+      try {
+        // Usar a solução da Manus que acessa as coordenadas XML reais
+        const imagensProcessadas = await processarExcelCorrigido(file);
+        
+        // Converter para formato compatível com o sistema
+        imagensEmbutidas = imagensProcessadas.map((img: any) => ({
+          nome: img.nome,
+          blob: img.blob,
+          linha: img.linha,
+          coluna: img.tipoColuna === 'IMAGEM' ? 'B' : 'C',
+          sku: img.sku,
+          tipoColuna: img.tipoColuna,
+          colunaExcel: img.colunaExcel
+        }));
+        
+        console.log(`✅ [MANUS] ${imagensEmbutidas.length} imagens mapeadas corretamente por posição XML`);
+        
+      } catch (error) {
+        console.error('❌ [MANUS] Erro ao processar imagens via solução Manus:', error);
+        console.log('💡 [MANUS] Verifique se o Excel contém os arquivos drawing necessários');
+      }
+      
+      // Processar dados do Excel
       const ExcelJS = (await import('exceljs')).default;
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer);
       const worksheet = workbook.getWorksheet(1);
       
       const dados: any[] = [];
-      let imagensEmbutidas: any[] = [];
       
       if (worksheet) {
-        // EXTRAIR IMAGENS EMBUTIDAS DO EXCEL
-        console.log('🖼️ [SKU_SYSTEM] Procurando imagens embutidas no Excel...');
-        
-        try {
-          // MÉTODO 1: Via ExcelJS - workbook.media (MAIS CONFIÁVEL)
-          const workbookAny = workbook as any;
-          if (workbookAny.media && workbookAny.media.length > 0) {
-            console.log(`📸 [EXCELJS_MEDIA] ${workbookAny.media.length} imagens encontradas via workbook.media`);
-            
-            for (let i = 0; i < workbookAny.media.length; i++) {
-              const media = workbookAny.media[i];
-              
-              // Criar blob da imagem
-              const blob = new Blob([media.buffer], { type: media.type || 'image/png' });
-              
-              // Distribuir imagens alternadamente entre coluna B e C
-              const colunaEstimada = i % 2 === 0 ? 'B' : 'C';
-              const tipoColuna = colunaEstimada === 'B' ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
-              const linhaEstimada = Math.floor(i / 2) + 2; // Agrupar 2 imagens por linha
-              
-              // Tentar extrair SKU do nome da imagem se disponível
-              const skuExtraido = media.name ? extrairSKUDoNome(media.name) : null;
-              
-              const sufixo = tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
-              imagensEmbutidas.push({
-                nome: skuExtraido ? `${skuExtraido}${sufixo}.jpg` : `imagem_workbook_${i + 1}.jpg`,
-                blob: blob,
-                linha: linhaEstimada,
-                coluna: colunaEstimada,
-                sku: skuExtraido,
-                tipoColuna: tipoColuna
-              });
-              
-              console.log(`📷 [EXCELJS_MEDIA] Imagem ${i + 1}: linha=${linhaEstimada}, coluna=${colunaEstimada} (${tipoColuna}), SKU=${skuExtraido}`);
-            }
-          }
-          
-          // MÉTODO 2: Via worksheet.getImages() (se disponível)
-          if (imagensEmbutidas.length === 0 && worksheet.getImages && typeof worksheet.getImages === 'function') {
-            const images = worksheet.getImages();
-            console.log(`📸 [SKU_SYSTEM] Método worksheet.getImages: ${images.length} imagens encontradas`);
-            
-            for (let index = 0; index < images.length; index++) {
-              const image: any = images[index];
-              console.log(`🖼️ [SKU_SYSTEM] Processando imagem ${index + 1} via worksheet.getImages`, image);
-            }
-          }
-          
-          // MÉTODO 3: Extração manual via ZIP do Excel (fallback)
-          if (zip && imagensEmbutidas.length === 0) {
-            console.log('🔍 [SKU_SYSTEM] Procurando imagens na estrutura interna do Excel ZIP...');
-            
-            // Excel armazena imagens em xl/media/
-            const xlMediaFiles = Object.keys(zip.files).filter(filename => 
-              filename.startsWith('xl/media/') && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename)
-            );
-            
-            if (xlMediaFiles.length > 0) {
-              console.log(`📁 [SKU_SYSTEM] ${xlMediaFiles.length} imagens encontradas em xl/media/`);
-              
-              for (let i = 0; i < xlMediaFiles.length; i++) {
-                const mediaFile = xlMediaFiles[i];
-                const zipFile = zip.files[mediaFile];
-                
-                if (zipFile) {
-                  const blob = await zipFile.async('blob');
-                  
-                  // Distribuir imagens alternadamente entre coluna B e C
-                  const colunaEstimada = i % 2 === 0 ? 'B' : 'C';
-                  const tipoColuna = colunaEstimada === 'B' ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
-                  const linhaEstimada = Math.floor(i / 2) + 2; // Agrupar 2 imagens por linha
-                  
-                  // EXTRAIR SKU DO NOME DO ARQUIVO
-                  const skuExtraido = extrairSKUDoNome(mediaFile);
-                  
-                  const sufixo = tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
-                  imagensEmbutidas.push({
-                    nome: skuExtraido ? `${skuExtraido}${sufixo}.jpg` : `imagem_excel_${i + 1}.jpg`,
-                    blob: blob,
-                    linha: linhaEstimada,
-                    coluna: colunaEstimada,
-                    sku: skuExtraido,
-                    tipoColuna: tipoColuna
-                  });
-                  
-                  console.log(`📷 [ZIP_MEDIA] Imagem ${i + 1}: ${mediaFile} → linha=${linhaEstimada}, col=${colunaEstimada} (${tipoColuna})`);
-                }
-              }
-            } else {
-              console.log('📝 [SKU_SYSTEM] Nenhuma imagem encontrada na estrutura xl/media/');
-            }
-          }
-          
-          console.log(`✅ [TOTAL_IMAGES] ${imagensEmbutidas.length} imagens extraídas no total`);
-          
-        } catch (error) {
-          console.log('⚠️ [SKU_SYSTEM] Erro ao extrair imagens embutidas:', error);
-          console.log('💡 [SKU_SYSTEM] Dica: Para melhor suporte a imagens, salve o Excel como ZIP com imagens nomeadas por SKU');
-        }
         
         // CONSTRUIR MAPA SKU → LINHAS se houver imagens
         if (imagensEmbutidas.length > 0 || mediaFiles.length > 0) {
