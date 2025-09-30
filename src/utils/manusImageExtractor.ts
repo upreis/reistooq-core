@@ -301,19 +301,12 @@ export async function processarExcelCompletoCorrigido(arquivo) {
  * NOVA ABORDAGEM: Extrai imagens pela posição XML SEM tentar agrupar por linha
  */
 export async function extrairImagensFornecedorPorXML(excelFile: File) {
-  console.log('🏭 [FORNECEDOR_XML] ==================== INÍCIO ====================');
   console.log('🏭 [FORNECEDOR_XML] Extraindo imagens da coluna C via XML...');
-  console.log('🏭 [FORNECEDOR_XML] Arquivo:', excelFile.name, 'Tamanho:', excelFile.size);
   
   try {
-    console.log('🏭 [FORNECEDOR_XML] Passo 1: Lendo arrayBuffer...');
     const arrayBuffer = await excelFile.arrayBuffer();
-    console.log('🏭 [FORNECEDOR_XML] ArrayBuffer lido:', arrayBuffer.byteLength, 'bytes');
-    
-    console.log('🏭 [FORNECEDOR_XML] Passo 2: Carregando ZIP...');
     const zip = new JSZip();
     const zipContent = await zip.loadAsync(arrayBuffer);
-    console.log('🏭 [FORNECEDOR_XML] ZIP carregado com sucesso');
     
     // Encontrar arquivos de drawing
     const drawingRelsFile = Object.keys(zipContent.files).find(name => 
@@ -324,82 +317,58 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
       name.includes('xl/drawings/') && name.endsWith('.xml') && !name.includes('_rels')
     );
     
-    console.log('🏭 [FORNECEDOR_XML] Passo 3: Procurando arquivos de drawing...');
     if (!drawingRelsFile || !drawingFile) {
-      console.log('❌ [FORNECEDOR_XML] Arquivos de drawing não encontrados!');
-      console.log('❌ [FORNECEDOR_XML] drawingRelsFile:', drawingRelsFile);
-      console.log('❌ [FORNECEDOR_XML] drawingFile:', drawingFile);
+      console.log('⚠️ [FORNECEDOR_XML] Arquivos de drawing não encontrados');
       return [];
     }
-    console.log('✅ [FORNECEDOR_XML] Arquivos encontrados:');
-    console.log('   - drawingRelsFile:', drawingRelsFile);
-    console.log('   - drawingFile:', drawingFile);
     
-    console.log('🏭 [FORNECEDOR_XML] Passo 4: Extraindo mapeamento rId...');
+    // Mapear rId para nome de arquivo
     const relsContent = await zipContent.files[drawingRelsFile].async('text');
     const ridMap = extrairMapeamentoRIds(relsContent);
-    console.log('🏭 [FORNECEDOR_XML] rIds mapeados:', Object.keys(ridMap).length);
     
-    console.log('🏭 [FORNECEDOR_XML] Passo 5: Lendo drawing XML...');
+    // Extrair posições do XML
     const drawingContent = await zipContent.files[drawingFile].async('text');
-    console.log('🏭 [FORNECEDOR_XML] Drawing XML lido:', drawingContent.length, 'caracteres');
     
-    console.log('🏭 [FORNECEDOR_XML] Passo 6: Lendo SKUs...');
+    // Ler SKUs do Excel
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
     const worksheet = workbook.Sheets[workbook.SheetNames[0]];
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
     const skus = jsonData.slice(1).map((row: any) => row[0]).filter((sku: any) => sku);
-    console.log('🏭 [FORNECEDOR_XML] SKUs lidos:', skus.length);
     
-    console.log('🏭 [FORNECEDOR_XML] Passo 7: Extraindo posições do XML...');
+    // Extrair TODAS as posições sem filtro
     const posicoes: Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}> = [];
     
-    console.log('🏭 [FORNECEDOR_XML] Iniciando regex match...');
     const twoCellAnchorRegex = /<xdr:twoCellAnchor[^>]*>([\s\S]*?)<\/xdr:twoCellAnchor>/g;
     let match;
-    let matchCount = 0;
     
     while ((match = twoCellAnchorRegex.exec(drawingContent)) !== null) {
-      matchCount++;
       const anchorContent = match[1];
       
       const fromMatch = /<xdr:from>([\s\S]*?)<\/xdr:from>/.exec(anchorContent);
-      if (!fromMatch) {
-        console.log(`⚠️ [FORNECEDOR_XML] Match ${matchCount}: sem <xdr:from>`);
-        continue;
-      }
+      if (!fromMatch) continue;
       
       const fromContent = fromMatch[1];
       const rowMatch = /<xdr:row>(\d+)<\/xdr:row>/.exec(fromContent);
       const colMatch = /<xdr:col>(\d+)<\/xdr:col>/.exec(fromContent);
       
-      if (!rowMatch || !colMatch) {
-        console.log(`⚠️ [FORNECEDOR_XML] Match ${matchCount}: sem row/col`);
-        continue;
-      }
+      if (!rowMatch || !colMatch) continue;
       
       const linha = parseInt(rowMatch[1]) + 1;
       const coluna = parseInt(colMatch[1]) + 1;
       
       const ridMatch = /r:embed="([^"]+)"/.exec(anchorContent);
-      if (!ridMatch) {
-        console.log(`⚠️ [FORNECEDOR_XML] Match ${matchCount}: sem rId`);
-        continue;
-      }
+      if (!ridMatch) continue;
       
       const rid = ridMatch[1];
       const nomeArquivo = ridMap[rid];
       
       if (nomeArquivo) {
         posicoes.push({ linha, coluna, rid, nomeArquivo });
-        console.log(`✅ [FORNECEDOR_XML] Imagem ${posicoes.length}: linha=${linha}, coluna=${coluna}, arquivo=${nomeArquivo}`);
-      } else {
-        console.log(`⚠️ [FORNECEDOR_XML] Match ${matchCount}: rId ${rid} não encontrado no mapa`);
+        console.log(`🔍 [FORNECEDOR_XML] Imagem encontrada: linha=${linha}, coluna=${coluna}, arquivo=${nomeArquivo}`);
       }
     }
     
-    console.log(`🏭 [FORNECEDOR_XML] Passo 8: Total de matches: ${matchCount}`);
-    console.log(`📊 [FORNECEDOR_XML] Total de imagens extraídas: ${posicoes.length}`);
+    console.log(`📊 [FORNECEDOR_XML] Total de imagens no XML: ${posicoes.length}`);
     
     // Agrupar imagens por linha
     const imagensPorLinha: Record<number, Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}>> = {};
@@ -457,13 +426,11 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
       }
     }
     
-    console.log(`✅ [FORNECEDOR_XML] ${imagensColunaC.length} imagens de fornecedor extraídas`);
-    console.log('🏭 [FORNECEDOR_XML] ==================== FIM ====================');
+    console.log(`🏭 [FORNECEDOR_XML] ${imagensColunaC.length} imagens de fornecedor extraídas`);
     return imagensColunaC;
     
   } catch (error) {
-    console.error('❌ [FORNECEDOR_XML] ERRO CRÍTICO:', error);
-    console.error('❌ [FORNECEDOR_XML] Stack:', (error as Error).stack);
+    console.error('❌ [FORNECEDOR_XML] Erro:', error);
     return [];
   }
 }
