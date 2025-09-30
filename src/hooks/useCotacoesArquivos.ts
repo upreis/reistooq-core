@@ -373,59 +373,45 @@ export function useCotacoesArquivos() {
       
       console.log('✅ [SKU_SYSTEM] Dados do Excel extraídos:', dados.length);
       
-      // PROCESSAR IMAGENS (ZIP + Embutidas)
+      // SISTEMA SIMPLIFICADO - USAR APENAS UM MÉTODO POR VEZ
+      console.log('🎯 [UNIFICADO] Sistema simplificado de processamento de imagens');
+      
       let imagens: any[] = [];
       
-      // 1. Processar imagens do ZIP se houver
-      if (zip && mediaFiles.length > 0) {
-        console.log('🖼️ [SKU_SYSTEM] Processando imagens do ZIP por SKU...');
-        const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
-        
-        console.log('✅ [SKU_SYSTEM] Processamento de imagens ZIP concluído:', {
-          imagensProcessadas: resultado.imagensProcessadas.length,
-          rejeitadas: resultado.rejeitadas.length,
-          renomeadas: resultado.renomeadasCount
-        });
-        
-        // Mapear para formato esperado
-        const imagensZip = resultado.imagensProcessadas.map(img => {
-          // Extrair SKU do nome original do arquivo também
-          const skuDoNome = extrairSKUDoNome(img.arquivoOriginal);
-          const skuFinal = img.sku || skuDoNome;
-          
-          return {
-            nome: img.arquivoOriginal, // Manter nome original para extração de SKU
-            blob: img.blob,
-            linha: img.linha,
-            coluna: 'IMAGEM',
-            sku: skuFinal
-          };
-        });
-        
-        imagens = [...imagens, ...imagensZip];
-      }
-      
-      // 2. Processar imagens embutidas do Excel
+      // PRIORIDADE 1: Processar imagens embutidas do Excel
       if (imagensEmbutidas.length > 0) {
-        console.log('🖼️ [SKU_SYSTEM] Associando imagens embutidas do Excel por linha...');
+        console.log('🥇 [UNIFICADO] Usando imagens embutidas do Excel');
         
-        // Associar SKUs às imagens embutidas baseado na linha
         const imagensComSku = imagensEmbutidas.map(img => {
-          // Encontrar SKU da linha correspondente
-          const produtoData = dados[img.linha - 2]; // -2 porque linha 1 = cabeçalho, linha 2 = dados[0]
+          const produtoData = dados[img.linha - 2];
           const sku = produtoData?.SKU || produtoData?.sku || `PROD-${img.linha}`;
           
           return {
             nome: `${sku}-embutida.jpg`,
-            blob: img.blob,
+            url: img.blob ? URL.createObjectURL(img.blob) : '',
             linha: img.linha,
             coluna: img.coluna,
             sku: sku
           };
         });
         
-        console.log(`✅ [SKU_SYSTEM] ${imagensComSku.length} imagens embutidas associadas por linha`);
-        imagens = [...imagens, ...imagensComSku];
+        imagens = imagensComSku;
+        console.log(`✅ [UNIFICADO] ${imagens.length} imagens embutidas processadas`);
+      }
+      // PRIORIDADE 2: Processar ZIP por SKU
+      else if (zip && mediaFiles.length > 0) {
+        console.log('🥈 [UNIFICADO] Processando ZIP por SKU');
+        const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
+        
+        imagens = resultado.imagensProcessadas.map(img => ({
+          nome: img.arquivoOriginal || img.nome || 'imagem',
+          url: img.blob ? URL.createObjectURL(img.blob) : '',
+          linha: img.linha || 2,
+          coluna: 'IMAGEM',
+          sku: img.sku
+        }));
+        
+        console.log(`✅ [UNIFICADO] ${imagens.length} imagens ZIP processadas`);
       }
       
       return { dados, imagens };
