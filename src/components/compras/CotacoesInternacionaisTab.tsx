@@ -998,7 +998,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   }, [getContainerUsage]);
   
   // Função para lidar com dados importados
-  const handleImportSuccess = useCallback((dadosImportados: any[]) => {
+  const handleImportSuccess = useCallback(async (dadosImportados: any[]) => {
     console.log('📥 [DEBUG] Dados recebidos na importação:', dadosImportados);
     console.log('📥 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
     console.log('📥 [DEBUG] Campos disponíveis:', Object.keys(dadosImportados[0] || {}));
@@ -1068,16 +1068,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(produtosComCalculos);
     setHasImportedData(true); // Marcar que dados foram importados
     
-    // Salvar no sessionStorage para persistir entre navegações (removendo URLs blob inválidas)
+    // Salvar no sessionStorage para persistir entre navegações (convertendo blob URLs para base64)
     try {
-      const cleanedProducts = produtosComCalculos.map(product => ({
-        ...product,
-        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-      }));
+      const cleanedProducts = await Promise.all(
+        produtosComCalculos.map(async (product) => ({
+          ...product,
+          imagem: product.imagem?.startsWith('blob:') 
+            ? await imageUrlToBase64(product.imagem) 
+            : product.imagem,
+          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') 
+            ? await imageUrlToBase64(product.imagem_fornecedor) 
+            : product.imagem_fornecedor
+        }))
+      );
       sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+      console.log('✅ Produtos salvos no sessionStorage com imagens em base64');
     } catch (error) {
-      console.warn('Erro ao salvar no sessionStorage:', error);
+      console.warn('❌ Erro ao salvar no sessionStorage:', error);
     }
     
     // Força atualização da UI
