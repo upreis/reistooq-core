@@ -404,27 +404,8 @@ export function useCotacoesArquivos() {
           };
         });
         
-      imagens = imagensComSku;
+        imagens = imagensComSku;
         console.log(`✅ [MANUS] ${imagens.length} imagens corretamente mapeadas pela solução Manus`);
-        
-        // 🔍 DEBUG CRÍTICO: Ver quantas imagens de cada tipo
-        const imagensPrincipais = imagens.filter(img => img.tipoColuna === 'IMAGEM');
-        const imagensFornecedor = imagens.filter(img => img.tipoColuna === 'IMAGEM_FORNECEDOR');
-        console.log(`🔍 [DEBUG_FINAL_TIPOS] Principais: ${imagensPrincipais.length}, Fornecedor: ${imagensFornecedor.length}`);
-        
-        // 🔍 Mostrar primeiras 3 de cada tipo
-        console.log(`🔍 [DEBUG_AMOSTRA_PRINCIPAIS]`, imagensPrincipais.slice(0, 3).map(img => ({
-          sku: img.sku,
-          nome: img.nome,
-          tipoColuna: img.tipoColuna,
-          linha: img.linha
-        })));
-        console.log(`🔍 [DEBUG_AMOSTRA_FORNECEDOR]`, imagensFornecedor.slice(0, 3).map(img => ({
-          sku: img.sku,
-          nome: img.nome,
-          tipoColuna: img.tipoColuna,
-          linha: img.linha
-        })));
       }
       // PRIORIDADE 2: Processar ZIP por SKU
       else if (zip && mediaFiles.length > 0) {
@@ -441,13 +422,6 @@ export function useCotacoesArquivos() {
         
         console.log(`✅ [UNIFICADO] ${imagens.length} imagens ZIP processadas`);
       }
-      
-      console.log(`🎯 [RETORNO_FINAL] Retornando ${dados.length} dados e ${imagens.length} imagens`);
-      console.log(`🎯 [RETORNO_TIPOS]`, imagens.reduce((acc, img) => {
-        const tipo = img.tipoColuna || 'SEM_TIPO';
-        acc[tipo] = (acc[tipo] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>));
       
       return { dados, imagens };
       

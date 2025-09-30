@@ -122,37 +122,49 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('✅ Upload simulado concluído:', arquivoUpload);
       setProgressoUpload(30);
 
-      // ✅ USAR FUNÇÃO COMPLETA DO HOOK (com suporte a coluna B e C)
-      console.log('🚀 [COMPLETO] Extraindo dados E imagens (B e C) simultaneamente...');
-      const { dados, imagens } = await lerArquivoComImagens(file);
-      console.log('✅ [COMPLETO] Dados extraídos:', dados.length, 'produtos');
-      console.log('✅ [COMPLETO] Imagens extraídas:', imagens.length, 'imagens');
+      // PASSO 1: Extrair dados normais
+      console.log('📊 [POSIÇÃO] PASSO 1: Extraindo dados da planilha...');
+      const dados = await lerArquivo(file);
+      console.log('📊 [POSIÇÃO] Dados extraídos:', dados.length, 'produtos');
+      setProgressoUpload(30);
+      
+      // PASSO 2: Extrair imagens por posição
+      console.log('📸 [POSIÇÃO] PASSO 2: Extraindo imagens por posicionamento...');
+      const imagensExtraidas = await extrairImagensDoExcel(file);
+      console.log('📸 [POSIÇÃO] Imagens extraídas:', imagensExtraidas.length);
       setProgressoUpload(50);
       
-      // Fazer upload das imagens
-      console.log('📤 [UPLOAD] Fazendo upload de imagens...');
-      const imagensComBlob = await Promise.all(imagens.map(async (img) => ({
-        nome: img.nome,
-        blob: await fetch(img.url).then(r => r.blob()),
-        linha: img.linha,
-        coluna: img.coluna,
-        sku: img.sku,
-        tipoColuna: img.tipoColuna
-      })));
-      
-      const imagensUpload = await uploadImagensExtraidas(imagensComBlob, cotacaoId, organizationId);
-      console.log('✅ [UPLOAD] Upload concluído:', imagensUpload.length, 'imagens');
+      // PASSO 3: Converter para Data URL
+      console.log('🔄 [POSIÇÃO] PASSO 3: Convertendo imagens...');
+      const imagensProcessadas = await converterImagensParaDataURL(imagensExtraidas);
+      console.log('🔄 [POSIÇÃO] Imagens processadas:', imagensProcessadas.length);
       setProgressoUpload(70);
       
-      // Processar dados com as imagens
-      console.log('🔗 [CORRELAÇÃO] Correlacionando imagens com produtos...');
-      const produtosComImagens = processarDados(dados, imagensUpload);
+      // DEBUG DETALHADO
+      console.log('🎯 [POSIÇÃO] MAPEAMENTO FINAL:');
+      imagensProcessadas.forEach((img, i) => {
+        console.log(`  ${i + 1}. SKU: ${img.sku} → Imagem: ${img.nome}`);
+      });
       
-      // Debug das associações
-      const comImagem = produtosComImagens.filter(p => p.imagem);
-      const comImagemFornecedor = produtosComImagens.filter(p => p.imagem_fornecedor);
-      console.log(`✅ [CORRELAÇÃO] ${comImagem.length} produtos com imagem principal`);
-      console.log(`✅ [CORRELAÇÃO] ${comImagemFornecedor.length} produtos com imagem fornecedor`);
+      // CORRELACIONAR IMAGENS COM PRODUTOS
+      console.log('🔗 [POSIÇÃO] CORRELACIONANDO IMAGENS COM PRODUTOS...');
+      const produtosComImagens = dados.map(produto => {
+        const imagemProduto = imagensProcessadas.find(img => 
+          img.sku === produto.sku || img.sku === String(produto.sku) ||
+          img.sku === produto.SKU || img.sku === String(produto.SKU)
+        );
+        
+        return {
+          ...produto,
+          imagem: imagemProduto?.url || '',
+          imagem_fornecedor: '',
+          nomeImagem: imagemProduto?.nome || ''
+        };
+      });
+      
+      console.log('✅ [POSIÇÃO] CORRELAÇÃO CONCLUÍDA!');
+      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => p.imagem).length} produtos com imagem`);
+      console.log(`📊 [POSIÇÃO] ${produtosComImagens.filter(p => !p.imagem).length} produtos sem imagem`);
       setProgressoUpload(80);
       
       let dadosProcessados = produtosComImagens;
