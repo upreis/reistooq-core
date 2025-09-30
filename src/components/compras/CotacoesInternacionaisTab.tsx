@@ -1847,7 +1847,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                               )}
                             >
                               <ProdutoImagemPreview
-                                imagemUrl={product.imagem_fornecedor}
+                                imagemFornecedorUrl={product.imagem_fornecedor}
                                 nomeProduto={product.nome_produto || product.sku}
                                 sku={product.sku}
                                 className="mx-auto"
