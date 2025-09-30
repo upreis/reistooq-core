@@ -9,6 +9,9 @@ import {
   adicionarCorrecaoPendente
 } from './useCotacoesValidacoes';
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
+import { extrairImagensDoExcel } from '../utils/excelImageExtractor';
+import * as XLSX from 'xlsx';
+import JSZip from 'jszip';
 
 interface CotacaoArquivo {
   id?: string;
@@ -280,66 +283,67 @@ export function useCotacoesArquivos() {
       let imagensEmbutidas: any[] = [];
       
       if (worksheet) {
-        // EXTRAIR IMAGENS EMBUTIDAS DO EXCEL
-        console.log('🖼️ [SKU_SYSTEM] Procurando imagens embutidas no Excel...');
+        // USAR EXTRAÇÃO POR XML (CORRIGIDA) EM VEZ DE POSIÇÃO MANUAL
+        console.log('🖼️ [SKU_SYSTEM_CORRIGIDO] Usando extração XML para posicionamento correto...');
         
         try {
-          // MÉTODO 1: Tentar usar ExcelJS getImages (pode não existir em todas as versões)
-          if (worksheet.getImages && typeof worksheet.getImages === 'function') {
-            const images = worksheet.getImages();
-            console.log(`📸 [SKU_SYSTEM] Método ExcelJS: ${images.length} imagens encontradas`);
-            
-            images.forEach((image: any, index: number) => {
-              // Processar imagens via ExcelJS
-              console.log(`🖼️ [SKU_SYSTEM] Processando imagem ${index + 1} via ExcelJS`);
-            });
-          } else {
-            console.log('⚠️ [SKU_SYSTEM] Método ExcelJS não disponível, tentando extração manual...');
-          }
+          // USAR NOSSA FUNÇÃO DE EXTRAÇÃO XML CORRIGIDA
+          const imagensXML = await extrairImagensDoExcel(file);
           
-          // MÉTODO 2: Extração manual via ZIP do Excel
-          if (zip && imagensEmbutidas.length === 0) {
-            console.log('🔍 [SKU_SYSTEM] Procurando imagens na estrutura interna do Excel ZIP...');
+          if (imagensXML.length > 0) {
+            console.log(`✅ [XML_CORRIGIDO] ${imagensXML.length} imagens extraídas com posicionamento XML`);
             
-            // Excel armazena imagens em xl/media/
-            const xlMediaFiles = Object.keys(zip.files).filter(filename => 
-              filename.startsWith('xl/media/') && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename)
-            );
-            
-            if (xlMediaFiles.length > 0) {
-              console.log(`📁 [SKU_SYSTEM] ${xlMediaFiles.length} imagens encontradas em xl/media/`);
+            // CONVERTER PARA FORMATO BLOB COMPATÍVEL
+            for (const imagemXML of imagensXML) {
+              // Criar blob a partir do Uint8Array
+              const blob = new Blob([imagemXML.dados], { type: 'image/png' });
               
-              for (let i = 0; i < xlMediaFiles.length; i++) {
-                const mediaFile = xlMediaFiles[i];
-                const zipFile = zip.files[mediaFile];
+              imagensEmbutidas.push({
+                nome: imagemXML.nome,
+                blob: blob, // Blob ÚNICO para cada imagem
+                linha: imagemXML.linha,
+                coluna: imagemXML.coluna,
+                sku: imagemXML.sku
+              });
+              
+              console.log(`🎯 [XML_BLOB] Linha ${imagemXML.linha} → SKU: ${imagemXML.sku} → Blob criado`);
+            }
+          } else {
+            console.log('⚠️ [XML_CORRIGIDO] Nenhuma imagem encontrada via XML, tentando método ZIP...');
+            
+            // FALLBACK: Método ZIP manual 
+            if (zip) {
+              const xlMediaFiles = Object.keys(zip.files).filter(filename => 
+                filename.startsWith('xl/media/') && /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(filename)
+              );
+              
+              if (xlMediaFiles.length > 0) {
+                console.log(`📁 [FALLBACK] ${xlMediaFiles.length} imagens encontradas em xl/media/`);
                 
-                if (zipFile) {
-                  const blob = await zipFile.async('blob');
+                for (let i = 0; i < xlMediaFiles.length; i++) {
+                  const mediaFile = xlMediaFiles[i];
+                  const zipFile = zip.files[mediaFile];
                   
-                  // DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
-                  const imagemInfo = detectarPosicaoImagemReal(worksheet, i);
-                  
-                  // EXTRAIR SKU DO NOME DO ARQUIVO
-                  const skuExtraido = extrairSKUDoNome(mediaFile);
-                  
-                  imagensEmbutidas.push({
-                    nome: skuExtraido ? `${skuExtraido}.jpg` : `imagem_excel_${i + 1}.jpg`,
-                    blob: blob,
-                    linha: imagemInfo.linha,
-                    coluna: imagemInfo.coluna,
-                    sku: skuExtraido
-                  });
-                  
-                  console.log(`📷 [SKU_SYSTEM] Imagem ${i + 1} extraída: ${mediaFile}`);
+                  if (zipFile) {
+                    const blob = await zipFile.async('blob');
+                    const skuExtraido = extrairSKUDoNome(mediaFile);
+                    
+                    imagensEmbutidas.push({
+                      nome: skuExtraido ? `${skuExtraido}.jpg` : `imagem_excel_${i + 1}.jpg`,
+                      blob: blob, // Blob individual
+                      linha: i + 2, // Linha sequencial a partir da linha 2
+                      coluna: 'C',
+                      sku: skuExtraido || `PROD-${i + 1}`
+                    });
+                    
+                    console.log(`📷 [FALLBACK] Imagem ${i + 1}: ${mediaFile} → SKU: ${skuExtraido || `PROD-${i + 1}`}`);
+                  }
                 }
               }
-            } else {
-              console.log('📝 [SKU_SYSTEM] Nenhuma imagem encontrada na estrutura xl/media/');
             }
           }
         } catch (error) {
-          console.log('⚠️ [SKU_SYSTEM] Erro ao extrair imagens embutidas:', error);
-          console.log('💡 [SKU_SYSTEM] Dica: Para melhor suporte a imagens, salve o Excel como ZIP com imagens nomeadas por SKU');
+          console.log('⚠️ [SKU_SYSTEM] Erro ao extrair imagens:', error);
         }
         
         // CONSTRUIR MAPA SKU → LINHAS se houver imagens
