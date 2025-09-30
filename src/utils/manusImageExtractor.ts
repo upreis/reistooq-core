@@ -109,45 +109,65 @@ async function extrairTodasImagensPorPosicao(excelFile, skus) {
   const posicoesImagens = extrairPosicoesDoXML(drawingContent, ridMap);
   console.log('📍 Posições extraídas:', posicoesImagens);
   
-  // 4. Ordenar por linha e mapear com SKUs
-  posicoesImagens.sort((a, b) => a.linha - b.linha);
+  // 4. Agrupar imagens por linha para identificar principal vs fornecedor
+  const imagensPorLinha: Record<number, Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}>> = {};
   
-  // 5. Extrair blobs das imagens e criar mapeamento final
+  for (const img of posicoesImagens) {
+    if (!imagensPorLinha[img.linha]) imagensPorLinha[img.linha] = [];
+    imagensPorLinha[img.linha].push(img);
+  }
+  
+  console.log('📊 [DEBUG_AGRUPAMENTO] Imagens agrupadas por linha:', 
+    Object.entries(imagensPorLinha).map(([linha, imgs]) => ({
+      linha,
+      quantidade: imgs.length
+    }))
+  );
+  
+  // 5. Extrair blobs e criar mapeamento final com tipo correto
   const todasImagensMapeadas = [];
   
-  for (const posicao of posicoesImagens) {
-    const linhaIdx = posicao.linha - 2; // -2 para ajustar ao índice da lista de SKUs
+  for (const [linhaStr, imagensDaLinha] of Object.entries(imagensPorLinha)) {
+    const linha = parseInt(linhaStr);
+    const linhaIdx = linha - 2; // -2 para ajustar ao índice da lista de SKUs
     
     if (linhaIdx >= 0 && linhaIdx < skus.length) {
       const sku = skus[linhaIdx];
-      const caminhoImagem = `xl/media/${posicao.nomeArquivo}`;
       
-      if (zipContent.files[caminhoImagem]) {
-        const blob = await zipContent.files[caminhoImagem].async('blob');
+      // Ordenar por coluna para garantir ordem correta
+      imagensDaLinha.sort((a, b) => a.coluna - b.coluna);
+      
+      for (let i = 0; i < imagensDaLinha.length; i++) {
+        const posicao = imagensDaLinha[i];
+        const caminhoImagem = `xl/media/${posicao.nomeArquivo}`;
         
-        // Determinar tipo da imagem baseado na coluna
-        const tipoImagem = posicao.coluna === 2 ? 'principal' : 
-                          posicao.coluna === 3 ? 'fornecedor' : 'outro';
-        
-        const sufixo = tipoImagem === 'fornecedor' ? '_fornecedor' : '';
-        const extensao = posicao.nomeArquivo.split('.').pop();
-        
-        todasImagensMapeadas.push({
-          sku: sku,
-          linha: posicao.linha,
-          coluna: posicao.coluna,
-          tipo: tipoImagem,
-          nomeOriginal: posicao.nomeArquivo,
-          nomeNovo: `${sku}${sufixo}.${extensao}`,
-          blob: blob,
-          url: URL.createObjectURL(blob)
-        });
-        
-        const colunaTexto = posicao.coluna === 2 ? 'B (IMAGEM)' : 
-                           posicao.coluna === 3 ? 'C (IMAGEM FORNECEDOR)' : 
-                           `${posicao.coluna}`;
-        
-        console.log(`✅ Linha ${posicao.linha}, Coluna ${colunaTexto}: SKU '${sku}' -> '${posicao.nomeArquivo}'`);
+        if (zipContent.files[caminhoImagem]) {
+          const blob = await zipContent.files[caminhoImagem].async('blob');
+          
+          // Determinar tipo baseado na posição dentro da linha
+          // 1ª imagem = principal (coluna B)
+          // 2ª imagem = fornecedor (coluna C)
+          const tipoImagem = i === 0 ? 'principal' : 'fornecedor';
+          const colunaReal = i === 0 ? 2 : 3; // B=2, C=3
+          
+          const sufixo = tipoImagem === 'fornecedor' ? '_fornecedor' : '';
+          const extensao = posicao.nomeArquivo.split('.').pop();
+          
+          todasImagensMapeadas.push({
+            sku: sku,
+            linha: posicao.linha,
+            coluna: colunaReal,
+            tipo: tipoImagem,
+            nomeOriginal: posicao.nomeArquivo,
+            nomeNovo: `${sku}${sufixo}.${extensao}`,
+            blob: blob,
+            url: URL.createObjectURL(blob)
+          });
+          
+          const colunaTexto = tipoImagem === 'principal' ? 'B (IMAGEM)' : 'C (IMAGEM FORNECEDOR)';
+          
+          console.log(`✅ Linha ${posicao.linha}, Coluna ${colunaTexto}: SKU '${sku}' -> '${posicao.nomeArquivo}' (${i + 1}ª imagem da linha)`);
+        }
       }
     }
   }
