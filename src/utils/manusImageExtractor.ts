@@ -198,13 +198,15 @@ function extrairPosicoesDoXML(xmlContent, ridMap) {
     
     if (!rowMatch || !colMatch) continue;
     
-    const linha = parseInt(rowMatch[1]) + 1; // +1 porque XML usa índice 0
-    const coluna = parseInt(colMatch[1]) + 1;
+    const rowRaw = parseInt(rowMatch[1]);
+    const colRaw = parseInt(colMatch[1]);
+    const linha = rowRaw + 1; // +1 porque XML usa índice 0
+    const coluna = colRaw + 1;
     
     // Extrair rId da imagem
     const ridMatch = /r:embed="([^"]+)"/.exec(anchorContent);
     
-    console.log(`🔍 [DEBUG_XML_PARSING] Encontrada imagem: linha=${linha}, coluna=${coluna}, rid=${ridMatch ? ridMatch[1] : 'N/A'}`);
+    console.log(`🔍 [DEBUG_XML_RAW] XML bruto: row=${rowRaw}, col=${colRaw} | Convertido: linha=${linha}, coluna=${coluna} | rid=${ridMatch ? ridMatch[1] : 'N/A'}`);
     
     if (!ridMatch) continue;
     
