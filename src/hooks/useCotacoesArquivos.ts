@@ -347,29 +347,31 @@ export function useCotacoesArquivos() {
       
       let imagens: any[] = [];
       
-      // PRIORIDADE 1: Processar imagens embutidas do Excel
+      // PRIORIDADE 1: Processar imagens embutidas do Excel (SOLUÇÃO MANUS)
       if (imagensEmbutidas.length > 0) {
-        console.log('🥇 [UNIFICADO] Usando imagens embutidas do Excel');
+        console.log('🥇 [UNIFICADO] Usando imagens da solução Manus (coordenadas XML)');
         
+        // ✅ CORREÇÃO CRÍTICA: NÃO sobrescrever o SKU que veio da solução Manus!
+        // A solução Manus já mapeou corretamente o SKU pela posição XML real.
         const imagensComSku = imagensEmbutidas.map(img => {
-          const produtoData = dados[img.linha - 2];
-          const sku = produtoData?.SKU || produtoData?.sku || `PROD-${img.linha}`;
+          // ✅ USAR O SKU QUE JÁ VEIO DA SOLUÇÃO MANUS (img.sku)
+          const skuCorreto = img.sku; // Este SKU foi extraído pela posição XML real!
           const sufixo = img.tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
           
-          console.log(`🔍 [DEBUG_MAP] Imagem: linha=${img.linha}, coluna=${img.coluna}, tipoColuna=${img.tipoColuna}, SKU=${sku}`);
+          console.log(`🔍 [MANUS_MAP] Imagem: linha=${img.linha}, coluna=${img.coluna}, tipoColuna=${img.tipoColuna}, SKU=${skuCorreto}`);
           
           return {
-            nome: `${sku}${sufixo}-embutida.jpg`,
+            nome: `${skuCorreto}${sufixo}-embutida.jpg`,
             url: img.blob ? URL.createObjectURL(img.blob) : '',
             linha: img.linha,
             coluna: img.coluna,
-            sku: sku,
+            sku: skuCorreto, // ✅ SKU correto da solução Manus
             tipoColuna: img.tipoColuna
           };
         });
         
         imagens = imagensComSku;
-        console.log(`✅ [UNIFICADO] ${imagens.length} imagens embutidas processadas`);
+        console.log(`✅ [MANUS] ${imagens.length} imagens corretamente mapeadas pela solução Manus`);
       }
       // PRIORIDADE 2: Processar ZIP por SKU
       else if (zip && mediaFiles.length > 0) {
