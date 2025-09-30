@@ -285,20 +285,51 @@ export function useCotacoesArquivos() {
         console.log('🖼️ [SKU_SYSTEM] Procurando imagens embutidas no Excel...');
         
         try {
-          // MÉTODO 1: Tentar usar ExcelJS getImages (pode não existir em todas as versões)
-          if (worksheet.getImages && typeof worksheet.getImages === 'function') {
-            const images = worksheet.getImages();
-            console.log(`📸 [SKU_SYSTEM] Método ExcelJS: ${images.length} imagens encontradas`);
+          // MÉTODO 1: Via ExcelJS - workbook.media (MAIS CONFIÁVEL)
+          const workbookAny = workbook as any;
+          if (workbookAny.media && workbookAny.media.length > 0) {
+            console.log(`📸 [EXCELJS_MEDIA] ${workbookAny.media.length} imagens encontradas via workbook.media`);
             
-            images.forEach((image: any, index: number) => {
-              // Processar imagens via ExcelJS
-              console.log(`🖼️ [SKU_SYSTEM] Processando imagem ${index + 1} via ExcelJS`);
-            });
-          } else {
-            console.log('⚠️ [SKU_SYSTEM] Método ExcelJS não disponível, tentando extração manual...');
+            for (let i = 0; i < workbookAny.media.length; i++) {
+              const media = workbookAny.media[i];
+              
+              // Criar blob da imagem
+              const blob = new Blob([media.buffer], { type: media.type || 'image/png' });
+              
+              // Distribuir imagens alternadamente entre coluna B e C
+              const colunaEstimada = i % 2 === 0 ? 'B' : 'C';
+              const tipoColuna = colunaEstimada === 'B' ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+              const linhaEstimada = Math.floor(i / 2) + 2; // Agrupar 2 imagens por linha
+              
+              // Tentar extrair SKU do nome da imagem se disponível
+              const skuExtraido = media.name ? extrairSKUDoNome(media.name) : null;
+              
+              const sufixo = tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
+              imagensEmbutidas.push({
+                nome: skuExtraido ? `${skuExtraido}${sufixo}.jpg` : `imagem_workbook_${i + 1}.jpg`,
+                blob: blob,
+                linha: linhaEstimada,
+                coluna: colunaEstimada,
+                sku: skuExtraido,
+                tipoColuna: tipoColuna
+              });
+              
+              console.log(`📷 [EXCELJS_MEDIA] Imagem ${i + 1}: linha=${linhaEstimada}, coluna=${colunaEstimada} (${tipoColuna}), SKU=${skuExtraido}`);
+            }
           }
           
-          // MÉTODO 2: Extração manual via ZIP do Excel
+          // MÉTODO 2: Via worksheet.getImages() (se disponível)
+          if (imagensEmbutidas.length === 0 && worksheet.getImages && typeof worksheet.getImages === 'function') {
+            const images = worksheet.getImages();
+            console.log(`📸 [SKU_SYSTEM] Método worksheet.getImages: ${images.length} imagens encontradas`);
+            
+            for (let index = 0; index < images.length; index++) {
+              const image: any = images[index];
+              console.log(`🖼️ [SKU_SYSTEM] Processando imagem ${index + 1} via worksheet.getImages`, image);
+            }
+          }
+          
+          // MÉTODO 3: Extração manual via ZIP do Excel (fallback)
           if (zip && imagensEmbutidas.length === 0) {
             console.log('🔍 [SKU_SYSTEM] Procurando imagens na estrutura interna do Excel ZIP...');
             
@@ -317,29 +348,34 @@ export function useCotacoesArquivos() {
                 if (zipFile) {
                   const blob = await zipFile.async('blob');
                   
-                  // DETECTAR POSIÇÃO REAL DA IMAGEM NO EXCEL
-                  const imagemInfo = detectarPosicaoImagemReal(worksheet, i);
+                  // Distribuir imagens alternadamente entre coluna B e C
+                  const colunaEstimada = i % 2 === 0 ? 'B' : 'C';
+                  const tipoColuna = colunaEstimada === 'B' ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+                  const linhaEstimada = Math.floor(i / 2) + 2; // Agrupar 2 imagens por linha
                   
                   // EXTRAIR SKU DO NOME DO ARQUIVO
                   const skuExtraido = extrairSKUDoNome(mediaFile);
                   
-                  const sufixo = imagemInfo.coluna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
+                  const sufixo = tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
                   imagensEmbutidas.push({
                     nome: skuExtraido ? `${skuExtraido}${sufixo}.jpg` : `imagem_excel_${i + 1}.jpg`,
                     blob: blob,
-                    linha: imagemInfo.linha,
-                    coluna: imagemInfo.coluna,
+                    linha: linhaEstimada,
+                    coluna: colunaEstimada,
                     sku: skuExtraido,
-                    tipoColuna: imagemInfo.coluna
+                    tipoColuna: tipoColuna
                   });
                   
-                  console.log(`📷 [SKU_SYSTEM] Imagem ${i + 1} extraída: ${mediaFile}`);
+                  console.log(`📷 [ZIP_MEDIA] Imagem ${i + 1}: ${mediaFile} → linha=${linhaEstimada}, col=${colunaEstimada} (${tipoColuna})`);
                 }
               }
             } else {
               console.log('📝 [SKU_SYSTEM] Nenhuma imagem encontrada na estrutura xl/media/');
             }
           }
+          
+          console.log(`✅ [TOTAL_IMAGES] ${imagensEmbutidas.length} imagens extraídas no total`);
+          
         } catch (error) {
           console.log('⚠️ [SKU_SYSTEM] Erro ao extrair imagens embutidas:', error);
           console.log('💡 [SKU_SYSTEM] Dica: Para melhor suporte a imagens, salve o Excel como ZIP com imagens nomeadas por SKU');
