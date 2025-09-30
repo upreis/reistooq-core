@@ -307,20 +307,26 @@ export function useCotacoesArquivos() {
           
           // Mapear imagens de fornecedor (coluna C → IMAGEM_FORNECEDOR)
           if (imagensFornecedor && imagensFornecedor.length > 0) {
+            console.log(`🔍 [DEBUG_FORNECEDOR] Processando ${imagensFornecedor.length} imagens de fornecedor`);
             imagensFornecedor.forEach((img: any) => {
-              imagensEmbutidas.push({
+              const imagemData = {
                 nome: img.nome,
                 blob: img.blob,
                 linha: img.linha,
                 coluna: 'C',
                 sku: img.sku,
-                tipoColuna: 'IMAGEM_FORNECEDOR'
-              });
-              console.log(`  🏭 [C] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha}`);
+                tipoColuna: 'IMAGEM_FORNECEDOR',
+                url: img.url
+              };
+              imagensEmbutidas.push(imagemData);
+              console.log(`  🏭 [C] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha} | URL: ${img.url?.substring(0, 60)}...`);
             });
+          } else {
+            console.log(`⚠️ [DEBUG_FORNECEDOR] Nenhuma imagem de fornecedor encontrada!`);
           }
           
           console.log(`✅ [MANUS] Total: ${imagensEmbutidas.length} imagens processadas`);
+          console.log(`🔍 [DEBUG_IMAGENS] imagensEmbutidas:`, imagensEmbutidas.map(img => ({ sku: img.sku, tipo: img.tipoColuna, coluna: img.coluna })));
         } else {
           console.log('⚠️ [MANUS] Nenhuma imagem encontrada no Excel');
         }
@@ -546,14 +552,19 @@ export function useCotacoesArquivos() {
       
       // Se encontrou por nome, usar essa associação e pular o resto
       if (imagensPorNome.length > 0) {
+        console.log(`🔍 [DEBUG_NOME] Encontradas ${imagensPorNome.length} imagens por nome para SKU ${produtoMapeado.sku}`);
         imagensPorNome.forEach(img => {
           const tipo = img.tipoColuna || img.coluna;
           console.log(`🔍 [DEBUG_ASSOC] Associando por NOME: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${img.url?.substring(0, 50)}...`);
           
           if (tipo === 'IMAGEM' || tipo === 'B') {
             produtoMapeado.imagem = img.url;
+            console.log(`   ✅ Atribuído a 'imagem'`);
           } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
             produtoMapeado.imagem_fornecedor = img.url;
+            console.log(`   ✅ Atribuído a 'imagem_fornecedor'`);
+          } else {
+            console.log(`   ⚠️ Tipo não reconhecido: ${tipo}`);
           }
         });
         console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
@@ -585,14 +596,19 @@ export function useCotacoesArquivos() {
       
       // SEPARAR COLUNAS CORRETAMENTE
       if (imagensPorSku.length > 0) {
+        console.log(`🔍 [DEBUG_SKU] Encontradas ${imagensPorSku.length} imagens por SKU para ${produtoMapeado.sku}`);
         imagensPorSku.forEach(img => {
           const tipo = img.tipoColuna || img.coluna;
           console.log(`🔍 [DEBUG_ASSOC] Associando por SKU: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${img.url?.substring(0, 50)}...`);
           
           if (tipo === 'IMAGEM' || tipo === 'B') {
             produtoMapeado.imagem = img.url;
+            console.log(`   ✅ Atribuído a 'imagem'`);
           } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
             produtoMapeado.imagem_fornecedor = img.url;
+            console.log(`   ✅ Atribuído a 'imagem_fornecedor'`);
+          } else {
+            console.log(`   ⚠️ Tipo não reconhecido: ${tipo}`);
           }
         });
         console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
@@ -601,12 +617,16 @@ export function useCotacoesArquivos() {
         const imagensPorLinha = imagensUpload.filter(img => img.linha === (index + 2)); // +2 porque linha 1 = header
         
         if (imagensPorLinha.length > 0) {
+          console.log(`🔍 [DEBUG_LINHA] Encontradas ${imagensPorLinha.length} imagens por linha ${index + 2} para ${produtoMapeado.sku}`);
           imagensPorLinha.forEach(img => {
             const tipo = img.tipoColuna || img.coluna;
+            console.log(`   🔍 tipo=${tipo}, coluna=${img.coluna}, tipoColuna=${img.tipoColuna}`);
             if (tipo === 'IMAGEM' || tipo === 'B') {
               produtoMapeado.imagem = img.url;
+              console.log(`   ✅ Atribuído a 'imagem'`);
             } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
               produtoMapeado.imagem_fornecedor = img.url;
+              console.log(`   ✅ Atribuído a 'imagem_fornecedor'`);
             }
           });
           console.log(`✅ [LINHA_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorLinha.length} imagem(ns) associada(s) por linha ${index + 2}`);
