@@ -199,7 +199,7 @@ const determinarUltimaLinhaComDados = (dados: any[][]): number => {
 
 // FUNÇÃO AUXILIAR - EXTRAIR POSIÇÕES DO XML COM MAPEAMENTO PRECISO (MELHORADA)
 const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, string>, imagensDisponiveis?: Map<string, Uint8Array>): PosicaoImagem[] => {
-  console.log('🔍 [XML] Iniciando parse do XML de drawings com mapeamento preciso...');
+  console.log('🔍 [XML] CORRIGIDO: Mapeamento por coordenadas reais (não ordem de inserção)');
   
   const posicoes: PosicaoImagem[] = [];
   
@@ -207,7 +207,6 @@ const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, st
     // Parse básico do XML para encontrar elementos xdr:twoCellAnchor
     const twoCellAnchorRegex = /<xdr:twoCellAnchor[^>]*>([\s\S]*?)<\/xdr:twoCellAnchor>/g;
     let match;
-    let indiceSequencial = 0; // Para fallback quando não há mapeamento
     
     while ((match = twoCellAnchorRegex.exec(xmlContent)) !== null) {
       const anchorContent = match[1];
@@ -218,7 +217,7 @@ const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, st
       
       const fromContent = fromMatch[1];
       
-      // Extrair coluna e linha
+      // Extrair coluna e linha REAIS do Excel (não ordem de inserção)
       const colMatch = /<xdr:col>(\d+)<\/xdr:col>/.exec(fromContent);
       const rowMatch = /<xdr:row>(\d+)<\/xdr:row>/.exec(fromContent);
       
@@ -227,45 +226,47 @@ const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, st
       const coluna = parseInt(colMatch[1]) + 1; // +1 porque XML usa índice 0
       const linha = parseInt(rowMatch[1]) + 1;  // +1 porque XML usa índice 0
       
-      // MELHORIA: Extrair rId do XML e usar mapeamento preciso
+      // Extrair rId para mapeamento preciso da imagem
       const embedMatch = /<a:blip\s+r:embed="([^"]+)"/.exec(anchorContent);
       let nomeArquivo = '';
       let rId = '';
       
-      if (embedMatch && mapeamentoRels.size > 0) {
-        // MÉTODO PRECISO: Usar mapeamento de relacionamentos
+      if (embedMatch) {
         rId = embedMatch[1];
-        const arquivoMapeado = mapeamentoRels.get(rId);
         
-        if (arquivoMapeado) {
-          nomeArquivo = arquivoMapeado;
-          console.log(`🎯 [XML] Mapeamento preciso: ${rId} → ${nomeArquivo}`);
-        } else {
-          console.log(`⚠️ [XML] rId ${rId} não encontrado no mapeamento, tentando fallbacks...`);
-          // Tentar variações do rId
-          const variacoes = [`image${rId.replace('rId', '')}.png`, `image${indiceSequencial + 1}.png`, `image${indiceSequencial + 1}.jpg`];
+        // PRIORIDADE 1: Usar mapeamento de relacionamentos preciso
+        if (mapeamentoRels.size > 0) {
+          const arquivoMapeado = mapeamentoRels.get(rId);
           
-          let encontrado = false;
-          for (const variacao of variacoes) {
-            if (imagensDisponiveis?.has(variacao)) {
-              nomeArquivo = variacao;
-              console.log(`🎯 [XML] FALLBACK encontrado: ${variacao}`);
-              encontrado = true;
+          if (arquivoMapeado) {
+            nomeArquivo = arquivoMapeado;
+            console.log(`✅ [XML_PRECISO] Linha ${linha} → ${rId} → ${nomeArquivo}`);
+          }
+        }
+        
+        // PRIORIDADE 2: Fallback baseado em rId
+        if (!nomeArquivo) {
+          const numeroRId = rId.replace('rId', '');
+          const extensoes = ['png', 'jpg', 'jpeg', 'gif'];
+          
+          for (const ext of extensoes) {
+            const tentativa = `image${numeroRId}.${ext}`;
+            if (imagensDisponiveis?.has(tentativa)) {
+              nomeArquivo = tentativa;
+              console.log(`🔄 [XML_FALLBACK] Linha ${linha} → ${tentativa}`);
               break;
             }
           }
-          
-          if (!encontrado) {
-            nomeArquivo = `image${indiceSequencial + 1}.png`;
-            console.log(`⚠️ [XML] Usando fallback final: ${nomeArquivo}`);
-          }
         }
-      } else {
-        // FALLBACK: Usar ordem sequencial (método anterior)
-        nomeArquivo = `image${indiceSequencial + 1}.png`;
-        console.log(`⚠️ [XML] Usando fallback sequencial: ${nomeArquivo}`);
+        
+        // PRIORIDADE 3: Fallback final
+        if (!nomeArquivo) {
+          nomeArquivo = `image${rId.replace('rId', '')}.png`;
+          console.log(`⚠️ [XML_FINAL] Linha ${linha} → ${nomeArquivo} (fallback)`);
+        }
       }
       
+      // CRÍTICO: Ordenar por posição VISUAL, não por ordem de inserção
       posicoes.push({
         linha,
         coluna,
@@ -273,11 +274,13 @@ const extrairPosicoesDoXML = (xmlContent: string, mapeamentoRels: Map<string, st
         rId
       });
       
-      console.log(`🎯 [XML] Encontrada imagem na linha ${linha}, coluna ${coluna} → ${nomeArquivo} (rId: ${rId})`);
-      indiceSequencial++;
+      console.log(`📍 [XML_POSICAO] Linha VISUAL ${linha}, Col ${coluna} ← ${nomeArquivo}`);
     }
     
-    console.log(`✅ [XML] Total de ${posicoes.length} posições extraídas do XML`);
+    // ORDENAR POR LINHA PARA CORRIGIR ORDEM DE INSERÇÃO vs VISUAL
+    posicoes.sort((a, b) => a.linha - b.linha);
+    
+    console.log(`✅ [XML_CORRIGIDO] ${posicoes.length} imagens mapeadas por posição visual (ordenadas)`);
     return posicoes;
     
   } catch (error) {

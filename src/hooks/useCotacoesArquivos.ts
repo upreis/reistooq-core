@@ -378,25 +378,32 @@ export function useCotacoesArquivos() {
       
       let imagens: any[] = [];
       
-      // PRIORIDADE 1: Processar imagens embutidas do Excel
+      // PRIORIDADE 1: Processar imagens embutidas do Excel (CORRIGIDO)
       if (imagensEmbutidas.length > 0) {
-        console.log('🥇 [UNIFICADO] Usando imagens embutidas do Excel');
+        console.log('🥇 [UNIFICADO_CORRIGIDO] Usando posição VISUAL das imagens (não ordem inserção)');
         
-        const imagensComSku = imagensEmbutidas.map(img => {
-          const produtoData = dados[img.linha - 2];
-          const sku = produtoData?.SKU || produtoData?.sku || `PROD-${img.linha}`;
+        // ORDENAR por linha visual para corrigir problema ordem de inserção vs posição
+        const imagensOrdenadas = [...imagensEmbutidas].sort((a, b) => a.linha - b.linha);
+        
+        const imagensComSku = imagensOrdenadas.map((img, index) => {
+          // Usar linha REAL da imagem, não índice do array
+          const linhaReal = img.linha;
+          const produtoData = dados[linhaReal - 2]; // -2: linha 1=header, linha 2=dados[0]
+          const sku = produtoData?.SKU || produtoData?.sku || `PROD-${linhaReal}`;
+          
+          console.log(`📍 [MAPEAMENTO_VISUAL] Imagem ${index + 1} → Linha VISUAL ${linhaReal} → SKU: ${sku}`);
           
           return {
-            nome: `${sku}-embutida.jpg`,
+            nome: `${sku}-linha${linhaReal}.jpg`,
             url: img.blob ? URL.createObjectURL(img.blob) : '',
-            linha: img.linha,
+            linha: linhaReal, // Usar linha REAL, não índice
             coluna: img.coluna,
             sku: sku
           };
         });
         
         imagens = imagensComSku;
-        console.log(`✅ [UNIFICADO] ${imagens.length} imagens embutidas processadas`);
+        console.log(`✅ [UNIFICADO_CORRIGIDO] ${imagens.length} imagens processadas por posição visual`);
       }
       // PRIORIDADE 2: Processar ZIP por SKU
       else if (zip && mediaFiles.length > 0) {
