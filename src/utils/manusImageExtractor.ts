@@ -298,22 +298,141 @@ export async function processarExcelCompletoCorrigido(arquivo) {
 
 /**
  * Função específica para extrair apenas imagens de fornecedor (coluna C)
+ * NOVA ABORDAGEM: Extrai imagens pela posição XML SEM tentar agrupar por linha
  */
-export async function extrairImagensFornecedor(excelFile) {
-  console.log('🏭 Extraindo apenas imagens de fornecedor (coluna C)...');
+export async function extrairImagensFornecedorPorXML(excelFile: File) {
+  console.log('🏭 [FORNECEDOR_XML] Extraindo imagens da coluna C via XML...');
   
-  const { imagensFornecedor } = await extrairTodasImagensOrdenadas(excelFile);
-  return imagensFornecedor;
-}
-
-/**
- * Função específica para extrair apenas imagens principais (coluna B)
- */
-export async function extrairImagensPrincipais(excelFile) {
-  console.log('🖼️ Extraindo apenas imagens principais (coluna B)...');
-  
-  const { imagensPrincipais } = await extrairTodasImagensOrdenadas(excelFile);
-  return imagensPrincipais;
+  try {
+    const arrayBuffer = await excelFile.arrayBuffer();
+    const zip = new JSZip();
+    const zipContent = await zip.loadAsync(arrayBuffer);
+    
+    // Encontrar arquivos de drawing
+    const drawingRelsFile = Object.keys(zipContent.files).find(name => 
+      name.includes('xl/drawings/_rels') && name.endsWith('.xml.rels')
+    );
+    
+    const drawingFile = Object.keys(zipContent.files).find(name => 
+      name.includes('xl/drawings/') && name.endsWith('.xml') && !name.includes('_rels')
+    );
+    
+    if (!drawingRelsFile || !drawingFile) {
+      console.log('⚠️ [FORNECEDOR_XML] Arquivos de drawing não encontrados');
+      return [];
+    }
+    
+    // Mapear rId para nome de arquivo
+    const relsContent = await zipContent.files[drawingRelsFile].async('text');
+    const ridMap = extrairMapeamentoRIds(relsContent);
+    
+    // Extrair posições do XML
+    const drawingContent = await zipContent.files[drawingFile].async('text');
+    
+    // Ler SKUs do Excel
+    const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    const skus = jsonData.slice(1).map((row: any) => row[0]).filter((sku: any) => sku);
+    
+    // Extrair TODAS as posições sem filtro
+    const posicoes: Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}> = [];
+    
+    const twoCellAnchorRegex = /<xdr:twoCellAnchor[^>]*>([\s\S]*?)<\/xdr:twoCellAnchor>/g;
+    let match;
+    
+    while ((match = twoCellAnchorRegex.exec(drawingContent)) !== null) {
+      const anchorContent = match[1];
+      
+      const fromMatch = /<xdr:from>([\s\S]*?)<\/xdr:from>/.exec(anchorContent);
+      if (!fromMatch) continue;
+      
+      const fromContent = fromMatch[1];
+      const rowMatch = /<xdr:row>(\d+)<\/xdr:row>/.exec(fromContent);
+      const colMatch = /<xdr:col>(\d+)<\/xdr:col>/.exec(fromContent);
+      
+      if (!rowMatch || !colMatch) continue;
+      
+      const linha = parseInt(rowMatch[1]) + 1;
+      const coluna = parseInt(colMatch[1]) + 1;
+      
+      const ridMatch = /r:embed="([^"]+)"/.exec(anchorContent);
+      if (!ridMatch) continue;
+      
+      const rid = ridMatch[1];
+      const nomeArquivo = ridMap[rid];
+      
+      if (nomeArquivo) {
+        posicoes.push({ linha, coluna, rid, nomeArquivo });
+        console.log(`🔍 [FORNECEDOR_XML] Imagem encontrada: linha=${linha}, coluna=${coluna}, arquivo=${nomeArquivo}`);
+      }
+    }
+    
+    console.log(`📊 [FORNECEDOR_XML] Total de imagens no XML: ${posicoes.length}`);
+    
+    // Agrupar imagens por linha
+    const imagensPorLinha: Record<number, Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}>> = {};
+    
+    for (const posicao of posicoes) {
+      if (!imagensPorLinha[posicao.linha]) {
+        imagensPorLinha[posicao.linha] = [];
+      }
+      imagensPorLinha[posicao.linha].push(posicao);
+    }
+    
+    console.log(`📊 [FORNECEDOR_XML] Linhas com imagens:`, 
+      Object.entries(imagensPorLinha).map(([linha, imgs]) => ({
+        linha,
+        quantidade: imgs.length
+      }))
+    );
+    
+    // Extrair apenas a SEGUNDA imagem de cada linha (fornecedor)
+    const imagensColunaC = [];
+    
+    for (const [linhaStr, imagensDaLinha] of Object.entries(imagensPorLinha)) {
+      const linha = parseInt(linhaStr);
+      
+      // Se houver mais de uma imagem nesta linha, a segunda é o fornecedor
+      if (imagensDaLinha.length >= 2) {
+        // Ordenar por coluna para garantir ordem
+        imagensDaLinha.sort((a, b) => a.coluna - b.coluna);
+        
+        const posicaoFornecedor = imagensDaLinha[1]; // 2ª imagem = fornecedor
+        const linhaIdx = linha - 2;
+        
+        if (linhaIdx >= 0 && linhaIdx < skus.length) {
+          const sku = skus[linhaIdx];
+          const caminhoImagem = `xl/media/${posicaoFornecedor.nomeArquivo}`;
+          
+          if (zipContent.files[caminhoImagem]) {
+            const blob = await zipContent.files[caminhoImagem].async('blob');
+            const extensao = posicaoFornecedor.nomeArquivo.split('.').pop();
+            
+            imagensColunaC.push({
+              sku: sku,
+              linha: linha,
+              coluna: 3,
+              tipo: 'fornecedor',
+              nomeOriginal: posicaoFornecedor.nomeArquivo,
+              nomeNovo: `${sku}_fornecedor.${extensao}`,
+              blob: blob,
+              url: URL.createObjectURL(blob)
+            });
+            
+            console.log(`✅ [FORNECEDOR_XML] Linha ${linha}: SKU '${sku}' -> '${posicaoFornecedor.nomeArquivo}' (2ª imagem da linha)`);
+          }
+        }
+      }
+    }
+    
+    console.log(`🏭 [FORNECEDOR_XML] ${imagensColunaC.length} imagens de fornecedor extraídas`);
+    return imagensColunaC;
+    
+  } catch (error) {
+    console.error('❌ [FORNECEDOR_XML] Erro:', error);
+    return [];
+  }
 }
 
 // Exemplo de uso no componente React
