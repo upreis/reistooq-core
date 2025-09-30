@@ -29,12 +29,28 @@ export async function extrairTodasImagensOrdenadas(excelFile) {
     // 2. Extrair e mapear todas as imagens por posição
     const todasImagens = await extrairTodasImagensPorPosicao(excelFile, skus);
     
+    console.log(`📊 [DEBUG_TODAS_COLUNAS] Total de imagens extraídas: ${todasImagens.length}`);
+    
+    // Analisar distribuição por coluna
+    const imagensPorColuna = todasImagens.reduce((acc, img) => {
+      acc[img.coluna] = (acc[img.coluna] || 0) + 1;
+      return acc;
+    }, {} as Record<number, number>);
+    
+    console.log(`📊 [DEBUG_DISTRIBUICAO] Distribuição de imagens por coluna:`, imagensPorColuna);
+    console.log(`📊 [DEBUG_DISTRIBUICAO] Primeiras 5 imagens:`, todasImagens.slice(0, 5).map(img => ({
+      sku: img.sku,
+      linha: img.linha,
+      coluna: img.coluna,
+      nome: img.nomeOriginal
+    })));
+    
     // 3. Separar por tipo (coluna B = principais, coluna C = fornecedor)
     const imagensPrincipais = todasImagens.filter(img => img.coluna === 2); // Coluna B = índice 2
     const imagensFornecedor = todasImagens.filter(img => img.coluna === 3); // Coluna C = índice 3
     
-    console.log(`🖼️ Extraídas ${imagensPrincipais.length} imagens principais (coluna B)`);
-    console.log(`🏭 Extraídas ${imagensFornecedor.length} imagens de fornecedor (coluna C)`);
+    console.log(`🖼️ Extraídas ${imagensPrincipais.length} imagens principais (coluna B = índice 2)`);
+    console.log(`🏭 Extraídas ${imagensFornecedor.length} imagens de fornecedor (coluna C = índice 3)`);
     
     return {
       imagensPrincipais,
@@ -187,6 +203,9 @@ function extrairPosicoesDoXML(xmlContent, ridMap) {
     
     // Extrair rId da imagem
     const ridMatch = /r:embed="([^"]+)"/.exec(anchorContent);
+    
+    console.log(`🔍 [DEBUG_XML_PARSING] Encontrada imagem: linha=${linha}, coluna=${coluna}, rid=${ridMatch ? ridMatch[1] : 'N/A'}`);
+    
     if (!ridMatch) continue;
     
     const rid = ridMatch[1];
