@@ -9,7 +9,7 @@ import {
   adicionarCorrecaoPendente
 } from './useCotacoesValidacoes';
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
-import { processarExcelCorrigido } from '@/utils/excelImageMapper';
+import { processarExcelCompletoCorrigido } from '@/utils/manusImageExtractor';
 
 interface CotacaoArquivo {
   id?: string;
@@ -273,32 +273,61 @@ export function useCotacoesArquivos() {
       }
       
       // ============================================================
-      // SOLUÇÃO MANUS: EXTRAIR IMAGENS COM COORDENADAS XML REAIS
+      // ✅ SOLUÇÃO MANUS COMPLETA: EXTRAIR IMAGENS DAS COLUNAS B E C
       // ============================================================
-      console.log('🚀 [MANUS] Usando solução Manus para extração de imagens por coordenadas XML...');
+      console.log('🚀 [MANUS] Usando solução completa da Manus (colunas B e C)...');
       
       let imagensEmbutidas: any[] = [];
       
       try {
-        // Usar a solução da Manus que acessa as coordenadas XML reais
-        const imagensProcessadas = await processarExcelCorrigido(file);
+        // ✅ Usar a nova solução completa da Manus
+        const resultado = await processarExcelCompletoCorrigido(file);
         
-        // Converter para formato compatível com o sistema
-        imagensEmbutidas = imagensProcessadas.map((img: any) => ({
-          nome: img.nome,
-          blob: img.blob,
-          linha: img.linha,
-          coluna: img.tipoColuna === 'IMAGEM' ? 'B' : 'C',
-          sku: img.sku,
-          tipoColuna: img.tipoColuna,
-          colunaExcel: img.colunaExcel
-        }));
-        
-        console.log(`✅ [MANUS] ${imagensEmbutidas.length} imagens mapeadas corretamente por posição XML`);
+        if (resultado) {
+          const { imagensPrincipais, imagensFornecedor } = resultado;
+          
+          console.log(`✅ [MANUS] Extração concluída:`);
+          console.log(`   🖼️ ${imagensPrincipais?.length || 0} imagens principais (coluna B)`);
+          console.log(`   🏭 ${imagensFornecedor?.length || 0} imagens de fornecedor (coluna C)`);
+          
+          // Mapear imagens principais (coluna B → IMAGEM)
+          if (imagensPrincipais && imagensPrincipais.length > 0) {
+            imagensPrincipais.forEach((img: any) => {
+              imagensEmbutidas.push({
+                nome: img.nome,
+                blob: img.blob,
+                linha: img.linha,
+                coluna: 'B',
+                sku: img.sku,
+                tipoColuna: 'IMAGEM'
+              });
+              console.log(`  📸 [B] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha}`);
+            });
+          }
+          
+          // Mapear imagens de fornecedor (coluna C → IMAGEM_FORNECEDOR)
+          if (imagensFornecedor && imagensFornecedor.length > 0) {
+            imagensFornecedor.forEach((img: any) => {
+              imagensEmbutidas.push({
+                nome: img.nome,
+                blob: img.blob,
+                linha: img.linha,
+                coluna: 'C',
+                sku: img.sku,
+                tipoColuna: 'IMAGEM_FORNECEDOR'
+              });
+              console.log(`  🏭 [C] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha}`);
+            });
+          }
+          
+          console.log(`✅ [MANUS] Total: ${imagensEmbutidas.length} imagens processadas`);
+        } else {
+          console.log('⚠️ [MANUS] Nenhuma imagem encontrada no Excel');
+        }
         
       } catch (error) {
-        console.error('❌ [MANUS] Erro ao processar imagens via solução Manus:', error);
-        console.log('💡 [MANUS] Verifique se o Excel contém os arquivos drawing necessários');
+        console.error('❌ [MANUS] Erro ao processar imagens:', error);
+        console.log('💡 [MANUS] Certifique-se de que o Excel contém imagens nas colunas B/C');
       }
       
       // Processar dados do Excel

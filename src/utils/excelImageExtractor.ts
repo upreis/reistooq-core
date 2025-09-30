@@ -1,12 +1,12 @@
 /**
  * @deprecated Este arquivo é mantido apenas para compatibilidade retroativa.
- * Use @/utils/excelImageMapper (solução Manus) para novos desenvolvimentos.
+ * Use @/utils/manusImageExtractor (solução Manus completa) para novos desenvolvimentos.
  * 
- * A solução Manus extrai imagens usando coordenadas XML reais do Excel,
+ * A solução Manus completa extrai imagens das colunas B e C usando coordenadas XML reais,
  * garantindo mapeamento correto entre imagens e SKUs.
  */
 
-import { processarExcelCorrigido } from './excelImageMapper';
+import { processarExcelCompletoCorrigido } from './manusImageExtractor';
 
 export interface ImagemPosicionada {
   nome: string;
@@ -28,35 +28,60 @@ export interface ImagemProcessada {
 }
 
 /**
- * @deprecated Use processarExcelCorrigido de @/utils/excelImageMapper
- * Mantido para compatibilidade retroativa - redireciona para nova solução Manus
+ * @deprecated Use processarExcelCompletoCorrigido de @/utils/manusImageExtractor
+ * Mantido para compatibilidade retroativa - redireciona para solução Manus completa
  */
 export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosicionada[]> => {
-  console.warn('⚠️ [DEPRECATED] extrairImagensDoExcel: Use processarExcelCorrigido da solução Manus');
-  console.log('🔄 [COMPAT] Redirecionando para solução Manus...');
+  console.warn('⚠️ [DEPRECATED] extrairImagensDoExcel: Use processarExcelCompletoCorrigido da solução Manus');
+  console.log('🔄 [COMPAT] Redirecionando para solução Manus completa...');
   
   try {
-    const imagensProcessadas = await processarExcelCorrigido(file);
+    const resultado = await processarExcelCompletoCorrigido(file);
+    
+    if (!resultado) {
+      return [];
+    }
+    
+    const { imagensPrincipais, imagensFornecedor } = resultado;
     
     // Converter formato para compatibilidade
     const imagensCompativeis: ImagemPosicionada[] = [];
     
-    for (const img of imagensProcessadas) {
-      // Converter blob para Uint8Array
-      const arrayBuffer = await img.blob.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      
-      imagensCompativeis.push({
-        nome: img.nome,
-        dados: uint8Array,
-        linha: img.linha,
-        coluna: img.colunaExcel,
-        tipoColuna: img.tipoColuna as 'IMAGEM' | 'IMAGEM_FORNECEDOR',
-        sku: img.sku
-      });
+    // Processar imagens principais (coluna B)
+    if (imagensPrincipais) {
+      for (const img of imagensPrincipais) {
+        const arrayBuffer = await img.blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        imagensCompativeis.push({
+          nome: img.nome,
+          dados: uint8Array,
+          linha: img.linha,
+          coluna: 2, // Coluna B
+          tipoColuna: 'IMAGEM',
+          sku: img.sku
+        });
+      }
     }
     
-    console.log(`✅ [COMPAT] ${imagensCompativeis.length} imagens convertidas via solução Manus`);
+    // Processar imagens de fornecedor (coluna C)
+    if (imagensFornecedor) {
+      for (const img of imagensFornecedor) {
+        const arrayBuffer = await img.blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        imagensCompativeis.push({
+          nome: img.nome,
+          dados: uint8Array,
+          linha: img.linha,
+          coluna: 3, // Coluna C
+          tipoColuna: 'IMAGEM_FORNECEDOR',
+          sku: img.sku
+        });
+      }
+    }
+    
+    console.log(`✅ [COMPAT] ${imagensCompativeis.length} imagens convertidas (${imagensPrincipais?.length || 0} principais + ${imagensFornecedor?.length || 0} fornecedor)`);
     return imagensCompativeis;
     
   } catch (error) {
@@ -69,7 +94,7 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
  * @deprecated Mantido para compatibilidade retroativa
  */
 export const converterImagensParaDataURL = async (imagens: ImagemPosicionada[]): Promise<ImagemProcessada[]> => {
-  console.warn('⚠️ [DEPRECATED] converterImagensParaDataURL: Use processarExcelCorrigido diretamente');
+  console.warn('⚠️ [DEPRECATED] converterImagensParaDataURL: Use processarExcelCompletoCorrigido diretamente');
   
   const imagensProcessadas: ImagemProcessada[] = [];
   
