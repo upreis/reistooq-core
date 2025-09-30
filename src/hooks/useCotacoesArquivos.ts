@@ -390,6 +390,8 @@ export function useCotacoesArquivos() {
           const sku = produtoData?.SKU || produtoData?.sku || `PROD-${img.linha}`;
           const sufixo = img.tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
           
+          console.log(`🔍 [DEBUG_MAP] Imagem: linha=${img.linha}, coluna=${img.coluna}, tipoColuna=${img.tipoColuna}, SKU=${sku}`);
+          
           return {
             nome: `${sku}${sufixo}-embutida.jpg`,
             url: img.blob ? URL.createObjectURL(img.blob) : '',
@@ -538,13 +540,15 @@ export function useCotacoesArquivos() {
       if (imagensPorNome.length > 0) {
         imagensPorNome.forEach(img => {
           const tipo = img.tipoColuna || img.coluna;
+          console.log(`🔍 [DEBUG_ASSOC] Associando por NOME: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${img.url?.substring(0, 50)}...`);
+          
           if (tipo === 'IMAGEM' || tipo === 'B') {
             produtoMapeado.imagem = img.url;
           } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
             produtoMapeado.imagem_fornecedor = img.url;
           }
         });
-        console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: ${imagensPorNome.length} imagem(ns) associada(s) por NOME DE ARQUIVO`);
+        console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
         
         
         return produtoMapeado;
@@ -575,13 +579,15 @@ export function useCotacoesArquivos() {
       if (imagensPorSku.length > 0) {
         imagensPorSku.forEach(img => {
           const tipo = img.tipoColuna || img.coluna;
+          console.log(`🔍 [DEBUG_ASSOC] Associando por SKU: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${img.url?.substring(0, 50)}...`);
+          
           if (tipo === 'IMAGEM' || tipo === 'B') {
             produtoMapeado.imagem = img.url;
           } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
             produtoMapeado.imagem_fornecedor = img.url;
           }
         });
-        console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorSku.length} imagem(ns) associada(s) por SKU MATCH`);
+        console.log(`✅ [SKU_SYSTEM] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
       } else {
         // 2ª PRIORIDADE: Associação por linha (fallback apenas para casos especiais)
         const imagensPorLinha = imagensUpload.filter(img => img.linha === (index + 2)); // +2 porque linha 1 = header

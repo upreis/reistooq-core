@@ -82,8 +82,12 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
     // 8. MAPEAR IMAGENS POR POSIÇÃO REAL
     const imagensFinais: ImagemPosicionada[] = [];
     
+    console.log(`🔍 [DEBUG_COLUNA] Processando ${posicoesImagens.length} posições de imagens...`);
+    
     for (const posicao of posicoesImagens) {
       const { linha, coluna, nomeArquivo, rId } = posicao;
+      
+      console.log(`🔍 [DEBUG_COLUNA] Posição: linha=${linha}, coluna=${coluna}, arquivo=${nomeArquivo}`);
       
       // Verifica se a linha está dentro do range de dados
       if (linha < 2 || linha > ultimaLinhaComDados) {
@@ -91,8 +95,9 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
         continue;
       }
       
-      // Determinar tipo de coluna baseado na posição (1=B, 2=C)
+      // Determinar tipo de coluna baseado na posição (coluna após +1: 2=B, 3=C)
       const tipoColuna = coluna === 2 ? 'IMAGEM' : coluna === 3 ? 'IMAGEM_FORNECEDOR' : 'IMAGEM';
+      console.log(`🎯 [DEBUG_COLUNA] Coluna ${coluna} → Tipo: ${tipoColuna}`);
       
       // Extrai SKU da linha correspondente
       const sku = extrairSkuDaLinha(dados, linha);
@@ -138,7 +143,7 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
         sku: sku
       });
 
-      console.log(`📸 [XML] Linha ${linha}, Coluna ${coluna} (${tipoColuna}), rId: ${rId} → SKU: ${sku} → ${nomeImagem} ✅`);
+      console.log(`📸 [XML] ✅ Linha ${linha}, Coluna ${coluna} (${tipoColuna}), rId: ${rId} → SKU: ${sku} → ${nomeImagem}`);
     }
 
     console.log(`✅ [XML] ${imagensFinais.length} imagens processadas por posicionamento XML preciso`);
