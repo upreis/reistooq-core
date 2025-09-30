@@ -1,12 +1,14 @@
 import { toast } from 'sonner';
 
 export interface ImagemProcessada {
+  nome?: string;     // Para compatibilidade com excelImageExtractor
   sku: string;
-  linha: number;
-  arquivoOriginal: string;
-  arquivoRenomeado: string;
-  blob: Blob;
-  sucesso: boolean;
+  linha?: number;
+  arquivoOriginal?: string;
+  arquivoRenomeado?: string;
+  blob?: Blob;
+  url?: string;      // Para compatibilidade com excelImageExtractor
+  sucesso?: boolean;
   erro?: string;
 }
 
@@ -121,6 +123,7 @@ export class ImagemSKUProcessor {
     
     // 5. CRIAR RESULTADO
     const resultado: ImagemProcessada = {
+      nome: arquivoRenomeado,
       sku: skuExtraido,
       linha,
       arquivoOriginal: mediaFile,

@@ -2,6 +2,7 @@
 
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
+import { ImagemProcessada } from '@/hooks/useImagemSKUProcessor';
 
 interface ImagemPosicionada {
   nome: string;
@@ -11,11 +12,7 @@ interface ImagemPosicionada {
   sku?: string;
 }
 
-interface ImagemProcessada {
-  nome: string;
-  sku: string;
-  url: string;
-}
+// Usar interface centralizada do useImagemSKUProcessor
 
 interface PosicaoImagem {
   linha: number;

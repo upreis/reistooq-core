@@ -517,15 +517,10 @@ export function useCotacoesArquivos() {
         imagem_fornecedor: ''
       };
       
-      // LOGS DETALHADOS PARA DEBUG
-      console.log(`🔍 AUDIT: Produto ${index + 1}:`);
-      console.log(`  - SKU: ${produtoMapeado.sku}`);
-      console.log(`  - Linha Excel: ${index + 2}`);
-      console.log(`  - Imagens encontradas: ${imagensUpload.length}`);
-      
-      imagensUpload.forEach((img, i) => {
-        console.log(`  - Imagem ${i + 1}: Nome=${img.nome}, SKU=${img.sku}, Linha=${img.linha}, Coluna=${img.coluna}`);
-      });
+      // Auditoria simplificada
+      if (index === 0) {
+        console.log(`📊 [ASSOCIAÇÃO] Processando ${dados.length} produtos com ${imagensUpload.length} imagens`);
+      }
       
       // ====== PRIORIDADE 1: ASSOCIAÇÃO POR NOME DE ARQUIVO ======
       const imagensPorNome = imagensUpload.filter(img => {
