@@ -351,8 +351,8 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
     const skus = jsonData.slice(1).map((row: any) => row[0]).filter((sku: any) => sku);
     console.log('🏭 [FORNECEDOR_XML] SKUs lidos:', skus.length);
     
-    console.log('🏭 [FORNECEDOR_XML] Passo 7: Extraindo posições do XML...');
-    const posicoes: Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}> = [];
+    console.log('🏭 [FORNECEDOR_XML] Passo 7: Extraindo posições do XML com offset...');
+    const posicoes: Array<{linha: number; coluna: number; rid: string; nomeArquivo: string; offsetX: number}> = [];
     
     console.log('🏭 [FORNECEDOR_XML] Iniciando regex match...');
     const twoCellAnchorRegex = /<xdr:twoCellAnchor[^>]*>([\s\S]*?)<\/xdr:twoCellAnchor>/g;
@@ -372,6 +372,7 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
       const fromContent = fromMatch[1];
       const rowMatch = /<xdr:row>(\d+)<\/xdr:row>/.exec(fromContent);
       const colMatch = /<xdr:col>(\d+)<\/xdr:col>/.exec(fromContent);
+      const colOffMatch = /<xdr:colOff>(\d+)<\/xdr:colOff>/.exec(fromContent);
       
       if (!rowMatch || !colMatch) {
         console.log(`⚠️ [FORNECEDOR_XML] Match ${matchCount}: sem row/col`);
@@ -379,7 +380,13 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
       }
       
       const linha = parseInt(rowMatch[1]) + 1;
-      const coluna = parseInt(colMatch[1]) + 1;
+      const colunaXML = parseInt(colMatch[1]) + 1;
+      const offsetX = colOffMatch ? parseInt(colOffMatch[1]) : 0;
+      
+      // NOVA LÓGICA: Usar offset para determinar a coluna real
+      // EMU (English Metric Unit): 914400 EMUs = 1 polegada
+      // Se offset > 800000 EMUs, provavelmente é coluna C (próxima coluna)
+      const coluna = offsetX > 800000 ? colunaXML + 1 : colunaXML;
       
       const ridMatch = /r:embed="([^"]+)"/.exec(anchorContent);
       if (!ridMatch) {
@@ -391,8 +398,8 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
       const nomeArquivo = ridMap[rid];
       
       if (nomeArquivo) {
-        posicoes.push({ linha, coluna, rid, nomeArquivo });
-        console.log(`✅ [FORNECEDOR_XML] Imagem ${posicoes.length}: linha=${linha}, coluna=${coluna}, arquivo=${nomeArquivo}`);
+        posicoes.push({ linha, coluna, rid, nomeArquivo, offsetX });
+        console.log(`✅ [FORNECEDOR_XML] Imagem ${posicoes.length}: linha=${linha}, colunaXML=${colunaXML}, offset=${offsetX}, colunaFinal=${coluna}, arquivo=${nomeArquivo}`);
       } else {
         console.log(`⚠️ [FORNECEDOR_XML] Match ${matchCount}: rId ${rid} não encontrado no mapa`);
       }
@@ -401,65 +408,56 @@ export async function extrairImagensFornecedorPorXML(excelFile: File) {
     console.log(`🏭 [FORNECEDOR_XML] Passo 8: Total de matches: ${matchCount}`);
     console.log(`📊 [FORNECEDOR_XML] Total de imagens extraídas: ${posicoes.length}`);
     
-    // Agrupar imagens por linha
-    const imagensPorLinha: Record<number, Array<{linha: number; coluna: number; rid: string; nomeArquivo: string}>> = {};
+    // Separar imagens por coluna baseado na coluna calculada
+    const imagensColunaB = posicoes.filter(p => p.coluna === 2);
+    const imagensColunaC = posicoes.filter(p => p.coluna === 3);
     
-    for (const posicao of posicoes) {
-      if (!imagensPorLinha[posicao.linha]) {
-        imagensPorLinha[posicao.linha] = [];
-      }
-      imagensPorLinha[posicao.linha].push(posicao);
-    }
+    console.log(`📊 [FORNECEDOR_XML] Distribuição por coluna:`);
+    console.log(`   - Coluna B (2): ${imagensColunaB.length} imagens`);
+    console.log(`   - Coluna C (3): ${imagensColunaC.length} imagens`);
     
-    console.log(`📊 [FORNECEDOR_XML] Linhas com imagens:`, 
-      Object.entries(imagensPorLinha).map(([linha, imgs]) => ({
-        linha,
-        quantidade: imgs.length
-      }))
+    // Mostrar primeiras 5 imagens de cada coluna
+    console.log(`📊 [FORNECEDOR_XML] Primeiras imagens coluna B:`, 
+      imagensColunaB.slice(0, 5).map(p => `linha ${p.linha}: ${p.nomeArquivo} (offset: ${p.offsetX})`)
+    );
+    console.log(`📊 [FORNECEDOR_XML] Primeiras imagens coluna C:`, 
+      imagensColunaC.slice(0, 5).map(p => `linha ${p.linha}: ${p.nomeArquivo} (offset: ${p.offsetX})`)
     );
     
-    // Extrair apenas a SEGUNDA imagem de cada linha (fornecedor)
-    const imagensColunaC = [];
+    // Processar apenas imagens da coluna C (fornecedor)
+    const imagensProcessadas = [];
     
-    for (const [linhaStr, imagensDaLinha] of Object.entries(imagensPorLinha)) {
-      const linha = parseInt(linhaStr);
+    for (const posicao of imagensColunaC) {
+      const linha = posicao.linha;
+      const linhaIdx = linha - 2; // Ajustar índice (linha 2 do Excel = índice 0)
       
-      // Se houver mais de uma imagem nesta linha, a segunda é o fornecedor
-      if (imagensDaLinha.length >= 2) {
-        // Ordenar por coluna para garantir ordem
-        imagensDaLinha.sort((a, b) => a.coluna - b.coluna);
+      if (linhaIdx >= 0 && linhaIdx < skus.length) {
+        const sku = skus[linhaIdx];
+        const caminhoImagem = `xl/media/${posicao.nomeArquivo}`;
         
-        const posicaoFornecedor = imagensDaLinha[1]; // 2ª imagem = fornecedor
-        const linhaIdx = linha - 2;
-        
-        if (linhaIdx >= 0 && linhaIdx < skus.length) {
-          const sku = skus[linhaIdx];
-          const caminhoImagem = `xl/media/${posicaoFornecedor.nomeArquivo}`;
+        if (zipContent.files[caminhoImagem]) {
+          const blob = await zipContent.files[caminhoImagem].async('blob');
+          const extensao = posicao.nomeArquivo.split('.').pop();
           
-          if (zipContent.files[caminhoImagem]) {
-            const blob = await zipContent.files[caminhoImagem].async('blob');
-            const extensao = posicaoFornecedor.nomeArquivo.split('.').pop();
-            
-            imagensColunaC.push({
-              sku: sku,
-              linha: linha,
-              coluna: 3,
-              tipo: 'fornecedor',
-              nomeOriginal: posicaoFornecedor.nomeArquivo,
-              nomeNovo: `${sku}_fornecedor.${extensao}`,
-              blob: blob,
-              url: URL.createObjectURL(blob)
-            });
-            
-            console.log(`✅ [FORNECEDOR_XML] Linha ${linha}: SKU '${sku}' -> '${posicaoFornecedor.nomeArquivo}' (2ª imagem da linha)`);
-          }
+          imagensProcessadas.push({
+            sku: sku,
+            linha: linha,
+            coluna: 3,
+            tipo: 'fornecedor',
+            nomeOriginal: posicao.nomeArquivo,
+            nomeNovo: `${sku}_fornecedor.${extensao}`,
+            blob: blob,
+            url: URL.createObjectURL(blob)
+          });
+          
+          console.log(`✅ [FORNECEDOR_XML] Linha ${linha}: SKU '${sku}' -> '${posicao.nomeArquivo}' (offset: ${posicao.offsetX})`);
         }
       }
     }
     
-    console.log(`✅ [FORNECEDOR_XML] ${imagensColunaC.length} imagens de fornecedor extraídas`);
+    console.log(`✅ [FORNECEDOR_XML] ${imagensProcessadas.length} imagens de fornecedor extraídas`);
     console.log('🏭 [FORNECEDOR_XML] ==================== FIM ====================');
-    return imagensColunaC;
+    return imagensProcessadas;
     
   } catch (error) {
     console.error('❌ [FORNECEDOR_XML] ERRO CRÍTICO:', error);
