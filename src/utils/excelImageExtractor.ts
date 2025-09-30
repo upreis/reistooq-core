@@ -9,6 +9,7 @@ interface ImagemPosicionada {
   dados: Uint8Array;
   linha: number;
   coluna: number;
+  tipoColuna: 'IMAGEM' | 'IMAGEM_FORNECEDOR'; // Nova propriedade para identificar tipo
   sku?: string;
 }
 
@@ -90,6 +91,9 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
         continue;
       }
       
+      // Determinar tipo de coluna baseado na posição (1=B, 2=C)
+      const tipoColuna = coluna === 2 ? 'IMAGEM' : coluna === 3 ? 'IMAGEM_FORNECEDOR' : 'IMAGEM';
+      
       // Extrai SKU da linha correspondente
       const sku = extrairSkuDaLinha(dados, linha);
       if (!sku) {
@@ -122,17 +126,19 @@ export const extrairImagensDoExcel = async (file: File): Promise<ImagemPosiciona
         continue;
       }
       
-      const nomeImagem = `${sku}.png`;
+      const sufixo = tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
+      const nomeImagem = `${sku}${sufixo}.png`;
       
       imagensFinais.push({
         nome: nomeImagem,
         dados: dadosImagem,
         linha: linha,
         coluna: coluna,
+        tipoColuna: tipoColuna,
         sku: sku
       });
 
-      console.log(`📸 [XML] Linha ${linha}, Coluna ${coluna}, rId: ${rId} → SKU: ${sku} → ${nomeImagem} ✅`);
+      console.log(`📸 [XML] Linha ${linha}, Coluna ${coluna} (${tipoColuna}), rId: ${rId} → SKU: ${sku} → ${nomeImagem} ✅`);
     }
 
     console.log(`✅ [XML] ${imagensFinais.length} imagens processadas por posicionamento XML preciso`);
@@ -327,7 +333,8 @@ export const converterImagensParaDataURL = async (imagens: ImagemPosicionada[]):
       imagensProcessadas.push({
         nome: imagem.nome,
         sku: imagem.sku || 'SEM_SKU',
-        url: dataUrl
+        url: dataUrl,
+        tipoColuna: imagem.tipoColuna
       });
       
       console.log(`✅ [POSIÇÃO] Convertida: ${imagem.nome} (${imagem.sku})`);

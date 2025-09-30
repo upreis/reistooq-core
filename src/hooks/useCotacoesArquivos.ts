@@ -67,10 +67,11 @@ const detectarPosicaoImagemReal = (worksheet: any, imagemIndex: number) => {
         // range.tl = top-left corner da imagem
         const linha = img.range?.tl?.row || (imagemIndex + 2);
         const col = img.range?.tl?.col || 1; // 0=A, 1=B, 2=C
-        const coluna = col === 1 ? 'IMAGEM' : 'IMAGEM_FORNECEDOR';
+        const tipoColuna = col === 1 ? 'IMAGEM' : col === 2 ? 'IMAGEM_FORNECEDOR' : 'IMAGEM';
+        const coluna = col === 1 ? 'B' : col === 2 ? 'C' : 'B';
         
-        console.log(`📍 [POSITION] Imagem ${imagemIndex + 1} detectada: linha=${linha}, coluna=${coluna}`);
-        return { linha, coluna };
+        console.log(`📍 [POSITION] Imagem ${imagemIndex + 1} detectada: linha=${linha}, coluna=${coluna} (${tipoColuna})`);
+        return { linha, coluna, tipoColuna };
       }
     }
   } catch (error) {
@@ -80,7 +81,7 @@ const detectarPosicaoImagemReal = (worksheet: any, imagemIndex: number) => {
   // FALLBACK: Usar ordem sequencial (uma imagem por linha)
   const linhaFallback = imagemIndex + 2; // +2 porque linha 1 = header
   console.log(`📍 [POSITION] Fallback: Imagem ${imagemIndex + 1} → linha ${linhaFallback}`);
-  return { linha: linhaFallback, coluna: 'IMAGEM' };
+  return { linha: linhaFallback, coluna: 'B', tipoColuna: 'IMAGEM' };
 };
 
 export function useCotacoesArquivos() {
@@ -322,12 +323,14 @@ export function useCotacoesArquivos() {
                   // EXTRAIR SKU DO NOME DO ARQUIVO
                   const skuExtraido = extrairSKUDoNome(mediaFile);
                   
+                  const sufixo = imagemInfo.coluna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
                   imagensEmbutidas.push({
-                    nome: skuExtraido ? `${skuExtraido}.jpg` : `imagem_excel_${i + 1}.jpg`,
+                    nome: skuExtraido ? `${skuExtraido}${sufixo}.jpg` : `imagem_excel_${i + 1}.jpg`,
                     blob: blob,
                     linha: imagemInfo.linha,
                     coluna: imagemInfo.coluna,
-                    sku: skuExtraido
+                    sku: skuExtraido,
+                    tipoColuna: imagemInfo.coluna
                   });
                   
                   console.log(`📷 [SKU_SYSTEM] Imagem ${i + 1} extraída: ${mediaFile}`);
@@ -385,13 +388,15 @@ export function useCotacoesArquivos() {
         const imagensComSku = imagensEmbutidas.map(img => {
           const produtoData = dados[img.linha - 2];
           const sku = produtoData?.SKU || produtoData?.sku || `PROD-${img.linha}`;
+          const sufixo = img.tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
           
           return {
-            nome: `${sku}-embutida.jpg`,
+            nome: `${sku}${sufixo}-embutida.jpg`,
             url: img.blob ? URL.createObjectURL(img.blob) : '',
             linha: img.linha,
             coluna: img.coluna,
-            sku: sku
+            sku: sku,
+            tipoColuna: img.tipoColuna
           };
         });
         
@@ -423,7 +428,7 @@ export function useCotacoesArquivos() {
   }, [skuProcessor]);
 
   const uploadImagensExtraidas = useCallback(async (
-    imagensExtraidas: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string}[],
+    imagensExtraidas: {nome: string, blob: Blob, linha: number, coluna: string, sku?: string, tipoColuna?: string}[],
     cotacaoId: string,
     organizationId: string
   ) => {
@@ -435,7 +440,7 @@ export function useCotacoesArquivos() {
         throw new Error('Nenhuma imagem foi encontrada para upload');
       }
 
-      const imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = [];
+      const imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string, tipoColuna?: string}[] = [];
       
       for (const [index, imagem] of imagensExtraidas.entries()) {
         try {
@@ -461,7 +466,8 @@ export function useCotacoesArquivos() {
             url: urlData.publicUrl,
             linha: imagem.linha,
             coluna: imagem.coluna,
-            sku: imagem.sku
+            sku: imagem.sku,
+            tipoColuna: imagem.tipoColuna
           });
 
           console.log(`✅ [UPLOAD] Imagem ${index + 1}/${imagensExtraidas.length} enviada: ${imagem.nome}`);
@@ -479,7 +485,7 @@ export function useCotacoesArquivos() {
     }
   }, []);
 
-  const processarDados = useCallback((dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string}[] = []): any[] => {
+  const processarDados = useCallback((dados: any[], imagensUpload: {nome: string, url: string, linha: number, coluna: string, sku?: string, tipoColuna?: string}[] = []): any[] => {
     console.log('🔄 [SKU_SYSTEM] Processamento completo de dados com imagens');
     console.log('📊 [SKU_SYSTEM] Dados recebidos:', dados.length);
     console.log('🖼️ [SKU_SYSTEM] Imagens para associação:', imagensUpload.length);
@@ -531,9 +537,10 @@ export function useCotacoesArquivos() {
       // Se encontrou por nome, usar essa associação e pular o resto
       if (imagensPorNome.length > 0) {
         imagensPorNome.forEach(img => {
-          if (img.coluna === 'IMAGEM') {
+          const tipo = img.tipoColuna || img.coluna;
+          if (tipo === 'IMAGEM' || tipo === 'B') {
             produtoMapeado.imagem = img.url;
-          } else if (img.coluna === 'IMAGEM_FORNECEDOR') {
+          } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
             produtoMapeado.imagem_fornecedor = img.url;
           }
         });
@@ -567,9 +574,10 @@ export function useCotacoesArquivos() {
       // SEPARAR COLUNAS CORRETAMENTE
       if (imagensPorSku.length > 0) {
         imagensPorSku.forEach(img => {
-          if (img.coluna === 'IMAGEM') {
+          const tipo = img.tipoColuna || img.coluna;
+          if (tipo === 'IMAGEM' || tipo === 'B') {
             produtoMapeado.imagem = img.url;
-          } else if (img.coluna === 'IMAGEM_FORNECEDOR') {
+          } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
             produtoMapeado.imagem_fornecedor = img.url;
           }
         });
@@ -579,10 +587,14 @@ export function useCotacoesArquivos() {
         const imagensPorLinha = imagensUpload.filter(img => img.linha === (index + 2)); // +2 porque linha 1 = header
         
         if (imagensPorLinha.length > 0) {
-          produtoMapeado.imagem = imagensPorLinha[0].url;
-          if (imagensPorLinha[1]) {
-            produtoMapeado.imagem_fornecedor = imagensPorLinha[1].url;
-          }
+          imagensPorLinha.forEach(img => {
+            const tipo = img.tipoColuna || img.coluna;
+            if (tipo === 'IMAGEM' || tipo === 'B') {
+              produtoMapeado.imagem = img.url;
+            } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
+              produtoMapeado.imagem_fornecedor = img.url;
+            }
+          });
           console.log(`✅ [LINHA_SYSTEM] Produto ${produtoMapeado.sku}: ${imagensPorLinha.length} imagem(ns) associada(s) por linha ${index + 2}`);
         } else {
           console.log(`❌ [NO_MATCH] Produto ${produtoMapeado.sku}: Nenhuma imagem encontrada (nem por SKU nem por linha)`);

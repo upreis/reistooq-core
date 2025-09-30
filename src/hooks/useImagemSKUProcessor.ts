@@ -8,6 +8,7 @@ export interface ImagemProcessada {
   arquivoRenomeado?: string;
   blob?: Blob;
   url?: string;      // Para compatibilidade com excelImageExtractor
+  tipoColuna?: 'IMAGEM' | 'IMAGEM_FORNECEDOR'; // Identifica tipo de coluna
   sucesso?: boolean;
   erro?: string;
 }
