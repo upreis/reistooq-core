@@ -9,7 +9,7 @@ import {
   adicionarCorrecaoPendente
 } from './useCotacoesValidacoes';
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
-import { processarExcelCompletoCorrigido, extrairImagensFornecedorPorXML } from '@/utils/manusImageExtractor';
+import { processarExcelCompletoCorrigido } from '@/utils/manusImageExtractor';
 
 interface CotacaoArquivo {
   id?: string;
@@ -273,62 +273,63 @@ export function useCotacoesArquivos() {
       }
       
       // ============================================================
-      // ✅ SOLUÇÃO DUPLA: EXTRAIR IMAGENS DAS COLUNAS B E C SEPARADAMENTE
+      // ✅ SOLUÇÃO MANUS COMPLETA: EXTRAIR IMAGENS DAS COLUNAS B E C
       // ============================================================
-      console.log('🚀 [MANUS] Usando extração separada para colunas B e C...');
+      console.log('🚀 [MANUS] Usando solução completa da Manus (colunas B e C)...');
       
       let imagensEmbutidas: any[] = [];
       
       try {
-        // ✅ PASSO 1: Extrair imagens principais (coluna B)
-        const resultadoPrincipais = await processarExcelCompletoCorrigido(file);
+        // ✅ Usar a nova solução completa da Manus
+        const resultado = await processarExcelCompletoCorrigido(file);
         
-        if (resultadoPrincipais && resultadoPrincipais.imagensPrincipais) {
-          console.log(`✅ [MANUS_B] ${resultadoPrincipais.imagensPrincipais.length} imagens principais (coluna B)`);
+        if (resultado) {
+          const { imagensPrincipais, imagensFornecedor } = resultado;
           
-          resultadoPrincipais.imagensPrincipais.forEach((img: any) => {
-            imagensEmbutidas.push({
-              nome: img.nome,
-              blob: img.blob,
-              linha: img.linha,
-              coluna: 'B',
-              sku: img.sku,
-              tipoColuna: 'IMAGEM'
+          console.log(`✅ [MANUS] Extração concluída:`);
+          console.log(`   🖼️ ${imagensPrincipais?.length || 0} imagens principais (coluna B)`);
+          console.log(`   🏭 ${imagensFornecedor?.length || 0} imagens de fornecedor (coluna C)`);
+          
+          // Mapear imagens principais (coluna B → IMAGEM)
+          if (imagensPrincipais && imagensPrincipais.length > 0) {
+            imagensPrincipais.forEach((img: any) => {
+              imagensEmbutidas.push({
+                nome: img.nome,
+                blob: img.blob,
+                linha: img.linha,
+                coluna: 'B',
+                sku: img.sku,
+                tipoColuna: 'IMAGEM'
+              });
+              console.log(`  📸 [B] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha}`);
             });
-            console.log(`  📸 [B] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha}`);
-          });
-        }
-        
-        // ✅ PASSO 2: Extrair imagens de fornecedor (coluna C) com função separada
-        const imagensFornecedor = await extrairImagensFornecedorPorXML(file);
-        
-        if (imagensFornecedor && imagensFornecedor.length > 0) {
-          console.log(`✅ [MANUS_C] ${imagensFornecedor.length} imagens de fornecedor (coluna C)`);
+          }
           
-          imagensFornecedor.forEach((img: any) => {
-            const imagemData = {
-              nome: img.nomeNovo,
-              blob: img.blob,
-              linha: img.linha,
-              coluna: 'C',
-              sku: img.sku,
-              tipoColuna: 'IMAGEM_FORNECEDOR',
-              url: img.url
-            };
-            imagensEmbutidas.push(imagemData);
-            console.log(`  🏭 [C] ${img.nomeNovo} | SKU: ${img.sku} | Linha: ${img.linha}`);
-          });
+          // Mapear imagens de fornecedor (coluna C → IMAGEM_FORNECEDOR)
+          if (imagensFornecedor && imagensFornecedor.length > 0) {
+            console.log(`🔍 [DEBUG_FORNECEDOR] Processando ${imagensFornecedor.length} imagens de fornecedor`);
+            imagensFornecedor.forEach((img: any) => {
+              const imagemData = {
+                nome: img.nome,
+                blob: img.blob,
+                linha: img.linha,
+                coluna: 'C',
+                sku: img.sku,
+                tipoColuna: 'IMAGEM_FORNECEDOR',
+                url: img.url
+              };
+              imagensEmbutidas.push(imagemData);
+              console.log(`  🏭 [C] ${img.nome} | SKU: ${img.sku} | Linha: ${img.linha} | URL: ${img.url?.substring(0, 60)}...`);
+            });
+          } else {
+            console.log(`⚠️ [DEBUG_FORNECEDOR] Nenhuma imagem de fornecedor encontrada!`);
+          }
+          
+          console.log(`✅ [MANUS] Total: ${imagensEmbutidas.length} imagens processadas`);
+          console.log(`🔍 [DEBUG_IMAGENS] imagensEmbutidas:`, imagensEmbutidas.map(img => ({ sku: img.sku, tipo: img.tipoColuna, coluna: img.coluna })));
         } else {
-          console.log(`⚠️ [MANUS_C] Nenhuma imagem de fornecedor encontrada na coluna C`);
+          console.log('⚠️ [MANUS] Nenhuma imagem encontrada no Excel');
         }
-        
-        console.log(`✅ [MANUS] Total: ${imagensEmbutidas.length} imagens processadas`);
-        console.log(`🔍 [DEBUG_FINAL] Distribuição:`, 
-          imagensEmbutidas.reduce((acc, img) => {
-            acc[img.tipoColuna] = (acc[img.tipoColuna] || 0) + 1;
-            return acc;
-          }, {} as Record<string, number>)
-        );
         
       } catch (error) {
         console.error('❌ [MANUS] Erro ao processar imagens:', error);
