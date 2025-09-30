@@ -558,10 +558,6 @@ export function useCotacoesArquivos() {
         });
         console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: ${imagensPorNome.length} imagem(ns) associada(s) por NOME DE ARQUIVO`);
         
-        // Debug adicional
-        if (produtoMapeado.imagem) {
-          console.log(`🔍 [AUDIT] Produto ${index + 1}: imagem=${produtoMapeado.imagem.substring(0, 100)}...`);
-        }
         
         return produtoMapeado;
       }
@@ -612,11 +608,6 @@ export function useCotacoesArquivos() {
         }
       }
       
-      // Debug adicional
-      console.log(`🔍 [AUDIT] Produto ${index + 1}: imagem=${produtoMapeado.imagem ? 'DEFINIDA' : 'VAZIA'}`);
-      if (produtoMapeado.imagem) {
-        console.log(`🔍 [AUDIT] Produto ${index + 1}: imagem=${produtoMapeado.imagem.substring(0, 100)}...`);
-      }
       
       return produtoMapeado;
     });

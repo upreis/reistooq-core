@@ -1808,7 +1808,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          </TableCell>
                             <TableCell className="text-center py-3">
                               {(() => {
-                                console.log(`🔍 [AUDIT] Produto ${index}: imagem=${product.imagem}, sku=${product.sku}`);
                                 return (
                                   <div 
                                     className="cursor-pointer hover:opacity-80 transition-opacity"
