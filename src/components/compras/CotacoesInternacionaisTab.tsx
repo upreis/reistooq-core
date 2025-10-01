@@ -1086,7 +1086,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
     
     console.log('📋 [IMPORT] Recebendo dados já processados pelo hook. Total de produtos:', dadosImportados.length);
-    console.log('📋 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
+    console.log('📋 [CAMPOS] Verificando campos do primeiro produto:');
+    const primeiro = dadosImportados[0];
+    console.log('  - material:', primeiro?.material);
+    console.log('  - cor:', primeiro?.cor);
+    console.log('  - nome_produto:', primeiro?.nome_produto);
+    console.log('  - nome:', primeiro?.nome);
+    console.log('  - preco:', primeiro?.preco);
+    console.log('  - preco_unitario:', primeiro?.preco_unitario);
+    console.log('  - package_qtd:', primeiro?.package_qtd);
+    console.log('  - pcs_ctn:', primeiro?.pcs_ctn);
     
     // ✅ USAR DADOS JÁ MAPEADOS PELO HOOK - não refazer mapeamento!
     const novosProdutos = dadosImportados.map((produto, index) => ({
