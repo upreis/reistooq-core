@@ -11,7 +11,7 @@ import {
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
 import { processarExcelCompletoCorrigido, extrairImagensFornecedorPorXML } from '@/utils/manusImageExtractor';
 import { diagnosticarImportacaoExcel, testarMapeamentoCampos, validarTiposDados, diagnosticarProdutoMapeado } from '@/utils/diagnosticoExcel';
-import { mapearDadosExcel } from '@/utils/excelMapping';
+import { mapearDadosExcel, extrairValorExcel } from '@/utils/excelMapping';
 
 interface CotacaoArquivo {
   id?: string;
@@ -459,7 +459,8 @@ export function useCotacoesArquivos() {
         // A solução Manus já mapeou corretamente o SKU pela posição XML real.
         const imagensComSku = imagensEmbutidas.map(img => {
           // ✅ USAR O SKU QUE JÁ VEIO DA SOLUÇÃO MANUS (img.sku)
-          const skuCorreto = img.sku; // Este SKU foi extraído pela posição XML real!
+          // ✅ EXTRAIR valores de possíveis objetos ExcelJS
+          const skuCorreto = extrairValorExcel(img.sku); // Este SKU foi extraído pela posição XML real!
           const sufixo = img.tipoColuna === 'IMAGEM_FORNECEDOR' ? '-fornecedor' : '';
           
           console.log(`🔍 [MANUS_MAP] Imagem: linha=${img.linha}, coluna=${img.coluna}, tipoColuna=${img.tipoColuna}, SKU=${skuCorreto}`);
@@ -467,10 +468,10 @@ export function useCotacoesArquivos() {
           return {
             nome: `${skuCorreto}${sufixo}-embutida.jpg`,
             url: img.blob ? URL.createObjectURL(img.blob) : '',
-            linha: img.linha,
-            coluna: img.coluna,
+            linha: extrairValorExcel(img.linha),
+            coluna: extrairValorExcel(img.coluna),
             sku: skuCorreto, // ✅ SKU correto da solução Manus
-            tipoColuna: img.tipoColuna
+            tipoColuna: extrairValorExcel(img.tipoColuna)
           };
         });
         
@@ -483,11 +484,11 @@ export function useCotacoesArquivos() {
         const resultado = await skuProcessor.processarImagensIndividualmente(zip, mediaFiles);
         
         imagens = resultado.imagensProcessadas.map(img => ({
-          nome: img.arquivoOriginal || img.nome || 'imagem',
+          nome: extrairValorExcel(img.arquivoOriginal || img.nome || 'imagem'),
           url: img.blob ? URL.createObjectURL(img.blob) : '',
-          linha: img.linha || 2,
+          linha: extrairValorExcel(img.linha) || 2,
           coluna: 'IMAGEM',
-          sku: img.sku
+          sku: extrairValorExcel(img.sku)
         }));
         
         console.log(`✅ [UNIFICADO] ${imagens.length} imagens ZIP processadas`);
@@ -536,12 +537,12 @@ export function useCotacoesArquivos() {
             .getPublicUrl(filePath);
 
           imagensUpload.push({
-            nome: imagem.nome,
-            url: urlData.publicUrl,
-            linha: imagem.linha,
-            coluna: imagem.coluna,
-            sku: imagem.sku,
-            tipoColuna: imagem.tipoColuna
+            nome: extrairValorExcel(imagem.nome),
+            url: extrairValorExcel(urlData.publicUrl),
+            linha: extrairValorExcel(imagem.linha),
+            coluna: extrairValorExcel(imagem.coluna),
+            sku: extrairValorExcel(imagem.sku),
+            tipoColuna: extrairValorExcel(imagem.tipoColuna)
           });
 
           console.log(`✅ [UPLOAD] Imagem ${index + 1}/${imagensExtraidas.length} enviada: ${imagem.nome}`);
@@ -638,13 +639,15 @@ export function useCotacoesArquivos() {
         console.log(`🔍 [DEBUG_NOME] Encontradas ${imagensPorNome.length} imagens por nome para SKU ${produtoMapeado.sku}`);
         imagensPorNome.forEach(img => {
           const tipo = img.tipoColuna || img.coluna;
-          console.log(`🔍 [DEBUG_ASSOC] Associando por NOME: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${img.url?.substring(0, 50)}...`);
+          // ✅ CORREÇÃO: Extrair valor de objetos ExcelJS
+          const urlLimpa = extrairValorExcel(img.url);
+          console.log(`🔍 [DEBUG_ASSOC] Associando por NOME: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${urlLimpa?.substring(0, 50)}...`);
           
           if (tipo === 'IMAGEM' || tipo === 'B') {
-            produtoMapeado.imagem = img.url;
+            produtoMapeado.imagem = urlLimpa;
             console.log(`   ✅ Atribuído a 'imagem'`);
           } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
-            produtoMapeado.imagem_fornecedor = img.url;
+            produtoMapeado.imagem_fornecedor = urlLimpa;
             console.log(`   ✅ Atribuído a 'imagem_fornecedor'`);
           } else {
             console.log(`   ⚠️ Tipo não reconhecido: ${tipo}`);
@@ -682,13 +685,15 @@ export function useCotacoesArquivos() {
         console.log(`🔍 [DEBUG_SKU] Encontradas ${imagensPorSku.length} imagens por SKU para ${produtoMapeado.sku}`);
         imagensPorSku.forEach(img => {
           const tipo = img.tipoColuna || img.coluna;
-          console.log(`🔍 [DEBUG_ASSOC] Associando por SKU: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${img.url?.substring(0, 50)}...`);
+          // ✅ CORREÇÃO: Extrair valor de objetos ExcelJS
+          const urlLimpa = extrairValorExcel(img.url);
+          console.log(`🔍 [DEBUG_ASSOC] Associando por SKU: SKU=${produtoMapeado.sku}, tipo=${tipo}, url=${urlLimpa?.substring(0, 50)}...`);
           
           if (tipo === 'IMAGEM' || tipo === 'B') {
-            produtoMapeado.imagem = img.url;
+            produtoMapeado.imagem = urlLimpa;
             console.log(`   ✅ Atribuído a 'imagem'`);
           } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
-            produtoMapeado.imagem_fornecedor = img.url;
+            produtoMapeado.imagem_fornecedor = urlLimpa;
             console.log(`   ✅ Atribuído a 'imagem_fornecedor'`);
           } else {
             console.log(`   ⚠️ Tipo não reconhecido: ${tipo}`);
@@ -703,12 +708,14 @@ export function useCotacoesArquivos() {
           console.log(`🔍 [DEBUG_LINHA] Encontradas ${imagensPorLinha.length} imagens por linha ${index + 2} para ${produtoMapeado.sku}`);
           imagensPorLinha.forEach(img => {
             const tipo = img.tipoColuna || img.coluna;
+            // ✅ CORREÇÃO: Extrair valor de objetos ExcelJS
+            const urlLimpa = extrairValorExcel(img.url);
             console.log(`   🔍 tipo=${tipo}, coluna=${img.coluna}, tipoColuna=${img.tipoColuna}`);
             if (tipo === 'IMAGEM' || tipo === 'B') {
-              produtoMapeado.imagem = img.url;
+              produtoMapeado.imagem = urlLimpa;
               console.log(`   ✅ Atribuído a 'imagem'`);
             } else if (tipo === 'IMAGEM_FORNECEDOR' || tipo === 'C') {
-              produtoMapeado.imagem_fornecedor = img.url;
+              produtoMapeado.imagem_fornecedor = urlLimpa;
               console.log(`   ✅ Atribuído a 'imagem_fornecedor'`);
             }
           });
