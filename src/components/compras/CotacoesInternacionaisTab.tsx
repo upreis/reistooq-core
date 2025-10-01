@@ -1881,21 +1881,21 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                                     className="cursor-pointer hover:opacity-80 transition-opacity"
                                     onClick={() => openImageComparisonModal(
                                       product.imagem || '',
-                                      product.imagem_fornecedor || '',
-                                      product.obs || '',
-                                      {
-                                        sku: product.sku,
-                                        nome_produto: product.nome_produto,
-                                        rowIndex: index
-                                      }
+                                 product.imagem_fornecedor || '',
+                                 product.obs || '',
+                                 {
+                                   sku: product.sku,
+                                   nome_produto: product.nome,
+                                   rowIndex: index
+                                 }
                                     )}
                                   >
-                                    <ProdutoImagemPreview
-                                      imagemUrl={product.imagem}
-                                      nomeProduto={product.nome_produto || product.sku}
-                                      sku={product.sku}
-                                      className="mx-auto"
-                                    />
+                                   <ProdutoImagemPreview
+                                     imagemUrl={product.imagem}
+                                     nomeProduto={product.nome || product.sku}
+                                     sku={product.sku}
+                                     className="mx-auto"
+                                   />
                                   </div>
                                 );
                               })()}
@@ -1906,20 +1906,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                               onClick={() => openImageComparisonModal(
                                 product.imagem || '',
                                 product.imagem_fornecedor || '',
-                                product.obs || '',
-                                {
-                                  sku: product.sku,
-                                  nome_produto: product.nome_produto,
-                                  rowIndex: index
-                                }
-                              )}
-                            >
-                              <ProdutoImagemPreview
-                                imagemFornecedorUrl={product.imagem_fornecedor}
-                                nomeProduto={product.nome_produto || product.sku}
-                                sku={product.sku}
-                                className="mx-auto"
-                              />
+                                 product.obs || '',
+                                 {
+                                   sku: product.sku,
+                                   nome_produto: product.nome,
+                                   rowIndex: index
+                                 }
+                               )}
+                             >
+                               <ProdutoImagemPreview
+                                 imagemFornecedorUrl={product.imagem_fornecedor}
+                                 nomeProduto={product.nome || product.sku}
+                                 sku={product.sku}
+                                 className="mx-auto"
+                               />
                             </div>
                           </TableCell>
                          <TableCell className="py-3">
@@ -1942,48 +1942,48 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'cor')}
                            />
                          </TableCell>
-                         <TableCell className="max-w-[200px] py-3">
-                           <EditableCell
-                             value={product.nome_produto}
-                             type="text"
-                             onSave={(value) => updateProductData(index, 'nome_produto', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'nome_produto'}
-                             onDoubleClick={() => startEditing(index, 'nome_produto')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-center py-3">
-                           <EditableCell
-                             value={product.package}
-                             type="text"
-                             onSave={(value) => updateProductData(index, 'package', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'package'}
-                             onDoubleClick={() => startEditing(index, 'package')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-right py-3">
-                           <EditableCell
-                             value={product.preco}
-                             type="number"
-                             prefix={`${getCurrencySymbol(selectedCurrency)} `}
-                             step="0.01"
-                             onSave={(value) => updateProductData(index, 'preco', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'preco'}
-                             onDoubleClick={() => startEditing(index, 'preco')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-center py-3">
-                           <EditableCell
-                             value={product.unit}
-                             type="text"
-                             onSave={(value) => updateProductData(index, 'unit', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'unit'}
-                             onDoubleClick={() => startEditing(index, 'unit')}
-                           />
-                         </TableCell>
+                          <TableCell className="max-w-[200px] py-3">
+                            <EditableCell
+                              value={product.nome}
+                              type="text"
+                              onSave={(value) => updateProductData(index, 'nome', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'nome'}
+                              onDoubleClick={() => startEditing(index, 'nome')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <EditableCell
+                              value={product.package_qtd}
+                              type="number"
+                              onSave={(value) => updateProductData(index, 'package_qtd', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'package_qtd'}
+                              onDoubleClick={() => startEditing(index, 'package_qtd')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right py-3">
+                            <EditableCell
+                              value={product.preco_unitario}
+                              type="number"
+                              prefix={`${getCurrencySymbol(selectedCurrency)} `}
+                              step="0.01"
+                              onSave={(value) => updateProductData(index, 'preco_unitario', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'preco_unitario'}
+                              onDoubleClick={() => startEditing(index, 'preco_unitario')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <EditableCell
+                              value={product.unidade_medida}
+                              type="text"
+                              onSave={(value) => updateProductData(index, 'unidade_medida', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'unidade_medida'}
+                              onDoubleClick={() => startEditing(index, 'unidade_medida')}
+                            />
+                          </TableCell>
                          <TableCell className="text-center py-3">
                            <EditableCell
                              value={product.pcs_ctn}
@@ -1994,25 +1994,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'pcs_ctn')}
                            />
                          </TableCell>
-                         <TableCell className="bg-accent/20 text-center py-3 font-medium">
-                           <EditableCell
-                             value={product.caixas}
-                             type="number"
-                             onSave={(value) => updateProductData(index, 'caixas', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'caixas'}
-                             onDoubleClick={() => startEditing(index, 'caixas')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-right py-3 font-mono text-sm">{(product.peso_unitario_g || 0).toFixed(0)}g</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_total_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_total_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3">{product.comprimento || 0}</TableCell>
-                         <TableCell className="text-center py-3">{product.largura || 0}</TableCell>
-                         <TableCell className="text-center py-3">{product.altura || 0}</TableCell>
-                         <TableCell className="text-center py-3">{(product.cbm_cubagem || 0).toFixed(2)}</TableCell>
+                          <TableCell className="bg-accent/20 text-center py-3 font-medium">
+                            <EditableCell
+                              value={product.qtd_caixas_pedido}
+                              type="number"
+                              onSave={(value) => updateProductData(index, 'qtd_caixas_pedido', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'qtd_caixas_pedido'}
+                              onDoubleClick={() => startEditing(index, 'qtd_caixas_pedido')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right py-3 font-mono text-sm">{(product.peso_unitario_g || 0).toFixed(0)}g</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_emb_master_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_sem_emb_master_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_total_emb_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_total_sem_emb_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3">{product.comprimento_cm || 0}</TableCell>
+                          <TableCell className="text-center py-3">{product.largura_cm || 0}</TableCell>
+                          <TableCell className="text-center py-3">{product.altura_cm || 0}</TableCell>
+                          <TableCell className="text-center py-3">{(product.cbm_unitario || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3">{(product.cbm_total || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3 font-medium">{product.quantidade_total || 0}</TableCell>
                          <TableCell className="text-right py-3 font-medium">{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
