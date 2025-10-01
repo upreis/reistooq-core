@@ -10,6 +10,7 @@ import {
 } from './useCotacoesValidacoes';
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
 import { processarExcelCompletoCorrigido, extrairImagensFornecedorPorXML } from '@/utils/manusImageExtractor';
+import { diagnosticarImportacaoExcel, testarMapeamentoCampos, validarTiposDados, diagnosticarProdutoMapeado } from '@/utils/diagnosticoExcel';
 
 interface CotacaoArquivo {
   id?: string;
@@ -430,16 +431,15 @@ export function useCotacoesArquivos() {
           }
         }
         
-        // AUDITORIA: Mostrar primeiros dados para debug
+        // ✅ DIAGNÓSTICO COMPLETO: Analisar dados extraídos
         if (dados.length > 0) {
-          console.log('📊 [DADOS] Primeira linha de dados:', JSON.stringify(dados[0], null, 2));
-          console.log('📊 [DADOS] Todas as chaves:', Object.keys(dados[0]));
-          console.log('📊 [DADOS] Valores material e cor:', {
-            material: dados[0]['material'],
-            cor: dados[0]['cor'],
-            material_tipo: typeof dados[0]['material'],
-            cor_tipo: typeof dados[0]['cor']
-          });
+          diagnosticarImportacaoExcel(dados);
+          const dadoMapeadoTeste = testarMapeamentoCampos(dados[0]);
+          const errosValidacao = validarTiposDados(dadoMapeadoTeste);
+          
+          if (errosValidacao.length > 0) {
+            console.warn('⚠️ Erros de validação encontrados:', errosValidacao);
+          }
         }
       }
       
@@ -592,6 +592,9 @@ export function useCotacoesArquivos() {
         imagem_fornecedor: '',
         obs: item['Obs.'] || item.obs || item.observacoes || ''
       };
+      
+      // ✅ DIAGNÓSTICO: Analisar cada produto mapeado
+      diagnosticarProdutoMapeado(produtoMapeado, index);
       
       // Auditoria simplificada
       if (index === 0) {
