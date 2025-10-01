@@ -581,27 +581,17 @@ export function useCotacoesArquivos() {
       
       // ✅ SOLUÇÃO HÍBRIDA: Mapeamento robusto de todas as colunas
       const produtoMapeado = {
-        // ===== DADOS BÁSICOS =====
+        // ===== DADOS BÁSICOS ===== (NOMES DO SISTEMA ANTIGO)
         sku: extrairValorExcel(linha.SKU || linha.sku) || `PROD-${index + 1}`,
         
-        // MATERIAL - Múltiplas variações
-        material: extrairValorExcel(
-          linha.MATERIAL || 
-          linha.Material || 
-          linha.material || 
-          linha.MATERÍAL || 
-          linha.Materíal
-        ) || '',
+        // MATERIAL
+        material: extrairValorExcel(linha.MATERIAL || linha.material) || '',
         
-        // COR - Múltiplas variações
-        cor: extrairValorExcel(
-          linha.COR || 
-          linha.Cor || 
-          linha.cor
-        ) || '',
+        // COR
+        cor: extrairValorExcel(linha.COR || linha.cor) || '',
         
-        // NOME DO PRODUTO - 5 variações
-        nome: extrairValorExcel(
+        // NOME DO PRODUTO - usar nome_produto (sistema antigo)
+        nome_produto: extrairValorExcel(
           linha['Nome do Produto'] || 
           linha.NOME_PRODUTO || 
           linha.nome_produto || 
@@ -609,92 +599,51 @@ export function useCotacoesArquivos() {
           linha.nome
         ) || '',
         
-        // PACKAGE - Com tratamento numérico
-        package_qtd: parseFloat(String(
-          extrairValorExcel(linha.PACKAGE || linha.package || linha.Package) || '1'
-        ).replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
+        // PACKAGE - usar nome package (sistema antigo)
+        package: extrairValorExcel(linha.PACKAGE || linha.package || linha.Package) || '',
         
-        // ===== PREÇOS E QUANTIDADES =====
-        
-        // PREÇO - Tratamento robusto com validação
-        preco_unitario: (() => {
-          const valorRaw = extrairValorExcel(
+        // PREÇO - usar nome preco (sistema antigo)
+        preco: parseFloat(String(
+          extrairValorExcel(
             linha.PREÇO || 
             linha.PRECO || 
             linha.preco || 
-            linha.Preço || 
-            linha['Preço Unit.'] ||
-            linha['Preço Unitário']
-          ) || '0';
-          
-          const valorStr = String(valorRaw).trim();
-          
-          // ✅ Validação: Rejeitar se contém letras (ex: "0/12 cm")
-          if (/[a-zA-Z]/.test(valorStr)) {
-            if (index < 3) {
-              console.warn(`⚠️ [PREÇO] Valor inválido detectado (contém letras): "${valorStr}" - linha ${index + 2}`);
-            }
-            return 0;
-          }
-          
-          const valorNumerico = parseFloat(valorStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-          
-          if (index === 0) {
-            console.log(`💰 [PREÇO] Primeira linha: raw="${valorRaw}" → string="${valorStr}" → numérico=${valorNumerico}`);
-          }
-          
-          return valorNumerico;
-        })(),
+            linha.Preço
+          ) || '0'
+        ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // UNIDADE - 5 variações
-        unidade_medida: extrairValorExcel(
-          linha.UNIT || 
-          linha.unit || 
-          linha.UNID || 
-          linha['Unid.'] || 
-          linha.unid ||
-          linha.Unit
-        ) || 'PCS',
+        // UNIDADE - usar nome unit (sistema antigo)
+        unit: extrairValorExcel(linha.UNIT || linha.unit) || '',
         
-        // PCS/CTN - Com tratamento int
+        // PCS/CTN
         pcs_ctn: parseInt(String(
           extrairValorExcel(
             linha['PCS/CTN'] || 
             linha.PCS_CTN || 
-            linha.pcs_ctn ||
-            linha['PCS / CTN'] ||
-            linha.PCSCTN
+            linha.pcs_ctn
           ) || '0'
         ).replace(/[^\d]/g, '')) || 0,
         
-        // CAIXAS
-        qtd_caixas_pedido: parseFloat(String(
-          extrairValorExcel(
-            linha.CAIXAS || 
-            linha.caixas || 
-            linha.Caixas ||
-            linha.QTD_CAIXAS ||
-            linha.qtd_caixas
-          ) || '1'
+        // CAIXAS - usar nome caixas (sistema antigo)
+        caixas: parseFloat(String(
+          extrairValorExcel(linha.CAIXAS || linha.caixas) || '1'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
         
-        // ===== PESOS =====
+        // ===== PESOS ===== (NOMES DO SISTEMA ANTIGO)
         
-        // PESO UNITÁRIO - 5 variações
+        // PESO UNITÁRIO
         peso_unitario_g: parseFloat(String(
           extrairValorExcel(
             linha['PESO UNITARIO(g)'] || 
             linha.PESO_UNITARIO_G || 
             linha.peso_unitario_g || 
             linha.PESO_UNITARIO_KG || 
-            linha.peso_unitario_kg ||
-            linha['Peso Unitário (g)'] ||
-            linha['Peso Unit. (g)']
+            linha.peso_unitario_kg
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // PESO EMBALADO MASTER - 13 variações!
-        peso_emb_master_kg: parseFloat(String(
+        // PESO EMBALADO MASTER - usar nome peso_cx_master_kg (sistema antigo)
+        peso_cx_master_kg: parseFloat(String(
           extrairValorExcel(
             linha['COLUNA_M'] ||
             linha['Peso embalado cx Master (KG)'] || 
@@ -712,8 +661,8 @@ export function useCotacoesArquivos() {
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // PESO SEM EMBALAGEM MASTER - 13 variações!
-        peso_sem_emb_master_kg: parseFloat(String(
+        // PESO SEM EMBALAGEM MASTER - usar nome peso_sem_cx_master_kg (sistema antigo)
+        peso_sem_cx_master_kg: parseFloat(String(
           extrairValorExcel(
             linha['COLUNA_N'] ||
             linha['Peso Sem embalagem cx Master (KG)'] || 
@@ -731,70 +680,52 @@ export function useCotacoesArquivos() {
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // ===== DIMENSÕES =====
+        // ===== DIMENSÕES ===== (NOMES DO SISTEMA ANTIGO)
         
-        // COMPRIMENTO - Validação contra texto
-        comprimento_cm: (() => {
-          const valorRaw = extrairValorExcel(
+        // COMPRIMENTO - usar nome comprimento (sistema antigo)
+        comprimento: parseFloat(String(
+          extrairValorExcel(
             linha.Comprimento || 
             linha.COMPRIMENTO || 
-            linha.comprimento ||
-            linha['Comp.'] ||
-            linha.COMP
-          ) || '0';
-          
-          const valorStr = String(valorRaw).trim();
-          
-          // Rejeitar se contém letras
-          if (/[a-zA-Z]/.test(valorStr)) {
-            return 0;
-          }
-          
-          return parseFloat(valorStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-        })(),
+            linha.comprimento
+          ) || '0'
+        ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // LARGURA
-        largura_cm: parseFloat(String(
+        // LARGURA - usar nome largura (sistema antigo)
+        largura: parseFloat(String(
           extrairValorExcel(
             linha.Largura || 
             linha.LARGURA || 
-            linha.largura ||
-            linha['Larg.'] ||
-            linha.LARG
+            linha.largura
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // ALTURA
-        altura_cm: parseFloat(String(
+        // ALTURA - usar nome altura (sistema antigo)
+        altura: parseFloat(String(
           extrairValorExcel(
             linha.Altura || 
             linha.ALTURA || 
-            linha.altura ||
-            linha.Alt ||
-            linha.ALT
+            linha.altura
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // CBM CUBAGEM
-        cbm_unitario: parseFloat(String(
+        // CBM CUBAGEM - usar nome cbm_cubagem (sistema antigo)
+        cbm_cubagem: parseFloat(String(
           extrairValorExcel(
             linha['CBM Cubagem'] || 
             linha.CBM_CUBAGEM || 
-            linha.cbm_cubagem ||
-            linha.CBM ||
-            linha.cbm
+            linha.cbm_cubagem
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
         // ===== CÁLCULOS AUTOMÁTICOS =====
-        peso_total_emb_kg: 0,
-        peso_total_sem_emb_kg: 0,
+        peso_total_cx_master_kg: 0,
+        peso_total_sem_cx_master_kg: 0,
         quantidade_total: 0,
         cbm_total: 0,
         valor_total: 0,
-        peso_total_kg: 0,
         
-        // ===== IMAGENS (Preenchidas pela lógica de associação abaixo) =====
+        // ===== IMAGENS (Associadas pela lógica posterior) =====
         imagem: '',
         imagem_fornecedor: '',
         
@@ -802,47 +733,40 @@ export function useCotacoesArquivos() {
         obs: extrairValorExcel(
           linha.OBS || 
           linha.obs || 
-          linha.Obs || 
-          linha.Observações || 
-          linha.OBSERVAÇÕES || 
-          linha.observacoes
-        ) || '',
-        
-        descricao: extrairValorExcel(
-          linha.DESCRIÇÃO || 
-          linha.DESCRICAO || 
-          linha.descricao || 
-          linha.DESC || 
-          linha.desc
+          linha.Obs
         ) || ''
       };
       
-      // ✅ CÁLCULOS AUTOMÁTICOS (EXECUTADOS APÓS MAPEAMENTO)
-      produtoMapeado.quantidade_total = produtoMapeado.qtd_caixas_pedido * produtoMapeado.pcs_ctn;
-      produtoMapeado.cbm_total = produtoMapeado.cbm_unitario * produtoMapeado.qtd_caixas_pedido;
-      produtoMapeado.valor_total = produtoMapeado.preco_unitario * produtoMapeado.quantidade_total;
-      produtoMapeado.peso_total_emb_kg = produtoMapeado.peso_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
-      produtoMapeado.peso_total_sem_emb_kg = produtoMapeado.peso_sem_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
+      // ✅ CÁLCULOS AUTOMÁTICOS (Sistema Antigo)
+      produtoMapeado.quantidade_total = produtoMapeado.caixas * produtoMapeado.pcs_ctn;
+      produtoMapeado.cbm_total = produtoMapeado.cbm_cubagem * produtoMapeado.caixas;
+      produtoMapeado.valor_total = produtoMapeado.preco * produtoMapeado.quantidade_total;
+      produtoMapeado.peso_total_cx_master_kg = produtoMapeado.peso_cx_master_kg * produtoMapeado.caixas;
+      produtoMapeado.peso_total_sem_cx_master_kg = produtoMapeado.peso_sem_cx_master_kg * produtoMapeado.caixas;
       
-      // 🔍 LOGS DETALHADOS: Primeiras 3 linhas para debug
+      // ✅ ALIASES para compatibilidade total com componente (AMBOS os nomes)
+      const produtoComAliases = {
+        ...produtoMapeado,
+        preco_unitario: produtoMapeado.preco,
+        unidade_medida: produtoMapeado.unit,
+        comprimento_cm: produtoMapeado.comprimento,
+        largura_cm: produtoMapeado.largura,
+        altura_cm: produtoMapeado.altura,
+        cbm_unitario: produtoMapeado.cbm_cubagem,
+        nome: produtoMapeado.nome_produto
+      };
+      
+      // 🔍 LOGS: Primeiras 3 linhas
       if (index < 3) {
-        console.log(`\n📋 ========== PRODUTO ${index + 1} MAPEADO (linha Excel ${index + 2}) ==========`);
+        console.log(`\n📋 ========== PRODUTO ${index + 1} MAPEADO ==========`);
         console.log(`✅ SKU: "${produtoMapeado.sku}"`);
-        console.log(`✅ Material: "${produtoMapeado.material}" ${produtoMapeado.material ? '✓' : '❌ VAZIO'}`);
-        console.log(`✅ Cor: "${produtoMapeado.cor}" ${produtoMapeado.cor ? '✓' : '❌ VAZIO'}`);
-        console.log(`✅ Nome: "${produtoMapeado.nome}" ${produtoMapeado.nome ? '✓' : '❌ VAZIO'}`);
-        console.log(`✅ Preço: ${produtoMapeado.preco_unitario} ${produtoMapeado.preco_unitario > 0 ? '✓' : '❌ ZERO'}`);
-        console.log(`✅ Peso (g): ${produtoMapeado.peso_unitario_g} ${produtoMapeado.peso_unitario_g > 0 ? '✓' : '❌ ZERO'}`);
-        console.log(`✅ Dimensões: ${produtoMapeado.comprimento_cm}x${produtoMapeado.largura_cm}x${produtoMapeado.altura_cm} cm`);
-        console.log(`✅ PCS/CTN: ${produtoMapeado.pcs_ctn}`);
-        console.log(`✅ Caixas: ${produtoMapeado.qtd_caixas_pedido}`);
-        console.log(`✅ Quantidade Total: ${produtoMapeado.quantidade_total}`);
-        console.log(`✅ Valor Total: ${produtoMapeado.valor_total}`);
+        console.log(`✅ Material: "${produtoMapeado.material}"`);
+        console.log(`✅ Cor: "${produtoMapeado.cor}"`);
+        console.log(`✅ Nome: "${produtoMapeado.nome_produto}"`);
+        console.log(`✅ Preço: ${produtoMapeado.preco}`);
+        console.log(`✅ Dimensões: ${produtoMapeado.comprimento}x${produtoMapeado.largura}x${produtoMapeado.altura}`);
         console.log(`========================================================\n`);
       }
-      
-      // ✅ DIAGNÓSTICO: Analisar cada produto mapeado
-      diagnosticarProdutoMapeado(produtoMapeado, index);
       
       // Auditoria simplificada
       if (index === 0) {
