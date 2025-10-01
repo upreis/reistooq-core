@@ -50,6 +50,7 @@ export interface ProdutoCotacao {
   cbm_total: number;
   quantidade_total: number;
   valor_total: number;
+  obs?: string;
 }
 
 /**
