@@ -1532,16 +1532,51 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {filteredCotacoes.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhuma cotação encontrada</h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Comece criando sua primeira cotação internacional'}
-                </p>
-                {!searchTerm && (
-                  <Button onClick={() => { resetForm(); setShowModal(true); }}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nova Cotação
-                  </Button>
+                {hasImportedData && productData.length > 0 ? (
+                  <>
+                    <Package className="h-12 w-12 text-primary mb-4" />
+                    <h3 className="text-lg font-semibold mb-2 text-primary">
+                      {productData.length} produtos importados encontrados!
+                    </h3>
+                    <p className="text-muted-foreground text-center mb-4 max-w-md">
+                      Você tem produtos importados aguardando. Crie uma nova cotação para visualizar e salvar esses dados.
+                    </p>
+                    <div className="flex gap-3">
+                      <Button onClick={() => { 
+                        resetForm(); 
+                        setShowModal(true); 
+                      }} size="lg" className="gap-2">
+                        <Plus className="h-5 w-5" />
+                        Criar Cotação com os Produtos Importados
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => {
+                          SessionStorageManager.clearProducts();
+                          setProductData([]);
+                          setHasImportedData(false);
+                          toast({ title: "Dados limpos", description: "Produtos importados removidos." });
+                        }}
+                        size="lg"
+                      >
+                        Limpar Dados Importados
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Nenhuma cotação encontrada</h3>
+                    <p className="text-muted-foreground text-center mb-4">
+                      {searchTerm ? 'Tente ajustar os filtros de busca' : 'Comece criando sua primeira cotação internacional'}
+                    </p>
+                    {!searchTerm && (
+                      <Button onClick={() => { resetForm(); setShowModal(true); }}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nova Cotação
+                      </Button>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
