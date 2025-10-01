@@ -192,17 +192,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
   const [productData, setProductData] = useState<any[]>(() => {
-    // CORREÇÃO: Usar o novo gerenciador de sessionStorage
     const loaded = SessionStorageManager.loadProducts();
-    console.log('🎯 [INIT] productData inicializado com', loaded.length, 'produtos do sessionStorage');
     return loaded;
   });
   
   // Monitor de mudanças no productData
   useEffect(() => {
-    console.log('🔥 [useEffect] productData MUDOU! Novo length:', productData.length);
     if (productData.length > 0) {
-      console.log('🔥 [useEffect] Primeiros 3 produtos:', productData.slice(0, 3).map(p => ({ sku: p.sku, material: p.material, cor: p.cor })));
+      console.log('✓ Produtos carregados:', productData.length);
     }
   }, [productData]);
   
@@ -927,28 +924,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // CORREÇÃO: Calcular valores dinamicamente sem criar loop
   const displayProductsWithCalculations = useMemo(() => {
-    console.log('🔄 [useMemo] Recalculando displayProductsWithCalculations. productData.length:', productData.length);
+    if (productData.length === 0) return [];
     
-    if (productData.length === 0) {
-      console.warn('⚠️ [useMemo] productData está vazio!');
-      return [];
-    }
-    
-    try {
-      const result = productData.map(product => ({
-        ...product,
-        change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
-        change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-        multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
-        multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-      }));
-      
-      console.log('✅ [useMemo] Resultado calculado com sucesso. Length:', result.length);
-      return result;
-    } catch (error) {
-      console.error('❌ [useMemo] Erro ao calcular produtos:', error);
-      return productData; // Retorna sem cálculos em caso de erro
-    }
+    return productData.map(product => ({
+      ...product,
+      change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+      multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+    }));
   }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   // Funções para edição inline
@@ -987,19 +971,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // CORREÇÃO: Usar produtos com cálculos dinâmicos
   const displayProducts = displayProductsWithCalculations;
-  
-  // Debug: Log quando displayProducts mudar
-  useEffect(() => {
-    console.log('📊 [displayProducts CHANGED] Novo length:', displayProducts.length);
-    if (displayProducts.length > 0) {
-      console.log('📊 [displayProducts] Primeiro produto:', {
-        sku: displayProducts[0]?.sku,
-        material: displayProducts[0]?.material,
-        cor: displayProducts[0]?.cor,
-        preco: displayProducts[0]?.preco
-      });
-    }
-  }, [displayProducts]);
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
@@ -1142,13 +1113,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
     }));
     
-    console.log('🎯 [handleImportSuccess] Chamando setProductData com', produtosComCalculos.length, 'produtos');
     setProductData(produtosComCalculos);
-    setHasImportedData(true); // Marcar que dados foram importados
+    setHasImportedData(true);
     
-    console.log('🎯 [handleImportSuccess] setProductData chamado com sucesso');
-    
-    // CORREÇÃO: Salvar no sessionStorage SEM converter blob URLs
+    // Salvar no sessionStorage
     try {
       SessionStorageManager.saveProducts(produtosComCalculos);
       console.log('✅ Produtos salvos no sessionStorage com imagens preservadas');
