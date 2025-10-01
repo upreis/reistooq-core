@@ -566,6 +566,12 @@ export function useCotacoesArquivos() {
     console.log('🖼️ [SKU_SYSTEM] Imagens para associação:', imagensUpload.length);
     
     return dados.map((linha, index) => {
+      // 🔍 DEBUG: Verificar estrutura da linha
+      if (index === 0) {
+        console.log('🔍 [DEBUG] Primeira linha recebida:', linha);
+        console.log('🔍 [DEBUG] Chaves disponíveis:', Object.keys(linha));
+      }
+      
       // ✅ MAPEAMENTO DIRETO (LÓGICA ANTIGA)
       const produtoMapeado = {
         // ⚠️ SKU: Mantém lógica atual de geração automática
@@ -644,6 +650,20 @@ export function useCotacoesArquivos() {
       produtoMapeado.valor_total = produtoMapeado.preco_unitario * produtoMapeado.quantidade_total;
       produtoMapeado.peso_total_emb_kg = produtoMapeado.peso_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
       produtoMapeado.peso_total_sem_emb_kg = produtoMapeado.peso_sem_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
+      
+      // 🔍 DEBUG: Verificar produto mapeado
+      if (index === 0) {
+        console.log('🔍 [DEBUG] Produto mapeado (primeiro):', {
+          sku: produtoMapeado.sku,
+          material: produtoMapeado.material,
+          cor: produtoMapeado.cor,
+          nome: produtoMapeado.nome,
+          preco: produtoMapeado.preco_unitario,
+          unidade: produtoMapeado.unidade_medida,
+          pcs_ctn: produtoMapeado.pcs_ctn,
+          caixas: produtoMapeado.qtd_caixas_pedido
+        });
+      }
       
       // ✅ DIAGNÓSTICO: Analisar cada produto mapeado
       diagnosticarProdutoMapeado(produtoMapeado, index);
