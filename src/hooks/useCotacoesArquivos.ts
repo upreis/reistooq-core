@@ -580,6 +580,30 @@ export function useCotacoesArquivos() {
       }
       
       // ✅ SOLUÇÃO HÍBRIDA: Mapeamento robusto de todas as colunas
+      // Logs de debug apenas para as primeiras 3 linhas
+      if (index < 3) {
+        console.log(`\n🔍 ========== LINHA ${index + 1} - DADOS BRUTOS ==========`);
+        console.log('Colunas disponíveis:', Object.keys(linha));
+        console.log('Valores de Material:', {
+          'MATERIAL': linha.MATERIAL,
+          'material': linha.material,
+          'Material': linha.Material
+        });
+        console.log('Valores de Cor:', {
+          'COR': linha.COR,
+          'cor': linha.cor,
+          'Cor': linha.Cor
+        });
+        console.log('Valores de Preço:', {
+          'PREÇO': linha.PREÇO,
+          'PRECO': linha.PRECO,
+          'preco': linha.preco,
+          'Preço': linha.Preço,
+          'Preco': linha.Preco
+        });
+        console.log('========================================================\n');
+      }
+      
       const produtoMapeado = {
         // ===== DADOS BÁSICOS ===== (NOMES DO SISTEMA ANTIGO)
         sku: extrairValorExcel(linha.SKU || linha.sku) || `PROD-${index + 1}`,
