@@ -494,6 +494,12 @@ export function useCotacoesArquivos() {
         console.log('📋 [HEADERS] Headers extraídos:', headers);
         console.log('📋 [HEADERS] Total de colunas:', headers.length);
         console.log('📋 [HEADERS] LISTA COMPLETA:', JSON.stringify(headers, null, 2));
+        
+        console.log('\n🔍 =============== VERIFICAÇÃO DE HEADERS ===============');
+        headers.forEach((header, idx) => {
+          console.log(`  Coluna ${idx + 1}: "${header}"`);
+        });
+        console.log('========================================================\n');
 
         for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
           const row = worksheet.getRow(rowNumber);
@@ -508,6 +514,17 @@ export function useCotacoesArquivos() {
               // DEBUG: Log detalhado da primeira linha - TODAS as colunas
               if (rowNumber === 2) {
                 console.log(`🔍 [CELL_DEBUG] Linha ${rowNumber}, Col ${colNumber}, Header: "${header}", Valor bruto:`, cell.value, 'Tipo:', typeof cell.value);
+                
+                // Log especial para MATERIAL, COR e PREÇO
+                if (header === 'MATERIAL' || header === 'material' || header === 'Material') {
+                  console.log(`🎯 [MATERIAL] Valor encontrado:`, cellValue, '| Original:', cell.value);
+                }
+                if (header === 'COR' || header === 'cor' || header === 'Cor') {
+                  console.log(`🎯 [COR] Valor encontrado:`, cellValue, '| Original:', cell.value);
+                }
+                if (header === 'PREÇO' || header === 'preco_unitario' || header === 'Preço') {
+                  console.log(`🎯 [PREÇO] Valor encontrado:`, cellValue, '| Original:', cell.value);
+                }
               }
               
               // ✅ CORREÇÃO: Tratar objetos com _type (formato ExcelJS especial)
