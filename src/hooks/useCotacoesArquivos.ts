@@ -371,6 +371,8 @@ export function useCotacoesArquivos() {
           
           headers[colNumber - 1] = cellValue?.toString() || `Coluna${colNumber}`;
         });
+        
+        console.log('📋 [HEADERS] Headers extraídos:', headers);
 
         for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
           const row = worksheet.getRow(rowNumber);
@@ -403,6 +405,11 @@ export function useCotacoesArquivos() {
           if (Object.keys(rowData).length > 0) {
             dados.push(rowData);
           }
+        }
+        
+        // AUDITORIA: Mostrar primeiros dados para debug
+        if (dados.length > 0) {
+          console.log('📊 [DADOS] Primeira linha de dados:', JSON.stringify(dados[0], null, 2));
         }
       }
       
