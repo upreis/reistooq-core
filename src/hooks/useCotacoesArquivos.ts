@@ -696,6 +696,17 @@ export function useCotacoesArquivos() {
         console.log('==================================================================================\n');
       }
       
+      // 🔍 DEBUG: Mostrar TODAS as colunas e valores da primeira linha
+      if (index === 0) {
+        console.log('\n🔍 ==================== DEBUG COLUNAS ====================');
+        console.log('Total de colunas encontradas:', Object.keys(linha).length);
+        console.log('\n📋 TODAS AS COLUNAS E SEUS VALORES:');
+        Object.entries(linha).forEach(([coluna, valor], idx) => {
+          console.log(`  ${idx + 1}. [${coluna}] = "${extrairValorExcel(valor)}"`);
+        });
+        console.log('========================================================\n');
+      }
+      
       // ✅ SOLUÇÃO HÍBRIDA: Mapeamento robusto de todas as colunas
       const produtoMapeado = {
         // ===== DADOS BÁSICOS ===== (NOMES DO SISTEMA ANTIGO)
