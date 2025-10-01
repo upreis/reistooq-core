@@ -821,32 +821,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return value > 0 ? value : 5.44;
   };
 
-  // Effect para recalcular produtos quando divisores/multiplicadores mudarem
-  useEffect(() => {
-    if (productData.length > 0) {
-      const updatedProducts = productData.map(product => ({
-        ...product,
-        change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
-        change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-        multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
-        multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-      }));
-      
-      setProductData(updatedProducts);
-      
-      // Salvar no sessionStorage
-      try {
-        const cleanedProducts = updatedProducts.map(product => ({
-          ...product,
-          imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-        }));
-        sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
-      } catch (error) {
-        console.warn('Erro ao salvar no sessionStorage:', error);
-      }
-    }
-  }, [changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
+  // CORREÇÃO: Calcular valores dinamicamente sem criar loop
+  const displayProductsWithCalculations = useMemo(() => {
+    return productData.map(product => ({
+      ...product,
+      change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+      multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+    }));
+  }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
@@ -882,8 +866,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return currency?.symbol || currencyCode;
   }, []);
 
-  // Usar apenas productData - sem dados de exemplo
-  const displayProducts = productData;
+  // CORREÇÃO: Usar produtos com cálculos dinâmicos
+  const displayProducts = displayProductsWithCalculations;
   
   // Remover logs excessivos que causam loop infinito
 
@@ -932,14 +916,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(updatedProducts);
     stopEditing();
     
-    // Salvar no sessionStorage (removendo URLs blob inválidas)
+    // CORREÇÃO: Salvar no sessionStorage SEM limpar imagens
     try {
-      const cleanedProducts = updatedProducts.map(product => ({
-        ...product,
-        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-      }));
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+      SessionStorageManager.saveProducts(updatedProducts);
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
@@ -1068,23 +1047,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(produtosComCalculos);
     setHasImportedData(true); // Marcar que dados foram importados
     
-    // Salvar no sessionStorage para persistir entre navegações (convertendo blob URLs para base64)
+    // CORREÇÃO: Salvar no sessionStorage SEM converter blob URLs
     try {
-      const cleanedProducts = await Promise.all(
-        produtosComCalculos.map(async (product) => ({
-          ...product,
-          imagem: product.imagem?.startsWith('blob:') 
-            ? await imageUrlToBase64(product.imagem) 
-            : product.imagem,
-          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') 
-            ? await imageUrlToBase64(product.imagem_fornecedor) 
-            : product.imagem_fornecedor
-        }))
-      );
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
-      console.log('✅ Produtos salvos no sessionStorage com imagens em base64');
+      SessionStorageManager.saveProducts(produtosComCalculos);
+      console.log('✅ Produtos salvos no sessionStorage com imagens preservadas');
     } catch (error) {
-      console.warn('❌ Erro ao salvar no sessionStorage:', error);
+      console.warn('Erro ao salvar no sessionStorage:', error);
     }
     
     // Força atualização da UI
