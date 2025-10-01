@@ -1085,49 +1085,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return;
     }
     
-    console.log('📋 [IMPORT] Processando dados sem correção de desalinhamento. Total de produtos:', dadosImportados.length);
+    console.log('📋 [IMPORT] Recebendo dados já processados pelo hook. Total de produtos:', dadosImportados.length);
+    console.log('📋 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
     
-    // Mapear dados importados para o formato esperado (SEM correção de desalinhamento)
-    const novosProdutos = dadosImportados.map((produto, index) => {
-      console.log(`📋 [DEBUG] Processando produto ${index}:`, produto);
-      
-      const produtoMapeado = {
-        ...produto,
-        id: `import-${index}`,
-        // Garantir que todas as propriedades necessárias existem
-         sku: produto.sku || `PROD-${index + 1}`,
-         imagem: produto.imagem || '', // Usar imagem original sem correção
-         imagem_fornecedor: produto.imagem_fornecedor || '', // Manter a original do fornecedor
-        nome_produto: produto.nome_produto || produto.nome || '',
-        material: produto.material || '',
-        cor: produto.cor || '',
-        package: produto.package || '',
-        preco: Number(produto.preco) || Number(produto.preco_unitario) || 0,
-        unit: produto.unit || 'pc',
-        pcs_ctn: Number(produto.pcs_ctn) || 0,
-        caixas: Number(produto.caixas) || Number(produto.quantidade_total_calc) || 1,
-        peso_unitario_g: Number(produto.peso_unitario_g) || 0,
-        peso_cx_master_kg: Number(produto.peso_cx_master_kg) || 0,
-        peso_sem_cx_master_kg: Number(produto.peso_sem_cx_master_kg) || 0,
-        peso_total_cx_master_kg: Number(produto.peso_total_cx_master_kg) || 0,
-        peso_total_sem_cx_master_kg: Number(produto.peso_total_sem_cx_master_kg) || 0,
-        comprimento: Number(produto.comprimento) || 0,
-        largura: Number(produto.largura) || 0,
-        altura: Number(produto.altura) || 0,
-        cbm_cubagem: Number(produto.cbm_cubagem) || 0,
-        cbm_total: Number(produto.cbm_total) || Number(produto.cbm_total_calc) || 0,
-        quantidade_total: Number(produto.quantidade_total) || Number(produto.quantidade_total_calc) || 0,
-        valor_total: Number(produto.valor_total) || 0,
-        obs: produto.obs || '',
-        change_dolar: Number(produto.change_dolar) || 0,
-        multiplicador_reais: Number(produto.multiplicador_reais) || 0,
-        // Campos calculados
-        change_dolar_total: Number(produto.change_dolar_total) || 0,
-        multiplicador_reais_total: Number(produto.multiplicador_reais_total) || 0,
-      };
-      
-      return produtoMapeado;
-    });
+    // ✅ USAR DADOS JÁ MAPEADOS PELO HOOK - não refazer mapeamento!
+    const novosProdutos = dadosImportados.map((produto, index) => ({
+      ...produto,
+      id: produto.id || `import-${index}`,
+      // Garantir campos obrigatórios com fallback
+      sku: produto.sku || `PROD-${index + 1}`,
+      imagem: produto.imagem || '',
+      imagem_fornecedor: produto.imagem_fornecedor || '',
+    }));
     // Recalcular campos automaticamente para todos os produtos
     const produtosComCalculos = novosProdutos.map(produto => ({
       ...produto,
