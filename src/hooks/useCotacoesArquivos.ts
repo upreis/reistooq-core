@@ -529,7 +529,6 @@ export function useCotacoesArquivos() {
     return dados.map((item, index) => {
       // Mapeamento de campos (compatível com interface ProdutoCotacao)
       const produtoMapeado = {
-        ...item,
         sku: item.SKU || item.sku || `PROD-${index + 1}`,
         nome: item['Nome do Produto'] || item.PRODUTO || item.produto || item.nome_produto || item.nome || '',
         preco_unitario: Number(item['PREÇO'] || item['Preço'] || item.PRECO_UNITARIO || item.preco_unitario || item.preco) || 0,
