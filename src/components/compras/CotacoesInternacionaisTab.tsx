@@ -27,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditableCell } from './EditableCell';
 import ContainerVisualization from './ContainerVisualization';
-import { CotacaoImportDialog } from './CotacaoImportDialog';
+const CotacaoImportDialog = React.lazy(() => import('./CotacaoImportDialog').then(m => ({ default: m.CotacaoImportDialog })));
 import { ImageComparisonModal } from './ImageComparisonModal';
 import { ProdutoImagemPreview } from './ProdutoImagemPreview';
 import { 
@@ -2770,12 +2770,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       />
       
       {/* Dialog de Importação */}
-      <CotacaoImportDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        cotacao={null}
-        onImportSuccess={handleImportSuccess}
-      />
+      {showImportDialog && (
+        <React.Suspense fallback={<div>Carregando...</div>}>
+          <CotacaoImportDialog
+            open={showImportDialog}
+            onOpenChange={setShowImportDialog}
+            cotacao={null}
+            onImportSuccess={handleImportSuccess}
+          />
+        </React.Suspense>
+      )}
       
       {/* Modal de Comparação de Imagens */}
       <ImageComparisonModal

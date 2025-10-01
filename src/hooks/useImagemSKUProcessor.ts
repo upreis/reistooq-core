@@ -1,3 +1,4 @@
+import React from 'react';
 import { toast } from 'sonner';
 
 export interface ImagemProcessada {
@@ -231,11 +232,18 @@ export class ImagemSKUProcessor {
 
 // HOOK PARA USAR O PROCESSOR
 export const useImagemSKUProcessor = () => {
-  const processor = new ImagemSKUProcessor();
+  // Criar uma instância estável do processor
+  const processorRef = React.useRef<ImagemSKUProcessor | null>(null);
   
-  return {
+  if (!processorRef.current) {
+    processorRef.current = new ImagemSKUProcessor();
+  }
+  
+  const processor = processorRef.current;
+  
+  return React.useMemo(() => ({
     construirMapaSkuLinhas: processor.construirMapaSkuLinhas.bind(processor),
     processarImagensIndividualmente: processor.processarImagensIndividualmente.bind(processor),
     obterEstatisticas: processor.obterEstatisticas.bind(processor)
-  };
+  }), [processor]);
 };
