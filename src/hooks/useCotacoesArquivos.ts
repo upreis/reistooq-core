@@ -762,11 +762,25 @@ export function useCotacoesArquivos() {
         // ===== DADOS BÁSICOS ===== (NOMES DO SISTEMA ANTIGO)
         sku: extrairValorExcel(linha.SKU || linha.sku) || `PROD-${index + 1}`,
         
-        // MATERIAL
-        material: extrairValorExcel(linha.MATERIAL || linha.material) || '',
+        // MATERIAL - usar a mesma lógica de PCS/CTN que funciona
+        material: String(
+          extrairValorExcel(
+            linha['MATERIAL'] || 
+            linha.MATERIAL || 
+            linha.material ||
+            linha.Material
+          ) || ''
+        ),
         
-        // COR
-        cor: extrairValorExcel(linha.COR || linha.cor) || '',
+        // COR - usar a mesma lógica de PCS/CTN que funciona
+        cor: String(
+          extrairValorExcel(
+            linha['COR'] || 
+            linha.COR || 
+            linha.cor ||
+            linha.Cor
+          ) || ''
+        ),
         
         // NOME DO PRODUTO - usar nome_produto (sistema antigo)
         nome_produto: extrairValorExcel(
@@ -780,13 +794,16 @@ export function useCotacoesArquivos() {
         // PACKAGE - usar nome package (sistema antigo)
         package: extrairValorExcel(linha.PACKAGE || linha.package || linha.Package) || '',
         
-        // PREÇO - usar nome preco (sistema antigo)
+        // PREÇO - usar a mesma lógica de PCS/CTN que funciona
         preco: parseFloat(String(
           extrairValorExcel(
+            linha['PREÇO'] ||
+            linha['PRECO'] ||
             linha.PREÇO || 
-            linha.PRECO || 
+            linha.PRECO ||
             linha.preco || 
-            linha.Preço
+            linha.Preço ||
+            linha['Preço']
           ) || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         

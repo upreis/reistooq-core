@@ -1837,7 +1837,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   </TableHeader>
                    <TableBody>
                      {(() => {
-                       console.log('🔍 [AUDIT] displayProducts:', displayProducts.length, displayProducts.map((p, i) => ({ index: i, sku: p.sku, imagem: p.imagem })));
+                       console.log('🔍 [AUDIT] displayProducts:', displayProducts.length);
+                       if (displayProducts.length > 0) {
+                         console.log('🔍 [AUDIT] Primeiro produto completo:', displayProducts[0]);
+                         console.log('🔍 [AUDIT] Campos críticos do primeiro produto:', {
+                           sku: displayProducts[0].sku,
+                           material: displayProducts[0].material,
+                           cor: displayProducts[0].cor,
+                           preco_unitario: displayProducts[0].preco_unitario,
+                           preco: displayProducts[0].preco
+                         });
+                       }
                        return displayProducts.map((product: any, index: number) => (
                         <TableRow key={index} className="hover:bg-muted/30 border-b border-border/50">
                           <TableCell className="text-center py-3">
