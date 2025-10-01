@@ -1072,7 +1072,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Função para lidar com dados importados
   const handleImportSuccess = useCallback(async (dadosImportados: any[]) => {
     console.log('📥 [DEBUG] Dados recebidos na importação:', dadosImportados);
-    console.log('📥 [DEBUG] Cotação selecionada:', selectedCotacao?.id);
+    console.log('📥 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
+    console.log('📥 [DEBUG] Campos disponíveis:', Object.keys(dadosImportados[0] || {}));
     
     if (!dadosImportados || dadosImportados.length === 0) {
       console.error('❌ [DEBUG] Nenhum dado para importar');
@@ -1086,110 +1087,79 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     console.log('📋 [IMPORT] Processando dados sem correção de desalinhamento. Total de produtos:', dadosImportados.length);
     
-    // Mapear dados importados para o formato esperado
+    // Mapear dados importados para o formato esperado (SEM correção de desalinhamento)
     const novosProdutos = dadosImportados.map((produto, index) => {
       console.log(`📋 [DEBUG] Processando produto ${index}:`, produto);
       
       const produtoMapeado = {
         ...produto,
-        id: `import-${Date.now()}-${index}`,
-        sku: produto.sku || `PROD-${index + 1}`,
-        imagem: produto.imagem || '',
-        imagem_fornecedor: produto.imagem_fornecedor || '',
-        nome: produto.nome_produto || produto.nome || '',
+        id: `import-${index}`,
+        // Garantir que todas as propriedades necessárias existem
+         sku: produto.sku || `PROD-${index + 1}`,
+         imagem: produto.imagem || '', // Usar imagem original sem correção
+         imagem_fornecedor: produto.imagem_fornecedor || '', // Manter a original do fornecedor
+        nome_produto: produto.nome_produto || produto.nome || '',
         material: produto.material || '',
         cor: produto.cor || '',
-        package_qtd: Number(produto.package || produto.package_qtd) || 1,
-        preco_unitario: Number(produto.preco) || Number(produto.preco_unitario) || 0,
-        unidade_medida: produto.unit || produto.unidade_medida || 'PCS',
+        package: produto.package || '',
+        preco: Number(produto.preco) || Number(produto.preco_unitario) || 0,
+        unit: produto.unit || 'pc',
         pcs_ctn: Number(produto.pcs_ctn) || 0,
-        qtd_caixas_pedido: Number(produto.caixas) || Number(produto.qtd_caixas_pedido) || 1,
+        caixas: Number(produto.caixas) || Number(produto.quantidade_total_calc) || 1,
         peso_unitario_g: Number(produto.peso_unitario_g) || 0,
         peso_cx_master_kg: Number(produto.peso_cx_master_kg) || 0,
         peso_sem_cx_master_kg: Number(produto.peso_sem_cx_master_kg) || 0,
-        comprimento_cm: Number(produto.comprimento) || 0,
-        largura_cm: Number(produto.largura) || 0,
-        altura_cm: Number(produto.altura) || 0,
-        cbm_unitario: Number(produto.cbm_cubagem) || 0,
-        quantidade_total: Number(produto.quantidade_total) || 0,
-        cbm_total: Number(produto.cbm_total) || 0,
+        peso_total_cx_master_kg: Number(produto.peso_total_cx_master_kg) || 0,
+        peso_total_sem_cx_master_kg: Number(produto.peso_total_sem_cx_master_kg) || 0,
+        comprimento: Number(produto.comprimento) || 0,
+        largura: Number(produto.largura) || 0,
+        altura: Number(produto.altura) || 0,
+        cbm_cubagem: Number(produto.cbm_cubagem) || 0,
+        cbm_total: Number(produto.cbm_total) || Number(produto.cbm_total_calc) || 0,
+        quantidade_total: Number(produto.quantidade_total) || Number(produto.quantidade_total_calc) || 0,
         valor_total: Number(produto.valor_total) || 0,
-        observacoes: produto.obs || '',
+        obs: produto.obs || '',
+        change_dolar: Number(produto.change_dolar) || 0,
+        multiplicador_reais: Number(produto.multiplicador_reais) || 0,
+        // Campos calculados
+        change_dolar_total: Number(produto.change_dolar_total) || 0,
+        multiplicador_reais_total: Number(produto.multiplicador_reais_total) || 0,
       };
       
       return produtoMapeado;
     });
+    // Recalcular campos automaticamente para todos os produtos
+    const produtosComCalculos = novosProdutos.map(produto => ({
+      ...produto,
+      change_dolar: (produto.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar_total: (produto.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+      multiplicador_reais: (produto.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+    }));
     
-    // Se estiver visualizando uma cotação, atualizar diretamente
-    if (selectedCotacao) {
-      console.log('💾 [SAVE] Salvando produtos na cotação:', selectedCotacao.id);
-      
-      try {
-        // Preparar dados - data_fechamento deve ser null se não existir, não string vazia
-        const dataAbertura = typeof selectedCotacao.data_abertura === 'string'
-          ? selectedCotacao.data_abertura.split('T')[0]
-          : new Date(selectedCotacao.data_abertura).toISOString().split('T')[0];
-        
-        const dataFechamento = selectedCotacao.data_fechamento 
-          ? (typeof selectedCotacao.data_fechamento === 'string'
-              ? selectedCotacao.data_fechamento.split('T')[0]
-              : new Date(selectedCotacao.data_fechamento).toISOString().split('T')[0])
-          : null; // null em vez de string vazia
-        
-        await secureUpdateCotacao(selectedCotacao.id, {
-          numero_cotacao: selectedCotacao.numero_cotacao,
-          descricao: selectedCotacao.descricao,
-          pais_origem: selectedCotacao.pais_origem,
-          moeda_origem: selectedCotacao.moeda_origem,
-          fator_multiplicador: Number(selectedCotacao.fator_multiplicador),
-          data_abertura: dataAbertura,
-          data_fechamento: dataFechamento,
-          status: selectedCotacao.status || 'rascunho',
-          observacoes: selectedCotacao.observacoes || null,
-          produtos: [...novosProdutos],
-          total_quantidade: novosProdutos.reduce((sum, p) => sum + (Number(p.quantidade_total) || 0), 0),
-          total_peso_kg: novosProdutos.reduce((sum, p) => sum + (Number(p.peso_cx_master_kg) * Number(p.qtd_caixas_pedido) || 0), 0),
-          total_cbm: novosProdutos.reduce((sum, p) => sum + (Number(p.cbm_total) || 0), 0),
-          total_valor_origem: novosProdutos.reduce((sum, p) => sum + (Number(p.valor_total) || 0), 0),
-        });
-        
-        toast({
-          title: "Importação concluída!",
-          description: `${novosProdutos.length} produtos salvos na cotação ${selectedCotacao.numero_cotacao}.`,
-        });
-        
-        // Recarregar dados
-        onRefresh();
-        setShowImportDialog(false);
-      } catch (error) {
-        console.error('❌ Erro ao salvar produtos na cotação:', error);
-        toast({
-          title: "Erro ao salvar",
-          description: "Não foi possível salvar os produtos na cotação.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      // Se não há cotação selecionada, salvar no sessionStorage (caso de nova cotação)
-      console.log('💾 [TEMP] Salvando no sessionStorage (nova cotação)');
-      setProductData(novosProdutos);
-      setHasImportedData(true);
-      
-      try {
-        SessionStorageManager.saveProducts(novosProdutos);
-        console.log('✅ Produtos salvos no sessionStorage');
-      } catch (error) {
-        console.warn('Erro ao salvar no sessionStorage:', error);
-      }
-      
-      toast({
-        title: "Importação concluída!",
-        description: `${novosProdutos.length} produtos importados. Crie uma cotação para salvá-los.`,
-      });
-      
-      setShowImportDialog(false);
+    setProductData(produtosComCalculos);
+    setHasImportedData(true); // Marcar que dados foram importados
+    
+    // CORREÇÃO: Salvar no sessionStorage SEM converter blob URLs
+    try {
+      SessionStorageManager.saveProducts(produtosComCalculos);
+      console.log('✅ Produtos salvos no sessionStorage com imagens preservadas');
+    } catch (error) {
+      console.warn('Erro ao salvar no sessionStorage:', error);
     }
-  }, [selectedCotacao, secureUpdateCotacao, onRefresh, toast]);
+    
+    // Força atualização da UI
+    setTimeout(() => {
+      if (productData.length === 0 && novosProdutos.length > 0) {
+        setProductData([...novosProdutos]); // força nova referência
+      }
+    }, 100);
+    
+    toast({
+      title: "Importação concluída!",
+      description: `${novosProdutos.length} produtos importados com sucesso.`,
+    });
+  }, [toast]);
 
   // Função para converter imagem URL para base64
   const imageUrlToBase64 = async (url: string): Promise<string> => {
@@ -1403,45 +1373,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   };
   return (
     <div className="space-y-6">
-      {/* Banner de Produtos Importados - SEMPRE VISÍVEL quando há produtos */}
-      {hasImportedData && productData.length > 0 && (
-        <Card className="border-primary bg-primary/5">
-          <CardContent className="flex items-center justify-between py-4">
-            <div className="flex items-center gap-3">
-              <Package className="h-8 w-8 text-primary" />
-              <div>
-                <h3 className="font-semibold text-primary">
-                  {productData.length} produtos importados aguardando
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Clique em "Criar Cotação" para salvar esses produtos
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={() => { 
-                resetForm(); 
-                setShowModal(true); 
-              }} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Criar Cotação
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  SessionStorageManager.clearProducts();
-                  setProductData([]);
-                  setHasImportedData(false);
-                  toast({ title: "Dados limpos", description: "Produtos importados removidos." });
-                }}
-              >
-                Limpar
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
@@ -1601,51 +1532,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {filteredCotacoes.length === 0 && (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
-                {hasImportedData && productData.length > 0 ? (
-                  <>
-                    <Package className="h-12 w-12 text-primary mb-4" />
-                    <h3 className="text-lg font-semibold mb-2 text-primary">
-                      {productData.length} produtos importados encontrados!
-                    </h3>
-                    <p className="text-muted-foreground text-center mb-4 max-w-md">
-                      Você tem produtos importados aguardando. Crie uma nova cotação para visualizar e salvar esses dados.
-                    </p>
-                    <div className="flex gap-3">
-                      <Button onClick={() => { 
-                        resetForm(); 
-                        setShowModal(true); 
-                      }} size="lg" className="gap-2">
-                        <Plus className="h-5 w-5" />
-                        Criar Cotação com os Produtos Importados
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        onClick={() => {
-                          SessionStorageManager.clearProducts();
-                          setProductData([]);
-                          setHasImportedData(false);
-                          toast({ title: "Dados limpos", description: "Produtos importados removidos." });
-                        }}
-                        size="lg"
-                      >
-                        Limpar Dados Importados
-                      </Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Nenhuma cotação encontrada</h3>
-                    <p className="text-muted-foreground text-center mb-4">
-                      {searchTerm ? 'Tente ajustar os filtros de busca' : 'Comece criando sua primeira cotação internacional'}
-                    </p>
-                    {!searchTerm && (
-                      <Button onClick={() => { resetForm(); setShowModal(true); }}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nova Cotação
-                      </Button>
-                    )}
-                  </>
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Nenhuma cotação encontrada</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Comece criando sua primeira cotação internacional'}
+                </p>
+                {!searchTerm && (
+                  <Button onClick={() => { resetForm(); setShowModal(true); }}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nova Cotação
+                  </Button>
                 )}
               </CardContent>
             </Card>
@@ -2879,7 +2775,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           <CotacaoImportDialog
             open={showImportDialog}
             onOpenChange={setShowImportDialog}
-            cotacao={selectedCotacao}
+            cotacao={null}
             onImportSuccess={handleImportSuccess}
           />
         </React.Suspense>
