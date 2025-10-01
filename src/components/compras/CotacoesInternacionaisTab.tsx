@@ -1126,6 +1126,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       
       try {
         await secureUpdateCotacao(selectedCotacao.id, {
+          ...selectedCotacao, // Manter todos os campos obrigatórios da cotação
           produtos: [...novosProdutos],
           total_quantidade: novosProdutos.reduce((sum, p) => sum + (Number(p.quantidade_total) || 0), 0),
           total_peso_kg: novosProdutos.reduce((sum, p) => sum + (Number(p.peso_cx_master_kg) * Number(p.qtd_caixas_pedido) || 0), 0),
