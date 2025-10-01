@@ -2775,7 +2775,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           <CotacaoImportDialog
             open={showImportDialog}
             onOpenChange={setShowImportDialog}
-            cotacao={null}
+            cotacao={selectedCotacao}
             onImportSuccess={handleImportSuccess}
           />
         </React.Suspense>
