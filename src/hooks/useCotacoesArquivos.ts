@@ -577,7 +577,7 @@ export function useCotacoesArquivos() {
         nome: extrairValorExcel(linha['Nome do Produto'] || linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome) || '',
         package_qtd: parseFloat(String(extrairValorExcel(linha.PACKAGE || linha.package) || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
         preco_unitario: parseFloat(String(extrairValorExcel(linha.PREÇO || linha.PRECO || linha.preco) || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
-        unidade_medida: extrairValorExcel(linha.UNIT || linha.unit) || 'PCS',
+        unidade_medida: extrairValorExcel(linha.UNIT || linha.unit || linha.UNID || linha['Unid.'] || linha.unid) || 'PCS',
         pcs_ctn: parseInt(String(extrairValorExcel(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn) || '0').replace(/[^\d]/g, '')) || 0,
         qtd_caixas_pedido: parseFloat(String(extrairValorExcel(linha.CAIXAS || linha.caixas) || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
         peso_unitario_g: parseFloat(String(extrairValorExcel(
@@ -634,7 +634,8 @@ export function useCotacoesArquivos() {
         imagem: '',
         imagem_fornecedor: '',
         
-        obs: extrairValorExcel(linha.OBS || linha.obs || linha.Obs || linha.Observações || linha.OBSERVAÇÕES || linha.observacoes) || ''
+        obs: extrairValorExcel(linha.OBS || linha.obs || linha.Obs || linha.Observações || linha.OBSERVAÇÕES || linha.observacoes) || '',
+        descricao: extrairValorExcel(linha.DESCRIÇÃO || linha.DESCRICAO || linha.descricao || linha.DESC || linha.desc) || ''
       };
       
       // ✅ CÁLCULOS AUTOMÁTICOS (EXECUTADOS APÓS MAPEAMENTO)
