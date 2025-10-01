@@ -383,7 +383,7 @@ export function useCotacoesArquivos() {
           row.eachCell((cell, colNumber) => {
             const header = headers[colNumber - 1];
             if (header) {
-              // CORREÇÃO: Extrair valor simples de objetos complexos do ExcelJS
+              // CORREÇÃO CRÍTICA: Extrair valor simples de TODOS os tipos de objetos do ExcelJS
               let cellValue: any = cell.value;
               
               // DEBUG: Log detalhado da primeira linha - TODAS as colunas
@@ -391,18 +391,34 @@ export function useCotacoesArquivos() {
                 console.log(`🔍 [CELL_DEBUG] Linha ${rowNumber}, Col ${colNumber}, Header: "${header}", Valor bruto:`, cell.value, 'Tipo:', typeof cell.value);
               }
               
-              // Se é um objeto com propriedades aninhadas, extrair o valor real
+              // ✅ CORREÇÃO: Tratar objetos com _type (formato ExcelJS especial)
               if (cellValue && typeof cellValue === 'object' && !Array.isArray(cellValue) && !(cellValue instanceof Date)) {
-                // Tentar extrair valor de estruturas conhecidas
-                if ('value' in cellValue) {
+                // 1. Objetos com _type e value (problema principal!)
+                if ('_type' in cellValue && 'value' in cellValue) {
                   cellValue = (cellValue as any).value;
-                } else if ('richText' in cellValue) {
+                  console.log(`🔧 [FIX_TYPE] Extraído _type.value para "${header}":`, cellValue);
+                }
+                // 2. Objetos com apenas 'value'
+                else if ('value' in cellValue) {
+                  cellValue = (cellValue as any).value;
+                }
+                // 3. RichText
+                else if ('richText' in cellValue) {
                   cellValue = (cellValue as any).richText.map((t: any) => t.text).join('');
-                } else if ('result' in cellValue) {
+                }
+                // 4. Fórmulas
+                else if ('result' in cellValue) {
                   cellValue = (cellValue as any).result;
-                } else if ('text' in cellValue) {
+                }
+                // 5. Texto simples
+                else if ('text' in cellValue) {
                   cellValue = (cellValue as any).text;
                 }
+              }
+              
+              // ✅ Converter strings vazias para null
+              if (cellValue === '' || cellValue === undefined) {
+                cellValue = null;
               }
               
               rowData[header] = cellValue;
