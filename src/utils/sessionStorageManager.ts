@@ -94,6 +94,21 @@ export class SessionStorageManager {
       .map(product => {
         const cleaned = { ...product };
         
+        // ✅ CORREÇÃO CRÍTICA: Extrair valores de objetos complexos (tipo ExcelJS)
+        Object.keys(cleaned).forEach(key => {
+          const value = cleaned[key];
+          
+          // 1. Objetos com _type e value (problema principal!)
+          if (value && typeof value === 'object' && '_type' in value && 'value' in value) {
+            cleaned[key] = value.value;
+            console.log(`🔧 [SANITIZE_TYPE] Campo "${key}" extraído de objeto _type:`, cleaned[key]);
+          }
+          // 2. Objetos com apenas value
+          else if (value && typeof value === 'object' && 'value' in value && !('_type' in value)) {
+            cleaned[key] = value.value;
+          }
+        });
+        
         // Limpar URLs blob inválidas
         if (cleaned.imagem?.startsWith('blob:')) {
           this.revokeAndRemoveBlobUrl(cleaned.imagem);

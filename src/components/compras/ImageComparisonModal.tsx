@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Save, X } from 'lucide-react';
+import { Save, X, Trash2, Upload } from 'lucide-react';
 import { useToastFeedback } from '@/hooks/useToastFeedback';
 
 interface ImageComparisonModalProps {
@@ -18,6 +18,10 @@ interface ImageComparisonModalProps {
     rowIndex: number;
   };
   onSaveObservacoes: (rowIndex: number, observacoes: string) => void;
+  onDeleteImagemPrincipal?: (rowIndex: number) => void;
+  onDeleteImagemFornecedor?: (rowIndex: number) => void;
+  onUploadImagemPrincipal?: (rowIndex: number, file: File) => Promise<void>;
+  onUploadImagemFornecedor?: (rowIndex: number, file: File) => Promise<void>;
 }
 
 export function ImageComparisonModal({
@@ -27,11 +31,18 @@ export function ImageComparisonModal({
   imagemFornecedor,
   observacoes = '',
   produtoInfo,
-  onSaveObservacoes
+  onSaveObservacoes,
+  onDeleteImagemPrincipal,
+  onDeleteImagemFornecedor,
+  onUploadImagemPrincipal,
+  onUploadImagemFornecedor
 }: ImageComparisonModalProps) {
   const [editedObservacoes, setEditedObservacoes] = useState(observacoes);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const { showSuccess, showError } = useToastFeedback();
+  const inputPrincipalRef = useRef<HTMLInputElement>(null);
+  const inputFornecedorRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEditedObservacoes(observacoes);
@@ -56,6 +67,48 @@ export function ImageComparisonModal({
   const handleClose = () => {
     setEditedObservacoes(observacoes);
     onClose();
+  };
+
+  const handleDeletePrincipal = () => {
+    if (!produtoInfo || !onDeleteImagemPrincipal) return;
+    onDeleteImagemPrincipal(produtoInfo.rowIndex);
+    showSuccess('Imagem principal removida');
+  };
+
+  const handleDeleteFornecedor = () => {
+    if (!produtoInfo || !onDeleteImagemFornecedor) return;
+    onDeleteImagemFornecedor(produtoInfo.rowIndex);
+    showSuccess('Imagem do fornecedor removida');
+  };
+
+  const handleUploadPrincipal = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!produtoInfo || !onUploadImagemPrincipal || !e.target.files?.[0]) return;
+    
+    setIsUploading(true);
+    try {
+      await onUploadImagemPrincipal(produtoInfo.rowIndex, e.target.files[0]);
+      showSuccess('Imagem principal atualizada');
+    } catch (error) {
+      showError('Erro ao fazer upload da imagem');
+    } finally {
+      setIsUploading(false);
+      if (inputPrincipalRef.current) inputPrincipalRef.current.value = '';
+    }
+  };
+
+  const handleUploadFornecedor = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!produtoInfo || !onUploadImagemFornecedor || !e.target.files?.[0]) return;
+    
+    setIsUploading(true);
+    try {
+      await onUploadImagemFornecedor(produtoInfo.rowIndex, e.target.files[0]);
+      showSuccess('Imagem do fornecedor atualizada');
+    } catch (error) {
+      showError('Erro ao fazer upload da imagem');
+    } finally {
+      setIsUploading(false);
+      if (inputFornecedorRef.current) inputFornecedorRef.current.value = '';
+    }
   };
 
   return (
@@ -88,10 +141,42 @@ export function ImageComparisonModal({
           <div className="grid grid-cols-2 gap-6">
             {/* Imagem Principal */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Imagem Principal</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Imagem Principal</Label>
+                <div className="flex gap-2">
+                  <input
+                    ref={inputPrincipalRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleUploadPrincipal}
+                    disabled={isUploading}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => inputPrincipalRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    {imagemPrincipal ? 'Substituir' : 'Adicionar'}
+                  </Button>
+                  {imagemPrincipal && onDeleteImagemPrincipal && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeletePrincipal}
+                      disabled={isUploading}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Excluir
+                    </Button>
+                  )}
+                </div>
+              </div>
               <div className="border rounded-lg p-3 bg-background">
                 {imagemPrincipal ? (
-                  <div className="relative">
+                  <div className="relative group">
                     <img
                       src={imagemPrincipal}
                       alt="Imagem Principal"
@@ -121,10 +206,42 @@ export function ImageComparisonModal({
 
             {/* Imagem do Fornecedor */}
             <div className="space-y-3">
-              <Label className="text-sm font-medium">Imagem do Fornecedor</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">Imagem do Fornecedor</Label>
+                <div className="flex gap-2">
+                  <input
+                    ref={inputFornecedorRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleUploadFornecedor}
+                    disabled={isUploading}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => inputFornecedorRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    {imagemFornecedor ? 'Substituir' : 'Adicionar'}
+                  </Button>
+                  {imagemFornecedor && onDeleteImagemFornecedor && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeleteFornecedor}
+                      disabled={isUploading}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Excluir
+                    </Button>
+                  )}
+                </div>
+              </div>
               <div className="border rounded-lg p-3 bg-background">
                 {imagemFornecedor ? (
-                  <div className="relative">
+                  <div className="relative group">
                     <img
                       src={imagemFornecedor}
                       alt="Imagem do Fornecedor"
@@ -174,7 +291,7 @@ export function ImageComparisonModal({
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={isSaving}
+              disabled={isSaving || isUploading}
               size="sm"
               className="gap-2"
             >

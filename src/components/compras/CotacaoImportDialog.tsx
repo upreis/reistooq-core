@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useCotacoesArquivos } from "@/hooks/useCotacoesArquivos";
 import { useToast } from "@/hooks/use-toast";
+import { extrairImagensDoExcel, converterImagensParaDataURL } from '@/utils/excelImageExtractor';
 import * as XLSX from 'xlsx';
 
 interface CotacaoImportDialogProps {
@@ -121,42 +122,162 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       console.log('✅ Upload simulado concluído:', arquivoUpload);
       setProgressoUpload(30);
 
-      // Ler arquivo com extração de imagens
-      console.log('📖 Lendo arquivo com extração de imagens...');
-      const { dados, imagens } = await lerArquivoComImagens(file);
-      console.log('📊 Dados extraídos:', { totalDados: dados.length, totalImagens: imagens.length });
+      // PASSO 1: Extrair dados normais
+      console.log('📊 [POSIÇÃO] PASSO 1: Extraindo dados da planilha...');
+      const dados = await lerArquivo(file);
+      console.log('📊 [POSIÇÃO] Dados extraídos:', dados.length, 'produtos');
+      setProgressoUpload(30);
+      
+      // PASSO 2: Extrair imagens por posição
+      console.log('📸 [POSIÇÃO] PASSO 2: Extraindo imagens por posicionamento...');
+      const imagensExtraidas = await extrairImagensDoExcel(file);
+      console.log('📸 [POSIÇÃO] Imagens extraídas:', imagensExtraidas.length);
       setProgressoUpload(50);
-
-      // Converter imagens para Data URLs para persistir além do reload
-      let imagensUpload: {nome: string, url: string, linha: number, coluna: string}[] = [];
-      if (imagens.length > 0) {
-        console.log('☁️ Convertendo imagens para Data URLs...');
-        imagensUpload = await Promise.all(
-          imagens.map(async (img, index) => {
-            // Converter blob para data URL para persistir
-            const reader = new FileReader();
-            const dataUrl = await new Promise<string>((resolve) => {
-              reader.onload = () => resolve(reader.result as string);
-              reader.readAsDataURL(img.blob);
-            });
-            
-            return {
-              nome: `imagem-${index}.png`,
-              url: dataUrl,
-              linha: img.linha,
-              coluna: img.coluna
-            };
-          })
-        );
-        console.log('✅ Imagens convertidas para Data URLs:', imagensUpload.length);
-      }
+      
+      // PASSO 3: Converter para Data URL
+      console.log('🔄 [POSIÇÃO] PASSO 3: Convertendo imagens...');
+      const imagensProcessadas = await converterImagensParaDataURL(imagensExtraidas);
+      console.log('🔄 [POSIÇÃO] Imagens processadas:', imagensProcessadas.length);
       setProgressoUpload(70);
+      
+      // DEBUG DETALHADO POR TIPO
+      const imagensPrincipais = imagensProcessadas.filter(img => img.tipoColuna === 'IMAGEM');
+      const imagensFornecedor = imagensProcessadas.filter(img => img.tipoColuna === 'IMAGEM_FORNECEDOR');
+      
+      console.log('🎯 [AUDITORIA] DISTRIBUIÇÃO DE IMAGENS:');
+      console.log(`  📊 Total: ${imagensProcessadas.length} imagens`);
+      console.log(`  📸 Coluna B (IMAGEM): ${imagensPrincipais.length} imagens`);
+      console.log(`  🏭 Coluna C (IMAGEM_FORNECEDOR): ${imagensFornecedor.length} imagens`);
+      
+      console.log('\n🎯 [AUDITORIA] DETALHES DAS IMAGENS PRINCIPAIS (COLUNA B):');
+      imagensPrincipais.slice(0, 3).forEach((img, i) => {
+        console.log(`  ${i + 1}. SKU: ${img.sku} | Nome: ${img.nome} | Tipo: ${img.tipoColuna} | Linha: ${img.linha}`);
+      });
+      
+      console.log('\n🎯 [AUDITORIA] DETALHES DAS IMAGENS FORNECEDOR (COLUNA C):');
+      imagensFornecedor.slice(0, 3).forEach((img, i) => {
+        console.log(`  ${i + 1}. SKU: ${img.sku} | Nome: ${img.nome} | Tipo: ${img.tipoColuna} | Linha: ${img.linha}`);
+      });
+      
+      // CORRELACIONAR IMAGENS COM PRODUTOS (SEPARANDO POR TIPO)
+      console.log('\n🔗 [AUDITORIA] CORRELACIONANDO IMAGENS COM PRODUTOS...');
+      console.log(`📊 Total de produtos: ${dados.length}`);
+      console.log(`📸 Total de imagens disponíveis: ${imagensProcessadas.length}`);
+      
+      const produtosComImagens = dados.map((produto, idx) => {
+        const skuProduto = produto.sku || produto.SKU;
+        
+        // Buscar imagem principal (coluna B)
+        const imagemPrincipal = imagensProcessadas.find(img => 
+          (img.sku === produto.sku || img.sku === String(produto.sku) ||
+           img.sku === produto.SKU || img.sku === String(produto.SKU)) &&
+          img.tipoColuna === 'IMAGEM'
+        );
+        
+        // Buscar imagem de fornecedor (coluna C)
+        const imagemFornecedor = imagensProcessadas.find(img => 
+          (img.sku === produto.sku || img.sku === String(produto.sku) ||
+           img.sku === produto.SKU || img.sku === String(produto.SKU)) &&
+          img.tipoColuna === 'IMAGEM_FORNECEDOR'
+        );
+        
+        // Log apenas dos primeiros 3 produtos para não sobrecarregar console
+        if (idx < 3) {
+          console.log(`\n🔍 [CORRELAÇÃO] Produto ${idx + 1}:`)
+          console.log(`  - SKU: ${skuProduto}`);
+          console.log(`  - Imagem Principal (B): ${imagemPrincipal ? '✅ ENCONTRADA' : '❌ NÃO ENCONTRADA'}`);
+          if (imagemPrincipal) console.log(`    → Nome: ${imagemPrincipal.nome}`);
+          console.log(`  - Imagem Fornecedor (C): ${imagemFornecedor ? '✅ ENCONTRADA' : '❌ NÃO ENCONTRADA'}`);
+          if (imagemFornecedor) console.log(`    → Nome: ${imagemFornecedor.nome}`);
+        }
+        
+        return {
+          ...produto,
+          imagem: imagemPrincipal?.url || '',
+          imagem_fornecedor: imagemFornecedor?.url || '',
+          nomeImagem: imagemPrincipal?.nome || ''
+        };
+      });
+      
+      const comImagemPrincipal = produtosComImagens.filter(p => p.imagem).length;
+      const comImagemFornecedor = produtosComImagens.filter(p => p.imagem_fornecedor).length;
+      const semImagens = produtosComImagens.filter(p => !p.imagem && !p.imagem_fornecedor).length;
+      
+      console.log('\n✅ [AUDITORIA] ==================== RESULTADO FINAL ====================');
+      console.log(`📊 Total de produtos processados: ${produtosComImagens.length}`);
+      console.log(`📸 Produtos com imagem principal (coluna B): ${comImagemPrincipal} (${(comImagemPrincipal/produtosComImagens.length*100).toFixed(1)}%)`);
+      console.log(`🏭 Produtos com imagem fornecedor (coluna C): ${comImagemFornecedor} (${(comImagemFornecedor/produtosComImagens.length*100).toFixed(1)}%)`);
+      console.log(`⚠️ Produtos sem imagens: ${semImagens} (${(semImagens/produtosComImagens.length*100).toFixed(1)}%)`);
+      console.log('================================================================\n');
+      setProgressoUpload(80);
+      
+      let dadosProcessados = produtosComImagens;
+      
+      try {
+        // MAPEAR TODOS OS CAMPOS DO EXCEL PARA ESTRUTURA COMPLETA
+        dadosProcessados = produtosComImagens.map((item, index) => ({
+          id: `produto-${index}`,
+          
+          // CAMPOS BÁSICOS
+          sku: item.SKU || item.sku || `PROD-${index + 1}`,
+          material: item.Material || item.material || '',
+          cor: item.Cor || item.cor || '',
+          nome_produto: item['Nome do Produto'] || item.PRODUTO || item.produto || `Produto ${index + 1}`,
+          package: item.Package || item.package || '',
+          
+          // PREÇOS E QUANTIDADES
+          preco_unitario: Number(item.Preço || item.PRECO_UNITARIO || item.preco || 0),
+          unidade: item['Unid.'] || item.UNIT || item.unidade || 'un',
+          pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
+          caixas: Number(item.Caixas || item.caixas || 0),
+          quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
+          valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
+          
+          // PESOS (EM GRAMAS E QUILOS)
+          peso_unitario_g: Number(item['Peso Unit. (g)'] || item.peso_unitario || 0),
+          peso_embalagem_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_embalagem || 0),
+          peso_sem_embalagem_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || 0),
+          peso_total_embalagem_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_bruto || 0),
+          peso_total_sem_embalagem_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_liquido || 0),
+          
+          // DIMENSÕES (EM CENTÍMETROS)
+          comprimento_cm: Number(item['Comp. (cm)'] || item.comprimento || 0),
+          largura_cm: Number(item['Larg. (cm)'] || item.largura || 0),
+          altura_cm: Number(item['Alt. (cm)'] || item.altura || 0),
+          
+          // CUBAGEM
+          cbm_cubagem: Number(item['CBM Cubagem'] || item.cbm_unitario || 0),
+          cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
+          
+          // OBSERVAÇÕES E IMAGENS
+          observacoes: item['Obs.'] || item.OBSERVACOES || item.observacoes || '',
+          
+          // CAMPOS DE IMAGEM
+          imagem: item.imagem || '',
+          imagem_fornecedor: item.imagem_fornecedor || '',
+          nomeImagem: item.nomeImagem || ''
+        }));
 
-      // Processar dados associando com imagens
-      console.log('⚙️ Processando dados e associando imagens...');
-      const dadosProcessados = processarDados(dados, imagensUpload);
-      console.log('✅ Dados processados:', { totalProdutos: dadosProcessados.length });
-      console.log('🔍 Primeiro produto com imagens:', dadosProcessados.find(p => p.imagem || p.imagem_fornecedor));
+        console.log('✅ Dados processados com TODOS os campos:', { 
+          totalProdutos: dadosProcessados.length,
+          camposExemplo: dadosProcessados[0] ? Object.keys(dadosProcessados[0]) : [],
+          primeiroItem: dadosProcessados[0]
+        });
+        
+      } catch (error) {
+        console.error('❌ Erro no processamento de dados completos:', error);
+        // Fallback mais robusto mantendo estrutura mínima
+        dadosProcessados = produtosComImagens.map((item, index) => ({
+          id: `fallback-${index}`,
+          sku: item.SKU || item.sku || `PROD-${index + 1}`,
+          nome_produto: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,
+          preco_unitario: Number(item.Preço || item.preco || 0),
+          quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
+          valor_total: Number(item['Valor Total'] || item.valor_total || 0),
+          imagem: item.imagem || '',
+          imagem_fornecedor: item.imagem_fornecedor || ''
+        }));
+      }
       setProgressoUpload(90);
 
       // Simular salvamento de dados
