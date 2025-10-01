@@ -802,7 +802,7 @@ export function useCotacoesArquivos() {
         });
         console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
         
-        // ✅ ALIASES para compatibilidade (criar DEPOIS das imagens)
+        // ✅ ALIASES COMPLETOS para compatibilidade
         return {
           ...produtoMapeado,
           preco_unitario: produtoMapeado.preco,
@@ -811,7 +811,13 @@ export function useCotacoesArquivos() {
           largura_cm: produtoMapeado.largura,
           altura_cm: produtoMapeado.altura,
           cbm_unitario: produtoMapeado.cbm_cubagem,
-          nome: produtoMapeado.nome_produto
+          nome: produtoMapeado.nome_produto,
+          package_qtd: produtoMapeado.pcs_ctn,
+          qtd_caixas_pedido: produtoMapeado.caixas,
+          peso_emb_master_kg: produtoMapeado.peso_cx_master_kg,
+          peso_sem_emb_master_kg: produtoMapeado.peso_sem_cx_master_kg,
+          peso_total_emb_kg: produtoMapeado.peso_total_cx_master_kg,
+          peso_total_sem_emb_kg: produtoMapeado.peso_total_sem_cx_master_kg
         };
       }
       
@@ -881,16 +887,27 @@ export function useCotacoesArquivos() {
         }
       }
       
-      // ✅ ALIASES para compatibilidade (criar DEPOIS das imagens)
+      // ✅ ALIASES COMPLETOS para compatibilidade com a tabela
       return {
         ...produtoMapeado,
+        // Aliases de preço/valores
         preco_unitario: produtoMapeado.preco,
+        // Aliases de medidas
         unidade_medida: produtoMapeado.unit,
         comprimento_cm: produtoMapeado.comprimento,
         largura_cm: produtoMapeado.largura,
         altura_cm: produtoMapeado.altura,
         cbm_unitario: produtoMapeado.cbm_cubagem,
-        nome: produtoMapeado.nome_produto
+        // Aliases de nome/descrição
+        nome: produtoMapeado.nome_produto,
+        // Aliases de package/quantidade
+        package_qtd: produtoMapeado.pcs_ctn,
+        qtd_caixas_pedido: produtoMapeado.caixas,
+        // Aliases de peso
+        peso_emb_master_kg: produtoMapeado.peso_cx_master_kg,
+        peso_sem_emb_master_kg: produtoMapeado.peso_sem_cx_master_kg,
+        peso_total_emb_kg: produtoMapeado.peso_total_cx_master_kg,
+        peso_total_sem_emb_kg: produtoMapeado.peso_total_sem_cx_master_kg
       };
     });
   }, []);
