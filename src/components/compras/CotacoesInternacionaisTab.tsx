@@ -1071,12 +1071,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   
   // Função para lidar com dados importados
   const handleImportSuccess = useCallback(async (dadosImportados: any[]) => {
-    console.log('📥 [DEBUG] Dados recebidos na importação:', dadosImportados);
-    console.log('📥 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
-    console.log('📥 [DEBUG] Campos disponíveis:', Object.keys(dadosImportados[0] || {}));
-    
     if (!dadosImportados || dadosImportados.length === 0) {
-      console.error('❌ [DEBUG] Nenhum dado para importar');
       toast({
         title: "Erro na importação",
         description: "Nenhum dado foi recebido para importação.",
@@ -1084,18 +1079,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       });
       return;
     }
-    
-    console.log('📋 [IMPORT] Recebendo dados já processados pelo hook. Total de produtos:', dadosImportados.length);
-    console.log('📋 [CAMPOS] Verificando campos do primeiro produto:');
-    const primeiro = dadosImportados[0];
-    console.log('  - material:', primeiro?.material);
-    console.log('  - cor:', primeiro?.cor);
-    console.log('  - nome_produto:', primeiro?.nome_produto);
-    console.log('  - nome:', primeiro?.nome);
-    console.log('  - preco:', primeiro?.preco);
-    console.log('  - preco_unitario:', primeiro?.preco_unitario);
-    console.log('  - package_qtd:', primeiro?.package_qtd);
-    console.log('  - pcs_ctn:', primeiro?.pcs_ctn);
     
     // ✅ USAR DADOS JÁ MAPEADOS PELO HOOK - não refazer mapeamento!
     const novosProdutos = dadosImportados.map((produto, index) => ({

@@ -228,27 +228,144 @@ export function useCotacoesArquivos() {
     }
   }, [toast]);
 
-  const downloadTemplate = useCallback((formato?: 'csv' | 'excel') => {
+  const downloadTemplate = useCallback(async (formato?: 'csv' | 'excel') => {
+    // ✅ COLUNAS EXATAS que o sistema espera (baseadas no mapeamento real)
     const headers = [
-      'SKU', 'Material', 'Cor', 'Nome do Produto', 'Package', 'Preço', 'Unid.', 
-      'PCS/CTN', 'Caixas', 'Peso Unit. (g)', 'Peso Emb. Master (KG)', 
-      'Peso S/ Emb. Master (KG)', 'Peso Total Emb. (KG)', 'Peso Total S/ Emb. (KG)',
-      'Comp. (cm)', 'Larg. (cm)', 'Alt. (cm)', 'CBM Cubagem', 'CBM Total', 
-      'Qtd. Total', 'Valor Total', 'Obs.'
+      'SKU',                                    // Obrigatório
+      'IMAGEM',                                 // Coluna para imagem principal
+      'IMAGEM_FORNECEDOR',                      // Coluna para imagem do fornecedor
+      'MATERIAL',                               // Material do produto
+      'COR',                                    // Cor do produto
+      'Nome do Produto',                        // Nome/descrição
+      'PACKAGE',                                // Embalagem
+      'PREÇO',                                  // Preço unitário
+      'UNIT',                                   // Unidade (pc, kg, etc)
+      'PCS/CTN',                                // Peças por caixa
+      'CAIXAS',                                 // Quantidade de caixas
+      'PESO UNITARIO(g)',                       // Peso unitário em gramas
+      'Peso embalado cx Master (KG)',           // Peso com embalagem master
+      'Peso Sem embalagem cx Master (KG)',      // Peso sem embalagem master
+      'PESO TOTAL EMBALADO (KG)',               // Peso total com embalagem
+      'PESO TOTAL SEM EMBALAGEM (KG)',          // Peso total sem embalagem
+      'COMP. (CM)',                             // Comprimento
+      'LARG. (CM)',                             // Largura
+      'ALT. (CM)',                              // Altura
+      'CBM CUBAGEM',                            // CBM unitário
+      'CBM TOTAL',                              // CBM total
+      'QTD. TOTAL',                             // Quantidade total
+      'VALOR TOTAL',                            // Valor total
+      'OBS.'                                    // Observações
     ];
 
-    const csvContent = headers.join(',') + '\n' + 
-      'CMD-001,Plástico,Azul,Produto Exemplo,Caixa 12un,10.50,pc,12,5,250,1.2,10.8,6.0,54.0,15.0,10.0,8.0,0.0012,0.006,60,630.00,Produto de exemplo para cotação';
+    if (formato === 'excel') {
+      // Criar Excel com ExcelJS para permitir colar imagens
+      const ExcelJS = (await import('exceljs')).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Cotação');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'template_cotacao_completo.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // Adicionar cabeçalhos
+      worksheet.addRow(headers);
+      
+      // Estilizar cabeçalho
+      worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4F46E5' }
+      };
+      
+      // Ajustar largura das colunas
+      worksheet.columns = [
+        { width: 15 },  // SKU
+        { width: 20 },  // IMAGEM
+        { width: 20 },  // IMAGEM_FORNECEDOR
+        { width: 20 },  // MATERIAL
+        { width: 15 },  // COR
+        { width: 30 },  // Nome do Produto
+        { width: 20 },  // PACKAGE
+        { width: 12 },  // PREÇO
+        { width: 10 },  // UNIT
+        { width: 12 },  // PCS/CTN
+        { width: 12 },  // CAIXAS
+        { width: 18 },  // PESO UNITARIO
+        { width: 25 },  // Peso embalado
+        { width: 28 },  // Peso sem embalagem
+        { width: 25 },  // Peso total embalado
+        { width: 28 },  // Peso total sem embalagem
+        { width: 12 },  // COMP
+        { width: 12 },  // LARG
+        { width: 12 },  // ALT
+        { width: 15 },  // CBM
+        { width: 15 },  // CBM TOTAL
+        { width: 15 },  // QTD TOTAL
+        { width: 15 },  // VALOR TOTAL
+        { width: 30 }   // OBS
+      ];
+
+      // Adicionar linha de exemplo
+      worksheet.addRow([
+        'CMD-001',
+        '(Cole imagem aqui)',
+        '(Cole imagem aqui)',
+        'Plástico',
+        'Azul',
+        'Produto Exemplo',
+        'Caixa 12un',
+        '10.50',
+        'pc',
+        '12',
+        '5',
+        '250',
+        '1.2',
+        '10.8',
+        '6.0',
+        '54.0',
+        '15.0',
+        '10.0',
+        '8.0',
+        '0.0012',
+        '0.006',
+        '60',
+        '630.00',
+        'Produto de exemplo'
+      ]);
+
+      // Adicionar mais 5 linhas vazias para facilitar preenchimento
+      for (let i = 0; i < 5; i++) {
+        worksheet.addRow(Array(headers.length).fill(''));
+      }
+
+      // Gerar arquivo
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'template_cotacao_internacional.xlsx');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Formato CSV
+      const csvContent = headers.join(',') + '\n' + 
+        'CMD-001,,,"Plástico","Azul","Produto Exemplo","Caixa 12un","10.50","pc","12","5","250","1.2","10.8","6.0","54.0","15.0","10.0","8.0","0.0012","0.006","60","630.00","Produto de exemplo"';
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'template_cotacao_internacional.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
   }, []);
 
   const lerArquivoComImagens = useCallback(async (
@@ -580,30 +697,6 @@ export function useCotacoesArquivos() {
       }
       
       // ✅ SOLUÇÃO HÍBRIDA: Mapeamento robusto de todas as colunas
-      // Logs de debug apenas para as primeiras 3 linhas
-      if (index < 3) {
-        console.log(`\n🔍 ========== LINHA ${index + 1} - DADOS BRUTOS ==========`);
-        console.log('Colunas disponíveis:', Object.keys(linha));
-        console.log('Valores de Material:', {
-          'MATERIAL': linha.MATERIAL,
-          'material': linha.material,
-          'Material': linha.Material
-        });
-        console.log('Valores de Cor:', {
-          'COR': linha.COR,
-          'cor': linha.cor,
-          'Cor': linha.Cor
-        });
-        console.log('Valores de Preço:', {
-          'PREÇO': linha.PREÇO,
-          'PRECO': linha.PRECO,
-          'preco': linha.preco,
-          'Preço': linha.Preço,
-          'Preco': linha.Preco
-        });
-        console.log('========================================================\n');
-      }
-      
       const produtoMapeado = {
         // ===== DADOS BÁSICOS ===== (NOMES DO SISTEMA ANTIGO)
         sku: extrairValorExcel(linha.SKU || linha.sku) || `PROD-${index + 1}`,
