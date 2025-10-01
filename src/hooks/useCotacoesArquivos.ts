@@ -495,33 +495,34 @@ export function useCotacoesArquivos() {
     console.log('🖼️ [SKU_SYSTEM] Imagens para associação:', imagensUpload.length);
     
     return dados.map((item, index) => {
-      // Mapeamento de campos (nomes conforme interface ProdutoCotacao)
+      // Mapeamento de campos (compatível com a interface de exibição)
       const produtoMapeado = {
         ...item,
         sku: item.SKU || item.sku || `PROD-${index + 1}`,
-        nome: item['Nome do Produto'] || item.PRODUTO || item.produto || item.nome_produto || item.nome || '',
-        preco_unitario: Number(item['Preço'] || item.PRECO_UNITARIO || item.preco_unitario || item.preco) || 0,
+        nome_produto: item['Nome do Produto'] || item.PRODUTO || item.produto || item.nome_produto || item.nome || '',
+        preco: Number(item['Preço'] || item.PRECO_UNITARIO || item.preco_unitario || item.preco) || 0,
         quantidade_total: Number(item.QUANTIDADE || item.quantidade) || 1,
         valor_total: Number(item.PRECO_TOTAL || item.preco_total || item.valor_total) || 0,
         material: item.Material || item.material || '',
         cor: item.Cor || item.cor || item.COR || '',
-        package_qtd: Number(item.Package || item.package || item.PACKAGE) || 1,
-        unidade_medida: item['Unid.'] || item.unit || item.Unit || item.UNIT || 'pc',
+        package: Number(item.Package || item.package || item.PACKAGE) || 1,
+        unit: item['Unid.'] || item.unit || item.Unit || item.UNIT || 'pc',
         pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || item.PCS_CTN) || 0,
-        qtd_caixas_pedido: Number(item.Caixas || item.caixas || item.CAIXAS) || 1,
+        caixas: Number(item.Caixas || item.caixas || item.CAIXAS) || 1,
         peso_unitario_g: Number(item['Peso Unit. (g)'] || item.peso_unitario_g) || 0,
-        peso_emb_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_emb_master_kg) || 0,
-        peso_sem_emb_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_sem_emb_master_kg) || 0,
-        peso_total_emb_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_emb_kg) || 0,
-        peso_total_sem_emb_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_sem_emb_kg) || 0,
-        comprimento_cm: Number(item['Comp. (cm)'] || item.comprimento_cm) || 0,
-        largura_cm: Number(item['Larg. (cm)'] || item.largura_cm) || 0,
-        altura_cm: Number(item['Alt. (cm)'] || item.altura_cm) || 0,
-        cbm_unitario: Number(item['CBM Cubagem'] || item.cbm_cubagem || item.cbm_unitario) || 0,
+        peso_cx_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_emb_master_kg || item.peso_cx_master_kg) || 0,
+        peso_sem_cx_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_sem_emb_master_kg || item.peso_sem_cx_master_kg) || 0,
+        peso_total_cx_master_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_emb_kg || item.peso_total_cx_master_kg) || 0,
+        peso_total_sem_cx_master_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_sem_emb_kg || item.peso_total_sem_cx_master_kg) || 0,
+        comprimento: Number(item['Comp. (cm)'] || item.comprimento_cm || item.comprimento) || 0,
+        largura: Number(item['Larg. (cm)'] || item.largura_cm || item.largura) || 0,
+        altura: Number(item['Alt. (cm)'] || item.altura_cm || item.altura) || 0,
+        cbm_cubagem: Number(item['CBM Cubagem'] || item.cbm_cubagem || item.cbm_unitario) || 0,
         cbm_total: 0, // Calculado depois
         peso_total_kg: 0, // Calculado depois
         imagem: '',
-        imagem_fornecedor: ''
+        imagem_fornecedor: '',
+        obs: item['Obs.'] || item.obs || item.observacoes || ''
       };
       
       // Auditoria simplificada
