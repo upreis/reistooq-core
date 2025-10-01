@@ -927,13 +927,28 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // CORREÇÃO: Calcular valores dinamicamente sem criar loop
   const displayProductsWithCalculations = useMemo(() => {
-    return productData.map(product => ({
-      ...product,
-      change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
-      change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
-      multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-    }));
+    console.log('🔄 [useMemo] Recalculando displayProductsWithCalculations. productData.length:', productData.length);
+    
+    if (productData.length === 0) {
+      console.warn('⚠️ [useMemo] productData está vazio!');
+      return [];
+    }
+    
+    try {
+      const result = productData.map(product => ({
+        ...product,
+        change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
+        change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+        multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
+        multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+      }));
+      
+      console.log('✅ [useMemo] Resultado calculado com sucesso. Length:', result.length);
+      return result;
+    } catch (error) {
+      console.error('❌ [useMemo] Erro ao calcular produtos:', error);
+      return productData; // Retorna sem cálculos em caso de erro
+    }
   }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   // Funções para edição inline
@@ -973,7 +988,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // CORREÇÃO: Usar produtos com cálculos dinâmicos
   const displayProducts = displayProductsWithCalculations;
   
-  // Remover logs excessivos que causam loop infinito
+  // Debug: Log quando displayProducts mudar
+  useEffect(() => {
+    console.log('📊 [displayProducts CHANGED] Novo length:', displayProducts.length);
+    if (displayProducts.length > 0) {
+      console.log('📊 [displayProducts] Primeiro produto:', {
+        sku: displayProducts[0]?.sku,
+        material: displayProducts[0]?.material,
+        cor: displayProducts[0]?.cor,
+        preco: displayProducts[0]?.preco
+      });
+    }
+  }, [displayProducts]);
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
@@ -1130,14 +1156,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
     
-    // Força atualização da UI
-    setTimeout(() => {
-      console.log('🎯 [handleImportSuccess] setTimeout - productData.length atual:', productData.length);
-      if (productData.length === 0 && novosProdutos.length > 0) {
-        console.log('🎯 [handleImportSuccess] Forçando atualização com setTimeout');
-        setProductData([...novosProdutos]); // força nova referência
-      }
-    }, 100);
+    // NÃO USAR setTimeout aqui - causa bugs de estado
     
     toast({
       title: "Importação concluída!",
@@ -1836,19 +1855,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     </TableRow>
                   </TableHeader>
                    <TableBody>
-                     {(() => {
-                       console.log('🔍 [AUDIT] displayProducts:', displayProducts.length);
-                       if (displayProducts.length > 0) {
-                         console.log('🔍 [AUDIT] Primeiro produto completo:', displayProducts[0]);
-                         console.log('🔍 [AUDIT] Campos críticos do primeiro produto:', {
-                           sku: displayProducts[0].sku,
-                           material: displayProducts[0].material,
-                           cor: displayProducts[0].cor,
-                           preco_unitario: displayProducts[0].preco_unitario,
-                           preco: displayProducts[0].preco
-                         });
-                       }
-                       return displayProducts.map((product: any, index: number) => (
+                     {displayProducts.map((product: any, index: number) => (
                         <TableRow key={index} className="hover:bg-muted/30 border-b border-border/50">
                           <TableCell className="text-center py-3">
                            <input 
@@ -2015,10 +2022,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                            <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                        </TableRow>
-                      ));
-                     })()}
-                     </TableBody>
+                         </TableRow>
+                       ))}
+                   </TableBody>
                  </Table>
               </div>
               
