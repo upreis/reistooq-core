@@ -12,6 +12,7 @@ import {
 } from '@/utils/cotacaoTypeGuards';
 import { useSecureCotacoes } from '@/hooks/useSecureCotacoes';
 import { validateFileUpload, sanitizeInput, logSecurityEvent } from '@/utils/inputValidation';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +27,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { EditableCell } from './EditableCell';
 import ContainerVisualization from './ContainerVisualization';
-import { CotacaoImportDialog } from './CotacaoImportDialog';
+const CotacaoImportDialog = React.lazy(() => import('./CotacaoImportDialog').then(m => ({ default: m.CotacaoImportDialog })));
 import { ImageComparisonModal } from './ImageComparisonModal';
 import { ProdutoImagemPreview } from './ProdutoImagemPreview';
 import { 
@@ -277,6 +278,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     secureDeleteCotacao, 
     loading: saveLoading 
   } = useSecureCotacoes();
+  const { uploadImage, uploading: imageUploading } = useImageUpload();
 
   // CORREÇÃO: Funções memoizadas para seleção múltipla
   const toggleSelectMode = useCallback(() => {
@@ -391,6 +393,97 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return newData;
     });
   }, []);
+
+  // Funções para gerenciar imagens no modal de comparação
+  const handleDeleteImagemPrincipal = useCallback((rowIndex: number) => {
+    setProductData(prevData => {
+      const newData = [...prevData];
+      if (newData[rowIndex]) {
+        newData[rowIndex] = { ...newData[rowIndex], imagem: '' };
+      }
+      SessionStorageManager.saveProducts(newData);
+      return newData;
+    });
+    
+    // Atualizar o modal
+    setImageComparisonModal(prev => ({
+      ...prev,
+      imagemPrincipal: ''
+    }));
+  }, []);
+
+  const handleDeleteImagemFornecedor = useCallback((rowIndex: number) => {
+    setProductData(prevData => {
+      const newData = [...prevData];
+      if (newData[rowIndex]) {
+        newData[rowIndex] = { ...newData[rowIndex], imagem_fornecedor: '' };
+      }
+      SessionStorageManager.saveProducts(newData);
+      return newData;
+    });
+    
+    // Atualizar o modal
+    setImageComparisonModal(prev => ({
+      ...prev,
+      imagemFornecedor: ''
+    }));
+  }, []);
+
+  const handleUploadImagemPrincipal = useCallback(async (rowIndex: number, file: File) => {
+    try {
+      const result = await uploadImage(file, `cotacoes/imagens-produtos/${Date.now()}-${file.name}`);
+      
+      if (result.success && result.url) {
+        setProductData(prevData => {
+          const newData = [...prevData];
+          if (newData[rowIndex]) {
+            newData[rowIndex] = { ...newData[rowIndex], imagem: result.url };
+          }
+          SessionStorageManager.saveProducts(newData);
+          return newData;
+        });
+        
+        // Atualizar o modal
+        setImageComparisonModal(prev => ({
+          ...prev,
+          imagemPrincipal: result.url
+        }));
+      } else {
+        throw new Error(result.error || 'Erro ao fazer upload');
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      throw error;
+    }
+  }, [uploadImage]);
+
+  const handleUploadImagemFornecedor = useCallback(async (rowIndex: number, file: File) => {
+    try {
+      const result = await uploadImage(file, `cotacoes/imagens-fornecedor/${Date.now()}-${file.name}`);
+      
+      if (result.success && result.url) {
+        setProductData(prevData => {
+          const newData = [...prevData];
+          if (newData[rowIndex]) {
+            newData[rowIndex] = { ...newData[rowIndex], imagem_fornecedor: result.url };
+          }
+          SessionStorageManager.saveProducts(newData);
+          return newData;
+        });
+        
+        // Atualizar o modal
+        setImageComparisonModal(prev => ({
+          ...prev,
+          imagemFornecedor: result.url
+        }));
+      } else {
+        throw new Error(result.error || 'Erro ao fazer upload');
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      throw error;
+    }
+  }, [uploadImage]);
 
   // Handler para produtos selecionados do seletor avançado
   const handleProductSelectorConfirm = (selectedProducts: any[]) => {
@@ -821,32 +914,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return value > 0 ? value : 5.44;
   };
 
-  // Effect para recalcular produtos quando divisores/multiplicadores mudarem
-  useEffect(() => {
-    if (productData.length > 0) {
-      const updatedProducts = productData.map(product => ({
-        ...product,
-        change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
-        change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-        multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
-        multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-      }));
-      
-      setProductData(updatedProducts);
-      
-      // Salvar no sessionStorage
-      try {
-        const cleanedProducts = updatedProducts.map(product => ({
-          ...product,
-          imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-          imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-        }));
-        sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
-      } catch (error) {
-        console.warn('Erro ao salvar no sessionStorage:', error);
-      }
-    }
-  }, [changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
+  // CORREÇÃO: Calcular valores dinamicamente sem criar loop
+  const displayProductsWithCalculations = useMemo(() => {
+    return productData.map(product => ({
+      ...product,
+      change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+      multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+    }));
+  }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
@@ -882,8 +959,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return currency?.symbol || currencyCode;
   }, []);
 
-  // Usar apenas productData - sem dados de exemplo
-  const displayProducts = productData;
+  // CORREÇÃO: Usar produtos com cálculos dinâmicos
+  const displayProducts = displayProductsWithCalculations;
   
   // Remover logs excessivos que causam loop infinito
 
@@ -932,14 +1009,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(updatedProducts);
     stopEditing();
     
-    // Salvar no sessionStorage (removendo URLs blob inválidas)
+    // CORREÇÃO: Salvar no sessionStorage SEM limpar imagens
     try {
-      const cleanedProducts = updatedProducts.map(product => ({
-        ...product,
-        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-      }));
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+      SessionStorageManager.saveProducts(updatedProducts);
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
@@ -998,7 +1070,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   }, [getContainerUsage]);
   
   // Função para lidar com dados importados
-  const handleImportSuccess = useCallback((dadosImportados: any[]) => {
+  const handleImportSuccess = useCallback(async (dadosImportados: any[]) => {
     console.log('📥 [DEBUG] Dados recebidos na importação:', dadosImportados);
     console.log('📥 [DEBUG] Estrutura do primeiro produto:', dadosImportados[0]);
     console.log('📥 [DEBUG] Campos disponíveis:', Object.keys(dadosImportados[0] || {}));
@@ -1068,14 +1140,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(produtosComCalculos);
     setHasImportedData(true); // Marcar que dados foram importados
     
-    // Salvar no sessionStorage para persistir entre navegações (removendo URLs blob inválidas)
+    // CORREÇÃO: Salvar no sessionStorage SEM converter blob URLs
     try {
-      const cleanedProducts = produtosComCalculos.map(product => ({
-        ...product,
-        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-      }));
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+      SessionStorageManager.saveProducts(produtosComCalculos);
+      console.log('✅ Produtos salvos no sessionStorage com imagens preservadas');
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
@@ -1808,27 +1876,26 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          </TableCell>
                             <TableCell className="text-center py-3">
                               {(() => {
-                                console.log(`🔍 [AUDIT] Produto ${index}: imagem=${product.imagem}, sku=${product.sku}`);
                                 return (
                                   <div 
                                     className="cursor-pointer hover:opacity-80 transition-opacity"
                                     onClick={() => openImageComparisonModal(
                                       product.imagem || '',
-                                      product.imagem_fornecedor || '',
-                                      product.obs || '',
-                                      {
-                                        sku: product.sku,
-                                        nome_produto: product.nome_produto,
-                                        rowIndex: index
-                                      }
+                                 product.imagem_fornecedor || '',
+                                 product.obs || '',
+                                 {
+                                   sku: product.sku,
+                                   nome_produto: product.nome,
+                                   rowIndex: index
+                                 }
                                     )}
                                   >
-                                    <ProdutoImagemPreview
-                                      imagemUrl={product.imagem}
-                                      nomeProduto={product.nome_produto || product.sku}
-                                      sku={product.sku}
-                                      className="mx-auto"
-                                    />
+                                   <ProdutoImagemPreview
+                                     imagemUrl={product.imagem}
+                                     nomeProduto={product.nome || product.sku}
+                                     sku={product.sku}
+                                     className="mx-auto"
+                                   />
                                   </div>
                                 );
                               })()}
@@ -1839,20 +1906,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                               onClick={() => openImageComparisonModal(
                                 product.imagem || '',
                                 product.imagem_fornecedor || '',
-                                product.obs || '',
-                                {
-                                  sku: product.sku,
-                                  nome_produto: product.nome_produto,
-                                  rowIndex: index
-                                }
-                              )}
-                            >
-                              <ProdutoImagemPreview
-                                imagemUrl={product.imagem_fornecedor}
-                                nomeProduto={product.nome_produto || product.sku}
-                                sku={product.sku}
-                                className="mx-auto"
-                              />
+                                 product.obs || '',
+                                 {
+                                   sku: product.sku,
+                                   nome_produto: product.nome,
+                                   rowIndex: index
+                                 }
+                               )}
+                             >
+                               <ProdutoImagemPreview
+                                 imagemFornecedorUrl={product.imagem_fornecedor}
+                                 nomeProduto={product.nome || product.sku}
+                                 sku={product.sku}
+                                 className="mx-auto"
+                               />
                             </div>
                           </TableCell>
                          <TableCell className="py-3">
@@ -1875,48 +1942,48 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'cor')}
                            />
                          </TableCell>
-                         <TableCell className="max-w-[200px] py-3">
-                           <EditableCell
-                             value={product.nome_produto}
-                             type="text"
-                             onSave={(value) => updateProductData(index, 'nome_produto', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'nome_produto'}
-                             onDoubleClick={() => startEditing(index, 'nome_produto')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-center py-3">
-                           <EditableCell
-                             value={product.package}
-                             type="text"
-                             onSave={(value) => updateProductData(index, 'package', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'package'}
-                             onDoubleClick={() => startEditing(index, 'package')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-right py-3">
-                           <EditableCell
-                             value={product.preco}
-                             type="number"
-                             prefix={`${getCurrencySymbol(selectedCurrency)} `}
-                             step="0.01"
-                             onSave={(value) => updateProductData(index, 'preco', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'preco'}
-                             onDoubleClick={() => startEditing(index, 'preco')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-center py-3">
-                           <EditableCell
-                             value={product.unit}
-                             type="text"
-                             onSave={(value) => updateProductData(index, 'unit', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'unit'}
-                             onDoubleClick={() => startEditing(index, 'unit')}
-                           />
-                         </TableCell>
+                          <TableCell className="max-w-[200px] py-3">
+                            <EditableCell
+                              value={product.nome}
+                              type="text"
+                              onSave={(value) => updateProductData(index, 'nome', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'nome'}
+                              onDoubleClick={() => startEditing(index, 'nome')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <EditableCell
+                              value={product.package_qtd}
+                              type="number"
+                              onSave={(value) => updateProductData(index, 'package_qtd', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'package_qtd'}
+                              onDoubleClick={() => startEditing(index, 'package_qtd')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right py-3">
+                            <EditableCell
+                              value={product.preco_unitario}
+                              type="number"
+                              prefix={`${getCurrencySymbol(selectedCurrency)} `}
+                              step="0.01"
+                              onSave={(value) => updateProductData(index, 'preco_unitario', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'preco_unitario'}
+                              onDoubleClick={() => startEditing(index, 'preco_unitario')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <EditableCell
+                              value={product.unidade_medida}
+                              type="text"
+                              onSave={(value) => updateProductData(index, 'unidade_medida', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'unidade_medida'}
+                              onDoubleClick={() => startEditing(index, 'unidade_medida')}
+                            />
+                          </TableCell>
                          <TableCell className="text-center py-3">
                            <EditableCell
                              value={product.pcs_ctn}
@@ -1927,25 +1994,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                              onDoubleClick={() => startEditing(index, 'pcs_ctn')}
                            />
                          </TableCell>
-                         <TableCell className="bg-accent/20 text-center py-3 font-medium">
-                           <EditableCell
-                             value={product.caixas}
-                             type="number"
-                             onSave={(value) => updateProductData(index, 'caixas', value)}
-                             onCancel={stopEditing}
-                             isEditing={editingCell?.row === index && editingCell?.field === 'caixas'}
-                             onDoubleClick={() => startEditing(index, 'caixas')}
-                           />
-                         </TableCell>
-                         <TableCell className="text-right py-3 font-mono text-sm">{(product.peso_unitario_g || 0).toFixed(0)}g</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_total_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 text-sm">{(product.peso_total_sem_cx_master_kg || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3">{product.comprimento || 0}</TableCell>
-                         <TableCell className="text-center py-3">{product.largura || 0}</TableCell>
-                         <TableCell className="text-center py-3">{product.altura || 0}</TableCell>
-                         <TableCell className="text-center py-3">{(product.cbm_cubagem || 0).toFixed(2)}</TableCell>
+                          <TableCell className="bg-accent/20 text-center py-3 font-medium">
+                            <EditableCell
+                              value={product.qtd_caixas_pedido}
+                              type="number"
+                              onSave={(value) => updateProductData(index, 'qtd_caixas_pedido', value)}
+                              onCancel={stopEditing}
+                              isEditing={editingCell?.row === index && editingCell?.field === 'qtd_caixas_pedido'}
+                              onDoubleClick={() => startEditing(index, 'qtd_caixas_pedido')}
+                            />
+                          </TableCell>
+                          <TableCell className="text-right py-3 font-mono text-sm">{(product.peso_unitario_g || 0).toFixed(0)}g</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_emb_master_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_sem_emb_master_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_total_emb_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3 text-sm">{(product.peso_total_sem_emb_kg || 0).toFixed(2)}</TableCell>
+                          <TableCell className="text-center py-3">{product.comprimento_cm || 0}</TableCell>
+                          <TableCell className="text-center py-3">{product.largura_cm || 0}</TableCell>
+                          <TableCell className="text-center py-3">{product.altura_cm || 0}</TableCell>
+                          <TableCell className="text-center py-3">{(product.cbm_unitario || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3">{(product.cbm_total || 0).toFixed(2)}</TableCell>
                          <TableCell className="text-center py-3 font-medium">{product.quantidade_total || 0}</TableCell>
                          <TableCell className="text-right py-3 font-medium">{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
@@ -2703,12 +2770,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       />
       
       {/* Dialog de Importação */}
-      <CotacaoImportDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        cotacao={null}
-        onImportSuccess={handleImportSuccess}
-      />
+      {showImportDialog && (
+        <React.Suspense fallback={<div>Carregando...</div>}>
+          <CotacaoImportDialog
+            open={showImportDialog}
+            onOpenChange={setShowImportDialog}
+            cotacao={null}
+            onImportSuccess={handleImportSuccess}
+          />
+        </React.Suspense>
+      )}
       
       {/* Modal de Comparação de Imagens */}
       <ImageComparisonModal
@@ -2719,6 +2790,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         observacoes={imageComparisonModal.observacoes}
         produtoInfo={imageComparisonModal.produtoInfo}
         onSaveObservacoes={saveObservacoes}
+        onDeleteImagemPrincipal={handleDeleteImagemPrincipal}
+        onDeleteImagemFornecedor={handleDeleteImagemFornecedor}
+        onUploadImagemPrincipal={handleUploadImagemPrincipal}
+        onUploadImagemFornecedor={handleUploadImagemFornecedor}
       />
     </div>
   );
