@@ -193,8 +193,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
   const [productData, setProductData] = useState<any[]>(() => {
     // CORREÇÃO: Usar o novo gerenciador de sessionStorage
-    return SessionStorageManager.loadProducts();
+    const loaded = SessionStorageManager.loadProducts();
+    console.log('🎯 [INIT] productData inicializado com', loaded.length, 'produtos do sessionStorage');
+    return loaded;
   });
+  
+  // Monitor de mudanças no productData
+  useEffect(() => {
+    console.log('🔥 [useEffect] productData MUDOU! Novo length:', productData.length);
+    if (productData.length > 0) {
+      console.log('🔥 [useEffect] Primeiros 3 produtos:', productData.slice(0, 3).map(p => ({ sku: p.sku, material: p.material, cor: p.cor })));
+    }
+  }, [productData]);
+  
   const [hasImportedData, setHasImportedData] = useState(() => {
     const products = SessionStorageManager.loadProducts();
     return products.length > 0;
@@ -1071,6 +1082,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   
   // Função para lidar com dados importados
   const handleImportSuccess = useCallback(async (dadosImportados: any[]) => {
+    console.log('🎯 [handleImportSuccess] INÍCIO - Dados recebidos:', dadosImportados.length);
+    console.log('🎯 [handleImportSuccess] Estado atual de productData:', productData.length);
+    
     if (!dadosImportados || dadosImportados.length === 0) {
       toast({
         title: "Erro na importação",
@@ -1089,6 +1103,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       imagem: produto.imagem || '',
       imagem_fornecedor: produto.imagem_fornecedor || '',
     }));
+    
+    console.log('🎯 [handleImportSuccess] novosProdutos criados:', novosProdutos.length);
+    console.log('🎯 [handleImportSuccess] Primeiro produto:', novosProdutos[0]);
+    
     // Recalcular campos automaticamente para todos os produtos
     const produtosComCalculos = novosProdutos.map(produto => ({
       ...produto,
@@ -1098,8 +1116,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
     }));
     
+    console.log('🎯 [handleImportSuccess] Chamando setProductData com', produtosComCalculos.length, 'produtos');
     setProductData(produtosComCalculos);
     setHasImportedData(true); // Marcar que dados foram importados
+    
+    console.log('🎯 [handleImportSuccess] setProductData chamado com sucesso');
     
     // CORREÇÃO: Salvar no sessionStorage SEM converter blob URLs
     try {
@@ -1111,7 +1132,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     // Força atualização da UI
     setTimeout(() => {
+      console.log('🎯 [handleImportSuccess] setTimeout - productData.length atual:', productData.length);
       if (productData.length === 0 && novosProdutos.length > 0) {
+        console.log('🎯 [handleImportSuccess] Forçando atualização com setTimeout');
         setProductData([...novosProdutos]); // força nova referência
       }
     }, 100);
@@ -1120,7 +1143,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       title: "Importação concluída!",
       description: `${novosProdutos.length} produtos importados com sucesso.`,
     });
-  }, [toast]);
+  }, [toast, productData, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue]);
 
   // Função para converter imagem URL para base64
   const imageUrlToBase64 = async (url: string): Promise<string> => {
