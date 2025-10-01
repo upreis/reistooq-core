@@ -565,46 +565,86 @@ export function useCotacoesArquivos() {
     console.log('📊 [SKU_SYSTEM] Dados recebidos:', dados.length);
     console.log('🖼️ [SKU_SYSTEM] Imagens para associação:', imagensUpload.length);
     
-    return dados.map((item, index) => {
-      // ✅ MAPEAMENTO ROBUSTO: Usa o novo sistema que trata objetos ExcelJS, acentos, case sensitivity
-      const resultadoMapeamento = mapearDadosExcel(item, index);
-      
-      // Construir produto final usando os dados mapeados
+    return dados.map((linha, index) => {
+      // ✅ MAPEAMENTO DIRETO (LÓGICA ANTIGA)
       const produtoMapeado = {
-        sku: resultadoMapeamento.produto.sku,
-        nome: resultadoMapeamento.produto.nome,
-        preco_unitario: resultadoMapeamento.produto.preco_unitario,
-        quantidade_total: resultadoMapeamento.produto.quantidade_total || 1,
-        valor_total: resultadoMapeamento.produto.valor_total || 0,
-        material: resultadoMapeamento.produto.material,
-        cor: resultadoMapeamento.produto.cor,
-        package_qtd: Number(resultadoMapeamento.produto.package) || 1,
-        unidade_medida: resultadoMapeamento.produto.unidade || 'PCS',
-        pcs_ctn: resultadoMapeamento.produto.pcs_ctn,
-        qtd_caixas_pedido: resultadoMapeamento.produto.caixas || 1,
-        peso_unitario_g: resultadoMapeamento.produto.peso_unitario_g,
-        peso_emb_master_kg: resultadoMapeamento.produto.peso_emb_master_kg,
-        peso_sem_emb_master_kg: resultadoMapeamento.produto.peso_sem_emb_master_kg,
-        peso_total_emb_kg: resultadoMapeamento.produto.peso_total_emb_kg,
-        peso_total_sem_emb_kg: resultadoMapeamento.produto.peso_total_sem_emb_kg,
-        comprimento_cm: resultadoMapeamento.produto.comprimento_cm,
-        largura_cm: resultadoMapeamento.produto.largura_cm,
-        altura_cm: resultadoMapeamento.produto.altura_cm,
-        cbm_unitario: resultadoMapeamento.produto.cbm_cubagem,
-        cbm_total: 0, // Calculado depois
-        peso_total_kg: 0, // Calculado depois
+        // ⚠️ SKU: Mantém lógica atual de geração automática
+        sku: extrairValorExcel(linha.SKU || linha.sku || `PROD-${index + 1}`),
+        
+        // ✅ COLUNAS COM LÓGICA ANTIGA
+        material: linha.MATERIAL || linha.material || '',
+        cor: linha.COR || linha.cor || '',
+        nome: linha['Nome do Produto'] || linha.NOME_PRODUTO || linha.nome_produto || linha.NOME || linha.nome || '',
+        package_qtd: parseFloat(String(linha.PACKAGE || linha.package || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
+        preco_unitario: parseFloat(String(linha.PREÇO || linha.PRECO || linha.preco || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        unidade_medida: linha.UNIT || linha.unit || 'PCS',
+        pcs_ctn: parseInt(String(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn || '0').replace(/[^\d]/g, '')) || 0,
+        qtd_caixas_pedido: parseFloat(String(linha.CAIXAS || linha.caixas || '1').replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
+        peso_unitario_g: parseFloat(String(
+          linha['PESO UNITARIO(g)'] || 
+          linha.PESO_UNITARIO_G || 
+          linha.peso_unitario_g || 
+          linha.PESO_UNITARIO_KG || 
+          linha.peso_unitario_kg || '0'
+        ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        peso_emb_master_kg: parseFloat(String(
+          linha['COLUNA_M'] ||
+          linha['Peso embalado cx Master (KG)'] || 
+          linha['PESO EMBALADO CX MASTER (KG)'] ||
+          linha['Peso embalado cx Master(KG)'] ||
+          linha['Peso embalado cx Master (Kg)'] ||
+          linha['Peso embalado cx Master'] ||
+          linha['PESO EMBALADO CX MASTER'] ||
+          linha['peso embalado cx master (kg)'] ||
+          linha['peso embalado cx master'] ||
+          linha.PESO_MASTER_KG || 
+          linha.peso_master_kg || 
+          linha.PESO_CX_MASTER_KG || 
+          linha.peso_cx_master_kg || 
+          '0'
+        ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        peso_sem_emb_master_kg: parseFloat(String(
+          linha['COLUNA_N'] ||
+          linha['Peso Sem embalagem cx Master (KG)'] || 
+          linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
+          linha['Peso Sem embalagem cx Master(KG)'] ||
+          linha['Peso Sem embalagem cx Master (Kg)'] ||
+          linha['Peso Sem embalagem cx Master'] ||
+          linha['PESO SEM EMBALAGEM CX MASTER'] ||
+          linha['peso sem embalagem cx master (kg)'] ||
+          linha['peso sem embalagem cx master'] ||
+          linha.PESO_SEM_MASTER_KG || 
+          linha.peso_sem_master_kg || 
+          linha.PESO_SEM_CX_MASTER_KG || 
+          linha.peso_sem_cx_master_kg || 
+          '0'
+        ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        comprimento_cm: parseFloat(String(linha.Comprimento || linha.COMPRIMENTO || linha.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        largura_cm: parseFloat(String(linha.Largura || linha.LARGURA || linha.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        altura_cm: parseFloat(String(linha.Altura || linha.ALTURA || linha.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        cbm_unitario: parseFloat(String(linha['CBM Cubagem'] || linha.CBM_CUBAGEM || linha.cbm_cubagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+        
+        // ✅ CÁLCULOS AUTOMÁTICOS (LÓGICA ANTIGA)
+        peso_total_emb_kg: 0,
+        peso_total_sem_emb_kg: 0,
+        quantidade_total: 0,
+        cbm_total: 0,
+        valor_total: 0,
+        peso_total_kg: 0,
+        
+        // ⚠️ IMAGENS: Preenchidas pela lógica de associação abaixo (NÃO MEXER)
         imagem: '',
         imagem_fornecedor: '',
-        obs: resultadoMapeamento.produto.obs
+        
+        obs: linha.OBS || linha.obs || linha.Obs || linha.Observações || linha.OBSERVAÇÕES || linha.observacoes || ''
       };
       
-      // Log de avisos/erros se houver
-      if (index === 0 && (resultadoMapeamento.erros.length > 0 || resultadoMapeamento.avisos.length > 0)) {
-        console.log('⚠️ [MAPEAMENTO] Primeiro item processado com avisos/erros:', {
-          erros: resultadoMapeamento.erros,
-          avisos: resultadoMapeamento.avisos
-        });
-      }
+      // ✅ CÁLCULOS AUTOMÁTICOS (EXECUTADOS APÓS MAPEAMENTO)
+      produtoMapeado.quantidade_total = produtoMapeado.qtd_caixas_pedido * produtoMapeado.pcs_ctn;
+      produtoMapeado.cbm_total = produtoMapeado.cbm_unitario * produtoMapeado.qtd_caixas_pedido;
+      produtoMapeado.valor_total = produtoMapeado.preco_unitario * produtoMapeado.quantidade_total;
+      produtoMapeado.peso_total_emb_kg = produtoMapeado.peso_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
+      produtoMapeado.peso_total_sem_emb_kg = produtoMapeado.peso_sem_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
       
       // ✅ DIAGNÓSTICO: Analisar cada produto mapeado
       diagnosticarProdutoMapeado(produtoMapeado, index);
