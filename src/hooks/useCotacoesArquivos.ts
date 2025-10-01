@@ -11,6 +11,7 @@ import {
 import { useImagemSKUProcessor } from './useImagemSKUProcessor';
 import { processarExcelCompletoCorrigido, extrairImagensFornecedorPorXML } from '@/utils/manusImageExtractor';
 import { diagnosticarImportacaoExcel, testarMapeamentoCampos, validarTiposDados, diagnosticarProdutoMapeado } from '@/utils/diagnosticoExcel';
+import { mapearDadosExcel } from '@/utils/excelMapping';
 
 interface CotacaoArquivo {
   id?: string;
@@ -564,34 +565,45 @@ export function useCotacoesArquivos() {
     console.log('🖼️ [SKU_SYSTEM] Imagens para associação:', imagensUpload.length);
     
     return dados.map((item, index) => {
-      // Mapeamento de campos (compatível com interface ProdutoCotacao)
+      // ✅ MAPEAMENTO ROBUSTO: Usa o novo sistema que trata objetos ExcelJS, acentos, case sensitivity
+      const resultadoMapeamento = mapearDadosExcel(item, index);
+      
+      // Construir produto final usando os dados mapeados
       const produtoMapeado = {
-        sku: item.SKU || item.sku || `PROD-${index + 1}`,
-        nome: item['Nome do Produto'] || item.PRODUTO || item.produto || item.nome_produto || item.nome || '',
-        preco_unitario: Number(item['PREÇO'] || item['Preço'] || item.PRECO_UNITARIO || item.preco_unitario || item.preco) || 0,
-        quantidade_total: Number(item.QUANTIDADE || item.quantidade) || 1,
-        valor_total: Number(item.PRECO_TOTAL || item.preco_total || item.valor_total) || 0,
-        material: item.MATERIAL || item.Material || item.material || '',
-        cor: item.COR || item.Cor || item.cor || '',
-        package_qtd: Number(item.PACKAGE || item.Package || item.package) || 1,
-        unidade_medida: item.UNIT || item['Unid.'] || item.unit || item.Unit || 'PCS',
-        pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || item.PCS_CTN) || 0,
-        qtd_caixas_pedido: Number(item.CAIXAS || item.Caixas || item.caixas) || 1,
-        peso_unitario_g: Number(item['PESO UNITARIO(g)'] || item['Peso Unit. (g)'] || item.peso_unitario_g) || 0,
-        peso_emb_master_kg: Number(item['Peso embalado cx Master (KG)'] || item['Peso Emb. Master (KG)'] || item.peso_emb_master_kg || item.peso_cx_master_kg) || 0,
-        peso_sem_emb_master_kg: Number(item['Peso Sem embalagem cx Master (KG)'] || item['Peso S/ Emb. Master (KG)'] || item.peso_sem_emb_master_kg || item.peso_sem_cx_master_kg) || 0,
-        peso_total_emb_kg: Number(item['Peso total embalado cx Master (KG)'] || item['Peso Total Emb. (KG)'] || item.peso_total_emb_kg || item.peso_total_cx_master_kg) || 0,
-        peso_total_sem_emb_kg: Number(item['Peso total sem embalagem cx Master (KG)'] || item['Peso Total S/ Emb. (KG)'] || item.peso_total_sem_emb_kg || item.peso_total_sem_cx_master_kg) || 0,
-        comprimento_cm: Number(item.Comprimento || item['Comp. (cm)'] || item.comprimento_cm || item.comprimento) || 0,
-        largura_cm: Number(item.Largura || item['Larg. (cm)'] || item.largura_cm || item.largura) || 0,
-        altura_cm: Number(item.Altura || item['Alt. (cm)'] || item.altura_cm || item.altura) || 0,
-        cbm_unitario: Number(item['CBM Cubagem'] || item.cbm_cubagem || item.cbm_unitario) || 0,
+        sku: resultadoMapeamento.produto.sku,
+        nome: resultadoMapeamento.produto.nome,
+        preco_unitario: resultadoMapeamento.produto.preco_unitario,
+        quantidade_total: resultadoMapeamento.produto.quantidade_total || 1,
+        valor_total: resultadoMapeamento.produto.valor_total || 0,
+        material: resultadoMapeamento.produto.material,
+        cor: resultadoMapeamento.produto.cor,
+        package_qtd: Number(resultadoMapeamento.produto.package) || 1,
+        unidade_medida: resultadoMapeamento.produto.unidade || 'PCS',
+        pcs_ctn: resultadoMapeamento.produto.pcs_ctn,
+        qtd_caixas_pedido: resultadoMapeamento.produto.caixas || 1,
+        peso_unitario_g: resultadoMapeamento.produto.peso_unitario_g,
+        peso_emb_master_kg: resultadoMapeamento.produto.peso_emb_master_kg,
+        peso_sem_emb_master_kg: resultadoMapeamento.produto.peso_sem_emb_master_kg,
+        peso_total_emb_kg: resultadoMapeamento.produto.peso_total_emb_kg,
+        peso_total_sem_emb_kg: resultadoMapeamento.produto.peso_total_sem_emb_kg,
+        comprimento_cm: resultadoMapeamento.produto.comprimento_cm,
+        largura_cm: resultadoMapeamento.produto.largura_cm,
+        altura_cm: resultadoMapeamento.produto.altura_cm,
+        cbm_unitario: resultadoMapeamento.produto.cbm_cubagem,
         cbm_total: 0, // Calculado depois
         peso_total_kg: 0, // Calculado depois
         imagem: '',
         imagem_fornecedor: '',
-        obs: item['Obs.'] || item.obs || item.observacoes || ''
+        obs: resultadoMapeamento.produto.obs
       };
+      
+      // Log de avisos/erros se houver
+      if (index === 0 && (resultadoMapeamento.erros.length > 0 || resultadoMapeamento.avisos.length > 0)) {
+        console.log('⚠️ [MAPEAMENTO] Primeiro item processado com avisos/erros:', {
+          erros: resultadoMapeamento.erros,
+          avisos: resultadoMapeamento.avisos
+        });
+      }
       
       // ✅ DIAGNÓSTICO: Analisar cada produto mapeado
       diagnosticarProdutoMapeado(produtoMapeado, index);
