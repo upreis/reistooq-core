@@ -725,6 +725,39 @@ export function useCotacoesArquivos() {
       }
       
       // ✅ SOLUÇÃO HÍBRIDA: Mapeamento robusto de todas as colunas
+      
+      // 🔍 DEBUG CRÍTICO: Mostrar valores BRUTOS das colunas importantes na primeira linha
+      if (index === 0) {
+        console.log('\n🎯 ========== DEBUG VALORES BRUTOS (Linha 1) ==========');
+        console.log('📦 CHAVES DISPONÍVEIS NO OBJETO linha:', Object.keys(linha));
+        console.log('\nPCS/CTN (funciona ✅):', {
+          'linha["PCS/CTN"]': linha['PCS/CTN'],
+          'linha.PCS_CTN': linha.PCS_CTN,
+          'linha.pcs_ctn': linha.pcs_ctn,
+          'APÓS extrairValorExcel': extrairValorExcel(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn)
+        });
+        console.log('\nMATERIAL (não funciona ❌):', {
+          'linha.MATERIAL': linha.MATERIAL,
+          'linha.material': linha.material,
+          'linha.Material': linha.Material,
+          'APÓS extrairValorExcel': extrairValorExcel(linha.MATERIAL || linha.material)
+        });
+        console.log('\nCOR (não funciona ❌):', {
+          'linha.COR': linha.COR,
+          'linha.cor': linha.cor,
+          'linha.Cor': linha.Cor,
+          'APÓS extrairValorExcel': extrairValorExcel(linha.COR || linha.cor)
+        });
+        console.log('\nPREÇO (não funciona ❌):', {
+          'linha.PREÇO': linha.PREÇO,
+          'linha.PRECO': linha.PRECO,
+          'linha.preco': linha.preco,
+          'linha.Preço': linha.Preço,
+          'APÓS extrairValorExcel': extrairValorExcel(linha.PREÇO || linha.PRECO || linha.preco)
+        });
+        console.log('====================================================\n');
+      }
+      
       const produtoMapeado = {
         // ===== DADOS BÁSICOS ===== (NOMES DO SISTEMA ANTIGO)
         sku: extrairValorExcel(linha.SKU || linha.sku) || `PROD-${index + 1}`,
