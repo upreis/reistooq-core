@@ -374,6 +374,7 @@ export function useCotacoesArquivos() {
         
         console.log('📋 [HEADERS] Headers extraídos:', headers);
         console.log('📋 [HEADERS] Total de colunas:', headers.length);
+        console.log('📋 [HEADERS] LISTA COMPLETA:', JSON.stringify(headers, null, 2));
 
         for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
           const row = worksheet.getRow(rowNumber);
@@ -385,8 +386,8 @@ export function useCotacoesArquivos() {
               // CORREÇÃO: Extrair valor simples de objetos complexos do ExcelJS
               let cellValue: any = cell.value;
               
-              // DEBUG: Log detalhado da primeira linha
-              if (rowNumber === 2 && colNumber <= 10) {
+              // DEBUG: Log detalhado da primeira linha - TODAS as colunas
+              if (rowNumber === 2) {
                 console.log(`🔍 [CELL_DEBUG] Linha ${rowNumber}, Col ${colNumber}, Header: "${header}", Valor bruto:`, cell.value, 'Tipo:', typeof cell.value);
               }
               
@@ -416,6 +417,13 @@ export function useCotacoesArquivos() {
         // AUDITORIA: Mostrar primeiros dados para debug
         if (dados.length > 0) {
           console.log('📊 [DADOS] Primeira linha de dados:', JSON.stringify(dados[0], null, 2));
+          console.log('📊 [DADOS] Todas as chaves:', Object.keys(dados[0]));
+          console.log('📊 [DADOS] Valores material e cor:', {
+            material: dados[0]['material'],
+            cor: dados[0]['cor'],
+            material_tipo: typeof dados[0]['material'],
+            cor_tipo: typeof dados[0]['cor']
+          });
         }
       }
       
