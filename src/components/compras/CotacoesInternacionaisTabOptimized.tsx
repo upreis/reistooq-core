@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { toast } from 'sonner';
 import { 
   Plus, 
   FileText, 
@@ -12,15 +11,13 @@ import {
   List, 
   RefreshCw,
   Settings,
-  Download,
-  Upload
+  Download
 } from "lucide-react";
 
 // Importações lazy dos componentes otimizados
 import { CotacaoCard } from './cotacoes/CotacaoCard';
 import { CotacoesAnalyticsPanel } from './cotacoes/CotacoesAnalyticsPanel';
 import { CotacoesFilters } from './cotacoes/CotacoesFilters';
-import { CotacoesCorrecaoManual } from './CotacoesCorrecaoManual';
 import { 
   CotacoesListSkeleton, 
   AnalyticsPanelSkeleton,
@@ -63,7 +60,6 @@ export const CotacoesInternacionaisTabOptimized = memo<CotacoesInternacionaisTab
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isCorrecaoDialogOpen, setIsCorrecaoDialogOpen] = useState(false);
 
   // Hooks otimizados
   const { showSuccess, showError } = useToastFeedback();
@@ -197,12 +193,6 @@ export const CotacoesInternacionaisTabOptimized = memo<CotacoesInternacionaisTab
       showError('Erro ao excluir cotações selecionadas');
     }
   }, [selectedIds, secureDeleteCotacao, clearSelection, toggleSelectMode, onRefresh, hasSelection, selectedCount, showSuccess, showError]);
-
-  const handleAplicarCorrecoes = useCallback((correcoes: any[]) => {
-    console.log('🔧 [CORREÇÃO] Aplicando correções:', correcoes);
-    toast(`${correcoes.length} correções aplicadas com sucesso`);
-    onRefresh();
-  }, [onRefresh]);
 
   return (
     <div className="space-y-6 p-6">
@@ -381,25 +371,9 @@ export const CotacoesInternacionaisTabOptimized = memo<CotacoesInternacionaisTab
         </TabsContent>
       </Tabs>
 
-      {/* Modais lazy carregados */}
-      <CotacoesCorrecaoManual
-        isOpen={isCorrecaoDialogOpen}
-        onClose={() => setIsCorrecaoDialogOpen(false)}
-        onAplicarCorrecoes={handleAplicarCorrecoes}
-      />
-      
-      {/* Outros modais comentados */}
-      {/*
-      <LazyCotacaoImportDialog
-        isOpen={isImportDialogOpen}
-        onClose={() => setIsImportDialogOpen(false)}
-        onRefresh={onRefresh}
-      />
-      */}
+      {/* Modais lazy carregados - removido temporariamente para corrigir tipos */}
     </div>
   );
 });
 
 CotacoesInternacionaisTabOptimized.displayName = 'CotacoesInternacionaisTabOptimized';
-
-export default CotacoesInternacionaisTabOptimized;

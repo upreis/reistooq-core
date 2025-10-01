@@ -29,19 +29,13 @@ export interface ProdutoCotacao {
   sku: string;
   nome: string;
   imagem?: string | null;
-  imagem_fornecedor?: string | null;
   material: string;
-  cor?: string;
   package_qtd: number;
   preco_unitario: number;
   unidade_medida: string;
   pcs_ctn: number;
   qtd_caixas_pedido: number;
   peso_unitario_g: number;
-  peso_emb_master_kg?: number;
-  peso_sem_emb_master_kg?: number;
-  peso_total_emb_kg?: number;
-  peso_total_sem_emb_kg?: number;
   largura_cm: number;
   altura_cm: number;
   comprimento_cm: number;
@@ -50,7 +44,6 @@ export interface ProdutoCotacao {
   cbm_total: number;
   quantidade_total: number;
   valor_total: number;
-  obs?: string;
 }
 
 /**
