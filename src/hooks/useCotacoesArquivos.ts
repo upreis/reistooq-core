@@ -354,7 +354,22 @@ export function useCotacoesArquivos() {
         const headers: string[] = [];
         const headerRow = worksheet.getRow(1);
         headerRow.eachCell((cell, colNumber) => {
-          headers[colNumber - 1] = cell.value?.toString() || `Coluna${colNumber}`;
+          // Extrair valor simples de objetos complexos do ExcelJS (igual fazemos com dados)
+          let cellValue: any = cell.value;
+          
+          if (cellValue && typeof cellValue === 'object' && !Array.isArray(cellValue) && !(cellValue instanceof Date)) {
+            if ('value' in cellValue) {
+              cellValue = (cellValue as any).value;
+            } else if ('richText' in cellValue) {
+              cellValue = (cellValue as any).richText.map((t: any) => t.text).join('');
+            } else if ('result' in cellValue) {
+              cellValue = (cellValue as any).result;
+            } else if ('text' in cellValue) {
+              cellValue = (cellValue as any).text;
+            }
+          }
+          
+          headers[colNumber - 1] = cellValue?.toString() || `Coluna${colNumber}`;
         });
 
         for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
