@@ -12,6 +12,7 @@ import {
 } from '@/utils/cotacaoTypeGuards';
 import { useSecureCotacoes } from '@/hooks/useSecureCotacoes';
 import { validateFileUpload, sanitizeInput, logSecurityEvent } from '@/utils/inputValidation';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -277,6 +278,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     secureDeleteCotacao, 
     loading: saveLoading 
   } = useSecureCotacoes();
+  const { uploadImage, uploading: imageUploading } = useImageUpload();
 
   // CORREÇÃO: Funções memoizadas para seleção múltipla
   const toggleSelectMode = useCallback(() => {
@@ -391,6 +393,97 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       return newData;
     });
   }, []);
+
+  // Funções para gerenciar imagens no modal de comparação
+  const handleDeleteImagemPrincipal = useCallback((rowIndex: number) => {
+    setProductData(prevData => {
+      const newData = [...prevData];
+      if (newData[rowIndex]) {
+        newData[rowIndex] = { ...newData[rowIndex], imagem: '' };
+      }
+      SessionStorageManager.saveProducts(newData);
+      return newData;
+    });
+    
+    // Atualizar o modal
+    setImageComparisonModal(prev => ({
+      ...prev,
+      imagemPrincipal: ''
+    }));
+  }, []);
+
+  const handleDeleteImagemFornecedor = useCallback((rowIndex: number) => {
+    setProductData(prevData => {
+      const newData = [...prevData];
+      if (newData[rowIndex]) {
+        newData[rowIndex] = { ...newData[rowIndex], imagem_fornecedor: '' };
+      }
+      SessionStorageManager.saveProducts(newData);
+      return newData;
+    });
+    
+    // Atualizar o modal
+    setImageComparisonModal(prev => ({
+      ...prev,
+      imagemFornecedor: ''
+    }));
+  }, []);
+
+  const handleUploadImagemPrincipal = useCallback(async (rowIndex: number, file: File) => {
+    try {
+      const result = await uploadImage(file, `cotacoes/imagens-produtos/${Date.now()}-${file.name}`);
+      
+      if (result.success && result.url) {
+        setProductData(prevData => {
+          const newData = [...prevData];
+          if (newData[rowIndex]) {
+            newData[rowIndex] = { ...newData[rowIndex], imagem: result.url };
+          }
+          SessionStorageManager.saveProducts(newData);
+          return newData;
+        });
+        
+        // Atualizar o modal
+        setImageComparisonModal(prev => ({
+          ...prev,
+          imagemPrincipal: result.url
+        }));
+      } else {
+        throw new Error(result.error || 'Erro ao fazer upload');
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      throw error;
+    }
+  }, [uploadImage]);
+
+  const handleUploadImagemFornecedor = useCallback(async (rowIndex: number, file: File) => {
+    try {
+      const result = await uploadImage(file, `cotacoes/imagens-fornecedor/${Date.now()}-${file.name}`);
+      
+      if (result.success && result.url) {
+        setProductData(prevData => {
+          const newData = [...prevData];
+          if (newData[rowIndex]) {
+            newData[rowIndex] = { ...newData[rowIndex], imagem_fornecedor: result.url };
+          }
+          SessionStorageManager.saveProducts(newData);
+          return newData;
+        });
+        
+        // Atualizar o modal
+        setImageComparisonModal(prev => ({
+          ...prev,
+          imagemFornecedor: result.url
+        }));
+      } else {
+        throw new Error(result.error || 'Erro ao fazer upload');
+      }
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      throw error;
+    }
+  }, [uploadImage]);
 
   // Handler para produtos selecionados do seletor avançado
   const handleProductSelectorConfirm = (selectedProducts: any[]) => {
@@ -2693,6 +2786,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         observacoes={imageComparisonModal.observacoes}
         produtoInfo={imageComparisonModal.produtoInfo}
         onSaveObservacoes={saveObservacoes}
+        onDeleteImagemPrincipal={handleDeleteImagemPrincipal}
+        onDeleteImagemFornecedor={handleDeleteImagemFornecedor}
+        onUploadImagemPrincipal={handleUploadImagemPrincipal}
+        onUploadImagemFornecedor={handleUploadImagemFornecedor}
       />
     </div>
   );
