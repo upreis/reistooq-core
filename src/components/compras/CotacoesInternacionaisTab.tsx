@@ -1125,7 +1125,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('💾 [SAVE] Salvando produtos na cotação:', selectedCotacao.id);
       
       try {
-        // Preparar dados com formato correto para validação
+        // Preparar dados - data_fechamento deve ser null se não existir, não string vazia
         const dataAbertura = typeof selectedCotacao.data_abertura === 'string'
           ? selectedCotacao.data_abertura.split('T')[0]
           : new Date(selectedCotacao.data_abertura).toISOString().split('T')[0];
@@ -1134,7 +1134,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           ? (typeof selectedCotacao.data_fechamento === 'string'
               ? selectedCotacao.data_fechamento.split('T')[0]
               : new Date(selectedCotacao.data_fechamento).toISOString().split('T')[0])
-          : '';
+          : null; // null em vez de string vazia
         
         await secureUpdateCotacao(selectedCotacao.id, {
           numero_cotacao: selectedCotacao.numero_cotacao,
@@ -1145,7 +1145,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           data_abertura: dataAbertura,
           data_fechamento: dataFechamento,
           status: selectedCotacao.status || 'rascunho',
-          observacoes: selectedCotacao.observacoes || '',
+          observacoes: selectedCotacao.observacoes || null,
           produtos: [...novosProdutos],
           total_quantidade: novosProdutos.reduce((sum, p) => sum + (Number(p.quantidade_total) || 0), 0),
           total_peso_kg: novosProdutos.reduce((sum, p) => sum + (Number(p.peso_cx_master_kg) * Number(p.qtd_caixas_pedido) || 0), 0),

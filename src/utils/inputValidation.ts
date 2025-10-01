@@ -34,8 +34,8 @@ export const cotacaoInternacionalSchema = z.object({
   
   data_fechamento: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD")
-    .optional()
-    .or(z.literal("")),
+    .nullable()
+    .optional(),
   
   status: z.enum(['rascunho', 'enviada', 'aprovada', 'rejeitada', 'cancelada']).refine(
     (val) => ['rascunho', 'enviada', 'aprovada', 'rejeitada', 'cancelada'].includes(val),
