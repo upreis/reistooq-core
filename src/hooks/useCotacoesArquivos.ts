@@ -364,7 +364,24 @@ export function useCotacoesArquivos() {
           row.eachCell((cell, colNumber) => {
             const header = headers[colNumber - 1];
             if (header) {
-              rowData[header] = cell.value;
+              // CORREÇÃO: Extrair valor simples de objetos complexos do ExcelJS
+              let cellValue: any = cell.value;
+              
+              // Se é um objeto com propriedades aninhadas, extrair o valor real
+              if (cellValue && typeof cellValue === 'object' && !Array.isArray(cellValue) && !(cellValue instanceof Date)) {
+                // Tentar extrair valor de estruturas conhecidas
+                if ('value' in cellValue) {
+                  cellValue = (cellValue as any).value;
+                } else if ('richText' in cellValue) {
+                  cellValue = (cellValue as any).richText.map((t: any) => t.text).join('');
+                } else if ('result' in cellValue) {
+                  cellValue = (cellValue as any).result;
+                } else if ('text' in cellValue) {
+                  cellValue = (cellValue as any).text;
+                }
+              }
+              
+              rowData[header] = cellValue;
             }
           });
           
