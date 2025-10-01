@@ -373,6 +373,7 @@ export function useCotacoesArquivos() {
         });
         
         console.log('📋 [HEADERS] Headers extraídos:', headers);
+        console.log('📋 [HEADERS] Total de colunas:', headers.length);
 
         for (let rowNumber = 2; rowNumber <= worksheet.rowCount; rowNumber++) {
           const row = worksheet.getRow(rowNumber);
@@ -383,6 +384,11 @@ export function useCotacoesArquivos() {
             if (header) {
               // CORREÇÃO: Extrair valor simples de objetos complexos do ExcelJS
               let cellValue: any = cell.value;
+              
+              // DEBUG: Log detalhado da primeira linha
+              if (rowNumber === 2 && colNumber <= 10) {
+                console.log(`🔍 [CELL_DEBUG] Linha ${rowNumber}, Col ${colNumber}, Header: "${header}", Valor bruto:`, cell.value, 'Tipo:', typeof cell.value);
+              }
               
               // Se é um objeto com propriedades aninhadas, extrair o valor real
               if (cellValue && typeof cellValue === 'object' && !Array.isArray(cellValue) && !(cellValue instanceof Date)) {
