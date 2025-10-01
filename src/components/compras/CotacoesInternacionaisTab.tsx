@@ -1125,8 +1125,27 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('💾 [SAVE] Salvando produtos na cotação:', selectedCotacao.id);
       
       try {
+        // Preparar dados com formato correto para validação
+        const dataAbertura = typeof selectedCotacao.data_abertura === 'string'
+          ? selectedCotacao.data_abertura.split('T')[0]
+          : new Date(selectedCotacao.data_abertura).toISOString().split('T')[0];
+        
+        const dataFechamento = selectedCotacao.data_fechamento 
+          ? (typeof selectedCotacao.data_fechamento === 'string'
+              ? selectedCotacao.data_fechamento.split('T')[0]
+              : new Date(selectedCotacao.data_fechamento).toISOString().split('T')[0])
+          : '';
+        
         await secureUpdateCotacao(selectedCotacao.id, {
-          ...selectedCotacao, // Manter todos os campos obrigatórios da cotação
+          numero_cotacao: selectedCotacao.numero_cotacao,
+          descricao: selectedCotacao.descricao,
+          pais_origem: selectedCotacao.pais_origem,
+          moeda_origem: selectedCotacao.moeda_origem,
+          fator_multiplicador: Number(selectedCotacao.fator_multiplicador),
+          data_abertura: dataAbertura,
+          data_fechamento: dataFechamento,
+          status: selectedCotacao.status || 'rascunho',
+          observacoes: selectedCotacao.observacoes || '',
           produtos: [...novosProdutos],
           total_quantidade: novosProdutos.reduce((sum, p) => sum + (Number(p.quantidade_total) || 0), 0),
           total_peso_kg: novosProdutos.reduce((sum, p) => sum + (Number(p.peso_cx_master_kg) * Number(p.qtd_caixas_pedido) || 0), 0),
