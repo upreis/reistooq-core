@@ -1373,6 +1373,45 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   };
   return (
     <div className="space-y-6">
+      {/* Banner de Produtos Importados - SEMPRE VISÍVEL quando há produtos */}
+      {hasImportedData && productData.length > 0 && (
+        <Card className="border-primary bg-primary/5">
+          <CardContent className="flex items-center justify-between py-4">
+            <div className="flex items-center gap-3">
+              <Package className="h-8 w-8 text-primary" />
+              <div>
+                <h3 className="font-semibold text-primary">
+                  {productData.length} produtos importados aguardando
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Clique em "Criar Cotação" para salvar esses produtos
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => { 
+                resetForm(); 
+                setShowModal(true); 
+              }} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Criar Cotação
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  SessionStorageManager.clearProducts();
+                  setProductData([]);
+                  setHasImportedData(false);
+                  toast({ title: "Dados limpos", description: "Produtos importados removidos." });
+                }}
+              >
+                Limpar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between gap-4">
         <div>
