@@ -744,18 +744,6 @@ export function useCotacoesArquivos() {
       produtoMapeado.peso_total_cx_master_kg = produtoMapeado.peso_cx_master_kg * produtoMapeado.caixas;
       produtoMapeado.peso_total_sem_cx_master_kg = produtoMapeado.peso_sem_cx_master_kg * produtoMapeado.caixas;
       
-      // ✅ ALIASES para compatibilidade total com componente (AMBOS os nomes)
-      const produtoComAliases = {
-        ...produtoMapeado,
-        preco_unitario: produtoMapeado.preco,
-        unidade_medida: produtoMapeado.unit,
-        comprimento_cm: produtoMapeado.comprimento,
-        largura_cm: produtoMapeado.largura,
-        altura_cm: produtoMapeado.altura,
-        cbm_unitario: produtoMapeado.cbm_cubagem,
-        nome: produtoMapeado.nome_produto
-      };
-      
       // 🔍 LOGS: Primeiras 3 linhas
       if (index < 3) {
         console.log(`\n📋 ========== PRODUTO ${index + 1} MAPEADO ==========`);
@@ -814,8 +802,17 @@ export function useCotacoesArquivos() {
         });
         console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
         
-        
-        return produtoMapeado;
+        // ✅ ALIASES para compatibilidade (criar DEPOIS das imagens)
+        return {
+          ...produtoMapeado,
+          preco_unitario: produtoMapeado.preco,
+          unidade_medida: produtoMapeado.unit,
+          comprimento_cm: produtoMapeado.comprimento,
+          largura_cm: produtoMapeado.largura,
+          altura_cm: produtoMapeado.altura,
+          cbm_unitario: produtoMapeado.cbm_cubagem,
+          nome: produtoMapeado.nome_produto
+        };
       }
       
       // ====== PRIORIDADE 2: ASSOCIAÇÃO POR SKU (FLEXÍVEL) ======
@@ -884,8 +881,17 @@ export function useCotacoesArquivos() {
         }
       }
       
-      
-      return produtoMapeado;
+      // ✅ ALIASES para compatibilidade (criar DEPOIS das imagens)
+      return {
+        ...produtoMapeado,
+        preco_unitario: produtoMapeado.preco,
+        unidade_medida: produtoMapeado.unit,
+        comprimento_cm: produtoMapeado.comprimento,
+        largura_cm: produtoMapeado.largura,
+        altura_cm: produtoMapeado.altura,
+        cbm_unitario: produtoMapeado.cbm_cubagem,
+        nome: produtoMapeado.nome_produto
+      };
     });
   }, []);
 
