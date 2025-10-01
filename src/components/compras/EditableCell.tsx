@@ -5,7 +5,7 @@ import { Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EditableCellProps {
-  value: string | number;
+  value: string | number | undefined | null;
   type?: 'text' | 'number';
   onSave: (newValue: string | number) => void;
   onCancel: () => void;
@@ -35,7 +35,8 @@ export function EditableCell({
   max,
   placeholder
 }: EditableCellProps) {
-  const [inputValue, setInputValue] = useState(value.toString());
+  const safeValue = value ?? (type === 'number' ? 0 : '');
+  const [inputValue, setInputValue] = useState(safeValue.toString());
   const [isValid, setIsValid] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -47,8 +48,9 @@ export function EditableCell({
   }, [isEditing]);
 
   useEffect(() => {
-    setInputValue(value.toString());
-  }, [value]);
+    const safeValue = value ?? (type === 'number' ? 0 : '');
+    setInputValue(safeValue.toString());
+  }, [value, type]);
 
   const validateInput = (val: string) => {
     if (type === 'number') {
@@ -72,7 +74,8 @@ export function EditableCell({
   };
 
   const handleCancel = () => {
-    setInputValue(value.toString());
+    const safeValue = value ?? (type === 'number' ? 0 : '');
+    setInputValue(safeValue.toString());
     setIsValid(true);
     onCancel();
   };
