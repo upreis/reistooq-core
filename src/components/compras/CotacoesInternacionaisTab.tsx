@@ -450,6 +450,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const produtosAdicionados: string[] = [];
     const produtosDuplicados: string[] = [];
     
+    const novosProdutos: ProdutoCotacao[] = [];
+    
     selectedProducts.forEach(product => {
       // Verificar se já existe um produto com o mesmo SKU
       const produtoExistente = produtos.find(p => p.sku === product.sku_interno);
@@ -483,7 +485,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       
       try {
         produtoSchema.parse(novoProduto);
-        setProdutos(prev => [...prev, novoProduto]);
+        novosProdutos.push(novoProduto);
         produtosAdicionados.push(product.nome);
       } catch (error) {
         if (error instanceof z.ZodError) {
@@ -495,6 +497,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         }
       }
     });
+    
+    // Adicionar produtos ao estado
+    setProdutos(prev => [...prev, ...novosProdutos]);
+    
+    // Se não há cotação selecionada (é uma nova cotação), mostrar modal de dados básicos
+    if (!selectedCotacao && novosProdutos.length > 0) {
+      setShowNewCotacaoDialog(true);
+    }
     
     // Mostrar feedback dos resultados
     if (produtosAdicionados.length > 0) {
@@ -1571,7 +1581,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   status: 'rascunho' as const,
                   observacoes: ''
                 });
-                setShowNewCotacaoDialog(true);
+                // Abrir o seletor de produtos para nova cotação
+                setIsProductSelectorOpen(true);
               }}
               className="gap-2"
             >
@@ -2421,7 +2432,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           <div className="flex justify-end gap-2 pt-4">
             <Button
               variant="outline"
-              onClick={() => setShowNewCotacaoDialog(false)}
+              onClick={() => {
+                setShowNewCotacaoDialog(false);
+                setProdutos([]); // Limpar produtos se cancelar
+              }}
             >
               Cancelar
             </Button>
@@ -2447,10 +2461,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 }
                 
                 try {
-                  // Criar cotação com dados básicos
+                  // Criar cotação com dados básicos e produtos já selecionados
                   const novaCotacao = await secureCreateCotacao({
                     ...newCotacaoData,
-                    produtos: [],
+                    produtos: produtos,
                     total_peso_kg: 0,
                     total_cbm: 0,
                     total_quantidade: 0,
@@ -2466,6 +2480,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                     });
                     
                     setShowNewCotacaoDialog(false);
+                    setProdutos([]); // Limpar produtos temporários
                     onRefresh();
                   }
                 } catch (error) {
