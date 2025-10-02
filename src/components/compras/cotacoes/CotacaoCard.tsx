@@ -32,10 +32,16 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
   // Calcular quantidade de produtos baseado no array de produtos
   const qtdProdutos = Array.isArray(cotacao.produtos) ? cotacao.produtos.length : 0;
   
-  // Calcular quantidade de containers baseado no CBM
-  const qtdContainers = cotacao.total_cbm 
-    ? Math.ceil(cotacao.total_cbm / 28)
+  // Calcular CBM total baseado nos produtos
+  const cbmTotalCalculado = Array.isArray(cotacao.produtos)
+    ? cotacao.produtos.reduce((sum, p: any) => sum + (p.cbm_total || 0), 0)
     : 0;
+    
+  // Usar o cbm_total salvo ou o calculado
+  const cbmTotal = cotacao.total_cbm || cbmTotalCalculado;
+  
+  // Calcular quantidade de containers baseado no CBM
+  const qtdContainers = cbmTotal > 0 ? Math.ceil(cbmTotal / 28) : 0;
 
   const handleSave = (field: string, value: string | number) => {
     if (onUpdate && cotacao.id) {

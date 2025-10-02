@@ -1445,6 +1445,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
         // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
         if (selectedCotacao?.id) {
+          console.log('📊 Auto-save: Salvando totais', totaisGerais);
           await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
           console.log('✅ Auto-save: Cotação atualizada');
         } else {
