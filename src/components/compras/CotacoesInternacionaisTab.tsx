@@ -630,21 +630,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
     const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
-    // Calcular Total BRL somando Multiplicador REAIS Total de cada produto
-    const getChangeDolarTotalDiv = () => {
-      const value = parseFloat(changeDolarTotalDivisor);
-      return value > 0 ? value : 7.45;
-    };
-    
-    const getMultiplicadorReaisTotalVal = () => {
-      const value = parseFloat(multiplicadorReaisTotal);
-      return value > 0 ? value : 5.44;
-    };
-    
+    // Calcular Total BRL somando diretamente a coluna Multiplicador REAIS Total de cada produto
     const total_valor_brl = produtosCalculados.reduce((sum, p) => {
-      const changeDolar = (p.valor_total || 0) / getChangeDolarTotalDiv();
-      const multiplicadorReaisTotal = changeDolar * getMultiplicadorReaisTotalVal();
-      return sum + multiplicadorReaisTotal;
+      return sum + (p.multiplicador_reais_total || 0);
     }, 0);
     
     const { valorUSD: total_valor_usd } = converterMoeda(
@@ -1816,11 +1804,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       {/* Total BRL em linha separada */}
                       <div className="flex justify-between items-center">
                         <span className="text-slate-400">Total BRL:</span>
-                        <div className="font-semibold text-orange-400 text-sm">R$ {(() => {
-                          const totalOrigemValue = getTotalValorTotal();
-                          const { valorBRL } = converterMoeda(totalOrigemValue, selectedCurrency, 1);
-                          return valorBRL.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                        })()}</div>
+                        <div className="font-semibold text-orange-400 text-sm">
+                          R$ {totaisGerais.total_valor_brl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
                       </div>
                    </div>
                 </div>

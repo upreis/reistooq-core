@@ -51,6 +51,11 @@ export interface ProdutoCotacao {
   quantidade_total: number;
   valor_total: number;
   obs?: string;
+  // Campos calculados
+  change_dolar?: number;
+  change_dolar_total?: number;
+  multiplicador_reais?: number;
+  multiplicador_reais_total?: number;
 }
 
 /**
