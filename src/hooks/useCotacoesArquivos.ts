@@ -701,62 +701,17 @@ export function useCotacoesArquivos() {
     console.log('🖼️ [HÍBRIDO] Imagens para associação:', imagensUpload.length);
     
     return dados.map((linha, index) => {
-      // 🔍 DEBUG: Log detalhado da primeira linha
+      // 🔍 DEBUG: Log resumido da primeira linha
       if (index === 0) {
-        console.log('\n🔍 ==================== DIAGNÓSTICO DETALHADO DA PRIMEIRA LINHA ====================');
-        console.log('📋 Chaves disponíveis no Excel:', Object.keys(linha));
-        console.log('📊 Valores da primeira linha:');
-        Object.keys(linha).forEach(key => {
-          const valor = linha[key];
-          const valorExtraido = extrairValorExcel(valor);
-          console.log(`   "${key}": ${JSON.stringify(valor)} → Extraído: ${JSON.stringify(valorExtraido)}`);
-        });
-        console.log('==================================================================================\n');
-      }
-      
-      // 🔍 DEBUG: Mostrar TODAS as colunas e valores da primeira linha
-      if (index === 0) {
-        console.log('\n🔍 ==================== DEBUG COLUNAS ====================');
-        console.log('Total de colunas encontradas:', Object.keys(linha).length);
-        console.log('\n📋 TODAS AS COLUNAS E SEUS VALORES:');
-        Object.entries(linha).forEach(([coluna, valor], idx) => {
-          console.log(`  ${idx + 1}. [${coluna}] = "${extrairValorExcel(valor)}"`);
-        });
-        console.log('========================================================\n');
-      }
-      
-      // ✅ SOLUÇÃO HÍBRIDA: Mapeamento robusto de todas as colunas
-      
-      // 🔍 DEBUG CRÍTICO: Mostrar valores BRUTOS das colunas importantes na primeira linha
-      if (index === 0) {
-        console.log('\n🎯 ========== DEBUG VALORES BRUTOS (Linha 1) ==========');
-        console.log('📦 CHAVES DISPONÍVEIS NO OBJETO linha:', Object.keys(linha));
-        console.log('\nPCS/CTN (funciona ✅):', {
-          'linha["PCS/CTN"]': linha['PCS/CTN'],
-          'linha.PCS_CTN': linha.PCS_CTN,
-          'linha.pcs_ctn': linha.pcs_ctn,
-          'APÓS extrairValorExcel': extrairValorExcel(linha['PCS/CTN'] || linha.PCS_CTN || linha.pcs_ctn)
-        });
-        console.log('\nMATERIAL (não funciona ❌):', {
-          'linha.MATERIAL': linha.MATERIAL,
-          'linha.material': linha.material,
-          'linha.Material': linha.Material,
-          'APÓS extrairValorExcel': extrairValorExcel(linha.MATERIAL || linha.material)
-        });
-        console.log('\nCOR (não funciona ❌):', {
-          'linha.COR': linha.COR,
-          'linha.cor': linha.cor,
-          'linha.Cor': linha.Cor,
-          'APÓS extrairValorExcel': extrairValorExcel(linha.COR || linha.cor)
-        });
-        console.log('\nPREÇO (não funciona ❌):', {
-          'linha.PREÇO': linha.PREÇO,
-          'linha.PRECO': linha.PRECO,
-          'linha.preco': linha.preco,
-          'linha.Preço': linha.Preço,
-          'APÓS extrairValorExcel': extrairValorExcel(linha.PREÇO || linha.PRECO || linha.preco)
-        });
-        console.log('====================================================\n');
+        console.log('\n🔍 ==================== DEBUG PRIMEIRA LINHA ====================');
+        console.log('📋 Total de colunas:', Object.keys(linha).length);
+        console.log('📋 Primeiras 10 colunas:', Object.keys(linha).slice(0, 10).join(', '));
+        console.log('📊 Valores de teste:');
+        console.log('  - MATERIAL:', linha.MATERIAL || linha.Material || linha.material || 'não encontrado');
+        console.log('  - COR:', linha.COR || linha.Cor || linha.cor || 'não encontrado');
+        console.log('  - Package:', linha['Package'] || linha.PACKAGE || linha.package || 'não encontrado');
+        console.log('  - Preço:', linha['Preço'] || linha.PREÇO || linha.PRECO || 'não encontrado');
+        console.log('=============================================================\n');
       }
       
       const produtoMapeado = {
@@ -769,14 +724,12 @@ export function useCotacoesArquivos() {
         // COR - lógica SIMPLES do sistema antigo
         cor: linha.COR || linha.cor || '',
         
-        // NOME DO PRODUTO - usar nome_produto (sistema antigo)
-        nome_produto: extrairValorExcel(
-          linha['Nome do Produto'] || 
+        // NOME DO PRODUTO - usar nome EXATO do Excel
+        nome_produto: linha['Nome do Produto'] || 
           linha.NOME_PRODUTO || 
           linha.nome_produto || 
           linha.NOME || 
-          linha.nome
-        ) || '',
+          linha.nome || '',
         
         // PACKAGE - usar nome EXATO do Excel
         package: linha['Package'] || linha.PACKAGE || linha.package || '',
@@ -789,13 +742,11 @@ export function useCotacoesArquivos() {
         // UNIDADE - usar nome EXATO do Excel
         unit: linha['Unid.'] || linha.UNIT || linha.unit || '',
         
-        // PCS/CTN
+        // PCS/CTN - usar nome EXATO do Excel
         pcs_ctn: parseInt(String(
-          extrairValorExcel(
-            linha['PCS/CTN'] || 
-            linha.PCS_CTN || 
-            linha.pcs_ctn
-          ) || '0'
+          linha['PCS/CTN'] || 
+          linha.PCS_CTN || 
+          linha.pcs_ctn || '0'
         ).replace(/[^\d]/g, '')) || 0,
         
         // CAIXAS - usar nome EXATO do Excel
