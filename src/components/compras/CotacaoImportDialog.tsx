@@ -229,24 +229,24 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),
           unidade_medida: item['Unid.'] || item.UNIT || item.unidade || 'un',  // ✅ Tabela usa "unidade_medida"
           pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
-          qtd_caixas_pedido: Number(item['Caixas'] || item.caixas || 0),  // ✅ Tabela usa "qtd_caixas_pedido"
+          qtd_caixas_pedido: parseFloat(String(item['Caixas'] || item.caixas || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,  // ✅ Limpar formatação
           quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
           
-          // PESOS
-          peso_unitario_g: Number(item['Peso Unit. (g)'] || item.peso_unitario || 0),
-          peso_emb_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_embalagem || 0),  // ✅ Nome correto
-          peso_sem_emb_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || 0),  // ✅ Nome correto
-          peso_total_emb_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_bruto || 0),  // ✅ Nome correto
-          peso_total_sem_emb_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_liquido || 0),  // ✅ Nome correto
+          // PESOS - Limpar formatação antes do parse
+          peso_unitario_g: parseFloat(String(item['Peso Unit. (g)'] || item.peso_unitario || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_emb_master_kg: parseFloat(String(item['Peso Emb. Master (KG)'] || item.peso_embalagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_sem_emb_master_kg: parseFloat(String(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_emb_kg: parseFloat(String(item['Peso Total Emb. (KG)'] || item.peso_total_bruto || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          peso_total_sem_emb_kg: parseFloat(String(item['Peso Total S/ Emb. (KG)'] || item.peso_total_liquido || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           
-          // DIMENSÕES
-          comprimento_cm: Number(item['Comp. (cm)'] || item.comprimento || 0),
-          largura_cm: Number(item['Larg. (cm)'] || item.largura || 0),
-          altura_cm: Number(item['Alt. (cm)'] || item.altura || 0),
+          // DIMENSÕES - Limpar formatação antes do parse
+          comprimento_cm: parseFloat(String(item['Comp. (cm)'] || item.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          largura_cm: parseFloat(String(item['Larg. (cm)'] || item.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
+          altura_cm: parseFloat(String(item['Alt. (cm)'] || item.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           
-          // CUBAGEM
-          cbm_unitario: Number(item['CBM Cubagem'] || item.cbm_unitario || 0),  // ✅ Nome correto
+          // CUBAGEM - Limpar formatação antes do parse
+          cbm_unitario: parseFloat(String(item['CBM Cubagem'] || item.cbm_unitario || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
           cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
           
           // OBSERVAÇÕES E IMAGENS
