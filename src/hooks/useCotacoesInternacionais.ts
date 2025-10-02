@@ -89,13 +89,20 @@ export function useCotacoesInternacionais() {
       console.log('✅ Cotação internacional salva com sucesso:', data);
 
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao criar cotação internacional:', error);
-      toast({
-        title: "Erro ao salvar cotação",
-        description: "Não foi possível salvar a cotação internacional.",
-        variant: "destructive",
-      });
+      
+      // Só mostrar toast se não for um erro de validação silencioso
+      const isSilentValidation = error?.message?.includes('Número da cotação') || 
+                                  error?.message?.includes('Descrição é obrigatória');
+      
+      if (!isSilentValidation) {
+        toast({
+          title: "Erro ao salvar cotação",
+          description: "Não foi possível salvar a cotação internacional.",
+          variant: "destructive",
+        });
+      }
       throw error;
     } finally {
       setLoading(false);

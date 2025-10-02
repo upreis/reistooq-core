@@ -1421,6 +1421,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
     // Agendar auto-save após 3 segundos de inatividade
     autoSaveTimeoutRef.current = setTimeout(async () => {
+      // Verificar novamente se os dados básicos estão preenchidos antes de salvar
+      const temDadosBasicos = selectedCotacao?.id || (dadosBasicos.numero_cotacao && dadosBasicos.descricao);
+      
+      if (!temDadosBasicos) {
+        console.log('⏭️ Auto-save cancelado: Preencha número e descrição da cotação primeiro');
+        return;
+      }
+
       try {
         setIsSavingAuto(true);
         
@@ -1473,7 +1481,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         
       } catch (error) {
         console.error('❌ Erro no auto-save:', error);
-        // Não mostrar toast de erro para não irritar o usuário
+        // Não mostrar toast de erro para auto-save silencioso
       } finally {
         setIsSavingAuto(false);
       }
