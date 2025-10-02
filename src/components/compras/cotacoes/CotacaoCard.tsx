@@ -40,8 +40,19 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
   // Usar o cbm_total salvo ou o calculado
   const cbmTotal = cotacao.total_cbm || cbmTotalCalculado;
   
-  // Calcular quantidade de containers baseado no CBM
-  const qtdContainers = cbmTotal > 0 ? Math.ceil(cbmTotal / 28) : 0;
+  // Calcular quantidade de containers baseado no CBM (usando 67.7m³ para container 40')
+  const qtdContainers = cbmTotal > 0 ? Math.ceil(cbmTotal / 67.7) : 0;
+  
+  // Debug log
+  console.log('🎴 Card Debug:', {
+    numero: cotacao.numero_cotacao,
+    qtdProdutos,
+    cbmTotal,
+    qtdContainers,
+    total_valor_origem: cotacao.total_valor_origem,
+    total_valor_usd: cotacao.total_valor_usd,
+    total_valor_brl: cotacao.total_valor_brl
+  });
 
   const handleSave = (field: string, value: string | number) => {
     if (onUpdate && cotacao.id) {
