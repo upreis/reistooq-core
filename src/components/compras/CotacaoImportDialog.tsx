@@ -233,46 +233,70 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
           
-          // PESOS - Limpar formatação antes do parse
+          // PESOS - Buscar em múltiplas variações de nomes de colunas
           peso_unitario_g: (() => {
-            const valor = parseFloat(String(item['Peso Unit. (g)'] || item.peso_unitario || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 Peso Unit: Excel="${item['Peso Unit. (g)']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
+              'PESO UNIT. (G)', 'PESO UNIT (G)', 'peso_unitario', 'peso_unitario_g'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Peso Unit: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           peso_emb_master_kg: (() => {
-            const valor = parseFloat(String(item['Peso Emb. Master (KG)'] || item.peso_embalagem || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 Peso Emb Master: Excel="${item['Peso Emb. Master (KG)']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'Peso Emb. Master (KG)', 'Peso Emb Master (KG)', 'Peso Cx. Master (KG)', 'Peso Cx Master (KG)',
+              'PESO EMB. MASTER (KG)', 'PESO EMB MASTER (KG)', 'peso_emb_master', 'peso_emb_master_kg', 'peso_embalagem'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Peso Emb Master: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           peso_sem_emb_master_kg: (() => {
-            const valor = parseFloat(String(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 Peso S/ Emb Master: Excel="${item['Peso S/ Emb. Master (KG)']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'Peso S/ Emb. Master (KG)', 'Peso S/ Emb Master (KG)', 'Peso Sem Emb. Master (KG)', 'Peso Sem Emb Master (KG)',
+              'PESO S/ EMB. MASTER (KG)', 'PESO S/ EMB MASTER (KG)', 'peso_sem_emb_master', 'peso_sem_emb_master_kg', 'peso_liquido'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Peso S/ Emb Master: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           peso_total_emb_kg: 0,  // ✅ SERÁ CALCULADO: peso_emb_master_kg * qtd_caixas_pedido
           peso_total_sem_emb_kg: 0,  // ✅ SERÁ CALCULADO: peso_sem_emb_master_kg * qtd_caixas_pedido
           
-          // DIMENSÕES - Limpar formatação antes do parse
+          // DIMENSÕES - Buscar em múltiplas variações de nomes de colunas
           comprimento_cm: (() => {
-            const valor = parseFloat(String(item['Comp. (cm)'] || item.comprimento || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 Comprimento: Excel="${item['Comp. (cm)']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'Comp. (cm)', 'Comp (cm)', 'Comprimento (cm)', 'COMP. (CM)', 'COMP (CM)', 'comprimento', 'comprimento_cm'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Comprimento: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           largura_cm: (() => {
-            const valor = parseFloat(String(item['Larg. (cm)'] || item.largura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 Largura: Excel="${item['Larg. (cm)']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'Larg. (cm)', 'Larg (cm)', 'Largura (cm)', 'LARG. (CM)', 'LARG (CM)', 'largura', 'largura_cm'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Largura: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           altura_cm: (() => {
-            const valor = parseFloat(String(item['Alt. (cm)'] || item.altura || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 Altura: Excel="${item['Alt. (cm)']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'Alt. (cm)', 'Alt (cm)', 'Altura (cm)', 'ALT. (CM)', 'ALT (CM)', 'altura', 'altura_cm'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Altura: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           
-          // CUBAGEM - Limpar formatação antes do parse
+          // CUBAGEM - Buscar em múltiplas variações de nomes de colunas
           cbm_unitario: (() => {
-            const valor = parseFloat(String(item['CBM Cubagem'] || item.cbm_unitario || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
-            console.log(`🔍 CBM Cubagem: Excel="${item['CBM Cubagem']}" → Parsed=${valor}`);
+            const rawValue = buscarValorColuna(item, [
+              'CBM Cubagem', 'CBM CUBAGEM', 'Cubagem', 'CBM', 'cbm_unitario', 'cbm_cubagem'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 CBM Cubagem: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
           cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
@@ -378,6 +402,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
     }
   };
 
+  // Helper para buscar valor em múltiplas variações de nome de coluna
+  const buscarValorColuna = (item: any, variacoes: string[]): any => {
+    for (const variacao of variacoes) {
+      if (item[variacao] !== undefined && item[variacao] !== null && item[variacao] !== '') {
+        return item[variacao];
+      }
+    }
+    return undefined;
+  };
+
   const lerArquivo = (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -409,6 +443,11 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             const sheetName = workbook.SheetNames[0];
             const worksheet = workbook.Sheets[sheetName];
             rows = XLSX.utils.sheet_to_json(worksheet);
+            
+            // DEBUG: Mostrar as colunas reais do Excel
+            if (rows.length > 0) {
+              console.log('🔍 [DEBUG] Colunas encontradas no Excel:', Object.keys(rows[0]));
+            }
           }
 
           resolve(rows);
