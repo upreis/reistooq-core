@@ -1401,46 +1401,41 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       try {
         setIsSavingAuto(true);
         
-        // Preparar dados da cotação
-        const produtosFormatados = produtosParaSalvar.map((p: any) => ({
-          id: p.id || `prod-${Date.now()}-${Math.random()}`,
-          sku: p.sku || '',
-          nome: p.nome_produto || p.nome || '',
-          material: p.material || '',
-          package_qtd: p.pcs_ctn || 1,
-          preco_unitario: p.preco || p.preco_unitario || 0,
-          unidade_medida: p.unit || p.unidade_medida || 'PCS',
-          pcs_ctn: p.pcs_ctn || 1,
-          qtd_caixas_pedido: p.caixas || p.qtd_caixas_pedido || 1,
-          peso_unitario_g: p.peso_unitario_g || 0,
-          largura_cm: p.largura || p.largura_cm || 0,
-          altura_cm: p.altura || p.altura_cm || 0,
-          comprimento_cm: p.comprimento || p.comprimento_cm || 0,
-          peso_total_kg: p.peso_total_kg || 0,
-          cbm_unitario: p.cbm_unitario || 0,
-          cbm_total: p.cbm_total || 0,
-          quantidade_total: p.quantidade_total || 0,
-          valor_total: p.valor_total || 0
-        }));
+        console.log('💾 [AUTO-SAVE] Preparando dados para salvar...');
+        
+        // Validar produtos antes de salvar (modo auto-save = mais tolerante)
+        const invalidProducts = produtosParaSalvar.filter(p => {
+          const validation = validateProdutoData(p, true); // true = isAutoSave
+          return !validation.isValid;
+        });
+        
+        if (invalidProducts.length > 0) {
+          console.log('⚠️ Auto-save: Dados inválidos, aguardando preenchimento', {
+            produtosInvalidos: invalidProducts.length,
+            totalProdutos: produtosParaSalvar.length
+          });
+          setIsSavingAuto(false);
+          return;
+        }
 
-        // Preparar dados da cotação
-        // Se há cotação selecionada, usar os dados dela. Senão, usar dadosBasicos
-        const dadosCotacao = selectedCotacao?.id ? {
-          numero_cotacao: selectedCotacao.numero_cotacao,
-          descricao: selectedCotacao.descricao,
-          pais_origem: selectedCotacao.pais_origem,
-          moeda_origem: selectedCotacao.moeda_origem,
-          fator_multiplicador: selectedCotacao.fator_multiplicador,
-          data_abertura: selectedCotacao.data_abertura,
-          data_fechamento: selectedCotacao.data_fechamento,
-          status: selectedCotacao.status,
-          observacoes: selectedCotacao.observacoes
-        } : dadosBasicos;
-
-        const cotacaoCompleta: CotacaoInternacional = {
-          ...dadosCotacao,
-          produtos: produtosFormatados,
-          ...totaisGerais
+        // Criar objeto completo da cotação
+        const cotacaoCompleta = {
+          numero_cotacao: selectedCotacao?.numero_cotacao || dadosBasicos.numero_cotacao,
+          descricao: selectedCotacao?.descricao || dadosBasicos.descricao,
+          pais_origem: selectedCotacao?.pais_origem || dadosBasicos.pais_origem,
+          moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
+          fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
+          data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
+          data_fechamento: selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento || null,
+          status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
+          observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
+          produtos: produtosParaSalvar,
+          total_peso_kg: totaisGerais.total_peso_kg || 0,
+          total_cbm: totaisGerais.total_cbm || 0,
+          total_quantidade: totaisGerais.total_quantidade || 0,
+          total_valor_origem: totaisGerais.total_valor_origem || 0,
+          total_valor_usd: totaisGerais.total_valor_usd || 0,
+          total_valor_brl: totaisGerais.total_valor_brl || 0
         };
 
         // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
@@ -1451,6 +1446,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           const novaCotacao = await silentCreateCotacao(cotacaoCompleta);
           if (novaCotacao) {
             // Converter produtos de Json para ProdutoCotacao[]
+            const produtosFormatados = Array.isArray(novaCotacao.produtos) ? novaCotacao.produtos : [];
             const cotacaoConvertida = {
               ...novaCotacao,
               produtos: produtosFormatados

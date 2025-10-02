@@ -257,36 +257,47 @@ export interface ProdutoValidationResult {
   warnings: string[];
 }
 
-export function validateProdutoData(produto: Partial<ProdutoCotacao>): ProdutoValidationResult {
+export function validateProdutoData(produto: Partial<ProdutoCotacao>, isAutoSave: boolean = false): ProdutoValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
   
-  // Validações obrigatórias
+  // Validações obrigatórias (mais flexíveis para auto-save)
   if (!produto.sku || produto.sku.trim() === '') {
-    errors.push('SKU é obrigatório');
+    if (isAutoSave) {
+      warnings.push('SKU não preenchido');
+    } else {
+      errors.push('SKU é obrigatório');
+    }
   }
   
   if (!produto.nome || produto.nome.trim() === '') {
-    errors.push('Nome do produto é obrigatório');
+    if (isAutoSave) {
+      warnings.push('Nome do produto não preenchido');
+    } else {
+      errors.push('Nome do produto é obrigatório');
+    }
   }
   
-  if ((produto.preco_unitario || 0) <= 0) {
-    errors.push('Preço unitário deve ser maior que zero');
+  // Validações de valores - apenas para adição manual, não para auto-save
+  if (!isAutoSave) {
+    if ((produto.preco_unitario || 0) <= 0) {
+      errors.push('Preço unitário deve ser maior que zero');
+    }
+    
+    if ((produto.package_qtd || 0) <= 0) {
+      errors.push('Quantidade por package deve ser maior que zero');
+    }
+    
+    if ((produto.pcs_ctn || 0) <= 0) {
+      errors.push('PCS/CTN deve ser maior que zero');
+    }
+    
+    if ((produto.qtd_caixas_pedido || 0) <= 0) {
+      errors.push('Quantidade de caixas deve ser maior que zero');
+    }
   }
   
-  if ((produto.package_qtd || 0) <= 0) {
-    errors.push('Quantidade por package deve ser maior que zero');
-  }
-  
-  if ((produto.pcs_ctn || 0) <= 0) {
-    errors.push('PCS/CTN deve ser maior que zero');
-  }
-  
-  if ((produto.qtd_caixas_pedido || 0) <= 0) {
-    errors.push('Quantidade de caixas deve ser maior que zero');
-  }
-  
-  // Validações de warning
+  // Validações de warning (sempre aplicadas, mas não bloqueiam)
   if ((produto.peso_unitario_g || 0) === 0) {
     warnings.push('Peso unitário não informado - pode afetar cálculos de frete');
   }
