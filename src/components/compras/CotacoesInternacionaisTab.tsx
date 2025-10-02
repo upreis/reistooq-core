@@ -930,7 +930,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       ...product,
       change_dolar: (product.preco_unitario || 0) * getChangeDolarDivisorValue(),
       change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais: (product.preco_unitario || 0) * getMultiplicadorReaisValue(),
       multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
     }));
   }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
@@ -1011,7 +1011,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Recalcular campos calculados automaticamente
     product.change_dolar = (product.preco_unitario || 0) * getChangeDolarDivisorValue();
     product.change_dolar_total = product.valor_total / getChangeDolarTotalDivisorValue();
-    product.multiplicador_reais = product.preco * getMultiplicadorReaisValue();
+    product.multiplicador_reais = (product.preco_unitario || 0) * getMultiplicadorReaisValue();
     product.multiplicador_reais_total = (product.valor_total / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue();
     
     setProductData(updatedProducts);
@@ -1124,7 +1124,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       ...produto,
       change_dolar: (produto.preco_unitario || 0) * getChangeDolarDivisorValue(),
       change_dolar_total: (produto.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: (produto.preco || 0) * getMultiplicadorReaisValue(),
+      multiplicador_reais: (produto.preco_unitario || 0) * getMultiplicadorReaisValue(),
       multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
     }));
     
