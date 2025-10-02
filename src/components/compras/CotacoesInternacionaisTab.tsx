@@ -1082,6 +1082,21 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     console.log('🎯 [handleImportSuccess] INÍCIO - Dados recebidos:', dadosImportados.length);
     console.log('🎯 [handleImportSuccess] Estado atual de productData:', productData.length);
     
+    // 🔍 DEBUG: Verificar campos problemáticos dos dados recebidos
+    if (dadosImportados && dadosImportados.length > 0) {
+      const p = dadosImportados[0];
+      console.log('🔍 DADOS RECEBIDOS NO TAB:', {
+        qtd_caixas_pedido: p.qtd_caixas_pedido,
+        peso_unitario_g: p.peso_unitario_g,
+        peso_emb_master_kg: p.peso_emb_master_kg,
+        peso_sem_emb_master_kg: p.peso_sem_emb_master_kg,
+        comprimento_cm: p.comprimento_cm,
+        largura_cm: p.largura_cm,
+        altura_cm: p.altura_cm,
+        cbm_unitario: p.cbm_unitario
+      });
+    }
+    
     if (!dadosImportados || dadosImportados.length === 0) {
       toast({
         title: "Erro na importação",
