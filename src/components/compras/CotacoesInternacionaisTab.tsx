@@ -1,5 +1,5 @@
 // src/components/compras/CotacoesInternacionaisTab.tsx
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { SessionStorageManager } from '@/utils/sessionStorageManager';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { 
@@ -182,6 +182,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   
   // Estados para seleção de produtos na tabela
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  
+  // Ref para controlar auto-save
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
+  const [isSavingAuto, setIsSavingAuto] = useState(false);
   
   // Estados para divisores e multiplicadores com valores padrão
   const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>("1");
@@ -1385,6 +1390,85 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       });
     }
   };
+
+  // Auto-save: salvar automaticamente após edições
+  useEffect(() => {
+    // Não fazer auto-save se não houver produtos ou se estiver carregando
+    if (productData.length === 0 || !hasImportedData || isSavingAuto) {
+      return;
+    }
+
+    // Limpar timeout anterior
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Agendar auto-save após 3 segundos de inatividade
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      try {
+        setIsSavingAuto(true);
+        
+        // Preparar dados da cotação
+        const produtosFormatados = totaisGerais.produtos.map((p: any) => ({
+          id: p.id || `prod-${Date.now()}-${Math.random()}`,
+          sku: p.sku || '',
+          nome: p.nome_produto || p.nome || '',
+          material: p.material || '',
+          package_qtd: p.pcs_ctn || 1,
+          preco_unitario: p.preco || p.preco_unitario || 0,
+          unidade_medida: p.unit || p.unidade_medida || 'PCS',
+          pcs_ctn: p.pcs_ctn || 1,
+          qtd_caixas_pedido: p.caixas || p.qtd_caixas_pedido || 1,
+          peso_unitario_g: p.peso_unitario_g || 0,
+          largura_cm: p.largura || p.largura_cm || 0,
+          altura_cm: p.altura || p.altura_cm || 0,
+          comprimento_cm: p.comprimento || p.comprimento_cm || 0,
+          peso_total_kg: p.peso_total_kg || 0,
+          cbm_unitario: p.cbm_unitario || 0,
+          cbm_total: p.cbm_total || 0,
+          quantidade_total: p.quantidade_total || 0,
+          valor_total: p.valor_total || 0
+        }));
+
+        const cotacaoCompleta: CotacaoInternacional = {
+          ...dadosBasicos,
+          produtos: produtosFormatados,
+          ...totaisGerais
+        };
+
+        // Atualizar se já existe, criar se não existe
+        if (selectedCotacao?.id) {
+          await secureUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
+          console.log('✅ Auto-save: Cotação atualizada');
+        } else if (dadosBasicos.numero_cotacao && dadosBasicos.descricao) {
+          const novaCotacao = await secureCreateCotacao(cotacaoCompleta);
+          if (novaCotacao) {
+            // Converter produtos de Json para ProdutoCotacao[]
+            const cotacaoConvertida = {
+              ...novaCotacao,
+              produtos: produtosFormatados
+            } as unknown as CotacaoInternacional;
+            setSelectedCotacao(cotacaoConvertida);
+          }
+          console.log('✅ Auto-save: Cotação criada');
+        }
+
+        setLastAutoSave(new Date());
+        
+      } catch (error) {
+        console.error('Erro no auto-save:', error);
+      } finally {
+        setIsSavingAuto(false);
+      }
+    }, 3000); // 3 segundos de debounce
+
+    // Cleanup
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, secureCreateCotacao, secureUpdateCotacao]);
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1571,7 +1655,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 {/* Coluna esquerda - Informações */}
                 <div className="bg-slate-800 text-white p-3 rounded-lg w-80">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
+                      {isSavingAuto && (
+                        <span className="text-xs text-yellow-400 flex items-center gap-1">
+                          <RefreshCw className="h-3 w-3 animate-spin" />
+                          Salvando...
+                        </span>
+                      )}
+                      {lastAutoSave && !isSavingAuto && (
+                        <span className="text-xs text-green-400">
+                          ✓ Salvo {new Date(lastAutoSave).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
+                    </div>
                     <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
                       {selectedCotacao.status}
                     </Badge>
