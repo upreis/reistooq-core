@@ -99,24 +99,62 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
+        {/* Datas e Quantidades */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div className="text-muted-foreground text-xs mb-1">Data Criação</div>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium">{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <span>{cotacao.total_quantidade || 0} itens</span>
+          <div>
+            <div className="text-muted-foreground text-xs mb-1">Previsão Chegada</div>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium">
+                {cotacao.data_fechamento 
+                  ? new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')
+                  : 'Não definida'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Quantidades */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
+          <div>
+            <div className="text-muted-foreground text-xs mb-1">Qtd Produtos</div>
+            <div className="flex items-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium">{cotacao.total_quantidade || 0} itens</span>
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground text-xs mb-1">Containers</div>
+            <div className="flex items-center gap-1.5">
+              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="font-medium">
+                {cotacao.total_cbm 
+                  ? `${Math.ceil((cotacao.total_cbm / 28))} (${cotacao.total_cbm.toFixed(2)} m³)`
+                  : '0'}
+              </span>
+            </div>
           </div>
         </div>
         
-        <div className="space-y-1">
+        {/* Valores */}
+        <div className="space-y-1.5 pt-2 border-t">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
-            <span>{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
+            <span className="text-muted-foreground">Yuan ({cotacao.moeda_origem}):</span>
+            <span className="font-medium">{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
           </div>
-          <div className="flex justify-between text-sm font-semibold">
-            <span>Total BRL:</span>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">Dólar (USD):</span>
+            <span className="font-medium">{formatCurrency(cotacao.total_valor_usd || 0, 'USD')}</span>
+          </div>
+          <div className="flex justify-between text-sm font-semibold text-primary">
+            <span>Total Real (BRL):</span>
             <span>{formatCurrency(cotacao.total_valor_brl || 0)}</span>
           </div>
         </div>
