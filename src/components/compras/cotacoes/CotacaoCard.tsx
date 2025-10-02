@@ -1,184 +1,104 @@
-import React, { memo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Eye, Edit, Trash2, Calendar, DollarSign, Globe, Package } from "lucide-react";
+import { Calendar, Package, Eye } from "lucide-react";
+import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
 
 interface CotacaoCardProps {
-  cotacao: {
-    id?: string;
-    numero_cotacao: string;
-    descricao: string;
-    pais_origem: string;
-    moeda_origem: string;
-    status: string;
-    data_abertura: string;
-    data_fechamento?: string;
-    total_quantidade?: number;
-    total_valor_origem?: number;
-    total_valor_usd?: number;
-    total_valor_brl?: number;
-    total_peso_kg?: number;
-    total_cbm?: number;
-  };
-  onView: (cotacao: any) => void;
-  onEdit: (cotacao: any) => void;
-  onDelete: (id: string) => void;
-  isSelected?: boolean;
-  onSelect?: (id: string) => void;
-  isSelectMode?: boolean;
+  cotacao: CotacaoInternacional;
+  isSelectMode: boolean;
+  isSelected: boolean;
+  onSelect: (id: string) => void;
+  onClick: () => void;
+  formatCurrency: (value: number, currency?: string) => string;
+  getStatusColor: (status: string) => string;
 }
 
-/**
- * Componente otimizado para exibir informações de uma cotação internacional
- * Memoizado para evitar re-renders desnecessários
- */
-export const CotacaoCard = memo<CotacaoCardProps>(({
+export const CotacaoCard: React.FC<CotacaoCardProps> = ({
   cotacao,
-  onView,
-  onEdit,
-  onDelete,
-  isSelected = false,
+  isSelectMode,
+  isSelected,
   onSelect,
-  isSelectMode = false
+  onClick,
+  formatCurrency,
+  getStatusColor
 }) => {
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'rascunho': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'enviada': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'aprovada': return 'bg-green-100 text-green-800 border-green-200';
-      case 'rejeitada': return 'bg-red-100 text-red-800 border-red-200';
-      case 'cancelada': return 'bg-orange-100 text-orange-800 border-orange-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const formatCurrency = (value?: number, currency = 'BRL') => {
-    if (!value) return currency === 'CNY' ? '¥0.00' : currency === 'USD' ? '$0.00' : 'R$0.00';
-    
-    if (currency === 'CNY') {
-      return `¥${new Intl.NumberFormat('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
-    } else if (currency === 'USD') {
-      return `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)}`;
-    } else {
-      return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL'
-      }).format(value);
-    }
-  };
-
-  const formatNumber = (value?: number, unit = '') => {
-    if (!value) return 'N/A';
-    return `${new Intl.NumberFormat('pt-BR').format(value)}${unit}`;
-  };
-
   return (
     <Card 
-      className={`relative transition-all duration-200 hover:shadow-md ${
-        isSelected ? 'ring-2 ring-primary shadow-md' : ''
-      } ${isSelectMode ? 'cursor-pointer' : ''}`}
-      onClick={isSelectMode && onSelect ? () => onSelect(cotacao.id!) : undefined}
+      className={`relative cursor-pointer hover:shadow-md transition-all ${
+        isSelectMode 
+          ? isSelected 
+            ? 'ring-2 ring-primary bg-primary/5' 
+            : 'hover:ring-1 hover:ring-border'
+          : ''
+      }`}
+      onClick={(e) => {
+        if (isSelectMode) {
+          e.stopPropagation();
+          onSelect(cotacao.id!);
+        } else {
+          onClick();
+        }
+      }}
     >
+      {isSelectMode && (
+        <div className="absolute top-2 left-2 z-10">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => {
+              e.stopPropagation();
+              onSelect(cotacao.id!);
+            }}
+            className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+          />
+        </div>
+      )}
+      
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1 min-w-0">
-            <CardTitle className="text-lg font-semibold text-foreground truncate">
-              {cotacao.numero_cotacao}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-              {cotacao.descricao}
-            </p>
-          </div>
-          <Badge 
-            variant="outline" 
-            className={`ml-2 shrink-0 ${getStatusColor(cotacao.status)}`}
-          >
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{cotacao.numero_cotacao}</CardTitle>
+          <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
             {cotacao.status}
           </Badge>
         </div>
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {cotacao.descricao}
+        </p>
       </CardHeader>
-
-      <CardContent className="pt-0">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="space-y-2">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Globe className="w-4 h-4 mr-2" />
-              <span className="font-medium">{cotacao.pais_origem}</span>
-              <span className="ml-1">({cotacao.moeda_origem})</span>
-            </div>
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Calendar className="w-4 h-4 mr-2" />
-              <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
-            </div>
+      <CardContent className="space-y-3">
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
           </div>
-          
-          <div className="space-y-2 text-right">
-            <div className="flex items-center justify-end text-sm text-muted-foreground">
-              <Package className="w-4 h-4 mr-2" />
-              <span>{formatNumber(cotacao.total_quantidade)} itens</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <span>{cotacao.total_quantidade || 0} itens</span>
           </div>
         </div>
-
-        {/* Valores financeiros */}
-        <div className="space-y-1 mb-4">
+        
+        <div className="space-y-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
-            <span className="font-medium">{formatCurrency(cotacao.total_valor_origem, cotacao.moeda_origem)}</span>
+            <span>{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
           </div>
           <div className="flex justify-between text-sm font-semibold">
             <span>Total BRL:</span>
-            <span className="text-primary">{formatCurrency(cotacao.total_valor_brl, 'BRL')}</span>
+            <span>{formatCurrency(cotacao.total_valor_brl || 0)}</span>
           </div>
         </div>
-
-        {/* Resumo físico */}
-        <div className="grid grid-cols-2 gap-4 p-3 bg-muted/30 rounded-lg text-xs">
-          <div>
-            <span className="text-muted-foreground">Peso:</span>
-            <span className="ml-1 font-medium">{formatNumber(cotacao.total_peso_kg, ' kg')}</span>
-          </div>
-          <div>
-            <span className="text-muted-foreground">Volume:</span>
-            <span className="ml-1 font-medium">{formatNumber(cotacao.total_cbm, ' m³')}</span>
-          </div>
-        </div>
-
-        {/* Ações */}
+        
         {!isSelectMode && (
-          <div className="flex gap-2 mt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onView(cotacao)}
-              className="flex-1"
-            >
-              <Eye className="w-4 h-4 mr-1" />
-              Ver
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(cotacao)}
-              className="flex-1"
-            >
-              <Edit className="w-4 h-4 mr-1" />
-              Editar
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => onDelete(cotacao.id!)}
-              className="px-3"
-            >
-              <Trash2 className="w-4 h-4" />
+          <div className="flex gap-2 pt-2">
+            <Button variant="outline" size="sm" className="flex-1">
+              <Eye className="h-4 w-4 mr-1" />
+              Ver Produtos
             </Button>
           </div>
         )}
       </CardContent>
     </Card>
   );
-});
-
-CotacaoCard.displayName = 'CotacaoCard';
+};

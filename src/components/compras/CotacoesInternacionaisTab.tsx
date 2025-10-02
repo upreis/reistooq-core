@@ -30,6 +30,9 @@ import ContainerVisualization from './ContainerVisualization';
 const CotacaoImportDialog = React.lazy(() => import('./CotacaoImportDialog').then(m => ({ default: m.CotacaoImportDialog })));
 import { ImageComparisonModal } from './ImageComparisonModal';
 import { ProdutoImagemPreview } from './ProdutoImagemPreview';
+import { CotacaoCard } from './cotacoes/CotacaoCard';
+import { CotacaoHeader } from './cotacoes/CotacaoHeader';
+import { EmptyState } from './cotacoes/EmptyState';
 import { 
   Plus, 
   FileText, 
@@ -1652,228 +1655,56 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {/* Cotações Grid - Cards Layout */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredCotacoes.map((cotacao) => (
-                <Card 
-                  key={cotacao.id} 
-                  className={`relative cursor-pointer hover:shadow-md transition-all ${
-                    isSelectMode 
-                      ? selectedCotacoes.includes(cotacao.id!) 
-                        ? 'ring-2 ring-primary bg-primary/5' 
-                        : 'hover:ring-1 hover:ring-border'
-                      : ''
-                  }`}
-                  onClick={(e) => {
-                    if (isSelectMode) {
-                      e.stopPropagation();
-                      selectCotacao(cotacao.id!);
-                    } else {
-                      setSelectedCotacao(cotacao);
-                    }
-                  }}
-                >
-                  {isSelectMode && (
-                    <div className="absolute top-2 left-2 z-10">
-                      <input
-                        type="checkbox"
-                        checked={selectedCotacoes.includes(cotacao.id!)}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          selectCotacao(cotacao.id!);
-                        }}
-                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                    </div>
-                  )}
-                  
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{cotacao.numero_cotacao}</CardTitle>
-                      <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
-                        {cotacao.status}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {cotacao.descricao}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Package className="h-4 w-4 text-muted-foreground" />
-                        <span>{cotacao.total_quantidade || 0} itens</span>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
-                        <span>{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
-                      </div>
-                      <div className="flex justify-between text-sm font-semibold">
-                        <span>Total BRL:</span>
-                        <span>{formatCurrency(cotacao.total_valor_brl || 0)}</span>
-                      </div>
-                    </div>
-                    
-                    {!isSelectMode && (
-                      <div className="flex gap-2 pt-2">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver Produtos
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+              <CotacaoCard
+                key={cotacao.id}
+                cotacao={cotacao}
+                isSelectMode={isSelectMode}
+                isSelected={selectedCotacoes.includes(cotacao.id!)}
+                onSelect={selectCotacao}
+                onClick={() => setSelectedCotacao(cotacao)}
+                formatCurrency={formatCurrency}
+                getStatusColor={getStatusColor}
+              />
+            ))}
           </div>
 
-          {filteredCotacoes.length === 0 && (
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Nenhuma cotação encontrada</h3>
-                <p className="text-muted-foreground text-center mb-4">
-                  {searchTerm ? 'Tente ajustar os filtros de busca' : 'Use a importação de Excel para criar cotações'}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {filteredCotacoes.length === 0 && <EmptyState searchTerm={searchTerm} />}
         </>
       ) : (
         <div className="space-y-4">
           {/* Cabeçalho da Cotação Selecionada */}
-          <Card>
-            <CardHeader className="pb-3">
-              {/* Layout em duas colunas */}
-              <div className="flex gap-6">
-                {/* Coluna esquerda - Informações */}
-                <div className="bg-slate-800 text-white p-3 rounded-lg w-80">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">{selectedCotacao.numero_cotacao}</h3>
-                      {isSavingAuto && (
-                        <span className="text-xs text-yellow-400 flex items-center gap-1">
-                          <RefreshCw className="h-3 w-3 animate-spin" />
-                          Salvando...
-                        </span>
-                      )}
-                      {lastAutoSave && !isSavingAuto && (
-                        <span className="text-xs text-green-400">
-                          ✓ Salvo {new Date(lastAutoSave).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                    </div>
-                    <Badge className={`text-white ${getStatusColor(selectedCotacao.status)}`}>
-                      {selectedCotacao.status}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-slate-300 mb-3">{selectedCotacao.descricao}</p>
-                  
-                   {/* Resumo de Totais */}
-                   <div className="space-y-3 text-xs">
-                     {/* País e Moeda */}
-                     <div className="flex items-center justify-between gap-6">
-                       <div className="flex items-center gap-2">
-                         <span className="text-slate-400">País:</span>
-                         <span className="font-medium text-white">{selectedCotacao.pais_origem}</span>
-                       </div>
-                       <div className="flex items-center gap-2">
-                         <span className="text-slate-400">Moeda:</span>
-                         <Select value={selectedCurrency} onValueChange={(value) => {
-                           setSelectedCurrency(value);
-                           try {
-                             sessionStorage.setItem('cotacao-selected-currency', value);
-                           } catch (error) {
-                             console.warn('Erro ao salvar moeda no sessionStorage:', error);
-                           }
-                         }}>
-                           <SelectTrigger className="w-20 h-6 text-xs bg-slate-700 border-slate-600">
-                             <SelectValue />
-                           </SelectTrigger>
-                           <SelectContent className="bg-background border border-border z-50">
-                             {AVAILABLE_CURRENCIES.map((currency) => (
-                               <SelectItem key={currency.code} value={currency.code}>
-                                 <span className="flex items-center gap-2">
-                                   <span>{currency.flag}</span>
-                                   <span>{currency.code}</span>
-                                 </span>
-                               </SelectItem>
-                             ))}
-                           </SelectContent>
-                         </Select>
-                       </div>
-                     </div>
-              
-                     {/* Total na moeda de origem */}
-                     <div className="flex justify-between items-center">
-                       <span className="text-slate-400">Total {dadosBasicos.moeda_origem}:</span>
-                       <div className="font-semibold text-blue-400 text-sm">
-                         {getCurrencySymbol(dadosBasicos.moeda_origem)} {totaisGerais.total_valor_origem.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                       </div>
-                     </div>
-              
-                     {/* Total USD */}
-                     <div className="flex justify-between items-center">
-                       <span className="text-slate-400">Total USD:</span>
-                       <div className="font-semibold text-green-400 text-sm">
-                         $ {totaisGerais.total_valor_usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                       </div>
-                     </div>
-                     
-                     {/* Total BRL */}
-                     <div className="flex justify-between items-center">
-                       <span className="text-slate-400">Total BRL:</span>
-                       <div className="font-semibold text-orange-400 text-sm">
-                         R$ {totaisGerais.total_valor_brl.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                       </div>
-                     </div>
-                   </div>
-                </div>
-                
-                {/* Coluna direita - Container Visualization */}
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-medium text-muted-foreground">Simulação de Contêiner</h4>
-                    <div className="w-36">
-                      <Select value={selectedContainer} onValueChange={(value) => {
-                        setSelectedContainer(value);
-                        try {
-                          sessionStorage.setItem('cotacao-selected-container', value);
-                        } catch (error) {
-                          console.warn('Erro ao salvar container no sessionStorage:', error);
-                        }
-                      }}>
-                        <SelectTrigger className="w-full h-6 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border z-50">
-                          {Object.entries(CONTAINER_TYPES).map(([key, container]) => (
-                            <SelectItem key={key} value={key}>
-                              {container.name} ({container.volume}m³, {container.maxWeight.toLocaleString()}kg)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  <ContainerVisualization
-                    containerType={CONTAINER_TYPES[selectedContainer].name}
-                    volumePercentage={getContainerUsage('volume')}
-                    weightPercentage={getContainerUsage('weight')}
-                    totalCBM={getTotalCBM()}
-                    totalWeight={getTotalWeight()}
-                    maxVolume={CONTAINER_TYPES[selectedContainer].volume}
-                    maxWeight={CONTAINER_TYPES[selectedContainer].maxWeight}
-                  />
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
+          <CotacaoHeader
+            cotacao={selectedCotacao}
+            isSavingAuto={isSavingAuto}
+            lastAutoSave={lastAutoSave}
+            selectedCurrency={selectedCurrency}
+            onCurrencyChange={(value) => {
+              setSelectedCurrency(value);
+              try {
+                sessionStorage.setItem('cotacao-selected-currency', value);
+              } catch (error) {
+                console.warn('Erro ao salvar moeda no sessionStorage:', error);
+              }
+            }}
+            selectedContainer={selectedContainer}
+            onContainerChange={(value) => {
+              setSelectedContainer(value);
+              try {
+                sessionStorage.setItem('cotacao-selected-container', value);
+              } catch (error) {
+                console.warn('Erro ao salvar container no sessionStorage:', error);
+              }
+            }}
+            totaisGerais={totaisGerais}
+            dadosBasicos={dadosBasicos}
+            getContainerUsage={getContainerUsage}
+            getTotalCBM={getTotalCBM}
+            getTotalWeight={getTotalWeight}
+            getStatusColor={getStatusColor}
+            getCurrencySymbol={getCurrencySymbol}
+            availableCurrencies={AVAILABLE_CURRENCIES}
+            containerTypes={CONTAINER_TYPES}
+          />
 
           {/* Tabela estilo Excel */}
           <Card>
