@@ -229,7 +229,15 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),
           unidade_medida: item['Unid.'] || item.UNIT || item.unidade || 'un',  // ✅ Tabela usa "unidade_medida"
           pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
-          qtd_caixas_pedido: parseFloat(String(item['Caixas'] || item.caixas || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0,  // ✅ Limpar formatação
+          qtd_caixas_pedido: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Caixas', 'CAIXAS', 'Qtd Caixas', 'Qtd. Caixas', 'Quantidade Caixas',
+              'caixas', 'qtd_caixas', 'qtd_caixas_pedido'
+            ]);
+            const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+            console.log(`🔍 Caixas: Excel="${rawValue}" → Parsed=${valor}`);
+            return valor;
+          })(),
           quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
           
