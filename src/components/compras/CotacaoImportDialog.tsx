@@ -330,11 +330,13 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         dadosProcessados = dadosProcessados.map(produto => {
           const peso_total_emb_kg = (produto.peso_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
           const peso_total_sem_emb_kg = (produto.peso_sem_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
+          const cbm_total = (produto.cbm_unitario || 0) * (produto.qtd_caixas_pedido || 0);
           
           return {
             ...produto,
             peso_total_emb_kg,
-            peso_total_sem_emb_kg
+            peso_total_sem_emb_kg,
+            cbm_total
           };
         });
 
@@ -357,7 +359,8 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             comprimento_cm: p.comprimento_cm,
             largura_cm: p.largura_cm,
             altura_cm: p.altura_cm,
-            cbm_unitario: p.cbm_unitario
+            cbm_unitario: p.cbm_unitario,
+            cbm_total: p.cbm_total
           });
         }
         
@@ -436,7 +439,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             ]);
             return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
           })(),
-          cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
+          cbm_total: 0,  // ✅ SERÁ CALCULADO a seguir
           quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.valor_total || 0),
           obs: item['Obs.'] || item.OBSERVACOES || item.observacoes || '',
@@ -450,11 +453,13 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         dadosProcessados = dadosProcessados.map(produto => {
           const peso_total_emb_kg = (produto.peso_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
           const peso_total_sem_emb_kg = (produto.peso_sem_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
+          const cbm_total = (produto.cbm_unitario || 0) * (produto.qtd_caixas_pedido || 0);
           
           return {
             ...produto,
             peso_total_emb_kg,
-            peso_total_sem_emb_kg
+            peso_total_sem_emb_kg,
+            cbm_total
           };
         });
       }
