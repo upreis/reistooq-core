@@ -623,7 +623,44 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Cálculos totais da cotação
   const totaisGerais = useMemo(() => {
-    const produtosCalculados = produtos.map(calcularProduto);
+    // Usar productData quando disponível (dados importados do Excel)
+    // Se não, usar produtos (adicionados manualmente)
+    const dadosBase = productData.length > 0 ? productData : produtos.map(calcularProduto);
+    
+    // Calcular os campos necessários para cada produto
+    const getChangeDolarDivisorValue = () => {
+      const value = parseFloat(changeDolarDivisor);
+      return value > 0 ? value : 7.10;
+    };
+    
+    const getChangeDolarTotalDivisorValue = () => {
+      const value = parseFloat(changeDolarTotalDivisor);
+      return value > 0 ? value : 7.45;
+    };
+    
+    const getMultiplicadorReaisValue = () => {
+      const value = parseFloat(multiplicadorReais);
+      return value > 0 ? value : 5.44;
+    };
+    
+    const getMultiplicadorReaisTotalValue = () => {
+      const value = parseFloat(multiplicadorReaisTotal);
+      return value > 0 ? value : 5.44;
+    };
+    
+    const produtosCalculados = dadosBase.map(product => {
+      const changeDolar = (product.preco_unitario || product.preco || 0) / getChangeDolarDivisorValue();
+      const valor_total_produto = product.valor_total || 0;
+      const multiplicador_reais_total = (valor_total_produto / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue();
+      
+      return {
+        ...product,
+        change_dolar: changeDolar,
+        change_dolar_total: valor_total_produto / getChangeDolarTotalDivisorValue(),
+        multiplicador_reais: changeDolar * getMultiplicadorReaisValue(),
+        multiplicador_reais_total: multiplicador_reais_total
+      };
+    });
     
     const total_peso_kg = produtosCalculados.reduce((sum, p) => sum + (p.peso_total_kg || 0), 0);
     const total_cbm = produtosCalculados.reduce((sum, p) => sum + (p.cbm_total || 0), 0);
@@ -650,7 +687,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_brl: total_valor_brl || 0,
       produtos: produtosCalculados
     };
-  }, [produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates, changeDolarTotalDivisor, multiplicadorReaisTotal]);
+  }, [productData, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   const adicionarProduto = useCallback(() => {
     try {
