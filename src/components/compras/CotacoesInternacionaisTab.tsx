@@ -1428,9 +1428,28 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
     // Agendar auto-save após 3 segundos de inatividade
     autoSaveTimeoutRef.current = setTimeout(async () => {
+      console.log('🔍 [AUTO-SAVE] Verificando condições:', {
+        temSelectedCotacao: !!selectedCotacao?.id,
+        selectedCotacaoData: selectedCotacao ? {
+          id: selectedCotacao.id,
+          numero: selectedCotacao.numero_cotacao,
+          descricao: selectedCotacao.descricao
+        } : null,
+        dadosBasicos,
+        totalProdutos: totaisGerais.produtos?.length || 0,
+        productDataLength: productData.length
+      });
+
       // Se não tem cotação selecionada, verificar se tem dados básicos
       if (!selectedCotacao?.id && !dadosBasicos.numero_cotacao) {
         console.log('⏭️ Auto-save cancelado: Aguardando número e descrição da cotação');
+        return;
+      }
+
+      // Verificar se há produtos para salvar
+      const produtosParaSalvar = totaisGerais.produtos || productData;
+      if (!produtosParaSalvar || produtosParaSalvar.length === 0) {
+        console.log('⏭️ Auto-save cancelado: Nenhum produto para salvar');
         return;
       }
 
@@ -1438,7 +1457,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         setIsSavingAuto(true);
         
         // Preparar dados da cotação
-        const produtosFormatados = totaisGerais.produtos.map((p: any) => ({
+        const produtosFormatados = produtosParaSalvar.map((p: any) => ({
           id: p.id || `prod-${Date.now()}-${Math.random()}`,
           sku: p.sku || '',
           nome: p.nome_produto || p.nome || '',
