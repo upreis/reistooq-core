@@ -1314,11 +1314,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           try {
             const base64 = await imageUrlToBase64(product.imagem);
             if (base64) {
+              // Converter base64 para Uint8Array (compatível com navegador)
               const imageData = base64.split(',')[1] || base64;
-              const imageBuffer = Buffer.from(imageData, 'base64');
+              const binaryString = atob(imageData);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
               
               const imageId = workbook.addImage({
-                buffer: imageBuffer,
+                buffer: bytes,
                 extension: 'png',
               });
 
@@ -1341,11 +1346,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           try {
             const base64 = await imageUrlToBase64(product.imagem_fornecedor);
             if (base64) {
+              // Converter base64 para Uint8Array (compatível com navegador)
               const imageData = base64.split(',')[1] || base64;
-              const imageBuffer = Buffer.from(imageData, 'base64');
+              const binaryString = atob(imageData);
+              const bytes = new Uint8Array(binaryString.length);
+              for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+              }
               
               const imageId = workbook.addImage({
-                buffer: imageBuffer,
+                buffer: bytes,
                 extension: 'png',
               });
 

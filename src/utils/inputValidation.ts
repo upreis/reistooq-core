@@ -37,10 +37,11 @@ export const cotacaoInternacionalSchema = z.object({
     .optional()
     .or(z.literal("")),
   
-  status: z.enum(['rascunho', 'enviada', 'aprovada', 'rejeitada', 'cancelada']).refine(
-    (val) => ['rascunho', 'enviada', 'aprovada', 'rejeitada', 'cancelada'].includes(val),
-    { message: "Status inválido" }
-  ),
+  status: z.string()
+    .refine(
+      (val) => ['rascunho', 'enviada', 'aprovada', 'rejeitada', 'cancelada', 'aberta', 'fechada'].includes(val),
+      { message: "Status inválido" }
+    ),
   
   observacoes: z.string()
     .trim()
