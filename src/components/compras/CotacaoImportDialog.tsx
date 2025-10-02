@@ -277,8 +277,8 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             console.log(`🔍 Peso S/ Emb Master: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
           })(),
-          peso_total_emb_kg: 0,  // ✅ SERÁ CALCULADO: peso_emb_master_kg * qtd_caixas_pedido
-          peso_total_sem_emb_kg: 0,  // ✅ SERÁ CALCULADO: peso_sem_emb_master_kg * qtd_caixas_pedido
+          peso_total_emb_kg: 0,  // ✅ SERÁ CALCULADO a seguir
+          peso_total_sem_emb_kg: 0,  // ✅ SERÁ CALCULADO a seguir
           
           // DIMENSÕES - Buscar em múltiplas variações de nomes de colunas
           comprimento_cm: (() => {
@@ -325,21 +325,35 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           imagem_fornecedor: item.imagem_fornecedor || '',
           nomeImagem: item.nomeImagem || ''
         }));
+        
+        // ✅ CALCULAR CAMPOS AUTOMÁTICOS APÓS MAPEAMENTO
+        dadosProcessados = dadosProcessados.map(produto => {
+          const peso_total_emb_kg = (produto.peso_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
+          const peso_total_sem_emb_kg = (produto.peso_sem_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
+          
+          return {
+            ...produto,
+            peso_total_emb_kg,
+            peso_total_sem_emb_kg
+          };
+        });
 
-        console.log('✅ Dados processados com TODOS os campos:', { 
+        console.log('✅ Dados processados com TODOS os campos:', {
           totalProdutos: dadosProcessados.length,
           camposExemplo: dadosProcessados[0] ? Object.keys(dadosProcessados[0]) : [],
           primeiroItem: dadosProcessados[0]
         });
         
-        // 🔍 DEBUG: Verificar campos problemáticos após mapeamento
+        // 🔍 DEBUG: Verificar campos problemáticos após mapeamento E CÁLCULOS
         if (dadosProcessados[0]) {
           const p = dadosProcessados[0];
-          console.log('🔍 APÓS MAPEAMENTO DIALOG:', {
+          console.log('🔍 APÓS MAPEAMENTO E CÁLCULOS:', {
             qtd_caixas_pedido: p.qtd_caixas_pedido,
             peso_unitario_g: p.peso_unitario_g,
             peso_emb_master_kg: p.peso_emb_master_kg,
             peso_sem_emb_master_kg: p.peso_sem_emb_master_kg,
+            peso_total_emb_kg: p.peso_total_emb_kg,
+            peso_total_sem_emb_kg: p.peso_total_sem_emb_kg,
             comprimento_cm: p.comprimento_cm,
             largura_cm: p.largura_cm,
             altura_cm: p.altura_cm,
@@ -429,6 +443,18 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           imagem: item.imagem || '',
           imagem_fornecedor: item.imagem_fornecedor || '',
           nomeImagem: item.nomeImagem || ''
+          };
+        });
+        
+        // ✅ CALCULAR CAMPOS AUTOMÁTICOS NO FALLBACK TAMBÉM
+        dadosProcessados = dadosProcessados.map(produto => {
+          const peso_total_emb_kg = (produto.peso_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
+          const peso_total_sem_emb_kg = (produto.peso_sem_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
+          
+          return {
+            ...produto,
+            peso_total_emb_kg,
+            peso_total_sem_emb_kg
           };
         });
       }
