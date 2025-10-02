@@ -1393,8 +1393,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Auto-save: salvar automaticamente após edições
   useEffect(() => {
-    // Não fazer auto-save se não houver produtos ou se estiver carregando
-    if (productData.length === 0 || !hasImportedData || isSavingAuto) {
+    // ✅ VALIDAÇÕES PARA AUTO-SAVE
+    // Não fazer auto-save se:
+    // 1. Não houver produtos
+    // 2. Já estiver salvando
+    // 3. Não tiver dados básicos preenchidos (numero_cotacao E descricao) quando não há cotação selecionada
+    const canAutoSave = productData.length > 0 
+      && !isSavingAuto 
+      && hasImportedData
+      && (selectedCotacao?.id || (dadosBasicos.numero_cotacao && dadosBasicos.descricao));
+
+    if (!canAutoSave) {
+      console.log('⏸️ Auto-save pausado:', {
+        temProdutos: productData.length > 0,
+        naoEstaSalvando: !isSavingAuto,
+        temDadosImportados: hasImportedData,
+        temCotacaoSelecionada: !!selectedCotacao?.id,
+        temDadosBasicos: !!(dadosBasicos.numero_cotacao && dadosBasicos.descricao)
+      });
       return;
     }
 
@@ -1440,7 +1456,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         if (selectedCotacao?.id) {
           await secureUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
           console.log('✅ Auto-save: Cotação atualizada');
-        } else if (dadosBasicos.numero_cotacao && dadosBasicos.descricao) {
+        } else {
           const novaCotacao = await secureCreateCotacao(cotacaoCompleta);
           if (novaCotacao) {
             // Converter produtos de Json para ProdutoCotacao[]
@@ -1456,7 +1472,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         setLastAutoSave(new Date());
         
       } catch (error) {
-        console.error('Erro no auto-save:', error);
+        console.error('❌ Erro no auto-save:', error);
+        // Não mostrar toast de erro para não irritar o usuário
       } finally {
         setIsSavingAuto(false);
       }
@@ -1468,7 +1485,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, secureCreateCotacao, secureUpdateCotacao]);
+  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, secureCreateCotacao, secureUpdateCotacao, isSavingAuto]);
   return (
     <div className="space-y-6">
       {/* Header */}
