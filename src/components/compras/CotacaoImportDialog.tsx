@@ -347,12 +347,72 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
           material: item.MATERIAL || item.material || '',
           cor: item.COR || item.cor || '',
-          nome: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,  // ✅ "nome"
+          nome: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,
+          package_qtd: Number(item['PCS/CTN'] || item.pcs_ctn || 1),
           preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),
+          unidade_medida: item['Unid.'] || item.UNIT || item.unidade || 'un',
+          pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
+          qtd_caixas_pedido: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Caixas', 'CAIXAS', 'Qtd Caixas', 'Qtd. Caixas', 'Quantidade Caixas',
+              'caixas', 'qtd_caixas', 'qtd_caixas_pedido'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          peso_unitario_g: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
+              'PESO UNIT. (G)', 'PESO UNIT (G)', 'peso_unitario', 'peso_unitario_g'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          peso_emb_master_kg: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Peso Emb. Master (KG)', 'Peso Emb Master (KG)', 'Peso Cx. Master (KG)', 'Peso Cx Master (KG)',
+              'PESO EMB. MASTER (KG)', 'PESO EMB MASTER (KG)', 'peso_emb_master', 'peso_emb_master_kg', 'peso_embalagem'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          peso_sem_emb_master_kg: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Peso S/ Emb. Master (KG)', 'Peso S/ Emb Master (KG)', 'Peso Sem Emb. Master (KG)', 'Peso Sem Emb Master (KG)',
+              'PESO S/ EMB. MASTER (KG)', 'PESO S/ EMB MASTER (KG)', 'peso_sem_emb_master', 'peso_sem_emb_master_kg', 'peso_liquido'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          peso_total_emb_kg: 0,
+          peso_total_sem_emb_kg: 0,
+          comprimento_cm: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Comp. (cm)', 'Comp (cm)', 'Comprimento (cm)', 'COMP. (CM)', 'COMP (CM)', 'comprimento', 'comprimento_cm'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          largura_cm: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Larg. (cm)', 'Larg (cm)', 'Largura (cm)', 'LARG. (CM)', 'LARG (CM)', 'largura', 'largura_cm'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          altura_cm: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'Alt. (cm)', 'Alt (cm)', 'Altura (cm)', 'ALT. (CM)', 'ALT (CM)', 'altura', 'altura_cm'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          cbm_unitario: (() => {
+            const rawValue = buscarValorColuna(item, [
+              'CBM Cubagem', 'CBM CUBAGEM', 'Cubagem', 'CBM', 'cbm_unitario', 'cbm_cubagem'
+            ]);
+            return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+          })(),
+          cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
           quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.valor_total || 0),
+          obs: item['Obs.'] || item.OBSERVACOES || item.observacoes || '',
           imagem: item.imagem || '',
-          imagem_fornecedor: item.imagem_fornecedor || ''
+          imagem_fornecedor: item.imagem_fornecedor || '',
+          nomeImagem: item.nomeImagem || ''
         }));
       }
       setProgressoUpload(90);
