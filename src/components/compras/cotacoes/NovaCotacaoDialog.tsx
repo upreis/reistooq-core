@@ -31,7 +31,7 @@ export function NovaCotacaoDialog({
   const [currentTab, setCurrentTab] = useState('dados-basicos');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   
-  const [dadosBasicos, setDadosBasicos] = useState({
+  const getInitialDadosBasicos = () => ({
     numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Date.now()}`,
     descricao: '',
     data_abertura: new Date().toISOString().split('T')[0],
@@ -40,14 +40,30 @@ export function NovaCotacaoDialog({
     observacoes: ''
   });
 
-  const [dadosFornecedor, setDadosFornecedor] = useState({
+  const [dadosBasicos, setDadosBasicos] = useState(getInitialDadosBasicos());
+
+  const getInitialDadosFornecedor = () => ({
     pais_origem: 'China',
     moeda_origem: 'CNY'
   });
 
-  const [valores, setValores] = useState({
+  const getInitialValores = () => ({
     fator_multiplicador: 1
   });
+
+  const [dadosFornecedor, setDadosFornecedor] = useState(getInitialDadosFornecedor());
+  const [valores, setValores] = useState(getInitialValores());
+
+  // Reset form when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      setDadosBasicos(getInitialDadosBasicos());
+      setDadosFornecedor(getInitialDadosFornecedor());
+      setValores(getInitialValores());
+      setProdutosSelecionados([]);
+      setCurrentTab('dados-basicos');
+    }
+  }, [open]);
 
   const [produtosSelecionados, setProdutosSelecionados] = useState<any[]>([]);
 
@@ -118,26 +134,12 @@ export function NovaCotacaoDialog({
 
       const result = await onSave(novaCotacao);
 
-      // Só fecha o modal e limpa se foi criado com sucesso
+      // Só fecha o modal se foi criado com sucesso
       if (result !== null && result !== undefined) {
-        // Resetar formulário
-        setDadosBasicos({
-          numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Date.now()}`,
-          descricao: '',
-          data_abertura: new Date().toISOString().split('T')[0],
-          data_fechamento: '',
-          status: 'rascunho',
-          observacoes: ''
+        toast({
+          title: "Sucesso!",
+          description: "Cotação criada com sucesso"
         });
-        setDadosFornecedor({
-          pais_origem: 'China',
-          moeda_origem: 'CNY'
-        });
-        setValores({
-          fator_multiplicador: 1
-        });
-        setProdutosSelecionados([]);
-        setCurrentTab('dados-basicos');
         onOpenChange(false);
       }
     } catch (error) {
