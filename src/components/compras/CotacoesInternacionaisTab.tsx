@@ -143,7 +143,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
-  const [showNewCotacaoDialog, setShowNewCotacaoDialog] = useState(false);
   
   // Estados para seleção de produtos na tabela
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
@@ -816,19 +815,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
     const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
-    // ✅ CORREÇÃO: Calcular USD e BRL usando as taxas reais
-    // Se os divisores ainda são 1 (padrão), usar as taxas do hook de moedas
-    const taxaCNYtoUSD = getChangeDolarTotalDivisorValue() !== 1 
-      ? getChangeDolarTotalDivisorValue() 
-      : (rates.CNY_TO_USD || 7.25); // Taxa padrão CNY para USD
+    // Somar a coluna Change DOLAR Total
+    const total_valor_usd = produtosCalculados.reduce((sum, p) => {
+      return sum + (p.change_dolar_total || 0);
+    }, 0);
     
-    const taxaUSDtoBRL = getMultiplicadorReaisTotalValue() !== 5.44
-      ? getMultiplicadorReaisTotalValue()
-      : (rates.USD_TO_BRL || 5.44); // Taxa padrão USD para BRL
-    
-    // Calcular totais em USD e BRL
-    const total_valor_usd = total_valor_origem / taxaCNYtoUSD;
-    const total_valor_brl = total_valor_usd * taxaUSDtoBRL;
+    // Somar a coluna Multiplicador REAIS Total
+    const total_valor_brl = produtosCalculados.reduce((sum, p) => {
+      return sum + (p.multiplicador_reais_total || 0);
+    }, 0);
 
     return {
       total_peso_kg: total_peso_kg || 0,
@@ -839,7 +834,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_brl: total_valor_brl || 0,
       produtos: produtosCalculados
     };
-  }, [displayProductsWithCalculations, produtos, rates, changeDolarTotalDivisor, multiplicadorReaisTotal]);
+  }, [displayProductsWithCalculations, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, converterMoeda]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
@@ -1432,17 +1427,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
           fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
           data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
-          data_fechamento: (selectedCotacao?.data_fechamento && selectedCotacao.data_fechamento.trim() !== '') 
-            ? selectedCotacao.data_fechamento 
-            : ((dadosBasicos.data_fechamento && dadosBasicos.data_fechamento.trim() !== '') 
-              ? dadosBasicos.data_fechamento 
-              : null),
+          data_fechamento: selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento || null,
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
-          observacoes: (selectedCotacao?.observacoes && selectedCotacao.observacoes.trim() !== '') 
-            ? selectedCotacao.observacoes 
-            : ((dadosBasicos.observacoes && dadosBasicos.observacoes.trim() !== '') 
-              ? dadosBasicos.observacoes 
-              : null),
+          observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
           produtos: produtosValidos, // Usar apenas produtos válidos
           total_peso_kg: totaisGerais.total_peso_kg || 0,
           total_cbm: totaisGerais.total_cbm || 0,
@@ -1452,23 +1439,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           total_valor_brl: totaisGerais.total_valor_brl || 0
         };
 
-        console.log('📊 [AUTO-SAVE] Totais sendo salvos:', {
-          total_cbm: totaisGerais.total_cbm,
-          total_valor_origem: totaisGerais.total_valor_origem,
-          total_valor_usd: totaisGerais.total_valor_usd,
-          total_valor_brl: totaisGerais.total_valor_brl,
-          qtd_produtos: produtosValidos.length
-        });
-
         // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
         if (selectedCotacao?.id) {
-          console.log('📊 Auto-save: Salvando totais', totaisGerais);
-          const resultado = await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
-          if (resultado) {
-            console.log('✅ Auto-save: Cotação atualizada');
-            // Atualizar a lista de cotações após salvar
-            onRefresh();
-          }
+          await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
+          console.log('✅ Auto-save: Cotação atualizada');
         } else {
           const novaCotacao = await silentCreateCotacao(cotacaoCompleta);
           if (novaCotacao) {
@@ -1479,8 +1453,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               produtos: produtosFormatados
             } as unknown as CotacaoInternacional;
             setSelectedCotacao(cotacaoConvertida);
-            // Atualizar a lista de cotações após criar
-            onRefresh();
           }
           console.log('✅ Auto-save: Cotação criada');
         }
@@ -1502,72 +1474,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       }
     };
   }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, silentCreateCotacao, silentUpdateCotacao, isSavingAuto]);
-
-  // Atualizar campos do card (número e descrição)
-  const handleCardUpdate = async (id: string, field: string, value: string) => {
-    try {
-      await silentUpdateCotacao(id, { [field]: value });
-      // Recarregar cotações para refletir mudanças
-      onRefresh();
-      toast({
-        title: "Cotação atualizada",
-        description: "Alterações salvas com sucesso"
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar cotação:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar a cotação",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Criar nova cotação - abre modal completo
-  const handleCreateNewCotacao = () => {
-    // Resetar tudo para nova cotação
-    const novaCotacao = {
-      numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000000)}`,
-      descricao: '',
-      pais_origem: 'China',
-      moeda_origem: 'CNY',
-      fator_multiplicador: 1.3,
-      data_abertura: new Date().toISOString().split('T')[0],
-      data_fechamento: '',
-      status: 'rascunho' as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
-      produtos: [],
-      total_peso_kg: 0,
-      total_cbm: 0,
-      total_quantidade: 0,
-      total_valor_origem: 0,
-      total_valor_usd: 0,
-      total_valor_brl: 0
-    } as CotacaoInternacional;
-    
-    setDadosBasicos({
-      numero_cotacao: novaCotacao.numero_cotacao,
-      descricao: '',
-      pais_origem: 'China',
-      moeda_origem: 'CNY',
-      fator_multiplicador: 1.3,
-      data_abertura: new Date().toISOString().split('T')[0],
-      data_fechamento: '',
-      status: 'rascunho' as const,
-      observacoes: ''
-    });
-    
-    setSelectedCotacao(novaCotacao);
-    setProductData([]);
-    setProdutos([]);
-    setHasImportedData(false);
-    setShowNewCotacaoDialog(false);
-    
-    toast({
-      title: "Nova cotação",
-      description: "Preencha os dados e adicione produtos"
-    });
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1604,19 +1510,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               size="sm"
             >
               {isSelectMode ? 'Cancelar Seleção' : 'Selecionar'}
-            </Button>
-          )}
-          
-          {/* Botão de criar nova cotação */}
-          {!selectedCotacao && (
-            <Button 
-              variant="default" 
-              onClick={handleCreateNewCotacao}
-              size="sm"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nova Cotação
             </Button>
           )}
           
@@ -1663,7 +1556,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 isSelected={selectedCotacoes.includes(cotacao.id!)}
                 onSelect={selectCotacao}
                 onClick={() => setSelectedCotacao(cotacao)}
-                onUpdate={handleCardUpdate}
                 formatCurrency={formatCurrency}
                 getStatusColor={getStatusColor}
               />

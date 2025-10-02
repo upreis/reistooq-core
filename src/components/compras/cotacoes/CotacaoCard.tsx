@@ -1,10 +1,9 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Package, Eye } from "lucide-react";
 import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
-import { EditableCell } from '@/components/compras/EditableCell';
 
 interface CotacaoCardProps {
   cotacao: CotacaoInternacional;
@@ -12,7 +11,6 @@ interface CotacaoCardProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   onClick: () => void;
-  onUpdate?: (id: string, field: string, value: string) => void;
   formatCurrency: (value: number, currency?: string) => string;
   getStatusColor: (status: string) => string;
 }
@@ -23,44 +21,9 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
   isSelected,
   onSelect,
   onClick,
-  onUpdate,
   formatCurrency,
   getStatusColor
 }) => {
-  const [editingField, setEditingField] = useState<string | null>(null);
-
-  // Calcular quantidade de produtos baseado no array de produtos
-  const qtdProdutos = Array.isArray(cotacao.produtos) ? cotacao.produtos.length : 0;
-  
-  // Calcular CBM total baseado nos produtos
-  const cbmTotalCalculado = Array.isArray(cotacao.produtos)
-    ? cotacao.produtos.reduce((sum, p: any) => sum + (p.cbm_total || 0), 0)
-    : 0;
-    
-  // Usar o cbm_total salvo ou o calculado
-  const cbmTotal = cotacao.total_cbm || cbmTotalCalculado;
-  
-  // Calcular quantidade de containers baseado no CBM (usando 67.7m³ para container 40')
-  const qtdContainers = cbmTotal > 0 ? Math.ceil(cbmTotal / 67.7) : 0;
-  
-  // Debug log
-  console.log('🎴 Card Debug:', {
-    numero: cotacao.numero_cotacao,
-    qtdProdutos,
-    cbmTotal,
-    qtdContainers,
-    total_valor_origem: cotacao.total_valor_origem,
-    total_valor_usd: cotacao.total_valor_usd,
-    total_valor_brl: cotacao.total_valor_brl
-  });
-
-  const handleSave = (field: string, value: string | number) => {
-    if (onUpdate && cotacao.id) {
-      onUpdate(cotacao.id, field, String(value));
-    }
-    setEditingField(null);
-  };
-
   return (
     <Card 
       className={`relative cursor-pointer hover:shadow-md transition-all ${
@@ -94,88 +57,35 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
       )}
       
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex-1 min-w-0">
-            <EditableCell
-              value={cotacao.numero_cotacao}
-              type="text"
-              isEditing={editingField === 'numero_cotacao'}
-              onDoubleClick={() => setEditingField('numero_cotacao')}
-              onSave={(value) => handleSave('numero_cotacao', value)}
-              onCancel={() => setEditingField(null)}
-              placeholder="Número da cotação"
-            />
-          </div>
-          <Badge className={`text-white ${getStatusColor(cotacao.status)} shrink-0`}>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">{cotacao.numero_cotacao}</CardTitle>
+          <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
             {cotacao.status}
           </Badge>
         </div>
-        <div className="mt-2">
-          <EditableCell
-            value={cotacao.descricao}
-            type="text"
-            isEditing={editingField === 'descricao'}
-            onDoubleClick={() => setEditingField('descricao')}
-            onSave={(value) => handleSave('descricao', value)}
-            onCancel={() => setEditingField(null)}
-            placeholder="Descrição"
-            className="text-sm text-muted-foreground"
-          />
-        </div>
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {cotacao.descricao}
+        </p>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Datas e Quantidades */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <div className="text-muted-foreground text-xs mb-1">Data Criação</div>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
-            </div>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
           </div>
-          <div>
-            <div className="text-muted-foreground text-xs mb-1">Previsão Chegada</div>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">
-                {cotacao.data_fechamento 
-                  ? new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')
-                  : 'Não definida'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Quantidades */}
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <div className="text-muted-foreground text-xs mb-1">Qtd Produtos</div>
-            <div className="flex items-center gap-1.5">
-              <Package className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">{qtdProdutos} {qtdProdutos === 1 ? 'item' : 'itens'}</span>
-            </div>
-          </div>
-          <div>
-            <div className="text-muted-foreground text-xs mb-1">Containers</div>
-            <div className="flex items-center gap-1.5">
-              <Package className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">{qtdContainers}</span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <span>{cotacao.total_quantidade || 0} itens</span>
           </div>
         </div>
         
-        {/* Valores */}
-        <div className="space-y-1.5 pt-2 border-t">
+        <div className="space-y-1">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Yuan ({cotacao.moeda_origem}):</span>
-            <span className="font-medium">{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
+            <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
+            <span>{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Dólar (USD):</span>
-            <span className="font-medium">{formatCurrency(cotacao.total_valor_usd || 0, 'USD')}</span>
-          </div>
-          <div className="flex justify-between text-sm font-semibold text-primary">
-            <span>Total Real (BRL):</span>
+          <div className="flex justify-between text-sm font-semibold">
+            <span>Total BRL:</span>
             <span>{formatCurrency(cotacao.total_valor_brl || 0)}</span>
           </div>
         </div>
