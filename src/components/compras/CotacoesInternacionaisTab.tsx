@@ -1431,9 +1431,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
           fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
           data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
-          data_fechamento: selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento || null,
+          data_fechamento: (selectedCotacao?.data_fechamento && selectedCotacao.data_fechamento.trim() !== '') 
+            ? selectedCotacao.data_fechamento 
+            : ((dadosBasicos.data_fechamento && dadosBasicos.data_fechamento.trim() !== '') 
+              ? dadosBasicos.data_fechamento 
+              : null),
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
-          observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
+          observacoes: (selectedCotacao?.observacoes && selectedCotacao.observacoes.trim() !== '') 
+            ? selectedCotacao.observacoes 
+            : ((dadosBasicos.observacoes && dadosBasicos.observacoes.trim() !== '') 
+              ? dadosBasicos.observacoes 
+              : null),
           produtos: produtosValidos, // Usar apenas produtos válidos
           total_peso_kg: totaisGerais.total_peso_kg || 0,
           total_cbm: totaisGerais.total_cbm || 0,
