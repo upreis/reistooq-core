@@ -1443,6 +1443,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           total_valor_brl: totaisGerais.total_valor_brl || 0
         };
 
+        console.log('📊 [AUTO-SAVE] Totais sendo salvos:', {
+          total_cbm: totaisGerais.total_cbm,
+          total_valor_origem: totaisGerais.total_valor_origem,
+          total_valor_usd: totaisGerais.total_valor_usd,
+          total_valor_brl: totaisGerais.total_valor_brl,
+          qtd_produtos: produtosValidos.length
+        });
+
         // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
         if (selectedCotacao?.id) {
           console.log('📊 Auto-save: Salvando totais', totaisGerais);
