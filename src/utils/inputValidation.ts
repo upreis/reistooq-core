@@ -33,9 +33,11 @@ export const cotacaoInternacionalSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   
   data_fechamento: z.string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD")
     .optional()
-    .or(z.literal("")),
+    .refine(
+      (val) => !val || /^\d{4}-\d{2}-\d{2}$/.test(val),
+      { message: "Data deve estar no formato YYYY-MM-DD ou vazia" }
+    ),
   
   status: z.string()
     .refine(
