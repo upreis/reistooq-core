@@ -1399,19 +1399,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Não fazer auto-save se:
     // 1. Não houver produtos
     // 2. Já estiver salvando
-    // 3. Não tiver dados básicos preenchidos (numero_cotacao E descricao) quando não há cotação selecionada
+    // 3. Não houver cotação selecionada E dados básicos não estiverem preenchidos
+    
+    // Se tem cotação selecionada, sempre pode salvar (já tem número e descrição)
+    const temCotacaoSelecionada = !!selectedCotacao?.id;
+    const temDadosBasicosNovos = !!(dadosBasicos.numero_cotacao && dadosBasicos.descricao);
+    
     const canAutoSave = productData.length > 0 
       && !isSavingAuto 
       && hasImportedData
-      && (selectedCotacao?.id || (dadosBasicos.numero_cotacao && dadosBasicos.descricao));
+      && (temCotacaoSelecionada || temDadosBasicosNovos);
 
     if (!canAutoSave) {
       console.log('⏸️ Auto-save pausado:', {
         temProdutos: productData.length > 0,
         naoEstaSalvando: !isSavingAuto,
         temDadosImportados: hasImportedData,
-        temCotacaoSelecionada: !!selectedCotacao?.id,
-        temDadosBasicos: !!(dadosBasicos.numero_cotacao && dadosBasicos.descricao)
+        temCotacaoSelecionada,
+        temDadosBasicosNovos
       });
       return;
     }
@@ -1423,11 +1428,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
     // Agendar auto-save após 3 segundos de inatividade
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      // Verificar novamente se os dados básicos estão preenchidos antes de salvar
-      const temDadosBasicos = selectedCotacao?.id || (dadosBasicos.numero_cotacao && dadosBasicos.descricao);
-      
-      if (!temDadosBasicos) {
-        console.log('⏭️ Auto-save cancelado: Preencha número e descrição da cotação primeiro');
+      // Se não tem cotação selecionada, verificar se tem dados básicos
+      if (!selectedCotacao?.id && !dadosBasicos.numero_cotacao) {
+        console.log('⏭️ Auto-save cancelado: Aguardando número e descrição da cotação');
         return;
       }
 
@@ -1456,8 +1459,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           valor_total: p.valor_total || 0
         }));
 
+        // Preparar dados da cotação
+        // Se há cotação selecionada, usar os dados dela. Senão, usar dadosBasicos
+        const dadosCotacao = selectedCotacao?.id ? {
+          numero_cotacao: selectedCotacao.numero_cotacao,
+          descricao: selectedCotacao.descricao,
+          pais_origem: selectedCotacao.pais_origem,
+          moeda_origem: selectedCotacao.moeda_origem,
+          fator_multiplicador: selectedCotacao.fator_multiplicador,
+          data_abertura: selectedCotacao.data_abertura,
+          data_fechamento: selectedCotacao.data_fechamento,
+          status: selectedCotacao.status,
+          observacoes: selectedCotacao.observacoes
+        } : dadosBasicos;
+
         const cotacaoCompleta: CotacaoInternacional = {
-          ...dadosBasicos,
+          ...dadosCotacao,
           produtos: produtosFormatados,
           ...totaisGerais
         };
