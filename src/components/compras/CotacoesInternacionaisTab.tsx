@@ -63,6 +63,9 @@ import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { useToastFeedback } from '@/hooks/useToastFeedback';
 import { useCompatibleToast } from '@/utils/toastUtils';
+import { useCurrencyRates } from '@/hooks/useCurrencyRates';
+import { usePersistentCalculators } from '@/hooks/usePersistentCalculators';
+import { useMultipleSelection } from '@/hooks/useMultipleSelection';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -134,40 +137,7 @@ const AVAILABLE_CURRENCIES = [
   { code: 'VND', name: 'Dong Vietnamita', flag: '🇻🇳', symbol: '₫' },
 ];
 
-// Hook para cotações de moedas com API real
-const useCurrencyRates = () => {
-  const [rates, setRates] = useState<any>({});
-  const [loading, setLoading] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const { toast } = useCompatibleToast();
-
-  const updateRates = async () => {
-    try {
-      setLoading(true);
-      const newRates = await CurrencyService.getRealTimeRates();
-      setRates(newRates);
-      setLastUpdate(newRates.lastUpdate);
-      
-      toast({ title: "Cotações atualizadas", description: "Cotações de moedas atualizadas com sucesso!" });
-    } catch (error) {
-      console.error('Erro ao atualizar cotações:', error);
-      toast({
-        title: "Erro ao atualizar cotações",
-        description: "Usando valores padrão. Verifique sua conexão.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Carrega cotações iniciais
-  useEffect(() => {
-    updateRates();
-  }, []);
-
-  return { rates, updateRates, loading, lastUpdate };
-};
+// Hook movido para src/hooks/useCurrencyRates.ts
 
 export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps> = ({
   cotacoes,
@@ -176,9 +146,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
-  // Estados para seleção múltipla de cotações
-  const [selectedCotacoes, setSelectedCotacoes] = useState<string[]>([]);
-  const [isSelectMode, setIsSelectMode] = useState(false);
   
   // Estados para seleção de produtos na tabela
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
@@ -187,24 +154,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const [isSavingAuto, setIsSavingAuto] = useState(false);
-  
-  // Estados para divisores e multiplicadores com valores padrão e persistência
-  const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>(() => {
-    const saved = sessionStorage.getItem('changeDolarDivisor');
-    return saved || "1";
-  });
-  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>(() => {
-    const saved = sessionStorage.getItem('changeDolarTotalDivisor');
-    return saved || "1";
-  });
-  const [multiplicadorReais, setMultiplicadorReais] = useState<string>(() => {
-    const saved = sessionStorage.getItem('multiplicadorReais');
-    return saved || "5.44";
-  });
-  const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>(() => {
-    const saved = sessionStorage.getItem('multiplicadorReaisTotal');
-    return saved || "5.44";
-  });
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
@@ -219,23 +168,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('✓ Produtos carregados:', productData.length);
     }
   }, [productData]);
-  
-  // Persistir divisores e multiplicadores quando mudarem
-  useEffect(() => {
-    sessionStorage.setItem('changeDolarDivisor', changeDolarDivisor);
-  }, [changeDolarDivisor]);
-  
-  useEffect(() => {
-    sessionStorage.setItem('changeDolarTotalDivisor', changeDolarTotalDivisor);
-  }, [changeDolarTotalDivisor]);
-  
-  useEffect(() => {
-    sessionStorage.setItem('multiplicadorReais', multiplicadorReais);
-  }, [multiplicadorReais]);
-  
-  useEffect(() => {
-    sessionStorage.setItem('multiplicadorReaisTotal', multiplicadorReaisTotal);
-  }, [multiplicadorReaisTotal]);
   
   const [hasImportedData, setHasImportedData] = useState(() => {
     const products = SessionStorageManager.loadProducts();
@@ -312,6 +244,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     comprimento_cm: 0
   });
 
+  // Hooks customizados
   const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
   const { getCotacoesInternacionais } = useCotacoesInternacionais();
   const { 
@@ -323,55 +256,29 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     loading: saveLoading 
   } = useSecureCotacoes();
   const { uploadImage, uploading: imageUploading } = useImageUpload();
-
-  // CORREÇÃO: Funções memoizadas para seleção múltipla
-  const toggleSelectMode = useCallback(() => {
-    setIsSelectMode(!isSelectMode);
-    if (isSelectMode) {
-      setSelectedCotacoes([]);
-    }
-  }, [isSelectMode]);
-
-  const selectCotacao = useCallback((cotacaoId: string) => {
-    if (selectedCotacoes.includes(cotacaoId)) {
-      setSelectedCotacoes(selectedCotacoes.filter(id => id !== cotacaoId));
-    } else {
-      setSelectedCotacoes([...selectedCotacoes, cotacaoId]);
-    }
-  }, [selectedCotacoes]);
-
-  const selectAllCotacoes = useCallback(() => {
-    // Usar validatedCotacoes que será definido depois, ou cotacoes diretamente
-    if (!Array.isArray(cotacoes)) return;
-    const allCotacaoIds = cotacoes.map(c => c.id!).filter(Boolean);
-    setSelectedCotacoes(allCotacaoIds);
-  }, [cotacoes]);
-
-  const clearSelection = useCallback(() => {
-    setSelectedCotacoes([]);
-  }, []);
-
-  const deleteSelectedCotacoes = useCallback(async () => {
-    if (selectedCotacoes.length === 0) return;
-    
-    try {
-      const promises = selectedCotacoes.map(id => secureDeleteCotacao(id));
-      await Promise.all(promises);
-      
-      toast({ title: "Cotações excluídas!", description: `${selectedCotacoes.length} cotação(ões) excluída(s) com sucesso.` });
-      
-      setSelectedCotacoes([]);
-      setIsSelectMode(false);
-      onRefresh();
-    } catch (error) {
-      const errorDetails = ErrorHandler.capture(error, {
-        component: 'CotacoesInternacionaisTab',
-        action: 'delete_selected_cotacoes'
-      });
-      
-      toast({ title: "Erro ao excluir cotações", description: ErrorHandler.getUserMessage(errorDetails), variant: "destructive" });
-    }
-  }, [selectedCotacoes, secureDeleteCotacao, toast, onRefresh]);
+  const {
+    changeDolarDivisor,
+    setChangeDolarDivisor,
+    changeDolarTotalDivisor,
+    setChangeDolarTotalDivisor,
+    multiplicadorReais,
+    setMultiplicadorReais,
+    multiplicadorReaisTotal,
+    setMultiplicadorReaisTotal
+  } = usePersistentCalculators();
+  const {
+    selectedIds: selectedCotacoes,
+    isSelectMode,
+    toggleSelectMode,
+    selectItem: selectCotacao,
+    selectAll: selectAllCotacoes,
+    clearSelection,
+    deleteSelected: deleteSelectedCotacoes
+  } = useMultipleSelection({
+    items: cotacoes,
+    onRefresh,
+    deleteFunction: secureDeleteCotacao
+  });
 
   // CORREÇÃO: Memoizar filtros com validação de props usando type guards
   const validatedCotacoes = useMemo(() => {
