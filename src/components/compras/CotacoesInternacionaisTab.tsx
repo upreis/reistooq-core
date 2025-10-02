@@ -59,7 +59,8 @@ import { CurrencyService } from "@/services/currencyService";
 import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { useToastFeedback } from '@/hooks/useToastFeedback';
-import { useCompatibleToast } from '@/utils/toastUtils';
+import { useCotacaoMultipliers } from '@/hooks/useCotacaoMultipliers';
+import { useCurrencyRatesFixed } from '@/hooks/useCurrencyRatesFixed';
 import { z } from 'zod';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -131,51 +132,16 @@ const AVAILABLE_CURRENCIES = [
   { code: 'VND', name: 'Dong Vietnamita', flag: '🇻🇳', symbol: '₫' },
 ];
 
-// Hook para cotações de moedas com API real
-const useCurrencyRates = () => {
-  const [rates, setRates] = useState<any>({});
-  const [loading, setLoading] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const { toast } = useCompatibleToast();
-
-  const updateRates = async () => {
-    try {
-      setLoading(true);
-      const newRates = await CurrencyService.getRealTimeRates();
-      setRates(newRates);
-      setLastUpdate(newRates.lastUpdate);
-      
-      toast({ title: "Cotações atualizadas", description: "Cotações de moedas atualizadas com sucesso!" });
-    } catch (error) {
-      console.error('Erro ao atualizar cotações:', error);
-      toast({
-        title: "Erro ao atualizar cotações",
-        description: "Usando valores padrão. Verifique sua conexão.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Carrega cotações iniciais
-  useEffect(() => {
-    updateRates();
-  }, []);
-
-  return { rates, updateRates, loading, lastUpdate };
-};
+// Hook movido para src/hooks/useCurrencyRatesFixed.ts
 
 export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps> = ({
   cotacoes,
   onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [currentTab, setCurrentTab] = useState('basico');
-  const [editingCotacao, setEditingCotacao] = useState<CotacaoInternacional | null>(null);
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
+  
   // Estados para seleção múltipla de cotações
   const [selectedCotacoes, setSelectedCotacoes] = useState<string[]>([]);
   const [isSelectMode, setIsSelectMode] = useState(false);
@@ -188,54 +154,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const [isSavingAuto, setIsSavingAuto] = useState(false);
   
-  // Estados para divisores e multiplicadores com valores padrão e persistência
-  const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>(() => {
-    const saved = sessionStorage.getItem('changeDolarDivisor');
-    return saved || "1";
-  });
-  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>(() => {
-    const saved = sessionStorage.getItem('changeDolarTotalDivisor');
-    return saved || "1";
-  });
-  const [multiplicadorReais, setMultiplicadorReais] = useState<string>(() => {
-    const saved = sessionStorage.getItem('multiplicadorReais');
-    return saved || "5.44";
-  });
-  const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>(() => {
-    const saved = sessionStorage.getItem('multiplicadorReaisTotal');
-    return saved || "5.44";
-  });
-  
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
   const [productData, setProductData] = useState<any[]>(() => {
     const loaded = SessionStorageManager.loadProducts();
     return loaded;
   });
-  
-  // Monitor de mudanças no productData
-  useEffect(() => {
-    if (productData.length > 0) {
-      console.log('✓ Produtos carregados:', productData.length);
-    }
-  }, [productData]);
-  
-  // Persistir divisores e multiplicadores quando mudarem
-  useEffect(() => {
-    sessionStorage.setItem('changeDolarDivisor', changeDolarDivisor);
-  }, [changeDolarDivisor]);
-  
-  useEffect(() => {
-    sessionStorage.setItem('changeDolarTotalDivisor', changeDolarTotalDivisor);
-  }, [changeDolarTotalDivisor]);
-  
-  useEffect(() => {
-    sessionStorage.setItem('multiplicadorReais', multiplicadorReais);
-  }, [multiplicadorReais]);
-  
-  useEffect(() => {
-    sessionStorage.setItem('multiplicadorReaisTotal', multiplicadorReaisTotal);
-  }, [multiplicadorReaisTotal]);
   
   const [hasImportedData, setHasImportedData] = useState(() => {
     const products = SessionStorageManager.loadProducts();
@@ -274,8 +198,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     produtoInfo: undefined
   });
   
-  // Hook do toast
-  const { toast } = useCompatibleToast();
+  // Hooks consolidados
+  const { showSuccess, showError, showInfo, showWarning } = useToastFeedback();
+  const {
+    changeDolarDivisor,
+    setChangeDolarDivisor,
+    changeDolarTotalDivisor,
+    setChangeDolarTotalDivisor,
+    multiplicadorReais,
+    setMultiplicadorReais,
+    multiplicadorReaisTotal,
+    setMultiplicadorReaisTotal
+  } = useCotacaoMultipliers();
   
   // Tipos de contêineres disponíveis
   const CONTAINER_TYPES = {
@@ -312,7 +246,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     comprimento_cm: 0
   });
 
-  const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
+  const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRatesFixed();
   const { getCotacoesInternacionais } = useCotacoesInternacionais();
   const { 
     secureCreateCotacao, 
@@ -333,12 +267,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   }, [isSelectMode]);
 
   const selectCotacao = useCallback((cotacaoId: string) => {
-    if (selectedCotacoes.includes(cotacaoId)) {
-      setSelectedCotacoes(selectedCotacoes.filter(id => id !== cotacaoId));
-    } else {
-      setSelectedCotacoes([...selectedCotacoes, cotacaoId]);
-    }
-  }, [selectedCotacoes]);
+    setSelectedCotacoes(prev => {
+      if (prev.includes(cotacaoId)) {
+        return prev.filter(id => id !== cotacaoId);
+      } else {
+        return [...prev, cotacaoId];
+      }
+    });
+  }, []);
 
   const selectAllCotacoes = useCallback(() => {
     // Usar validatedCotacoes que será definido depois, ou cotacoes diretamente
@@ -358,7 +294,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       const promises = selectedCotacoes.map(id => secureDeleteCotacao(id));
       await Promise.all(promises);
       
-      toast({ title: "Cotações excluídas!", description: `${selectedCotacoes.length} cotação(ões) excluída(s) com sucesso.` });
+      showSuccess(`${selectedCotacoes.length} cotação(ões) excluída(s) com sucesso.`);
       
       setSelectedCotacoes([]);
       setIsSelectMode(false);
@@ -369,9 +305,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         action: 'delete_selected_cotacoes'
       });
       
-      toast({ title: "Erro ao excluir cotações", description: ErrorHandler.getUserMessage(errorDetails), variant: "destructive" });
+      showError(ErrorHandler.getUserMessage(errorDetails));
     }
-  }, [selectedCotacoes, secureDeleteCotacao, toast, onRefresh]);
+  }, [selectedCotacoes, secureDeleteCotacao, showSuccess, showError, onRefresh]);
 
   // CORREÇÃO: Memoizar filtros com validação de props usando type guards
   const validatedCotacoes = useMemo(() => {
@@ -571,26 +507,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         produtosAdicionados.push(product.nome);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          toast({
-            title: "Erro de validação",
-            description: `${product.nome}: ${error.issues[0].message}`,
-            variant: "destructive"
-          });
+          showError(`${product.nome}: ${error.issues[0].message}`);
         }
       }
     });
     
     // Mostrar feedback dos resultados
     if (produtosAdicionados.length > 0) {
-      toast({ title: "Produtos adicionados!", description: `${produtosAdicionados.length} produto(s) adicionado(s) à cotação.` });
+      showSuccess(`${produtosAdicionados.length} produto(s) adicionado(s) à cotação.`);
     }
     
     if (produtosDuplicados.length > 0) {
-      toast({
-        title: "Produtos duplicados",
-        description: `${produtosDuplicados.length} produto(s) já existe(m) na cotação.`,
-        variant: "default"
-      });
+      showInfo(`${produtosDuplicados.length} produto(s) já existe(m) na cotação.`);
     }
   };
 
@@ -657,21 +585,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       const validationResult = validateProdutoData(produtoTemp);
       
       if (!validationResult.isValid) {
-        toast({
-          title: "Dados inválidos",
-          description: validationResult.errors.join(', '),
-          variant: "destructive",
-        });
+        showError(validationResult.errors.join(', '));
         return;
       }
       
       // Mostrar warnings se houver
       if (validationResult.warnings.length > 0) {
-        toast({
-          title: "Atenção",
-          description: validationResult.warnings.join(', '),
-          variant: "default",
-        });
+        showWarning(validationResult.warnings.join(', '));
       }
 
       // Usar função de sanitização para garantir dados consistentes
@@ -696,23 +616,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         comprimento_cm: 0
       });
 
-      toast({
-        title: "Produto adicionado",
-        description: `${novoProduto.nome} foi adicionado à cotação`
-      });
+      showSuccess(`${novoProduto.nome} foi adicionado à cotação`);
     } catch (error) {
       const errorDetails = ErrorHandler.capture(error, {
         component: 'CotacoesInternacionaisTab',
         action: 'adicionar_produto'
       });
       
-      toast({
-        title: "Erro ao adicionar produto",
-        description: ErrorHandler.getUserMessage(errorDetails),
-        variant: "destructive",
-      });
+      showError(ErrorHandler.getUserMessage(errorDetails));
     }
-  }, [produtoTemp, produtos, toast]);
+  }, [produtoTemp, produtos, showError]);
 
   const removerProduto = useCallback((id: string) => {
     setProdutos(produtos.filter(p => p.id !== id));
@@ -745,8 +658,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       altura_cm: 0,
       comprimento_cm: 0
     });
-    setCurrentTab('basico');
-    setEditingCotacao(null);
   };
 
   const handleSave = async () => {
@@ -755,11 +666,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       cotacaoSchema.parse(dadosBasicos);
 
       if (produtos.length === 0) {
-        toast({
-          title: "Erro de validação",
-          description: "Adicione pelo menos um produto à cotação",
-          variant: "destructive"
-        });
+        showError("Adicione pelo menos um produto à cotação");
         return;
       }
 
@@ -794,33 +701,17 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('Salvando cotação:', cotacaoCompleta);
 
       // Salvar no banco de dados
-      if (editingCotacao?.id) {
-        await secureUpdateCotacao(editingCotacao.id, cotacaoCompleta);
-      } else {
-        await secureCreateCotacao(cotacaoCompleta);
-      }
+      await secureCreateCotacao(cotacaoCompleta);
 
-      toast({
-        title: "✅ Cotação salva com sucesso!",
-        description: `Cotação ${cotacaoCompleta.numero_cotacao} foi criada na aba "Cotações Internacionais"`,
-      });
+      showSuccess(`Cotação ${cotacaoCompleta.numero_cotacao} foi criada com sucesso!`);
 
-      setShowModal(false);
       resetForm();
       onRefresh();
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast({
-          title: "Erro de validação",
-          description: error.issues[0].message,
-          variant: "destructive"
-        });
+        showError(error.issues[0].message);
       } else {
-        toast({
-          title: "Erro ao salvar",
-          description: "Não foi possível salvar a cotação",
-          variant: "destructive"
-        });
+        showError("Não foi possível salvar a cotação");
       }
     }
   };
@@ -896,10 +787,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.warn('Erro ao salvar no sessionStorage:', error);
     }
     
-    toast({
-      title: "Produtos excluídos",
-      description: `${selectedProductIds.length} produto(s) foram excluídos com sucesso.`,
-    });
+    showSuccess(`${selectedProductIds.length} produto(s) foram excluídos com sucesso.`);
   };
 
   const getStatusColor = (status: string) => {
@@ -1151,11 +1039,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
     
     if (!dadosImportados || dadosImportados.length === 0) {
-      toast({
-        title: "Erro na importação",
-        description: "Nenhum dado foi recebido para importação.",
-        variant: "destructive",
-      });
+      showError("Nenhum dado foi recebido para importação.");
       return;
     }
     
@@ -1197,11 +1081,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     // NÃO USAR setTimeout aqui - causa bugs de estado
     
-    toast({
-      title: "Importação concluída!",
-      description: `${novosProdutos.length} produtos importados com sucesso.`,
-    });
-  }, [toast, productData, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue]);
+    showSuccess(`${novosProdutos.length} produtos importados com sucesso.`);
+  }, [showSuccess, productData, getChangeDolarDivisorValue, getChangeDolarTotalDivisorValue, getMultiplicadorReaisValue, getMultiplicadorReaisTotalValue]);
 
   // Função para converter imagem URL para base64
   const imageUrlToBase64 = async (url: string): Promise<string> => {
@@ -1234,10 +1115,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Função para download do Excel com imagens
   const handleDownloadExcel = async () => {
     try {
-      toast({
-        title: "Preparando download...",
-        description: "Processando imagens e gerando planilha Excel.",
-      });
+      showInfo("Processando imagens e gerando planilha Excel...");
 
       // Criar workbook usando ExcelJS
       const workbook = new ExcelJS.Workbook();
@@ -1409,18 +1287,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       });
       saveAs(blob, nomeArquivo);
 
-      toast({
-        title: "Download concluído!",
-        description: `Planilha ${nomeArquivo} baixada com sucesso.`,
-      });
+      showSuccess(`Planilha ${nomeArquivo} baixada com sucesso.`);
 
     } catch (error) {
       console.error('Erro no download do Excel:', error);
-      toast({
-        title: "Erro no download",
-        description: "Ocorreu um erro ao gerar a planilha Excel.",
-        variant: "destructive",
-      });
+      showError("Ocorreu um erro ao gerar a planilha Excel.");
     }
   };
 
@@ -1641,7 +1512,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             <RefreshCw className={`h-4 w-4 ${ratesLoading ? 'animate-spin' : ''}`} />
             {ratesLoading ? 'Atualizando...' : 'Atualizar Cotações'}
           </Button>
-          <Button className="gap-2" onClick={() => { resetForm(); setShowModal(true); }} size="sm">
+          <Button className="gap-2" onClick={() => resetForm()} size="sm" disabled>
             <Plus className="h-4 w-4" />
             Nova Cotação Internacional
           </Button>
@@ -1754,7 +1625,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   {searchTerm ? 'Tente ajustar os filtros de busca' : 'Comece criando sua primeira cotação internacional'}
                 </p>
                 {!searchTerm && (
-                  <Button onClick={() => { resetForm(); setShowModal(true); }}>
+                  <Button onClick={() => resetForm()} disabled>
                     <Plus className="h-4 w-4 mr-2" />
                     Nova Cotação
                   </Button>
@@ -2498,34 +2369,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         </div>
       )}
 
-      {/* Modal de Nova Cotação */}
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5" />
-              {editingCotacao ? 'Editar Cotação Internacional' : 'Nova Cotação Internacional'}
-              {dadosBasicos.numero_cotacao && (
-                <Badge variant="outline">{dadosBasicos.numero_cotacao}</Badge>
-              )}
-            </DialogTitle>
-            <DialogDescription>
-              Gerencie cotações de produtos importados com conversão automática de moedas e cálculos de impostos.
-            </DialogDescription>
-          </DialogHeader>
-
-          <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="basico">Dados Básicos</TabsTrigger>
-              <TabsTrigger value="produtos">Produtos ({produtos.length})</TabsTrigger>
-              <TabsTrigger value="calculos">Cálculos</TabsTrigger>
-              <TabsTrigger value="revisao">Revisão</TabsTrigger>
-            </TabsList>
-
-            <div className="flex-1 overflow-y-auto">
-              {/* ABA 1: Dados Básicos */}
-              <TabsContent value="basico" className="space-y-4">
-                <Card>
+      {/* Modal de Nova Cotação - REMOVIDO temporariamente durante refatoração */}
+      
+      {/* Modal do Seletor de Produtos */}
+      <ProductSelector
                   <CardHeader>
                     <CardTitle>Informações Gerais</CardTitle>
                   </CardHeader>
@@ -3196,34 +3043,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               </TabsContent>
             </div>
 
-            {/* Botões de Ação */}
-            <div className="flex justify-between items-center pt-4 border-t">
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={updateRates} size="sm">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Atualizar Cotações
-                </Button>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => setShowModal(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleSave} 
-                  disabled={!dadosBasicos.numero_cotacao || !dadosBasicos.descricao || saveLoading}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {saveLoading ? 'Salvando...' : (editingCotacao ? 'Atualizar' : 'Salvar')} Cotação
-                </Button>
-              </div>
-            </div>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Modal do Seletor de Produtos */}
-      <ProductSelector
         isOpen={isProductSelectorOpen}
         onOpenChange={setIsProductSelectorOpen}
         onSelectProducts={handleProductSelectorConfirm}
