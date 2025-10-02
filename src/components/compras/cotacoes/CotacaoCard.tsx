@@ -29,6 +29,14 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
 }) => {
   const [editingField, setEditingField] = useState<string | null>(null);
 
+  // Calcular quantidade de produtos baseado no array de produtos
+  const qtdProdutos = Array.isArray(cotacao.produtos) ? cotacao.produtos.length : 0;
+  
+  // Calcular quantidade de containers baseado no CBM
+  const qtdContainers = cotacao.total_cbm 
+    ? Math.ceil(cotacao.total_cbm / 28)
+    : 0;
+
   const handleSave = (field: string, value: string | number) => {
     if (onUpdate && cotacao.id) {
       onUpdate(cotacao.id, field, String(value));
@@ -127,18 +135,14 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
             <div className="text-muted-foreground text-xs mb-1">Qtd Produtos</div>
             <div className="flex items-center gap-1.5">
               <Package className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">{cotacao.total_quantidade || 0} itens</span>
+              <span className="font-medium">{qtdProdutos} {qtdProdutos === 1 ? 'item' : 'itens'}</span>
             </div>
           </div>
           <div>
             <div className="text-muted-foreground text-xs mb-1">Containers</div>
             <div className="flex items-center gap-1.5">
               <Package className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="font-medium">
-                {cotacao.total_cbm 
-                  ? `${Math.ceil((cotacao.total_cbm / 28))} (${cotacao.total_cbm.toFixed(2)} m³)`
-                  : '0'}
-              </span>
+              <span className="font-medium">{qtdContainers}</span>
             </div>
           </div>
         </div>
