@@ -928,7 +928,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     return productData.map(product => ({
       ...product,
-      change_dolar: (product.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar: (product.preco_unitario || 0) * getChangeDolarDivisorValue(),
       change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
       multiplicador_reais: (product.preco || 0) * getMultiplicadorReaisValue(),
       multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
@@ -1009,7 +1009,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
     
     // Recalcular campos calculados automaticamente
-    product.change_dolar = product.preco / getChangeDolarDivisorValue();
+    product.change_dolar = (product.preco_unitario || 0) * getChangeDolarDivisorValue();
     product.change_dolar_total = product.valor_total / getChangeDolarTotalDivisorValue();
     product.multiplicador_reais = product.preco * getMultiplicadorReaisValue();
     product.multiplicador_reais_total = (product.valor_total / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue();
@@ -1122,7 +1122,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Recalcular campos automaticamente para todos os produtos
     const produtosComCalculos = novosProdutos.map(produto => ({
       ...produto,
-      change_dolar: (produto.preco || 0) / getChangeDolarDivisorValue(),
+      change_dolar: (produto.preco_unitario || 0) * getChangeDolarDivisorValue(),
       change_dolar_total: (produto.valor_total || 0) / getChangeDolarTotalDivisorValue(),
       multiplicador_reais: (produto.preco || 0) * getMultiplicadorReaisValue(),
       multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
