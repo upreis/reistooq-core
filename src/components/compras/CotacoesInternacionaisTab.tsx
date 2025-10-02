@@ -926,13 +926,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const displayProductsWithCalculations = useMemo(() => {
     if (productData.length === 0) return [];
     
-    return productData.map(product => ({
-      ...product,
-      change_dolar: (product.preco_unitario || 0) / getChangeDolarDivisorValue(),
-      change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: (product.preco_unitario || 0) / getMultiplicadorReaisValue(),
-      multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-    }));
+    return productData.map(product => {
+      const changeDolar = (product.preco_unitario || 0) / getChangeDolarDivisorValue();
+      return {
+        ...product,
+        change_dolar: changeDolar,
+        change_dolar_total: (product.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+        multiplicador_reais: changeDolar * getMultiplicadorReaisValue(),
+        multiplicador_reais_total: ((product.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+      };
+    });
   }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   // Funções para edição inline
@@ -1011,7 +1014,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Recalcular campos calculados automaticamente
     product.change_dolar = (product.preco_unitario || 0) / getChangeDolarDivisorValue();
     product.change_dolar_total = (product.valor_total || 0) / getChangeDolarTotalDivisorValue();
-    product.multiplicador_reais = (product.preco_unitario || 0) / getMultiplicadorReaisValue();
+    product.multiplicador_reais = product.change_dolar * getMultiplicadorReaisValue();
     product.multiplicador_reais_total = (product.valor_total / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue();
     
     setProductData(updatedProducts);
@@ -1120,13 +1123,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     console.log('🎯 [handleImportSuccess] Primeiro produto:', novosProdutos[0]);
     
     // Recalcular campos automaticamente para todos os produtos
-    const produtosComCalculos = novosProdutos.map(produto => ({
-      ...produto,
-      change_dolar: (produto.preco_unitario || 0) / getChangeDolarDivisorValue(),
-      change_dolar_total: (produto.valor_total || 0) / getChangeDolarTotalDivisorValue(),
-      multiplicador_reais: (produto.preco_unitario || 0) / getMultiplicadorReaisValue(),
-      multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
-    }));
+    const produtosComCalculos = novosProdutos.map(produto => {
+      const changeDolar = (produto.preco_unitario || 0) / getChangeDolarDivisorValue();
+      return {
+        ...produto,
+        change_dolar: changeDolar,
+        change_dolar_total: (produto.valor_total || 0) / getChangeDolarTotalDivisorValue(),
+        multiplicador_reais: changeDolar * getMultiplicadorReaisValue(),
+        multiplicador_reais_total: ((produto.valor_total || 0) / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue()
+      };
+    });
     
     setProductData(produtosComCalculos);
     setHasImportedData(true);
