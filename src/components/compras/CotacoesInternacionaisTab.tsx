@@ -815,15 +815,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
     const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
-    // Somar a coluna Change DOLAR Total
-    const total_valor_usd = produtosCalculados.reduce((sum, p) => {
-      return sum + (p.change_dolar_total || 0);
-    }, 0);
+    // ✅ CORREÇÃO: Calcular USD e BRL usando as taxas reais
+    // Se os divisores ainda são 1 (padrão), usar as taxas do hook de moedas
+    const taxaCNYtoUSD = getChangeDolarTotalDivisorValue() !== 1 
+      ? getChangeDolarTotalDivisorValue() 
+      : (rates.CNY_TO_USD || 7.25); // Taxa padrão CNY para USD
     
-    // Somar a coluna Multiplicador REAIS Total
-    const total_valor_brl = produtosCalculados.reduce((sum, p) => {
-      return sum + (p.multiplicador_reais_total || 0);
-    }, 0);
+    const taxaUSDtoBRL = getMultiplicadorReaisTotalValue() !== 5.44
+      ? getMultiplicadorReaisTotalValue()
+      : (rates.USD_TO_BRL || 5.44); // Taxa padrão USD para BRL
+    
+    // Calcular totais em USD e BRL
+    const total_valor_usd = total_valor_origem / taxaCNYtoUSD;
+    const total_valor_brl = total_valor_usd * taxaUSDtoBRL;
 
     return {
       total_peso_kg: total_peso_kg || 0,
@@ -834,7 +838,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_brl: total_valor_brl || 0,
       produtos: produtosCalculados
     };
-  }, [displayProductsWithCalculations, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, converterMoeda]);
+  }, [displayProductsWithCalculations, produtos, rates, changeDolarTotalDivisor, multiplicadorReaisTotal]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
