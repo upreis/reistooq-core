@@ -1522,6 +1522,42 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
+  // Criar nova cotação
+  const handleCreateNewCotacao = () => {
+    const novaCotacao = {
+      numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000000)}`,
+      descricao: 'Nova Cotação',
+      pais_origem: 'China',
+      moeda_origem: 'CNY',
+      fator_multiplicador: 1.3,
+      data_abertura: new Date().toISOString().split('T')[0],
+      status: 'rascunho' as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
+      produtos: [],
+      total_peso_kg: 0,
+      total_cbm: 0,
+      total_quantidade: 0,
+      total_valor_origem: 0,
+      total_valor_usd: 0,
+      total_valor_brl: 0
+    } as CotacaoInternacional;
+    
+    setSelectedCotacao(novaCotacao);
+    setDadosBasicos({
+      numero_cotacao: novaCotacao.numero_cotacao,
+      descricao: novaCotacao.descricao,
+      pais_origem: novaCotacao.pais_origem,
+      moeda_origem: novaCotacao.moeda_origem,
+      fator_multiplicador: novaCotacao.fator_multiplicador,
+      data_abertura: novaCotacao.data_abertura,
+      data_fechamento: '',
+      status: 'rascunho' as const,
+      observacoes: ''
+    });
+    setProductData([]);
+    setProdutos([]);
+    setHasImportedData(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1558,6 +1594,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               size="sm"
             >
               {isSelectMode ? 'Cancelar Seleção' : 'Selecionar'}
+            </Button>
+          )}
+          
+          {/* Botão de criar nova cotação */}
+          {!selectedCotacao && (
+            <Button 
+              variant="default" 
+              onClick={handleCreateNewCotacao}
+              size="sm"
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nova Cotação
             </Button>
           )}
           
