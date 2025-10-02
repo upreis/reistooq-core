@@ -218,15 +218,15 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         dadosProcessados = produtosComImagens.map((item, index) => ({
           id: `produto-${index}`,
           
-          // CAMPOS BÁSICOS
+          // CAMPOS BÁSICOS - USAR EXATAMENTE OS MESMOS NOMES DO HOOK
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
-          material: item.Material || item.material || '',
-          cor: item.Cor || item.cor || '',
+          material: item.MATERIAL || item.material || '',  // ✅ MAIÚSCULO
+          cor: item.COR || item.cor || '',                 // ✅ MAIÚSCULO
           nome_produto: item['Nome do Produto'] || item.PRODUTO || item.produto || `Produto ${index + 1}`,
-          package: item.Package || item.package || '',
+          package: item.PACKAGE || item.Package || item.package || '',  // ✅ MAIÚSCULO primeiro
           
-          // PREÇOS E QUANTIDADES
-          preco_unitario: Number(item.Preço || item.PRECO_UNITARIO || item.preco || 0),
+          // PREÇOS E QUANTIDADES - USAR EXATAMENTE OS MESMOS NOMES DO HOOK
+          preco_unitario: Number(item.PREÇO || item.PRECO || item.preco || 0),  // ✅ MAIÚSCULO
           unidade: item['Unid.'] || item.UNIT || item.unidade || 'un',
           pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
           caixas: Number(item.Caixas || item.caixas || 0),
@@ -270,8 +270,10 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         dadosProcessados = produtosComImagens.map((item, index) => ({
           id: `fallback-${index}`,
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
+          material: item.MATERIAL || item.material || '',  // ✅ MAIÚSCULO
+          cor: item.COR || item.cor || '',                 // ✅ MAIÚSCULO
           nome_produto: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,
-          preco_unitario: Number(item.Preço || item.preco || 0),
+          preco_unitario: Number(item.PREÇO || item.PRECO || item.preco || 0),  // ✅ MAIÚSCULO
           quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.valor_total || 0),
           imagem: item.imagem || '',
