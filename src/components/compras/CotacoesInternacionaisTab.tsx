@@ -623,10 +623,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
     const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
-    // Somar diretamente a coluna Multiplicador REAIS Total dos produtos exibidos
-    const total_valor_brl = displayProducts.reduce((sum, p) => {
-      const changeDolar = (p.valor_total || 0) / getChangeDolarTotalDivisorValue();
-      const multiplicadorReaisTotal = changeDolar * getMultiplicadorReaisTotalValue();
+    // Calcular Total BRL somando Multiplicador REAIS Total de cada produto
+    const getChangeDolarTotalDiv = () => {
+      const value = parseFloat(changeDolarTotalDivisor);
+      return value > 0 ? value : 7.45;
+    };
+    
+    const getMultiplicadorReaisTotalVal = () => {
+      const value = parseFloat(multiplicadorReaisTotal);
+      return value > 0 ? value : 5.44;
+    };
+    
+    const total_valor_brl = produtosCalculados.reduce((sum, p) => {
+      const changeDolar = (p.valor_total || 0) / getChangeDolarTotalDiv();
+      const multiplicadorReaisTotal = changeDolar * getMultiplicadorReaisTotalVal();
       return sum + multiplicadorReaisTotal;
     }, 0);
     
@@ -645,7 +655,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_brl: total_valor_brl || 0,
       produtos: produtosCalculados
     };
-  }, [produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates]);
+  }, [produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates, changeDolarTotalDivisor, multiplicadorReaisTotal]);
 
   const adicionarProduto = useCallback(() => {
     try {
