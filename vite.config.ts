@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+// ✅ CONFIGURAÇÃO ULTRA-SIMPLIFICADA - Remove todas as otimizações que podem causar conflitos
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
@@ -35,77 +36,20 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    mode === 'development' &&
-    componentTagger(),
+    mode === 'development' && componentTagger(),
   ].filter(Boolean),
   build: {
-    rollupOptions: {
-      output: {
-        // ✅ FIX CRÍTICO: Simplifica chunks e evita problemas de inicialização
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'scheduler'],
-          'router-vendor': ['react-router-dom'],
-          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-tooltip'],
-          'query-vendor': ['@tanstack/react-query'],
-          'supabase-vendor': ['@supabase/supabase-js']
-        },
-        // ✅ FIX CRÍTICO: Garante ordem correta de carregamento
-        entryFileNames: 'assets/[name]-[hash].js',
-        chunkFileNames: 'assets/[name]-[hash].js',
-        assetFileNames: 'assets/[name]-[hash].[ext]'
-      }
-    },
     target: 'es2020',
-    minify: 'esbuild',
     sourcemap: false,
-    // ✅ FIX CRÍTICO: Configurações para evitar problemas de inicialização
-    modulePreload: {
-      polyfill: false
-    },
-    cssCodeSplit: true
+    // ✅ REMOVIDO: manualChunks - deixa Vite fazer automaticamente
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // ✅ FIX CRÍTICO: Força uma única instância do React
-      "react": path.resolve(__dirname, "./node_modules/react"),
-      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
-      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
-      "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime"),
-      "scheduler": path.resolve(__dirname, "./node_modules/scheduler"),
     },
-    dedupe: [
-      "react",
-      "react-dom",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
-      "scheduler",
-      "@tanstack/react-query",
-      "@radix-ui/react-slot",
-      "@radix-ui/react-dialog",
-      "@radix-ui/react-dropdown-menu",
-      "@radix-ui/react-tooltip",
-      "lucide-react",
-      "framer-motion"
-    ],
   },
   optimizeDeps: {
-    // ✅ FIX CRÍTICO: Pre-bundling forçado do React e todas as suas dependências
-    include: [
-      "react",
-      "react-dom",
-      "react/jsx-runtime",
-      "react/jsx-dev-runtime",
-      "scheduler",
-      "react-dom/client"
-    ],
-    exclude: [],
-    esbuildOptions: {
-      // ✅ FIX CRÍTICO: Garante que o React seja tratado corretamente
-      resolveExtensions: ['.js', '.jsx', '.ts', '.tsx'],
-      // Força o JSX runtime do React 18
-      jsx: 'automatic',
-      jsxDev: mode === 'development',
-    },
+    // ✅ REMOVIDO: lista explícita - deixa Vite detectar automaticamente
+    force: true, // Força rebuild do cache
   },
 }));
