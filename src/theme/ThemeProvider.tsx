@@ -30,7 +30,13 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  // React hooks são carregados normalmente pelo React
+  // ✅ FIX CRÍTICO: Verificação de React hooks antes de usar
+  if (!useState || typeof useState !== 'function') {
+    console.error('🚨 React useState not available in ThemeProvider');
+    // Fallback: renderizar children sem tema
+    return <>{children}</>;
+  }
+
   const [theme, setTheme] = useState<ThemeName>(() => {
     // ✅ FIX CRÍTICO: Verificação mais robusta para evitar erro de React
     if (typeof window === 'undefined' || typeof document === 'undefined') {

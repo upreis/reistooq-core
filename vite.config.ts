@@ -67,8 +67,12 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // ✅ FIX CRÍTICO: Força uma única instância do React
       "react": path.resolve(__dirname, "./node_modules/react"),
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
+      "react/jsx-runtime": path.resolve(__dirname, "./node_modules/react/jsx-runtime"),
+      "react/jsx-dev-runtime": path.resolve(__dirname, "./node_modules/react/jsx-dev-runtime"),
+      "scheduler": path.resolve(__dirname, "./node_modules/scheduler"),
     },
     dedupe: [
       "react",
@@ -76,7 +80,6 @@ export default defineConfig(({ mode }) => ({
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
       "scheduler",
-      // ✅ ADICIONADOS - Previne múltiplas instâncias:
       "@tanstack/react-query",
       "@radix-ui/react-slot",
       "@radix-ui/react-dialog",
@@ -87,7 +90,22 @@ export default defineConfig(({ mode }) => ({
     ],
   },
   optimizeDeps: {
-    include: ["react", "react-dom"],
-    force: true,
+    // ✅ FIX CRÍTICO: Pre-bundling forçado do React e todas as suas dependências
+    include: [
+      "react",
+      "react-dom",
+      "react/jsx-runtime",
+      "react/jsx-dev-runtime",
+      "scheduler",
+      "react-dom/client"
+    ],
+    exclude: [],
+    esbuildOptions: {
+      // ✅ FIX CRÍTICO: Garante que o React seja tratado corretamente
+      resolveExtensions: ['.js', '.jsx', '.ts', '.tsx'],
+      // Força o JSX runtime do React 18
+      jsx: 'automatic',
+      jsxDev: mode === 'development',
+    },
   },
 }));

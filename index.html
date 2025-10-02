@@ -21,6 +21,43 @@
   <body>
     <div id="root"></div>
     <div id="portal-root"></div>
+    
+    <!-- ✅ FIX CRÍTICO: Fallback para erro de carregamento -->
+    <script>
+      // Captura erros globais antes do React carregar
+      window.addEventListener('error', function(e) {
+        if (e.message && e.message.includes('useState')) {
+          console.error('🚨 React useState error detected:', e);
+          const root = document.getElementById('root');
+          if (root && !root.innerHTML) {
+            root.innerHTML = `
+              <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1a1a1a; color: #fff; font-family: system-ui;">
+                <div style="text-align: center; padding: 20px;">
+                  <h1>⚠️ Erro de Carregamento</h1>
+                  <p>Erro ao inicializar React. Limpando cache...</p>
+                  <button onclick="clearCacheAndReload()" style="padding: 10px 20px; margin-top: 10px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Recarregar Aplicação
+                  </button>
+                </div>
+              </div>
+            `;
+          }
+        }
+      });
+      
+      function clearCacheAndReload() {
+        // Limpa cache do localStorage e sessionStorage
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch (e) {
+          console.warn('Cache clear warning:', e);
+        }
+        // Força reload com cache limpo
+        window.location.reload(true);
+      }
+    </script>
+    
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
