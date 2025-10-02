@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,12 +45,12 @@ interface ArquivoProcessado {
   organization_id?: string;
 }
 
-export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
+export const CotacaoImportDialog = ({
   open,
   onOpenChange,
   cotacao,
   onImportSuccess
-}) => {
+}: CotacaoImportDialogProps) => {
   const [arquivos, setArquivos] = useState<ArquivoProcessado[]>([]);
   const [processando, setProcessando] = useState(false);
   const [progressoUpload, setProgressoUpload] = useState(0);
