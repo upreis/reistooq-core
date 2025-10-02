@@ -1446,8 +1446,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
         if (selectedCotacao?.id) {
           console.log('📊 Auto-save: Salvando totais', totaisGerais);
-          await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
-          console.log('✅ Auto-save: Cotação atualizada');
+          const resultado = await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
+          if (resultado) {
+            console.log('✅ Auto-save: Cotação atualizada');
+            // Atualizar a lista de cotações após salvar
+            onRefresh();
+          }
         } else {
           const novaCotacao = await silentCreateCotacao(cotacaoCompleta);
           if (novaCotacao) {
@@ -1458,6 +1462,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               produtos: produtosFormatados
             } as unknown as CotacaoInternacional;
             setSelectedCotacao(cotacaoConvertida);
+            // Atualizar a lista de cotações após criar
+            onRefresh();
           }
           console.log('✅ Auto-save: Cotação criada');
         }
