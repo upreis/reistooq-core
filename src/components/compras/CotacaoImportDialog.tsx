@@ -331,12 +331,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           const peso_total_emb_kg = (produto.peso_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
           const peso_total_sem_emb_kg = (produto.peso_sem_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
           const cbm_total = (produto.cbm_unitario || 0) * (produto.qtd_caixas_pedido || 0);
+          const quantidade_total = (produto.pcs_ctn || 0) * (produto.qtd_caixas_pedido || 0);
+          const valor_total = quantidade_total * (produto.preco_unitario || 0);
           
           return {
             ...produto,
             peso_total_emb_kg,
             peso_total_sem_emb_kg,
-            cbm_total
+            cbm_total,
+            quantidade_total,
+            valor_total
           };
         });
 
@@ -454,12 +458,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           const peso_total_emb_kg = (produto.peso_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
           const peso_total_sem_emb_kg = (produto.peso_sem_emb_master_kg || 0) * (produto.qtd_caixas_pedido || 0);
           const cbm_total = (produto.cbm_unitario || 0) * (produto.qtd_caixas_pedido || 0);
+          const quantidade_total = (produto.pcs_ctn || 0) * (produto.qtd_caixas_pedido || 0);
+          const valor_total = quantidade_total * (produto.preco_unitario || 0);
           
           return {
             ...produto,
             peso_total_emb_kg,
             peso_total_sem_emb_kg,
-            cbm_total
+            cbm_total,
+            quantidade_total,
+            valor_total
           };
         });
       }
