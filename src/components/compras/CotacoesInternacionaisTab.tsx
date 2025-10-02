@@ -621,73 +621,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return { valorUSD, valorBRL };
   };
 
-  // Cálculos totais da cotação
-  const totaisGerais = useMemo(() => {
-    // Usar productData quando disponível (dados importados do Excel)
-    // Se não, usar produtos (adicionados manualmente)
-    const dadosBase = productData.length > 0 ? productData : produtos.map(calcularProduto);
-    
-    // Calcular os campos necessários para cada produto
-    const getChangeDolarDivisorValue = () => {
-      const value = parseFloat(changeDolarDivisor);
-      return value > 0 ? value : 7.10;
-    };
-    
-    const getChangeDolarTotalDivisorValue = () => {
-      const value = parseFloat(changeDolarTotalDivisor);
-      return value > 0 ? value : 7.45;
-    };
-    
-    const getMultiplicadorReaisValue = () => {
-      const value = parseFloat(multiplicadorReais);
-      return value > 0 ? value : 5.44;
-    };
-    
-    const getMultiplicadorReaisTotalValue = () => {
-      const value = parseFloat(multiplicadorReaisTotal);
-      return value > 0 ? value : 5.44;
-    };
-    
-    const produtosCalculados = dadosBase.map(product => {
-      const changeDolar = (product.preco_unitario || product.preco || 0) / getChangeDolarDivisorValue();
-      const valor_total_produto = product.valor_total || 0;
-      const multiplicador_reais_total = (valor_total_produto / getChangeDolarTotalDivisorValue()) * getMultiplicadorReaisTotalValue();
-      
-      return {
-        ...product,
-        change_dolar: changeDolar,
-        change_dolar_total: valor_total_produto / getChangeDolarTotalDivisorValue(),
-        multiplicador_reais: changeDolar * getMultiplicadorReaisValue(),
-        multiplicador_reais_total: multiplicador_reais_total
-      };
-    });
-    
-    const total_peso_kg = produtosCalculados.reduce((sum, p) => sum + (p.peso_total_kg || 0), 0);
-    const total_cbm = produtosCalculados.reduce((sum, p) => sum + (p.cbm_total || 0), 0);
-    const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
-    const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
-    
-    // Calcular Total BRL somando diretamente a coluna Multiplicador REAIS Total de cada produto
-    const total_valor_brl = produtosCalculados.reduce((sum, p) => {
-      return sum + (p.multiplicador_reais_total || 0);
-    }, 0);
-    
-    const { valorUSD: total_valor_usd } = converterMoeda(
-      total_valor_origem, 
-      dadosBasicos.moeda_origem, 
-      dadosBasicos.fator_multiplicador
-    );
-
-    return {
-      total_peso_kg: total_peso_kg || 0,
-      total_cbm: total_cbm || 0,
-      total_quantidade: total_quantidade || 0,
-      total_valor_origem: total_valor_origem || 0,
-      total_valor_usd: total_valor_usd || 0,
-      total_valor_brl: total_valor_brl || 0,
-      produtos: produtosCalculados
-    };
-  }, [productData, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
 
   const adicionarProduto = useCallback(() => {
     try {
@@ -986,6 +919,40 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       };
     });
   }, [productData, changeDolarDivisor, changeDolarTotalDivisor, multiplicadorReais, multiplicadorReaisTotal]);
+
+  // Cálculos totais da cotação (movido para depois de displayProductsWithCalculations)
+  const totaisGerais = useMemo(() => {
+    // Usar displayProductsWithCalculations que já tem todos os valores calculados corretamente
+    const produtosCalculados = displayProductsWithCalculations.length > 0 
+      ? displayProductsWithCalculations 
+      : produtos.map(calcularProduto);
+    
+    const total_peso_kg = produtosCalculados.reduce((sum, p) => sum + (p.peso_total_kg || 0), 0);
+    const total_cbm = produtosCalculados.reduce((sum, p) => sum + (p.cbm_total || 0), 0);
+    const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
+    const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
+    
+    // Somar APENAS a coluna Multiplicador REAIS Total (já calculada em displayProductsWithCalculations)
+    const total_valor_brl = produtosCalculados.reduce((sum, p) => {
+      return sum + (p.multiplicador_reais_total || 0);
+    }, 0);
+    
+    const { valorUSD: total_valor_usd } = converterMoeda(
+      total_valor_origem, 
+      dadosBasicos.moeda_origem, 
+      dadosBasicos.fator_multiplicador
+    );
+
+    return {
+      total_peso_kg: total_peso_kg || 0,
+      total_cbm: total_cbm || 0,
+      total_quantidade: total_quantidade || 0,
+      total_valor_origem: total_valor_origem || 0,
+      total_valor_usd: total_valor_usd || 0,
+      total_valor_brl: total_valor_brl || 0,
+      produtos: produtosCalculados
+    };
+  }, [displayProductsWithCalculations, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
