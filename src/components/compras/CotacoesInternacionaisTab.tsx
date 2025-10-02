@@ -188,11 +188,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const [isSavingAuto, setIsSavingAuto] = useState(false);
   
-  // Estados para divisores e multiplicadores com valores padrão
-  const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>("1");
-  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>("1");
-  const [multiplicadorReais, setMultiplicadorReais] = useState<string>("5.44");
-  const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>("5.44");
+  // Estados para divisores e multiplicadores com valores padrão e persistência
+  const [changeDolarDivisor, setChangeDolarDivisor] = useState<string>(() => {
+    const saved = sessionStorage.getItem('changeDolarDivisor');
+    return saved || "1";
+  });
+  const [changeDolarTotalDivisor, setChangeDolarTotalDivisor] = useState<string>(() => {
+    const saved = sessionStorage.getItem('changeDolarTotalDivisor');
+    return saved || "1";
+  });
+  const [multiplicadorReais, setMultiplicadorReais] = useState<string>(() => {
+    const saved = sessionStorage.getItem('multiplicadorReais');
+    return saved || "5.44";
+  });
+  const [multiplicadorReaisTotal, setMultiplicadorReaisTotal] = useState<string>(() => {
+    const saved = sessionStorage.getItem('multiplicadorReaisTotal');
+    return saved || "5.44";
+  });
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
@@ -207,6 +219,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('✓ Produtos carregados:', productData.length);
     }
   }, [productData]);
+  
+  // Persistir divisores e multiplicadores quando mudarem
+  useEffect(() => {
+    sessionStorage.setItem('changeDolarDivisor', changeDolarDivisor);
+  }, [changeDolarDivisor]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('changeDolarTotalDivisor', changeDolarTotalDivisor);
+  }, [changeDolarTotalDivisor]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('multiplicadorReais', multiplicadorReais);
+  }, [multiplicadorReais]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('multiplicadorReaisTotal', multiplicadorReaisTotal);
+  }, [multiplicadorReaisTotal]);
   
   const [hasImportedData, setHasImportedData] = useState(() => {
     const products = SessionStorageManager.loadProducts();
