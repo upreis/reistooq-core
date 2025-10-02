@@ -62,23 +62,23 @@ export const cotacaoInternacionalSchema = z.object({
 
 // ✅ Schema TOLERANTE para auto-save (aceita dados incompletos)
 export const cotacaoAutoSaveSchema = z.object({
-  numero_cotacao: z.string().trim().max(50).optional().or(z.literal('')).transform(val => val || ''),
-  descricao: z.string().trim().max(500).optional().or(z.literal('')).transform(val => val || ''),
-  pais_origem: z.string().trim().max(100).optional().or(z.literal('')).transform(val => val || 'China'),
-  moeda_origem: z.string().trim().optional().or(z.literal('')).transform(val => val || 'CNY'),
-  fator_multiplicador: z.number().positive().optional().or(z.literal(0)).transform(val => val || 1),
-  data_abertura: z.string().optional().or(z.literal('')).transform(val => val || new Date().toISOString().split('T')[0]),
-  data_fechamento: z.string().optional().or(z.literal("")),
-  status: z.string().optional().or(z.literal('')).transform(val => val || 'rascunho'),
-  observacoes: z.string().trim().max(1000).optional().or(z.literal("")),
-  produtos: z.array(z.any()).optional().or(z.literal([])).transform(val => val || []),
-  total_peso_kg: z.number().optional(),
-  total_cbm: z.number().optional(),
-  total_quantidade: z.number().optional(),
-  total_valor_origem: z.number().optional(),
-  total_valor_usd: z.number().optional(),
-  total_valor_brl: z.number().optional()
-});
+  numero_cotacao: z.union([z.string(), z.undefined(), z.null()]).transform(val => String(val || '').trim().substring(0, 50)),
+  descricao: z.union([z.string(), z.undefined(), z.null()]).transform(val => String(val || '').trim().substring(0, 500)),
+  pais_origem: z.union([z.string(), z.undefined(), z.null()]).transform(val => String(val || 'China').trim().substring(0, 100)),
+  moeda_origem: z.union([z.string(), z.undefined(), z.null()]).transform(val => String(val || 'CNY').trim().substring(0, 3)),
+  fator_multiplicador: z.union([z.number(), z.undefined(), z.null()]).transform(val => typeof val === 'number' && val > 0 ? val : 1),
+  data_abertura: z.union([z.string(), z.undefined(), z.null()]).transform(val => val || new Date().toISOString().split('T')[0]),
+  data_fechamento: z.union([z.string(), z.undefined(), z.null()]).transform(val => val || ''),
+  status: z.union([z.string(), z.undefined(), z.null()]).transform(val => val || 'rascunho'),
+  observacoes: z.union([z.string(), z.undefined(), z.null()]).transform(val => String(val || '').trim().substring(0, 1000)),
+  produtos: z.union([z.array(z.any()), z.undefined(), z.null()]).transform(val => Array.isArray(val) ? val : []),
+  total_peso_kg: z.union([z.number(), z.undefined(), z.null()]).transform(val => val || undefined),
+  total_cbm: z.union([z.number(), z.undefined(), z.null()]).transform(val => val || undefined),
+  total_quantidade: z.union([z.number(), z.undefined(), z.null()]).transform(val => val || undefined),
+  total_valor_origem: z.union([z.number(), z.undefined(), z.null()]).transform(val => val || undefined),
+  total_valor_usd: z.union([z.number(), z.undefined(), z.null()]).transform(val => val || undefined),
+  total_valor_brl: z.union([z.number(), z.undefined(), z.null()]).transform(val => val || undefined)
+}).passthrough();
 
 export const produtoCotacaoSchema = z.object({
   sku: z.string()

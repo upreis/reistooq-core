@@ -201,6 +201,7 @@ function App() {
                       </PermissionRoute>
                     } />
                     <Route path="/" element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
+                    <Route path="/dashboard" element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
                     <Route path="/oms/*" element={
                       <PermissionRoute requiredPermissions={['oms:view']}>
                         <OMS />
