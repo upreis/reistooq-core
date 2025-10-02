@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { useToastFeedback } from '@/hooks/useToastFeedback';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { 
-  cotacaoInternacionalSchema, 
+  cotacaoInternacionalSchema,
+  cotacaoAutoSaveSchema,
   sanitizeInput, 
   sanitizeNumericInput,
   validateUserPermissions,
@@ -39,7 +40,7 @@ export function useSecureCotacoes() {
     loading 
   } = useCotacoesInternacionais();
 
-  const validateAndSanitizeCotacao = useCallback((cotacao: any, silent = false): CotacaoSecura | null => {
+  const validateAndSanitizeCotacao = useCallback((cotacao: any, silent = false, isAutoSave = false): CotacaoSecura | null => {
     try {
       // Sanitizar strings
       const sanitizedCotacao = {
@@ -58,8 +59,9 @@ export function useSecureCotacoes() {
         total_valor_brl: sanitizeNumericInput(cotacao.total_valor_brl) || undefined
       };
 
-      // Validar com schema Zod
-      const result = cotacaoInternacionalSchema.safeParse(sanitizedCotacao);
+      // ✅ Usar schema apropriado: tolerante para auto-save, rígido para criação manual
+      const schema = isAutoSave ? cotacaoAutoSaveSchema : cotacaoInternacionalSchema;
+      const result = schema.safeParse(sanitizedCotacao);
       
       if (!result.success) {
         const errors = result.error.issues.map(err => err.message).join(', ');
@@ -170,7 +172,7 @@ export function useSecureCotacoes() {
         return null;
       }
 
-      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao);
+      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao, true, true); // silent + isAutoSave
       if (!sanitizedCotacao) {
         console.warn('⚠️ Auto-save: Dados inválidos, aguardando preenchimento');
         return null;
@@ -213,7 +215,7 @@ export function useSecureCotacoes() {
         return null;
       }
 
-      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao);
+      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao, true, true); // silent + isAutoSave
       if (!sanitizedCotacao) {
         console.warn('⚠️ Auto-save: Dados inválidos, aguardando preenchimento');
         return null;

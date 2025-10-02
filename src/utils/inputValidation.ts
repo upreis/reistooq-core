@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import DOMPurify from 'dompurify';
 
-// Esquemas de validação Zod
+// Schema RÍGIDO para criação/atualização manual
 export const cotacaoInternacionalSchema = z.object({
   numero_cotacao: z.string()
     .trim()
@@ -54,6 +54,26 @@ export const cotacaoInternacionalSchema = z.object({
   // Campos opcionais de totais
   total_peso_kg: z.number().optional(),
   total_cbm: z.number().optional(), 
+  total_quantidade: z.number().optional(),
+  total_valor_origem: z.number().optional(),
+  total_valor_usd: z.number().optional(),
+  total_valor_brl: z.number().optional()
+});
+
+// ✅ Schema TOLERANTE para auto-save (aceita dados incompletos)
+export const cotacaoAutoSaveSchema = z.object({
+  numero_cotacao: z.string().trim().max(50).optional().or(z.literal('')).transform(val => val || ''),
+  descricao: z.string().trim().max(500).optional().or(z.literal('')).transform(val => val || ''),
+  pais_origem: z.string().trim().max(100).optional().or(z.literal('')).transform(val => val || 'China'),
+  moeda_origem: z.string().trim().optional().or(z.literal('')).transform(val => val || 'CNY'),
+  fator_multiplicador: z.number().positive().optional().or(z.literal(0)).transform(val => val || 1),
+  data_abertura: z.string().optional().or(z.literal('')).transform(val => val || new Date().toISOString().split('T')[0]),
+  data_fechamento: z.string().optional().or(z.literal("")),
+  status: z.string().optional().or(z.literal('')).transform(val => val || 'rascunho'),
+  observacoes: z.string().trim().max(1000).optional().or(z.literal("")),
+  produtos: z.array(z.any()).optional().or(z.literal([])).transform(val => val || []),
+  total_peso_kg: z.number().optional(),
+  total_cbm: z.number().optional(),
   total_quantidade: z.number().optional(),
   total_valor_origem: z.number().optional(),
   total_valor_usd: z.number().optional(),

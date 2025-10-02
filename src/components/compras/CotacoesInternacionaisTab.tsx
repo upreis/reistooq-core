@@ -1403,22 +1403,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         
         console.log('💾 [AUTO-SAVE] Preparando dados para salvar...');
         
-        // Validar produtos antes de salvar (modo auto-save = mais tolerante)
-        const invalidProducts = produtosParaSalvar.filter(p => {
-          const validation = validateProdutoData(p, true); // true = isAutoSave
-          return !validation.isValid;
+        // ✅ CORREÇÃO: Auto-save NÃO deve validar produtos rigidamente
+        // Apenas filtra produtos que têm pelo menos SKU OU nome preenchido
+        const produtosValidos = produtosParaSalvar.filter(p => {
+          const temSku = p.sku && p.sku.trim().length > 0;
+          const temNome = p.nome && p.nome.trim().length > 0;
+          return temSku || temNome;
         });
         
-        if (invalidProducts.length > 0) {
-          console.log('⚠️ Auto-save: Dados inválidos, aguardando preenchimento', {
-            produtosInvalidos: invalidProducts.length,
-            totalProdutos: produtosParaSalvar.length
-          });
+        if (produtosValidos.length === 0) {
+          console.log('⏭️ Auto-save cancelado: Nenhum produto com dados mínimos');
           setIsSavingAuto(false);
           return;
         }
+        
+        console.log(`💾 [AUTO-SAVE] Salvando ${produtosValidos.length} de ${produtosParaSalvar.length} produtos`);
 
-        // Criar objeto completo da cotação
+        // Criar objeto completo da cotação com produtos válidos
         const cotacaoCompleta = {
           numero_cotacao: selectedCotacao?.numero_cotacao || dadosBasicos.numero_cotacao,
           descricao: selectedCotacao?.descricao || dadosBasicos.descricao,
@@ -1429,7 +1430,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           data_fechamento: selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento || null,
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
           observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
-          produtos: produtosParaSalvar,
+          produtos: produtosValidos, // Usar apenas produtos válidos
           total_peso_kg: totaisGerais.total_peso_kg || 0,
           total_cbm: totaisGerais.total_cbm || 0,
           total_quantidade: totaisGerais.total_quantidade || 0,
