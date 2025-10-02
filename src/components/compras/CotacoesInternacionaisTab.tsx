@@ -288,7 +288,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const { 
     secureCreateCotacao, 
     secureUpdateCotacao, 
-    secureDeleteCotacao, 
+    secureDeleteCotacao,
+    silentCreateCotacao,
+    silentUpdateCotacao,
     loading: saveLoading 
   } = useSecureCotacoes();
   const { uploadImage, uploading: imageUploading } = useImageUpload();
@@ -1460,12 +1462,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           ...totaisGerais
         };
 
-        // Atualizar se já existe, criar se não existe
+        // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
         if (selectedCotacao?.id) {
-          await secureUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
+          await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
           console.log('✅ Auto-save: Cotação atualizada');
         } else {
-          const novaCotacao = await secureCreateCotacao(cotacaoCompleta);
+          const novaCotacao = await silentCreateCotacao(cotacaoCompleta);
           if (novaCotacao) {
             // Converter produtos de Json para ProdutoCotacao[]
             const cotacaoConvertida = {
@@ -1493,7 +1495,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, secureCreateCotacao, secureUpdateCotacao, isSavingAuto]);
+  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, silentCreateCotacao, silentUpdateCotacao, isSavingAuto]);
   return (
     <div className="space-y-6">
       {/* Header */}

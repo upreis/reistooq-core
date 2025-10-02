@@ -39,7 +39,7 @@ export function useSecureCotacoes() {
     loading 
   } = useCotacoesInternacionais();
 
-  const validateAndSanitizeCotacao = useCallback((cotacao: any): CotacaoSecura | null => {
+  const validateAndSanitizeCotacao = useCallback((cotacao: any, silent = false): CotacaoSecura | null => {
     try {
       // Sanitizar strings
       const sanitizedCotacao = {
@@ -73,7 +73,10 @@ export function useSecureCotacoes() {
           severity: 'medium'
         });
         
-        showError(`Dados inválidos: ${errors}`);
+        // Só mostrar erro se não for modo silencioso
+        if (!silent) {
+          showError(`Dados inválidos: ${errors}`);
+        }
         return null;
       }
 
@@ -84,7 +87,10 @@ export function useSecureCotacoes() {
         action: 'validateAndSanitizeCotacao'
       });
       
-      showError(ErrorHandler.getUserMessage(errorDetails));
+      // Só mostrar erro se não for modo silencioso
+      if (!silent) {
+        showError(ErrorHandler.getUserMessage(errorDetails));
+      }
       return null;
     }
   }, [showError]);
@@ -149,6 +155,92 @@ export function useSecureCotacoes() {
     }
   }, [createCotacaoInternacional, validateAndSanitizeCotacao, showError, showSuccess]);
 
+  // ✅ Versão silenciosa do update para auto-save (sem toasts)
+  const silentUpdateCotacao = useCallback(async (id: string, cotacao: any) => {
+    try {
+      // Verificar permissões
+      if (!validateUserPermissions(['cotacoes:update'])) {
+        console.warn('⚠️ Auto-save: Sem permissão para atualizar');
+        return null;
+      }
+
+      // Verificar rate limit
+      if (!checkRateLimit('update_cotacao', 20, 60000)) {
+        console.warn('⚠️ Auto-save: Rate limit atingido');
+        return null;
+      }
+
+      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao);
+      if (!sanitizedCotacao) {
+        console.warn('⚠️ Auto-save: Dados inválidos, aguardando preenchimento');
+        return null;
+      }
+
+      const result = await updateCotacaoInternacional(id, sanitizedCotacao);
+      
+      if (result) {
+        logSecurityEvent({
+          type: 'sensitive_access',
+          details: { 
+            action: 'auto_save_cotacao', 
+            cotacao_id: id,
+            success: true 
+          },
+          severity: 'low'
+        });
+        console.log('✅ Auto-save: Cotação atualizada silenciosamente');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Auto-save: Erro ao atualizar', error);
+      return null;
+    }
+  }, [updateCotacaoInternacional, validateAndSanitizeCotacao]);
+
+  // ✅ Versão silenciosa do create para auto-save (sem toasts)
+  const silentCreateCotacao = useCallback(async (cotacao: any) => {
+    try {
+      // Verificar permissões
+      if (!validateUserPermissions(['cotacoes:create'])) {
+        console.warn('⚠️ Auto-save: Sem permissão para criar');
+        return null;
+      }
+
+      // Verificar rate limit
+      if (!checkRateLimit('create_cotacao', 10, 60000)) {
+        console.warn('⚠️ Auto-save: Rate limit atingido');
+        return null;
+      }
+
+      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao);
+      if (!sanitizedCotacao) {
+        console.warn('⚠️ Auto-save: Dados inválidos, aguardando preenchimento');
+        return null;
+      }
+
+      const result = await createCotacaoInternacional(sanitizedCotacao);
+      
+      if (result) {
+        logSecurityEvent({
+          type: 'sensitive_access',
+          details: { 
+            action: 'auto_create_cotacao', 
+            cotacao_id: result.id,
+            success: true 
+          },
+          severity: 'low'
+        });
+        console.log('✅ Auto-save: Cotação criada silenciosamente');
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('❌ Auto-save: Erro ao criar', error);
+      return null;
+    }
+  }, [createCotacaoInternacional, validateAndSanitizeCotacao]);
+
   const secureUpdateCotacao = useCallback(async (id: string, cotacao: any) => {
     try {
       // Verificar permissões
@@ -163,12 +255,12 @@ export function useSecureCotacoes() {
       }
 
       // Verificar rate limit
-      if (!checkRateLimit('update_cotacao', 20, 60000)) { // 20 atualizações por minuto
-        showError('Muitas tentativas. Aguarde um momento antes de tentar novamente.');
+      if (!checkRateLimit('update_cotacao', 20, 60000)) {
+        console.warn('⚠️ Auto-save: Rate limit atingido');
         return null;
       }
 
-      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao);
+      const sanitizedCotacao = validateAndSanitizeCotacao(cotacao, true); // silent = true
       if (!sanitizedCotacao) return null;
 
       const result = await updateCotacaoInternacional(id, sanitizedCotacao);
@@ -258,6 +350,8 @@ export function useSecureCotacoes() {
     secureCreateCotacao,
     secureUpdateCotacao,
     secureDeleteCotacao,
+    silentCreateCotacao,
+    silentUpdateCotacao,
     validateAndSanitizeCotacao,
     loading
   };
