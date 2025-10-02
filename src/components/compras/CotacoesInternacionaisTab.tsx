@@ -1523,10 +1523,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Criar nova cotação
+  // Criar nova cotação - abre modal completo
   const handleCreateNewCotacao = () => {
-    // Resetar formulário com dados padrão
-    setDadosBasicos({
+    // Resetar tudo para nova cotação
+    const novaCotacao = {
       numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000000)}`,
       descricao: '',
       pais_origem: 'China',
@@ -1534,32 +1534,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       fator_multiplicador: 1.3,
       data_abertura: new Date().toISOString().split('T')[0],
       data_fechamento: '',
-      status: 'rascunho' as const,
-      observacoes: ''
-    });
-    setShowNewCotacaoDialog(true);
-  };
-
-  const handleSaveNewCotacao = async () => {
-    if (!dadosBasicos.numero_cotacao || !dadosBasicos.descricao) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha o número e descrição da cotação",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const novaCotacao = {
-      numero_cotacao: dadosBasicos.numero_cotacao,
-      descricao: dadosBasicos.descricao,
-      pais_origem: dadosBasicos.pais_origem,
-      moeda_origem: dadosBasicos.moeda_origem,
-      fator_multiplicador: dadosBasicos.fator_multiplicador,
-      data_abertura: dadosBasicos.data_abertura,
-      data_fechamento: dadosBasicos.data_fechamento || null,
       status: 'rascunho' as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
-      observacoes: dadosBasicos.observacoes || null,
       produtos: [],
       total_peso_kg: 0,
       total_cbm: 0,
@@ -1569,6 +1544,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_brl: 0
     } as CotacaoInternacional;
     
+    setDadosBasicos({
+      numero_cotacao: novaCotacao.numero_cotacao,
+      descricao: '',
+      pais_origem: 'China',
+      moeda_origem: 'CNY',
+      fator_multiplicador: 1.3,
+      data_abertura: new Date().toISOString().split('T')[0],
+      data_fechamento: '',
+      status: 'rascunho' as const,
+      observacoes: ''
+    });
+    
     setSelectedCotacao(novaCotacao);
     setProductData([]);
     setProdutos([]);
@@ -1576,8 +1563,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setShowNewCotacaoDialog(false);
     
     toast({
-      title: "Cotação criada",
-      description: "Agora você pode adicionar produtos à cotação"
+      title: "Nova cotação",
+      description: "Preencha os dados e adicione produtos"
     });
   };
 
@@ -2357,128 +2344,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         onUploadImagemPrincipal={handleUploadImagemPrincipal}
         onUploadImagemFornecedor={handleUploadImagemFornecedor}
       />
-      
-      {/* Dialog para Nova Cotação Internacional */}
-      <Dialog open={showNewCotacaoDialog} onOpenChange={setShowNewCotacaoDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Nova Cotação Internacional</DialogTitle>
-            <DialogDescription>
-              Preencha os dados básicos da cotação internacional
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="numero_cotacao">Número da Cotação *</Label>
-                <Input
-                  id="numero_cotacao"
-                  value={dadosBasicos.numero_cotacao}
-                  onChange={(e) => setDadosBasicos({ ...dadosBasicos, numero_cotacao: e.target.value })}
-                  placeholder="COT-INT-2025-001"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="data_abertura">Data de Abertura *</Label>
-                <Input
-                  id="data_abertura"
-                  type="date"
-                  value={dadosBasicos.data_abertura}
-                  onChange={(e) => setDadosBasicos({ ...dadosBasicos, data_abertura: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="descricao">Descrição *</Label>
-              <Input
-                id="descricao"
-                value={dadosBasicos.descricao}
-                onChange={(e) => setDadosBasicos({ ...dadosBasicos, descricao: e.target.value })}
-                placeholder="Ex: Eletrônicos - Container 40'"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="pais_origem">País de Origem *</Label>
-                <Input
-                  id="pais_origem"
-                  value={dadosBasicos.pais_origem}
-                  onChange={(e) => setDadosBasicos({ ...dadosBasicos, pais_origem: e.target.value })}
-                  placeholder="China"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="moeda_origem">Moeda *</Label>
-                <Select
-                  value={dadosBasicos.moeda_origem}
-                  onValueChange={(value) => setDadosBasicos({ ...dadosBasicos, moeda_origem: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AVAILABLE_CURRENCIES.map((currency) => (
-                      <SelectItem key={currency.code} value={currency.code}>
-                        {currency.flag} {currency.name} ({currency.symbol})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="fator_multiplicador">Fator Multiplicador</Label>
-                <Input
-                  id="fator_multiplicador"
-                  type="number"
-                  step="0.1"
-                  value={dadosBasicos.fator_multiplicador}
-                  onChange={(e) => setDadosBasicos({ ...dadosBasicos, fator_multiplicador: parseFloat(e.target.value) || 1 })}
-                  placeholder="1.3"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="data_fechamento">Previsão de Fechamento</Label>
-                <Input
-                  id="data_fechamento"
-                  type="date"
-                  value={dadosBasicos.data_fechamento}
-                  onChange={(e) => setDadosBasicos({ ...dadosBasicos, data_fechamento: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="observacoes">Observações</Label>
-              <Textarea
-                id="observacoes"
-                value={dadosBasicos.observacoes}
-                onChange={(e) => setDadosBasicos({ ...dadosBasicos, observacoes: e.target.value })}
-                placeholder="Observações adicionais sobre a cotação..."
-                rows={3}
-              />
-            </div>
-          </div>
-          
-          <div className="flex justify-end gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowNewCotacaoDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSaveNewCotacao}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Cotação
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
