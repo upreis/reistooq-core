@@ -989,12 +989,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     return total;
   }, [displayProducts]);
 
-  // Função para calcular peso total
+  // Função para calcular peso total - soma a coluna "Peso Total Emb. (KG)"
   const getTotalWeight = useCallback(() => {
     return displayProducts.reduce((total, product) => {
-      // Usar peso_total_cx_master_kg se disponível (dados do Excel), senão peso_total_kg
-      const peso = product.peso_total_cx_master_kg || product.peso_total_kg || 0;
-      return total + peso;
+      return total + (product.peso_total_emb_kg || 0);
     }, 0);
   }, [displayProducts]);
 
