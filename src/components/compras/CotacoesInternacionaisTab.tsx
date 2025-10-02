@@ -950,8 +950,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Identificar campos editáveis (excluir calculados)
   const editableFields = [
     'sku', 'material', 'cor', 'nome_produto', 'package', 'preco', 'unit', 
-    'pcs_ctn', 'caixas', 'peso_unitario_g', 'comprimento', 'largura', 
-    'altura', 'cbm_cubagem', 'cbm_total', 'obs'
+    'pcs_ctn', 'caixas', 'peso_unitario_g', 'peso_emb_master_kg', 'peso_sem_emb_master_kg',
+    'peso_total_emb_kg', 'peso_total_sem_emb_kg', 'comprimento', 'largura', 
+    'altura', 'cbm_cubagem', 'cbm_total', 'quantidade_total', 'valor_total', 'obs',
+    'comprimento_cm', 'largura_cm', 'altura_cm', 'cbm_unitario', 'qtd_caixas_pedido'
   ];
 
   const isFieldEditable = useCallback((field: string) => {
@@ -960,8 +962,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   const getFieldType = useCallback((field: string) => {
     const numberFields = [
-      'preco', 'pcs_ctn', 'caixas', 'peso_unitario_g', 'comprimento', 
-      'largura', 'altura', 'cbm_cubagem', 'cbm_total'
+      'preco', 'pcs_ctn', 'caixas', 'peso_unitario_g', 'peso_emb_master_kg', 
+      'peso_sem_emb_master_kg', 'peso_total_emb_kg', 'peso_total_sem_emb_kg',
+      'comprimento', 'largura', 'altura', 'cbm_cubagem', 'cbm_total',
+      'comprimento_cm', 'largura_cm', 'altura_cm', 'cbm_unitario', 
+      'quantidade_total', 'valor_total', 'qtd_caixas_pedido'
     ];
     return numberFields.includes(field) ? 'number' : 'text';
   }, []);
@@ -1994,19 +1999,255 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                               onDoubleClick={() => startEditing(index, 'qtd_caixas_pedido')}
                             />
                           </TableCell>
-                          <TableCell className="text-right py-3 font-mono text-sm">{(product.peso_unitario_g || 0).toFixed(0)}g</TableCell>
-                          <TableCell className="text-center py-3 text-sm">{(product.peso_emb_master_kg || 0).toFixed(2)}</TableCell>
-                          <TableCell className="text-center py-3 text-sm">{(product.peso_sem_emb_master_kg || 0).toFixed(2)}</TableCell>
-                          <TableCell className="text-center py-3 text-sm">{(product.peso_total_emb_kg || 0).toFixed(2)}</TableCell>
-                          <TableCell className="text-center py-3 text-sm">{(product.peso_total_sem_emb_kg || 0).toFixed(2)}</TableCell>
-                          <TableCell className="text-center py-3">{product.comprimento_cm || 0}</TableCell>
-                          <TableCell className="text-center py-3">{product.largura_cm || 0}</TableCell>
-                          <TableCell className="text-center py-3">{product.altura_cm || 0}</TableCell>
-                          <TableCell className="text-center py-3">{(product.cbm_unitario || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3">{(product.cbm_total || 0).toFixed(2)}</TableCell>
-                         <TableCell className="text-center py-3 font-medium">{product.quantidade_total || 0}</TableCell>
-                         <TableCell className="text-right py-3 font-medium">{getCurrencySymbol(selectedCurrency)} {(product.valor_total || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
-                         <TableCell className="text-center py-3">{product.obs}</TableCell>
+                          <TableCell className="text-right py-3 font-mono text-sm">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.peso_unitario_g || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'peso_unitario_g', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'peso_unitario_g'}
+                                      onDoubleClick={() => startEditing(index, 'peso_unitario_g')}
+                                      suffix="g"
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3 text-sm">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.peso_emb_master_kg || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'peso_emb_master_kg', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'peso_emb_master_kg'}
+                                      onDoubleClick={() => startEditing(index, 'peso_emb_master_kg')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3 text-sm">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.peso_sem_emb_master_kg || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'peso_sem_emb_master_kg', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'peso_sem_emb_master_kg'}
+                                      onDoubleClick={() => startEditing(index, 'peso_sem_emb_master_kg')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3 text-sm">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.peso_total_emb_kg || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'peso_total_emb_kg', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'peso_total_emb_kg'}
+                                      onDoubleClick={() => startEditing(index, 'peso_total_emb_kg')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3 text-sm">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.peso_total_sem_emb_kg || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'peso_total_sem_emb_kg', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'peso_total_sem_emb_kg'}
+                                      onDoubleClick={() => startEditing(index, 'peso_total_sem_emb_kg')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.comprimento_cm || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'comprimento_cm', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'comprimento_cm'}
+                                      onDoubleClick={() => startEditing(index, 'comprimento_cm')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.largura_cm || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'largura_cm', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'largura_cm'}
+                                      onDoubleClick={() => startEditing(index, 'largura_cm')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.altura_cm || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'altura_cm', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'altura_cm'}
+                                      onDoubleClick={() => startEditing(index, 'altura_cm')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-center py-3">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div>
+                                    <EditableCell
+                                      value={product.cbm_unitario || 0}
+                                      type="number"
+                                      onSave={(value) => updateProductData(index, 'cbm_unitario', value)}
+                                      onCancel={stopEditing}
+                                      isEditing={editingCell?.row === index && editingCell?.field === 'cbm_unitario'}
+                                      onDoubleClick={() => startEditing(index, 'cbm_unitario')}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>Clique 2x para editar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                         <TableCell className="text-center py-3">
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <div>
+                                   <EditableCell
+                                     value={product.cbm_total || 0}
+                                     type="number"
+                                     onSave={(value) => updateProductData(index, 'cbm_total', value)}
+                                     onCancel={stopEditing}
+                                     isEditing={editingCell?.row === index && editingCell?.field === 'cbm_total'}
+                                     onDoubleClick={() => startEditing(index, 'cbm_total')}
+                                   />
+                                 </div>
+                               </TooltipTrigger>
+                               <TooltipContent>Clique 2x para editar</TooltipContent>
+                             </Tooltip>
+                           </TooltipProvider>
+                         </TableCell>
+                         <TableCell className="text-center py-3 font-medium">
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <div>
+                                   <EditableCell
+                                     value={product.quantidade_total || 0}
+                                     type="number"
+                                     onSave={(value) => updateProductData(index, 'quantidade_total', value)}
+                                     onCancel={stopEditing}
+                                     isEditing={editingCell?.row === index && editingCell?.field === 'quantidade_total'}
+                                     onDoubleClick={() => startEditing(index, 'quantidade_total')}
+                                   />
+                                 </div>
+                               </TooltipTrigger>
+                               <TooltipContent>Clique 2x para editar</TooltipContent>
+                             </Tooltip>
+                           </TooltipProvider>
+                         </TableCell>
+                         <TableCell className="text-right py-3 font-medium">
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <div>
+                                   <EditableCell
+                                     value={product.valor_total || 0}
+                                     type="number"
+                                     onSave={(value) => updateProductData(index, 'valor_total', value)}
+                                     onCancel={stopEditing}
+                                     isEditing={editingCell?.row === index && editingCell?.field === 'valor_total'}
+                                     onDoubleClick={() => startEditing(index, 'valor_total')}
+                                     prefix={getCurrencySymbol(selectedCurrency) + ' '}
+                                   />
+                                 </div>
+                               </TooltipTrigger>
+                               <TooltipContent>Clique 2x para editar</TooltipContent>
+                             </Tooltip>
+                           </TooltipProvider>
+                         </TableCell>
+                         <TableCell className="text-center py-3">
+                           <TooltipProvider>
+                             <Tooltip>
+                               <TooltipTrigger asChild>
+                                 <div>
+                                   <EditableCell
+                                     value={product.obs || ''}
+                                     type="text"
+                                     onSave={(value) => updateProductData(index, 'obs', value)}
+                                     onCancel={stopEditing}
+                                     isEditing={editingCell?.row === index && editingCell?.field === 'obs'}
+                                     onDoubleClick={() => startEditing(index, 'obs')}
+                                   />
+                                 </div>
+                               </TooltipTrigger>
+                               <TooltipContent>Clique 2x para editar</TooltipContent>
+                             </Tooltip>
+                           </TooltipProvider>
+                         </TableCell>
                           <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                          <TableCell className="text-right py-3 font-mono text-sm">$ {product.change_dolar_total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right py-3 font-mono text-sm">R$ {product.multiplicador_reais.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</TableCell>
