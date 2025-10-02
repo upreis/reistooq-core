@@ -218,39 +218,39 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         dadosProcessados = produtosComImagens.map((item, index) => ({
           id: `produto-${index}`,
           
-          // CAMPOS BÁSICOS - USAR EXATAMENTE OS MESMOS NOMES DO HOOK
+          // CAMPOS BÁSICOS - USAR NOMES QUE A TABELA ESPERA
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
-          material: item.MATERIAL || item.material || '',  // ✅ MAIÚSCULO
-          cor: item.COR || item.cor || '',                 // ✅ MAIÚSCULO
-          nome_produto: item['Nome do Produto'] || item.PRODUTO || item.produto || `Produto ${index + 1}`,
-          package: item['Package'] || item.PACKAGE || item.package || '',  // ✅ Nome EXATO do Excel
+          material: item.MATERIAL || item.material || '',
+          cor: item.COR || item.cor || '',
+          nome: item['Nome do Produto'] || item.PRODUTO || item.produto || `Produto ${index + 1}`,  // ✅ Tabela usa "nome"
+          package_qtd: Number(item['PCS/CTN'] || item.pcs_ctn || 1),  // ✅ Tabela usa "package_qtd"
           
-          // PREÇOS E QUANTIDADES - USAR EXATAMENTE OS MESMOS NOMES DO EXCEL
-          preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),  // ✅ Nome EXATO do Excel
-          unidade: item['Unid.'] || item.UNIT || item.unidade || 'un',
+          // PREÇOS E QUANTIDADES
+          preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),
+          unidade_medida: item['Unid.'] || item.UNIT || item.unidade || 'un',  // ✅ Tabela usa "unidade_medida"
           pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
-          caixas: Number(item['Caixas'] || item.caixas || 0),  // ✅ Nome EXATO do Excel
+          qtd_caixas_pedido: Number(item['Caixas'] || item.caixas || 0),  // ✅ Tabela usa "qtd_caixas_pedido"
           quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
           
-          // PESOS (EM GRAMAS E QUILOS)
+          // PESOS
           peso_unitario_g: Number(item['Peso Unit. (g)'] || item.peso_unitario || 0),
-          peso_embalagem_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_embalagem || 0),
-          peso_sem_embalagem_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || 0),
-          peso_total_embalagem_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_bruto || 0),
-          peso_total_sem_embalagem_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_liquido || 0),
+          peso_emb_master_kg: Number(item['Peso Emb. Master (KG)'] || item.peso_embalagem || 0),  // ✅ Nome correto
+          peso_sem_emb_master_kg: Number(item['Peso S/ Emb. Master (KG)'] || item.peso_liquido || 0),  // ✅ Nome correto
+          peso_total_emb_kg: Number(item['Peso Total Emb. (KG)'] || item.peso_total_bruto || 0),  // ✅ Nome correto
+          peso_total_sem_emb_kg: Number(item['Peso Total S/ Emb. (KG)'] || item.peso_total_liquido || 0),  // ✅ Nome correto
           
-          // DIMENSÕES (EM CENTÍMETROS)
+          // DIMENSÕES
           comprimento_cm: Number(item['Comp. (cm)'] || item.comprimento || 0),
           largura_cm: Number(item['Larg. (cm)'] || item.largura || 0),
           altura_cm: Number(item['Alt. (cm)'] || item.altura || 0),
           
           // CUBAGEM
-          cbm_cubagem: Number(item['CBM Cubagem'] || item.cbm_unitario || 0),
+          cbm_unitario: Number(item['CBM Cubagem'] || item.cbm_unitario || 0),  // ✅ Nome correto
           cbm_total: Number(item['CBM Total'] || item.cbm_total || 0),
           
           // OBSERVAÇÕES E IMAGENS
-          observacoes: item['Obs.'] || item.OBSERVACOES || item.observacoes || '',
+          obs: item['Obs.'] || item.OBSERVACOES || item.observacoes || '',
           
           // CAMPOS DE IMAGEM
           imagem: item.imagem || '',
@@ -270,10 +270,10 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         dadosProcessados = produtosComImagens.map((item, index) => ({
           id: `fallback-${index}`,
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
-          material: item.MATERIAL || item.material || '',  // ✅ MAIÚSCULO
-          cor: item.COR || item.cor || '',                 // ✅ MAIÚSCULO
-          nome_produto: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,
-          preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),  // ✅ Nome EXATO do Excel
+          material: item.MATERIAL || item.material || '',
+          cor: item.COR || item.cor || '',
+          nome: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,  // ✅ "nome"
+          preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),
           quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.valor_total || 0),
           imagem: item.imagem || '',

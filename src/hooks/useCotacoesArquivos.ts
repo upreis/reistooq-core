@@ -724,23 +724,25 @@ export function useCotacoesArquivos() {
         // COR - lógica SIMPLES do sistema antigo
         cor: linha.COR || linha.cor || '',
         
-        // NOME DO PRODUTO - usar nome EXATO do Excel
-        nome_produto: linha['Nome do Produto'] || 
+        // NOME DO PRODUTO - usar nome EXATO do Excel → "nome" para a tabela
+        nome: linha['Nome do Produto'] || 
           linha.NOME_PRODUTO || 
           linha.nome_produto || 
           linha.NOME || 
           linha.nome || '',
         
-        // PACKAGE - usar nome EXATO do Excel
-        package: linha['Package'] || linha.PACKAGE || linha.package || '',
+        // PACKAGE - usar nome EXATO do Excel → "package_qtd" para a tabela
+        package_qtd: parseInt(String(
+          linha['Package'] || linha.PACKAGE || linha.package || linha['PCS/CTN'] || '1'
+        ).replace(/[^\d]/g, '')) || 1,
         
-        // PREÇO - usar nome EXATO do Excel
-        preco: parseFloat(String(
+        // PREÇO - usar nome EXATO do Excel → "preco_unitario" para a tabela
+        preco_unitario: parseFloat(String(
           linha['Preço'] || linha.PREÇO || linha.PRECO || linha.preco || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // UNIDADE - usar nome EXATO do Excel
-        unit: linha['Unid.'] || linha.UNIT || linha.unit || '',
+        // UNIDADE - usar nome EXATO do Excel → "unidade_medida" para a tabela
+        unidade_medida: linha['Unid.'] || linha.UNIT || linha.unit || 'un',
         
         // PCS/CTN - usar nome EXATO do Excel
         pcs_ctn: parseInt(String(
@@ -749,12 +751,12 @@ export function useCotacoesArquivos() {
           linha.pcs_ctn || '0'
         ).replace(/[^\d]/g, '')) || 0,
         
-        // CAIXAS - usar nome EXATO do Excel
-        caixas: parseFloat(String(
+        // CAIXAS - usar nome EXATO do Excel → "qtd_caixas_pedido" para a tabela
+        qtd_caixas_pedido: parseFloat(String(
           linha['Caixas'] || linha.CAIXAS || linha.caixas || '1'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
         
-        // ===== PESOS ===== (NOMES DO SISTEMA ANTIGO)
+        // ===== PESOS =====
         
         // PESO UNITÁRIO - usar nome EXATO do Excel
         peso_unitario_g: parseFloat(String(
@@ -764,8 +766,8 @@ export function useCotacoesArquivos() {
           linha.peso_unitario_g || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // PESO EMBALADO MASTER - usar nome EXATO do Excel
-        peso_cx_master_kg: parseFloat(String(
+        // PESO EMBALADO MASTER - nome correto para a tabela
+        peso_emb_master_kg: parseFloat(String(
           linha['Peso Emb. Master (KG)'] ||
           linha['Peso embalado cx Master (KG)'] || 
           linha['PESO EMBALADO CX MASTER (KG)'] ||
@@ -773,8 +775,8 @@ export function useCotacoesArquivos() {
           linha.peso_master_kg || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // PESO SEM EMBALAGEM MASTER - usar nome EXATO do Excel
-        peso_sem_cx_master_kg: parseFloat(String(
+        // PESO SEM EMBALAGEM MASTER - nome correto para a tabela
+        peso_sem_emb_master_kg: parseFloat(String(
           linha['Peso S/ Emb. Master (KG)'] ||
           linha['Peso Sem embalagem cx Master (KG)'] || 
           linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
@@ -782,10 +784,10 @@ export function useCotacoesArquivos() {
           linha.peso_sem_master_kg || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // ===== DIMENSÕES ===== (NOMES DO SISTEMA ANTIGO)
+        // ===== DIMENSÕES =====
         
         // COMPRIMENTO - usar nome EXATO do Excel
-        comprimento: parseFloat(String(
+        comprimento_cm: parseFloat(String(
           linha['Comp. (cm)'] || 
           linha.Comprimento || 
           linha.COMPRIMENTO || 
@@ -793,7 +795,7 @@ export function useCotacoesArquivos() {
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
         // LARGURA - usar nome EXATO do Excel
-        largura: parseFloat(String(
+        largura_cm: parseFloat(String(
           linha['Larg. (cm)'] || 
           linha.Largura || 
           linha.LARGURA || 
@@ -801,25 +803,23 @@ export function useCotacoesArquivos() {
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
         // ALTURA - usar nome EXATO do Excel
-        altura: parseFloat(String(
+        altura_cm: parseFloat(String(
           linha['Alt. (cm)'] || 
           linha.Altura || 
           linha.ALTURA || 
           linha.altura || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // CBM CUBAGEM - usar nome cbm_cubagem (sistema antigo)
-        cbm_cubagem: parseFloat(String(
-          extrairValorExcel(
-            linha['CBM Cubagem'] || 
-            linha.CBM_CUBAGEM || 
-            linha.cbm_cubagem
-          ) || '0'
+        // CBM CUBAGEM - nome correto para a tabela
+        cbm_unitario: parseFloat(String(
+          linha['CBM Cubagem'] || 
+          linha.CBM_CUBAGEM || 
+          linha.cbm_cubagem || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
         // ===== CÁLCULOS AUTOMÁTICOS =====
-        peso_total_cx_master_kg: 0,
-        peso_total_sem_cx_master_kg: 0,
+        peso_total_emb_kg: 0,
+        peso_total_sem_emb_kg: 0,
         quantidade_total: 0,
         cbm_total: 0,
         valor_total: 0,
@@ -829,19 +829,15 @@ export function useCotacoesArquivos() {
         imagem_fornecedor: '',
         
         // ===== OUTROS CAMPOS =====
-        obs: extrairValorExcel(
-          linha.OBS || 
-          linha.obs || 
-          linha.Obs
-        ) || ''
+        obs: linha['Obs.'] || linha.OBS || linha.obs || linha.Obs || ''
       };
       
       // ✅ CÁLCULOS AUTOMÁTICOS (Sistema Antigo)
-      produtoMapeado.quantidade_total = produtoMapeado.caixas * produtoMapeado.pcs_ctn;
-      produtoMapeado.cbm_total = produtoMapeado.cbm_cubagem * produtoMapeado.caixas;
-      produtoMapeado.valor_total = produtoMapeado.preco * produtoMapeado.quantidade_total;
-      produtoMapeado.peso_total_cx_master_kg = produtoMapeado.peso_cx_master_kg * produtoMapeado.caixas;
-      produtoMapeado.peso_total_sem_cx_master_kg = produtoMapeado.peso_sem_cx_master_kg * produtoMapeado.caixas;
+      produtoMapeado.quantidade_total = produtoMapeado.qtd_caixas_pedido * produtoMapeado.pcs_ctn;
+      produtoMapeado.cbm_total = produtoMapeado.cbm_unitario * produtoMapeado.qtd_caixas_pedido;
+      produtoMapeado.valor_total = produtoMapeado.preco_unitario * produtoMapeado.quantidade_total;
+      produtoMapeado.peso_total_emb_kg = produtoMapeado.peso_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
+      produtoMapeado.peso_total_sem_emb_kg = produtoMapeado.peso_sem_emb_master_kg * produtoMapeado.qtd_caixas_pedido;
       
       // 🔍 LOGS: Primeiras 3 linhas
       if (index < 3) {
@@ -849,9 +845,10 @@ export function useCotacoesArquivos() {
         console.log(`✅ SKU: "${produtoMapeado.sku}"`);
         console.log(`✅ Material: "${produtoMapeado.material}"`);
         console.log(`✅ Cor: "${produtoMapeado.cor}"`);
-        console.log(`✅ Nome: "${produtoMapeado.nome_produto}"`);
-        console.log(`✅ Preço: ${produtoMapeado.preco}`);
-        console.log(`✅ Dimensões: ${produtoMapeado.comprimento}x${produtoMapeado.largura}x${produtoMapeado.altura}`);
+        console.log(`✅ Nome: "${produtoMapeado.nome}"`);
+        console.log(`✅ Preço: ${produtoMapeado.preco_unitario}`);
+        console.log(`✅ Package: ${produtoMapeado.package_qtd}`);
+        console.log(`✅ Dimensões: ${produtoMapeado.comprimento_cm}x${produtoMapeado.largura_cm}x${produtoMapeado.altura_cm}`);
         console.log(`========================================================\n`);
       }
       
@@ -901,23 +898,8 @@ export function useCotacoesArquivos() {
         });
         console.log(`✅ [NOME] Produto ${produtoMapeado.sku}: imagem=${!!produtoMapeado.imagem}, imagem_fornecedor=${!!produtoMapeado.imagem_fornecedor}`);
         
-        // ✅ ALIASES COMPLETOS para compatibilidade
-        return {
-          ...produtoMapeado,
-          preco_unitario: produtoMapeado.preco,
-          unidade_medida: produtoMapeado.unit,
-          comprimento_cm: produtoMapeado.comprimento,
-          largura_cm: produtoMapeado.largura,
-          altura_cm: produtoMapeado.altura,
-          cbm_unitario: produtoMapeado.cbm_cubagem,
-          nome: produtoMapeado.nome_produto,
-          package_qtd: produtoMapeado.pcs_ctn,
-          qtd_caixas_pedido: produtoMapeado.caixas,
-          peso_emb_master_kg: produtoMapeado.peso_cx_master_kg,
-          peso_sem_emb_master_kg: produtoMapeado.peso_sem_cx_master_kg,
-          peso_total_emb_kg: produtoMapeado.peso_total_cx_master_kg,
-          peso_total_sem_emb_kg: produtoMapeado.peso_total_sem_cx_master_kg
-        };
+        // ✅ Retornar produto já com nomes corretos
+        return produtoMapeado;
       }
       
       // ====== PRIORIDADE 2: ASSOCIAÇÃO POR SKU (FLEXÍVEL) ======
@@ -986,28 +968,8 @@ export function useCotacoesArquivos() {
         }
       }
       
-      // ✅ ALIASES COMPLETOS para compatibilidade com a tabela
-      return {
-        ...produtoMapeado,
-        // Aliases de preço/valores
-        preco_unitario: produtoMapeado.preco,
-        // Aliases de medidas
-        unidade_medida: produtoMapeado.unit,
-        comprimento_cm: produtoMapeado.comprimento,
-        largura_cm: produtoMapeado.largura,
-        altura_cm: produtoMapeado.altura,
-        cbm_unitario: produtoMapeado.cbm_cubagem,
-        // Aliases de nome/descrição
-        nome: produtoMapeado.nome_produto,
-        // Aliases de package/quantidade
-        package_qtd: produtoMapeado.pcs_ctn,
-        qtd_caixas_pedido: produtoMapeado.caixas,
-        // Aliases de peso
-        peso_emb_master_kg: produtoMapeado.peso_cx_master_kg,
-        peso_sem_emb_master_kg: produtoMapeado.peso_sem_cx_master_kg,
-        peso_total_emb_kg: produtoMapeado.peso_total_cx_master_kg,
-        peso_total_sem_emb_kg: produtoMapeado.peso_total_sem_cx_master_kg
-      };
+      // ✅ Retornar produto já com nomes corretos
+      return produtoMapeado;
     });
   }, []);
 
