@@ -1399,24 +1399,42 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Não fazer auto-save se:
     // 1. Não houver produtos
     // 2. Já estiver salvando
-    // 3. Não houver cotação selecionada E dados básicos não estiverem preenchidos
+    // 3. Não houver dados completos da cotação
     
-    // Se tem cotação selecionada, sempre pode salvar (já tem número e descrição)
-    const temCotacaoSelecionada = !!selectedCotacao?.id;
-    const temDadosBasicosNovos = !!(dadosBasicos.numero_cotacao && dadosBasicos.descricao);
+    // Verificar se tem cotação selecionada COM dados válidos
+    const temCotacaoValidaSelecionada = !!(
+      selectedCotacao?.id && 
+      selectedCotacao.numero_cotacao && 
+      selectedCotacao.descricao
+    );
+    
+    // Verificar se tem dados básicos completos (para nova cotação)
+    const temDadosBasicosCompletos = !!(
+      dadosBasicos.numero_cotacao && 
+      dadosBasicos.descricao
+    );
     
     const canAutoSave = productData.length > 0 
       && !isSavingAuto 
       && hasImportedData
-      && (temCotacaoSelecionada || temDadosBasicosNovos);
+      && (temCotacaoValidaSelecionada || temDadosBasicosCompletos);
 
     if (!canAutoSave) {
       console.log('⏸️ Auto-save pausado:', {
         temProdutos: productData.length > 0,
         naoEstaSalvando: !isSavingAuto,
         temDadosImportados: hasImportedData,
-        temCotacaoSelecionada,
-        temDadosBasicosNovos
+        temCotacaoValidaSelecionada,
+        selectedCotacaoData: selectedCotacao ? {
+          id: selectedCotacao.id,
+          numero: selectedCotacao.numero_cotacao,
+          descricao: selectedCotacao.descricao
+        } : null,
+        temDadosBasicosCompletos,
+        dadosBasicos: {
+          numero: dadosBasicos.numero_cotacao,
+          descricao: dadosBasicos.descricao
+        }
       });
       return;
     }
@@ -1428,21 +1446,27 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
     // Agendar auto-save após 3 segundos de inatividade
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      console.log('🔍 [AUTO-SAVE] Verificando condições:', {
+      console.log('🔍 [AUTO-SAVE] Iniciando verificação final:', {
         temSelectedCotacao: !!selectedCotacao?.id,
         selectedCotacaoData: selectedCotacao ? {
           id: selectedCotacao.id,
           numero: selectedCotacao.numero_cotacao,
           descricao: selectedCotacao.descricao
         } : null,
-        dadosBasicos,
+        dadosBasicos: {
+          numero: dadosBasicos.numero_cotacao,
+          descricao: dadosBasicos.descricao
+        },
         totalProdutos: totaisGerais.produtos?.length || 0,
         productDataLength: productData.length
       });
 
-      // Se não tem cotação selecionada, verificar se tem dados básicos
-      if (!selectedCotacao?.id && !dadosBasicos.numero_cotacao) {
-        console.log('⏭️ Auto-save cancelado: Aguardando número e descrição da cotação');
+      // Validação final: garantir que há cotação válida OU dados básicos válidos
+      const cotacaoValida = selectedCotacao?.id && selectedCotacao.numero_cotacao && selectedCotacao.descricao;
+      const dadosBasicosValidos = dadosBasicos.numero_cotacao && dadosBasicos.descricao;
+      
+      if (!cotacaoValida && !dadosBasicosValidos) {
+        console.log('⏭️ Auto-save cancelado: Nenhuma cotação válida ou dados básicos completos');
         return;
       }
 
