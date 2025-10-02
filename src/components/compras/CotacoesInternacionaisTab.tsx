@@ -623,7 +623,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
     const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
-    const { valorUSD: total_valor_usd, valorBRL: total_valor_brl } = converterMoeda(
+    // Somar diretamente a coluna Multiplicador REAIS Total dos produtos exibidos
+    const total_valor_brl = displayProducts.reduce((sum, p) => {
+      const changeDolar = (p.valor_total || 0) / getChangeDolarTotalDivisorValue();
+      const multiplicadorReaisTotal = changeDolar * getMultiplicadorReaisTotalValue();
+      return sum + multiplicadorReaisTotal;
+    }, 0);
+    
+    const { valorUSD: total_valor_usd } = converterMoeda(
       total_valor_origem, 
       dadosBasicos.moeda_origem, 
       dadosBasicos.fator_multiplicador
