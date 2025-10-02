@@ -250,7 +250,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           // PESOS - Buscar em múltiplas variações de nomes de colunas
           peso_unitario_g: (() => {
             const rawValue = buscarValorColuna(item, [
-              'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
+              'PESO UNITARIO(g)', 'Peso Unitario(g)', 'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
               'PESO UNIT. (G)', 'PESO UNIT (G)', 'peso_unitario', 'peso_unitario_g'
             ], 'peso_unitario_g');
             const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
@@ -259,6 +259,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           })(),
           peso_emb_master_kg: (() => {
             const rawValue = buscarValorColuna(item, [
+              'Peso embalado cx Master (KG)', 'Peso Embalado cx Master (KG)', 'PESO EMBALADO CX MASTER (KG)',
               'Peso Emb. Master (KG)', 'Peso Emb Master (KG)', 'Peso Cx. Master (KG)', 'Peso Cx Master (KG)',
               'PESO EMB. MASTER (KG)', 'PESO EMB MASTER (KG)', 'peso_emb_master', 'peso_emb_master_kg', 'peso_embalagem'
             ], 'peso_emb_master_kg');
@@ -268,6 +269,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           })(),
           peso_sem_emb_master_kg: (() => {
             const rawValue = buscarValorColuna(item, [
+              'Peso Sem embalagem cx Master (KG)', 'Peso sem embalagem cx Master (KG)', 'PESO SEM EMBALAGEM CX MASTER (KG)',
               'Peso S/ Emb. Master (KG)', 'Peso S/ Emb Master (KG)', 'Peso Sem Emb. Master (KG)', 'Peso Sem Emb Master (KG)',
               'PESO S/ EMB. MASTER (KG)', 'PESO S/ EMB MASTER (KG)', 'peso_sem_emb_master', 'peso_sem_emb_master_kg', 'peso_liquido'
             ], 'peso_sem_emb_master_kg');
@@ -373,13 +375,14 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           })(),
           peso_unitario_g: (() => {
             const rawValue = buscarValorColuna(item, [
-              'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
+              'PESO UNITARIO(g)', 'Peso Unitario(g)', 'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
               'PESO UNIT. (G)', 'PESO UNIT (G)', 'peso_unitario', 'peso_unitario_g'
             ]);
             return parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
           })(),
           peso_emb_master_kg: (() => {
             const rawValue = buscarValorColuna(item, [
+              'Peso embalado cx Master (KG)', 'Peso Embalado cx Master (KG)', 'PESO EMBALADO CX MASTER (KG)',
               'Peso Emb. Master (KG)', 'Peso Emb Master (KG)', 'Peso Cx. Master (KG)', 'Peso Cx Master (KG)',
               'PESO EMB. MASTER (KG)', 'PESO EMB MASTER (KG)', 'peso_emb_master', 'peso_emb_master_kg', 'peso_embalagem'
             ]);
@@ -387,6 +390,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           })(),
           peso_sem_emb_master_kg: (() => {
             const rawValue = buscarValorColuna(item, [
+              'Peso Sem embalagem cx Master (KG)', 'Peso sem embalagem cx Master (KG)', 'PESO SEM EMBALAGEM CX MASTER (KG)',
               'Peso S/ Emb. Master (KG)', 'Peso S/ Emb Master (KG)', 'Peso Sem Emb. Master (KG)', 'Peso Sem Emb Master (KG)',
               'PESO S/ EMB. MASTER (KG)', 'PESO S/ EMB MASTER (KG)', 'peso_sem_emb_master', 'peso_sem_emb_master_kg', 'peso_liquido'
             ]);
