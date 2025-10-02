@@ -2272,8 +2272,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         open={showNewCotacaoDialog}
         onOpenChange={setShowNewCotacaoDialog}
         onSave={async (novaCotacao) => {
-          await secureCreateCotacao(novaCotacao);
-          onRefresh();
+          const result = await secureCreateCotacao(novaCotacao);
+          if (result) {
+            await onRefresh();
+          }
+          return result;
         }}
         availableCurrencies={AVAILABLE_CURRENCIES}
       />

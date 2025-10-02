@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 interface NovaCotacaoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (cotacao: any) => Promise<void>;
+  onSave: (cotacao: any) => Promise<any>;
   availableCurrencies: Array<{
     code: string;
     name: string;
@@ -116,39 +116,33 @@ export function NovaCotacaoDialog({
         total_valor_brl: 0
       };
 
-      await onSave(novaCotacao);
+      const result = await onSave(novaCotacao);
 
-      // Resetar formulário
-      setDadosBasicos({
-        numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Date.now()}`,
-        descricao: '',
-        data_abertura: new Date().toISOString().split('T')[0],
-        data_fechamento: '',
-        status: 'rascunho',
-        observacoes: ''
-      });
-      setDadosFornecedor({
-        pais_origem: 'China',
-        moeda_origem: 'CNY'
-      });
-      setValores({
-        fator_multiplicador: 1
-      });
-      setProdutosSelecionados([]);
-      setCurrentTab('dados-basicos');
-      onOpenChange(false);
-
-      toast({
-        title: "Sucesso!",
-        description: "Cotação criada com sucesso"
-      });
+      // Só fecha o modal e limpa se foi criado com sucesso
+      if (result !== null && result !== undefined) {
+        // Resetar formulário
+        setDadosBasicos({
+          numero_cotacao: `COT-INT-${new Date().getFullYear()}-${Date.now()}`,
+          descricao: '',
+          data_abertura: new Date().toISOString().split('T')[0],
+          data_fechamento: '',
+          status: 'rascunho',
+          observacoes: ''
+        });
+        setDadosFornecedor({
+          pais_origem: 'China',
+          moeda_origem: 'CNY'
+        });
+        setValores({
+          fator_multiplicador: 1
+        });
+        setProdutosSelecionados([]);
+        setCurrentTab('dados-basicos');
+        onOpenChange(false);
+      }
     } catch (error) {
       console.error('Erro ao criar cotação:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar a cotação",
-        variant: "destructive"
-      });
+      // Erro já foi tratado no onSave
     }
   };
 
