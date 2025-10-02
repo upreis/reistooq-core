@@ -58,7 +58,6 @@ import {
   Info,
   Download
 } from "lucide-react";
-import { CurrencyService } from "@/services/currencyService";
 import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
 import { useToastFeedback } from '@/hooks/useToastFeedback';
@@ -136,8 +135,6 @@ const AVAILABLE_CURRENCIES = [
   { code: 'PHP', name: 'Peso Filipino', flag: '🇵🇭', symbol: '₱' },
   { code: 'VND', name: 'Dong Vietnamita', flag: '🇻🇳', symbol: '₫' },
 ];
-
-// Hook movido para src/hooks/useCurrencyRates.ts
 
 export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps> = ({
   cotacoes,
@@ -743,7 +740,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Funções para seleção de produtos na tabela Excel (memoizadas)
   const handleSelectProduct = useCallback((productId: string, checked: boolean) => {
-    console.log('🔘 [DEBUG] Selecionando produto:', { productId, checked, currentSelected: selectedProductIds });
+    console.log('🔘 [DEBUG] Selecionando produto:', { productId, checked });
     if (checked) {
       setSelectedProductIds(prev => {
         const newSelected = [...prev, productId];
@@ -757,50 +754,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         return newSelected;
       });
     }
-  }, [selectedProductIds]);
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      // Usar displayProducts em vez de selectedCotacao.produtos
-      setSelectedProductIds(displayProducts.map((_, index) => index.toString()));
-    } else {
-      setSelectedProductIds([]);
-    }
-  };
-
-  // Função para excluir produtos selecionados
-  const handleDeleteSelectedProducts = () => {
-    if (selectedProductIds.length === 0) return;
-    
-    // Filtrar produtos que não estão selecionados
-    const updatedProducts = displayProducts.filter((_, index) => 
-      !selectedProductIds.includes(index.toString())
-    );
-    
-    // Atualizar o estado
-    setProductData(updatedProducts);
-    setSelectedProductIds([]);
-    
-    // CRITICAL: Marcar que dados foram importados/editados para não voltar ao mock
-    setHasImportedData(true);
-    
-    // Salvar no sessionStorage (removendo URLs blob inválidas)
-    try {
-      const cleanedProducts = updatedProducts.map(product => ({
-        ...product,
-        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
-        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
-      }));
-      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
-    } catch (error) {
-      console.warn('Erro ao salvar no sessionStorage:', error);
-    }
-    
-    toast({
-      title: "Produtos excluídos",
-      description: `${selectedProductIds.length} produto(s) foram excluídos com sucesso.`,
-    });
-  };
+  }, []);
 
   const getStatusColor = useCallback((status: string) => {
     switch (status) {
@@ -881,7 +835,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_brl: total_valor_brl || 0,
       produtos: produtosCalculados
     };
-  }, [displayProductsWithCalculations, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, rates]);
+  }, [displayProductsWithCalculations, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, converterMoeda]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
@@ -924,6 +878,43 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // CORREÇÃO: Usar produtos com cálculos dinâmicos
   const displayProducts = displayProductsWithCalculations;
+
+  // Funções de seleção que dependem de displayProducts (movidas para cá)
+  const handleSelectAll = useCallback((checked: boolean) => {
+    if (checked) {
+      setSelectedProductIds(displayProducts.map((_, index) => index.toString()));
+    } else {
+      setSelectedProductIds([]);
+    }
+  }, [displayProducts]);
+
+  const handleDeleteSelectedProducts = useCallback(() => {
+    if (selectedProductIds.length === 0) return;
+    
+    const updatedProducts = displayProducts.filter((_, index) => 
+      !selectedProductIds.includes(index.toString())
+    );
+    
+    setProductData(updatedProducts);
+    setSelectedProductIds([]);
+    setHasImportedData(true);
+    
+    try {
+      const cleanedProducts = updatedProducts.map(product => ({
+        ...product,
+        imagem: product.imagem?.startsWith('blob:') ? '' : product.imagem,
+        imagem_fornecedor: product.imagem_fornecedor?.startsWith('blob:') ? '' : product.imagem_fornecedor
+      }));
+      sessionStorage.setItem('cotacao-produtos', JSON.stringify(cleanedProducts));
+    } catch (error) {
+      console.warn('Erro ao salvar no sessionStorage:', error);
+    }
+    
+    toast({
+      title: "Produtos excluídos",
+      description: `${selectedProductIds.length} produto(s) foram excluídos com sucesso.`,
+    });
+  }, [displayProducts, selectedProductIds, toast]);
 
   // Função para atualizar dados do produto
   const updateProductData = useCallback((rowIndex: number, field: string, value: string | number) => {
