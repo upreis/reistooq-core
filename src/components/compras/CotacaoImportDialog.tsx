@@ -213,6 +213,12 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
       
       let dadosProcessados = produtosComImagens;
       
+      console.log('⚡ [CRÍTICO] INICIANDO MAPEAMENTO DE DADOS...');
+      console.log('⚡ [CRÍTICO] Total de produtos a mapear:', produtosComImagens.length);
+      if (produtosComImagens[0]) {
+        console.log('⚡ [CRÍTICO] Primeiro produto ANTES do mapeamento:', produtosComImagens[0]);
+      }
+      
       try {
         // MAPEAR TODOS OS CAMPOS DO EXCEL PARA ESTRUTURA COMPLETA
         dadosProcessados = produtosComImagens.map((item, index) => ({
@@ -340,9 +346,15 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
         }
         
       } catch (error) {
+        console.error('❌ ❌ ❌ CAIU NO CATCH - USANDO FALLBACK! ❌ ❌ ❌');
         console.error('❌ Erro no processamento de dados completos:', error);
+        console.error('❌ Stack:', error instanceof Error ? error.stack : 'No stack');
+        
         // Fallback mais robusto mantendo estrutura mínima
-        dadosProcessados = produtosComImagens.map((item, index) => ({
+        console.warn('⚠️ Iniciando fallback com mapeamento completo...');
+        dadosProcessados = produtosComImagens.map((item, index) => {
+          console.log(`⚠️ [FALLBACK] Mapeando produto ${index + 1}:`, item.SKU || item.sku);
+          return {
           id: `fallback-${index}`,
           sku: item.SKU || item.sku || `PROD-${index + 1}`,
           material: item.MATERIAL || item.material || '',
@@ -413,7 +425,8 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           imagem: item.imagem || '',
           imagem_fornecedor: item.imagem_fornecedor || '',
           nomeImagem: item.nomeImagem || ''
-        }));
+          };
+        });
       }
       setProgressoUpload(90);
 
