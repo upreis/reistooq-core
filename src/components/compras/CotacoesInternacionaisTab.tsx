@@ -815,16 +815,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
     const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
-    // Somar APENAS a coluna Multiplicador REAIS Total (já calculada em displayProductsWithCalculations)
+    // Somar a coluna Change DOLAR Total
+    const total_valor_usd = produtosCalculados.reduce((sum, p) => {
+      return sum + (p.change_dolar_total || 0);
+    }, 0);
+    
+    // Somar a coluna Multiplicador REAIS Total
     const total_valor_brl = produtosCalculados.reduce((sum, p) => {
       return sum + (p.multiplicador_reais_total || 0);
     }, 0);
-    
-    const { valorUSD: total_valor_usd } = converterMoeda(
-      total_valor_origem, 
-      dadosBasicos.moeda_origem, 
-      dadosBasicos.fator_multiplicador
-    );
 
     return {
       total_peso_kg: total_peso_kg || 0,
