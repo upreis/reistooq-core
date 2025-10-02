@@ -246,7 +246,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             const rawValue = buscarValorColuna(item, [
               'Peso Unit. (g)', 'Peso Unit (g)', 'Peso Unitário (g)', 'Peso Unitario (g)',
               'PESO UNIT. (G)', 'PESO UNIT (G)', 'peso_unitario', 'peso_unitario_g'
-            ]);
+            ], 'peso_unitario_g');
             const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
             console.log(`🔍 Peso Unit: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
@@ -255,7 +255,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             const rawValue = buscarValorColuna(item, [
               'Peso Emb. Master (KG)', 'Peso Emb Master (KG)', 'Peso Cx. Master (KG)', 'Peso Cx Master (KG)',
               'PESO EMB. MASTER (KG)', 'PESO EMB MASTER (KG)', 'peso_emb_master', 'peso_emb_master_kg', 'peso_embalagem'
-            ]);
+            ], 'peso_emb_master_kg');
             const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
             console.log(`🔍 Peso Emb Master: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
@@ -264,7 +264,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             const rawValue = buscarValorColuna(item, [
               'Peso S/ Emb. Master (KG)', 'Peso S/ Emb Master (KG)', 'Peso Sem Emb. Master (KG)', 'Peso Sem Emb Master (KG)',
               'PESO S/ EMB. MASTER (KG)', 'PESO S/ EMB MASTER (KG)', 'peso_sem_emb_master', 'peso_sem_emb_master_kg', 'peso_liquido'
-            ]);
+            ], 'peso_sem_emb_master_kg');
             const valor = parseFloat(String(rawValue || '0').replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
             console.log(`🔍 Peso S/ Emb Master: Excel="${rawValue}" → Parsed=${valor}`);
             return valor;
@@ -471,11 +471,18 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
   };
 
   // Helper para buscar valor em múltiplas variações de nome de coluna
-  const buscarValorColuna = (item: any, variacoes: string[]): any => {
+  const buscarValorColuna = (item: any, variacoes: string[], nomeCampo?: string): any => {
     for (const variacao of variacoes) {
       if (item[variacao] !== undefined && item[variacao] !== null && item[variacao] !== '') {
+        if (nomeCampo) console.log(`✅ [${nomeCampo}] Encontrado na coluna: "${variacao}" = "${item[variacao]}"`);
         return item[variacao];
       }
+    }
+    if (nomeCampo) {
+      console.log(`❌ [${nomeCampo}] Não encontrado. Tentou:`, variacoes.slice(0, 3));
+      console.log(`   Colunas disponíveis:`, Object.keys(item).filter(k => 
+        k.toLowerCase().includes(nomeCampo.toLowerCase().split('_')[0])
+      ));
     }
     return undefined;
   };
@@ -515,6 +522,16 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
             // DEBUG: Mostrar as colunas reais do Excel
             if (rows.length > 0) {
               console.log('🔍 [DEBUG] Colunas encontradas no Excel:', Object.keys(rows[0]));
+              console.log('🔍 [DEBUG] Primeiro produto completo:', rows[0]);
+              
+              // DEBUG ESPECÍFICO para colunas de peso
+              const primeiraLinha = rows[0];
+              console.log('🔍 [DEBUG] PESO - Valores brutos do Excel:');
+              Object.keys(primeiraLinha).forEach(key => {
+                if (key.toLowerCase().includes('peso') || key.toLowerCase().includes('caixa')) {
+                  console.log(`  "${key}": "${primeiraLinha[key]}"`);
+                }
+              });
             }
           }
 
