@@ -143,6 +143,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [searchTerm, setSearchTerm] = useState('');
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
+  const [showNewCotacaoDialog, setShowNewCotacaoDialog] = useState(false);
+  const [newCotacaoData, setNewCotacaoData] = useState({
+    numero_cotacao: '',
+    descricao: '',
+    pais_origem: 'China',
+    moeda_origem: 'CNY',
+    fator_multiplicador: 1,
+    data_abertura: new Date().toISOString().split('T')[0],
+    data_fechamento: '',
+    status: 'rascunho' as const,
+    observacoes: ''
+  });
   
   // Estados para seleção de produtos na tabela
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
@@ -1546,29 +1558,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             </div>
             <Button 
               onClick={() => {
-                const novaCotacao: CotacaoInternacional = {
-                  id: undefined,
-                  numero_cotacao: `COT-${Date.now()}`,
-                  descricao: '',
-                  pais_origem: 'China',
-                  moeda_origem: 'CNY',
-                  fator_multiplicador: 1,
-                  data_abertura: new Date().toISOString().split('T')[0],
-                  data_fechamento: null,
-                  status: 'rascunho',
-                  observacoes: '',
-                  produtos: [],
-                  total_peso_kg: 0,
-                  total_cbm: 0,
-                  total_quantidade: 0,
-                  total_valor_origem: 0,
-                  total_valor_usd: 0,
-                  total_valor_brl: 0
-                };
-                
-                // Definir dados básicos para nova cotação
-                setDadosBasicos({
-                  numero_cotacao: novaCotacao.numero_cotacao,
+                // Gerar número de cotação automático
+                const numeroCotacao = `COT-INT-${new Date().getFullYear()}-${Date.now()}`;
+                setNewCotacaoData({
+                  numero_cotacao: numeroCotacao,
                   descricao: '',
                   pais_origem: 'China',
                   moeda_origem: 'CNY',
@@ -1578,19 +1571,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   status: 'rascunho' as const,
                   observacoes: ''
                 });
-                
-                // Limpar produtos
-                setProductData([]);
-                setProdutos([]);
-                setHasImportedData(false);
-                
-                // Selecionar a nova cotação (abre o editor)
-                setSelectedCotacao(novaCotacao);
-                
-                toast({
-                  title: "Nova cotação criada",
-                  description: "Preencha os dados básicos e adicione produtos"
-                });
+                setShowNewCotacaoDialog(true);
               }}
               className="gap-2"
             >
@@ -2289,6 +2270,219 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         onUploadImagemPrincipal={handleUploadImagemPrincipal}
         onUploadImagemFornecedor={handleUploadImagemFornecedor}
       />
+      
+      {/* Dialog de Nova Cotação */}
+      <Dialog open={showNewCotacaoDialog} onOpenChange={setShowNewCotacaoDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nova Cotação Internacional</DialogTitle>
+            <DialogDescription>
+              Preencha as informações básicas da cotação
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="dados-basicos" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="dados-basicos">Dados Básicos</TabsTrigger>
+              <TabsTrigger value="fornecedor">Fornecedor</TabsTrigger>
+              <TabsTrigger value="valores">Valores</TabsTrigger>
+              <TabsTrigger value="observacoes">Observações</TabsTrigger>
+            </TabsList>
+            
+            {/* Aba: Dados Básicos */}
+            <TabsContent value="dados-basicos" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="numero_cotacao">Número da Cotação *</Label>
+                  <Input
+                    id="numero_cotacao"
+                    value={newCotacaoData.numero_cotacao}
+                    onChange={(e) => setNewCotacaoData(prev => ({ ...prev, numero_cotacao: e.target.value }))}
+                    placeholder="COT-INT-2025-123456"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="data_abertura">Data de Abertura *</Label>
+                  <Input
+                    id="data_abertura"
+                    type="date"
+                    value={newCotacaoData.data_abertura}
+                    onChange={(e) => setNewCotacaoData(prev => ({ ...prev, data_abertura: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="col-span-2 space-y-2">
+                  <Label htmlFor="descricao">Descrição *</Label>
+                  <Input
+                    id="descricao"
+                    value={newCotacaoData.descricao}
+                    onChange={(e) => setNewCotacaoData(prev => ({ ...prev, descricao: e.target.value }))}
+                    placeholder="Ex: Pedido de produtos para Q1 2025"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={newCotacaoData.status}
+                    onValueChange={(value: any) => setNewCotacaoData(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="rascunho">Rascunho</SelectItem>
+                      <SelectItem value="aberta">Aberta</SelectItem>
+                      <SelectItem value="fechada">Fechada</SelectItem>
+                      <SelectItem value="cancelada">Cancelada</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="data_fechamento">Previsão de Chegada</Label>
+                  <Input
+                    id="data_fechamento"
+                    type="date"
+                    value={newCotacaoData.data_fechamento}
+                    onChange={(e) => setNewCotacaoData(prev => ({ ...prev, data_fechamento: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Aba: Fornecedor */}
+            <TabsContent value="fornecedor" className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="pais_origem">País de Origem *</Label>
+                  <Input
+                    id="pais_origem"
+                    value={newCotacaoData.pais_origem}
+                    onChange={(e) => setNewCotacaoData(prev => ({ ...prev, pais_origem: e.target.value }))}
+                    placeholder="Ex: China"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="moeda_origem">Moeda de Origem *</Label>
+                  <Select
+                    value={newCotacaoData.moeda_origem}
+                    onValueChange={(value) => setNewCotacaoData(prev => ({ ...prev, moeda_origem: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AVAILABLE_CURRENCIES.map(currency => (
+                        <SelectItem key={currency.code} value={currency.code}>
+                          {currency.flag} {currency.name} ({currency.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </TabsContent>
+            
+            {/* Aba: Valores */}
+            <TabsContent value="valores" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="fator_multiplicador">Fator Multiplicador</Label>
+                <Input
+                  id="fator_multiplicador"
+                  type="number"
+                  step="0.01"
+                  value={newCotacaoData.fator_multiplicador}
+                  onChange={(e) => setNewCotacaoData(prev => ({ ...prev, fator_multiplicador: parseFloat(e.target.value) || 1 }))}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Fator para ajuste de valores (padrão: 1)
+                </p>
+              </div>
+            </TabsContent>
+            
+            {/* Aba: Observações */}
+            <TabsContent value="observacoes" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={newCotacaoData.observacoes}
+                  onChange={(e) => setNewCotacaoData(prev => ({ ...prev, observacoes: e.target.value }))}
+                  placeholder="Informações adicionais sobre a cotação..."
+                  rows={6}
+                />
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowNewCotacaoDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={async () => {
+                // Validar campos obrigatórios
+                if (!newCotacaoData.numero_cotacao.trim()) {
+                  toast({
+                    title: "Erro",
+                    description: "Número da cotação é obrigatório",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                if (!newCotacaoData.descricao.trim()) {
+                  toast({
+                    title: "Erro",
+                    description: "Descrição é obrigatória",
+                    variant: "destructive"
+                  });
+                  return;
+                }
+                
+                try {
+                  // Criar cotação com dados básicos
+                  const novaCotacao = await secureCreateCotacao({
+                    ...newCotacaoData,
+                    produtos: [],
+                    total_peso_kg: 0,
+                    total_cbm: 0,
+                    total_quantidade: 0,
+                    total_valor_origem: 0,
+                    total_valor_usd: 0,
+                    total_valor_brl: 0
+                  });
+                  
+                  if (novaCotacao) {
+                    toast({
+                      title: "Sucesso!",
+                      description: "Cotação criada com sucesso"
+                    });
+                    
+                    setShowNewCotacaoDialog(false);
+                    onRefresh();
+                  }
+                } catch (error) {
+                  console.error('Erro ao criar cotação:', error);
+                  toast({
+                    title: "Erro",
+                    description: "Não foi possível criar a cotação",
+                    variant: "destructive"
+                  });
+                }
+              }}
+            >
+              Criar Cotação
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
