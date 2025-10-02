@@ -1533,8 +1533,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
       {!selectedCotacao ? (
         <>
-          {/* Search */}
-          <div className="flex items-center space-x-4">
+          {/* Search and New Button */}
+          <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
@@ -1544,6 +1544,59 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 className="pl-9"
               />
             </div>
+            <Button 
+              onClick={() => {
+                const novaCotacao: CotacaoInternacional = {
+                  id: undefined,
+                  numero_cotacao: `COT-${Date.now()}`,
+                  descricao: '',
+                  pais_origem: 'China',
+                  moeda_origem: 'CNY',
+                  fator_multiplicador: 1,
+                  data_abertura: new Date().toISOString().split('T')[0],
+                  data_fechamento: null,
+                  status: 'rascunho',
+                  observacoes: '',
+                  produtos: [],
+                  total_peso_kg: 0,
+                  total_cbm: 0,
+                  total_quantidade: 0,
+                  total_valor_origem: 0,
+                  total_valor_usd: 0,
+                  total_valor_brl: 0
+                };
+                
+                // Definir dados básicos para nova cotação
+                setDadosBasicos({
+                  numero_cotacao: novaCotacao.numero_cotacao,
+                  descricao: '',
+                  pais_origem: 'China',
+                  moeda_origem: 'CNY',
+                  fator_multiplicador: 1,
+                  data_abertura: new Date().toISOString().split('T')[0],
+                  data_fechamento: '',
+                  status: 'rascunho' as const,
+                  observacoes: ''
+                });
+                
+                // Limpar produtos
+                setProductData([]);
+                setProdutos([]);
+                setHasImportedData(false);
+                
+                // Selecionar a nova cotação (abre o editor)
+                setSelectedCotacao(novaCotacao);
+                
+                toast({
+                  title: "Nova cotação criada",
+                  description: "Preencha os dados básicos e adicione produtos"
+                });
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Nova Cotação
+            </Button>
           </div>
 
           {/* Cotações Grid - Cards Layout */}
