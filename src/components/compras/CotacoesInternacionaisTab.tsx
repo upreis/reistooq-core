@@ -1474,27 +1474,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       }
     };
   }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, silentCreateCotacao, silentUpdateCotacao, isSavingAuto]);
-
-  // Atualizar campos do card (número e descrição)
-  const handleCardUpdate = async (id: string, field: string, value: string) => {
-    try {
-      await silentUpdateCotacao(id, { [field]: value });
-      // Recarregar cotações para refletir mudanças
-      onRefresh();
-      toast({
-        title: "Cotação atualizada",
-        description: "Alterações salvas com sucesso"
-      });
-    } catch (error) {
-      console.error('Erro ao atualizar cotação:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível atualizar a cotação",
-        variant: "destructive"
-      });
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1577,7 +1556,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 isSelected={selectedCotacoes.includes(cotacao.id!)}
                 onSelect={selectCotacao}
                 onClick={() => setSelectedCotacao(cotacao)}
-                onUpdate={handleCardUpdate}
                 formatCurrency={formatCurrency}
                 getStatusColor={getStatusColor}
               />
