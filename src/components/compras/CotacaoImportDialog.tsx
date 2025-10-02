@@ -223,13 +223,13 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           material: item.MATERIAL || item.material || '',  // ✅ MAIÚSCULO
           cor: item.COR || item.cor || '',                 // ✅ MAIÚSCULO
           nome_produto: item['Nome do Produto'] || item.PRODUTO || item.produto || `Produto ${index + 1}`,
-          package: item.PACKAGE || item.Package || item.package || '',  // ✅ MAIÚSCULO primeiro
+          package: item['Package'] || item.PACKAGE || item.package || '',  // ✅ Nome EXATO do Excel
           
-          // PREÇOS E QUANTIDADES - USAR EXATAMENTE OS MESMOS NOMES DO HOOK
-          preco_unitario: Number(item.PREÇO || item.PRECO || item.preco || 0),  // ✅ MAIÚSCULO
+          // PREÇOS E QUANTIDADES - USAR EXATAMENTE OS MESMOS NOMES DO EXCEL
+          preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),  // ✅ Nome EXATO do Excel
           unidade: item['Unid.'] || item.UNIT || item.unidade || 'un',
           pcs_ctn: Number(item['PCS/CTN'] || item.pcs_ctn || 0),
-          caixas: Number(item.Caixas || item.caixas || 0),
+          caixas: Number(item['Caixas'] || item.caixas || 0),  // ✅ Nome EXATO do Excel
           quantidade_total: Number(item['Qtd. Total'] || item.QUANTIDADE || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.PRECO_TOTAL || item.valor_total || 0),
           
@@ -273,7 +273,7 @@ export const CotacaoImportDialog: React.FC<CotacaoImportDialogProps> = ({
           material: item.MATERIAL || item.material || '',  // ✅ MAIÚSCULO
           cor: item.COR || item.cor || '',                 // ✅ MAIÚSCULO
           nome_produto: item['Nome do Produto'] || item.PRODUTO || `Produto ${index + 1}`,
-          preco_unitario: Number(item.PREÇO || item.PRECO || item.preco || 0),  // ✅ MAIÚSCULO
+          preco_unitario: Number(item['Preço'] || item.PREÇO || item.PRECO || item.preco || 0),  // ✅ Nome EXATO do Excel
           quantidade_total: Number(item['Qtd. Total'] || item.quantidade || 1),
           valor_total: Number(item['Valor Total'] || item.valor_total || 0),
           imagem: item.imagem || '',

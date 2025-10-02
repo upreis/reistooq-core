@@ -234,27 +234,28 @@ export function useCotacoesArquivos() {
       'SKU',                                    // Obrigatório
       'IMAGEM',                                 // Coluna para imagem principal
       'IMAGEM_FORNECEDOR',                      // Coluna para imagem do fornecedor
+      'SKU',                                    // SKU do produto
       'MATERIAL',                               // Material do produto
       'COR',                                    // Cor do produto
       'Nome do Produto',                        // Nome/descrição
-      'PACKAGE',                                // Embalagem
-      'PREÇO',                                  // Preço unitário
-      'UNIT',                                   // Unidade (pc, kg, etc)
+      'Package',                                // Embalagem
+      'Preço',                                  // Preço unitário
+      'Unid.',                                  // Unidade (pc, kg, etc)
       'PCS/CTN',                                // Peças por caixa
-      'CAIXAS',                                 // Quantidade de caixas
-      'PESO UNITARIO(g)',                       // Peso unitário em gramas
-      'Peso embalado cx Master (KG)',           // Peso com embalagem master
-      'Peso Sem embalagem cx Master (KG)',      // Peso sem embalagem master
-      'PESO TOTAL EMBALADO (KG)',               // Peso total com embalagem
-      'PESO TOTAL SEM EMBALAGEM (KG)',          // Peso total sem embalagem
-      'COMP. (CM)',                             // Comprimento
-      'LARG. (CM)',                             // Largura
-      'ALT. (CM)',                              // Altura
-      'CBM CUBAGEM',                            // CBM unitário
-      'CBM TOTAL',                              // CBM total
-      'QTD. TOTAL',                             // Quantidade total
-      'VALOR TOTAL',                            // Valor total
-      'OBS.'                                    // Observações
+      'Caixas',                                 // Quantidade de caixas
+      'Peso Unit. (g)',                         // Peso unitário em gramas
+      'Peso Emb. Master (KG)',                  // Peso com embalagem master
+      'Peso S/ Emb. Master (KG)',               // Peso sem embalagem master
+      'Peso Total Emb. (KG)',                   // Peso total com embalagem (calculado)
+      'Peso Total S/ Emb. (KG)',                // Peso total sem embalagem (calculado)
+      'Comp. (cm)',                             // Comprimento
+      'Larg. (cm)',                             // Largura
+      'Alt. (cm)',                              // Altura
+      'CBM Cubagem',                            // CBM unitário
+      'CBM Total',                              // CBM total (calculado)
+      'Qtd. Total',                             // Quantidade total (calculada)
+      'Valor Total',                            // Valor total (calculado)
+      'Obs.'                                    // Observações
     ];
 
     if (formato === 'excel') {
@@ -277,29 +278,29 @@ export function useCotacoesArquivos() {
       // Ajustar largura das colunas
       worksheet.columns = [
         { width: 15 },  // SKU
-        { width: 20 },  // IMAGEM
-        { width: 20 },  // IMAGEM_FORNECEDOR
+        { width: 25 },  // IMAGEM
+        { width: 25 },  // IMAGEM_FORNECEDOR
         { width: 20 },  // MATERIAL
         { width: 15 },  // COR
         { width: 30 },  // Nome do Produto
-        { width: 20 },  // PACKAGE
-        { width: 12 },  // PREÇO
-        { width: 10 },  // UNIT
+        { width: 20 },  // Package
+        { width: 12 },  // Preço
+        { width: 10 },  // Unid.
         { width: 12 },  // PCS/CTN
-        { width: 12 },  // CAIXAS
-        { width: 18 },  // PESO UNITARIO
-        { width: 25 },  // Peso embalado
-        { width: 28 },  // Peso sem embalagem
-        { width: 25 },  // Peso total embalado
-        { width: 28 },  // Peso total sem embalagem
-        { width: 12 },  // COMP
-        { width: 12 },  // LARG
-        { width: 12 },  // ALT
-        { width: 15 },  // CBM
-        { width: 15 },  // CBM TOTAL
-        { width: 15 },  // QTD TOTAL
-        { width: 15 },  // VALOR TOTAL
-        { width: 30 }   // OBS
+        { width: 12 },  // Caixas
+        { width: 18 },  // Peso Unit. (g)
+        { width: 25 },  // Peso Emb. Master (KG)
+        { width: 28 },  // Peso S/ Emb. Master (KG)
+        { width: 25 },  // Peso Total Emb. (KG)
+        { width: 28 },  // Peso Total S/ Emb. (KG)
+        { width: 12 },  // Comp. (cm)
+        { width: 12 },  // Larg. (cm)
+        { width: 12 },  // Alt. (cm)
+        { width: 15 },  // CBM Cubagem
+        { width: 15 },  // CBM Total
+        { width: 15 },  // Qtd. Total
+        { width: 15 },  // Valor Total
+        { width: 30 }   // Obs.
       ];
 
       // Adicionar linha de exemplo
@@ -777,16 +778,16 @@ export function useCotacoesArquivos() {
           linha.nome
         ) || '',
         
-        // PACKAGE - usar nome package (sistema antigo)
-        package: extrairValorExcel(linha.PACKAGE || linha.package || linha.Package) || '',
+        // PACKAGE - usar nome EXATO do Excel
+        package: linha['Package'] || linha.PACKAGE || linha.package || '',
         
-        // PREÇO - lógica SIMPLES do sistema antigo
+        // PREÇO - usar nome EXATO do Excel
         preco: parseFloat(String(
-          linha.PREÇO || linha.PRECO || linha.preco || '0'
+          linha['Preço'] || linha.PREÇO || linha.PRECO || linha.preco || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // UNIDADE - usar nome unit (sistema antigo)
-        unit: extrairValorExcel(linha.UNIT || linha.unit) || '',
+        // UNIDADE - usar nome EXATO do Excel
+        unit: linha['Unid.'] || linha.UNIT || linha.unit || '',
         
         // PCS/CTN
         pcs_ctn: parseInt(String(
@@ -797,89 +798,63 @@ export function useCotacoesArquivos() {
           ) || '0'
         ).replace(/[^\d]/g, '')) || 0,
         
-        // CAIXAS - usar nome caixas (sistema antigo)
+        // CAIXAS - usar nome EXATO do Excel
         caixas: parseFloat(String(
-          extrairValorExcel(linha.CAIXAS || linha.caixas) || '1'
+          linha['Caixas'] || linha.CAIXAS || linha.caixas || '1'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 1,
         
         // ===== PESOS ===== (NOMES DO SISTEMA ANTIGO)
         
-        // PESO UNITÁRIO
+        // PESO UNITÁRIO - usar nome EXATO do Excel
         peso_unitario_g: parseFloat(String(
-          extrairValorExcel(
-            linha['PESO UNITARIO(g)'] || 
-            linha.PESO_UNITARIO_G || 
-            linha.peso_unitario_g || 
-            linha.PESO_UNITARIO_KG || 
-            linha.peso_unitario_kg
-          ) || '0'
+          linha['Peso Unit. (g)'] || 
+          linha['PESO UNITARIO(g)'] || 
+          linha.PESO_UNITARIO_G || 
+          linha.peso_unitario_g || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // PESO EMBALADO MASTER - usar nome peso_cx_master_kg (sistema antigo)
+        // PESO EMBALADO MASTER - usar nome EXATO do Excel
         peso_cx_master_kg: parseFloat(String(
-          extrairValorExcel(
-            linha['COLUNA_M'] ||
-            linha['Peso embalado cx Master (KG)'] || 
-            linha['PESO EMBALADO CX MASTER (KG)'] ||
-            linha['Peso embalado cx Master(KG)'] ||
-            linha['Peso embalado cx Master (Kg)'] ||
-            linha['Peso embalado cx Master'] ||
-            linha['PESO EMBALADO CX MASTER'] ||
-            linha['peso embalado cx master (kg)'] ||
-            linha['peso embalado cx master'] ||
-            linha.PESO_MASTER_KG || 
-            linha.peso_master_kg || 
-            linha.PESO_CX_MASTER_KG || 
-            linha.peso_cx_master_kg
-          ) || '0'
+          linha['Peso Emb. Master (KG)'] ||
+          linha['Peso embalado cx Master (KG)'] || 
+          linha['PESO EMBALADO CX MASTER (KG)'] ||
+          linha.PESO_MASTER_KG || 
+          linha.peso_master_kg || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // PESO SEM EMBALAGEM MASTER - usar nome peso_sem_cx_master_kg (sistema antigo)
+        // PESO SEM EMBALAGEM MASTER - usar nome EXATO do Excel
         peso_sem_cx_master_kg: parseFloat(String(
-          extrairValorExcel(
-            linha['COLUNA_N'] ||
-            linha['Peso Sem embalagem cx Master (KG)'] || 
-            linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
-            linha['Peso Sem embalagem cx Master(KG)'] ||
-            linha['Peso Sem embalagem cx Master (Kg)'] ||
-            linha['Peso Sem embalagem cx Master'] ||
-            linha['PESO SEM EMBALAGEM CX MASTER'] ||
-            linha['peso sem embalagem cx master (kg)'] ||
-            linha['peso sem embalagem cx master'] ||
-            linha.PESO_SEM_MASTER_KG || 
-            linha.peso_sem_master_kg || 
-            linha.PESO_SEM_CX_MASTER_KG || 
-            linha.peso_sem_cx_master_kg
-          ) || '0'
+          linha['Peso S/ Emb. Master (KG)'] ||
+          linha['Peso Sem embalagem cx Master (KG)'] || 
+          linha['PESO SEM EMBALAGEM CX MASTER (KG)'] ||
+          linha.PESO_SEM_MASTER_KG || 
+          linha.peso_sem_master_kg || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
         // ===== DIMENSÕES ===== (NOMES DO SISTEMA ANTIGO)
         
-        // COMPRIMENTO - usar nome comprimento (sistema antigo)
+        // COMPRIMENTO - usar nome EXATO do Excel
         comprimento: parseFloat(String(
-          extrairValorExcel(
-            linha.Comprimento || 
-            linha.COMPRIMENTO || 
-            linha.comprimento
-          ) || '0'
+          linha['Comp. (cm)'] || 
+          linha.Comprimento || 
+          linha.COMPRIMENTO || 
+          linha.comprimento || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // LARGURA - usar nome largura (sistema antigo)
+        // LARGURA - usar nome EXATO do Excel
         largura: parseFloat(String(
-          extrairValorExcel(
-            linha.Largura || 
-            linha.LARGURA || 
-            linha.largura
-          ) || '0'
+          linha['Larg. (cm)'] || 
+          linha.Largura || 
+          linha.LARGURA || 
+          linha.largura || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
-        // ALTURA - usar nome altura (sistema antigo)
+        // ALTURA - usar nome EXATO do Excel
         altura: parseFloat(String(
-          extrairValorExcel(
-            linha.Altura || 
-            linha.ALTURA || 
-            linha.altura
-          ) || '0'
+          linha['Alt. (cm)'] || 
+          linha.Altura || 
+          linha.ALTURA || 
+          linha.altura || '0'
         ).replace(/[^\d.,]/g, '').replace(',', '.')) || 0,
         
         // CBM CUBAGEM - usar nome cbm_cubagem (sistema antigo)
