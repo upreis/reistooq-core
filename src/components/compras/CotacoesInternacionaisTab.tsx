@@ -669,8 +669,21 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     
     // Calcular Total BRL somando diretamente a coluna Multiplicador REAIS Total de cada produto
     const total_valor_brl = produtosCalculados.reduce((sum, p) => {
-      return sum + (p.multiplicador_reais_total || 0);
+      const valor = p.multiplicador_reais_total || 0;
+      console.log('💰 [TOTAL BRL DEBUG]', {
+        sku: p.sku || p.nome_produto,
+        multiplicador_reais_total: valor,
+        acumulado: sum + valor
+      });
+      return sum + valor;
     }, 0);
+    
+    console.log('💰 [TOTAL BRL FINAL DEBUG]', {
+      total_valor_brl,
+      total_produtos: produtosCalculados.length,
+      primeiro_produto: produtosCalculados[0],
+      ultimo_produto: produtosCalculados[produtosCalculados.length - 1]
+    });
     
     const { valorUSD: total_valor_usd } = converterMoeda(
       total_valor_origem, 
