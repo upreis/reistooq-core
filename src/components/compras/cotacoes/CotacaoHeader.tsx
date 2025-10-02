@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -31,7 +31,7 @@ interface CotacaoHeaderProps {
   containerTypes: Record<string, { name: string; volume: number; maxWeight: number }>;
 }
 
-export const CotacaoHeader: React.FC<CotacaoHeaderProps> = ({
+const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
   cotacao,
   isSavingAuto,
   lastAutoSave,
@@ -165,3 +165,6 @@ export const CotacaoHeader: React.FC<CotacaoHeaderProps> = ({
     </Card>
   );
 };
+
+// Memoizar para evitar re-renders desnecessários
+export const CotacaoHeader = memo(CotacaoHeaderComponent);

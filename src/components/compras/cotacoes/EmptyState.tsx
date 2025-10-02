@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText } from "lucide-react";
 
@@ -6,7 +6,7 @@ interface EmptyStateProps {
   searchTerm: string;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({ searchTerm }) => {
+const EmptyStateComponent: React.FC<EmptyStateProps> = ({ searchTerm }) => {
   return (
     <Card>
       <CardContent className="flex flex-col items-center justify-center py-12">
@@ -19,3 +19,6 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ searchTerm }) => {
     </Card>
   );
 };
+
+// Memoizar para evitar re-renders desnecessários
+export const EmptyState = memo(EmptyStateComponent);

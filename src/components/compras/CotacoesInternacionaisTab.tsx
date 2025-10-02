@@ -501,8 +501,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Função para calcular valores do produto
-  const calcularProduto = (produto: ProdutoCotacao): ProdutoCotacao => {
+  // Função para calcular valores do produto (memoizada)
+  const calcularProduto = useCallback((produto: ProdutoCotacao): ProdutoCotacao => {
     const peso_total_kg = ((produto.peso_unitario_g || 0) * (produto.pcs_ctn || 1) * (produto.qtd_caixas_pedido || 1)) / 1000;
     const cbm_unitario = ((produto.largura_cm || 0) * (produto.altura_cm || 0) * (produto.comprimento_cm || 0)) / 1000000;
     const cbm_total = cbm_unitario * (produto.qtd_caixas_pedido || 1);
@@ -517,10 +517,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       quantidade_total: quantidade_total || 0,
       valor_total: valor_total || 0
     };
-  };
+  }, []);
 
-  // Função para converter moedas usando API real
-  const converterMoeda = (valor: number, moedaOrigem: string, fatorMultiplicador: number = 1) => {
+  // Função para converter moedas usando API real (memoizada)
+  const converterMoeda = useCallback((valor: number, moedaOrigem: string, fatorMultiplicador: number = 1) => {
     const valorComFator = valor * fatorMultiplicador;
     
     // Se não temos cotações ainda, usa valores padrão
@@ -555,7 +555,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const valorBRL = valorUSD * (rates.USD_BRL || 5.20);
     
     return { valorUSD, valorBRL };
-  };
+  }, [rates]);
 
 
   const adicionarProduto = useCallback(() => {
@@ -625,7 +625,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProdutos(produtos.filter(p => p.id !== id));
   }, [produtos]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setDadosBasicos({
       numero_cotacao: `COT-INT-${new Date().getFullYear()}-${String(Date.now()).slice(-6)}`,
       descricao: '',
@@ -652,7 +652,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       altura_cm: 0,
       comprimento_cm: 0
     });
-  };
+  }, []);
 
   const handleSave = async () => {
     try {
@@ -725,7 +725,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  const formatCurrency = (value: number, currency: string = 'BRL') => {
+  const formatCurrency = useCallback((value: number, currency: string = 'BRL') => {
     const configs = {
       BRL: { locale: 'pt-BR', currency: 'BRL' },
       USD: { locale: 'en-US', currency: 'USD' },
@@ -739,10 +739,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       style: 'currency',
       currency: config.currency
     }).format(value);
-  };
+  }, []);
 
-  // Funções para seleção de produtos na tabela Excel
-  const handleSelectProduct = (productId: string, checked: boolean) => {
+  // Funções para seleção de produtos na tabela Excel (memoizadas)
+  const handleSelectProduct = useCallback((productId: string, checked: boolean) => {
     console.log('🔘 [DEBUG] Selecionando produto:', { productId, checked, currentSelected: selectedProductIds });
     if (checked) {
       setSelectedProductIds(prev => {
@@ -757,7 +757,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         return newSelected;
       });
     }
-  };
+  }, [selectedProductIds]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -802,7 +802,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     });
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = useCallback((status: string) => {
     switch (status) {
       case 'rascunho': return 'bg-gray-500';
       case 'aberta': return 'bg-blue-500';
@@ -810,7 +810,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       case 'cancelada': return 'bg-red-500';
       default: return 'bg-gray-500';
     }
-  };
+  }, []);
 
   // Helpers para conversão segura dos divisores
   const getChangeDolarDivisorValue = () => {
