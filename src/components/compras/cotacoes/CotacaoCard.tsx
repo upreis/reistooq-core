@@ -1,9 +1,10 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Package, Eye } from "lucide-react";
 import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
+import { EditableCell } from '@/components/compras/EditableCell';
 
 interface CotacaoCardProps {
   cotacao: CotacaoInternacional;
@@ -11,6 +12,7 @@ interface CotacaoCardProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   onClick: () => void;
+  onUpdate?: (id: string, field: string, value: string) => void;
   formatCurrency: (value: number, currency?: string) => string;
   getStatusColor: (status: string) => string;
 }
@@ -21,9 +23,19 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
   isSelected,
   onSelect,
   onClick,
+  onUpdate,
   formatCurrency,
   getStatusColor
 }) => {
+  const [editingField, setEditingField] = useState<string | null>(null);
+
+  const handleSave = (field: string, value: string | number) => {
+    if (onUpdate && cotacao.id) {
+      onUpdate(cotacao.id, field, String(value));
+    }
+    setEditingField(null);
+  };
+
   return (
     <Card 
       className={`relative cursor-pointer hover:shadow-md transition-all ${
@@ -57,15 +69,34 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
       )}
       
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">{cotacao.numero_cotacao}</CardTitle>
-          <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <EditableCell
+              value={cotacao.numero_cotacao}
+              type="text"
+              isEditing={editingField === 'numero_cotacao'}
+              onDoubleClick={() => setEditingField('numero_cotacao')}
+              onSave={(value) => handleSave('numero_cotacao', value)}
+              onCancel={() => setEditingField(null)}
+              placeholder="Número da cotação"
+            />
+          </div>
+          <Badge className={`text-white ${getStatusColor(cotacao.status)} shrink-0`}>
             {cotacao.status}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {cotacao.descricao}
-        </p>
+        <div className="mt-2">
+          <EditableCell
+            value={cotacao.descricao}
+            type="text"
+            isEditing={editingField === 'descricao'}
+            onDoubleClick={() => setEditingField('descricao')}
+            onSave={(value) => handleSave('descricao', value)}
+            onCancel={() => setEditingField(null)}
+            placeholder="Descrição"
+            className="text-sm text-muted-foreground"
+          />
+        </div>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="grid grid-cols-2 gap-4 text-sm">
