@@ -2270,7 +2270,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       {/* Novo Modal de Cotação com Abas Completas */}
       <NovaCotacaoDialog
         open={showNewCotacaoDialog}
-        onOpenChange={setShowNewCotacaoDialog}
+        onOpenChange={(isOpen) => {
+          // Limpar sessionStorage ao abrir o diálogo para nova cotação
+          if (isOpen) {
+            SessionStorageManager.clearProducts();
+            setProductData([]);
+            setHasImportedData(false);
+          }
+          setShowNewCotacaoDialog(isOpen);
+        }}
         onSave={async (novaCotacao) => {
           const result = await secureCreateCotacao(novaCotacao);
           if (result) {
