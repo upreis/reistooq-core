@@ -1099,10 +1099,32 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     setProductData(produtosComCalculos);
     setHasImportedData(true);
     
-    // Salvar no sessionStorage
+    // ✅ CORREÇÃO CRÍTICA: Converter URLs blob para base64 ANTES de salvar no sessionStorage
+    console.log('🔄 [IMPORT] Convertendo URLs blob para base64 antes de salvar...');
+    const produtosComImagensConvertidas = await Promise.all(
+      produtosComCalculos.map(async (produto) => {
+        const imagemBase64 = produto.imagem ? await imageUrlToBase64(produto.imagem) : '';
+        const imagemFornecedorBase64 = produto.imagem_fornecedor ? await imageUrlToBase64(produto.imagem_fornecedor) : '';
+        
+        console.log(`📸 [IMPORT] Produto ${produto.sku}:`, {
+          imagemOriginal: produto.imagem?.substring(0, 30),
+          imagemConvertida: imagemBase64 ? 'base64' : 'vazio',
+          imagemFornecedorOriginal: produto.imagem_fornecedor?.substring(0, 30),
+          imagemFornecedorConvertida: imagemFornecedorBase64 ? 'base64' : 'vazio'
+        });
+        
+        return {
+          ...produto,
+          imagem: imagemBase64,
+          imagem_fornecedor: imagemFornecedorBase64
+        };
+      })
+    );
+    
+    // Salvar no sessionStorage COM imagens já convertidas para base64
     try {
-      SessionStorageManager.saveProducts(produtosComCalculos);
-      console.log('✅ Produtos salvos no sessionStorage com imagens preservadas');
+      SessionStorageManager.saveProducts(produtosComImagensConvertidas);
+      console.log('✅ Produtos salvos no sessionStorage com imagens em base64');
     } catch (error) {
       console.warn('Erro ao salvar no sessionStorage:', error);
     }

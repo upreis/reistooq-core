@@ -109,15 +109,15 @@ export class SessionStorageManager {
           }
         });
         
-        // Limpar URLs blob inválidas
+        // ⚠️ CRÍTICO: NÃO REMOVER URLs blob! Elas devem ser convertidas para base64 ANTES de salvar
+        // O componente CotacoesInternacionaisTab é responsável pela conversão
+        // Apenas logar para debug
         if (cleaned.imagem?.startsWith('blob:')) {
-          this.revokeAndRemoveBlobUrl(cleaned.imagem);
-          cleaned.imagem = '';
+          console.warn(`⚠️ [SESSIONSTORAGE] Produto ${cleaned.sku}: imagem ainda é blob URL! Deve ser convertida para base64.`);
         }
         
         if (cleaned.imagem_fornecedor?.startsWith('blob:')) {
-          this.revokeAndRemoveBlobUrl(cleaned.imagem_fornecedor);
-          cleaned.imagem_fornecedor = '';
+          console.warn(`⚠️ [SESSIONSTORAGE] Produto ${cleaned.sku}: imagem_fornecedor ainda é blob URL! Deve ser convertida para base64.`);
         }
 
         // Sanitizar strings
