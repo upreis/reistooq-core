@@ -1585,7 +1585,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 isSelectMode={isSelectMode}
                 isSelected={selectedCotacoes.includes(cotacao.id!)}
                 onSelect={selectCotacao}
-                onClick={() => setSelectedCotacao(cotacao)}
+                onClick={() => {
+                  // Limpar sessionStorage e carregar produtos dessa cotação
+                  SessionStorageManager.clearProducts();
+                  
+                  // Carregar produtos da cotação selecionada do campo produtos (JSONB)
+                  const produtosCotacao = Array.isArray(cotacao.produtos) ? cotacao.produtos : [];
+                  setProductData(produtosCotacao);
+                  setHasImportedData(produtosCotacao.length > 0);
+                  
+                  // Salvar no sessionStorage
+                  if (produtosCotacao.length > 0) {
+                    SessionStorageManager.saveProducts(produtosCotacao);
+                  }
+                  
+                  setSelectedCotacao(cotacao);
+                }}
                 formatCurrency={formatCurrency}
                 getStatusColor={getStatusColor}
               />
