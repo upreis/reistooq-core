@@ -783,6 +783,7 @@ export type Database = {
       }
       cotacoes_internacionais: {
         Row: {
+          container_tipo: string | null
           created_at: string
           created_by: string
           data_abertura: string
@@ -807,6 +808,7 @@ export type Database = {
           updated_by: string
         }
         Insert: {
+          container_tipo?: string | null
           created_at?: string
           created_by?: string
           data_abertura?: string
@@ -831,6 +833,7 @@ export type Database = {
           updated_by?: string
         }
         Update: {
+          container_tipo?: string | null
           created_at?: string
           created_by?: string
           data_abertura?: string

@@ -1455,6 +1455,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           data_fechamento: dataFechamentoFinal,
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
           observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
+          container_tipo: selectedContainer, // Salvar o tipo de container selecionado
           produtos: produtosValidos, // Usar apenas produtos válidos
           total_peso_kg: totaisGerais.total_peso_kg || 0,
           total_cbm: totaisGerais.total_cbm || 0,

@@ -15,6 +15,7 @@ export interface CotacaoInternacional {
   data_fechamento?: string | null;
   status: 'rascunho' | 'aberta' | 'fechada' | 'cancelada';
   observacoes?: string | null;
+  container_tipo?: string; // Tipo de container selecionado ('20' ou '40')
   produtos: ProdutoCotacao[];
   total_peso_kg: number;
   total_cbm: number;

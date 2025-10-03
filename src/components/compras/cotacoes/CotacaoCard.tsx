@@ -24,14 +24,23 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
   formatCurrency,
   getStatusColor
 }) => {
-  // Calcular quantidade de containers 40' necessários
+  // Calcular quantidade de containers baseado no tipo salvo na cotação
   const calcularContainers = () => {
     const totalCBM = cotacao.total_cbm || 0;
-    const containerVolume = 67.7; // 40' Dry
+    const containerTipo = cotacao.container_tipo || '40';
+    
+    // Volumes dos containers
+    const containerVolumes: Record<string, number> = {
+      '20': 33.2,
+      '40': 67.7
+    };
+    
+    const containerVolume = containerVolumes[containerTipo] || 67.7;
     return totalCBM > 0 ? Math.ceil(totalCBM / containerVolume) : 0;
   };
 
   const containers = calcularContainers();
+  const containerTipo = cotacao.container_tipo || '40';
 
   return (
     <Card 
@@ -112,7 +121,7 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
           <div className="flex items-center gap-2">
             <Container className="h-4 w-4 text-orange-500 flex-shrink-0" />
             <div className="flex flex-col">
-              <span className="text-xs text-muted-foreground">Containers 40'</span>
+              <span className="text-xs text-muted-foreground">Containers {containerTipo}'</span>
               <span className="font-semibold text-orange-600">{containers}</span>
             </div>
           </div>
