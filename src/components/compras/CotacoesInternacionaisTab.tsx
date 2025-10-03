@@ -57,7 +57,8 @@ import {
   Save,
   X,
   Info,
-  Download
+  Download,
+  Upload
 } from "lucide-react";
 import { ProductSelector } from './ProductSelector';
 import { useCotacoesInternacionais } from '@/hooks/useCotacoesInternacionais';
@@ -1602,7 +1603,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
       {!selectedCotacao ? (
         <>
-          {/* Search and New Button */}
+          {/* Search and Action Buttons */}
           <div className="flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -1613,13 +1614,34 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 className="pl-9"
               />
             </div>
-            <Button 
-              onClick={() => setShowNewCotacaoDialog(true)}
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              Nova Cotação
-            </Button>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => setShowImportDialog(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Template
+              </Button>
+              
+              <Button 
+                onClick={() => setShowImportDialog(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Upload
+              </Button>
+              
+              <Button 
+                onClick={() => setShowNewCotacaoDialog(true)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Nova Cotação
+              </Button>
+            </div>
           </div>
 
           {/* Cotações Grid - Cards Layout */}
