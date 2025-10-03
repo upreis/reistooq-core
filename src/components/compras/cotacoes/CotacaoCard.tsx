@@ -102,7 +102,7 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
               <Calendar className="h-4 w-4 text-blue-500 flex-shrink-0" />
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Previsão</span>
-                <span className="font-medium text-blue-600">{new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')}</span>
+                <span className="font-medium text-blue-600 dark:text-blue-400">{new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
           )}
@@ -114,7 +114,7 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
             <Package className="h-4 w-4 text-purple-500 flex-shrink-0" />
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Produtos</span>
-              <span className="font-semibold text-purple-600">{(cotacao.total_quantidade || 0).toLocaleString('pt-BR')} itens</span>
+              <span className="font-semibold text-purple-600 dark:text-purple-400">{(cotacao.total_quantidade || 0).toLocaleString('pt-BR')} itens</span>
             </div>
           </div>
           
