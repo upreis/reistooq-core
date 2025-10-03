@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Package, Eye } from "lucide-react";
+import { Calendar, Package, Eye, Container, DollarSign, TrendingUp } from "lucide-react";
 import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
 
 interface CotacaoCardProps {
@@ -24,6 +24,15 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
   formatCurrency,
   getStatusColor
 }) => {
+  // Calcular quantidade de containers 40' necessários
+  const calcularContainers = () => {
+    const totalCBM = cotacao.total_cbm || 0;
+    const containerVolume = 67.7; // 40' Dry
+    return totalCBM > 0 ? Math.ceil(totalCBM / containerVolume) : 0;
+  };
+
+  const containers = calcularContainers();
+
   return (
     <Card 
       className={`relative cursor-pointer hover:shadow-md transition-all ${
@@ -67,26 +76,79 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
           {cotacao.descricao}
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+      
+      <CardContent className="space-y-4">
+        {/* Datas e Quantidades */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Abertura</span>
+              <span className="font-medium">{new Date(cotacao.data_abertura).toLocaleDateString('pt-BR')}</span>
+            </div>
           </div>
+          
+          {cotacao.data_fechamento && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-blue-500 flex-shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-xs text-muted-foreground">Previsão</span>
+                <span className="font-medium text-blue-600">{new Date(cotacao.data_fechamento).toLocaleDateString('pt-BR')}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Produtos e Containers */}
+        <div className="grid grid-cols-2 gap-3 text-sm">
           <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-muted-foreground" />
-            <span>{cotacao.total_quantidade || 0} itens</span>
+            <Package className="h-4 w-4 text-purple-500 flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Produtos</span>
+              <span className="font-semibold text-purple-600">{cotacao.total_quantidade || 0} itens</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Container className="h-4 w-4 text-orange-500 flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-xs text-muted-foreground">Containers 40'</span>
+              <span className="font-semibold text-orange-600">{containers}</span>
+            </div>
           </div>
         </div>
         
-        <div className="space-y-1">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Origem ({cotacao.moeda_origem}):</span>
-            <span>{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
+        {/* Valores */}
+        <div className="space-y-2 pt-2 border-t">
+          {/* Moeda de Origem */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="h-3.5 w-3.5 text-slate-500" />
+              <span className="text-muted-foreground">{cotacao.moeda_origem}:</span>
+            </div>
+            <span className="font-medium">{formatCurrency(cotacao.total_valor_origem || 0, cotacao.moeda_origem)}</span>
           </div>
-          <div className="flex justify-between text-sm font-semibold">
-            <span>Total BRL:</span>
-            <span>{formatCurrency(cotacao.total_valor_brl || 0)}</span>
+
+          {/* USD */}
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-muted-foreground">USD:</span>
+            </div>
+            <span className="font-semibold text-green-600">
+              $ {(cotacao.total_valor_usd || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </span>
+          </div>
+
+          {/* BRL */}
+          <div className="flex items-center justify-between text-sm bg-primary/5 -mx-4 px-4 py-2 rounded">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-3.5 w-3.5 text-primary" />
+              <span className="font-medium">Total BRL:</span>
+            </div>
+            <span className="font-bold text-primary text-base">
+              {formatCurrency(cotacao.total_valor_brl || 0)}
+            </span>
           </div>
         </div>
         
