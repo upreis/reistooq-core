@@ -1393,6 +1393,40 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           return;
         }
 
+        // ✅ Converter blob URLs para base64 antes de salvar
+        const produtosComImagensConvertidas = await Promise.all(produtosValidos.map(async (p) => {
+          const produtoSanitizado = sanitizeProduto(p);
+          
+          // Converter imagem blob para base64
+          if (produtoSanitizado.imagem && produtoSanitizado.imagem.startsWith('blob:')) {
+            try {
+              const base64 = await imageUrlToBase64(produtoSanitizado.imagem);
+              produtoSanitizado.imagem = base64 && !base64.startsWith('data:') 
+                ? `data:image/jpeg;base64,${base64}` 
+                : base64;
+            } catch (error) {
+              console.warn('⚠️ Erro ao converter imagem para base64:', error);
+              produtoSanitizado.imagem = '';
+            }
+          }
+          
+          // Converter imagem_fornecedor blob para base64
+          if (produtoSanitizado.imagem_fornecedor && produtoSanitizado.imagem_fornecedor.startsWith('blob:')) {
+            try {
+              const base64 = await imageUrlToBase64(produtoSanitizado.imagem_fornecedor);
+              produtoSanitizado.imagem_fornecedor = base64 && !base64.startsWith('data:') 
+                ? `data:image/jpeg;base64,${base64}` 
+                : base64;
+              console.log('✅ Imagem fornecedor convertida para base64');
+            } catch (error) {
+              console.warn('⚠️ Erro ao converter imagem_fornecedor para base64:', error);
+              produtoSanitizado.imagem_fornecedor = '';
+            }
+          }
+          
+          return produtoSanitizado;
+        }));
+
         // Criar objeto completo da cotação
         const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
         const dataFechamentoFinal = (dataFechamento && dataFechamento.trim() !== '') ? dataFechamento : null;
@@ -1408,7 +1442,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
           observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
           container_tipo: selectedContainer,
-          produtos: produtosValidos,
+          produtos: produtosComImagensConvertidas,
           total_peso_kg: totaisGerais.total_peso_kg || 0,
           total_cbm: totaisGerais.total_cbm || 0,
           total_quantidade: totaisGerais.total_quantidade || 0,
