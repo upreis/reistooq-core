@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CotacoesTab } from "@/components/compras/CotacoesTab";
 import { CotacoesInternacionaisTab } from "@/components/compras/CotacoesInternacionaisTab";
@@ -7,6 +8,8 @@ import { useCotacoesInternacionais } from "@/hooks/useCotacoesInternacionais";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CotacoesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "nacionais");
   const [cotacoes, setCotacoes] = useState([]);
   const [cotacoesInternacionais, setCotacoesInternacionais] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
@@ -45,9 +48,14 @@ export default function CotacoesPage() {
     return <div className="p-6">Carregando...</div>;
   }
 
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value });
+  };
+
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="nacionais" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="nacionais">Cotações Nacionais</TabsTrigger>
           <TabsTrigger value="internacionais">Cotações Internacionais</TabsTrigger>
