@@ -1541,7 +1541,14 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           )}
           
           {selectedCotacao && (
-            <Button variant="outline" onClick={() => setSelectedCotacao(null)} size="sm">
+            <Button 
+              variant="outline" 
+              onClick={async () => {
+                setSelectedCotacao(null);
+                await onRefresh(); // Recarregar lista de cotações para mostrar dados atualizados
+              }} 
+              size="sm"
+            >
               Voltar aos Cards
             </Button>
           )}
