@@ -1443,6 +1443,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         console.log(`💾 [AUTO-SAVE] Salvando ${produtosValidos.length} de ${produtosParaSalvar.length} produtos`);
 
         // Criar objeto completo da cotação com produtos válidos
+        // Converter data_fechamento vazio para null
+        const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
+        const dataFechamentoFinal = (dataFechamento && dataFechamento.trim() !== '') ? dataFechamento : null;
+        
         const cotacaoCompleta = {
           numero_cotacao: selectedCotacao?.numero_cotacao || dadosBasicos.numero_cotacao,
           descricao: selectedCotacao?.descricao || dadosBasicos.descricao,
@@ -1450,7 +1454,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
           fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
           data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
-          data_fechamento: selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento || null,
+          data_fechamento: dataFechamentoFinal,
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
           observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
           produtos: produtosValidos, // Usar apenas produtos válidos
@@ -1488,7 +1492,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       } finally {
         setIsSavingAuto(false);
       }
-    }, 3000); // 3 segundos de debounce
+    }, 10000); // 10 segundos de debounce (reduzido de 3s para evitar loop)
 
     // Cleanup
     return () => {
