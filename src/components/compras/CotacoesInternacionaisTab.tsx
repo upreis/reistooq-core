@@ -1647,6 +1647,16 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             getCurrencySymbol={getCurrencySymbol}
             availableCurrencies={AVAILABLE_CURRENCIES}
             containerTypes={CONTAINER_TYPES}
+            onCotacaoChange={(field, value) => {
+              // Atualizar o estado da cotação selecionada
+              setSelectedCotacao(prev => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  [field]: value
+                };
+              });
+            }}
           />
 
           {/* Tabela estilo Excel */}

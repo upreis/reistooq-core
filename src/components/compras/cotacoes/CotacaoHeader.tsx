@@ -2,6 +2,8 @@ import React, { memo } from 'react';
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { RefreshCw } from "lucide-react";
 import ContainerVisualization from '../ContainerVisualization';
 import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
@@ -29,6 +31,7 @@ interface CotacaoHeaderProps {
   getCurrencySymbol: (code: string) => string;
   availableCurrencies: Array<{ code: string; name: string; flag: string; symbol: string }>;
   containerTypes: Record<string, { name: string; volume: number; maxWeight: number }>;
+  onCotacaoChange?: (field: string, value: any) => void;
 }
 
 const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
@@ -47,7 +50,8 @@ const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
   getStatusColor,
   getCurrencySymbol,
   availableCurrencies,
-  containerTypes
+  containerTypes,
+  onCotacaoChange
 }) => {
   return (
     <Card>
@@ -103,6 +107,22 @@ const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
                   </Select>
                 </div>
               </div>
+
+              {/* Previsão de Chegada - Editável */}
+              {onCotacaoChange && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="data_fechamento_edit" className="text-slate-400 text-xs whitespace-nowrap">
+                    Previsão de Chegada:
+                  </Label>
+                  <Input
+                    id="data_fechamento_edit"
+                    type="date"
+                    value={cotacao.data_fechamento || ''}
+                    onChange={(e) => onCotacaoChange('data_fechamento', e.target.value)}
+                    className="h-6 text-xs bg-slate-700 border-slate-600 text-white flex-1"
+                  />
+                </div>
+              )}
         
               {/* Total na moeda de origem */}
               <div className="flex justify-between items-center">
