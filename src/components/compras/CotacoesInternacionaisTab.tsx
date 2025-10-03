@@ -1118,27 +1118,40 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Função para converter imagem URL para base64
   const imageUrlToBase64 = async (url: string): Promise<string> => {
     try {
-      if (!url || url.startsWith('blob:')) return '';
-      
-      // Se a URL já é base64, extrair apenas os dados
-      if (url.startsWith('data:')) {
-        return url.split(',')[1];
+      if (!url) {
+        console.log('🔍 imageUrlToBase64: URL vazia');
+        return '';
       }
       
-      const response = await fetch(url);
-      const blob = await response.blob();
+      // Se a URL já é base64, retornar como está
+      if (url.startsWith('data:')) {
+        console.log('🔍 imageUrlToBase64: URL já é base64');
+        return url;
+      }
       
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          resolve(base64String.split(',')[1]); // Remove o prefixo data:image/...;base64,
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
+      // Se é blob URL, converter
+      if (url.startsWith('blob:')) {
+        console.log('🔍 imageUrlToBase64: Convertendo blob URL');
+        const response = await fetch(url);
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const base64String = reader.result as string;
+            console.log('✅ imageUrlToBase64: Blob convertido para base64');
+            resolve(base64String); // Retorna com prefixo data:image/...;base64,
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+      
+      // URL normal
+      console.log('🔍 imageUrlToBase64: URL normal, retornando como está');
+      return url;
     } catch (error) {
-      console.warn('Erro ao converter imagem para base64:', error);
+      console.warn('⚠️ Erro ao converter imagem para base64:', error);
       return '';
     }
   };
@@ -1394,16 +1407,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         }
 
         // ✅ Converter blob URLs para base64 antes de salvar
-        const produtosComImagensConvertidas = await Promise.all(produtosValidos.map(async (p) => {
+        console.log('🔍 [AUTO-SAVE] Convertendo imagens de produtos:', produtosValidos.length);
+        const produtosComImagensConvertidas = await Promise.all(produtosValidos.map(async (p, index) => {
           const produtoSanitizado = sanitizeProduto(p);
+          
+          console.log(`🔍 [AUTO-SAVE] Produto ${index} (${produtoSanitizado.sku}):`, {
+            temImagem: !!produtoSanitizado.imagem,
+            imagemTipo: produtoSanitizado.imagem?.substring(0, 20),
+            temImagemFornecedor: !!produtoSanitizado.imagem_fornecedor,
+            imagemFornecedorTipo: produtoSanitizado.imagem_fornecedor?.substring(0, 20)
+          });
           
           // Converter imagem blob para base64
           if (produtoSanitizado.imagem && produtoSanitizado.imagem.startsWith('blob:')) {
             try {
-              const base64 = await imageUrlToBase64(produtoSanitizado.imagem);
-              produtoSanitizado.imagem = base64 && !base64.startsWith('data:') 
-                ? `data:image/jpeg;base64,${base64}` 
-                : base64;
+              console.log(`🔄 [AUTO-SAVE] Convertendo imagem do produto ${produtoSanitizado.sku}`);
+              produtoSanitizado.imagem = await imageUrlToBase64(produtoSanitizado.imagem);
+              console.log(`✅ [AUTO-SAVE] Imagem convertida: ${produtoSanitizado.imagem.substring(0, 50)}...`);
             } catch (error) {
               console.warn('⚠️ Erro ao converter imagem para base64:', error);
               produtoSanitizado.imagem = '';
@@ -1413,11 +1433,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           // Converter imagem_fornecedor blob para base64
           if (produtoSanitizado.imagem_fornecedor && produtoSanitizado.imagem_fornecedor.startsWith('blob:')) {
             try {
-              const base64 = await imageUrlToBase64(produtoSanitizado.imagem_fornecedor);
-              produtoSanitizado.imagem_fornecedor = base64 && !base64.startsWith('data:') 
-                ? `data:image/jpeg;base64,${base64}` 
-                : base64;
-              console.log('✅ Imagem fornecedor convertida para base64');
+              console.log(`🔄 [AUTO-SAVE] Convertendo imagem_fornecedor do produto ${produtoSanitizado.sku}`);
+              produtoSanitizado.imagem_fornecedor = await imageUrlToBase64(produtoSanitizado.imagem_fornecedor);
+              console.log(`✅ [AUTO-SAVE] Imagem fornecedor convertida: ${produtoSanitizado.imagem_fornecedor.substring(0, 50)}...`);
             } catch (error) {
               console.warn('⚠️ Erro ao converter imagem_fornecedor para base64:', error);
               produtoSanitizado.imagem_fornecedor = '';
@@ -1426,6 +1444,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           
           return produtoSanitizado;
         }));
+        
+        console.log('✅ [AUTO-SAVE] Conversão de imagens concluída');
 
         // Criar objeto completo da cotação
         const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
@@ -1595,6 +1615,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   
                   // Carregar produtos da cotação selecionada do campo produtos (JSONB)
                   const produtosCotacao = Array.isArray(cotacao.produtos) ? cotacao.produtos : [];
+                  
+                  console.log('🔍 [CARREGANDO COTAÇÃO] Total de produtos:', produtosCotacao.length);
+                  produtosCotacao.slice(0, 3).forEach((p, i) => {
+                    console.log(`🔍 [CARREGANDO COTAÇÃO] Produto ${i}:`, {
+                      sku: p.sku,
+                      temImagem: !!p.imagem,
+                      imagemTipo: p.imagem?.substring(0, 30),
+                      temImagemFornecedor: !!p.imagem_fornecedor,
+                      imagemFornecedorTipo: p.imagem_fornecedor?.substring(0, 30)
+                    });
+                  });
+                  
                   setProductData(produtosCotacao);
                   setHasImportedData(produtosCotacao.length > 0);
                   
