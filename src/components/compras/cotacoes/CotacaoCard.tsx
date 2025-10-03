@@ -114,7 +114,7 @@ const CotacaoCardComponent: React.FC<CotacaoCardProps> = ({
             <Package className="h-4 w-4 text-purple-500 flex-shrink-0" />
             <div className="flex flex-col">
               <span className="text-xs text-muted-foreground">Produtos</span>
-              <span className="font-semibold text-purple-600">{cotacao.total_quantidade || 0} itens</span>
+              <span className="font-semibold text-purple-600">{(cotacao.total_quantidade || 0).toLocaleString('pt-BR')} itens</span>
             </div>
           </div>
           
