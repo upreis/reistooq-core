@@ -828,23 +828,21 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Cálculos totais da cotação (movido para depois de displayProductsWithCalculations)
   const totaisGerais = useMemo(() => {
-    // Usar displayProductsWithCalculations que já tem todos os valores calculados corretamente
-    const produtosCalculados = displayProductsWithCalculations.length > 0 
-      ? displayProductsWithCalculations 
-      : produtos.map(calcularProduto);
+    // Usar productData para calcular os totais (dados atuais da tabela)
+    const produtosParaCalculo = productData.length > 0 ? productData : [];
     
-    const total_peso_kg = produtosCalculados.reduce((sum, p) => sum + (p.peso_total_kg || 0), 0);
-    const total_cbm = produtosCalculados.reduce((sum, p) => sum + (p.cbm_total || 0), 0);
-    const total_quantidade = produtosCalculados.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
-    const total_valor_origem = produtosCalculados.reduce((sum, p) => sum + (p.valor_total || 0), 0);
+    const total_peso_kg = produtosParaCalculo.reduce((sum, p) => sum + (p.peso_total_kg || 0), 0);
+    const total_cbm = produtosParaCalculo.reduce((sum, p) => sum + (p.cbm_total || 0), 0);
+    const total_quantidade = produtosParaCalculo.reduce((sum, p) => sum + (p.quantidade_total || 0), 0);
+    const total_valor_origem = produtosParaCalculo.reduce((sum, p) => sum + (p.valor_total || 0), 0);
     
     // Somar a coluna Change DOLAR Total
-    const total_valor_usd = produtosCalculados.reduce((sum, p) => {
+    const total_valor_usd = displayProductsWithCalculations.reduce((sum, p) => {
       return sum + (p.change_dolar_total || 0);
     }, 0);
     
     // Somar a coluna Multiplicador REAIS Total
-    const total_valor_brl = produtosCalculados.reduce((sum, p) => {
+    const total_valor_brl = displayProductsWithCalculations.reduce((sum, p) => {
       return sum + (p.multiplicador_reais_total || 0);
     }, 0);
 
@@ -855,9 +853,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       total_valor_origem: total_valor_origem || 0,
       total_valor_usd: total_valor_usd || 0,
       total_valor_brl: total_valor_brl || 0,
-      produtos: produtosCalculados
+      produtos: produtosParaCalculo
     };
-  }, [displayProductsWithCalculations, produtos, dadosBasicos.moeda_origem, dadosBasicos.fator_multiplicador, converterMoeda]);
+  }, [productData, displayProductsWithCalculations]);
 
   // Funções para edição inline
   const startEditing = useCallback((rowIndex: number, field: string) => {
