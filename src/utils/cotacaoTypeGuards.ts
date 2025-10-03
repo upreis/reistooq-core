@@ -154,13 +154,19 @@ export function sanitizeProduto(produto: Partial<ProdutoCotacao>): ProdutoCotaca
     sku: produto.sku || '',
     nome: produto.nome || '',
     imagem: produto.imagem || null,
+    imagem_fornecedor: produto.imagem_fornecedor || null,
     material: produto.material || '',
+    cor: produto.cor,
     package_qtd: produto.package_qtd || 1,
     preco_unitario: produto.preco_unitario || 0,
     unidade_medida: produto.unidade_medida || 'PCS',
     pcs_ctn: produto.pcs_ctn || 1,
     qtd_caixas_pedido: produto.qtd_caixas_pedido || 1,
     peso_unitario_g: produto.peso_unitario_g || 0,
+    peso_emb_master_kg: produto.peso_emb_master_kg,
+    peso_sem_emb_master_kg: produto.peso_sem_emb_master_kg,
+    peso_total_emb_kg: produto.peso_total_emb_kg,
+    peso_total_sem_emb_kg: produto.peso_total_sem_emb_kg,
     largura_cm: produto.largura_cm || 0,
     altura_cm: produto.altura_cm || 0,
     comprimento_cm: produto.comprimento_cm || 0,
@@ -168,7 +174,12 @@ export function sanitizeProduto(produto: Partial<ProdutoCotacao>): ProdutoCotaca
     cbm_unitario: produto.cbm_unitario || 0,
     cbm_total: produto.cbm_total || 0,
     quantidade_total: produto.quantidade_total || 0,
-    valor_total: produto.valor_total || 0
+    valor_total: produto.valor_total || 0,
+    obs: produto.obs,
+    change_dolar: produto.change_dolar,
+    change_dolar_total: produto.change_dolar_total,
+    multiplicador_reais: produto.multiplicador_reais,
+    multiplicador_reais_total: produto.multiplicador_reais_total
   };
   
   // Recalcular campos derivados se necessário
