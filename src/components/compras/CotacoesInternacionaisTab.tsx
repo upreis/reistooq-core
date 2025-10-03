@@ -1616,14 +1616,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   // Carregar produtos da cotação selecionada do campo produtos (JSONB)
                   const produtosCotacao = Array.isArray(cotacao.produtos) ? cotacao.produtos : [];
                   
+                  console.log('🔍 [CARREGANDO COTAÇÃO] ==================== INÍCIO ====================');
                   console.log('🔍 [CARREGANDO COTAÇÃO] Total de produtos:', produtosCotacao.length);
-                  produtosCotacao.slice(0, 3).forEach((p, i) => {
-                    console.log(`🔍 [CARREGANDO COTAÇÃO] Produto ${i}:`, {
-                      sku: p.sku,
+                  console.log('🔍 [CARREGANDO COTAÇÃO] Dados brutos do JSONB:', JSON.stringify(cotacao.produtos).substring(0, 500));
+                  
+                  produtosCotacao.slice(0, 5).forEach((p, i) => {
+                    console.log(`🔍 [CARREGANDO COTAÇÃO] Produto ${i} (${p.sku}):`, {
                       temImagem: !!p.imagem,
-                      imagemTipo: p.imagem?.substring(0, 30),
+                      imagemTipo: p.imagem ? (p.imagem.startsWith('data:') ? 'base64' : p.imagem.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
+                      imagemInicio: p.imagem?.substring(0, 50),
                       temImagemFornecedor: !!p.imagem_fornecedor,
-                      imagemFornecedorTipo: p.imagem_fornecedor?.substring(0, 30)
+                      imagemFornecedorTipo: p.imagem_fornecedor ? (p.imagem_fornecedor.startsWith('data:') ? 'base64' : p.imagem_fornecedor.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
+                      imagemFornecedorInicio: p.imagem_fornecedor?.substring(0, 50),
+                      todasChaves: Object.keys(p)
                     });
                   });
                   
@@ -1636,6 +1641,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   }
                   
                   setSelectedCotacao(cotacao);
+                  console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
                 }}
                 formatCurrency={formatCurrency}
                 getStatusColor={getStatusColor}
