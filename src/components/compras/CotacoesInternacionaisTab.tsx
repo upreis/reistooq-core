@@ -164,6 +164,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
   const [isSavingAuto, setIsSavingAuto] = useState(false);
+  const lastSavedDataRef = useRef<string>(''); // Hash dos últimos dados salvos
   
   // Estados para edição inline
   const [editingCell, setEditingCell] = useState<{row: number, field: string} | null>(null);
@@ -1335,14 +1336,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Auto-save: salvar automaticamente após edições
+  // Auto-save: salvar automaticamente após edições (otimizado)
   useEffect(() => {
-    // ✅ VALIDAÇÕES PARA AUTO-SAVE
-    // Não fazer auto-save se:
-    // 1. Não houver produtos
-    // 2. Já estiver salvando
-    // 3. Não houver dados completos da cotação
-    
     // Verificar se tem cotação selecionada COM dados válidos
     const temCotacaoValidaSelecionada = !!(
       selectedCotacao?.id && 
@@ -1362,22 +1357,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       && (temCotacaoValidaSelecionada || temDadosBasicosCompletos);
 
     if (!canAutoSave) {
-      console.log('⏸️ Auto-save pausado:', {
-        temProdutos: productData.length > 0,
-        naoEstaSalvando: !isSavingAuto,
-        temDadosImportados: hasImportedData,
-        temCotacaoValidaSelecionada,
-        selectedCotacaoData: selectedCotacao ? {
-          id: selectedCotacao.id,
-          numero: selectedCotacao.numero_cotacao,
-          descricao: selectedCotacao.descricao
-        } : null,
-        temDadosBasicosCompletos,
-        dadosBasicos: {
-          numero: dadosBasicos.numero_cotacao,
-          descricao: dadosBasicos.descricao
-        }
-      });
       return;
     }
 
@@ -1386,46 +1365,24 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       clearTimeout(autoSaveTimeoutRef.current);
     }
 
-    // Agendar auto-save após 3 segundos de inatividade
+    // Agendar auto-save após 2 segundos de inatividade
     autoSaveTimeoutRef.current = setTimeout(async () => {
-      console.log('🔍 [AUTO-SAVE] Iniciando verificação final:', {
-        temSelectedCotacao: !!selectedCotacao?.id,
-        selectedCotacaoData: selectedCotacao ? {
-          id: selectedCotacao.id,
-          numero: selectedCotacao.numero_cotacao,
-          descricao: selectedCotacao.descricao
-        } : null,
-        dadosBasicos: {
-          numero: dadosBasicos.numero_cotacao,
-          descricao: dadosBasicos.descricao
-        },
-        totalProdutos: totaisGerais.produtos?.length || 0,
-        productDataLength: productData.length
-      });
-
       // Validação final: garantir que há cotação válida OU dados básicos válidos
       const cotacaoValida = selectedCotacao?.id && selectedCotacao.numero_cotacao && selectedCotacao.descricao;
       const dadosBasicosValidos = dadosBasicos.numero_cotacao && dadosBasicos.descricao;
       
       if (!cotacaoValida && !dadosBasicosValidos) {
-        console.log('⏭️ Auto-save cancelado: Nenhuma cotação válida ou dados básicos completos');
         return;
       }
 
       // Verificar se há produtos para salvar
       const produtosParaSalvar = totaisGerais.produtos || productData;
       if (!produtosParaSalvar || produtosParaSalvar.length === 0) {
-        console.log('⏭️ Auto-save cancelado: Nenhum produto para salvar');
         return;
       }
 
       try {
-        setIsSavingAuto(true);
-        
-        console.log('💾 [AUTO-SAVE] Preparando dados para salvar...');
-        
-        // ✅ CORREÇÃO: Auto-save NÃO deve validar produtos rigidamente
-        // Apenas filtra produtos que têm pelo menos SKU OU nome preenchido
+        // Filtrar produtos válidos
         const produtosValidos = produtosParaSalvar.filter(p => {
           const temSku = p.sku && p.sku.trim().length > 0;
           const temNome = p.nome && p.nome.trim().length > 0;
@@ -1433,15 +1390,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         });
         
         if (produtosValidos.length === 0) {
-          console.log('⏭️ Auto-save cancelado: Nenhum produto com dados mínimos');
-          setIsSavingAuto(false);
           return;
         }
-        
-        console.log(`💾 [AUTO-SAVE] Salvando ${produtosValidos.length} de ${produtosParaSalvar.length} produtos`);
 
-        // Criar objeto completo da cotação com produtos válidos
-        // Converter data_fechamento vazio para null
+        // Criar objeto completo da cotação
         const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
         const dataFechamentoFinal = (dataFechamento && dataFechamento.trim() !== '') ? dataFechamento : null;
         
@@ -1455,8 +1407,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           data_fechamento: dataFechamentoFinal,
           status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
           observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
-          container_tipo: selectedContainer, // Salvar o tipo de container selecionado
-          produtos: produtosValidos, // Usar apenas produtos válidos
+          container_tipo: selectedContainer,
+          produtos: produtosValidos,
           total_peso_kg: totaisGerais.total_peso_kg || 0,
           total_cbm: totaisGerais.total_cbm || 0,
           total_quantidade: totaisGerais.total_quantidade || 0,
@@ -1465,14 +1417,22 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           total_valor_brl: totaisGerais.total_valor_brl || 0
         };
 
-        // Atualizar se já existe, criar se não existe (SILENCIOSO - sem toasts)
+        // Gerar hash dos dados atuais para comparação
+        const currentDataHash = JSON.stringify(cotacaoCompleta);
+        
+        // Verificar se os dados realmente mudaram
+        if (currentDataHash === lastSavedDataRef.current) {
+          return; // Não salvar se não houver mudanças
+        }
+
+        setIsSavingAuto(true);
+
+        // Atualizar se já existe, criar se não existe (SILENCIOSO)
         if (selectedCotacao?.id) {
           await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
-          console.log('✅ Auto-save: Cotação atualizada');
         } else {
           const novaCotacao = await silentCreateCotacao(cotacaoCompleta);
           if (novaCotacao) {
-            // Converter produtos de Json para ProdutoCotacao[]
             const produtosFormatados = Array.isArray(novaCotacao.produtos) ? novaCotacao.produtos : [];
             const cotacaoConvertida = {
               ...novaCotacao,
@@ -1480,18 +1440,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             } as unknown as CotacaoInternacional;
             setSelectedCotacao(cotacaoConvertida);
           }
-          console.log('✅ Auto-save: Cotação criada');
         }
 
+        // Atualizar hash dos dados salvos
+        lastSavedDataRef.current = currentDataHash;
         setLastAutoSave(new Date());
         
       } catch (error) {
-        console.error('❌ Erro no auto-save:', error);
-        // Não mostrar toast de erro para auto-save silencioso
+        console.error('Erro no auto-save:', error);
       } finally {
         setIsSavingAuto(false);
       }
-    }, 10000); // 10 segundos de debounce (reduzido de 3s para evitar loop)
+    }, 2000); // 2 segundos de debounce
 
     // Cleanup
     return () => {
@@ -1499,7 +1459,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         clearTimeout(autoSaveTimeoutRef.current);
       }
     };
-  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, silentCreateCotacao, silentUpdateCotacao, isSavingAuto]);
+  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, selectedContainer, silentCreateCotacao, silentUpdateCotacao, isSavingAuto]);
   return (
     <div className="space-y-6">
       {/* Header */}
