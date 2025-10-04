@@ -34,6 +34,7 @@ import { CotacaoCard } from './cotacoes/CotacaoCard';
 import { CotacaoHeader } from './cotacoes/CotacaoHeader';
 import { EmptyState } from './cotacoes/EmptyState';
 import { NovaCotacaoDialog } from './cotacoes/NovaCotacaoDialog';
+import { CotacoesGridSkeleton } from './cotacoes/CotacaoCardSkeleton';
 import { 
   Plus, 
   FileText, 
@@ -146,6 +147,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [showNewCotacaoDialog, setShowNewCotacaoDialog] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // NOTA: newCotacaoData é usado pelo NovaCotacaoDialog (modal de criação)
   const [newCotacaoData, setNewCotacaoData] = useState({
@@ -182,6 +184,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       console.log('✓ Produtos carregados:', productData.length);
     }
   }, [productData]);
+  
+  // Detectar fim do carregamento inicial
+  useEffect(() => {
+    if (cotacoes.length > 0 && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [cotacoes, isInitialLoad]);
   
   const [hasImportedData, setHasImportedData] = useState(() => {
     const products = SessionStorageManager.loadProducts();
@@ -1647,56 +1656,63 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             </div>
           </div>
 
-          {/* Cotações Grid - Cards Layout */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredCotacoes.map((cotacao) => (
-              <CotacaoCard
-                key={cotacao.id}
-                cotacao={cotacao}
-                isSelectMode={isSelectMode}
-                isSelected={selectedCotacoes.includes(cotacao.id!)}
-                onSelect={selectCotacao}
-                onClick={() => {
-                  // Limpar sessionStorage e carregar produtos dessa cotação
-                  SessionStorageManager.clearProducts();
-                  
-                  // Carregar produtos da cotação selecionada do campo produtos (JSONB)
-                  const produtosCotacao = Array.isArray(cotacao.produtos) ? cotacao.produtos : [];
-                  
-                  console.log('🔍 [CARREGANDO COTAÇÃO] ==================== INÍCIO ====================');
-                  console.log('🔍 [CARREGANDO COTAÇÃO] Total de produtos:', produtosCotacao.length);
-                  console.log('🔍 [CARREGANDO COTAÇÃO] Dados brutos do JSONB:', JSON.stringify(cotacao.produtos).substring(0, 500));
-                  
-                  produtosCotacao.slice(0, 5).forEach((p, i) => {
-                    console.log(`🔍 [CARREGANDO COTAÇÃO] Produto ${i} (${p.sku}):`, {
-                      temImagem: !!p.imagem,
-                      imagemTipo: p.imagem ? (p.imagem.startsWith('data:') ? 'base64' : p.imagem.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
-                      imagemInicio: p.imagem?.substring(0, 50),
-                      temImagemFornecedor: !!p.imagem_fornecedor,
-                      imagemFornecedorTipo: p.imagem_fornecedor ? (p.imagem_fornecedor.startsWith('data:') ? 'base64' : p.imagem_fornecedor.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
-                      imagemFornecedorInicio: p.imagem_fornecedor?.substring(0, 50),
-                      todasChaves: Object.keys(p)
+          {/* Cotações Grid - Cards Layout com Skeleton Loader */}
+          {isInitialLoad && cotacoes.length === 0 ? (
+            // Mostrar skeleton durante carregamento inicial
+            <CotacoesGridSkeleton count={6} />
+          ) : filteredCotacoes.length > 0 ? (
+            // Mostrar cotações normalmente
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredCotacoes.map((cotacao) => (
+                <CotacaoCard
+                  key={cotacao.id}
+                  cotacao={cotacao}
+                  isSelectMode={isSelectMode}
+                  isSelected={selectedCotacoes.includes(cotacao.id!)}
+                  onSelect={selectCotacao}
+                  onClick={() => {
+                    // Limpar sessionStorage e carregar produtos dessa cotação
+                    SessionStorageManager.clearProducts();
+                    
+                    // Carregar produtos da cotação selecionada do campo produtos (JSONB)
+                    const produtosCotacao = Array.isArray(cotacao.produtos) ? cotacao.produtos : [];
+                    
+                    console.log('🔍 [CARREGANDO COTAÇÃO] ==================== INÍCIO ====================');
+                    console.log('🔍 [CARREGANDO COTAÇÃO] Total de produtos:', produtosCotacao.length);
+                    console.log('🔍 [CARREGANDO COTAÇÃO] Dados brutos do JSONB:', JSON.stringify(cotacao.produtos).substring(0, 500));
+                    
+                    produtosCotacao.slice(0, 5).forEach((p, i) => {
+                      console.log(`🔍 [CARREGANDO COTAÇÃO] Produto ${i} (${p.sku}):`, {
+                        temImagem: !!p.imagem,
+                        imagemTipo: p.imagem ? (p.imagem.startsWith('data:') ? 'base64' : p.imagem.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
+                        imagemInicio: p.imagem?.substring(0, 50),
+                        temImagemFornecedor: !!p.imagem_fornecedor,
+                        imagemFornecedorTipo: p.imagem_fornecedor ? (p.imagem_fornecedor.startsWith('data:') ? 'base64' : p.imagem_fornecedor.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
+                        imagemFornecedorInicio: p.imagem_fornecedor?.substring(0, 50),
+                        todasChaves: Object.keys(p)
+                      });
                     });
-                  });
-                  
-                  setProductData(produtosCotacao);
-                  setHasImportedData(produtosCotacao.length > 0);
-                  
-                  // Salvar no sessionStorage
-                  if (produtosCotacao.length > 0) {
-                    SessionStorageManager.saveProducts(produtosCotacao);
-                  }
-                  
-                  setSelectedCotacao(cotacao);
-                  console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
-                }}
-                formatCurrency={formatCurrency}
-                getStatusColor={getStatusColor}
-              />
-            ))}
-          </div>
-
-          {filteredCotacoes.length === 0 && <EmptyState searchTerm={searchTerm} />}
+                    
+                    setProductData(produtosCotacao);
+                    setHasImportedData(produtosCotacao.length > 0);
+                    
+                    // Salvar no sessionStorage
+                    if (produtosCotacao.length > 0) {
+                      SessionStorageManager.saveProducts(produtosCotacao);
+                    }
+                    
+                    setSelectedCotacao(cotacao);
+                    console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
+                  }}
+                  formatCurrency={formatCurrency}
+                  getStatusColor={getStatusColor}
+                />
+              ))}
+            </div>
+          ) : (
+            // Mostrar mensagem de vazio quando não há resultados
+            <EmptyState searchTerm={searchTerm} />
+          )}
         </>
       ) : (
         <div className="space-y-4">
