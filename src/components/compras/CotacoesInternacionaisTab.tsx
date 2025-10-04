@@ -36,6 +36,7 @@ import { EmptyState } from './cotacoes/EmptyState';
 import { NovaCotacaoDialog } from './cotacoes/NovaCotacaoDialog';
 import { CotacoesGridSkeleton } from './cotacoes/CotacaoCardSkeleton';
 import { ProductTableSkeleton } from './cotacoes/ProductTableSkeleton';
+import { CotacaoInternacionalDialog } from '@/features/compras/components/CotacaoInternacionalDialog';
 import { 
   Plus, 
   FileText, 
@@ -148,6 +149,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [showNewCotacaoDialog, setShowNewCotacaoDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   
@@ -1842,7 +1844,11 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowEditDialog(true)}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
                     </Button>
@@ -2472,6 +2478,18 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           return result;
         }}
         availableCurrencies={AVAILABLE_CURRENCIES}
+      />
+      
+      {/* Modal de Edição de Cotação */}
+      <CotacaoInternacionalDialog
+        open={showEditDialog}
+        onOpenChange={setShowEditDialog}
+        initialData={selectedCotacao || undefined}
+        mode="edit"
+        onSave={() => {
+          onRefresh();
+          setShowEditDialog(false);
+        }}
       />
     </div>
   );
