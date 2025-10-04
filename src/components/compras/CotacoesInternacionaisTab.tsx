@@ -1640,7 +1640,47 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               </Button>
 
               <Button
-                onClick={() => setShowImportDialog(true)}
+                onClick={async () => {
+                  // Criar uma nova cotação temporária e abrir o dialog de importação
+                  const timestamp = new Date().getTime();
+                  const novaCotacao: CotacaoInternacional = {
+                    numero_cotacao: `COT-INT-${timestamp}`,
+                    descricao: 'Cotação importada',
+                    pais_origem: 'China',
+                    moeda_origem: 'CNY',
+                    fator_multiplicador: 1,
+                    data_abertura: new Date().toISOString().split('T')[0],
+                    status: 'rascunho',
+                    produtos: [],
+                    total_peso_kg: 0,
+                    total_cbm: 0,
+                    total_quantidade: 0,
+                    total_valor_origem: 0,
+                    total_valor_usd: 0,
+                    total_valor_brl: 0
+                  };
+                  
+                  // Salvar a nova cotação
+                  try {
+                    const cotacaoCriada = await silentCreateCotacao(novaCotacao);
+                    if (cotacaoCriada) {
+                      // Selecionar a cotação criada e abrir o dialog de importação
+                      setSelectedCotacao(cotacaoCriada as unknown as CotacaoInternacional);
+                      setShowImportDialog(true);
+                      toast({
+                        title: "Nova cotação criada",
+                        description: "Importe o arquivo para adicionar produtos."
+                      });
+                    }
+                  } catch (error) {
+                    console.error('Erro ao criar cotação:', error);
+                    toast({
+                      title: "Erro ao criar cotação",
+                      description: "Não foi possível criar uma nova cotação para o upload.",
+                      variant: "destructive"
+                    });
+                  }
+                }}
                 variant="outline"
                 className="gap-2"
               >
