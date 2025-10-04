@@ -1,17 +1,19 @@
 import React, { memo } from 'react';
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RefreshCw } from "lucide-react";
+import { Save, AlertCircle } from "lucide-react";
 import ContainerVisualization from '../ContainerVisualization';
 import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
 
 interface CotacaoHeaderProps {
   cotacao: CotacaoInternacional;
-  isSavingAuto: boolean;
-  lastAutoSave: Date | null;
+  hasUnsavedChanges: boolean;
+  isSaving: boolean;
+  onSave: () => void;
   selectedCurrency: string;
   onCurrencyChange: (value: string) => void;
   selectedContainer: string;
@@ -36,8 +38,9 @@ interface CotacaoHeaderProps {
 
 const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
   cotacao,
-  isSavingAuto,
-  lastAutoSave,
+  hasUnsavedChanges,
+  isSaving,
+  onSave,
   selectedCurrency,
   onCurrencyChange,
   selectedContainer,
@@ -62,21 +65,29 @@ const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">{cotacao.numero_cotacao}</h3>
-                {isSavingAuto && (
+                {hasUnsavedChanges && (
                   <span className="text-xs text-yellow-400 flex items-center gap-1">
-                    <RefreshCw className="h-3 w-3 animate-spin" />
-                    Salvando...
-                  </span>
-                )}
-                {lastAutoSave && !isSavingAuto && (
-                  <span className="text-xs text-green-400">
-                    ✓ Salvo {new Date(lastAutoSave).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    <AlertCircle className="h-3 w-3" />
+                    Alterações não salvas
                   </span>
                 )}
               </div>
-              <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
-                {cotacao.status}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
+                  {cotacao.status}
+                </Badge>
+                {hasUnsavedChanges && (
+                  <Button
+                    onClick={onSave}
+                    disabled={isSaving}
+                    size="sm"
+                    className="h-7 text-xs"
+                  >
+                    <Save className="h-3 w-3 mr-1" />
+                    {isSaving ? 'Salvando...' : 'Salvar'}
+                  </Button>
+                )}
+              </div>
             </div>
             <p className="text-sm text-slate-300 mb-3">{cotacao.descricao}</p>
             

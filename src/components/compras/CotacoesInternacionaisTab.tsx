@@ -169,10 +169,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   // Estados para seleção de produtos na tabela
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   
-  // Ref para controlar auto-save
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [lastAutoSave, setLastAutoSave] = useState<Date | null>(null);
-  const [isSavingAuto, setIsSavingAuto] = useState(false);
+  // Estado para controlar alterações não salvas
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const lastSavedDataRef = useRef<string>(''); // Hash dos últimos dados salvos
   
   // Estados para edição inline
@@ -1388,7 +1387,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     }
   };
 
-  // Auto-save: salvar automaticamente após edições (otimizado)
+  // Detectar alterações não salvas
   useEffect(() => {
     // Verificar se tem cotação selecionada COM dados válidos
     const temCotacaoValidaSelecionada = !!(
@@ -1403,156 +1402,184 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       dadosBasicos.descricao
     );
     
-    const canAutoSave = productData.length > 0 
-      && !isSavingAuto 
+    const temDadosParaSalvar = productData.length > 0 
       && hasImportedData
       && (temCotacaoValidaSelecionada || temDadosBasicosCompletos);
 
-    if (!canAutoSave) {
+    if (!temDadosParaSalvar) {
+      setHasUnsavedChanges(false);
       return;
     }
 
-    // Limpar timeout anterior
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
+    // Criar objeto completo da cotação para comparação
+    const produtosParaSalvar = totaisGerais.produtos || productData;
+    const produtosValidos = produtosParaSalvar.filter(p => {
+      const temSku = p.sku && p.sku.trim().length > 0;
+      const temNome = p.nome && p.nome.trim().length > 0;
+      return temSku || temNome;
+    });
+
+    if (produtosValidos.length === 0) {
+      setHasUnsavedChanges(false);
+      return;
     }
 
-    // Agendar auto-save após 2 segundos de inatividade
-    autoSaveTimeoutRef.current = setTimeout(async () => {
-      // Validação final: garantir que há cotação válida OU dados básicos válidos
-      const cotacaoValida = selectedCotacao?.id && selectedCotacao.numero_cotacao && selectedCotacao.descricao;
-      const dadosBasicosValidos = dadosBasicos.numero_cotacao && dadosBasicos.descricao;
-      
-      if (!cotacaoValida && !dadosBasicosValidos) {
-        return;
-      }
-
-      // Verificar se há produtos para salvar
-      const produtosParaSalvar = totaisGerais.produtos || productData;
-      if (!produtosParaSalvar || produtosParaSalvar.length === 0) {
-        return;
-      }
-
-      try {
-        // Filtrar produtos válidos
-        const produtosValidos = produtosParaSalvar.filter(p => {
-          const temSku = p.sku && p.sku.trim().length > 0;
-          const temNome = p.nome && p.nome.trim().length > 0;
-          return temSku || temNome;
-        });
-        
-        if (produtosValidos.length === 0) {
-          return;
-        }
-
-        // ✅ Converter blob URLs para base64 antes de salvar
-        console.log('🔍 [AUTO-SAVE] Convertendo imagens de produtos:', produtosValidos.length);
-        const produtosComImagensConvertidas = await Promise.all(produtosValidos.map(async (p, index) => {
-          const produtoSanitizado = sanitizeProduto(p);
-          
-          console.log(`🔍 [AUTO-SAVE] Produto ${index} (${produtoSanitizado.sku}):`, {
-            temImagem: !!produtoSanitizado.imagem,
-            imagemTipo: produtoSanitizado.imagem?.substring(0, 20),
-            temImagemFornecedor: !!produtoSanitizado.imagem_fornecedor,
-            imagemFornecedorTipo: produtoSanitizado.imagem_fornecedor?.substring(0, 20)
-          });
-          
-          // Converter imagem blob para base64
-          if (produtoSanitizado.imagem && produtoSanitizado.imagem.startsWith('blob:')) {
-            try {
-              console.log(`🔄 [AUTO-SAVE] Convertendo imagem do produto ${produtoSanitizado.sku}`);
-              produtoSanitizado.imagem = await imageUrlToBase64(produtoSanitizado.imagem);
-              console.log(`✅ [AUTO-SAVE] Imagem convertida: ${produtoSanitizado.imagem.substring(0, 50)}...`);
-            } catch (error) {
-              console.warn('⚠️ Erro ao converter imagem para base64:', error);
-              produtoSanitizado.imagem = '';
-            }
-          }
-          
-          // Converter imagem_fornecedor blob para base64
-          if (produtoSanitizado.imagem_fornecedor && produtoSanitizado.imagem_fornecedor.startsWith('blob:')) {
-            try {
-              console.log(`🔄 [AUTO-SAVE] Convertendo imagem_fornecedor do produto ${produtoSanitizado.sku}`);
-              produtoSanitizado.imagem_fornecedor = await imageUrlToBase64(produtoSanitizado.imagem_fornecedor);
-              console.log(`✅ [AUTO-SAVE] Imagem fornecedor convertida: ${produtoSanitizado.imagem_fornecedor.substring(0, 50)}...`);
-            } catch (error) {
-              console.warn('⚠️ Erro ao converter imagem_fornecedor para base64:', error);
-              produtoSanitizado.imagem_fornecedor = '';
-            }
-          }
-          
-          return produtoSanitizado;
-        }));
-        
-        console.log('✅ [AUTO-SAVE] Conversão de imagens concluída');
-
-        // Criar objeto completo da cotação
-        const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
-        const dataFechamentoFinal = (dataFechamento && dataFechamento.trim() !== '') ? dataFechamento : null;
-        
-        const cotacaoCompleta = {
-          numero_cotacao: selectedCotacao?.numero_cotacao || dadosBasicos.numero_cotacao,
-          descricao: selectedCotacao?.descricao || dadosBasicos.descricao,
-          pais_origem: selectedCotacao?.pais_origem || dadosBasicos.pais_origem,
-          moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
-          fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
-          data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
-          data_fechamento: dataFechamentoFinal,
-          status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
-          observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
-          container_tipo: selectedContainer,
-          produtos: produtosComImagensConvertidas,
-          total_peso_kg: totaisGerais.total_peso_kg || 0,
-          total_cbm: totaisGerais.total_cbm || 0,
-          total_quantidade: totaisGerais.total_quantidade || 0,
-          total_valor_origem: totaisGerais.total_valor_origem || 0,
-          total_valor_usd: totaisGerais.total_valor_usd || 0,
-          total_valor_brl: totaisGerais.total_valor_brl || 0
-        };
-
-        // Gerar hash dos dados atuais para comparação
-        const currentDataHash = JSON.stringify(cotacaoCompleta);
-        
-        // Verificar se os dados realmente mudaram
-        if (currentDataHash === lastSavedDataRef.current) {
-          return; // Não salvar se não houver mudanças
-        }
-
-        setIsSavingAuto(true);
-
-        // Atualizar se já existe, criar se não existe (SILENCIOSO)
-        if (selectedCotacao?.id) {
-          await silentUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
-        } else {
-          const novaCotacao = await silentCreateCotacao(cotacaoCompleta);
-          if (novaCotacao) {
-            const produtosFormatados = Array.isArray(novaCotacao.produtos) ? novaCotacao.produtos : [];
-            const cotacaoConvertida = {
-              ...novaCotacao,
-              produtos: produtosFormatados
-            } as unknown as CotacaoInternacional;
-            setSelectedCotacao(cotacaoConvertida);
-          }
-        }
-
-        // Atualizar hash dos dados salvos
-        lastSavedDataRef.current = currentDataHash;
-        setLastAutoSave(new Date());
-        
-      } catch (error) {
-        console.error('Erro no auto-save:', error);
-      } finally {
-        setIsSavingAuto(false);
-      }
-    }, 2000); // 2 segundos de debounce
-
-    // Cleanup
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
+    const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
+    const dataFechamentoFinal = (dataFechamento && dataFechamento.trim() !== '') ? dataFechamento : null;
+    
+    const cotacaoAtual = {
+      numero_cotacao: selectedCotacao?.numero_cotacao || dadosBasicos.numero_cotacao,
+      descricao: selectedCotacao?.descricao || dadosBasicos.descricao,
+      pais_origem: selectedCotacao?.pais_origem || dadosBasicos.pais_origem,
+      moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
+      fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
+      data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
+      data_fechamento: dataFechamentoFinal,
+      status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
+      observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
+      container_tipo: selectedContainer,
+      produtos: produtosValidos.map(p => sanitizeProduto(p)),
+      total_peso_kg: totaisGerais.total_peso_kg || 0,
+      total_cbm: totaisGerais.total_cbm || 0,
+      total_quantidade: totaisGerais.total_quantidade || 0,
+      total_valor_origem: totaisGerais.total_valor_origem || 0,
+      total_valor_usd: totaisGerais.total_valor_usd || 0,
+      total_valor_brl: totaisGerais.total_valor_brl || 0
     };
-  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, selectedContainer, silentCreateCotacao, silentUpdateCotacao, isSavingAuto]);
+
+    // Gerar hash dos dados atuais para comparação
+    const currentDataHash = JSON.stringify(cotacaoAtual);
+    
+    // Verificar se os dados mudaram
+    const dadosMudaram = currentDataHash !== lastSavedDataRef.current;
+    setHasUnsavedChanges(dadosMudaram);
+
+  }, [productData, dadosBasicos, totaisGerais, hasImportedData, selectedCotacao, selectedContainer]);
+
+  // Função para salvar as alterações
+  const handleSaveChanges = async () => {
+    if (!hasUnsavedChanges || isSaving) return;
+
+    // Verificar se há produtos para salvar
+    const produtosParaSalvar = totaisGerais.produtos || productData;
+    if (!produtosParaSalvar || produtosParaSalvar.length === 0) {
+      toast({
+        title: "Nenhum produto para salvar",
+        description: "Adicione produtos antes de salvar a cotação.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+
+      // Filtrar produtos válidos
+      const produtosValidos = produtosParaSalvar.filter(p => {
+        const temSku = p.sku && p.sku.trim().length > 0;
+        const temNome = p.nome && p.nome.trim().length > 0;
+        return temSku || temNome;
+      });
+      
+      if (produtosValidos.length === 0) {
+        toast({
+          title: "Produtos inválidos",
+          description: "Os produtos precisam ter SKU ou Nome preenchidos.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Converter blob URLs para base64 antes de salvar
+      const produtosComImagensConvertidas = await Promise.all(produtosValidos.map(async (p) => {
+        const produtoSanitizado = sanitizeProduto(p);
+        
+        // Converter imagem blob para base64
+        if (produtoSanitizado.imagem && produtoSanitizado.imagem.startsWith('blob:')) {
+          try {
+            produtoSanitizado.imagem = await imageUrlToBase64(produtoSanitizado.imagem);
+          } catch (error) {
+            console.warn('⚠️ Erro ao converter imagem para base64:', error);
+            produtoSanitizado.imagem = '';
+          }
+        }
+        
+        // Converter imagem_fornecedor blob para base64
+        if (produtoSanitizado.imagem_fornecedor && produtoSanitizado.imagem_fornecedor.startsWith('blob:')) {
+          try {
+            produtoSanitizado.imagem_fornecedor = await imageUrlToBase64(produtoSanitizado.imagem_fornecedor);
+          } catch (error) {
+            console.warn('⚠️ Erro ao converter imagem_fornecedor para base64:', error);
+            produtoSanitizado.imagem_fornecedor = '';
+          }
+        }
+        
+        return produtoSanitizado;
+      }));
+
+      // Criar objeto completo da cotação
+      const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
+      const dataFechamentoFinal = (dataFechamento && dataFechamento.trim() !== '') ? dataFechamento : null;
+      
+      const cotacaoCompleta = {
+        numero_cotacao: selectedCotacao?.numero_cotacao || dadosBasicos.numero_cotacao,
+        descricao: selectedCotacao?.descricao || dadosBasicos.descricao,
+        pais_origem: selectedCotacao?.pais_origem || dadosBasicos.pais_origem,
+        moeda_origem: selectedCotacao?.moeda_origem || dadosBasicos.moeda_origem,
+        fator_multiplicador: selectedCotacao?.fator_multiplicador || dadosBasicos.fator_multiplicador,
+        data_abertura: selectedCotacao?.data_abertura || dadosBasicos.data_abertura,
+        data_fechamento: dataFechamentoFinal,
+        status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
+        observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
+        container_tipo: selectedContainer,
+        produtos: produtosComImagensConvertidas,
+        total_peso_kg: totaisGerais.total_peso_kg || 0,
+        total_cbm: totaisGerais.total_cbm || 0,
+        total_quantidade: totaisGerais.total_quantidade || 0,
+        total_valor_origem: totaisGerais.total_valor_origem || 0,
+        total_valor_usd: totaisGerais.total_valor_usd || 0,
+        total_valor_brl: totaisGerais.total_valor_brl || 0
+      };
+
+      // Atualizar se já existe, criar se não existe
+      if (selectedCotacao?.id) {
+        await secureUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
+        toast({
+          title: "Alterações salvas",
+          description: "A cotação foi atualizada com sucesso.",
+        });
+      } else {
+        const novaCotacao = await secureCreateCotacao(cotacaoCompleta);
+        if (novaCotacao) {
+          const produtosFormatados = Array.isArray(novaCotacao.produtos) ? novaCotacao.produtos : [];
+          const cotacaoConvertida = {
+            ...novaCotacao,
+            produtos: produtosFormatados
+          } as unknown as CotacaoInternacional;
+          setSelectedCotacao(cotacaoConvertida);
+          toast({
+            title: "Cotação criada",
+            description: "A cotação foi criada com sucesso.",
+          });
+        }
+      }
+
+      // Atualizar hash dos dados salvos
+      const currentDataHash = JSON.stringify(cotacaoCompleta);
+      lastSavedDataRef.current = currentDataHash;
+      setHasUnsavedChanges(false);
+      
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      toast({
+        title: "Erro ao salvar",
+        description: "Não foi possível salvar as alterações.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1699,8 +1726,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {/* Cabeçalho da Cotação Selecionada */}
           <CotacaoHeader
             cotacao={selectedCotacao}
-            isSavingAuto={isSavingAuto}
-            lastAutoSave={lastAutoSave}
+            hasUnsavedChanges={hasUnsavedChanges}
+            isSaving={isSaving}
+            onSave={handleSaveChanges}
             selectedCurrency={selectedCurrency}
             onCurrencyChange={(value) => {
               setSelectedCurrency(value);
