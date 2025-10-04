@@ -1,11 +1,9 @@
 import React, { memo } from 'react';
 import { Card, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Save, AlertCircle } from "lucide-react";
 import ContainerVisualization from '../ContainerVisualization';
 import type { CotacaoInternacional } from '@/utils/cotacaoTypeGuards';
 
@@ -65,29 +63,10 @@ const CotacaoHeaderComponent: React.FC<CotacaoHeaderProps> = ({
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-semibold">{cotacao.numero_cotacao}</h3>
-                {hasUnsavedChanges && (
-                  <span className="text-xs text-yellow-400 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    Alterações não salvas
-                  </span>
-                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
-                  {cotacao.status}
-                </Badge>
-                {hasUnsavedChanges && (
-                  <Button
-                    onClick={onSave}
-                    disabled={isSaving}
-                    size="sm"
-                    className="h-7 text-xs"
-                  >
-                    <Save className="h-3 w-3 mr-1" />
-                    {isSaving ? 'Salvando...' : 'Salvar'}
-                  </Button>
-                )}
-              </div>
+              <Badge className={`text-white ${getStatusColor(cotacao.status)}`}>
+                {cotacao.status}
+              </Badge>
             </div>
             <p className="text-sm text-slate-300 mb-3">{cotacao.descricao}</p>
             
