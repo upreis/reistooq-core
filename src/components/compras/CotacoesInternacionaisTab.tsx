@@ -35,6 +35,7 @@ import { CotacaoHeader } from './cotacoes/CotacaoHeader';
 import { EmptyState } from './cotacoes/EmptyState';
 import { NovaCotacaoDialog } from './cotacoes/NovaCotacaoDialog';
 import { CotacoesGridSkeleton } from './cotacoes/CotacaoCardSkeleton';
+import { ProductTableSkeleton } from './cotacoes/ProductTableSkeleton';
 import { 
   Plus, 
   FileText, 
@@ -148,6 +149,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [showNewCotacaoDialog, setShowNewCotacaoDialog] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   
   // NOTA: newCotacaoData é usado pelo NovaCotacaoDialog (modal de criação)
   const [newCotacaoData, setNewCotacaoData] = useState({
@@ -1671,6 +1673,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   isSelected={selectedCotacoes.includes(cotacao.id!)}
                   onSelect={selectCotacao}
                   onClick={() => {
+                    // Mostrar loading
+                    setIsLoadingProducts(true);
+                    
                     // Limpar sessionStorage e carregar produtos dessa cotação
                     SessionStorageManager.clearProducts();
                     
@@ -1693,16 +1698,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                       });
                     });
                     
-                    setProductData(produtosCotacao);
-                    setHasImportedData(produtosCotacao.length > 0);
-                    
-                    // Salvar no sessionStorage
-                    if (produtosCotacao.length > 0) {
-                      SessionStorageManager.saveProducts(produtosCotacao);
-                    }
-                    
-                    setSelectedCotacao(cotacao);
-                    console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
+                    // Usar setTimeout para dar tempo da UI atualizar com o skeleton
+                    setTimeout(() => {
+                      setProductData(produtosCotacao);
+                      setHasImportedData(produtosCotacao.length > 0);
+                      
+                      // Salvar no sessionStorage
+                      if (produtosCotacao.length > 0) {
+                        SessionStorageManager.saveProducts(produtosCotacao);
+                      }
+                      
+                      setSelectedCotacao(cotacao);
+                      setIsLoadingProducts(false);
+                      console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
+                    }, 100);
                   }}
                   formatCurrency={formatCurrency}
                   getStatusColor={getStatusColor}
@@ -1801,6 +1810,10 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                 </div>
             </CardHeader>
             <CardContent>
+              {isLoadingProducts ? (
+                <ProductTableSkeleton rows={8} />
+              ) : (
+              <>
               <div className="overflow-auto border rounded-lg">
                 <Table>
                   <TableHeader>
@@ -2350,13 +2363,15 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                          </TableRow>
                        ))}
                    </TableBody>
-                 </Table>
-              </div>
-              
-              {displayProducts.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhum produto importado. Use o botão "Importar" para carregar dados de um arquivo Excel.
-                </div>
+                  </Table>
+               </div>
+               
+               {displayProducts.length === 0 && (
+                 <div className="text-center py-8 text-muted-foreground">
+                   Nenhum produto importado. Use o botão "Importar" para carregar dados de um arquivo Excel.
+                 </div>
+               )}
+              </>
               )}
             </CardContent>
           </Card>
