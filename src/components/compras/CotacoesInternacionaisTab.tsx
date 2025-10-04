@@ -273,7 +273,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
 
   // Hooks customizados
-  const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
+  const { rates } = useCurrencyRates(); // Mantido apenas para conversões automáticas
   const { getCotacoesInternacionais } = useCotacoesInternacionais();
   const { 
     secureCreateCotacao, 
@@ -1601,16 +1601,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               Voltar aos Cards
             </Button>
           )}
-          <Button 
-            variant="outline" 
-            onClick={updateRates} 
-            className="gap-2"
-            disabled={ratesLoading}
-            size="sm"
-          >
-            <RefreshCw className={`h-4 w-4 ${ratesLoading ? 'animate-spin' : ''}`} />
-            {ratesLoading ? 'Atualizando...' : 'Atualizar Cotações'}
-          </Button>
         </div>
       </div>
 
