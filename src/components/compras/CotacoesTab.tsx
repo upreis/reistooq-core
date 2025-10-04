@@ -22,49 +22,19 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  ShoppingCart,
-  Upload,
-  FileSpreadsheet
+  ShoppingCart
 } from "lucide-react";
 import { ProductSelectorShop } from "./ProductSelectorShop";
 import { useCompras } from "@/hooks/useCompras";
 import { useToast } from "@/hooks/use-toast";
-import { useDropzone } from 'react-dropzone';
-import { extrairImagensDoExcel, converterImagensParaDataURL } from '@/utils/excelImageExtractor';
 
 interface CotacoesTabProps {
   cotacoes?: any[];
   onRefresh: () => void;
 }
 
-// Mock de cotações para demonstração
-const mockCotacoes = [
-  {
-    id: '1',
-    numero_cotacao: 'COT-001',
-    descricao: 'Materiais de escritório',
-    data_abertura: '2024-01-15',
-    data_fechamento: null,
-    status: 'aberta',
-    valor_estimado: 2500.00,
-    fornecedores_convidados: 3,
-    propostas_recebidas: 1
-  },
-  {
-    id: '2',
-    numero_cotacao: 'COT-002',
-    descricao: 'Equipamentos de informática',
-    data_abertura: '2024-01-10',
-    data_fechamento: '2024-01-20',
-    status: 'fechada',
-    valor_estimado: 15000.00,
-    fornecedores_convidados: 5,
-    propostas_recebidas: 4
-  }
-];
-
 export const CotacoesTab: React.FC<CotacoesTabProps> = ({
-  cotacoes = mockCotacoes,
+  cotacoes = [], // Usar array vazio em vez de mock data
   onRefresh
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -72,10 +42,6 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [showTestUpload, setShowTestUpload] = useState(false);
-  const [isProcessingImages, setIsProcessingImages] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [processedImages, setProcessedImages] = useState([]);
   const { createCotacao } = useCompras();
   const { toast } = useToast();
   const [formData, setFormData] = useState({
@@ -180,70 +146,6 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
     }
   };
 
-  // NOVA FUNCIONALIDADE - TESTE DE UPLOAD DE IMAGENS
-  const onDropTestUpload = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (file) {
-      processExcelWithImages(file);
-    }
-  }, []);
-
-  const { getRootProps: getTestUploadRootProps, getInputProps: getTestUploadInputProps, isDragActive: isTestUploadDragActive } = useDropzone({
-    onDrop: onDropTestUpload,
-    accept: {
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
-      'application/vnd.ms-excel': ['.xls']
-    },
-    maxFiles: 1
-  });
-
-  const processExcelWithImages = async (file: File) => {
-    setIsProcessingImages(true);
-    setUploadProgress(0);
-    setProcessedImages([]);
-
-    try {
-      console.log('🔍 [TESTE] Iniciando teste de extração de imagens...');
-      setUploadProgress(20);
-
-      // PASSO 1: Extrair imagens por posição XML
-      console.log('📸 [TESTE] PASSO 1: Extraindo imagens por posicionamento...');
-      const imagensExtraidas = await extrairImagensDoExcel(file);
-      console.log('📸 [TESTE] Imagens extraídas:', imagensExtraidas.length);
-      setUploadProgress(50);
-
-      // PASSO 2: Converter para Data URL
-      console.log('🔄 [TESTE] PASSO 2: Convertendo imagens...');
-      const imagensProcessadas = await converterImagensParaDataURL(imagensExtraidas);
-      console.log('🔄 [TESTE] Imagens processadas:', imagensProcessadas.length);
-      setUploadProgress(80);
-
-      // PASSO 3: Salvar resultados
-      setProcessedImages(imagensProcessadas);
-      setUploadProgress(100);
-
-      // DEBUG DETALHADO
-      console.log('🎯 [TESTE] MAPEAMENTO FINAL:');
-      imagensProcessadas.forEach((img, i) => {
-        console.log(`  ${i + 1}. SKU: ${img.sku} → Imagem: ${img.nome}`);
-      });
-
-      toast({
-        title: "Teste concluído!",
-        description: `${imagensProcessadas.length} imagens extraídas e processadas com sucesso.`,
-      });
-
-    } catch (error) {
-      console.error('❌ [TESTE] Erro no processamento:', error);
-      toast({
-        title: "Erro no teste",
-        description: "Não foi possível processar o arquivo Excel.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessingImages(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -258,21 +160,10 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
           />
         </div>
         
-        <div className="flex gap-2">
-          <Button className="gap-2" onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4" />
-            Nova Cotação
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            className="gap-2" 
-            onClick={() => setShowTestUpload(true)}
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Teste Upload Imagens
-          </Button>
-        </div>
+        <Button className="gap-2" onClick={() => setShowForm(true)}>
+          <Plus className="h-4 w-4" />
+          Nova Cotação
+        </Button>
       </div>
 
       {/* Resumo Rápido */}
@@ -569,101 +460,6 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
                 disabled={saving}
               >
                 Cancelar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog para testar upload de imagens */}
-      <Dialog open={showTestUpload} onOpenChange={setShowTestUpload}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5" />
-              Teste de Extração de Imagens Excel
-            </DialogTitle>
-            <DialogDescription>
-              Teste nossa implementação melhorada de extração de imagens por posicionamento XML
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Upload Area */}
-            <div
-              {...getTestUploadRootProps()}
-              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-                isTestUploadDragActive 
-                  ? 'border-primary bg-primary/5' 
-                  : 'border-muted-foreground/25 hover:border-primary/50'
-              }`}
-            >
-              <input {...getTestUploadInputProps()} />
-              <FileSpreadsheet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-lg font-medium mb-2">
-                {isTestUploadDragActive 
-                  ? 'Solte o arquivo Excel aqui...' 
-                  : 'Arraste um arquivo Excel ou clique para selecionar'
-                }
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Formatos aceitos: .xlsx, .xls (com imagens incorporadas)
-              </p>
-            </div>
-
-            {/* Progresso de processamento */}
-            {isProcessingImages && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Processando imagens...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <Progress value={uploadProgress} className="w-full" />
-              </div>
-            )}
-
-            {/* Resultados do processamento */}
-            {processedImages.length > 0 && (
-              <div className="space-y-4">
-                <Alert>
-                  <CheckCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Sucesso!</strong> {processedImages.length} imagens extraídas e mapeadas corretamente.
-                  </AlertDescription>
-                </Alert>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
-                  {processedImages.map((img, index) => (
-                    <Card key={index} className="overflow-hidden">
-                      <CardContent className="p-4">
-                        <div className="aspect-square bg-gray-100 rounded-lg mb-3 overflow-hidden">
-                          <img 
-                            src={img.url} 
-                            alt={`Produto ${img.sku}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="font-medium text-sm">SKU: {img.sku}</p>
-                          <p className="text-xs text-muted-foreground">Nome: {img.nome}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setShowTestUpload(false);
-                  setProcessedImages([]);
-                  setUploadProgress(0);
-                }}
-              >
-                Fechar
               </Button>
             </div>
           </div>

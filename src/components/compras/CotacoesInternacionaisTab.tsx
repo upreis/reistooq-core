@@ -145,6 +145,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   const [isProductSelectorOpen, setIsProductSelectorOpen] = useState(false);
   const [selectedCotacao, setSelectedCotacao] = useState<CotacaoInternacional | null>(null);
   const [showNewCotacaoDialog, setShowNewCotacaoDialog] = useState(false);
+  
+  // NOTA: newCotacaoData é usado pelo NovaCotacaoDialog (modal de criação)
   const [newCotacaoData, setNewCotacaoData] = useState({
     numero_cotacao: '',
     descricao: '',
@@ -226,7 +228,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     '40': { name: "40' Dry", volume: 67.7, maxWeight: 28750 }
   };
   
-  // Estados do formulário
+  // NOTA: dadosBasicos é usado como fallback quando não há cotação selecionada
+  // É essencial para auto-save e criação de novas cotações a partir de importação
   const [dadosBasicos, setDadosBasicos] = useState({
     numero_cotacao: '',
     descricao: '',
