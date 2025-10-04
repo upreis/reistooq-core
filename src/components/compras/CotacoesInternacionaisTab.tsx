@@ -273,7 +273,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
   });
 
   // Hooks customizados
-  const { rates, updateRates, loading: ratesLoading, lastUpdate } = useCurrencyRates();
+  const { rates } = useCurrencyRates(); // Mantido apenas para conversões automáticas
   const { getCotacoesInternacionais } = useCotacoesInternacionais();
   const { 
     secureCreateCotacao, 
@@ -1595,25 +1595,12 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           {selectedCotacao && (
             <Button 
               variant="outline" 
-              onClick={async () => {
-                setSelectedCotacao(null);
-                await onRefresh(); // Recarregar lista de cotações para mostrar dados atualizados
-              }} 
+              onClick={() => setSelectedCotacao(null)} 
               size="sm"
             >
               Voltar aos Cards
             </Button>
           )}
-          <Button 
-            variant="outline" 
-            onClick={updateRates} 
-            className="gap-2"
-            disabled={ratesLoading}
-            size="sm"
-          >
-            <RefreshCw className={`h-4 w-4 ${ratesLoading ? 'animate-spin' : ''}`} />
-            {ratesLoading ? 'Atualizando...' : 'Atualizar Cotações'}
-          </Button>
         </div>
       </div>
 
@@ -1632,64 +1619,6 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
             </div>
 
             <div className="flex gap-2">
-              <Button
-                onClick={() => setShowImportDialog(true)}
-                variant="outline"
-                className="gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Template
-              </Button>
-
-              <Button
-                onClick={async () => {
-                  // Criar uma nova cotação temporária e abrir o dialog de importação
-                  const timestamp = new Date().getTime();
-                  const novaCotacao: CotacaoInternacional = {
-                    numero_cotacao: `COT-INT-${timestamp}`,
-                    descricao: 'Cotação importada',
-                    pais_origem: 'China',
-                    moeda_origem: 'CNY',
-                    fator_multiplicador: 1,
-                    data_abertura: new Date().toISOString().split('T')[0],
-                    status: 'rascunho',
-                    produtos: [],
-                    total_peso_kg: 0,
-                    total_cbm: 0,
-                    total_quantidade: 0,
-                    total_valor_origem: 0,
-                    total_valor_usd: 0,
-                    total_valor_brl: 0
-                  };
-                  
-                  // Salvar a nova cotação
-                  try {
-                    const cotacaoCriada = await silentCreateCotacao(novaCotacao);
-                    if (cotacaoCriada) {
-                      // Selecionar a cotação criada e abrir o dialog de importação
-                      setSelectedCotacao(cotacaoCriada as unknown as CotacaoInternacional);
-                      setShowImportDialog(true);
-                      toast({
-                        title: "Nova cotação criada",
-                        description: "Importe o arquivo para adicionar produtos."
-                      });
-                    }
-                  } catch (error) {
-                    console.error('Erro ao criar cotação:', error);
-                    toast({
-                      title: "Erro ao criar cotação",
-                      description: "Não foi possível criar uma nova cotação para o upload.",
-                      variant: "destructive"
-                    });
-                  }
-                }}
-                variant="outline"
-                className="gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Upload
-              </Button>
-
               <Button 
                 onClick={() => setShowNewCotacaoDialog(true)}
                 className="gap-2"
