@@ -43,6 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ProductSelector } from "./ProductSelector";
 import { useProducts } from "@/hooks/useProducts";
 import { useCompras } from "@/hooks/useCompras";
+import { formatMoney, formatDate } from "@/lib/format";
 
 // MANTÉM a interface original EXATAMENTE igual
 interface PedidosCompraTabProps {
@@ -494,16 +495,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
     );
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  // Usando funções de src/lib/format.ts para consistência com o resto do projeto
 
   // Cálculos automáticos
   const calcularTotais = () => {
@@ -664,11 +656,11 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                         step="0.01"
                         value={formData.valor_total}
                         onChange={(e) => setFormData({ ...formData, valor_total: parseFloat(e.target.value) || 0 })}
-                        placeholder={(formData.itens || []).length > 0 ? `Calculado: ${formatCurrency(totais.total)}` : "0.00"}
+                        placeholder={(formData.itens || []).length > 0 ? `Calculado: ${formatMoney(totais.total)}` : "0.00"}
                       />
                       {(formData.itens || []).length > 0 && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          Valor calculado automaticamente: {formatCurrency(totais.total)}
+                          Valor calculado automaticamente: {formatMoney(totais.total)}
                         </p>
                       )}
                     </div>
@@ -723,7 +715,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                             <div>
                               <div className="font-medium">{produto.nome}</div>
                               <div className="text-sm text-muted-foreground">
-                                SKU: {produto.sku_interno} | Custo: {formatCurrency(produto.preco_custo)}
+                                SKU: {produto.sku_interno} | Custo: {formatMoney(produto.preco_custo)}
                               </div>
                             </div>
                             <Button size="sm" variant="outline">
@@ -800,7 +792,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                                 <div>
                                   <Label className="text-xs">Total</Label>
                                   <Input
-                                    value={formatCurrency(item.valor_total)}
+                                    value={formatMoney(item.valor_total)}
                                     disabled
                                     className="h-8"
                                   />
@@ -836,11 +828,11 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                           <div className="text-sm text-muted-foreground">Quantidade</div>
                         </div>
                         <div>
-                          <div className="text-2xl font-bold">{formatCurrency(totais.subtotal)}</div>
+                          <div className="text-2xl font-bold">{formatMoney(totais.subtotal)}</div>
                           <div className="text-sm text-muted-foreground">Subtotal</div>
                         </div>
                         <div>
-                          <div className="text-2xl font-bold text-green-600">{formatCurrency(totais.total)}</div>
+                          <div className="text-2xl font-bold text-green-600">{formatMoney(totais.total)}</div>
                           <div className="text-sm text-muted-foreground">Total</div>
                         </div>
                       </div>
@@ -1068,24 +1060,24 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Subtotal produtos:</span>
-                            <span>{formatCurrency(totais.subtotal)}</span>
+                            <span>{formatMoney(totais.subtotal)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Frete:</span>
-                            <span>{formatCurrency(totais.frete)}</span>
+                            <span>{formatMoney(totais.frete)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Seguro:</span>
-                            <span>{formatCurrency(totais.seguro)}</span>
+                            <span>{formatMoney(totais.seguro)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Outras despesas:</span>
-                            <span>{formatCurrency(totais.outras)}</span>
+                            <span>{formatMoney(totais.outras)}</span>
                           </div>
                           <Separator />
                           <div className="flex justify-between font-semibold">
                             <span>Total:</span>
-                            <span>{formatCurrency(totais.total)}</span>
+                            <span>{formatMoney(totais.total)}</span>
                           </div>
                         </div>
                       </div>
@@ -1112,8 +1104,8 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                                   <TableCell className="font-medium">{item.produto_nome}</TableCell>
                                   <TableCell className="text-muted-foreground">{item.produto_sku}</TableCell>
                                   <TableCell className="text-center">{item.quantidade}</TableCell>
-                                  <TableCell className="text-right">{formatCurrency(item.valor_unitario)}</TableCell>
-                                  <TableCell className="text-right font-semibold">{formatCurrency(item.valor_total)}</TableCell>
+                                  <TableCell className="text-right">{formatMoney(item.valor_unitario)}</TableCell>
+                                  <TableCell className="text-right font-semibold">{formatMoney(item.valor_total)}</TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -1192,7 +1184,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                   <TableCell>{pedido.fornecedor_nome}</TableCell>
                   <TableCell>{formatDate(pedido.data_pedido)}</TableCell>
                   <TableCell>{getStatusBadge(pedido.status)}</TableCell>
-                  <TableCell>{formatCurrency(pedido.valor_total)}</TableCell>
+                  <TableCell>{formatMoney(pedido.valor_total)}</TableCell>
                   <TableCell>
                     <div className="flex gap-2">
                       <Button
@@ -1326,7 +1318,7 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                 </div>
                 <div>
                   <Label>Valor Total</Label>
-                  <p className="font-medium text-lg">{formatCurrency(viewingPedido.valor_total)}</p>
+                  <p className="font-medium text-lg">{formatMoney(viewingPedido.valor_total)}</p>
                 </div>
               </div>
               
@@ -1353,9 +1345,9 @@ export const PedidosCompraTab: React.FC<PedidosCompraTabProps> = ({
                             </TableCell>
                             <TableCell>{item.produtos?.sku_interno}</TableCell>
                             <TableCell className="text-center">{item.quantidade}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(item.valor_unitario)}</TableCell>
+                            <TableCell className="text-right">{formatMoney(item.valor_unitario)}</TableCell>
                             <TableCell className="text-right font-medium">
-                              {formatCurrency(item.quantidade * item.valor_unitario)}
+                              {formatMoney(item.quantidade * item.valor_unitario)}
                             </TableCell>
                           </TableRow>
                         ))}

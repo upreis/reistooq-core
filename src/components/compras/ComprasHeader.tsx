@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Settings
 } from "lucide-react";
+import { formatMoney } from "@/lib/format";
 
 interface ComprasHeaderProps {
   activeTab: string;
@@ -81,7 +82,7 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
             <div>
               <p className="text-sm text-muted-foreground">Valor Mês</p>
               <p className="text-lg font-semibold">
-                {stats.valor_total_mes ? formatCurrency(stats.valor_total_mes) : 'R$ 0'}
+                {stats.valor_total_mes ? formatMoney(stats.valor_total_mes) : 'R$ 0'}
               </p>
             </div>
           </div>

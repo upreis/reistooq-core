@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertTriangle
 } from "lucide-react";
+import { formatMoney } from "@/lib/format";
 
 interface ComprasStatsProps {
   fornecedores: any[];
@@ -34,12 +35,7 @@ export const ComprasStats: React.FC<ComprasStatsProps> = ({
   
   const valorTotalPedidos = pedidosCompra.reduce((acc, p) => acc + (p.valor_total || 0), 0);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // Usando formatMoney de src/lib/format.ts para consistência
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -113,11 +109,11 @@ export const ComprasStats: React.FC<ComprasStatsProps> = ({
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
-            {formatCurrency(valorTotalPedidos)}
+            {formatMoney(valorTotalPedidos)}
           </div>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-orange-600 dark:text-orange-400">
-              {totalPedidos > 0 ? `Média: ${formatCurrency(valorTotalPedidos / totalPedidos)}` : 'Sem pedidos'}
+              {totalPedidos > 0 ? `Média: ${formatMoney(valorTotalPedidos / totalPedidos)}` : 'Sem pedidos'}
             </span>
           </div>
         </CardContent>

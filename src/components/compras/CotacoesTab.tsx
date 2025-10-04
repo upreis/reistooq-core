@@ -27,6 +27,7 @@ import {
 import { ProductSelectorShop } from "./ProductSelectorShop";
 import { useCompras } from "@/hooks/useCompras";
 import { useToast } from "@/hooks/use-toast";
+import { formatMoney, formatDate } from "@/lib/format";
 
 interface CotacoesTabProps {
   cotacoes?: any[];
@@ -74,16 +75,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
     );
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
-  };
+  // Usando funções de src/lib/format.ts para consistência com o resto do projeto
 
   const handleCreateCotacao = async () => {
     if (!formData.descricao) {
@@ -215,7 +207,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
               <div>
                 <p className="text-sm text-muted-foreground">Valor Total</p>
                 <p className="text-2xl font-bold">
-                  {formatCurrency(
+                  {formatMoney(
                     cotacoes.reduce((total, c) => total + (c.valor_estimado || 0), 0)
                   )}
                 </p>
@@ -274,7 +266,7 @@ export const CotacoesTab: React.FC<CotacoesTabProps> = ({
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <DollarSign className="h-3 w-3 text-muted-foreground" />
-                      {formatCurrency(cotacao.valor_estimado)}
+                      {formatMoney(cotacao.valor_estimado)}
                     </div>
                   </TableCell>
                   <TableCell>

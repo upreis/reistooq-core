@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Package, ShoppingCart, Minus, Plus } from "lucide-react";
 import { useProducts } from "@/hooks/useProducts";
+import { formatMoney } from "@/lib/format";
 
 interface Product {
   id: string;
@@ -105,12 +106,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
     onOpenChange(false);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // Usando formatMoney de src/lib/format.ts para consistência
 
   const getStockStatus = (product: Product) => {
     const percentage = (product.quantidade_atual / (product.estoque_minimo || 1)) * 100;
@@ -169,7 +165,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-primary">
-                    {formatCurrency(totalValue)}
+                    {formatMoney(totalValue)}
                   </div>
                   <div className="text-sm text-muted-foreground">Total</div>
                 </div>
@@ -223,7 +219,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
                       </TableCell>
                       <TableCell>
                         <div className="font-medium">
-                          {formatCurrency(product.preco_custo)}
+                          {formatMoney(product.preco_custo)}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -289,7 +285,7 @@ export const ProductSelector: React.FC<ProductSelectorProps> = ({
           <div className="text-sm text-muted-foreground">
             {selectedCount > 0 && (
               <span>
-                {selectedCount} produto(s) selecionado(s) • Total: {formatCurrency(totalValue)}
+                {selectedCount} produto(s) selecionado(s) • Total: {formatMoney(totalValue)}
               </span>
             )}
           </div>

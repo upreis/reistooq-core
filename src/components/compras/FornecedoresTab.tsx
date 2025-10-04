@@ -22,6 +22,7 @@ import {
   AlertTriangle,
   Users
 } from "lucide-react";
+import { formatMoney } from "@/lib/format";
 
 interface FornecedoresTabProps {
   fornecedores?: any[];
@@ -161,7 +162,7 @@ export const FornecedoresTab: React.FC<FornecedoresTabProps> = ({
               <Users className="h-8 w-8 text-purple-600" />
               <div>
                 <p className="text-sm text-muted-foreground">Volume Total</p>
-                <p className="text-2xl font-bold">{formatCurrency(valorTotalGeral)}</p>
+                <p className="text-2xl font-bold">{formatMoney(valorTotalGeral)}</p>
               </div>
             </div>
           </CardContent>
