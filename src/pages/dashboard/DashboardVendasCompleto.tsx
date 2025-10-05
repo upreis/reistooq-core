@@ -95,13 +95,6 @@ export default function DashboardVendasCompleto() {
         onPeriodChange={setSelectedPeriod}
       />
       
-      {/* Cards de Métricas */}
-      <VendasMetricsCards
-        metrics={metrics}
-        analytics={analytics}
-        isLoading={isLoading}
-      />
-      
       {/* Layout Principal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráficos - 2 colunas */}
