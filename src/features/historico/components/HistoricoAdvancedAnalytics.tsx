@@ -444,13 +444,13 @@ export const HistoricoAdvancedAnalytics: React.FC<HistoricoAdvancedAnalyticsProp
                 <ResponsiveContainer width="100%" height={300}>
                   <RechartsPieChart>
                     <Pie
-                      data={customerSegments}
+                      data={customerSegments as any}
                       dataKey="count"
                       nameKey="segment"
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={({ segment, count }) => `${segment}: ${count}`}
+                      label={({ segment, count }: any) => `${segment}: ${count}`}
                     >
                       {customerSegments.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
