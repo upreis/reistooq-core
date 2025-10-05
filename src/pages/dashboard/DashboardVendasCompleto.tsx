@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { BarChart3, Download, RefreshCw } from 'lucide-react';
 import { useDashboardVendas } from '@/features/dashboard/hooks/useDashboardVendas';
 import { VendasFilters } from './components/VendasFilters';
-import { VendasMetricsCards } from './components/VendasMetricsCards';
 import { VendasCharts } from './components/VendasCharts';
 import { VendasMap } from './components/VendasMap';
 import { VendasTable } from './components/VendasTable';
@@ -17,7 +16,6 @@ export default function DashboardVendasCompleto() {
     vendas,
     allVendas,
     analytics,
-    metrics,
     isLoading,
     filters,
     selectedPeriod,
