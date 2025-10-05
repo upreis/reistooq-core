@@ -21,7 +21,7 @@ import { useShopProducts } from "../hooks/useShopProducts";
 import { ShopFilters } from "./ShopFilters";
 import { ProductCard } from "./ProductCard";
 import { ShopProduct } from "../types/shop.types";
-import { SalesStatsCard as StatsCard } from "@/components/dashboard/SalesStatsCard";
+import { StatsCard } from "@/components/dashboard/StatsCard";
 
 export function ShopAdvancedPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');

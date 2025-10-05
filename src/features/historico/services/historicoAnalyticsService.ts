@@ -51,29 +51,6 @@ export class HistoricoAnalyticsService {
       const valorSemana = vendasSemana.reduce((sum, v) => sum + (v.valor_total || 0), 0);
       const valorMes = vendasMes.reduce((sum, v) => sum + (v.valor_total || 0), 0);
 
-      // Contar pedidos por status
-      const pedidosPorStatus = vendas.reduce((acc, venda) => {
-        const status = venda.status?.toLowerCase() || 'outros';
-        const situacao = venda.situacao?.toLowerCase() || '';
-        
-        acc.total++;
-        
-        // Categorizar por status/situação
-        if (status.includes('pendente') || status.includes('aguardando') || situacao.includes('pendente')) {
-          acc.pendentes++;
-        } else if (status.includes('processando') || status.includes('preparando') || situacao.includes('preparando') || situacao.includes('transporte') || situacao.includes('enviado')) {
-          acc.processando++;
-        } else if (status.includes('concluida') || status.includes('entregue') || situacao.includes('entregue')) {
-          acc.entregues++;
-        } else if (status.includes('cancelad') || situacao.includes('cancelad')) {
-          acc.cancelados++;
-        } else {
-          acc.processando++; // Default para processando
-        }
-        
-        return acc;
-      }, { total: 0, pendentes: 0, processando: 0, entregues: 0, cancelados: 0 });
-
       // Top produtos vendidos
       const produtosCounts = vendas.reduce((acc, venda) => {
         const key = `${venda.sku_produto}_${venda.descricao}`;
@@ -142,7 +119,6 @@ export class HistoricoAnalyticsService {
           crescimentoSemanal: valorSemana > 0 ? ((valorHoje - valorOntem) / valorSemana) * 100 : 0,
           crescimentoMensal: valorMes > 0 ? ((valorSemana - (valorMes - valorSemana)) / (valorMes - valorSemana)) * 100 : 0
         },
-        pedidos: pedidosPorStatus,
         produtos: {
           topVendidos: topVendidos as any[],
           categorias: [] // Implementar se houver campo categoria
