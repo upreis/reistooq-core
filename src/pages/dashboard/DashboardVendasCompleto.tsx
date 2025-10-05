@@ -1,68 +1,41 @@
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { 
-  BarChart3, DollarSign, TrendingUp, Users, 
-  Package, Download
-} from 'lucide-react';
-import { useHistoricoVendas } from '@/features/historico/hooks/useHistoricoVendas';
-import { HistoricoAnalyticsService } from '@/features/historico/services/historicoAnalyticsService';
+import { BarChart3, Download, RefreshCw } from 'lucide-react';
+import { useDashboardVendas } from '@/features/dashboard/hooks/useDashboardVendas';
 import { VendasFilters } from './components/VendasFilters';
 import { VendasMetricsCards } from './components/VendasMetricsCards';
+import { VendasCharts } from './components/VendasCharts';
+import { VendasMap } from './components/VendasMap';
 import { VendasTable } from './components/VendasTable';
+import { VendasExportModal } from './components/VendasExportModal';
 
 export default function DashboardVendasCompleto() {
-  const [filters, setFilters] = useState({
-    dataInicio: '',
-    dataFim: '',
-    empresas: [],
-    status: [],
-    uf: [],
-    cidades: [],
-    skus: [],
-    produtos: []
-  });
-  
-  const [selectedPeriod, setSelectedPeriod] = useState('30d');
-  
-  const { data: historicoData, isLoading } = useHistoricoVendas(1, 1000);
-  const vendas = historicoData?.data || [];
-  
-  const analytics = useMemo(() => {
-    if (!vendas.length) return null;
-    return HistoricoAnalyticsService.getAnalytics();
-  }, [vendas]);
-  
-  const metrics = useMemo(() => {
-    if (!vendas.length) return null;
-    
-    const hoje = new Date().toISOString().split('T')[0];
-    const ontem = new Date(Date.now() - 86400000).toISOString().split('T')[0];
-    
-    const vendasHoje = vendas.filter(v => v.data_pedido === hoje);
-    const vendasOntem = vendas.filter(v => v.data_pedido === ontem);
-    
-    const valorHoje = vendasHoje.reduce((sum, v) => sum + (v.valor_total || 0), 0);
-    const valorOntem = vendasOntem.reduce((sum, v) => sum + (v.valor_total || 0), 0);
-    
-    const crescimentoVendas = valorOntem > 0 ? ((valorHoje - valorOntem) / valorOntem) * 100 : 0;
-    
-    return {
-      vendasHoje: {
-        valor: valorHoje,
-        quantidade: vendasHoje.length,
-        crescimento: crescimentoVendas
-      },
-      totalVendas: vendas.length,
-      valorTotal: vendas.reduce((sum, v) => sum + (v.valor_total || 0), 0),
-      ticketMedio: vendas.length > 0 ? vendas.reduce((sum, v) => sum + (v.valor_total || 0), 0) / vendas.length : 0,
-      clientesUnicos: new Set(vendas.map(v => v.cliente_nome).filter(Boolean)).size,
-      produtosUnicos: new Set(vendas.map(v => v.sku_produto).filter(Boolean)).size
-    };
-  }, [vendas]);
-  
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [selectedState, setSelectedState] = useState<any>(null);
+
+  const {
+    vendas,
+    allVendas,
+    analytics,
+    metrics,
+    isLoading,
+    filters,
+    selectedPeriod,
+    hasActiveFilters,
+    handleFilterChange,
+    setSelectedPeriod,
+    clearFilters,
+    refetch
+  } = useDashboardVendas();
+
+  const handleStateClick = (stateData: any) => {
+    if (stateData) {
+      setSelectedState(stateData);
+      handleFilterChange({ uf: [stateData.uf] });
+    } else {
+      setSelectedState(null);
+      handleFilterChange({ uf: [] });
+    }
   };
   
   if (isLoading) {
@@ -83,12 +56,30 @@ export default function DashboardVendasCompleto() {
           </div>
           <div>
             <h1 className="text-2xl font-bold">Dashboard de Vendas</h1>
-            <p className="text-muted-foreground">Análise completa das vendas com dados em tempo real</p>
+            <p className="text-muted-foreground">
+              Análise completa com {allVendas.length.toLocaleString()} registros
+              {hasActiveFilters && ` (${vendas.length.toLocaleString()} filtrados)`}
+            </p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setExportModalOpen(true)}
+            disabled={vendas.length === 0}
+          >
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
@@ -99,7 +90,7 @@ export default function DashboardVendasCompleto() {
       <VendasFilters
         filters={filters}
         onFiltersChange={handleFilterChange}
-        vendas={vendas}
+        vendas={allVendas}
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
       />
@@ -111,10 +102,39 @@ export default function DashboardVendasCompleto() {
         isLoading={isLoading}
       />
       
+      {/* Layout Principal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gráficos - 2 colunas */}
+        <div className="lg:col-span-2 space-y-6">
+          <VendasCharts
+            analytics={analytics}
+            vendas={vendas}
+            filters={filters}
+          />
+        </div>
+        
+        {/* Mapa - 1 coluna */}
+        <div className="space-y-6">
+          <VendasMap
+            analytics={analytics}
+            onStateClick={handleStateClick}
+            selectedState={selectedState}
+          />
+        </div>
+      </div>
+      
       {/* Tabela de Dados */}
       <VendasTable
         vendas={vendas}
         filters={filters}
+        analytics={analytics}
+      />
+      
+      {/* Modal de Exportação */}
+      <VendasExportModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        vendas={vendas}
         analytics={analytics}
       />
     </div>
