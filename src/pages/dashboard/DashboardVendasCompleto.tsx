@@ -10,6 +10,7 @@ import { BrazilMap } from './components/BrazilMap';
 import { DashboardCharts } from './components/DashboardCharts';
 import { DashboardStatusCards } from './components/DashboardStatusCards';
 import { DashboardProductsTable } from './components/DashboardProductsTable';
+import { normalizarUF } from '@/utils/estadosBrasil';
 
 export default function DashboardVendasCompleto() {
   const [exportModalOpen, setExportModalOpen] = useState(false);
@@ -145,7 +146,9 @@ export default function DashboardVendasCompleto() {
 
     // State data for map
     const stateGroups = vendas.reduce((acc, v) => {
-      const uf = v.uf || 'Outros';
+      const ufOriginal = v.uf || 'Outros';
+      const uf = normalizarUF(ufOriginal); // Converte nome completo para sigla
+      
       if (!acc[uf]) {
         acc[uf] = { uf, vendas: 0, valor: 0, pedidos: 0, cidades: {} as Record<string, any> };
       }
