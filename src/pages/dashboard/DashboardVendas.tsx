@@ -1,11 +1,20 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ShoppingCart, DollarSign, TrendingUp, Users, Package, MapPin, Calendar, BarChart3 } from 'lucide-react';
+import { 
+  ShoppingCart, DollarSign, TrendingUp, Users, Package, MapPin, 
+  Calendar, BarChart3, CreditCard, TrendingDown, Globe 
+} from 'lucide-react';
 import { SalesFilters, SalesFilterState } from '@/features/dashboard/components/SalesFilters';
 import { useSalesAnalytics } from '@/features/dashboard/hooks/useSalesAnalytics';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { 
+  Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend, 
+  Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis 
+} from 'recharts';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BrazilMap } from '@/components/dashboard/BrazilMap';
+import { SalesStatsCard } from '@/components/dashboard/SalesStatsCard';
+import { CongratualtionsWidget } from '@/components/dashboard/CongratulatoinsWidget';
 
 export default function DashboardVendas() {
   const [filters, setFilters] = useState<SalesFilterState>({ periodo: 'mes' });
@@ -100,72 +109,94 @@ export default function DashboardVendas() {
     );
   }
 
+  // Preparar dados para mini gráficos
+  const miniChartData = temporal.slice(-7).map(item => ({ value: item.valor }));
+  const ordersChartData = temporal.slice(-7).map(item => ({ value: item.vendas }));
+  
+  // Stats para widget de congratulações
+  const congratsStats = {
+    newOrders: Math.floor(vendas.hoje * 0.6),
+    onHold: Math.floor(vendas.hoje * 0.15),
+    delivered: Math.floor(vendas.hoje * 0.25)
+  };
+
   return (
     <div className="space-y-6">
       {/* Filtros */}
       <SalesFilters onFilterChange={handleFilterChange} onReset={handleReset} />
 
-      {/* Cards de Métricas Principais */}
+      {/* Widget de Congratulações */}
+      <CongratualtionsWidget
+        salesGrowth={vendas.crescimentoDiario}
+        stats={congratsStats}
+        chartData={miniChartData}
+      />
+
+      {/* Cards de Métricas Principais com Mini Charts */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Vendas do Período</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vendas.mes.toLocaleString()}</div>
-            <p className={`text-xs ${vendas.crescimentoMensal >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {vendas.crescimentoMensal >= 0 ? '+' : ''}{vendas.crescimentoMensal.toFixed(1)}% vs período anterior
-            </p>
-          </CardContent>
-        </Card>
+        <SalesStatsCard
+          title="Faturamento Total"
+          value={valorTotalMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+          icon={DollarSign}
+          trend={{ value: vendas.crescimentoMensal, label: 'vs período anterior' }}
+          iconBgClass="bg-emerald-500/10 text-emerald-500"
+          miniChart={
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={miniChartData}>
+                <defs>
+                  <linearGradient id="miniGradient1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(142 76% 36%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="value" stroke="hsl(142 76% 36%)" fill="url(#miniGradient1)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          }
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Faturamento</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {valorTotalMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Total do período selecionado
-            </p>
-          </CardContent>
-        </Card>
+        <SalesStatsCard
+          title="Total de Vendas"
+          value={vendas.mes.toLocaleString()}
+          icon={ShoppingCart}
+          trend={{ value: vendas.crescimentoMensal, label: 'vs período anterior' }}
+          subtitle="Últimos 7 dias"
+          iconBgClass="bg-blue-500/10 text-blue-500"
+          miniChart={
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={ordersChartData}>
+                <defs>
+                  <linearGradient id="miniGradient2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(217 91% 60%)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="hsl(217 91% 60%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Area type="monotone" dataKey="value" stroke="hsl(217 91% 60%)" fill="url(#miniGradient2)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          }
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ticket Médio</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Valor médio por venda
-            </p>
-          </CardContent>
-        </Card>
+        <SalesStatsCard
+          title="Ticket Médio"
+          value={ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          icon={TrendingUp}
+          subtitle="Valor médio por venda"
+          iconBgClass="bg-amber-500/10 text-amber-500"
+        />
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pedidos</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{clientesUnicos.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              Total de pedidos processados
-            </p>
-          </CardContent>
-        </Card>
+        <SalesStatsCard
+          title="Total de Pedidos"
+          value={clientesUnicos.toLocaleString()}
+          icon={Package}
+          subtitle="Pedidos processados"
+          iconBgClass="bg-purple-500/10 text-purple-500"
+        />
       </div>
 
-      {/* Gráfico de Evolução de Vendas */}
-      <Card>
+      {/* Gráfico de Evolução de Vendas + Mapa do Brasil */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
@@ -231,54 +262,56 @@ export default function DashboardVendas() {
         </CardContent>
       </Card>
 
-      {/* Análise Geográfica e Produtos */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Vendas por Estado */}
+        {/* Mapa do Brasil */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Vendas por Estado
+              <Globe className="h-5 w-5" />
+              Vendas no Brasil
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={estadosChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {estadosChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: number) => [`R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 'Faturamento']}
-                  contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            <BrazilMap data={estados} />
             <div className="mt-4 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Maior concentração</span>
+                <span className="flex items-center gap-2">
+                  <div className="h-3 w-8 bg-primary rounded" />
+                  <span>Alto</span>
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Menor concentração</span>
+                <span className="flex items-center gap-2">
+                  <div className="h-3 w-8 bg-primary/20 rounded" />
+                  <span>Baixo</span>
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t space-y-2">
               {estados.slice(0, 5).map((estado, index) => (
-                <div key={estado.uf} className="flex justify-between text-sm">
-                  <span className="flex items-center gap-2">
-                    <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    {estado.uf}
-                  </span>
-                  <span className="font-medium">
-                    {estado.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </span>
+                <div key={estado.uf} className="flex justify-between items-center text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded bg-muted text-xs font-medium">
+                      {index + 1}
+                    </div>
+                    <span className="font-medium">{estado.uf}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium text-xs">
+                      {estado.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{estado.vendas} vendas</div>
+                  </div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Análise de Produtos e Pagamentos */}
+      <div className="grid gap-6 md:grid-cols-2">
 
         {/* Top Produtos */}
         <Card>
