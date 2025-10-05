@@ -94,6 +94,13 @@ export interface HistoricoAnalytics {
     crescimentoSemanal: number;
     crescimentoMensal: number;
   };
+  pedidos: {
+    total: number;
+    pendentes: number;
+    processando: number;
+    entregues: number;
+    cancelados: number;
+  };
   produtos: {
     topVendidos: Array<{
       sku: string;

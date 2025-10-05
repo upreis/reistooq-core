@@ -113,11 +113,11 @@ export default function DashboardVendas() {
   const miniChartData = temporal.slice(-7).map(item => ({ value: item.valor }));
   const ordersChartData = temporal.slice(-7).map(item => ({ value: item.vendas }));
   
-  // Stats para widget de congratulações
+  // Stats com dados reais do histórico
   const congratsStats = {
-    newOrders: Math.floor(vendas.hoje * 0.6),
-    onHold: Math.floor(vendas.hoje * 0.15),
-    delivered: Math.floor(vendas.hoje * 0.25)
+    newOrders: analytics?.pedidos?.processando || 0,
+    onHold: analytics?.pedidos?.pendentes || 0,
+    delivered: analytics?.pedidos?.entregues || 0
   };
 
   return (
