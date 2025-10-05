@@ -14,6 +14,10 @@ interface SalesStatsCardProps {
   subtitle?: string;
   iconBgClass?: string;
   miniChart?: React.ReactNode;
+  // Legacy props for backward compatibility
+  change?: string;
+  changeType?: 'positive' | 'negative' | 'neutral';
+  gradient?: string;
 }
 
 export function SalesStatsCard({
@@ -23,9 +27,15 @@ export function SalesStatsCard({
   trend,
   subtitle,
   iconBgClass = 'bg-primary/10',
-  miniChart
+  miniChart,
+  change,
+  changeType,
+  gradient
 }: SalesStatsCardProps) {
   const isPositive = trend && trend.value >= 0;
+  
+  // Determine badge variant from changeType (legacy support)
+  const badgeVariant = changeType === 'positive' ? 'default' : changeType === 'negative' ? 'destructive' : 'secondary';
 
   return (
     <Card className="relative overflow-hidden">
@@ -41,6 +51,9 @@ export function SalesStatsCard({
               >
                 {isPositive ? '↑' : '↓'} {Math.abs(trend.value).toFixed(1)}%
               </Badge>
+            )}
+            {change && !trend && (
+              <p className="text-xs text-muted-foreground mt-2">{change}</p>
             )}
             {subtitle && (
               <p className="text-xs text-muted-foreground mt-2">{subtitle}</p>

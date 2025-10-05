@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { StatsCard } from "@/components/dashboard/StatsCard";
+import { SalesStatsCard as StatsCard } from "@/components/dashboard/SalesStatsCard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Bell, Clock, CheckCircle, Settings, X, Filter, Search } from "lucide-react";

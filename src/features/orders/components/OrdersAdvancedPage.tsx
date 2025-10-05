@@ -2,7 +2,7 @@ import React, { memo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { StatsCard } from "@/components/dashboard/StatsCard";
+import { SalesStatsCard as StatsCard } from "@/components/dashboard/SalesStatsCard";
 import { OrdersTable } from "@/components/orders/OrdersTable";
 import { OrdersAdvancedFilters } from "./OrdersAdvancedFilters";
 import { OrdersBulkOperations } from "./OrdersBulkOperations";
