@@ -131,6 +131,8 @@ export default function DashboardVendas() {
         salesGrowth={vendas.crescimentoDiario}
         stats={congratsStats}
         chartData={miniChartData}
+        totalOrders={clientesUnicos}
+        totalSales={valorTotalMes}
       />
 
       {/* Cards de Métricas Principais com Mini Charts */}

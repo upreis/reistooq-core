@@ -12,14 +12,23 @@ interface CongratualtionsWidgetProps {
     delivered: number;
   };
   chartData: Array<{ value: number }>;
+  totalOrders: number;
+  totalSales: number;
 }
 
 export function CongratualtionsWidget({ 
   salesGrowth, 
   userName = 'Usuário',
   stats,
-  chartData 
+  chartData,
+  totalOrders,
+  totalSales
 }: CongratualtionsWidgetProps) {
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return num.toString();
+  };
   return (
     <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-primary/20">
       <CardContent className="p-6">
@@ -93,10 +102,17 @@ export function CongratualtionsWidget({
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full">
                 <TrendingUp className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">
-                  Pedidos: <span className="text-primary">276k</span>
+                  Pedidos: <span className="text-primary">{formatNumber(totalOrders)}</span>
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">Vendas: $4,679 (↑ 28.14%)</p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Vendas: {totalSales.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })} 
+                {salesGrowth !== 0 && (
+                  <span className={salesGrowth > 0 ? 'text-emerald-500' : 'text-red-500'}>
+                    {' '}(↑ {Math.abs(salesGrowth).toFixed(2)}%)
+                  </span>
+                )}
+              </p>
             </div>
           </div>
         </div>
