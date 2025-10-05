@@ -30,9 +30,34 @@ export function useCotacoesInternacionais() {
     try {
       setLoading(true);
       
+      // ⚡ OTIMIZAÇÃO: Buscar SEM o campo produtos (muito pesado ~4.5MB cada)
+      // Produtos serão carregados apenas quando a cotação for aberta
       const { data, error } = await supabase
         .from('cotacoes_internacionais')
-        .select('*')
+        .select(`
+          id,
+          numero_cotacao,
+          descricao,
+          pais_origem,
+          moeda_origem,
+          fator_multiplicador,
+          data_abertura,
+          data_fechamento,
+          status,
+          observacoes,
+          container_tipo,
+          total_peso_kg,
+          total_cbm,
+          total_quantidade,
+          total_valor_origem,
+          total_valor_usd,
+          total_valor_brl,
+          created_at,
+          created_by,
+          updated_at,
+          updated_by,
+          organization_id
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -40,7 +65,13 @@ export function useCotacoesInternacionais() {
         throw error;
       }
 
-      return data || [];
+      // Retornar com produtos como array vazio (serão carregados depois)
+      const cotacoesComProdutosVazios = (data || []).map(cotacao => ({
+        ...cotacao,
+        produtos: [] // Produtos serão carregados sob demanda
+      }));
+
+      return cotacoesComProdutosVazios;
     } catch (error) {
       console.error('Erro ao buscar cotações internacionais:', error);
       toast({
@@ -51,6 +82,32 @@ export function useCotacoesInternacionais() {
       return [];
     } finally {
       setLoading(false);
+    }
+  }, [toast]);
+
+  // Nova função para buscar uma cotação específica COM produtos
+  const getCotacaoById = useCallback(async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('cotacoes_internacionais')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error('Erro ao buscar cotação:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao buscar cotação:', error);
+      toast({
+        title: "Erro ao carregar cotação",
+        description: "Não foi possível carregar os detalhes da cotação.",
+        variant: "destructive",
+      });
+      return null;
     }
   }, [toast]);
 
@@ -181,6 +238,7 @@ export function useCotacoesInternacionais() {
   return {
     loading,
     getCotacoesInternacionais,
+    getCotacaoById, // Nova função
     createCotacaoInternacional,
     updateCotacaoInternacional,
     deleteCotacaoInternacional,

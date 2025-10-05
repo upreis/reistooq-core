@@ -28,12 +28,15 @@ export default function CotacoesPage() {
       const [cotacoesData, fornecedoresData, cotacoesInternacionaisData] = await Promise.all([
         getCotacoes(),
         getFornecedores(),
-        getCotacoesInternacionais()
+        getCotacoesInternacionais() // Agora retorna apenas metadados, sem produtos pesados
       ]);
       setCotacoes(cotacoesData);
       setFornecedores(fornecedoresData);
       setCotacoesInternacionais(cotacoesInternacionaisData);
+      
+      console.log('✅ Cotações internacionais carregadas:', cotacoesInternacionaisData.length);
     } catch (error) {
+      console.error('❌ Erro ao carregar cotações:', error);
       toast({
         title: "Erro ao carregar cotações",
         description: "Não foi possível carregar os dados.",

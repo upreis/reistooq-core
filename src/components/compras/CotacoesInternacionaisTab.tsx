@@ -273,7 +273,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
 
   // Hooks customizados
   const { rates } = useCurrencyRates(); // Mantido apenas para conversões automáticas
-  const { getCotacoesInternacionais } = useCotacoesInternacionais();
+  const { getCotacoesInternacionais, getCotacaoById } = useCotacoesInternacionais();
   const { 
     secureCreateCotacao, 
     secureUpdateCotacao, 
@@ -1668,46 +1668,65 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                   isSelectMode={isSelectMode}
                   isSelected={selectedCotacoes.includes(cotacao.id!)}
                   onSelect={selectCotacao}
-                  onClick={() => {
+                  onClick={async () => {
                     // Mostrar loading
                     setIsLoadingProducts(true);
                     
-                    // Limpar sessionStorage e carregar produtos dessa cotação
-                    SessionStorageManager.clearProducts();
-                    
-                    // Carregar produtos da cotação selecionada do campo produtos (JSONB)
-                    const produtosCotacao = Array.isArray(cotacao.produtos) ? cotacao.produtos : [];
-                    
-                    console.log('🔍 [CARREGANDO COTAÇÃO] ==================== INÍCIO ====================');
-                    console.log('🔍 [CARREGANDO COTAÇÃO] Total de produtos:', produtosCotacao.length);
-                    console.log('🔍 [CARREGANDO COTAÇÃO] Dados brutos do JSONB:', JSON.stringify(cotacao.produtos).substring(0, 500));
-                    
-                    produtosCotacao.slice(0, 5).forEach((p, i) => {
-                      console.log(`🔍 [CARREGANDO COTAÇÃO] Produto ${i} (${p.sku}):`, {
-                        temImagem: !!p.imagem,
-                        imagemTipo: p.imagem ? (p.imagem.startsWith('data:') ? 'base64' : p.imagem.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
-                        imagemInicio: p.imagem?.substring(0, 50),
-                        temImagemFornecedor: !!p.imagem_fornecedor,
-                        imagemFornecedorTipo: p.imagem_fornecedor ? (p.imagem_fornecedor.startsWith('data:') ? 'base64' : p.imagem_fornecedor.startsWith('blob:') ? 'blob' : 'outro') : 'vazio',
-                        imagemFornecedorInicio: p.imagem_fornecedor?.substring(0, 50),
-                        todasChaves: Object.keys(p)
-                      });
-                    });
-                    
-                    // Usar setTimeout para dar tempo da UI atualizar com o skeleton
-                    setTimeout(() => {
-                      setProductData(produtosCotacao);
-                      setHasImportedData(produtosCotacao.length > 0);
+                    try {
+                      console.log('🔍 [CARREGANDO COTAÇÃO] ==================== INÍCIO ====================');
+                      console.log('🔍 [CARREGANDO COTAÇÃO] ID:', cotacao.id);
                       
-                      // Salvar no sessionStorage
-                      if (produtosCotacao.length > 0) {
-                        SessionStorageManager.saveProducts(produtosCotacao);
+                      // Limpar sessionStorage
+                      SessionStorageManager.clearProducts();
+                      
+                      // ⚡ OTIMIZAÇÃO: Buscar cotação completa COM produtos apenas agora
+                      const cotacaoCompleta = await getCotacaoById(cotacao.id!);
+                      
+                      if (!cotacaoCompleta) {
+                        toast({
+                          title: "Erro ao carregar cotação",
+                          description: "Não foi possível carregar os produtos.",
+                          variant: "destructive"
+                        });
+                        setIsLoadingProducts(false);
+                        return;
                       }
                       
-                      setSelectedCotacao(cotacao);
+                      // Carregar produtos da cotação selecionada do campo produtos (JSONB)
+                      const produtosCotacao = Array.isArray(cotacaoCompleta.produtos) ? cotacaoCompleta.produtos : [];
+                      
+                      console.log('🔍 [CARREGANDO COTAÇÃO] Total de produtos:', produtosCotacao.length);
+                      
+                      // Converter para o tipo correto
+                      const cotacaoConvertida = {
+                        ...cotacaoCompleta,
+                        produtos: produtosCotacao
+                      } as unknown as CotacaoInternacional;
+                      
+                      // Usar setTimeout para dar tempo da UI atualizar com o skeleton
+                      setTimeout(() => {
+                        setProductData(produtosCotacao as any);
+                        setHasImportedData(produtosCotacao.length > 0);
+                        
+                        // Salvar no sessionStorage
+                        if (produtosCotacao.length > 0) {
+                          SessionStorageManager.saveProducts(produtosCotacao as any);
+                        }
+                        
+                        setSelectedCotacao(cotacaoConvertida);
+                        setIsLoadingProducts(false);
+                        console.log('✅ [CARREGANDO COTAÇÃO] Produtos carregados:', produtosCotacao.length);
+                        console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
+                      }, 100);
+                    } catch (error) {
+                      console.error('❌ [ERRO CARREGANDO COTAÇÃO]:', error);
+                      toast({
+                        title: "Erro ao carregar cotação",
+                        description: "Não foi possível carregar os produtos.",
+                        variant: "destructive"
+                      });
                       setIsLoadingProducts(false);
-                      console.log('✅ [CARREGANDO COTAÇÃO] ==================== FIM ====================');
-                    }, 100);
+                    }
                   }}
                   formatCurrency={formatCurrency}
                   getStatusColor={getStatusColor}
