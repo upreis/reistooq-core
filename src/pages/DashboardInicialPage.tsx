@@ -2,7 +2,6 @@ import React from 'react';
 import { Routes, Route, Navigate } from "react-router-dom";
 import { BarChart3 } from "lucide-react";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
-import { DashboardInicialStats } from "@/features/dashboard/components/DashboardInicialStats";
 import DashboardVisaoGeral from "./dashboard/DashboardVisaoGeral";
 import DashboardVendas from "./dashboard/DashboardVendas";
 import DashboardEstoque from "./dashboard/DashboardEstoque";
@@ -20,11 +19,8 @@ const DashboardInicialContent = () => {
 
       {/* 2. Navigation tabs */}
       <DashboardInicialNav />
-
-      {/* 3. Stats cards */}
-      <DashboardInicialStats />
       
-      {/* 4. Conteúdo das rotas */}
+      {/* 3. Conteúdo das rotas */}
       <div className="mt-6">
         <Routes>
           <Route index element={<Navigate to="visao-geral" replace />} />
