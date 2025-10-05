@@ -127,6 +127,7 @@ export default function DashboardVendas() {
 
       {/* Widget de Congratulações */}
       <CongratualtionsWidget
+        userName="Usuário"
         salesGrowth={vendas.crescimentoDiario}
         stats={congratsStats}
         chartData={miniChartData}
