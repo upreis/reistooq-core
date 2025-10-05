@@ -5,6 +5,7 @@ import { useDashboardVendas } from '@/features/dashboard/hooks/useDashboardVenda
 import { VendasFilters } from './components/VendasFilters';
 import { VendasExportModal } from './components/VendasExportModal';
 import { DashboardHeroCard } from './components/DashboardHeroCard';
+import { DashboardKPICards } from './components/DashboardKPICards';
 import { BrazilMap } from './components/BrazilMap';
 import { DashboardCharts } from './components/DashboardCharts';
 import { DashboardStatusCards } from './components/DashboardStatusCards';
@@ -258,6 +259,18 @@ export default function DashboardVendasCompleto() {
         vendas={allVendas}
         selectedPeriod={selectedPeriod}
         onPeriodChange={setSelectedPeriod}
+      />
+      
+      {/* KPI Cards */}
+      <DashboardKPICards
+        salesToday={dashboardMetrics.salesToday}
+        salesTodayChange={dashboardMetrics.salesTodayChange}
+        ordersMonth={dashboardMetrics.ordersMonth}
+        ordersMonthChange={dashboardMetrics.ordersMonthChange}
+        totalRevenue={dashboardMetrics.totalRevenue}
+        totalRevenueChange={dashboardMetrics.totalRevenueChange}
+        newCustomers={dashboardMetrics.newCustomers}
+        newCustomersChange={dashboardMetrics.newCustomersChange}
       />
 
       {/* Status Cards */}
