@@ -1487,35 +1487,25 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           description: "Os produtos precisam ter SKU ou Nome preenchidos.",
           variant: "destructive"
         });
+        setIsSaving(false);
         return;
       }
 
-      // Converter blob URLs para base64 antes de salvar
-      const produtosComImagensConvertidas = await Promise.all(produtosValidos.map(async (p) => {
+      // Processar produtos de forma otimizada (sem converter imagens já em base64)
+      const produtosProcessados = produtosValidos.map(p => {
         const produtoSanitizado = sanitizeProduto(p);
         
-        // Converter imagem blob para base64
+        // Limpar imagens blob (serão removidas do banco)
         if (produtoSanitizado.imagem && produtoSanitizado.imagem.startsWith('blob:')) {
-          try {
-            produtoSanitizado.imagem = await imageUrlToBase64(produtoSanitizado.imagem);
-          } catch (error) {
-            console.warn('⚠️ Erro ao converter imagem para base64:', error);
-            produtoSanitizado.imagem = '';
-          }
+          produtoSanitizado.imagem = '';
         }
         
-        // Converter imagem_fornecedor blob para base64
         if (produtoSanitizado.imagem_fornecedor && produtoSanitizado.imagem_fornecedor.startsWith('blob:')) {
-          try {
-            produtoSanitizado.imagem_fornecedor = await imageUrlToBase64(produtoSanitizado.imagem_fornecedor);
-          } catch (error) {
-            console.warn('⚠️ Erro ao converter imagem_fornecedor para base64:', error);
-            produtoSanitizado.imagem_fornecedor = '';
-          }
+          produtoSanitizado.imagem_fornecedor = '';
         }
         
         return produtoSanitizado;
-      }));
+      });
 
       // Criar objeto completo da cotação
       const dataFechamento = selectedCotacao?.data_fechamento || dadosBasicos.data_fechamento;
@@ -1532,7 +1522,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         status: (selectedCotacao?.status || dadosBasicos.status) as 'rascunho' | 'aberta' | 'fechada' | 'cancelada',
         observacoes: selectedCotacao?.observacoes || dadosBasicos.observacoes || null,
         container_tipo: selectedContainer,
-        produtos: produtosComImagensConvertidas,
+        produtos: produtosProcessados,
         total_peso_kg: totaisGerais.total_peso_kg || 0,
         total_cbm: totaisGerais.total_cbm || 0,
         total_quantidade: totaisGerais.total_quantidade || 0,
@@ -1542,32 +1532,40 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       };
 
       // Atualizar se já existe, criar se não existe
+      let resultado;
       if (selectedCotacao?.id) {
-        await secureUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
-        toast({
-          title: "Alterações salvas",
-          description: "A cotação foi atualizada com sucesso.",
-        });
+        resultado = await secureUpdateCotacao(selectedCotacao.id, cotacaoCompleta);
+        if (resultado) {
+          toast({
+            title: "Salvo com sucesso",
+            description: "A cotação foi atualizada.",
+          });
+          
+          // Atualizar a cotação selecionada com os novos dados
+          setSelectedCotacao(prev => prev ? { ...prev, ...cotacaoCompleta } : null);
+        }
       } else {
-        const novaCotacao = await secureCreateCotacao(cotacaoCompleta);
-        if (novaCotacao) {
-          const produtosFormatados = Array.isArray(novaCotacao.produtos) ? novaCotacao.produtos : [];
+        resultado = await secureCreateCotacao(cotacaoCompleta);
+        if (resultado) {
+          const produtosFormatados = Array.isArray(resultado.produtos) ? resultado.produtos : [];
           const cotacaoConvertida = {
-            ...novaCotacao,
+            ...resultado,
             produtos: produtosFormatados
           } as unknown as CotacaoInternacional;
           setSelectedCotacao(cotacaoConvertida);
           toast({
             title: "Cotação criada",
-            description: "A cotação foi criada com sucesso.",
+            description: "Nova cotação salva com sucesso.",
           });
         }
       }
 
-      // Atualizar hash dos dados salvos
-      const currentDataHash = JSON.stringify(cotacaoCompleta);
-      lastSavedDataRef.current = currentDataHash;
-      setHasUnsavedChanges(false);
+      if (resultado) {
+        // Atualizar hash dos dados salvos
+        const currentDataHash = JSON.stringify(cotacaoCompleta);
+        lastSavedDataRef.current = currentDataHash;
+        setHasUnsavedChanges(false);
+      }
       
     } catch (error) {
       console.error('Erro ao salvar:', error);
