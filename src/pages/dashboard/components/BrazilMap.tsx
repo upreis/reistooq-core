@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { MapPin, TrendingUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { MapPin, Maximize2, Eye, EyeOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 interface StateData {
@@ -20,6 +21,8 @@ interface BrazilMapProps {
 export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
   const [hoveredState, setHoveredState] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<StateData | null>(null);
+  const [showCities, setShowCities] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   const { minSales, maxSales } = useMemo(() => {
@@ -32,11 +35,11 @@ export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
 
   const getStateColor = (uf: string) => {
     const state = stateData.find(s => s.uf === uf);
-    if (!state || state.vendas === 0) return '#e5f3e5';
+    if (!state || state.vendas === 0) return 'hsl(var(--muted))';
     
     const normalized = (state.vendas - minSales) / (maxSales - minSales);
-    const opacity = 0.3 + (normalized * 0.7);
-    return `hsl(142, 76%, ${50 - normalized * 20}%, ${opacity})`;
+    const lightness = 50 - (normalized * 20);
+    return `hsl(142, 76%, ${lightness}%)`;
   };
 
   const handleStateClick = (uf: string) => {
@@ -57,107 +60,230 @@ export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
       .slice(0, 5);
   }, [stateData]);
 
-  // Realistic Brazil map with all states
-  const states = [
-    // Norte
-    { uf: 'AM', path: 'M 50,120 L 120,110 L 140,125 L 155,115 L 170,130 L 165,145 L 175,155 L 170,170 L 155,175 L 145,185 L 135,175 L 125,180 L 115,175 L 105,185 L 95,180 L 85,185 L 75,175 L 65,180 L 55,175 L 50,165 L 45,155 L 50,145 L 45,135 Z' },
-    { uf: 'RR', path: 'M 120,30 L 140,35 L 145,50 L 140,65 L 135,75 L 125,85 L 120,95 L 110,95 L 105,85 L 100,75 L 105,65 L 100,55 L 105,45 L 110,40 Z' },
-    { uf: 'AP', path: 'M 155,50 L 170,55 L 175,65 L 180,75 L 175,85 L 170,90 L 165,95 L 160,100 L 155,105 L 150,100 L 150,90 L 155,80 L 150,70 L 155,60 Z' },
-    { uf: 'PA', path: 'M 120,110 L 175,105 L 200,115 L 220,125 L 235,130 L 245,140 L 255,150 L 260,160 L 255,170 L 245,175 L 235,180 L 225,175 L 215,180 L 205,175 L 195,180 L 185,175 L 175,170 L 165,165 L 155,170 L 145,165 L 135,170 L 125,165 L 120,155 L 125,145 L 120,135 Z' },
-    { uf: 'TO', path: 'M 255,170 L 265,180 L 270,195 L 275,210 L 270,225 L 265,235 L 260,245 L 255,255 L 250,265 L 245,260 L 240,250 L 235,240 L 235,230 L 240,220 L 235,210 L 240,200 L 245,190 L 250,180 Z' },
-    { uf: 'AC', path: 'M 50,155 L 65,165 L 75,175 L 85,185 L 90,195 L 85,205 L 75,210 L 65,205 L 55,200 L 45,195 L 40,185 L 35,175 L 40,165 Z' },
-    { uf: 'RO', path: 'M 95,190 L 115,195 L 125,205 L 130,215 L 125,225 L 120,230 L 110,235 L 100,230 L 90,225 L 85,215 L 90,205 Z' },
-    
-    // Nordeste
-    { uf: 'MA', path: 'M 260,160 L 275,165 L 290,170 L 305,165 L 315,170 L 320,180 L 315,190 L 305,195 L 295,200 L 285,205 L 275,210 L 270,200 L 265,190 L 265,180 Z' },
-    { uf: 'PI', path: 'M 275,210 L 285,215 L 295,225 L 300,235 L 295,245 L 285,250 L 275,245 L 270,235 L 270,225 Z' },
-    { uf: 'CE', path: 'M 320,150 L 340,155 L 355,160 L 365,155 L 375,160 L 380,170 L 375,180 L 365,185 L 355,180 L 345,185 L 335,180 L 325,175 L 320,165 Z' },
-    { uf: 'RN', path: 'M 375,160 L 395,165 L 405,170 L 410,180 L 405,185 L 395,190 L 385,185 L 380,175 Z' },
-    { uf: 'PB', path: 'M 395,185 L 410,190 L 415,200 L 410,205 L 400,210 L 390,205 L 385,195 Z' },
-    { uf: 'PE', path: 'M 385,195 L 400,200 L 410,210 L 415,220 L 410,230 L 400,235 L 385,230 L 375,225 L 370,215 L 375,205 Z' },
-    { uf: 'AL', path: 'M 400,235 L 410,240 L 415,250 L 410,260 L 400,255 L 395,245 Z' },
-    { uf: 'SE', path: 'M 390,260 L 400,265 L 405,275 L 400,280 L 390,275 L 385,265 Z' },
-    { uf: 'BA', path: 'M 295,245 L 310,250 L 325,260 L 340,270 L 355,280 L 365,290 L 370,305 L 365,320 L 355,330 L 340,335 L 325,340 L 310,335 L 295,330 L 285,320 L 280,305 L 275,290 L 280,275 L 285,260 Z' },
-    
-    // Centro-Oeste
-    { uf: 'MT', path: 'M 130,215 L 150,220 L 170,230 L 185,240 L 200,255 L 210,270 L 215,285 L 210,300 L 200,310 L 185,315 L 170,310 L 155,305 L 145,295 L 135,285 L 130,270 L 125,255 L 125,240 Z' },
-    { uf: 'MS', path: 'M 200,310 L 215,320 L 225,335 L 230,350 L 225,365 L 215,375 L 200,380 L 185,375 L 175,365 L 170,350 L 175,335 L 185,325 Z' },
-    { uf: 'GO', path: 'M 250,265 L 265,275 L 280,285 L 290,300 L 295,315 L 290,330 L 280,340 L 265,345 L 250,340 L 240,330 L 235,315 L 240,300 L 245,285 Z' },
-    { uf: 'DF', path: 'M 270,305 L 277,308 L 280,315 L 277,322 L 270,325 L 263,322 L 260,315 L 263,308 Z' },
-    
-    // Sudeste
-    { uf: 'MG', path: 'M 280,340 L 300,345 L 320,355 L 335,365 L 345,380 L 350,395 L 345,405 L 330,410 L 315,405 L 300,400 L 285,395 L 270,385 L 260,370 L 255,355 L 260,345 Z' },
-    { uf: 'ES', path: 'M 350,395 L 360,400 L 365,410 L 360,420 L 350,415 L 345,405 Z' },
-    { uf: 'RJ', path: 'M 330,410 L 345,415 L 355,425 L 350,435 L 340,438 L 330,435 L 325,425 L 325,415 Z' },
-    { uf: 'SP', path: 'M 285,395 L 305,405 L 320,415 L 330,425 L 325,440 L 315,450 L 300,455 L 285,450 L 270,440 L 260,425 L 255,410 L 260,400 Z' },
-    
-    // Sul
-    { uf: 'PR', path: 'M 255,410 L 270,420 L 285,435 L 295,450 L 290,465 L 280,475 L 265,480 L 250,475 L 240,465 L 235,450 L 240,435 L 245,420 Z' },
-    { uf: 'SC', path: 'M 250,475 L 265,485 L 280,495 L 285,505 L 280,515 L 265,520 L 250,515 L 240,505 L 235,495 L 240,485 Z' },
-    { uf: 'RS', path: 'M 235,495 L 250,510 L 265,525 L 270,540 L 265,555 L 255,565 L 240,570 L 225,565 L 215,555 L 210,540 L 205,525 L 210,510 L 220,500 Z' },
-  ];
+  const MapContent = ({ className = "" }: { className?: string }) => (
+    <div className={`relative ${className}`}>
+      <svg
+        viewBox="0 0 800 900"
+        className="w-full h-auto"
+        onMouseMove={handleMouseMove}
+      >
+        {/* Estados do Brasil com coordenadas mais realistas */}
+        
+        {/* Região Norte */}
+        <path id="AC" d="M 100,380 L 150,370 L 170,400 L 160,430 L 120,440 L 90,410 Z" 
+          fill={getStateColor('AC')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('AC')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('AC')} />
+        
+        <path id="AM" d="M 100,300 L 230,280 L 270,310 L 300,360 L 260,400 L 170,420 L 150,380 L 100,390 L 80,340 Z"
+          fill={getStateColor('AM')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('AM')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('AM')} />
+        
+        <path id="RR" d="M 180,160 L 250,145 L 265,180 L 230,215 L 180,225 L 165,190 Z"
+          fill={getStateColor('RR')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('RR')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('RR')} />
+        
+        <path id="AP" d="M 310,180 L 350,165 L 370,200 L 355,235 L 315,225 L 295,195 Z"
+          fill={getStateColor('AP')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('AP')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('AP')} />
+        
+        <path id="PA" d="M 230,280 L 350,265 L 390,295 L 410,335 L 385,375 L 335,390 L 300,370 L 270,320 Z"
+          fill={getStateColor('PA')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('PA')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('PA')} />
+        
+        <path id="RO" d="M 160,420 L 230,405 L 250,440 L 235,475 L 195,490 L 160,470 L 145,435 Z"
+          fill={getStateColor('RO')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('RO')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('RO')} />
+        
+        <path id="TO" d="M 385,375 L 415,365 L 435,395 L 450,430 L 435,465 L 410,485 L 385,470 L 370,435 L 365,400 Z"
+          fill={getStateColor('TO')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('TO')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('TO')} />
+
+        {/* Região Nordeste */}
+        <path id="MA" d="M 410,335 L 480,320 L 500,355 L 485,390 L 460,400 L 435,385 L 415,360 Z"
+          fill={getStateColor('MA')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('MA')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('MA')} />
+        
+        <path id="PI" d="M 435,395 L 485,385 L 505,420 L 490,455 L 460,465 L 435,450 L 425,420 Z"
+          fill={getStateColor('PI')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('PI')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('PI')} />
+        
+        <path id="CE" d="M 500,355 L 570,340 L 595,370 L 580,395 L 540,400 L 515,380 Z"
+          fill={getStateColor('CE')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('CE')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('CE')} />
+        
+        <path id="RN" d="M 570,370 L 625,355 L 645,375 L 630,395 L 595,400 L 575,385 Z"
+          fill={getStateColor('RN')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('RN')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('RN')} />
+        
+        <path id="PB" d="M 595,400 L 630,395 L 645,415 L 635,430 L 610,435 L 595,420 Z"
+          fill={getStateColor('PB')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('PB')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('PB')} />
+        
+        <path id="PE" d="M 540,420 L 610,435 L 630,465 L 615,490 L 575,505 L 540,485 L 515,455 Z"
+          fill={getStateColor('PE')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('PE')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('PE')} />
+        
+        <path id="AL" d="M 615,490 L 645,475 L 660,495 L 650,515 L 625,520 L 610,505 Z"
+          fill={getStateColor('AL')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('AL')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('AL')} />
+        
+        <path id="SE" d="M 610,520 L 650,515 L 660,535 L 645,555 L 625,555 L 610,540 Z"
+          fill={getStateColor('SE')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('SE')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('SE')} />
+        
+        <path id="BA" d="M 490,455 L 540,485 L 575,505 L 610,555 L 600,595 L 560,625 L 510,640 L 470,620 L 445,580 L 430,540 L 440,495 Z"
+          fill={getStateColor('BA')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('BA')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('BA')} />
+
+        {/* Região Centro-Oeste */}
+        <path id="MT" d="M 250,440 L 335,420 L 385,450 L 420,490 L 410,530 L 380,560 L 340,570 L 300,550 L 270,515 L 245,475 Z"
+          fill={getStateColor('MT')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('MT')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('MT')} />
+        
+        <path id="MS" d="M 340,570 L 410,555 L 435,590 L 430,630 L 405,665 L 370,680 L 330,670 L 305,640 L 295,600 Z"
+          fill={getStateColor('MS')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('MS')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('MS')} />
+        
+        <path id="GO" d="M 410,485 L 460,470 L 490,495 L 510,530 L 500,565 L 470,590 L 435,600 L 410,580 L 395,545 L 400,510 Z"
+          fill={getStateColor('GO')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('GO')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('GO')} />
+        
+        <circle id="DF" cx="475" cy="540" r="8"
+          fill={getStateColor('DF')} stroke="hsl(var(--border))" strokeWidth="2"
+          className="cursor-pointer hover:stroke-primary hover:stroke-3 transition-all"
+          onMouseEnter={() => setHoveredState('DF')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('DF')} />
+
+        {/* Região Sudeste */}
+        <path id="MG" d="M 470,590 L 540,570 L 600,595 L 630,630 L 620,670 L 585,700 L 540,710 L 500,695 L 465,665 L 445,630 L 450,600 Z"
+          fill={getStateColor('MG')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('MG')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('MG')} />
+        
+        <path id="ES" d="M 620,630 L 660,610 L 680,630 L 670,655 L 650,665 L 620,660 L 610,640 Z"
+          fill={getStateColor('ES')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('ES')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('ES')} />
+        
+        <path id="RJ" d="M 585,700 L 650,680 L 670,700 L 660,725 L 635,740 L 600,740 L 575,720 Z"
+          fill={getStateColor('RJ')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('RJ')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('RJ')} />
+        
+        <path id="SP" d="M 500,695 L 575,705 L 590,735 L 560,765 L 520,780 L 480,770 L 450,745 L 440,710 L 460,700 Z"
+          fill={getStateColor('SP')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('SP')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('SP')} />
+
+        {/* Região Sul */}
+        <path id="PR" d="M 405,665 L 465,665 L 480,695 L 475,725 L 450,750 L 415,765 L 380,755 L 360,730 L 365,700 Z"
+          fill={getStateColor('PR')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('PR')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('PR')} />
+        
+        <path id="SC" d="M 380,755 L 450,750 L 475,770 L 470,795 L 440,815 L 405,820 L 375,805 L 360,780 Z"
+          fill={getStateColor('SC')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('SC')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('SC')} />
+        
+        <path id="RS" d="M 360,805 L 440,815 L 460,840 L 455,875 L 430,900 L 390,910 L 350,895 L 325,865 L 325,830 Z"
+          fill={getStateColor('RS')} stroke="hsl(var(--border))" strokeWidth="1.5"
+          className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
+          onMouseEnter={() => setHoveredState('RS')} onMouseLeave={() => setHoveredState(null)}
+          onClick={() => handleStateClick('RS')} />
+      </svg>
+
+      {hoveredState && (
+        <div
+          className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 pointer-events-none"
+          style={{
+            left: mousePosition.x + 10,
+            top: mousePosition.y + 10,
+          }}
+        >
+          {(() => {
+            const state = stateData.find(s => s.uf === hoveredState);
+            return state ? (
+              <>
+                <div className="font-bold">{state.uf}</div>
+                <div className="text-sm">{state.vendas} vendas</div>
+                <div className="text-sm">
+                  {state.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </div>
+              </>
+            ) : (
+              <div className="text-sm">Sem dados</div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <>
       <Card className="col-span-1">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            Mapa de Vendas - Brasil
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Mapa de Vendas - Brasil
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsMaximized(true)}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="relative">
-            <svg
-              viewBox="0 0 450 600"
-              className="w-full h-auto"
-              onMouseMove={handleMouseMove}
-            >
-              {states.map(state => {
-                const stateInfo = stateData.find(s => s.uf === state.uf);
-                return (
-                  <path
-                    key={state.uf}
-                    d={state.path}
-                    fill={getStateColor(state.uf)}
-                    stroke="#374151"
-                    strokeWidth="1"
-                    className="cursor-pointer hover:stroke-primary hover:stroke-2 transition-all"
-                    onMouseEnter={() => setHoveredState(state.uf)}
-                    onMouseLeave={() => setHoveredState(null)}
-                    onClick={() => handleStateClick(state.uf)}
-                  />
-                );
-              })}
-            </svg>
-
-            {hoveredState && (
-              <div
-                className="fixed z-50 bg-popover text-popover-foreground border rounded-lg shadow-lg p-3 pointer-events-none"
-                style={{
-                  left: mousePosition.x + 10,
-                  top: mousePosition.y + 10,
-                }}
-              >
-                {(() => {
-                  const state = stateData.find(s => s.uf === hoveredState);
-                  return state ? (
-                    <>
-                      <div className="font-bold">{state.uf}</div>
-                      <div className="text-sm">
-                        {state.vendas} vendas
-                      </div>
-                      <div className="text-sm">
-                        {state.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-sm">Sem dados</div>
-                  );
-                })()}
-              </div>
-            )}
-          </div>
+          <MapContent />
 
           <div className="mt-4 space-y-2">
             <h4 className="text-sm font-semibold">Top 5 Estados</h4>
@@ -188,6 +314,45 @@ export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isMaximized} onOpenChange={setIsMaximized}>
+        <DialogContent className="max-w-6xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Mapa de Vendas - Visão Completa
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[calc(90vh-100px)]">
+            <MapContent className="h-96" />
+            
+            <div className="mt-4 grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="font-semibold mb-2">Top 10 Estados</h4>
+                <div className="space-y-1">
+                  {stateData
+                    .sort((a, b) => b.vendas - a.vendas)
+                    .slice(0, 10)
+                    .map((state, index) => (
+                      <div key={state.uf} className="flex items-center justify-between p-2 bg-muted/30 rounded text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 text-center font-bold">#{index + 1}</span>
+                          <span>{state.uf}</span>
+                        </div>
+                        <div className="text-right">
+                          <div>{state.vendas} vendas</div>
+                          <div className="text-xs text-muted-foreground">
+                            {state.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!selectedState} onOpenChange={() => setSelectedState(null)}>
         <DialogContent className="max-w-2xl">
