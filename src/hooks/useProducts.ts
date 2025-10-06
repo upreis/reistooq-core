@@ -150,17 +150,23 @@ export const useProducts = () => {
   const createProduct = useCallback(async (product: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'> & Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
-    // Verificar se já existe um produto com o mesmo SKU na organização
+    // Verificar se já existe um produto ativo com o mesmo SKU na organização
     const { data: existingProduct } = await supabase
       .from('produtos')
-      .select('id, sku_interno')
+      .select('id, sku_interno, ativo')
       .eq('sku_interno', product.sku_interno)
       .eq('organization_id', orgId)
       .limit(1)
       .single();
 
     if (existingProduct) {
-      throw new Error(`Já existe um produto com o SKU "${product.sku_interno}" nesta organização.`);
+      // Se o produto existe mas está inativo, reativar e atualizar
+      if (!existingProduct.ativo) {
+        console.log(`♻️ Reativando produto inativo: ${product.sku_interno}`);
+        return await updateProduct(existingProduct.id, { ...product, ativo: true });
+      }
+      // Se está ativo, não permitir duplicata
+      throw new Error(`Já existe um produto ativo com o SKU "${product.sku_interno}" nesta organização.`);
     }
 
     // Buscar unidade padrão "un" para a organização atual
