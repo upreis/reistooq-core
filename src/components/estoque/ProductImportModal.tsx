@@ -25,6 +25,7 @@ interface ProductImportData {
   'Preço de Custo': number;
   'Preço de Venda': number;
   'Código de Barras'?: string;
+  'URL da Imagem'?: string;
   'Ativo': string;
 }
 
@@ -59,6 +60,7 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
         'Preço de Custo': 50.00,
         'Preço de Venda': 100.00,
         'Código de Barras': '7890240078045',
+        'URL da Imagem': 'https://exemplo.com/imagem.jpg',
         'Ativo': 'Sim',
       }
     ];
@@ -80,6 +82,7 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
       { wch: 15 }, // Preço de Custo
       { wch: 15 }, // Preço de Venda
       { wch: 20 }, // Código de Barras
+      { wch: 50 }, // URL da Imagem
       { wch: 10 }, // Ativo
     ];
 
@@ -142,9 +145,9 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
             preco_custo: Number(row['Preço de Custo']) || 0,
             preco_venda: Number(row['Preço de Venda']) || 0,
             codigo_barras: row['Código de Barras'] || '',
+            url_imagem: row['URL da Imagem'] || '',
             ativo: row['Ativo']?.toLowerCase() === 'sim',
             status: 'active',
-            url_imagem: '',
           });
 
           successCount++;
