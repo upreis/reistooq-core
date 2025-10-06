@@ -265,7 +265,7 @@ export function EstoqueTable({
     },
     {
       key: "peso_liquido_kg",
-      label: "Peso (Kg)",
+      label: "Peso Liquido (Kg)",
       sortable: true,
       render: (value: number) => (
         <span className="text-[10px] text-foreground font-medium block leading-tight">
