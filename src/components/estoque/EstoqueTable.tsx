@@ -264,78 +264,13 @@ export function EstoqueTable({
       )
     },
     {
-      key: "peso_liquido_kg",
-      label: "Peso Liquido (Kg)",
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-[10px] text-foreground font-medium block leading-tight">
-          {value ? `${value} kg` : "N/A"}
-        </span>
-      )
-    },
-    {
-      key: "ncm_cest",
-      label: "NCM/Cód CEST",
+      key: "pesos",
+      label: "Peso Líquido/Bruto (Kg)",
       render: (_, product: Product) => (
         <div className="text-[10px] leading-tight">
-          <div className="text-foreground font-medium font-mono">
-            NCM: {product.ncm || "N/A"}
-          </div>
-          <div className="text-muted-foreground font-mono">
-            CEST: {product.codigo_cest || "N/A"}
-          </div>
+          <div className="text-foreground font-medium">L: {product.peso_liquido_kg ? `${product.peso_liquido_kg} kg` : "N/A"}</div>
+          <div className="text-foreground font-medium">B: {product.peso_bruto_kg ? `${product.peso_bruto_kg} kg` : "N/A"}</div>
         </div>
-      )
-    },
-    {
-      key: "sob_encomenda",
-      label: "Tipo",
-      render: (value: boolean, product: Product) => (
-        <div className="flex flex-col gap-0.5">
-          {value && (
-            <Badge variant="outline" className="text-[9px] px-1 py-0 leading-tight w-fit">
-              Sob Enc.
-            </Badge>
-          )}
-          {product.dias_preparacao && product.dias_preparacao > 0 && (
-            <span className="text-[9px] text-muted-foreground">
-              {product.dias_preparacao}d
-            </span>
-          )}
-          {!value && !product.dias_preparacao && (
-            <span className="text-[9px] text-muted-foreground">Regular</span>
-          )}
-        </div>
-      )
-    },
-    {
-      key: "unidade",
-      label: "Unid. Medida",
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] font-medium text-foreground block leading-tight">
-          {value || "UN"}
-        </span>
-      )
-    },
-    {
-      key: "localizacao",
-      label: "Localização",
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] text-foreground block leading-tight">
-          {value || "N/A"}
-        </span>
-      )
-    },
-    {
-      key: "peso_bruto_kg",
-      label: "Peso Bruto (Kg)",
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-[10px] text-foreground font-medium block leading-tight">
-          {value ? `${value} kg` : "N/A"}
-        </span>
       )
     },
     {
