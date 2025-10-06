@@ -45,7 +45,7 @@ export default function ControleEstoquePage() {
   const [newProductModalOpen, setNewProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
-  const { getProducts, getCategories, deleteProduct } = useProducts();
+  const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
 
   // Hook para filtros inteligentes
@@ -194,8 +194,6 @@ export default function ControleEstoquePage() {
     if (selectedProducts.length === 0) return;
     
     try {
-      const { updateProduct } = await import('@/hooks/useProducts').then(m => ({ updateProduct: useProducts().updateProduct }));
-      
       await Promise.all(
         selectedProducts.map(id => updateProduct(id, { ativo: newStatus }))
       );
@@ -208,9 +206,10 @@ export default function ControleEstoquePage() {
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
+      console.error('Erro ao atualizar status em massa:', error);
       toast({
         title: "Erro ao atualizar status",
-        description: "Não foi possível atualizar o status dos produtos selecionados.",
+        description: error instanceof Error ? error.message : "Não foi possível atualizar o status dos produtos selecionados.",
         variant: "destructive",
       });
     }
