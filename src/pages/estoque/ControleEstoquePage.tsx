@@ -65,30 +65,36 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     try {
       setLoading(true);
       
-      // Buscar todos os produtos sem filtro de ativo na query
+      // Determinar filtro de ativo para busca no banco
+      let ativoFilter: boolean | 'all' = 'all';
+      if (selectedStatus === "active_only") {
+        ativoFilter = true;
+      } else if (selectedStatus === "inactive_only") {
+        ativoFilter = false;
+      } else if (["low", "out", "high", "critical"].includes(selectedStatus)) {
+        ativoFilter = true; // Filtros de estoque só aplicam a produtos ativos
+      }
+      
+      // Buscar produtos do banco com filtro de ativo aplicado
       let allProducts = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 1000,
-        ativo: 'all', // Sempre buscar todos para poder filtrar localmente
+        limit: 10000, // Aumentar limite para garantir que busque todos
+        ativo: ativoFilter,
       });
 
-      // Aplicar filtro de status localmente
-      if (selectedStatus !== "all") {
+      // Aplicar filtros adicionais de estoque localmente
+      if (selectedStatus !== "all" && selectedStatus !== "active_only" && selectedStatus !== "inactive_only") {
         allProducts = allProducts.filter(product => {
           switch (selectedStatus) {
-            case "active_only":
-              return product.ativo === true;
-            case "inactive_only":
-              return product.ativo === false;
             case "low":
-              return product.ativo && product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
+              return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
             case "out":
-              return product.ativo && product.quantidade_atual === 0;
+              return product.quantidade_atual === 0;
             case "high":
-              return product.ativo && product.quantidade_atual >= product.estoque_maximo;
+              return product.quantidade_atual >= product.estoque_maximo;
             case "critical":
-              return product.ativo && product.quantidade_atual <= product.estoque_minimo;
+              return product.quantidade_atual <= product.estoque_minimo;
             default:
               return true;
           }
