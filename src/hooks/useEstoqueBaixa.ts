@@ -157,16 +157,58 @@ export function useProcessarBaixaEstoque() {
           throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
         }
 
-        // 🛡️ BAIXA DE ESTOQUE COM MONITORAMENTO
+        // 🔍 ETAPA NOVA: Buscar composições e preparar baixa dos componentes
+        console.log('🔍 Buscando composições dos produtos...');
+        const baixasComponentes: Array<{ sku: string; quantidade: number }> = [];
+        
+        for (const baixa of baixas) {
+          const skuMapeado = baixa.sku;
+          
+          // Buscar composição do produto em produto_componentes
+          const { data: composicao, error: composicaoError } = await supabase
+            .from('produto_componentes')
+            .select('sku_componente, quantidade')
+            .eq('sku_produto', skuMapeado);
+          
+          if (composicaoError) {
+            console.error(`❌ Erro ao buscar composição para SKU ${skuMapeado}:`, composicaoError);
+            continue;
+          }
+          
+          if (!composicao || composicao.length === 0) {
+            console.log(`⚠️ SKU ${skuMapeado} não tem composição definida, pulando...`);
+            continue;
+          }
+          
+          console.log(`📦 Composição encontrada para ${skuMapeado}:`, composicao);
+          
+          // Para cada componente, calcular quantidade total necessária
+          for (const componente of composicao) {
+            const quantidadeComponente = componente.quantidade * baixa.quantidade;
+            baixasComponentes.push({
+              sku: componente.sku_componente,
+              quantidade: quantidadeComponente
+            });
+          }
+        }
+        
+        if (baixasComponentes.length === 0) {
+          console.warn('⚠️ Nenhum componente encontrado nas composições');
+          throw new Error('Nenhum componente encontrado para baixa de estoque. Verifique se os produtos têm composições definidas.');
+        }
+        
+        console.log('📋 Componentes para baixa:', baixasComponentes);
+
+        // 🛡️ BAIXA DE ESTOQUE DOS COMPONENTES COM MONITORAMENTO
         const resultadoBaixa = await medirTempoExecucao(
-          'baixar_estoque_direto',
+          'baixar_estoque_componentes',
           'useEstoqueBaixa',
           'supabase',
           async () => {
-            console.log('🔍 DEBUG - Chamando baixar_estoque_direto com:', baixas);
+            console.log('🔍 DEBUG - Chamando baixar_estoque_direto com componentes:', baixasComponentes);
             
             const { data, error } = await supabase.rpc('baixar_estoque_direto', {
-              p_baixas: baixas
+              p_baixas: baixasComponentes
             });
 
             console.log('🔍 DEBUG - Resposta da função:', { data, error });
