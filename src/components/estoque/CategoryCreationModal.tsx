@@ -37,9 +37,8 @@ const categorySchema = z.object({
   descricao: z.string().optional(),
   cor: z.string().default("#6366f1"),
   icone: z.string().optional(),
-  nivel: z.enum(["1", "2", "3"]),
+  nivel: z.enum(["1", "2"]),
   categoria_principal_id: z.string().optional(),
-  categoria_id: z.string().optional(),
 });
 
 type CategoryFormData = z.infer<typeof categorySchema>;
@@ -61,7 +60,7 @@ interface CategoryCreationModalProps {
 
 export function CategoryCreationModal({ trigger, onSuccess }: CategoryCreationModalProps) {
   const [open, setOpen] = useState(false);
-  const { createCategory, getCategoriasPrincipais, getCategorias } = useHierarchicalCategories();
+  const { createCategory, getCategoriasPrincipais } = useHierarchicalCategories();
   const { toast } = useToast();
 
   const form = useForm<CategoryFormData>({
@@ -76,7 +75,6 @@ export function CategoryCreationModal({ trigger, onSuccess }: CategoryCreationMo
   });
 
   const selectedNivel = form.watch("nivel");
-  const selectedPrincipal = form.watch("categoria_principal_id");
 
   const onSubmit = async (data: CategoryFormData) => {
     try {
@@ -85,9 +83,8 @@ export function CategoryCreationModal({ trigger, onSuccess }: CategoryCreationMo
         descricao: data.descricao,
         cor: data.cor,
         icone: data.icone,
-        nivel: parseInt(data.nivel) as 1 | 2 | 3,
+        nivel: parseInt(data.nivel) as 1 | 2,
         categoria_principal_id: data.categoria_principal_id,
-        categoria_id: data.categoria_id,
       });
 
       toast({
@@ -149,12 +146,6 @@ export function CategoryCreationModal({ trigger, onSuccess }: CategoryCreationMo
                           Categoria
                         </div>
                       </SelectItem>
-                      <SelectItem value="3">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">Nível 3</Badge>
-                          Subcategoria
-                        </div>
-                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -177,33 +168,6 @@ export function CategoryCreationModal({ trigger, onSuccess }: CategoryCreationMo
                       </FormControl>
                       <SelectContent>
                         {getCategoriasPrincipais().map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>
-                            {cat.nome}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
-
-            {selectedNivel === "3" && selectedPrincipal && (
-              <FormField
-                control={form.control}
-                name="categoria_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione a categoria" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {getCategorias(selectedPrincipal).map((cat) => (
                           <SelectItem key={cat.id} value={cat.id}>
                             {cat.nome}
                           </SelectItem>
