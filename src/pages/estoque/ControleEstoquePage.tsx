@@ -16,6 +16,7 @@ import { Package, AlertTriangle, Filter, Upload } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { CategoryImportModal } from "@/components/estoque/CategoryImportModal";
+import { ProductImportModal } from "@/components/estoque/ProductImportModal";
 
 interface ControleEstoquePageProps {
   initialProducts?: Product[];
@@ -338,6 +339,21 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     <div className="space-y-6">
       {/* Botões de ação */}
       <div className="flex justify-end gap-2">
+        <ProductImportModal 
+          trigger={
+            <Button variant="outline" size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Importar Produtos
+            </Button>
+          }
+          onSuccess={() => {
+            loadProducts();
+            toast({
+              title: "Produtos importados",
+              description: "Os produtos foram importados com sucesso.",
+            });
+          }}
+        />
         <CategoryImportModal 
           trigger={
             <Button variant="outline" size="sm">
