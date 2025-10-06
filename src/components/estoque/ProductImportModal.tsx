@@ -18,14 +18,27 @@ interface ProductImportData {
   'Nome': string;
   'Descrição'?: string;
   'Categoria'?: string;
-  'Unidade de Medida ID'?: string;
+  'Unidade de Medida'?: string;
   'Quantidade Atual': number;
   'Estoque Mínimo': number;
+  'Estoque Máximo': number;
+  'Sob Encomenda'?: string;
+  'Dias para Preparação'?: number;
   'Localização'?: string;
   'Preço de Custo': number;
   'Preço de Venda': number;
   'Código de Barras'?: string;
   'URL da Imagem'?: string;
+  'Peso Líquido (Kg)'?: number;
+  'Peso Bruto (Kg)'?: number;
+  'Número de Volumes'?: number;
+  'Tipo de Embalagem'?: string;
+  'Largura (cm)'?: number;
+  'Altura (cm)'?: number;
+  'Comprimento (cm)'?: number;
+  'NCM'?: string;
+  'Código CEST'?: string;
+  'Origem'?: number;
   'Ativo': string;
 }
 
@@ -53,14 +66,27 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
         'Nome': 'Exemplo de Produto',
         'Descrição': 'Descrição do produto',
         'Categoria': 'Casa',
-        'Unidade de Medida ID': '',
+        'Unidade de Medida': 'Pç',
         'Quantidade Atual': 100,
         'Estoque Mínimo': 10,
+        'Estoque Máximo': 300,
+        'Sob Encomenda': 'Não',
+        'Dias para Preparação': 0,
         'Localização': 'A340',
         'Preço de Custo': 50.00,
         'Preço de Venda': 100.00,
         'Código de Barras': '7890240078045',
         'URL da Imagem': 'https://exemplo.com/imagem.jpg',
+        'Peso Líquido (Kg)': 0.5,
+        'Peso Bruto (Kg)': 0.6,
+        'Número de Volumes': 1,
+        'Tipo de Embalagem': 'Pacote / Caixa',
+        'Largura (cm)': 10,
+        'Altura (cm)': 15,
+        'Comprimento (cm)': 20,
+        'NCM': '1001.10.10',
+        'Código CEST': '01.003.00',
+        'Origem': 0,
         'Ativo': 'Sim',
       }
     ];
@@ -75,14 +101,27 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
       { wch: 30 }, // Nome
       { wch: 40 }, // Descrição
       { wch: 20 }, // Categoria
-      { wch: 20 }, // Unidade de Medida ID
+      { wch: 18 }, // Unidade de Medida
       { wch: 18 }, // Quantidade Atual
-      { wch: 18 }, // Estoque Mínimo
+      { wch: 15 }, // Estoque Mínimo
+      { wch: 15 }, // Estoque Máximo
+      { wch: 15 }, // Sob Encomenda
+      { wch: 20 }, // Dias para Preparação
       { wch: 15 }, // Localização
       { wch: 15 }, // Preço de Custo
       { wch: 15 }, // Preço de Venda
       { wch: 20 }, // Código de Barras
       { wch: 50 }, // URL da Imagem
+      { wch: 15 }, // Peso Líquido (Kg)
+      { wch: 15 }, // Peso Bruto (Kg)
+      { wch: 18 }, // Número de Volumes
+      { wch: 20 }, // Tipo de Embalagem
+      { wch: 12 }, // Largura (cm)
+      { wch: 12 }, // Altura (cm)
+      { wch: 15 }, // Comprimento (cm)
+      { wch: 15 }, // NCM
+      { wch: 15 }, // Código CEST
+      { wch: 10 }, // Origem
       { wch: 10 }, // Ativo
     ];
 
@@ -137,10 +176,10 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
             nome: row['Nome'],
             descricao: row['Descrição'] || '',
             categoria: row['Categoria'] || '',
-            unidade_medida_id: row['Unidade de Medida ID'] || null,
+            unidade_medida_id: row['Unidade de Medida'] || null,
             quantidade_atual: Number(row['Quantidade Atual']) || 0,
             estoque_minimo: Number(row['Estoque Mínimo']) || 0,
-            estoque_maximo: Number(row['Estoque Mínimo']) * 3 || 0,
+            estoque_maximo: Number(row['Estoque Máximo']) || 0,
             localizacao: row['Localização'] || '',
             preco_custo: Number(row['Preço de Custo']) || 0,
             preco_venda: Number(row['Preço de Venda']) || 0,
