@@ -215,7 +215,7 @@ export function EstoqueTable({
     },
     {
       key: "categorias",
-      label: "Categorias",
+      label: "Categoria Principal/Categoria",
       render: (_, product: Product) => (
         <div className="text-[10px] leading-tight">
           <div className="text-primary font-medium">Principal: {product.categoria_principal || "N/A"}</div>
