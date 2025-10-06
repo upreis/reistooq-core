@@ -309,6 +309,89 @@ export function EstoqueTable({
       )
     },
     {
+      key: "unidade",
+      label: "Unid. Medida",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] font-medium text-foreground block leading-tight">
+          {value || "UN"}
+        </span>
+      )
+    },
+    {
+      key: "localizacao",
+      label: "Localização",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block leading-tight">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "peso_bruto_kg",
+      label: "Peso Bruto (Kg)",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value ? `${value} kg` : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "numero_volumes",
+      label: "Nº Volumes",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value || "1"}
+        </span>
+      )
+    },
+    {
+      key: "tipo_embalagem",
+      label: "Tipo Embalagem",
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block leading-tight">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "dimensoes",
+      label: "Dimensões (cm)",
+      render: (_, product: Product) => (
+        <div className="text-[10px] leading-tight">
+          <div className="text-foreground">L: {product.largura || "N/A"}</div>
+          <div className="text-foreground">A: {product.altura || "N/A"}</div>
+          <div className="text-foreground">C: {product.comprimento || "N/A"}</div>
+        </div>
+      )
+    },
+    {
+      key: "origem",
+      label: "Origem",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground block leading-tight">
+          {value !== null && value !== undefined ? value : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "ativo",
+      label: "Status",
+      sortable: true,
+      render: (value: boolean) => (
+        <Badge 
+          variant={value ? "default" : "secondary"} 
+          className="text-[9px] px-1 py-0 leading-tight"
+        >
+          {value ? "Ativo" : "Inativo"}
+        </Badge>
+      )
+    },
+    {
       key: "ultima_movimentacao",
       label: "Última Mov.",
       render: (value: string) => (
