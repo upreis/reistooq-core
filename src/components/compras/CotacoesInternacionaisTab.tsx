@@ -1206,13 +1206,13 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Cotação');
 
-      // Definir cabeçalhos
+      // Definir cabeçalhos - incluindo todas as colunas até Obs. exceto Change DOLAR e Multiplicador REAIS
       const headers = [
-        'SKU', 'Imagem', 'Imagem Fornecedor', 'Material', 'Cor', 'Nome do Produto', 
+        'Material', 'Cor', 'Nome do Produto', 
         'Package', 'Preço', 'Unid.', 'PCS/CTN', 'Caixas', 'Peso Unit. (g)', 
         'Peso Emb. Master (KG)', 'Peso S/ Emb. Master (KG)', 'Peso Total Emb. (KG)', 
         'Peso Total S/ Emb. (KG)', 'Comp. (cm)', 'Larg. (cm)', 'Alt. (cm)', 
-        'CBM Cubagem', 'CBM Total', 'Qtd. Total', 'Valor Total', 'Obs.'
+        'CBM Cubagem', 'CBM Total', 'Qtd. Total', 'Valor Total Origem', 'Valor Total USD', 'Valor Total BRL', 'Obs.'
       ];
 
       // Adicionar cabeçalho
@@ -1229,7 +1229,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
 
       // Configurar larguras das colunas
-      const colWidths = [15, 15, 20, 12, 10, 25, 12, 10, 8, 10, 10, 15, 18, 20, 18, 20, 12, 12, 12, 15, 12, 12, 15, 20];
+      const colWidths = [12, 10, 25, 12, 10, 8, 10, 10, 15, 18, 20, 18, 20, 12, 12, 12, 15, 12, 12, 15, 15, 15, 20];
       headers.forEach((_, index) => {
         worksheet.getColumn(index + 1).width = colWidths[index];
       });
@@ -1239,11 +1239,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         const product = displayProducts[index];
         const rowNumber = index + 2;
 
-        // Criar linha com dados
+        // Criar linha com dados (sem SKU e colunas de imagens, sem Change DOLAR e Multiplicador REAIS)
         const rowData = [
-          product.sku || '',
-          '', // Imagem - será preenchida após inserir a imagem
-          '', // Imagem Fornecedor - será preenchida após inserir a imagem  
           product.material || '',
           product.cor || '',
           product.nome_produto || '',
@@ -1263,81 +1260,19 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_cubagem || '',
           typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
           product.quantidade_total || 0,
-          typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
+          typeof product.valor_total_origem === 'number' ? product.valor_total_origem.toFixed(2) : product.valor_total_origem || '',
+          typeof product.valor_total_usd === 'number' ? product.valor_total_usd.toFixed(2) : product.valor_total_usd || '',
+          typeof product.valor_total_brl === 'number' ? product.valor_total_brl.toFixed(2) : product.valor_total_brl || '',
           product.obs || ''
         ];
 
         worksheet.addRow(rowData);
 
-        // Configurar altura da linha para acomodar imagens
-        worksheet.getRow(rowNumber).height = 80;
+        // Configurar altura da linha padrão
+        worksheet.getRow(rowNumber).height = 20;
 
-        // Inserir imagem principal
-        if (product.imagem) {
-          try {
-            const base64 = await imageUrlToBase64(product.imagem);
-            if (base64) {
-              // Converter base64 para Uint8Array (compatível com navegador)
-              const imageData = base64.split(',')[1] || base64;
-              const binaryString = atob(imageData);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-              
-              const imageId = workbook.addImage({
-                buffer: bytes,
-                extension: 'png',
-              });
-
-              worksheet.addImage(imageId, {
-                tl: { col: 1, row: rowNumber - 1 }, // coluna B (index 1)
-                ext: { width: 100, height: 60 }
-              });
-
-              // Adicionar texto indicativo na célula
-              worksheet.getCell(rowNumber, 2).value = '[IMAGEM]';
-            }
-          } catch (error) {
-            console.warn('Erro ao processar imagem:', error);
-            worksheet.getCell(rowNumber, 2).value = 'Erro ao carregar';
-          }
-        }
-
-        // Inserir imagem do fornecedor
-        if (product.imagem_fornecedor) {
-          try {
-            const base64 = await imageUrlToBase64(product.imagem_fornecedor);
-            if (base64) {
-              // Converter base64 para Uint8Array (compatível com navegador)
-              const imageData = base64.split(',')[1] || base64;
-              const binaryString = atob(imageData);
-              const bytes = new Uint8Array(binaryString.length);
-              for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-              }
-              
-              const imageId = workbook.addImage({
-                buffer: bytes,
-                extension: 'png',
-              });
-
-              worksheet.addImage(imageId, {
-                tl: { col: 2, row: rowNumber - 1 }, // coluna C (index 2)
-                ext: { width: 100, height: 60 }
-              });
-
-              // Adicionar texto indicativo na célula
-              worksheet.getCell(rowNumber, 3).value = '[IMAGEM]';
-            }
-          } catch (error) {
-            console.warn('Erro ao processar imagem fornecedor:', error);
-            worksheet.getCell(rowNumber, 3).value = 'Erro ao carregar';
-          }
-        }
-
-        // Destacar coluna Caixas (coluna K)
-        const caixasCell = worksheet.getCell(rowNumber, 11);
+        // Destacar coluna Caixas (coluna H - agora posição 8)
+        const caixasCell = worksheet.getCell(rowNumber, 8);
         caixasCell.fill = {
           type: 'pattern',
           pattern: 'solid',
