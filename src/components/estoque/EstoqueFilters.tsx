@@ -71,13 +71,13 @@ export function EstoqueFilters({
   const isMobile = useIsMobile();
 
   const statusOptions = [
-    { value: "all", label: "Todos os status", icon: Package },
-    { value: "active", label: "Ativo", icon: Package },
+    { value: "all", label: "Todos", icon: Package },
+    { value: "active_only", label: "Apenas Ativos", icon: Package },
+    { value: "inactive_only", label: "Apenas Inativos", icon: X },
     { value: "low", label: "Estoque baixo", icon: AlertTriangle },
     { value: "out", label: "Sem estoque", icon: AlertTriangle },
     { value: "high", label: "Estoque alto", icon: TrendingUp },
     { value: "critical", label: "Crítico", icon: TrendingDown },
-    { value: "inactive", label: "Inativo", icon: X },
   ];
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

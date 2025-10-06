@@ -12,7 +12,7 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload, Plus, Settings } from "lucide-react";
+import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
@@ -69,25 +69,25 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: 1000,
-        ativo: selectedStatus === "inactive" ? false : (selectedStatus === "all" ? 'all' : true),
+        ativo: selectedStatus === "inactive_only" ? false : (selectedStatus === "active_only" ? true : 'all'),
       });
 
       // Aplicar filtro de status
       if (selectedStatus !== "all") {
         allProducts = allProducts.filter(product => {
           switch (selectedStatus) {
-            case "active":
-              return product.ativo && product.quantidade_atual > product.estoque_minimo;
+            case "active_only":
+              return product.ativo === true;
+            case "inactive_only":
+              return product.ativo === false;
             case "low":
-              return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
+              return product.ativo && product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
             case "out":
-              return product.quantidade_atual === 0;
+              return product.ativo && product.quantidade_atual === 0;
             case "high":
-              return product.quantidade_atual >= product.estoque_maximo;
+              return product.ativo && product.quantidade_atual >= product.estoque_maximo;
             case "critical":
-              return product.quantidade_atual <= product.estoque_minimo;
-            case "inactive":
-              return !product.ativo;
+              return product.ativo && product.quantidade_atual <= product.estoque_minimo;
             default:
               return true;
           }
@@ -204,6 +204,32 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
       toast({
         title: "Erro ao excluir",
         description: "Não foi possível excluir os produtos selecionados.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: boolean) => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      const { updateProduct } = await import('@/hooks/useProducts').then(m => ({ updateProduct: useProducts().updateProduct }));
+      
+      await Promise.all(
+        selectedProducts.map(id => updateProduct(id, { ativo: newStatus }))
+      );
+      
+      toast({
+        title: "Status atualizado",
+        description: `${selectedProducts.length} produto(s) ${newStatus ? 'ativado(s)' : 'desativado(s)'} com sucesso.`,
+      });
+      
+      setSelectedProducts([]);
+      loadProducts();
+    } catch (error) {
+      toast({
+        title: "Erro ao atualizar status",
+        description: "Não foi possível atualizar o status dos produtos selecionados.",
         variant: "destructive",
       });
     }
@@ -359,40 +385,66 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
   return (
     <div className="space-y-6">
       {/* Botões de ação */}
-      <div className="flex flex-wrap justify-end gap-2 mb-4">
-        <Button 
-          variant="default" 
-          size="sm"
-          onClick={() => {
-            console.log('🔵 Botão Adicionar Produto clicado');
-            handleNewProduct();
-          }}
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Adicionar Produto
-        </Button>
-        <ProductImportModal 
-          trigger={
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Importar Produtos
-            </Button>
-          }
-          onSuccess={() => {
-            loadProducts();
-            toast({
-              title: "Produtos importados",
-              description: "Os produtos foram importados com sucesso.",
-            });
-          }}
-        />
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/category-manager">
-            <Settings className="h-4 w-4 mr-2" />
-            Gerenciar Categorias
-          </Link>
-        </Button>
+      <div className="flex flex-wrap justify-between gap-2 mb-4">
+        <div className="flex gap-2">
+          {selectedProducts.length > 0 && (
+            <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleBulkStatusChange(true)}
+                className="border-green-500 text-green-600 hover:bg-green-50"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Ativar Selecionados ({selectedProducts.length})
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleBulkStatusChange(false)}
+                className="border-orange-500 text-orange-600 hover:bg-orange-50"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Desativar Selecionados ({selectedProducts.length})
+              </Button>
+            </>
+          )}
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => {
+              console.log('🔵 Botão Adicionar Produto clicado');
+              handleNewProduct();
+            }}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Adicionar Produto
+          </Button>
+          <ProductImportModal 
+            trigger={
+              <Button variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-2" />
+                Importar Produtos
+              </Button>
+            }
+            onSuccess={() => {
+              loadProducts();
+              toast({
+                title: "Produtos importados",
+                description: "Os produtos foram importados com sucesso.",
+              });
+            }}
+          />
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/category-manager">
+              <Settings className="h-4 w-4 mr-2" />
+              Gerenciar Categorias
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {/* Filtros básicos */}
