@@ -74,19 +74,32 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const getProductColumns = () => ([
     { key: 'sku_interno', label: 'SKU Interno', required: true },
     { key: 'nome', label: 'Nome', required: true },
+    { key: 'descricao', label: 'Descrição', required: false },
+    { key: 'codigo_barras', label: 'Código de Barras', required: false },
     { key: 'categoria_principal', label: 'Categoria Principal', required: false },
     { key: 'categoria', label: 'Categoria', required: false },
     { key: 'subcategoria', label: 'Subcategoria', required: false },
-    { key: 'descricao', label: 'Descrição', required: false },
-    { key: 'url_imagem', label: 'URL da Imagem', required: false },
-    { key: 'quantidade_atual', label: 'Quantidade Atual', required: false },
+    { key: 'quantidade_atual', label: 'Estoque Atual', required: false },
     { key: 'estoque_minimo', label: 'Estoque Mínimo', required: false },
     { key: 'estoque_maximo', label: 'Estoque Máximo', required: false },
     { key: 'preco_custo', label: 'Preço Custo', required: false },
     { key: 'preco_venda', label: 'Preço Venda', required: false },
-    { key: 'codigo_barras', label: 'Código de Barras', required: false },
+    { key: 'peso_liquido', label: 'Peso Líquido (Kg)', required: false },
+    { key: 'peso_bruto', label: 'Peso Bruto (Kg)', required: false },
+    { key: 'ncm', label: 'NCM', required: false },
+    { key: 'codigo_cest', label: 'Código CEST', required: false },
+    { key: 'sob_encomenda', label: 'Sob Encomenda', required: false },
+    { key: 'dias_preparacao', label: 'Dias para Preparação', required: false },
+    { key: 'unidade_medida', label: 'Unidade de Medida', required: false },
     { key: 'localizacao', label: 'Localização', required: false },
-    { key: 'unidade_medida_id', label: 'Unidade de Medida ID', required: false },
+    { key: 'numero_volumes', label: 'Nº Volumes', required: false },
+    { key: 'tipo_embalagem', label: 'Tipo Embalagem', required: false },
+    { key: 'largura', label: 'Largura (cm)', required: false },
+    { key: 'altura', label: 'Altura (cm)', required: false },
+    { key: 'comprimento', label: 'Comprimento (cm)', required: false },
+    { key: 'origem', label: 'Origem', required: false },
+    { key: 'ativo', label: 'Status (Ativo/Inativo)', required: false },
+    { key: 'url_imagem', label: 'URL da Imagem', required: false },
   ]);
 
   const templateColumns = tipo === 'produtos' ? getProductColumns() : getCompositionColumns();
@@ -94,21 +107,34 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const downloadTemplate = async () => {
     if (tipo === 'produtos') {
       const exampleRow = [
-        'EXEMPLO001',
-        'Produto Exemplo',
-        'Eletrônicos',
-        'Smartphones',
-        'iPhone',
-        'Descrição do produto exemplo',
-        'https://exemplo.com/imagem.jpg',
-        '10',
-        '5',
-        '100',
-        '50.00',
-        '75.00',
-        '1234567890123',
-        'Estoque A1',
-        ''  // unidade_medida_id (opcional)
+        'EXEMPLO001',                           // SKU Interno
+        'Produto Exemplo',                      // Nome
+        'Descrição do produto exemplo',         // Descrição
+        '1234567890123',                        // Código de Barras
+        'Eletrônicos',                          // Categoria Principal
+        'Smartphones',                          // Categoria
+        'iPhone',                               // Subcategoria
+        '10',                                   // Estoque Atual
+        '5',                                    // Estoque Mínimo
+        '100',                                  // Estoque Máximo
+        '50.00',                                // Preço Custo
+        '75.00',                                // Preço Venda
+        '0.5',                                  // Peso Líquido (Kg)
+        '0.6',                                  // Peso Bruto (Kg)
+        '85176990',                             // NCM
+        '0100100',                              // Código CEST
+        'Não',                                  // Sob Encomenda (Sim/Não)
+        '0',                                    // Dias para Preparação
+        'UN',                                   // Unidade de Medida
+        'Estoque A1',                           // Localização
+        '1',                                    // Nº Volumes
+        'Caixa',                                // Tipo Embalagem
+        '10',                                   // Largura (cm)
+        '20',                                   // Altura (cm)
+        '15',                                   // Comprimento (cm)
+        'Nacional',                             // Origem
+        'Ativo',                                // Status (Ativo/Inativo)
+        'https://exemplo.com/imagem.jpg',       // URL da Imagem
       ];
 
       const wb = XLSX.utils.book_new();
