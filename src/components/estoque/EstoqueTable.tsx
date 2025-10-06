@@ -234,16 +234,6 @@ export function EstoqueTable({
       )
     },
     {
-      key: "subcategoria", 
-      label: "SubCategoria",
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] text-foreground block truncate leading-tight">
-          {value || "N/A"}
-        </span>
-      )
-    },
-    {
       key: "quantidade_atual",
       label: "Estoque",
       sortable: true,
