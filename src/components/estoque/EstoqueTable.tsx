@@ -284,6 +284,47 @@ export function EstoqueTable({
       )
     },
     {
+      key: "peso_liquido_kg",
+      label: "Peso (Kg)",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value ? `${value} kg` : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "ncm",
+      label: "NCM",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] font-mono text-muted-foreground block truncate">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "sob_encomenda",
+      label: "Tipo",
+      render: (value: boolean, product: Product) => (
+        <div className="flex flex-col gap-0.5">
+          {value && (
+            <Badge variant="outline" className="text-[9px] px-1 py-0 leading-tight w-fit">
+              Sob Enc.
+            </Badge>
+          )}
+          {product.dias_preparacao && product.dias_preparacao > 0 && (
+            <span className="text-[9px] text-muted-foreground">
+              {product.dias_preparacao}d
+            </span>
+          )}
+          {!value && !product.dias_preparacao && (
+            <span className="text-[9px] text-muted-foreground">Regular</span>
+          )}
+        </div>
+      )
+    },
+    {
       key: "ultima_movimentacao",
       label: "Última Mov.",
       render: (value: string) => (
