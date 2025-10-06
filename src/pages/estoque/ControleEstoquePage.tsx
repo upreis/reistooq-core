@@ -28,14 +28,9 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
-interface ControleEstoquePageProps {
-  initialProducts?: Product[];
-  initialLoading?: boolean;
-}
-
-export default function ControleEstoquePage({ initialProducts = [], initialLoading = true }: ControleEstoquePageProps = {}) {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-  const [loading, setLoading] = useState(initialLoading);
+export default function ControleEstoquePage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -57,11 +52,6 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
 
   const loadProducts = useCallback(async () => {
-    // CORREÇÃO: Não recarregar se há produtos iniciais (usar filtros locais apenas)
-    if (initialProducts.length > 0) {
-      return;
-    }
-    
     try {
       setLoading(true);
       
@@ -126,7 +116,7 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast, initialProducts.length]);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -137,34 +127,18 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     }
   }, [getCategories]);
 
-  // Sincronizar com produtos iniciais do componente pai
   useEffect(() => {
-    if (initialProducts.length > 0) {
-      setProducts(initialProducts);
-      setLoading(false);
-    }
-  }, [initialProducts]);
-
-  useEffect(() => {
-    // Só carrega produtos se não foram fornecidos produtos iniciais
-    if (initialProducts.length === 0) {
-      loadProducts();
-      loadCategories();
-    } else {
-      loadCategories();
-    }
+    loadProducts();
+    loadCategories();
   }, []);
 
   useEffect(() => {
-    // CORREÇÃO: Só executar se não há produtos iniciais
-    if (initialProducts.length === 0) {
-      const delayedSearch = setTimeout(() => {
-        loadProducts();
-      }, 300);
+    const delayedSearch = setTimeout(() => {
+      loadProducts();
+    }, 300);
 
-      return () => clearTimeout(delayedSearch);
-    }
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, loadProducts, initialProducts.length]);
+    return () => clearTimeout(delayedSearch);
+  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, loadProducts]);
 
   const handleSearch = () => {
     setCurrentPage(1);
