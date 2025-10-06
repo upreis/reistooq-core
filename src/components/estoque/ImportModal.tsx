@@ -98,7 +98,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     { key: 'altura', label: 'Altura (cm)', required: false },
     { key: 'comprimento', label: 'Comprimento (cm)', required: false },
     { key: 'origem', label: 'Origem', required: false },
-    { key: 'ativo', label: 'Status (Ativo/Inativo)', required: false },
+    { key: 'ativo', label: 'Status', required: false },
     { key: 'url_imagem', label: 'URL da Imagem', required: false },
   ]);
 
@@ -133,7 +133,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         '20',                                   // Altura (cm)
         '15',                                   // Comprimento (cm)
         'Nacional',                             // Origem
-        'Ativo',                                // Status (Ativo/Inativo)
+        'Ativo',                                // Status
         'https://exemplo.com/imagem.jpg',       // URL da Imagem
       ];
 
