@@ -65,29 +65,31 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
         'SKU Interno': 'CMD-991-BRAN-10',
         'Nome': 'Exemplo de Produto',
         'Descrição': 'Descrição do produto',
-        'Categoria': 'Casa',
-        'Unidade de Medida': 'Pç',
+        'Código de Barras': '7890240078045',
+        'Categoria Principal': 'Casa',
+        'Categoria': 'Decoração',
+        'Subcategoria': 'Vasos',
         'Quantidade Atual': 100,
         'Estoque Mínimo': 10,
         'Estoque Máximo': 300,
-        'Sob Encomenda': 'Não',
-        'Dias para Preparação': 0,
-        'Localização': 'A340',
         'Preço de Custo': 50.00,
         'Preço de Venda': 100.00,
-        'Código de Barras': '7890240078045',
-        'URL da Imagem': 'https://exemplo.com/imagem.jpg',
         'Peso Líquido (Kg)': 0.5,
         'Peso Bruto (Kg)': 0.6,
+        'NCM': '1001.10.10',
+        'Código CEST': '01.003.00',
+        'Sob Encomenda': 'Não',
+        'Dias para Preparação': 0,
+        'Unidade de Medida': 'Pç',
+        'Localização': 'A340',
         'Número de Volumes': 1,
         'Tipo de Embalagem': 'Pacote / Caixa',
         'Largura (cm)': 10,
         'Altura (cm)': 15,
         'Comprimento (cm)': 20,
-        'NCM': '1001.10.10',
-        'Código CEST': '01.003.00',
-        'Origem': 0,
-        'Ativo': 'Sim',
+        'Origem': 'Nacional',
+        'Status': 'Ativo',
+        'URL da Imagem': 'https://exemplo.com/imagem.jpg',
       }
     ];
 
@@ -100,29 +102,31 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
       { wch: 20 }, // SKU Interno
       { wch: 30 }, // Nome
       { wch: 40 }, // Descrição
+      { wch: 20 }, // Código de Barras
+      { wch: 20 }, // Categoria Principal
       { wch: 20 }, // Categoria
-      { wch: 18 }, // Unidade de Medida
+      { wch: 20 }, // Subcategoria
       { wch: 18 }, // Quantidade Atual
       { wch: 15 }, // Estoque Mínimo
       { wch: 15 }, // Estoque Máximo
-      { wch: 15 }, // Sob Encomenda
-      { wch: 20 }, // Dias para Preparação
-      { wch: 15 }, // Localização
       { wch: 15 }, // Preço de Custo
       { wch: 15 }, // Preço de Venda
-      { wch: 20 }, // Código de Barras
-      { wch: 50 }, // URL da Imagem
       { wch: 15 }, // Peso Líquido (Kg)
       { wch: 15 }, // Peso Bruto (Kg)
+      { wch: 15 }, // NCM
+      { wch: 15 }, // Código CEST
+      { wch: 15 }, // Sob Encomenda
+      { wch: 20 }, // Dias para Preparação
+      { wch: 18 }, // Unidade de Medida
+      { wch: 15 }, // Localização
       { wch: 18 }, // Número de Volumes
       { wch: 20 }, // Tipo de Embalagem
       { wch: 12 }, // Largura (cm)
       { wch: 12 }, // Altura (cm)
       { wch: 15 }, // Comprimento (cm)
-      { wch: 15 }, // NCM
-      { wch: 15 }, // Código CEST
-      { wch: 10 }, // Origem
-      { wch: 10 }, // Ativo
+      { wch: 15 }, // Origem
+      { wch: 10 }, // Status
+      { wch: 50 }, // URL da Imagem
     ];
 
     XLSX.writeFile(wb, "template_importacao_produtos.xlsx");
