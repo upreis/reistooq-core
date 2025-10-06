@@ -1239,7 +1239,27 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
         const product = displayProducts[index];
         const rowNumber = index + 2;
 
-        // Criar linha com dados
+        // Log para debug - ver estrutura do produto
+        if (index === 0) {
+          console.log('📊 Estrutura do primeiro produto para Excel:', {
+            product,
+            campos_disponiveis: Object.keys(product)
+          });
+        }
+
+        // Helper para obter valor numérico
+        const getNumericValue = (value: any, decimals: number = 2): string => {
+          if (typeof value === 'number' && !isNaN(value)) {
+            return value.toFixed(decimals);
+          }
+          if (typeof value === 'string' && value.trim() !== '') {
+            const num = parseFloat(value);
+            return !isNaN(num) ? num.toFixed(decimals) : value;
+          }
+          return '';
+        };
+
+        // Criar linha com dados usando mapeamento mais robusto
         const rowData = [
           product.sku || '',
           '', // Imagem - será preenchida após inserir a imagem
@@ -1248,23 +1268,23 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           product.cor || '',
           product.nome_produto || product.nome || '',
           product.package_qtd || product.package || '',
-          typeof product.preco_unitario === 'number' ? product.preco_unitario.toFixed(2) : (typeof product.preco === 'number' ? product.preco.toFixed(2) : product.preco_unitario || product.preco || ''),
+          getNumericValue(product.preco_unitario || product.preco),
           product.unidade_medida || product.unit || '',
           product.pcs_ctn || 0,
           product.qtd_caixas_pedido || product.caixas || 0,
-          typeof product.peso_unitario_g === 'number' ? product.peso_unitario_g.toFixed(0) : product.peso_unitario_g || '',
-          typeof product.peso_cx_master_kg === 'number' ? product.peso_cx_master_kg.toFixed(2) : (typeof product.peso_embalagem_master_kg === 'number' ? product.peso_embalagem_master_kg.toFixed(2) : product.peso_cx_master_kg || product.peso_embalagem_master_kg || ''),
-          typeof product.peso_sem_cx_master_kg === 'number' ? product.peso_sem_cx_master_kg.toFixed(2) : (typeof product.peso_sem_embalagem_master_kg === 'number' ? product.peso_sem_embalagem_master_kg.toFixed(2) : product.peso_sem_cx_master_kg || product.peso_sem_embalagem_master_kg || ''),
-          typeof product.peso_total_cx_master_kg === 'number' ? product.peso_total_cx_master_kg.toFixed(2) : (typeof product.peso_total_embalagem_kg === 'number' ? product.peso_total_embalagem_kg.toFixed(2) : product.peso_total_cx_master_kg || product.peso_total_embalagem_kg || ''),
-          typeof product.peso_total_sem_cx_master_kg === 'number' ? product.peso_total_sem_cx_master_kg.toFixed(2) : (typeof product.peso_total_sem_embalagem_kg === 'number' ? product.peso_total_sem_embalagem_kg.toFixed(2) : product.peso_total_sem_cx_master_kg || product.peso_total_sem_embalagem_kg || ''),
+          getNumericValue(product.peso_unitario_g, 0),
+          getNumericValue(product.peso_cx_master_kg || product.peso_embalagem_master_kg),
+          getNumericValue(product.peso_sem_cx_master_kg || product.peso_sem_embalagem_master_kg),
+          getNumericValue(product.peso_total_cx_master_kg || product.peso_total_embalagem_kg || product.peso_total_emb_kg),
+          getNumericValue(product.peso_total_sem_cx_master_kg || product.peso_total_sem_embalagem_kg),
           product.comprimento_cm || product.comprimento || 0,
           product.largura_cm || product.largura || 0,
           product.altura_cm || product.altura || 0,
-          typeof product.cbm_unitario === 'number' ? product.cbm_unitario.toFixed(2) : (typeof product.cbm_cubagem === 'number' ? product.cbm_cubagem.toFixed(2) : product.cbm_unitario || product.cbm_cubagem || ''),
-          typeof product.cbm_total === 'number' ? product.cbm_total.toFixed(2) : product.cbm_total || '',
+          getNumericValue(product.cbm_unitario || product.cbm_cubagem),
+          getNumericValue(product.cbm_total),
           product.quantidade_total || 0,
-          typeof product.valor_total === 'number' ? product.valor_total.toFixed(2) : product.valor_total || '',
-          product.obs || ''
+          getNumericValue(product.valor_total),
+          product.obs || product.observacoes || ''
         ];
 
         worksheet.addRow(rowData);
