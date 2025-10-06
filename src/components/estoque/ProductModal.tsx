@@ -26,7 +26,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Upload, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Upload, X, Package as PackageIcon, Ruler, Weight, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
@@ -47,6 +49,21 @@ const productSchema = z.object({
   localizacao: z.string().optional(),
   unidade_medida_id: z.string().min(1, "Unidade de medida é obrigatória"),
   status: z.string().default("ativo"),
+  // Campos de estoque
+  sob_encomenda: z.boolean().optional(),
+  dias_preparacao: z.coerce.number().min(0).optional(),
+  // Dimensões e peso
+  peso_liquido_kg: z.coerce.number().min(0).optional(),
+  peso_bruto_kg: z.coerce.number().min(0).optional(),
+  numero_volumes: z.coerce.number().min(0).optional(),
+  tipo_embalagem: z.string().optional(),
+  largura: z.coerce.number().min(0).optional(),
+  altura: z.coerce.number().min(0).optional(),
+  comprimento: z.coerce.number().min(0).optional(),
+  // Fiscal
+  ncm: z.string().optional(),
+  codigo_cest: z.string().optional(),
+  origem: z.coerce.number().min(0).max(8).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -87,6 +104,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       localizacao: "",
       unidade_medida_id: "",
       status: "ativo",
+      sob_encomenda: false,
+      dias_preparacao: "" as any,
+      peso_liquido_kg: "" as any,
+      peso_bruto_kg: "" as any,
+      numero_volumes: "" as any,
+      tipo_embalagem: "",
+      largura: "" as any,
+      altura: "" as any,
+      comprimento: "" as any,
+      ncm: "",
+      codigo_cest: "",
+      origem: "" as any,
     },
   });
 
@@ -106,6 +135,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         localizacao: product.localizacao || "",
         unidade_medida_id: product.unidade_medida_id || "",
         status: product.status,
+        sob_encomenda: product.sob_encomenda || false,
+        dias_preparacao: product.dias_preparacao || "" as any,
+        peso_liquido_kg: product.peso_liquido_kg || "" as any,
+        peso_bruto_kg: product.peso_bruto_kg || "" as any,
+        numero_volumes: product.numero_volumes || "" as any,
+        tipo_embalagem: product.tipo_embalagem || "",
+        largura: product.largura || "" as any,
+        altura: product.altura || "" as any,
+        comprimento: product.comprimento || "" as any,
+        ncm: product.ncm || "",
+        codigo_cest: product.codigo_cest || "",
+        origem: product.origem !== null ? product.origem : "" as any,
       });
       setImagePreview(product.url_imagem || null);
     } else if (!product && open) {
@@ -126,6 +167,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         localizacao: "",
         unidade_medida_id: unidadePadrao?.id || "",
         status: "ativo",
+        sob_encomenda: false,
+        dias_preparacao: "" as any,
+        peso_liquido_kg: "" as any,
+        peso_bruto_kg: "" as any,
+        numero_volumes: "" as any,
+        tipo_embalagem: "",
+        largura: "" as any,
+        altura: "" as any,
+        comprimento: "" as any,
+        ncm: "",
+        codigo_cest: "",
+        origem: "" as any,
       });
       setImageFile(null);
       setImagePreview(null);
@@ -249,6 +302,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           status: data.status,
           ativo: true,
           url_imagem: null,
+          sob_encomenda: data.sob_encomenda || false,
+          dias_preparacao: data.dias_preparacao || null,
+          peso_liquido_kg: data.peso_liquido_kg || null,
+          peso_bruto_kg: data.peso_bruto_kg || null,
+          numero_volumes: data.numero_volumes || null,
+          tipo_embalagem: data.tipo_embalagem || null,
+          largura: data.largura || null,
+          altura: data.altura || null,
+          comprimento: data.comprimento || null,
+          ncm: data.ncm || null,
+          codigo_cest: data.codigo_cest || null,
+          origem: data.origem || null,
         });
         
         if (imageFile && newProduct) {
@@ -567,6 +632,296 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                   </FormItem>
                 )}
               />
+            </div>
+
+            {/* Seção: Controle de Estoque */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <PackageIcon className="w-4 h-4" />
+                Controle de Estoque
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Sob Encomenda */}
+                <FormField
+                  control={form.control}
+                  name="sob_encomenda"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Sob Encomenda</FormLabel>
+                        <div className="text-xs text-muted-foreground">
+                          Produto sob encomenda
+                        </div>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Dias para Preparação */}
+                <FormField
+                  control={form.control}
+                  name="dias_preparacao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Dias para Preparação</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Seção: Dimensões e Peso */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <Ruler className="w-4 h-4" />
+                Dimensões e Peso
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Peso Líquido */}
+                <FormField
+                  control={form.control}
+                  name="peso_liquido_kg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso Líquido (Kg)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Peso Bruto */}
+                <FormField
+                  control={form.control}
+                  name="peso_bruto_kg"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Peso Bruto (Kg)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Número de Volumes */}
+                <FormField
+                  control={form.control}
+                  name="numero_volumes"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número de Volumes</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="1"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Tipo de Embalagem */}
+                <FormField
+                  control={form.control}
+                  name="tipo_embalagem"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Tipo de Embalagem</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Pacote / Caixa">Pacote / Caixa</SelectItem>
+                          <SelectItem value="Embalagem customizada">Embalagem customizada</SelectItem>
+                          <SelectItem value="Pallet">Pallet</SelectItem>
+                          <SelectItem value="Envelope">Envelope</SelectItem>
+                          <SelectItem value="Saco">Saco</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Largura */}
+                <FormField
+                  control={form.control}
+                  name="largura"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Largura (cm)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="0.0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Altura */}
+                <FormField
+                  control={form.control}
+                  name="altura"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Altura (cm)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="0.0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Comprimento */}
+                <FormField
+                  control={form.control}
+                  name="comprimento"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Comprimento (cm)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.1"
+                          placeholder="0.0"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* Seção: Informações Fiscais */}
+            <div className="space-y-4 pt-4 border-t">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Informações Fiscais
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* NCM */}
+                <FormField
+                  control={form.control}
+                  name="ncm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>NCM</FormLabel>
+                      <FormControl>
+                        <Input placeholder="1001.10.10" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Código CEST */}
+                <FormField
+                  control={form.control}
+                  name="codigo_cest"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Código CEST</FormLabel>
+                      <FormControl>
+                        <Input placeholder="01.003.00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Origem */}
+                <FormField
+                  control={form.control}
+                  name="origem"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Origem</FormLabel>
+                      <Select
+                        onValueChange={(value) => field.onChange(value === "" ? "" : Number(value))}
+                        value={field.value?.toString() || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="0">0 - Nacional</SelectItem>
+                          <SelectItem value="1">1 - Estrangeira - Importação direta</SelectItem>
+                          <SelectItem value="2">2 - Estrangeira - Adquirida no mercado interno</SelectItem>
+                          <SelectItem value="3">3 - Nacional (&gt;40% conteúdo importação)</SelectItem>
+                          <SelectItem value="4">4 - Nacional (processos produtivos básicos)</SelectItem>
+                          <SelectItem value="5">5 - Nacional (&lt;40% conteúdo importação)</SelectItem>
+                          <SelectItem value="6">6 - Estrangeira - Importação direta CAMEX</SelectItem>
+                          <SelectItem value="7">7 - Estrangeira - Mercado interno CAMEX</SelectItem>
+                          <SelectItem value="8">8 - Nacional (&gt;70% conteúdo importação)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             {/* Descrição */}

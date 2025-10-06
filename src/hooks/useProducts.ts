@@ -51,6 +51,15 @@ export interface Product extends BaseProduct {
   observacoes?: string | null;
   unidade?: string | null;
   pcs_ctn?: number | null;
+  // Novos campos do template
+  sob_encomenda?: boolean | null;
+  dias_preparacao?: number | null;
+  peso_liquido_kg?: number | null;
+  peso_bruto_kg?: number | null;
+  numero_volumes?: number | null;
+  tipo_embalagem?: string | null;
+  codigo_cest?: string | null;
+  origem?: number | null;
 }
 
 export const useProducts = () => {

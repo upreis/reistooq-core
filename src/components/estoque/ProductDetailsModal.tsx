@@ -17,6 +17,10 @@ import {
   BarChart3,
   AlertTriangle,
   Edit,
+  Ruler,
+  Weight,
+  FileText,
+  Clock,
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 
@@ -36,6 +40,21 @@ export function ProductDetailsModal({
   const [imageError, setImageError] = useState(false);
 
   if (!product) return null;
+
+  const getOrigemLabel = (origem: number) => {
+    const labels = {
+      0: 'Nacional',
+      1: 'Estrangeira - Importação direta',
+      2: 'Estrangeira - Mercado interno',
+      3: 'Nacional (>40% conteúdo importação)',
+      4: 'Nacional (processos básicos)',
+      5: 'Nacional (<40% conteúdo importação)',
+      6: 'Estrangeira - Importação CAMEX',
+      7: 'Estrangeira - Mercado interno CAMEX',
+      8: 'Nacional (>70% conteúdo importação)',
+    };
+    return labels[origem as keyof typeof labels] || 'Não especificado';
+  };
 
   const getStockStatus = () => {
     if (product.quantidade_atual === 0) {
@@ -216,8 +235,123 @@ export function ProductDetailsModal({
                     </div>
                   </div>
                 )}
+                {/* Sob Encomenda / Dias Preparação */}
+                {(product.sob_encomenda || product.dias_preparacao) && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Sob Encomenda:</span>
+                    <div className="flex items-center gap-2">
+                      {product.sob_encomenda && (
+                        <Badge variant="outline" className="text-xs">Sob Encomenda</Badge>
+                      )}
+                      {product.dias_preparacao > 0 && (
+                        <span className="text-sm">{product.dias_preparacao} dias</span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
+
+            <Separator />
+
+            {/* Dimensões e Peso */}
+            {(product.peso_liquido_kg || product.peso_bruto_kg || product.numero_volumes || 
+              product.largura || product.altura || product.comprimento || product.tipo_embalagem) && (
+              <>
+                <div>
+                  <h3 className="flex items-center text-sm font-medium mb-3">
+                    <Ruler className="w-4 h-4 mr-2" />
+                    Dimensões e Peso
+                  </h3>
+                  <div className="space-y-3">
+                    {/* Pesos */}
+                    {(product.peso_liquido_kg || product.peso_bruto_kg) && (
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        {product.peso_liquido_kg && (
+                          <div className="text-center p-2 bg-muted rounded">
+                            <div className="text-xs text-muted-foreground">Peso Líquido</div>
+                            <div className="font-semibold">{product.peso_liquido_kg} kg</div>
+                          </div>
+                        )}
+                        {product.peso_bruto_kg && (
+                          <div className="text-center p-2 bg-muted rounded">
+                            <div className="text-xs text-muted-foreground">Peso Bruto</div>
+                            <div className="font-semibold">{product.peso_bruto_kg} kg</div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Dimensões */}
+                    {(product.largura || product.altura || product.comprimento) && (
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div className="text-center p-2 bg-muted rounded">
+                          <div className="text-xs text-muted-foreground">Largura</div>
+                          <div className="font-semibold">{product.largura || 0} cm</div>
+                        </div>
+                        <div className="text-center p-2 bg-muted rounded">
+                          <div className="text-xs text-muted-foreground">Altura</div>
+                          <div className="font-semibold">{product.altura || 0} cm</div>
+                        </div>
+                        <div className="text-center p-2 bg-muted rounded">
+                          <div className="text-xs text-muted-foreground">Comprimento</div>
+                          <div className="font-semibold">{product.comprimento || 0} cm</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Embalagem */}
+                    {product.tipo_embalagem && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Tipo de Embalagem:</span>
+                        <span>{product.tipo_embalagem}</span>
+                      </div>
+                    )}
+
+                    {product.numero_volumes && (
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground">Número de Volumes:</span>
+                        <span>{product.numero_volumes}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
+            {/* Informações Fiscais */}
+            {(product.ncm || product.codigo_cest || product.origem !== null) && (
+              <>
+                <div>
+                  <h3 className="flex items-center text-sm font-medium mb-3">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Informações Fiscais
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    {product.ncm && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">NCM:</span>
+                        <span className="font-mono">{product.ncm}</span>
+                      </div>
+                    )}
+                    {product.codigo_cest && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Código CEST:</span>
+                        <span className="font-mono">{product.codigo_cest}</span>
+                      </div>
+                    )}
+                    {product.origem !== null && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Origem:</span>
+                        <span>{product.origem} - {getOrigemLabel(product.origem)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
 
             <Separator />
 
