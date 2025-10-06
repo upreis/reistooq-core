@@ -65,14 +65,15 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     try {
       setLoading(true);
       
+      // Buscar todos os produtos sem filtro de ativo na query
       let allProducts = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         limit: 1000,
-        ativo: selectedStatus === "inactive_only" ? false : (selectedStatus === "active_only" ? true : 'all'),
+        ativo: 'all', // Sempre buscar todos para poder filtrar localmente
       });
 
-      // Aplicar filtro de status
+      // Aplicar filtro de status localmente
       if (selectedStatus !== "all") {
         allProducts = allProducts.filter(product => {
           switch (selectedStatus) {
