@@ -12,9 +12,10 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter } from "lucide-react";
+import { Package, AlertTriangle, Filter, Upload } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
+import { CategoryImportModal } from "@/components/estoque/CategoryImportModal";
 
 interface ControleEstoquePageProps {
   initialProducts?: Product[];
@@ -335,6 +336,25 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
 
   return (
     <div className="space-y-6">
+      {/* Botões de ação */}
+      <div className="flex justify-end gap-2">
+        <CategoryImportModal 
+          trigger={
+            <Button variant="outline" size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Importar Categorias
+            </Button>
+          }
+          onSuccess={() => {
+            loadCategories();
+            toast({
+              title: "Categorias importadas",
+              description: "As categorias foram importadas com sucesso.",
+            });
+          }}
+        />
+      </div>
+
       {/* Filtros básicos */}
       <EstoqueFilters
         searchTerm={searchTerm}
