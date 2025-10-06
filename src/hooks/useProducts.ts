@@ -60,6 +60,10 @@ export interface Product extends BaseProduct {
   tipo_embalagem?: string | null;
   codigo_cest?: string | null;
   origem?: number | null;
+  // Campos de categoria hierárquica
+  categoria_principal?: string | null;
+  categoria_nivel2?: string | null;
+  subcategoria?: string | null;
 }
 
 export const useProducts = () => {

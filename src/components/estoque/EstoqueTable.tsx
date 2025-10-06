@@ -214,23 +214,13 @@ export function EstoqueTable({
       )
     },
     {
-      key: "categoria_principal",
-      label: "Categoria Principal", 
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] text-foreground block truncate leading-tight">
-          {value || "N/A"}
-        </span>
-      )
-    },
-    {
-      key: "categoria_nivel2",
-      label: "Categoria", 
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] text-foreground block truncate leading-tight">
-          {value || "N/A"}
-        </span>
+      key: "categorias",
+      label: "Categorias",
+      render: (_, product: Product) => (
+        <div className="text-[10px] leading-tight">
+          <div className="text-primary font-medium">Principal: {product.categoria_principal || "N/A"}</div>
+          <div className="text-foreground">Categoria: {product.categoria_nivel2 || "N/A"}</div>
+        </div>
       )
     },
     {
