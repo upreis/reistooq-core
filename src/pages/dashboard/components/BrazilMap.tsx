@@ -32,11 +32,13 @@ export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
 
   const getStateColor = (uf: string) => {
     const state = stateData.find(s => s.uf === uf);
-    if (!state || state.vendas === 0) return '#e5f3e5';
+    if (!state || state.vendas === 0) return '#f3f4f6';
     
-    const normalized = (state.vendas - minSales) / (maxSales - minSales);
-    const opacity = 0.3 + (normalized * 0.7);
-    return `hsl(142, 76%, ${50 - normalized * 20}%, ${opacity})`;
+    const maxVendas = Math.max(...stateData.map(s => s.vendas || 0), 1);
+    const intensity = state.vendas / maxVendas;
+    const opacity = Math.max(0.2, intensity);
+    
+    return `rgba(16, 185, 129, ${opacity})`;
   };
 
   const handleStateClick = (uf: string) => {
@@ -57,44 +59,88 @@ export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
       .slice(0, 5);
   }, [stateData]);
 
-  // Realistic Brazil map with all states
+  // Geographically accurate Brazil map with all 27 states
   const states = [
-    // Norte
-    { uf: 'AM', path: 'M 50,120 L 120,110 L 140,125 L 155,115 L 170,130 L 165,145 L 175,155 L 170,170 L 155,175 L 145,185 L 135,175 L 125,180 L 115,175 L 105,185 L 95,180 L 85,185 L 75,175 L 65,180 L 55,175 L 50,165 L 45,155 L 50,145 L 45,135 Z' },
-    { uf: 'RR', path: 'M 120,30 L 140,35 L 145,50 L 140,65 L 135,75 L 125,85 L 120,95 L 110,95 L 105,85 L 100,75 L 105,65 L 100,55 L 105,45 L 110,40 Z' },
-    { uf: 'AP', path: 'M 155,50 L 170,55 L 175,65 L 180,75 L 175,85 L 170,90 L 165,95 L 160,100 L 155,105 L 150,100 L 150,90 L 155,80 L 150,70 L 155,60 Z' },
-    { uf: 'PA', path: 'M 120,110 L 175,105 L 200,115 L 220,125 L 235,130 L 245,140 L 255,150 L 260,160 L 255,170 L 245,175 L 235,180 L 225,175 L 215,180 L 205,175 L 195,180 L 185,175 L 175,170 L 165,165 L 155,170 L 145,165 L 135,170 L 125,165 L 120,155 L 125,145 L 120,135 Z' },
-    { uf: 'TO', path: 'M 255,170 L 265,180 L 270,195 L 275,210 L 270,225 L 265,235 L 260,245 L 255,255 L 250,265 L 245,260 L 240,250 L 235,240 L 235,230 L 240,220 L 235,210 L 240,200 L 245,190 L 250,180 Z' },
-    { uf: 'AC', path: 'M 50,155 L 65,165 L 75,175 L 85,185 L 90,195 L 85,205 L 75,210 L 65,205 L 55,200 L 45,195 L 40,185 L 35,175 L 40,165 Z' },
-    { uf: 'RO', path: 'M 95,190 L 115,195 L 125,205 L 130,215 L 125,225 L 120,230 L 110,235 L 100,230 L 90,225 L 85,215 L 90,205 Z' },
+    // ACRE - Extremo oeste
+    { uf: 'AC', path: 'M50,300 L90,290 L100,310 L95,330 L85,340 L70,345 L55,335 L45,315 Z' },
     
-    // Nordeste
-    { uf: 'MA', path: 'M 260,160 L 275,165 L 290,170 L 305,165 L 315,170 L 320,180 L 315,190 L 305,195 L 295,200 L 285,205 L 275,210 L 270,200 L 265,190 L 265,180 Z' },
-    { uf: 'PI', path: 'M 275,210 L 285,215 L 295,225 L 300,235 L 295,245 L 285,250 L 275,245 L 270,235 L 270,225 Z' },
-    { uf: 'CE', path: 'M 320,150 L 340,155 L 355,160 L 365,155 L 375,160 L 380,170 L 375,180 L 365,185 L 355,180 L 345,185 L 335,180 L 325,175 L 320,165 Z' },
-    { uf: 'RN', path: 'M 375,160 L 395,165 L 405,170 L 410,180 L 405,185 L 395,190 L 385,185 L 380,175 Z' },
-    { uf: 'PB', path: 'M 395,185 L 410,190 L 415,200 L 410,205 L 400,210 L 390,205 L 385,195 Z' },
-    { uf: 'PE', path: 'M 385,195 L 400,200 L 410,210 L 415,220 L 410,230 L 400,235 L 385,230 L 375,225 L 370,215 L 375,205 Z' },
-    { uf: 'AL', path: 'M 400,235 L 410,240 L 415,250 L 410,260 L 400,255 L 395,245 Z' },
-    { uf: 'SE', path: 'M 390,260 L 400,265 L 405,275 L 400,280 L 390,275 L 385,265 Z' },
-    { uf: 'BA', path: 'M 295,245 L 310,250 L 325,260 L 340,270 L 355,280 L 365,290 L 370,305 L 365,320 L 355,330 L 340,335 L 325,340 L 310,335 L 295,330 L 285,320 L 280,305 L 275,290 L 280,275 L 285,260 Z' },
+    // AMAZONAS - Grande estado norte
+    { uf: 'AM', path: 'M50,200 L200,190 L280,200 L320,220 L350,250 L360,290 L340,320 L300,340 L250,350 L200,345 L150,340 L100,330 L90,290 L50,300 L30,250 L35,220 Z' },
     
-    // Centro-Oeste
-    { uf: 'MT', path: 'M 130,215 L 150,220 L 170,230 L 185,240 L 200,255 L 210,270 L 215,285 L 210,300 L 200,310 L 185,315 L 170,310 L 155,305 L 145,295 L 135,285 L 130,270 L 125,255 L 125,240 Z' },
-    { uf: 'MS', path: 'M 200,310 L 215,320 L 225,335 L 230,350 L 225,365 L 215,375 L 200,380 L 185,375 L 175,365 L 170,350 L 175,335 L 185,325 Z' },
-    { uf: 'GO', path: 'M 250,265 L 265,275 L 280,285 L 290,300 L 295,315 L 290,330 L 280,340 L 265,345 L 250,340 L 240,330 L 235,315 L 240,300 L 245,285 Z' },
-    { uf: 'DF', path: 'M 270,305 L 277,308 L 280,315 L 277,322 L 270,325 L 263,322 L 260,315 L 263,308 Z' },
+    // PARÁ - Nordeste da região norte
+    { uf: 'PA', path: 'M280,200 L400,185 L450,210 L480,240 L490,270 L485,300 L470,330 L440,350 L400,360 L360,355 L340,340 L320,320 L310,290 L315,260 L330,230 Z' },
     
-    // Sudeste
-    { uf: 'MG', path: 'M 280,340 L 300,345 L 320,355 L 335,365 L 345,380 L 350,395 L 345,405 L 330,410 L 315,405 L 300,400 L 285,395 L 270,385 L 260,370 L 255,355 L 260,345 Z' },
-    { uf: 'ES', path: 'M 350,395 L 360,400 L 365,410 L 360,420 L 350,415 L 345,405 Z' },
-    { uf: 'RJ', path: 'M 330,410 L 345,415 L 355,425 L 350,435 L 340,438 L 330,435 L 325,425 L 325,415 Z' },
-    { uf: 'SP', path: 'M 285,395 L 305,405 L 320,415 L 330,425 L 325,440 L 315,450 L 300,455 L 285,450 L 270,440 L 260,425 L 255,410 L 260,400 Z' },
+    // RORAIMA - Norte extremo
+    { uf: 'RR', path: 'M200,120 L280,110 L300,140 L290,170 L270,190 L240,200 L210,190 L190,160 Z' },
     
-    // Sul
-    { uf: 'PR', path: 'M 255,410 L 270,420 L 285,435 L 295,450 L 290,465 L 280,475 L 265,480 L 250,475 L 240,465 L 235,450 L 240,435 L 245,420 Z' },
-    { uf: 'SC', path: 'M 250,475 L 265,485 L 280,495 L 285,505 L 280,515 L 265,520 L 250,515 L 240,505 L 235,495 L 240,485 Z' },
-    { uf: 'RS', path: 'M 235,495 L 250,510 L 265,525 L 270,540 L 265,555 L 255,565 L 240,570 L 225,565 L 215,555 L 210,540 L 205,525 L 210,510 L 220,500 Z' },
+    // AMAPÁ - Nordeste extremo
+    { uf: 'AP', path: 'M450,150 L490,140 L510,170 L500,200 L480,220 L450,210 L430,180 Z' },
+    
+    // RONDÔNIA - Sul do Acre
+    { uf: 'RO', path: 'M90,290 L140,280 L160,300 L155,320 L140,340 L120,350 L100,345 L85,325 Z' },
+    
+    // MATO GROSSO - Centro-oeste grande
+    { uf: 'MT', path: 'M140,340 L250,350 L300,360 L320,380 L330,410 L320,440 L300,470 L270,490 L240,500 L210,495 L180,485 L150,470 L130,450 L125,420 L135,390 Z' },
+    
+    // TOCANTINS - Centro-norte
+    { uf: 'TO', path: 'M400,360 L450,340 L480,370 L490,400 L480,430 L460,450 L430,460 L400,450 L380,420 L375,390 Z' },
+    
+    // MARANHÃO - Nordeste oeste
+    { uf: 'MA', path: 'M470,330 L530,320 L550,350 L540,380 L520,400 L490,410 L470,400 L460,370 Z' },
+    
+    // PIAUÍ - Centro nordeste
+    { uf: 'PI', path: 'M490,410 L540,390 L560,420 L550,450 L530,470 L500,480 L480,460 L475,430 Z' },
+    
+    // CEARÁ - Nordeste norte
+    { uf: 'CE', path: 'M550,350 L620,340 L640,370 L630,400 L610,420 L580,430 L560,420 L540,390 Z' },
+    
+    // RIO GRANDE DO NORTE - Nordeste extremo
+    { uf: 'RN', path: 'M630,370 L680,360 L700,380 L690,400 L670,410 L650,405 L635,385 Z' },
+    
+    // PARAÍBA - Nordeste leste
+    { uf: 'PB', path: 'M650,405 L690,400 L705,420 L695,440 L675,450 L655,445 L645,425 Z' },
+    
+    // PERNAMBUCO - Nordeste centro-leste
+    { uf: 'PE', path: 'M580,430 L655,445 L675,480 L660,510 L630,530 L600,540 L570,530 L550,500 L560,470 Z' },
+    
+    // ALAGOAS - Pequeno estado nordeste
+    { uf: 'AL', path: 'M630,530 L660,520 L675,540 L665,560 L645,570 L630,565 L620,545 Z' },
+    
+    // SERGIPE - Menor estado
+    { uf: 'SE', path: 'M630,565 L665,560 L675,580 L660,595 L640,600 L625,590 L620,575 Z' },
+    
+    // BAHIA - Grande estado nordeste
+    { uf: 'BA', path: 'M530,470 L570,530 L600,540 L620,575 L610,610 L590,640 L560,660 L520,670 L480,660 L450,640 L430,610 L420,580 L430,550 L460,530 L490,510 Z' },
+    
+    // GOIÁS - Centro-oeste
+    { uf: 'GO', path: 'M400,450 L460,530 L490,560 L480,590 L460,620 L430,640 L400,650 L370,640 L350,620 L340,590 L350,560 L370,540 L390,520 Z' },
+    
+    // DISTRITO FEDERAL - Pequeno no centro de Goiás
+    { uf: 'DF', path: 'M425,575 L435,570 L440,580 L435,590 L425,585 Z' },
+    
+    // MATO GROSSO DO SUL - Sul do centro-oeste
+    { uf: 'MS', path: 'M270,490 L370,540 L400,570 L390,600 L370,630 L340,650 L310,660 L280,650 L250,630 L230,600 L225,570 L235,540 Z' },
+    
+    // MINAS GERAIS - Grande estado sudeste
+    { uf: 'MG', path: 'M430,640 L520,620 L560,640 L590,660 L610,690 L600,720 L580,740 L550,750 L520,760 L490,750 L460,740 L430,720 L410,700 L400,680 L410,660 Z' },
+    
+    // ESPÍRITO SANTO - Pequeno estado leste
+    { uf: 'ES', path: 'M590,660 L620,650 L630,670 L625,690 L615,710 L600,720 L590,700 L585,680 Z' },
+    
+    // RIO DE JANEIRO - Estado leste
+    { uf: 'RJ', path: 'M550,750 L600,720 L620,740 L615,760 L600,780 L580,790 L560,785 L540,775 L530,760 Z' },
+    
+    // SÃO PAULO - Estado sudeste
+    { uf: 'SP', path: 'M460,740 L530,760 L520,790 L500,810 L470,820 L440,810 L420,790 L410,770 L420,750 L440,745 Z' },
+    
+    // PARANÁ - Sul
+    { uf: 'PR', path: 'M340,650 L430,640 L460,740 L440,745 L420,750 L400,760 L380,770 L360,760 L340,750 L330,730 L325,710 L330,690 L335,670 Z' },
+    
+    // SANTA CATARINA - Sul centro
+    { uf: 'SC', path: 'M360,760 L420,750 L440,770 L430,790 L410,800 L390,810 L370,805 L350,795 L340,780 L345,765 Z' },
+    
+    // RIO GRANDE DO SUL - Sul extremo
+    { uf: 'RS', path: 'M340,795 L410,800 L430,820 L420,850 L400,870 L370,880 L340,875 L320,860 L310,840 L315,820 L325,805 Z' },
   ];
 
   return (
@@ -109,7 +155,7 @@ export function BrazilMap({ stateData, onStateClick }: BrazilMapProps) {
         <CardContent>
           <div className="relative">
             <svg
-              viewBox="0 0 450 600"
+              viewBox="0 0 800 900"
               className="w-full h-auto"
               onMouseMove={handleMouseMove}
             >
