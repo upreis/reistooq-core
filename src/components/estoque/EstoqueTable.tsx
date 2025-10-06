@@ -289,23 +289,25 @@ export function EstoqueTable({
     },
     {
       key: "sob_encomenda",
-      label: "Tipo",
-      render: (value: boolean, product: Product) => (
-        <div className="flex flex-col gap-0.5">
-          {value && (
-            <Badge variant="outline" className="text-[9px] px-1 py-0 leading-tight w-fit">
-              Sob Enc.
-            </Badge>
-          )}
-          {product.dias_preparacao && product.dias_preparacao > 0 && (
-            <span className="text-[9px] text-muted-foreground">
-              {product.dias_preparacao}d
-            </span>
-          )}
-          {!value && !product.dias_preparacao && (
-            <span className="text-[9px] text-muted-foreground">Regular</span>
-          )}
-        </div>
+      label: "Sob Encomenda",
+      sortable: true,
+      render: (value: boolean) => (
+        <Badge 
+          variant={value ? "default" : "outline"} 
+          className="text-[9px] px-1 py-0 leading-tight"
+        >
+          {value ? "Sim" : "Não"}
+        </Badge>
+      )
+    },
+    {
+      key: "dias_preparacao",
+      label: "Dias para Preparação",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value && value > 0 ? `${value} dias` : "N/A"}
+        </span>
       )
     },
     {
