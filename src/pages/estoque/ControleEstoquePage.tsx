@@ -344,14 +344,20 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
   
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
 
+  console.log('🔵 Renderizando ControleEstoquePage - Botões de ação');
+  
   return (
     <div className="space-y-6">
       {/* Botões de ação */}
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2 mb-4">
         <Button 
           variant="default" 
           size="sm"
-          onClick={handleNewProduct}
+          onClick={() => {
+            console.log('🔵 Botão Adicionar Produto clicado');
+            handleNewProduct();
+          }}
+          className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
           Adicionar Produto
