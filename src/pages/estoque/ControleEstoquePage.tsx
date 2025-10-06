@@ -12,7 +12,8 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload, Plus } from "lucide-react";
+import { Package, AlertTriangle, Filter, Upload, Plus, Settings } from "lucide-react";
+import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { CategoryImportModal } from "@/components/estoque/CategoryImportModal";
@@ -401,6 +402,12 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
             });
           }}
         />
+        <Button variant="outline" size="sm" asChild>
+          <Link to="/category-manager">
+            <Settings className="h-4 w-4 mr-2" />
+            Gerenciar Categorias
+          </Link>
+        </Button>
       </div>
 
       {/* Filtros básicos */}
