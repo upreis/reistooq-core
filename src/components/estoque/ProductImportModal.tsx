@@ -68,7 +68,6 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
         'Código de Barras': '7890240078045',
         'Categoria Principal': 'Casa',
         'Categoria': 'Decoração',
-        'Subcategoria': 'Vasos',
         'Quantidade Atual': 100,
         'Estoque Mínimo': 10,
         'Estoque Máximo': 300,
@@ -105,7 +104,6 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
       { wch: 20 }, // Código de Barras
       { wch: 20 }, // Categoria Principal
       { wch: 20 }, // Categoria
-      { wch: 20 }, // Subcategoria
       { wch: 18 }, // Quantidade Atual
       { wch: 15 }, // Estoque Mínimo
       { wch: 15 }, // Estoque Máximo

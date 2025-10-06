@@ -78,7 +78,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
     { key: 'codigo_barras', label: 'Código de Barras', required: false },
     { key: 'categoria_principal', label: 'Categoria Principal', required: false },
     { key: 'categoria', label: 'Categoria', required: false },
-    { key: 'subcategoria', label: 'Subcategoria', required: false },
     { key: 'quantidade_atual', label: 'Estoque Atual', required: false },
     { key: 'estoque_minimo', label: 'Estoque Mínimo', required: false },
     { key: 'estoque_maximo', label: 'Estoque Máximo', required: false },
@@ -113,7 +112,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         '1234567890123',                        // Código de Barras
         'Eletrônicos',                          // Categoria Principal
         'Smartphones',                          // Categoria
-        'iPhone',                               // Subcategoria
         '10',                                   // Estoque Atual
         '5',                                    // Estoque Mínimo
         '100',                                  // Estoque Máximo
@@ -188,7 +186,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         ['2. Categorias são opcionais mas devem seguir a hierarquia:'],
         ['   • Categoria Principal (Ex: Eletrônicos)'],
         ['   • Categoria (Ex: Smartphones)'], 
-        ['   • Subcategoria (Ex: iPhone)'],
         ['3. Use as categorias das abas "Categorias Principais" e "Estrutura Hierárquica"'],
         ['4. Se não existir a categoria desejada, crie primeiro em /estoque/categorias'],
         ['5. Preços são opcionais (deixe em branco se não tiver)'],
@@ -197,8 +194,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         ['EXEMPLO DE CATEGORIZAÇÃO:'],
         ['• Categoria Principal: Eletrônicos'],
         ['• Categoria: Smartphones'],
-        ['• Subcategoria: iPhone'],
-        ['• Resultado: "Eletrônicos → Smartphones → iPhone"'],
+        ['• Resultado: "Eletrônicos → Smartphones"'],
       ];
       const wsInstrucoes = XLSX.utils.aoa_to_sheet(instrucoes);
       XLSX.utils.book_append_sheet(wb, wsInstrucoes, 'Instruções');
@@ -508,7 +504,6 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           const categoriaParts = [];
           if (row.categoria_principal?.trim()) categoriaParts.push(row.categoria_principal.trim());
           if (row.categoria?.trim()) categoriaParts.push(row.categoria.trim());  
-          if (row.subcategoria?.trim()) categoriaParts.push(row.subcategoria.trim());
           const categoriaCompleta = categoriaParts.length > 0 ? categoriaParts.join(" → ") : null;
           
           const normalized = {
