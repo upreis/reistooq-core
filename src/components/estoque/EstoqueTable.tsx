@@ -294,13 +294,17 @@ export function EstoqueTable({
       )
     },
     {
-      key: "ncm",
-      label: "NCM",
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] font-mono text-muted-foreground block truncate">
-          {value || "N/A"}
-        </span>
+      key: "ncm_cest",
+      label: "NCM/Cód CEST",
+      render: (_, product: Product) => (
+        <div className="text-[10px] leading-tight">
+          <div className="text-foreground font-medium font-mono">
+            NCM: {product.ncm || "N/A"}
+          </div>
+          <div className="text-muted-foreground font-mono">
+            CEST: {product.codigo_cest || "N/A"}
+          </div>
+        </div>
       )
     },
     {
