@@ -158,7 +158,7 @@ export function EstoqueTable({
   const columns = [
     {
       key: "nome",
-      label: "Produto",
+      label: "Produto/Descrição",
       primary: true,
       sortable: true,
       render: (value: string, product: Product) => (
