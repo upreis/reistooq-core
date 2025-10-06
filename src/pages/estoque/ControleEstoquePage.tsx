@@ -12,7 +12,7 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload } from "lucide-react";
+import { Package, AlertTriangle, Filter, Upload, Plus } from "lucide-react";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { CategoryImportModal } from "@/components/estoque/CategoryImportModal";
@@ -306,6 +306,15 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     });
   };
 
+  const handleNewProductSuccess = () => {
+    setNewProductModalOpen(false);
+    loadProducts();
+    toast({
+      title: "Produto criado",
+      description: "Produto criado com sucesso!",
+    });
+  };
+
   const handleNewProduct = () => {
     setNewProductModalOpen(true);
   };
@@ -339,6 +348,14 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
     <div className="space-y-6">
       {/* Botões de ação */}
       <div className="flex justify-end gap-2">
+        <Button 
+          variant="default" 
+          size="sm"
+          onClick={handleNewProduct}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Adicionar Produto
+        </Button>
         <ProductImportModal 
           trigger={
             <Button variant="outline" size="sm">
@@ -417,7 +434,7 @@ export default function ControleEstoquePage({ initialProducts = [], initialLoadi
           }
         }}
         product={editingProduct}
-        onSuccess={handleEditSuccess}
+        onSuccess={editModalOpen ? handleEditSuccess : handleNewProductSuccess}
       />
     </div>
   );
