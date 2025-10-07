@@ -726,7 +726,7 @@ export function ComposicoesEstoque() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={clearSelection}
+                  onClick={toggleSelectMode}
                   className="gap-2"
                 >
                   <X className="w-4 h-4" />
@@ -939,10 +939,7 @@ export function ComposicoesEstoque() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  clearSelection();
-                  toggleSelectMode();
-                }}
+                onClick={toggleSelectMode}
                 className="gap-1.5"
               >
                 <X className="w-4 h-4" />
