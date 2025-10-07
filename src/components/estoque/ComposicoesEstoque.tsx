@@ -635,6 +635,16 @@ export function ComposicoesEstoque() {
           
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <Button
+              onClick={() => {
+                setProdutoSelecionado(null);
+                setModalOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Nova Composição
+            </Button>
+            <Button
               variant="outline"
               onClick={() => setImportProdutosModalOpen(true)}
               className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
