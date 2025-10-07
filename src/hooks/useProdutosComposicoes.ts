@@ -174,6 +174,7 @@ export const useProdutosComposicoes = () => {
     error,
     refetch,
     createProduto: createProduto.mutate,
+    createProdutoAsync: createProduto.mutateAsync,
     updateProduto: updateProduto.mutate,
     deleteProduto: deleteProduto.mutate,
     importarDoEstoque: importarDoEstoque.mutate,

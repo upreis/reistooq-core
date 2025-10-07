@@ -77,6 +77,7 @@ export function ComposicoesEstoque() {
     produtos,
     isLoading,
     createProduto,
+    createProdutoAsync,
     updateProduto,
     deleteProduto,
     importarDoEstoque,
@@ -635,9 +636,26 @@ export function ComposicoesEstoque() {
           
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <Button
-              onClick={() => {
-                setProdutoSelecionado(null);
-                setModalOpen(true);
+              onClick={async () => {
+                // Criar um produto de composição básico primeiro
+                try {
+                  const novoProduto = await createProdutoAsync({
+                    sku_interno: `COMP-${Date.now()}`,
+                    nome: "Nova Composição",
+                    preco_venda: 0,
+                    quantidade_atual: 0,
+                    estoque_minimo: 0,
+                    status: 'ativo',
+                    ativo: true
+                  });
+                  
+                  if (novoProduto) {
+                    setProdutoSelecionado(novoProduto);
+                    setModalOpen(true);
+                  }
+                } catch (error) {
+                  console.error('Erro ao criar composição:', error);
+                }
               }}
               className="gap-2"
             >
