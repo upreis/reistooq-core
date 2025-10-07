@@ -292,9 +292,27 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                   });
                                 }}
                               />
-                               <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
-                                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                                <CommandGroup>
+                              <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
+                                {skuSearch[index] && skuSearch[index].trim() && (
+                                  <CommandGroup heading="Criar Novo">
+                                    <CommandItem
+                                      onSelect={() => {
+                                        atualizarComposicao(index, 'sku_componente', skuSearch[index]);
+                                        atualizarComposicao(index, 'nome_componente', '');
+                                        setSkuOpenIndex(null);
+                                      }}
+                                      className="bg-primary/5 border border-primary/20"
+                                    >
+                                      <Plus className="mr-2 h-4 w-4 text-primary" />
+                                      <div>
+                                        <div className="font-medium text-primary">Criar novo componente</div>
+                                        <div className="text-sm text-muted-foreground">SKU: {skuSearch[index]}</div>
+                                      </div>
+                                    </CommandItem>
+                                  </CommandGroup>
+                                )}
+                                <CommandEmpty>Nenhum produto encontrado. Use "Criar Novo" acima.</CommandEmpty>
+                                <CommandGroup heading={skuSearch[index] && skuSearch[index].trim() ? "Produtos Existentes" : undefined}>
                                   {availableProducts
                                     .filter(product => 
                                       product.sku_interno.toLowerCase().includes((skuSearch[index] ?? "").toLowerCase())
@@ -364,8 +382,26 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                 }}
                               />
                               <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
-                                <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                                <CommandGroup>
+                                {nomeSearch[index] && nomeSearch[index].trim() && (
+                                  <CommandGroup heading="Criar Novo">
+                                    <CommandItem
+                                      onSelect={() => {
+                                        atualizarComposicao(index, 'nome_componente', nomeSearch[index]);
+                                        atualizarComposicao(index, 'sku_componente', '');
+                                        setNomeOpenIndex(null);
+                                      }}
+                                      className="bg-primary/5 border border-primary/20"
+                                    >
+                                      <Plus className="mr-2 h-4 w-4 text-primary" />
+                                      <div>
+                                        <div className="font-medium text-primary">Criar novo componente</div>
+                                        <div className="text-sm text-muted-foreground">Nome: {nomeSearch[index]}</div>
+                                      </div>
+                                    </CommandItem>
+                                  </CommandGroup>
+                                )}
+                                <CommandEmpty>Nenhum produto encontrado. Use "Criar Novo" acima.</CommandEmpty>
+                                <CommandGroup heading={nomeSearch[index] && nomeSearch[index].trim() ? "Produtos Existentes" : undefined}>
                                   {availableProducts
                                     .filter(product => 
                                       product.nome.toLowerCase().includes((nomeSearch[index] ?? "").toLowerCase())
