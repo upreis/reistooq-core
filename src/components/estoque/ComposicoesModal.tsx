@@ -353,7 +353,11 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-50 bg-background border border-border shadow-lg">
+                          <PopoverContent 
+                            className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg"
+                            sideOffset={5}
+                            align="start"
+                          >
                             <Command className="bg-background text-foreground">
                               <CommandInput 
                                 placeholder="Buscar por SKU..." 
@@ -366,7 +370,12 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                   });
                                 }}
                               />
-                              <CommandList className="max-h-[200px] overflow-y-auto">
+                              <CommandList className="max-h-[300px] overflow-y-auto overscroll-contain"
+                                style={{ 
+                                  WebkitOverflowScrolling: 'touch',
+                                  scrollbarWidth: 'thin'
+                                }}
+                              >
                                 {skuSearch[index] && skuSearch[index].trim() && (
                                   <CommandGroup heading="Criar Novo">
                                     <CommandItem
@@ -443,7 +452,11 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-50 bg-background border border-border shadow-lg">
+                          <PopoverContent 
+                            className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg"
+                            sideOffset={5}
+                            align="start"
+                          >
                             <Command className="bg-background text-foreground">
                               <CommandInput 
                                 placeholder="Buscar por nome..." 
@@ -456,7 +469,12 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                   });
                                 }}
                               />
-                              <CommandList className="max-h-[200px] overflow-y-auto">
+                              <CommandList className="max-h-[300px] overflow-y-auto overscroll-contain"
+                                style={{ 
+                                  WebkitOverflowScrolling: 'touch',
+                                  scrollbarWidth: 'thin'
+                                }}
+                              >
                                 {nomeSearch[index] && nomeSearch[index].trim() && (
                                   <CommandGroup heading="Criar Novo">
                                     <CommandItem
