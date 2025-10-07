@@ -1306,7 +1306,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               }
               
               const imageId = workbook.addImage({
-                buffer: bytes,
+                buffer: bytes as any,
                 extension: 'png',
               });
 
@@ -1338,7 +1338,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
               }
               
               const imageId = workbook.addImage({
-                buffer: bytes,
+                buffer: bytes as any,
                 extension: 'png',
               });
 

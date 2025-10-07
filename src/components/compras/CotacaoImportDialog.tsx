@@ -219,6 +219,23 @@ export const CotacaoImportDialog = ({
         console.log('⚡ [CRÍTICO] Primeiro produto ANTES do mapeamento:', produtosComImagens[0]);
       }
       
+      // Helper para buscar valor em múltiplas variações de nome de coluna (MOVIDO PARA ANTES DO USO)
+      const buscarValorColuna = (item: any, variacoes: string[], nomeCampo?: string): any => {
+        for (const variacao of variacoes) {
+          if (item[variacao] !== undefined && item[variacao] !== null && item[variacao] !== '') {
+            if (nomeCampo) console.log(`✅ [${nomeCampo}] Encontrado na coluna: "${variacao}" = "${item[variacao]}"`);
+            return item[variacao];
+          }
+        }
+        if (nomeCampo) {
+          console.log(`❌ [${nomeCampo}] Não encontrado. Tentou:`, variacoes.slice(0, 3));
+          console.log(`   Colunas disponíveis:`, Object.keys(item).filter(k => 
+            k.toLowerCase().includes(nomeCampo.toLowerCase().split('_')[0])
+          ));
+        }
+        return undefined;
+      };
+      
       try {
         // MAPEAR TODOS OS CAMPOS DO EXCEL PARA ESTRUTURA COMPLETA
         dadosProcessados = produtosComImagens.map((item, index) => ({
@@ -526,22 +543,7 @@ export const CotacaoImportDialog = ({
     }
   };
 
-  // Helper para buscar valor em múltiplas variações de nome de coluna
-  const buscarValorColuna = (item: any, variacoes: string[], nomeCampo?: string): any => {
-    for (const variacao of variacoes) {
-      if (item[variacao] !== undefined && item[variacao] !== null && item[variacao] !== '') {
-        if (nomeCampo) console.log(`✅ [${nomeCampo}] Encontrado na coluna: "${variacao}" = "${item[variacao]}"`);
-        return item[variacao];
-      }
-    }
-    if (nomeCampo) {
-      console.log(`❌ [${nomeCampo}] Não encontrado. Tentou:`, variacoes.slice(0, 3));
-      console.log(`   Colunas disponíveis:`, Object.keys(item).filter(k => 
-        k.toLowerCase().includes(nomeCampo.toLowerCase().split('_')[0])
-      ));
-    }
-    return undefined;
-  };
+  // Helper movido para dentro da função handleFileUpload para evitar erro de hoisting
 
   const lerArquivo = (file: File): Promise<any[]> => {
     return new Promise((resolve, reject) => {
