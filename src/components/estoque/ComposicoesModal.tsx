@@ -353,7 +353,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent onWheelCapture={(e) => e.stopPropagation()} className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg overscroll-contain">
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-50 bg-background border border-border shadow-lg">
                             <Command className="bg-background text-foreground">
                               <CommandInput 
                                 placeholder="Buscar por SKU..." 
@@ -366,7 +366,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                   });
                                 }}
                               />
-                              <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
+                              <CommandList className="max-h-[200px] overflow-y-auto">
                                 {skuSearch[index] && skuSearch[index].trim() && (
                                   <CommandGroup heading="Criar Novo">
                                     <CommandItem
@@ -375,7 +375,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                         atualizarComposicao(index, 'nome_componente', '');
                                         setSkuOpenIndex(null);
                                       }}
-                                      className="bg-primary/5 border border-primary/20"
+                                      className="bg-primary/5 border border-primary/20 cursor-pointer"
                                     >
                                       <Plus className="mr-2 h-4 w-4 text-primary" />
                                       <div>
@@ -405,6 +405,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                           });
                                           setSkuOpenIndex(null);
                                         }}
+                                        className="cursor-pointer"
                                       >
                                         <Check
                                           className={cn(
@@ -442,7 +443,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent onWheelCapture={(e) => e.stopPropagation()} className="w-[--radix-popover-trigger-width] p-0 z-[9999] bg-background border border-border shadow-lg overscroll-contain">
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-50 bg-background border border-border shadow-lg">
                             <Command className="bg-background text-foreground">
                               <CommandInput 
                                 placeholder="Buscar por nome..." 
@@ -455,7 +456,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                   });
                                 }}
                               />
-                              <CommandList className="max-h-60 overflow-y-auto overscroll-contain touch-pan-y bg-background">
+                              <CommandList className="max-h-[200px] overflow-y-auto">
                                 {nomeSearch[index] && nomeSearch[index].trim() && (
                                   <CommandGroup heading="Criar Novo">
                                     <CommandItem
@@ -464,7 +465,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                         atualizarComposicao(index, 'sku_componente', '');
                                         setNomeOpenIndex(null);
                                       }}
-                                      className="bg-primary/5 border border-primary/20"
+                                      className="bg-primary/5 border border-primary/20 cursor-pointer"
                                     >
                                       <Plus className="mr-2 h-4 w-4 text-primary" />
                                       <div>
@@ -494,6 +495,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
                                           });
                                           setNomeOpenIndex(null);
                                         }}
+                                        className="cursor-pointer"
                                       >
                                         <Check
                                           className={cn(
