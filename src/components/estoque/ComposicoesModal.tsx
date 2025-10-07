@@ -44,24 +44,39 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
   const { unidades, getUnidadeById } = useUnidadesMedida();
   const [skuSearch, setSkuSearch] = useState<string[]>([]);
   const [nomeSearch, setNomeSearch] = useState<string[]>([]);
+  
+  // Estados para editar o produto principal da composição
+  const [produtoSku, setProdutoSku] = useState("");
+  const [produtoNome, setProdutoNome] = useState("");
+  const [produtoSkuOpen, setProdutoSkuOpen] = useState(false);
+  const [produtoNomeOpen, setProdutoNomeOpen] = useState(false);
+  const [produtoSkuSearch, setProdutoSkuSearch] = useState("");
+  const [produtoNomeSearch, setProdutoNomeSearch] = useState("");
 
   useEffect(() => {
-    if (produto && composicoes) {
-      setFormComposicoes(
-        composicoes.map(comp => ({
-          id: comp.id,
-          sku_componente: comp.sku_componente,
-          nome_componente: comp.nome_componente,
-          quantidade: comp.quantidade,
-          unidade_medida_id: comp.unidade_medida_id || ""
-        }))
-      );
-      setSkuSearch(composicoes.map(comp => comp.sku_componente || ""));
-      setNomeSearch(composicoes.map(comp => comp.nome_componente || ""));
-    } else if (produto) {
-      setFormComposicoes([]);
-      setSkuSearch([]);
-      setNomeSearch([]);
+    if (produto) {
+      setProdutoSku(produto.sku_interno || "");
+      setProdutoNome(produto.nome || "");
+      setProdutoSkuSearch(produto.sku_interno || "");
+      setProdutoNomeSearch(produto.nome || "");
+      
+      if (composicoes) {
+        setFormComposicoes(
+          composicoes.map(comp => ({
+            id: comp.id,
+            sku_componente: comp.sku_componente,
+            nome_componente: comp.nome_componente,
+            quantidade: comp.quantidade,
+            unidade_medida_id: comp.unidade_medida_id || ""
+          }))
+        );
+        setSkuSearch(composicoes.map(comp => comp.sku_componente || ""));
+        setNomeSearch(composicoes.map(comp => comp.nome_componente || ""));
+      } else {
+        setFormComposicoes([]);
+        setSkuSearch([]);
+        setNomeSearch([]);
+      }
     }
   }, [produto, composicoes]);
 
@@ -125,9 +140,31 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
   const salvarComposicoes = async () => {
     if (!produto) return;
 
+    // Validar se SKU e nome do produto foram preenchidos
+    if (!produtoSku.trim() || !produtoNome.trim()) {
+      toast({
+        title: "Dados incompletos",
+        description: "Por favor, preencha o SKU e nome do produto",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setSaving(true);
     try {
-      // Validar campos obrigatórios
+      // Primeiro, atualizar os dados do produto na tabela produtos_composicoes
+      const { error: updateProdutoError } = await supabase
+        .from('produtos_composicoes')
+        .update({
+          sku_interno: produtoSku.trim(),
+          nome: produtoNome.trim(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', produto.id);
+
+      if (updateProdutoError) throw updateProdutoError;
+
+      // Validar campos obrigatórios dos componentes
       const composicoesValidas = formComposicoes.filter(comp => 
         comp.sku_componente.trim() && 
         comp.nome_componente.trim() && 
@@ -139,7 +176,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         const { error: deleteError } = await supabase
           .from('produto_componentes')
           .delete()
-          .eq('sku_produto', produto.sku_interno);
+          .eq('sku_produto', produtoSku.trim());
 
         if (deleteError) throw deleteError;
       }
@@ -150,7 +187,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         const { data: productData } = await supabase
           .from('produtos')
           .select('organization_id')
-          .eq('sku_interno', produto.sku_interno)
+          .limit(1)
           .single();
 
         if (!productData?.organization_id) {
@@ -158,7 +195,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         }
 
         const composicoesParaInserir = composicoesValidas.map(comp => ({
-          sku_produto: produto.sku_interno,
+          sku_produto: produtoSku.trim(),
           sku_componente: comp.sku_componente.trim(),
           nome_componente: comp.nome_componente.trim(),
           quantidade: comp.quantidade,
@@ -175,7 +212,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
 
       toast({
         title: "Composições salvas com sucesso!",
-        description: `${composicoesValidas.length} componente(s) configurado(s) para ${produto.nome}`,
+        description: `${composicoesValidas.length} componente(s) configurado(s) para ${produtoNome}`,
       });
 
       onSave();
@@ -200,17 +237,172 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            Editar Composições - {produto.nome}
+            Editar Composições - {produtoNome || produto?.nome || "Nova Composição"}
           </DialogTitle>
-          <div className="text-sm text-muted-foreground">
-            SKU Produto: <Badge variant="outline">{produto.sku_interno}</Badge>
-          </div>
           <DialogDescription className="sr-only">
-            Editar composições do produto. Use os campos para buscar e selecionar componentes.
+            Editar dados do produto e suas composições. Use os campos para buscar e selecionar componentes.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Seção de Edição do Produto Principal */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Package className="h-5 w-5 text-primary" />
+                Dados do Produto
+              </h3>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* SKU do Produto */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">SKU do Produto</Label>
+                  <Popover open={produtoSkuOpen} onOpenChange={setProdutoSkuOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between text-left font-normal"
+                      >
+                        <span className="truncate">
+                          {produtoSku || "Selecione ou digite um SKU..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999]">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Buscar ou criar SKU..." 
+                          value={produtoSkuSearch}
+                          onValueChange={setProdutoSkuSearch}
+                        />
+                        <CommandList className="max-h-60 overflow-y-auto">
+                          {produtoSkuSearch && produtoSkuSearch.trim() && (
+                            <CommandGroup heading="Criar Novo">
+                              <CommandItem
+                                onSelect={() => {
+                                  setProdutoSku(produtoSkuSearch);
+                                  setProdutoSkuOpen(false);
+                                }}
+                                className="bg-primary/5 border border-primary/20"
+                              >
+                                <Plus className="mr-2 h-4 w-4 text-primary" />
+                                <div>
+                                  <div className="font-medium text-primary">Criar novo produto</div>
+                                  <div className="text-sm text-muted-foreground">SKU: {produtoSkuSearch}</div>
+                                </div>
+                              </CommandItem>
+                            </CommandGroup>
+                          )}
+                          <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                          <CommandGroup heading={produtoSkuSearch && produtoSkuSearch.trim() ? "Produtos Existentes" : undefined}>
+                            {availableProducts
+                              .filter(p => p.sku_interno.toLowerCase().includes(produtoSkuSearch.toLowerCase()))
+                              .map((p) => (
+                                <CommandItem
+                                  key={p.id}
+                                  value={p.sku_interno}
+                                  onSelect={() => {
+                                    setProdutoSku(p.sku_interno);
+                                    setProdutoNome(p.nome);
+                                    setProdutoSkuSearch(p.sku_interno);
+                                    setProdutoNomeSearch(p.nome);
+                                    setProdutoSkuOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", produtoSku === p.sku_interno ? "opacity-100" : "opacity-0")} />
+                                  <div>
+                                    <div className="font-medium">{p.sku_interno}</div>
+                                    <div className="text-sm text-muted-foreground">{p.nome}</div>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Nome do Produto */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Nome do Produto</Label>
+                  <Popover open={produtoNomeOpen} onOpenChange={setProdutoNomeOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        className="w-full justify-between text-left font-normal"
+                      >
+                        <span className="truncate">
+                          {produtoNome || "Selecione ou digite um nome..."}
+                        </span>
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999]">
+                      <Command>
+                        <CommandInput 
+                          placeholder="Buscar ou criar nome..." 
+                          value={produtoNomeSearch}
+                          onValueChange={setProdutoNomeSearch}
+                        />
+                        <CommandList className="max-h-60 overflow-y-auto">
+                          {produtoNomeSearch && produtoNomeSearch.trim() && (
+                            <CommandGroup heading="Criar Novo">
+                              <CommandItem
+                                onSelect={() => {
+                                  setProdutoNome(produtoNomeSearch);
+                                  setProdutoNomeOpen(false);
+                                }}
+                                className="bg-primary/5 border border-primary/20"
+                              >
+                                <Plus className="mr-2 h-4 w-4 text-primary" />
+                                <div>
+                                  <div className="font-medium text-primary">Criar novo produto</div>
+                                  <div className="text-sm text-muted-foreground">Nome: {produtoNomeSearch}</div>
+                                </div>
+                              </CommandItem>
+                            </CommandGroup>
+                          )}
+                          <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
+                          <CommandGroup heading={produtoNomeSearch && produtoNomeSearch.trim() ? "Produtos Existentes" : undefined}>
+                            {availableProducts
+                              .filter(p => p.nome.toLowerCase().includes(produtoNomeSearch.toLowerCase()))
+                              .map((p) => (
+                                <CommandItem
+                                  key={p.id}
+                                  value={p.nome}
+                                  onSelect={() => {
+                                    setProdutoNome(p.nome);
+                                    setProdutoSku(p.sku_interno);
+                                    setProdutoNomeSearch(p.nome);
+                                    setProdutoSkuSearch(p.sku_interno);
+                                    setProdutoNomeOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", produtoNome === p.nome ? "opacity-100" : "opacity-0")} />
+                                  <div>
+                                    <div className="font-medium">{p.nome}</div>
+                                    <div className="text-sm text-muted-foreground">{p.sku_interno}</div>
+                                  </div>
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Seção de Componentes */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Componentes da Composição</h3>
           {/* Lista de Composições */}
           <div className="space-y-4">
             {formComposicoes.map((composicao, index) => (
@@ -490,6 +682,7 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
             <Plus className="h-4 w-4 mr-2" />
             Adicionar Componente
           </Button>
+          </div>
 
           {/* Ações do Modal */}
           <div className="flex justify-end gap-2 pt-4 border-t">
