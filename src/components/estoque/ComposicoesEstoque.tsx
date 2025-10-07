@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import, Trash2, MoreHorizontal, Filter } from "lucide-react";
+import { Search, Package, Plus, Boxes, Edit, ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Upload, Download, Import, Trash2, MoreHorizontal, Filter, X } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -342,12 +342,23 @@ export function ComposicoesEstoque() {
 
     return (
       <Card key={product.id} className={cn(
-        "group hover:shadow-xl transition-all duration-300",
+        "group hover:shadow-xl transition-all duration-300 relative",
         itemSelected && "ring-2 ring-primary border-primary/50 bg-primary/5"
       )}>
         <CardContent className="p-3 md:p-6">
+          {/* Checkbox de seleção */}
+          {isSelectMode && (
+            <div className="absolute top-3 right-3 z-10">
+              <Checkbox
+                checked={itemSelected}
+                onCheckedChange={() => selectItem(product.id)}
+                className="h-5 w-5"
+              />
+            </div>
+          )}
+          
           <header className="mb-5">
-            <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2">{product.nome}</h3>
+            <h3 className="font-semibold text-lg text-foreground leading-snug line-clamp-2 mb-2 pr-8">{product.nome}</h3>
             <div className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground font-medium">SKU:</span>
               <Badge variant="outline" className="font-mono text-xs px-2 py-1">{product.sku_interno}</Badge>
@@ -635,57 +646,122 @@ export function ComposicoesEstoque() {
           </div>
           
           <div className="flex items-center gap-3 flex-wrap justify-end">
-            <Button
-              onClick={async () => {
-                // Criar um produto de composição básico primeiro
-                try {
-                  const novoProduto = await createProdutoAsync({
-                    sku_interno: `COMP-${Date.now()}`,
-                    nome: "Nova Composição",
-                    preco_venda: 0,
-                    quantidade_atual: 0,
-                    estoque_minimo: 0,
-                    status: 'ativo',
-                    ativo: true
-                  });
-                  
-                  if (novoProduto) {
-                    setProdutoSelecionado(novoProduto);
-                    setModalOpen(true);
-                  }
-                } catch (error) {
-                  console.error('Erro ao criar composição:', error);
-                }
-              }}
-              className="gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Nova Composição
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setImportProdutosModalOpen(true)}
-              className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-            >
-              <Import className="w-4 h-4" />
-              Importar do Estoque
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setImportModalOpen(true)}
-              className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-            >
-              <Upload className="w-4 h-4" />
-              Importar Excel
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleDownloadComposicoes}
-              className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-            >
-              <Download className="w-4 h-4" />
-              Baixar Dados
-            </Button>
+            {/* Modo de seleção */}
+            {!isSelectMode ? (
+              <>
+                <Button
+                  onClick={async () => {
+                    // Criar um produto de composição básico primeiro
+                    try {
+                      const novoProduto = await createProdutoAsync({
+                        sku_interno: `COMP-${Date.now()}`,
+                        nome: "Nova Composição",
+                        preco_venda: 0,
+                        quantidade_atual: 0,
+                        estoque_minimo: 0,
+                        status: 'ativo',
+                        ativo: true
+                      });
+                      
+                      if (novoProduto) {
+                        setProdutoSelecionado(novoProduto);
+                        setModalOpen(true);
+                      }
+                    } catch (error) {
+                      console.error('Erro ao criar composição:', error);
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nova Composição
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setImportProdutosModalOpen(true)}
+                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                >
+                  <Import className="w-4 h-4" />
+                  Importar do Estoque
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setImportModalOpen(true)}
+                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                >
+                  <Upload className="w-4 h-4" />
+                  Importar Excel
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleDownloadComposicoes}
+                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                >
+                  <Download className="w-4 h-4" />
+                  Baixar Dados
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={toggleSelectMode}
+                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Selecionar
+                </Button>
+              </>
+            ) : (
+              <>
+                <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                  {selectedCount} selecionado(s)
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => selectAll(produtosFinaisFiltrados)}
+                  className="gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Selecionar Todos
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearSelection}
+                  className="gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Cancelar
+                </Button>
+                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      disabled={selectedCount === 0}
+                      className="gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Excluir ({selectedCount})
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tem certeza que deseja excluir {selectedCount} composiç{selectedCount === 1 ? 'ão' : 'ões'}? 
+                        Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Excluir
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -840,6 +916,69 @@ export function ComposicoesEstoque() {
           )}
         </div>
       </div>
+
+      {/* Barra flutuante de ações (Mobile) */}
+      {isSelectMode && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-2xl p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 flex-1">
+              <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                {selectedCount} item(s)
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => selectAll(produtosFinaisFiltrados)}
+                className="gap-1.5 text-xs"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Todos
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  clearSelection();
+                  toggleSelectMode();
+                }}
+                className="gap-1.5"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+              <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    disabled={selectedCount === 0}
+                    className="gap-1.5"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir {selectedCount} composiç{selectedCount === 1 ? 'ão' : 'ões'}? 
+                      Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Composições */}
       <ComposicoesModal
