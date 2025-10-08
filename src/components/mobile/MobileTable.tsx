@@ -71,9 +71,9 @@ export default function MobileTable({
     );
   }
 
-  const selectableItems = !!onSelectItem && !isMobile; // Ocultar seleção no mobile
-  const allSelected = selectableItems && selectedItems.length === data.length && data.length > 0;
-  const someSelected = selectableItems && selectedItems.length > 0 && selectedItems.length < data.length;
+  const selectableItems = !!onSelectItem && !isMobile;
+  const allSelected = false; // Removido - não usar seleção no header
+  const someSelected = false; // Removido - não usar seleção no header
 
   const primaryColumn = columns.find(col => col.primary);
   const secondaryColumns = columns.filter(col => !col.primary);
@@ -98,6 +98,7 @@ export default function MobileTable({
     };
 
     const gridCols = columns.map(col => getColumnWidth(col)).join(' ');
+    // Adicionar espaço para checkbox individual, mas não para header
     const fullGridTemplate = `${selectableItems ? '40px ' : ''}${gridCols}${actions.length > 0 ? ' 140px' : ''}`;
 
     return (
@@ -108,17 +109,7 @@ export default function MobileTable({
                style={{ gridTemplateColumns: fullGridTemplate }}>
             {selectableItems && (
               <div className="flex items-center">
-                <Checkbox
-                  checked={allSelected}
-                  onCheckedChange={(checked) => {
-                    console.log('🔍 Checkbox Header - onCheckedChange:', checked);
-                    console.log('📋 allSelected:', allSelected, 'someSelected:', someSelected);
-                    onSelectAll?.(checked === true);
-                  }}
-                  ref={(el) => {
-                    if (el) (el as any).indeterminate = someSelected;
-                  }}
-                />
+                {/* Espaço vazio - sem checkbox no header */}
               </div>
             )}
             {columns.map((column) => (
