@@ -73,6 +73,7 @@ export default function Shop() {
     ultima_movimentacao: null,
     organization_id: null,
     integration_account_id: null,
+    sku_pai: null,
   })) || [];
 
   // Sync filters including hierarchical ones

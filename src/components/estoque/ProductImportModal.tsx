@@ -189,6 +189,7 @@ export function ProductImportModal({ trigger, onSuccess }: ProductImportModalPro
             url_imagem: row['URL da Imagem'] || '',
             ativo: row['Ativo']?.toLowerCase() === 'sim',
             status: 'active',
+            sku_pai: null,
           });
 
           successCount++;

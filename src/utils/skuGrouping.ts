@@ -77,6 +77,7 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
 
 function extractParentSku(sku: string): string {
   // Extrair SKU pai baseado no padrão CMD-29-VERD-1 -> CMD-29
+  // Mas priorizar o campo sku_pai do banco de dados
   const parts = sku.split('-');
   if (parts.length >= 3) {
     return parts.slice(0, 2).join('-');

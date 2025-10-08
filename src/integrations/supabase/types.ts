@@ -3611,6 +3611,7 @@ export type Database = {
           quantidade_atual: number
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
+          sku_pai: string | null
           status: string
           subcategoria: string | null
           ultima_movimentacao: string | null
@@ -3660,6 +3661,7 @@ export type Database = {
           quantidade_atual?: number
           sku_gerado_automaticamente?: boolean | null
           sku_interno: string
+          sku_pai?: string | null
           status?: string
           subcategoria?: string | null
           ultima_movimentacao?: string | null
@@ -3709,6 +3711,7 @@ export type Database = {
           quantidade_atual?: number
           sku_gerado_automaticamente?: boolean | null
           sku_interno?: string
+          sku_pai?: string | null
           status?: string
           subcategoria?: string | null
           ultima_movimentacao?: string | null
@@ -5117,6 +5120,7 @@ export type Database = {
           quantidade_atual: number
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
+          sku_pai: string | null
           status: string
           subcategoria: string | null
           ultima_movimentacao: string | null

@@ -90,7 +90,7 @@ const AddProduct = () => {
         return;
       }
 
-      await createProduct(formData);
+      await createProduct({ ...formData, sku_pai: null });
       toast.success("Produto criado com sucesso!");
       
       // Reset form

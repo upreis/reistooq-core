@@ -25,6 +25,7 @@ export interface BaseProduct {
   ultima_movimentacao: string | null;
   organization_id: string | null;
   integration_account_id: string | null;
+  sku_pai: string | null;
 }
 
 // Extended interface with additional fields for template import

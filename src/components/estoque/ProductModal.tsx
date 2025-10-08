@@ -314,6 +314,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           ncm: data.ncm || null,
           codigo_cest: data.codigo_cest || null,
           origem: data.origem || null,
+          sku_pai: null,
         });
         
         if (imageFile && newProduct) {
