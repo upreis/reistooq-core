@@ -174,10 +174,25 @@ export const useProducts = () => {
       .limit(1)
       .single();
 
+    // Filtrar apenas colunas que existem na tabela produtos
+    const allowedColumns = [
+      'sku_interno', 'nome', 'categoria', 'descricao', 'codigo_barras',
+      'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
+      'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
+      'url_imagem', 'sku_pai'
+    ];
+
+    const filteredProduct = Object.keys(product).reduce((acc, key) => {
+      if (allowedColumns.includes(key)) {
+        acc[key] = product[key];
+      }
+      return acc;
+    }, {} as any);
+
     const payload = {
-      ...product,
+      ...filteredProduct,
       organization_id: orgId,
-      unidade_medida_id: product.unidade_medida_id || unidadePadrao?.id || null,
+      unidade_medida_id: filteredProduct.unidade_medida_id || unidadePadrao?.id || null,
     };
 
     const { data, error } = await supabase
