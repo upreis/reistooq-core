@@ -109,30 +109,19 @@ export function useEstoqueFilters(products: Product[] = []) {
       });
     }
 
-    // Ordenar
+    // Ordenar - SEMPRE por data de criação mais recente primeiro
     filtered.sort((a, b) => {
-      switch (filters.orderBy) {
-        case 'recent':
-          return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
-        
-        case 'price-desc':
-          return (b.preco_venda || 0) - (a.preco_venda || 0);
-        
-        case 'price-asc':
-          return (a.preco_venda || 0) - (b.preco_venda || 0);
-
-        case 'stock-desc':
-          return (b.quantidade_atual || 0) - (a.quantidade_atual || 0);
-        
-        case 'stock-asc':
-          return (a.quantidade_atual || 0) - (b.quantidade_atual || 0);
-        
-        case 'name-asc':
-          return (a.nome || '').localeCompare(b.nome || '');
-        
-        default:
-          return 0;
-      }
+      // Forçar ordenação por data de criação (mais recente primeiro)
+      const dateA = new Date(a.created_at || 0).getTime();
+      const dateB = new Date(b.created_at || 0).getTime();
+      
+      console.log('🔍 Comparando:', {
+        a: { sku: a.sku_interno, created: a.created_at, timestamp: dateA },
+        b: { sku: b.sku_interno, created: b.created_at, timestamp: dateB },
+        result: dateB - dateA
+      });
+      
+      return dateB - dateA; // Mais recente primeiro (maior timestamp = mais recente)
     });
 
     return filtered;
