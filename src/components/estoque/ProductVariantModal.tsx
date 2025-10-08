@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Plus, X, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useProducts, Product } from "@/hooks/useProducts";
+import { useProducts, Product, BaseProduct } from "@/hooks/useProducts";
 import { Badge } from "@/components/ui/badge";
 
 interface ProductVariantModalProps {
@@ -26,9 +26,20 @@ interface VariantInput {
   quantity: number;
 }
 
+interface ParentProductForm {
+  sku_interno: string;
+  nome: string;
+  quantidade_atual: number;
+}
+
 export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVariantModalProps) {
   const [step, setStep] = useState<'parent' | 'variants'>('parent');
   const [parentProduct, setParentProduct] = useState<Product | null>(null);
+  const [parentForm, setParentForm] = useState<ParentProductForm>({
+    sku_interno: '',
+    nome: '',
+    quantidade_atual: 0,
+  });
   const [variants, setVariants] = useState<VariantInput[]>([{ suffix: '', quantity: 0 }]);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
@@ -50,13 +61,57 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
     setVariants(updated);
   };
 
-  const handleParentCreated = (product: Product) => {
-    setParentProduct(product);
-    setStep('variants');
-    toast({
-      title: "Produto pai criado!",
-      description: `SKU ${product.sku_interno} criado. Agora adicione as variações.`,
-    });
+  const handleCreateParent = async () => {
+    if (!parentForm.sku_interno.trim() || !parentForm.nome.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha SKU e Nome do produto pai.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const newProduct = {
+        sku_interno: parentForm.sku_interno.trim().toUpperCase(),
+        nome: parentForm.nome.trim(),
+        quantidade_atual: parentForm.quantidade_atual,
+        estoque_minimo: 0,
+        estoque_maximo: 0,
+        preco_custo: 0,
+        preco_venda: 0,
+        localizacao: '',
+        codigo_barras: '',
+        unidade_medida_id: null,
+        categoria: null,
+        descricao: null,
+        status: 'disponivel',
+        ativo: true,
+        sku_pai: null,
+        url_imagem: null,
+        dias_preparacao: 0,
+        sob_encomenda: false,
+      };
+
+      const createdProduct = await createProduct(newProduct);
+      setParentProduct(createdProduct);
+      setStep('variants');
+      
+      toast({
+        title: "Produto pai criado!",
+        description: `SKU ${createdProduct.sku_interno} criado. Agora adicione as variações.`,
+      });
+    } catch (error) {
+      console.error('Erro ao criar produto pai:', error);
+      toast({
+        title: "Erro ao criar produto pai",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleCreateVariants = async () => {
@@ -112,6 +167,7 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
   const handleClose = () => {
     setStep('parent');
     setParentProduct(null);
+    setParentForm({ sku_interno: '', nome: '', quantidade_atual: 0 });
     setVariants([{ suffix: '', quantity: 0 }]);
     onOpenChange(false);
   };
@@ -162,15 +218,64 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
                   </div>
                   <Badge variant="default">Criado</Badge>
                 </div>
+                <div className="mt-4 flex justify-end">
+                  <Button onClick={() => setStep('variants')}>
+                    Continuar para Variações
+                  </Button>
+                </div>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground mb-4">
-                  Use o botão "+ Novo Produto" para criar o produto pai primeiro.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Após criar o produto pai, você poderá adicionar variações.
-                </p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="parent-sku">SKU Interno *</Label>
+                    <Input
+                      id="parent-sku"
+                      placeholder="Ex: CAMISA-001"
+                      value={parentForm.sku_interno}
+                      onChange={(e) => setParentForm({ ...parentForm, sku_interno: e.target.value.toUpperCase() })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parent-name">Nome do Produto *</Label>
+                    <Input
+                      id="parent-name"
+                      placeholder="Ex: Camisa Polo"
+                      value={parentForm.nome}
+                      onChange={(e) => setParentForm({ ...parentForm, nome: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="parent-quantity">Quantidade Inicial</Label>
+                    <Input
+                      id="parent-quantity"
+                      type="number"
+                      min="0"
+                      value={parentForm.quantidade_atual}
+                      onChange={(e) => setParentForm({ ...parentForm, quantidade_atual: parseInt(e.target.value) || 0 })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pode ser 0 se o estoque será apenas nas variações
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={handleClose}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleCreateParent}
+                    disabled={isCreating}
+                  >
+                    {isCreating ? "Criando..." : "Criar Produto Pai"}
+                  </Button>
+                </div>
               </div>
             )}
           </TabsContent>
