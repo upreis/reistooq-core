@@ -157,15 +157,26 @@ export default function ControleEstoquePage() {
   };
 
   const handleSelectProduct = (productId: string) => {
-    setSelectedProducts(prev => 
-      prev.includes(productId) 
+    console.log('🔍 handleSelectProduct chamado com ID:', productId);
+    console.log('📋 Estado atual de selectedProducts:', selectedProducts);
+    
+    setSelectedProducts(prev => {
+      const newSelection = prev.includes(productId) 
         ? prev.filter(id => id !== productId)
-        : [...prev, productId]
-    );
+        : [...prev, productId];
+      
+      console.log('✅ Nova seleção:', newSelection);
+      return newSelection;
+    });
   };
 
   const handleSelectAll = (selected: boolean) => {
-    setSelectedProducts(selected ? paginatedProducts.map(p => p.id) : []);
+    console.log('🔍 handleSelectAll chamado com:', selected);
+    console.log('📋 Produtos paginados:', paginatedProducts.length);
+    
+    const newSelection = selected ? paginatedProducts.map(p => p.id) : [];
+    console.log('✅ Selecionando:', newSelection);
+    setSelectedProducts(newSelection);
   };
 
   const handleDeleteSelected = async () => {

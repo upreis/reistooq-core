@@ -111,6 +111,8 @@ export default function MobileTable({
                 <Checkbox
                   checked={allSelected}
                   onCheckedChange={(checked) => {
+                    console.log('🔍 Checkbox Header - onCheckedChange:', checked);
+                    console.log('📋 allSelected:', allSelected, 'someSelected:', someSelected);
                     onSelectAll?.(checked === true);
                   }}
                   ref={(el) => {
@@ -163,10 +165,15 @@ export default function MobileTable({
                   onClick={() => onRowClick?.(item)}
                 >
                   {selectableItems && (
-                    <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center" onClick={(e) => {
+                      console.log('🔍 Div do checkbox clicado');
+                      e.stopPropagation();
+                    }}>
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => {
+                          console.log('🔍 Checkbox Individual - Item ID:', item[keyField]);
+                          console.log('📋 isSelected atual:', isSelected);
                           onSelectItem?.(item[keyField]);
                         }}
                       />
