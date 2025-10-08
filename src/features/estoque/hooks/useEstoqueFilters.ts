@@ -39,7 +39,7 @@ export function useEstoqueFilters(products: Product[] = []) {
     };
   }, [products]);
 
-  // Aplicar filtros
+  // Aplicar filtros - SEM REORDENAR (usar ordem do banco)
   const filteredData = useMemo(() => {
     let filtered = [...products];
 
@@ -109,21 +109,7 @@ export function useEstoqueFilters(products: Product[] = []) {
       });
     }
 
-    // Ordenar - SEMPRE por data de criação mais recente primeiro
-    filtered.sort((a, b) => {
-      // Forçar ordenação por data de criação (mais recente primeiro)
-      const dateA = new Date(a.created_at || 0).getTime();
-      const dateB = new Date(b.created_at || 0).getTime();
-      
-      console.log('🔍 Comparando:', {
-        a: { sku: a.sku_interno, created: a.created_at, timestamp: dateA },
-        b: { sku: b.sku_interno, created: b.created_at, timestamp: dateB },
-        result: dateB - dateA
-      });
-      
-      return dateB - dateA; // Mais recente primeiro (maior timestamp = mais recente)
-    });
-
+    // NÃO REORDENAR - manter a ordem que veio do banco (created_at desc)
     return filtered;
   }, [products, filters]);
 
