@@ -9,12 +9,20 @@ import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
-import { TwoStepProductModal } from "@/components/estoque/TwoStepProductModal";
+import { ParentProductModal } from "@/components/estoque/ParentProductModal";
+import { VariationProductModal } from "@/components/estoque/VariationProductModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2, ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
@@ -42,7 +50,8 @@ export default function ControleEstoquePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [twoStepModalOpen, setTwoStepModalOpen] = useState(false);
+  const [parentModalOpen, setParentModalOpen] = useState(false);
+  const [variationModalOpen, setVariationModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -314,7 +323,11 @@ export default function ControleEstoquePage() {
   };
 
   const handleNewProduct = () => {
-    setTwoStepModalOpen(true);
+    setParentModalOpen(true);
+  };
+
+  const handleNewVariation = () => {
+    setVariationModalOpen(true);
   };
 
   const handleEditVariation = (product: Product) => {
@@ -322,20 +335,7 @@ export default function ControleEstoquePage() {
     setDetailsModalOpen(true);
   };
 
-  const handleTwoStepComplete = () => {
-    setCurrentPage(1);
-    setTimeout(() => {
-      loadProducts();
-    }, 100);
-    toast({
-      title: "Sucesso",
-      description: "Produto e variações criados com sucesso!",
-    });
-  };
-
-  const handleDetailsSuccess = () => {
-    setDetailsModalOpen(false);
-    setEditingProduct(null);
+  const handleParentCreated = () => {
     setCurrentPage(1);
     setTimeout(() => {
       loadProducts();
@@ -425,18 +425,38 @@ export default function ControleEstoquePage() {
           )}
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => {
-              console.log('🔵 Botão Adicionar Produto clicado');
-              handleNewProduct();
-            }}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Produto
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="default" 
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {
+                console.log('🔵 Produto Simples clicado');
+                setEditingProduct(null);
+                setEditModalOpen(true);
+              }}>
+                <Package className="w-4 h-4 mr-2" />
+                Produto Simples
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleNewProduct}>
+                <Package className="w-4 h-4 mr-2 text-primary" />
+                Produto PAI (agrupador)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleNewVariation}>
+                <Plus className="w-4 h-4 mr-2 text-blue-500" />
+                Adicionar Variação
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ProductImportModal 
             trigger={
               <Button variant="outline" size="sm">
@@ -567,12 +587,19 @@ export default function ControleEstoquePage() {
         onSuccess={handleEditSuccess}
       />
       
-      {/* Modal de duas etapas para criar produto pai e variações */}
-      <TwoStepProductModal
-        open={twoStepModalOpen}
-        onOpenChange={setTwoStepModalOpen}
-        onEditVariation={handleEditVariation}
-        onComplete={handleTwoStepComplete}
+      {/* Modal para criar SKU PAI */}
+      <ParentProductModal
+        open={parentModalOpen}
+        onOpenChange={setParentModalOpen}
+        onParentCreated={handleParentCreated}
+      />
+
+      {/* Modal para adicionar variação a um SKU PAI */}
+      <VariationProductModal
+        open={variationModalOpen}
+        onOpenChange={setVariationModalOpen}
+        onComplete={handleParentCreated}
+        parentProducts={products.filter(p => !p.sku_pai)} // Apenas produtos PAI
       />
 
       {/* Modal de detalhes/edição completa da variação */}
@@ -585,7 +612,7 @@ export default function ControleEstoquePage() {
           }
         }}
         product={editingProduct}
-        onSuccess={handleDetailsSuccess}
+        onSuccess={handleEditSuccess}
       />
     </div>
   );
