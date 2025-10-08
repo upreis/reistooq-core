@@ -156,12 +156,27 @@ export default function ControleEstoquePage() {
   };
 
   const handleDeleteSelected = async () => {
-    if (selectedProducts.length === 0) return;
+    console.log('🗑️ handleDeleteSelected chamado');
+    console.log('📋 Produtos selecionados:', selectedProducts);
+    
+    if (selectedProducts.length === 0) {
+      console.log('⚠️ Nenhum produto selecionado');
+      return;
+    }
     
     try {
-      await Promise.all(
-        selectedProducts.map(id => deleteProduct(id))
-      );
+      console.log('🔄 Iniciando exclusão de', selectedProducts.length, 'produtos');
+      
+      const deletePromises = selectedProducts.map(async id => {
+        console.log('🗑️ Excluindo produto:', id);
+        const result = await deleteProduct(id);
+        console.log('✅ Resultado da exclusão:', result);
+        return result;
+      });
+      
+      await Promise.all(deletePromises);
+      
+      console.log('✅ Todos os produtos foram excluídos');
       
       toast({
         title: "Produtos excluídos",
@@ -171,9 +186,10 @@ export default function ControleEstoquePage() {
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
+      console.error('❌ Erro ao excluir produtos:', error);
       toast({
         title: "Erro ao excluir",
-        description: "Não foi possível excluir os produtos selecionados.",
+        description: error instanceof Error ? error.message : "Não foi possível excluir os produtos selecionados.",
         variant: "destructive",
       });
     }
