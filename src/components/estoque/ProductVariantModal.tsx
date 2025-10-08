@@ -86,7 +86,7 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
         unidade_medida_id: null,
         categoria: null,
         descricao: null,
-        status: 'disponivel',
+        status: 'ativo',
         ativo: true,
         sku_pai: null,
         url_imagem: null,
