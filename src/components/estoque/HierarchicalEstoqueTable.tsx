@@ -103,17 +103,12 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 onOpenChange={() => hasChildren && toggleGroup(group.parentSku)}
               >
                 <div className="flex items-center p-4 hover:bg-muted/50">
-                  {/* Checkbox de seleção do produto pai */}
-                  {group.parentProduct && (
+                  {/* Checkbox de seleção do produto pai - APENAS SE NÃO TIVER FILHOS */}
+                  {group.parentProduct && !hasChildren && (
                     <div className="mr-3" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={props.selectedProducts.includes(group.parentProduct.id)}
                         onCheckedChange={() => {
-                          console.log('🔵 Checkbox PAI clicado:', {
-                            sku: group.parentSku,
-                            id: group.parentProduct?.id,
-                            nome: group.parentProduct?.nome
-                          });
                           props.onSelectProduct(group.parentProduct!.id);
                         }}
                       />
@@ -136,50 +131,38 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       </Button>
                     </CollapsibleTrigger>
                     
-                    {/* Clickable area for product details */}
-                    <div 
-                      className="flex items-center gap-2 flex-1 cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded"
-                      onClick={() => {
-                        if (group.parentProduct) {
-                          props.onEditProduct(group.parentProduct);
-                        }
-                      }}
-                    >
-                      <Package className="w-5 h-5 text-primary" />
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">
-                            SKU Pai: {group.parentSku}
-                          </span>
-                          <Badge variant={status.variant} className="text-xs">
-                            {status.label}
+                    <Package className="w-5 h-5 text-primary" />
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">
+                          SKU Pai: {group.parentSku}
+                        </span>
+                        <Badge variant={status.variant} className="text-xs">
+                          {status.label}
+                        </Badge>
+                        {hasChildren && (
+                          <Badge variant="outline" className="text-xs">
+                            {group.children.length} variações
                           </Badge>
-                          {hasChildren && (
-                            <Badge variant="outline" className="text-xs">
-                              {group.children.length} variações
-                            </Badge>
-                          )}
-                        </div>
-                        
-                        {group.parentProduct && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {group.parentProduct.nome}
-                          </p>
                         )}
                       </div>
                       
+                      {group.parentProduct && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {group.parentProduct.nome}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Mostrar estoque APENAS se tiver filhos (agrupador) */}
+                    {hasChildren && (
                       <div className="text-right">
                         <div className="text-sm font-semibold">
                           Estoque Total: {group.totalStock}
                         </div>
-                        {group.parentProduct && (
-                          <div className="text-xs text-muted-foreground">
-                            Produto Principal: {group.parentProduct.quantidade_atual}
-                          </div>
-                        )}
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
 
