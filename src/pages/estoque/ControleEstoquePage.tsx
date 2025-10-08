@@ -414,11 +414,19 @@ export default function ControleEstoquePage() {
           <Button 
             variant="default" 
             size="sm"
-            onClick={() => setChildProductModalOpen(true)}
+            onClick={() => setParentProductModalOpen(true)}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Criar Produto
+            Criar Produto Pai
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setChildProductModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Criar Produto Filho
           </Button>
           <ProductImportModal
             trigger={
