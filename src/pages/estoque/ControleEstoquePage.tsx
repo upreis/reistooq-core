@@ -329,6 +329,9 @@ export default function ControleEstoquePage() {
   const handleEditSuccess = () => {
     setEditModalOpen(false);
     setEditingProduct(null);
+    setCurrentPage(1); // Volta para primeira página
+    setSortBy('created_at'); // Ordena por data de criação
+    setSortOrder('desc'); // Mais recentes primeiro
     loadProducts();
     toast({
       title: "Produto atualizado",
@@ -346,6 +349,9 @@ export default function ControleEstoquePage() {
   };
 
   const handleTwoStepComplete = () => {
+    setCurrentPage(1); // Volta para primeira página
+    setSortBy('created_at'); // Ordena por data de criação
+    setSortOrder('desc'); // Mais recentes primeiro
     loadProducts();
     toast({
       title: "Sucesso",
@@ -356,6 +362,9 @@ export default function ControleEstoquePage() {
   const handleDetailsSuccess = () => {
     setDetailsModalOpen(false);
     setEditingProduct(null);
+    setCurrentPage(1); // Volta para primeira página
+    setSortBy('created_at'); // Ordena por data de criação
+    setSortOrder('desc'); // Mais recentes primeiro
     loadProducts();
   };
   
