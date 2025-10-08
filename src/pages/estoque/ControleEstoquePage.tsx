@@ -39,8 +39,6 @@ export default function ControleEstoquePage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   
-  const [sortBy, setSortBy] = useState<string>("created_at");
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -68,11 +66,11 @@ export default function ControleEstoquePage() {
         ativoFilter = true; // Filtros de estoque só aplicam a produtos ativos
       }
       
-      // Buscar produtos do banco com filtro de ativo aplicado
+      // Buscar produtos do banco já ordenados por created_at desc
       let allProducts = await getProducts({
         search: searchTerm || undefined,
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 10000, // Aumentar limite para garantir que busque todos
+        limit: 10000,
         ativo: ativoFilter,
       });
 
@@ -94,21 +92,6 @@ export default function ControleEstoquePage() {
         });
       }
 
-      // Aplicar ordenação
-      allProducts.sort((a, b) => {
-        let aVal = a[sortBy as keyof Product];
-        let bVal = b[sortBy as keyof Product];
-        
-        if (typeof aVal === 'string') aVal = aVal.toLowerCase();
-        if (typeof bVal === 'string') bVal = bVal.toLowerCase();
-        
-        if (sortOrder === 'asc') {
-          return aVal > bVal ? 1 : -1;
-        } else {
-          return aVal < bVal ? 1 : -1;
-        }
-      });
-
       setProducts(allProducts);
     } catch (error) {
       toast({
@@ -119,7 +102,7 @@ export default function ControleEstoquePage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, getProducts, toast]);
+  }, [searchTerm, selectedCategory, selectedStatus, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -141,20 +124,11 @@ export default function ControleEstoquePage() {
     }, 300);
 
     return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedCategory, selectedStatus, sortBy, sortOrder, loadProducts]);
+  }, [searchTerm, selectedCategory, selectedStatus, loadProducts]);
 
   const handleSearch = () => {
     setCurrentPage(1);
     loadProducts();
-  };
-
-  const handleSort = (field: string) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
   };
 
   const handleSelectProduct = (productId: string) => {
@@ -330,9 +304,6 @@ export default function ControleEstoquePage() {
     setEditModalOpen(false);
     setEditingProduct(null);
     setCurrentPage(1);
-    setSortBy('created_at');
-    setSortOrder('desc');
-    // Aguarda os estados atualizarem antes de recarregar
     setTimeout(() => {
       loadProducts();
     }, 100);
@@ -353,9 +324,6 @@ export default function ControleEstoquePage() {
 
   const handleTwoStepComplete = () => {
     setCurrentPage(1);
-    setSortBy('created_at');
-    setSortOrder('desc');
-    // Aguarda os estados atualizarem antes de recarregar
     setTimeout(() => {
       loadProducts();
     }, 100);
@@ -369,9 +337,6 @@ export default function ControleEstoquePage() {
     setDetailsModalOpen(false);
     setEditingProduct(null);
     setCurrentPage(1);
-    setSortBy('created_at');
-    setSortOrder('desc');
-    // Aguarda os estados atualizarem antes de recarregar
     setTimeout(() => {
       loadProducts();
     }, 100);
@@ -518,9 +483,9 @@ export default function ControleEstoquePage() {
         ) : (
           <HierarchicalEstoqueTable
             products={paginatedProducts}
-            onSort={handleSort}
-            sortBy={sortBy}
-            sortOrder={sortOrder}
+            onSort={() => {}}
+            sortBy=""
+            sortOrder="desc"
             selectedProducts={selectedProducts}
             onSelectProduct={handleSelectProduct}
             onSelectAll={handleSelectAll}
