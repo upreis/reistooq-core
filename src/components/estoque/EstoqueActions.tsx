@@ -46,7 +46,6 @@ import { useCatalogCategories } from "@/features/products/hooks/useCatalogCatego
 
 interface EstoqueActionsProps {
   onNewProduct: () => void;
-  onNewVariation?: () => void;
   onDeleteSelected: () => void;
   onRefresh: () => void;
   onSendAlerts: () => void;
@@ -56,7 +55,6 @@ interface EstoqueActionsProps {
 
 export function EstoqueActions({
   onNewProduct,
-  onNewVariation,
   onDeleteSelected,
   onRefresh,
   onSendAlerts,
@@ -162,31 +160,11 @@ export function EstoqueActions({
     <>
       {/* Desktop Actions - Hidden on mobile */}
       <div className="hidden md:flex flex-wrap items-center gap-3 p-4 bg-card border border-gray-600 rounded-lg">
-        {/* Dropdown Adicionar Produto */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Adicionar
-              <ChevronDown className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => setProductModalOpen(true)}>
-              <Package className="w-4 h-4 mr-2" />
-              Produto Simples
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onNewProduct}>
-              <Package className="w-4 h-4 mr-2 text-primary" />
-              Produto PAI (agrupador)
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onNewVariation}>
-              <Plus className="w-4 h-4 mr-2 text-blue-500" />
-              Adicionar Variação
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Botão Novo Produto */}
+        <Button onClick={() => setProductModalOpen(true)} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Novo Produto
+        </Button>
 
         {/* Botão Excluir Selecionados */}
         <Button
