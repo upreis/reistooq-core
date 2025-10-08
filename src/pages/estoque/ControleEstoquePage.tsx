@@ -10,7 +10,7 @@ import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntellige
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { ParentProductModal } from "@/components/estoque/ParentProductModal";
-import { AddVariationsModal } from "@/components/estoque/AddVariationsModal";
+
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -46,8 +46,7 @@ export default function ControleEstoquePage() {
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [parentModalOpen, setParentModalOpen] = useState(false);
-  const [variationsModalOpen, setVariationsModalOpen] = useState(false);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [variationModalOpen, setVariationModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [parentProductForVariations, setParentProductForVariations] = useState<Product | null>(null);
   
@@ -339,34 +338,53 @@ export default function ControleEstoquePage() {
     });
   };
 
-  const handleDetailsSuccess = () => {
-    setDetailsModalOpen(false);
-    setEditingProduct(null);
-    loadProducts();
-    toast({
-      title: "Produto atualizado",
-      description: "Produto atualizado com sucesso!",
-    });
-  };
-
   const handleNewProduct = () => {
     setParentModalOpen(true);
   };
 
-  const handleParentCreated = (product: Product) => {
-    setParentProductForVariations(product);
-    setVariationsModalOpen(true);
+  const handleParentCreated = (parentProduct: Product) => {
+    setParentModalOpen(false);
+    setParentProductForVariations(parentProduct);
+    
+    // Criar produto filho temporário para edição
+    const childProduct: Product = {
+      ...parentProduct,
+      id: `temp-new-variation`,
+      sku_interno: `${parentProduct.sku_interno}-`,
+      nome: `${parentProduct.nome} - `,
+      sku_pai: parentProduct.sku_interno,
+    };
+    
+    setEditingProduct(childProduct);
+    setVariationModalOpen(true);
   };
 
-  const handleEditVariation = (product: Product) => {
-    setEditingProduct(product);
-    setDetailsModalOpen(true);
-  };
-
-  const handleVariationsFinish = () => {
-    setVariationsModalOpen(false);
-    setParentProductForVariations(null);
+  const handleVariationSaved = () => {
     loadProducts();
+    
+    // Perguntar se quer adicionar outra variação
+    const addAnother = window.confirm("Variação criada! Deseja adicionar outra variação?");
+    
+    if (addAnother && parentProductForVariations) {
+      // Criar nova variação temporária
+      const childProduct: Product = {
+        ...parentProductForVariations,
+        id: `temp-new-variation-${Date.now()}`,
+        sku_interno: `${parentProductForVariations.sku_interno}-`,
+        nome: `${parentProductForVariations.nome} - `,
+        sku_pai: parentProductForVariations.sku_interno,
+      };
+      
+      setEditingProduct(childProduct);
+    } else {
+      setVariationModalOpen(false);
+      setParentProductForVariations(null);
+      setEditingProduct(null);
+      toast({
+        title: "Sucesso",
+        description: "Produto e variações criados com sucesso!",
+      });
+    }
   };
   
   const handleRefresh = () => loadProducts();
@@ -601,26 +619,18 @@ export default function ControleEstoquePage() {
         onParentCreated={handleParentCreated}
       />
 
-      {/* Modal de adição de variações */}
-      <AddVariationsModal
-        open={variationsModalOpen}
-        onOpenChange={setVariationsModalOpen}
-        parentProduct={parentProductForVariations}
-        onFinish={handleVariationsFinish}
-        onEditVariation={handleEditVariation}
-      />
-
-      {/* Modal completo de edição/detalhamento do produto */}
+      {/* Modal de variações (usa ProductModal completo) */}
       <ProductModal
-        open={detailsModalOpen}
+        open={variationModalOpen}
         onOpenChange={(open) => {
+          setVariationModalOpen(open);
           if (!open) {
-            setDetailsModalOpen(false);
+            setParentProductForVariations(null);
             setEditingProduct(null);
           }
         }}
         product={editingProduct}
-        onSuccess={handleDetailsSuccess}
+        onSuccess={handleVariationSaved}
       />
     </div>
   );
