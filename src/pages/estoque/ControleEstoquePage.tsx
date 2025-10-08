@@ -14,7 +14,7 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X } from "lucide-react";
+import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
@@ -378,7 +378,7 @@ export default function ControleEstoquePage() {
                 className="border-green-500 text-green-600 hover:bg-green-50"
               >
                 <Package className="h-4 w-4 mr-2" />
-                Ativar Selecionados ({selectedProducts.length})
+                Ativar ({selectedProducts.length})
               </Button>
               <Button 
                 variant="outline" 
@@ -387,7 +387,15 @@ export default function ControleEstoquePage() {
                 className="border-orange-500 text-orange-600 hover:bg-orange-50"
               >
                 <X className="h-4 w-4 mr-2" />
-                Desativar Selecionados ({selectedProducts.length})
+                Desativar ({selectedProducts.length})
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleDeleteSelected}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir ({selectedProducts.length})
               </Button>
             </>
           )}

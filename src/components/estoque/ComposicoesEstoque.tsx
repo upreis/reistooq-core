@@ -279,12 +279,31 @@ export function ComposicoesEstoque() {
 
     try {
       for (const produto of selectedProducts) {
-        deleteProduto(produto.id);
+        await deleteProduto(produto.id);
       }
       clearSelection();
-      setDeleteConfirmOpen(false);
+      toggleSelectMode(); // Sair do modo de seleção
+      toast.success(`${selectedProducts.length} produto(s) excluído(s) com sucesso`);
     } catch (error) {
       console.error('Erro ao excluir produtos:', error);
+      toast.error('Erro ao excluir produtos selecionados');
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: boolean) => {
+    const selectedProducts = getSelectedItems(produtosFinaisFiltrados);
+    if (selectedProducts.length === 0) return;
+
+    try {
+      for (const produto of selectedProducts) {
+        await updateProduto({ id: produto.id, ativo: newStatus });
+      }
+      clearSelection();
+      toggleSelectMode();
+      toast.success(`${selectedProducts.length} produto(s) ${newStatus ? 'ativado(s)' : 'desativado(s)'} com sucesso`);
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error);
+      toast.error('Erro ao atualizar status dos produtos');
     }
   };
 
@@ -726,13 +745,24 @@ export function ComposicoesEstoque() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={toggleSelectMode}
-                  className="gap-2"
+                  onClick={() => handleBulkStatusChange(true)}
+                  disabled={selectedCount === 0}
+                  className="gap-2 border-green-500 text-green-600 hover:bg-green-50"
+                >
+                  <Package className="w-4 h-4" />
+                  Ativar ({selectedCount})
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBulkStatusChange(false)}
+                  disabled={selectedCount === 0}
+                  className="gap-2 border-orange-500 text-orange-600 hover:bg-orange-50"
                 >
                   <X className="w-4 h-4" />
-                  Cancelar
+                  Desativar ({selectedCount})
                 </Button>
-                <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+                <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="destructive"
@@ -760,6 +790,15 @@ export function ComposicoesEstoque() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleSelectMode}
+                  className="gap-2"
+                >
+                  <X className="w-4 h-4" />
+                  Cancelar
+                </Button>
               </>
             )}
           </div>
