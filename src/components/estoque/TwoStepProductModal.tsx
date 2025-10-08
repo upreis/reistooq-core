@@ -117,7 +117,7 @@ export const TwoStepProductModal = ({
     onEditVariation(tempProduct);
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (!parentProduct) {
       toast({
         title: "Erro",
@@ -138,13 +138,47 @@ export const TwoStepProductModal = ({
       return;
     }
 
-    handleClose();
-    onComplete();
-    
-    toast({
-      title: "Sucesso",
-      description: `SKU PAI e ${validVariations.length} variação(ões) prontos para serem finalizados`,
-    });
+    // Criar as variações no banco de dados
+    try {
+      setIsCreatingParent(true); // Reutilizar o loading state
+      
+      for (const variation of validVariations) {
+        await createProduct({
+          sku_interno: `${parentProduct.sku_interno}${variation.suffix}`,
+          nome: `${parentProduct.nome} ${variation.suffix}`,
+          categoria: null,
+          descricao: null,
+          codigo_barras: variation.barcode || null,
+          quantidade_atual: parseInt(variation.quantity) || 0,
+          estoque_minimo: 0,
+          estoque_maximo: 0,
+          preco_custo: null,
+          preco_venda: null,
+          localizacao: null,
+          unidade_medida_id: null,
+          status: 'ativo',
+          ativo: true,
+          url_imagem: null,
+          sku_pai: parentProduct.sku_interno, // ✅ LIGAR AO PAI
+        });
+      }
+
+      toast({
+        title: "✅ Sucesso",
+        description: `SKU PAI e ${validVariations.length} variação(ões) criados com sucesso!`,
+      });
+
+      handleClose();
+      onComplete();
+    } catch (error) {
+      toast({
+        title: "Erro ao criar variações",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingParent(false);
+    }
   };
 
   const handleClose = () => {
