@@ -10,6 +10,7 @@ import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntellige
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { ParentProductModal } from "@/components/estoque/ParentProductModal";
+import { AddVariationsModal } from "@/components/estoque/AddVariationsModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,10 @@ export default function ControleEstoquePage() {
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [parentModalOpen, setParentModalOpen] = useState(false);
-  const [newProductModalOpen, setNewProductModalOpen] = useState(false);
+  const [variationsModalOpen, setVariationsModalOpen] = useState(false);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [parentProductForVariations, setParentProductForVariations] = useState<Product | null>(null);
   
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
@@ -336,8 +339,8 @@ export default function ControleEstoquePage() {
     });
   };
 
-  const handleNewProductSuccess = () => {
-    setNewProductModalOpen(false);
+  const handleDetailsSuccess = () => {
+    setDetailsModalOpen(false);
     setEditingProduct(null);
     loadProducts();
     toast({
@@ -351,8 +354,19 @@ export default function ControleEstoquePage() {
   };
 
   const handleParentCreated = (product: Product) => {
+    setParentProductForVariations(product);
+    setVariationsModalOpen(true);
+  };
+
+  const handleEditVariation = (product: Product) => {
     setEditingProduct(product);
-    setNewProductModalOpen(true);
+    setDetailsModalOpen(true);
+  };
+
+  const handleVariationsFinish = () => {
+    setVariationsModalOpen(false);
+    setParentProductForVariations(null);
+    loadProducts();
   };
   
   const handleRefresh = () => loadProducts();
@@ -587,17 +601,26 @@ export default function ControleEstoquePage() {
         onParentCreated={handleParentCreated}
       />
 
+      {/* Modal de adição de variações */}
+      <AddVariationsModal
+        open={variationsModalOpen}
+        onOpenChange={setVariationsModalOpen}
+        parentProduct={parentProductForVariations}
+        onFinish={handleVariationsFinish}
+        onEditVariation={handleEditVariation}
+      />
+
       {/* Modal completo de edição/detalhamento do produto */}
       <ProductModal
-        open={newProductModalOpen}
+        open={detailsModalOpen}
         onOpenChange={(open) => {
           if (!open) {
-            setNewProductModalOpen(false);
+            setDetailsModalOpen(false);
             setEditingProduct(null);
           }
         }}
         product={editingProduct}
-        onSuccess={handleNewProductSuccess}
+        onSuccess={handleDetailsSuccess}
       />
     </div>
   );
