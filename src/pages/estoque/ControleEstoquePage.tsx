@@ -329,10 +329,13 @@ export default function ControleEstoquePage() {
   const handleEditSuccess = () => {
     setEditModalOpen(false);
     setEditingProduct(null);
-    setCurrentPage(1); // Volta para primeira página
-    setSortBy('created_at'); // Ordena por data de criação
-    setSortOrder('desc'); // Mais recentes primeiro
-    loadProducts();
+    setCurrentPage(1);
+    setSortBy('created_at');
+    setSortOrder('desc');
+    // Aguarda os estados atualizarem antes de recarregar
+    setTimeout(() => {
+      loadProducts();
+    }, 100);
     toast({
       title: "Produto atualizado",
       description: "Produto atualizado com sucesso!",
@@ -349,10 +352,13 @@ export default function ControleEstoquePage() {
   };
 
   const handleTwoStepComplete = () => {
-    setCurrentPage(1); // Volta para primeira página
-    setSortBy('created_at'); // Ordena por data de criação
-    setSortOrder('desc'); // Mais recentes primeiro
-    loadProducts();
+    setCurrentPage(1);
+    setSortBy('created_at');
+    setSortOrder('desc');
+    // Aguarda os estados atualizarem antes de recarregar
+    setTimeout(() => {
+      loadProducts();
+    }, 100);
     toast({
       title: "Sucesso",
       description: "Produto e variações criados com sucesso!",
@@ -362,10 +368,13 @@ export default function ControleEstoquePage() {
   const handleDetailsSuccess = () => {
     setDetailsModalOpen(false);
     setEditingProduct(null);
-    setCurrentPage(1); // Volta para primeira página
-    setSortBy('created_at'); // Ordena por data de criação
-    setSortOrder('desc'); // Mais recentes primeiro
-    loadProducts();
+    setCurrentPage(1);
+    setSortBy('created_at');
+    setSortOrder('desc');
+    // Aguarda os estados atualizarem antes de recarregar
+    setTimeout(() => {
+      loadProducts();
+    }, 100);
   };
   
   const handleRefresh = () => loadProducts();
