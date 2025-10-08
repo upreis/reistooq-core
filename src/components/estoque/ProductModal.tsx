@@ -7,6 +7,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -331,7 +332,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       }
 
       onSuccess();
-      onOpenChange(false);
+      handleClose();
     } catch (error: any) {
       console.error('Erro ao salvar produto:', error);
       
@@ -361,13 +362,25 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
     }
   };
 
+  const handleClose = () => {
+    form.reset();
+    setImageFile(null);
+    setImagePreview(null);
+    setSelectedCategoriaPrincipal("");
+    setSelectedCategoria("");
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             {product ? "Editar Produto" : "Novo Produto"}
           </DialogTitle>
+          <DialogDescription>
+            {product ? "Edite as informações do produto abaixo" : "Preencha os dados do novo produto"}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>

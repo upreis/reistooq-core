@@ -89,7 +89,13 @@ export const VariationProductModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isOpen) {
+        onOpenChange(true);
+      } else {
+        handleClose();
+      }
+    }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Adicionar Variação (SKU Filho)</DialogTitle>
