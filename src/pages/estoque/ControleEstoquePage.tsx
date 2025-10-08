@@ -9,7 +9,8 @@ import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
-import { TwoStepProductModal } from "@/components/estoque/TwoStepProductModal";
+import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
+import { CreateChildProductModal } from "@/components/estoque/CreateChildProductModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -42,8 +43,8 @@ export default function ControleEstoquePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [twoStepModalOpen, setTwoStepModalOpen] = useState(false);
-  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [parentProductModalOpen, setParentProductModalOpen] = useState(false);
+  const [childProductModalOpen, setChildProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
@@ -313,29 +314,14 @@ export default function ControleEstoquePage() {
     });
   };
 
-  const handleNewProduct = () => {
-    setTwoStepModalOpen(true);
-  };
-
-  const handleEditVariation = (product: Product) => {
-    setEditingProduct(product);
-    setDetailsModalOpen(true);
-  };
-
-  const handleTwoStepComplete = () => {
+  const handleParentProductSuccess = () => {
     setCurrentPage(1);
     setTimeout(() => {
       loadProducts();
     }, 100);
-    toast({
-      title: "Sucesso",
-      description: "Produto e variações criados com sucesso!",
-    });
   };
 
-  const handleDetailsSuccess = () => {
-    setDetailsModalOpen(false);
-    setEditingProduct(null);
+  const handleChildProductSuccess = () => {
     setCurrentPage(1);
     setTimeout(() => {
       loadProducts();
@@ -428,16 +414,21 @@ export default function ControleEstoquePage() {
           <Button 
             variant="default" 
             size="sm"
-            onClick={() => {
-              console.log('🔵 Botão Adicionar Produto clicado');
-              handleNewProduct();
-            }}
+            onClick={() => setParentProductModalOpen(true)}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Adicionar Produto
+            <Package className="h-4 w-4 mr-2" />
+            Produto Pai
           </Button>
-          <ProductImportModal 
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setChildProductModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Produto Filho
+          </Button>
+          <ProductImportModal
             trigger={
               <Button variant="outline" size="sm">
                 <Upload className="h-4 w-4 mr-2" />
@@ -567,25 +558,18 @@ export default function ControleEstoquePage() {
         onSuccess={handleEditSuccess}
       />
       
-      {/* Modal de duas etapas para criar produto pai e variações */}
-      <TwoStepProductModal
-        open={twoStepModalOpen}
-        onOpenChange={setTwoStepModalOpen}
-        onEditVariation={handleEditVariation}
-        onComplete={handleTwoStepComplete}
+      {/* Modal de criação de produto pai */}
+      <CreateParentProductModal
+        open={parentProductModalOpen}
+        onOpenChange={setParentProductModalOpen}
+        onSuccess={handleParentProductSuccess}
       />
 
-      {/* Modal de detalhes/edição completa da variação */}
-      <ProductModal
-        open={detailsModalOpen}
-        onOpenChange={(open) => {
-          setDetailsModalOpen(open);
-          if (!open) {
-            setEditingProduct(null);
-          }
-        }}
-        product={editingProduct}
-        onSuccess={handleDetailsSuccess}
+      {/* Modal de criação de produto filho (variação) */}
+      <CreateChildProductModal
+        open={childProductModalOpen}
+        onOpenChange={setChildProductModalOpen}
+        onSuccess={handleChildProductSuccess}
       />
     </div>
   );
