@@ -120,18 +120,31 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     </div>
                   )}
                   
-                  <CollapsibleTrigger asChild>
-                    <div className="flex items-center gap-2 flex-1 cursor-pointer">
-                      {hasChildren ? (
-                        isExpanded ? (
-                          <ChevronDown className="w-4 h-4" />
+                  <div className="flex items-center gap-2 flex-1">
+                    {/* Expand/collapse icon */}
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" size="sm" className="p-0 h-auto">
+                        {hasChildren ? (
+                          isExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )
                         ) : (
-                          <ChevronRight className="w-4 h-4" />
-                        )
-                      ) : (
-                        <div className="w-4 h-4" />
-                      )}
-                      
+                          <div className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                    
+                    {/* Clickable area for product details */}
+                    <div 
+                      className="flex items-center gap-2 flex-1 cursor-pointer hover:bg-muted/30 -mx-2 px-2 py-1 rounded"
+                      onClick={() => {
+                        if (group.parentProduct) {
+                          props.onEditProduct(group.parentProduct);
+                        }
+                      }}
+                    >
                       <Package className="w-5 h-5 text-primary" />
                       
                       <div className="flex-1">
@@ -167,7 +180,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         )}
                       </div>
                     </div>
-                  </CollapsibleTrigger>
+                  </div>
                 </div>
 
                 {/* SKUs Filhos */}
