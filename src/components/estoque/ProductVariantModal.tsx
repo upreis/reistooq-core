@@ -90,8 +90,6 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
         ativo: true,
         sku_pai: null,
         url_imagem: null,
-        dias_preparacao: 0,
-        sob_encomenda: false,
       };
 
       const createdProduct = await createProduct(newProduct);
