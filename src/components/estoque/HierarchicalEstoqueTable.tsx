@@ -166,7 +166,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   </div>
                 </div>
 
-                {/* SKUs Filhos */}
+                {/* SKUs Filhos - NÃO incluir o produto pai na lista */}
                 {hasChildren && (
                   <CollapsibleContent>
                     <div className="border-t bg-muted/20">
@@ -186,7 +186,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 )}
               </Collapsible>
 
-              {/* Se é um produto independente (sem filhos), mostrar na tabela normal */}
+
+              {/* Produtos independentes (sem variações) - mostrar normalmente */}
               {!hasChildren && group.parentProduct && (
                 <div className="border-t">
                   <EstoqueTable
