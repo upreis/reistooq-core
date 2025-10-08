@@ -348,6 +348,14 @@ export default function ControleEstoquePage() {
   const finalFilteredProducts = useMemo(() => {
     let filtered = [...intelligentFilteredData];
 
+    console.log('🔍 Primeiros 5 produtos após filtros inteligentes:', 
+      filtered.slice(0, 5).map(p => ({ 
+        sku: p.sku_interno, 
+        nome: p.nome, 
+        created_at: p.created_at 
+      }))
+    );
+
     // Aplicar busca por termo
     if (searchTerm) {
       filtered = filtered.filter(product => 
@@ -356,6 +364,14 @@ export default function ControleEstoquePage() {
         (product.codigo_barras && product.codigo_barras.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
+
+    console.log('🔍 Primeiros 5 produtos após busca:', 
+      filtered.slice(0, 5).map(p => ({ 
+        sku: p.sku_interno, 
+        nome: p.nome, 
+        created_at: p.created_at 
+      }))
+    );
 
     return filtered;
   }, [intelligentFilteredData, searchTerm]);
