@@ -86,8 +86,11 @@ export function ParentProductModal({ open, onOpenChange, onParentCreated }: Pare
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) handleClose();
-      else onOpenChange(isOpen);
+      if (isOpen) {
+        onOpenChange(true);
+      } else {
+        handleClose();
+      }
     }}>
       <DialogContent className="max-w-md">
         <DialogHeader>

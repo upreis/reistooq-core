@@ -90,8 +90,11 @@ export const VariationProductModal = ({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) handleClose();
-      else onOpenChange(isOpen);
+      if (isOpen) {
+        onOpenChange(true);
+      } else {
+        handleClose();
+      }
     }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
