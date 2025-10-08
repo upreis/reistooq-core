@@ -108,7 +108,14 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     <div className="mr-3" onClick={(e) => e.stopPropagation()}>
                       <Checkbox
                         checked={props.selectedProducts.includes(group.parentProduct.id)}
-                        onCheckedChange={() => props.onSelectProduct(group.parentProduct!.id)}
+                        onCheckedChange={() => {
+                          console.log('🔵 Checkbox PAI clicado:', {
+                            sku: group.parentSku,
+                            id: group.parentProduct?.id,
+                            nome: group.parentProduct?.nome
+                          });
+                          props.onSelectProduct(group.parentProduct!.id);
+                        }}
                       />
                     </div>
                   )}
