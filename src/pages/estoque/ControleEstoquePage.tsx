@@ -165,7 +165,7 @@ export default function ControleEstoquePage() {
   };
 
   const handleSelectAll = (selected: boolean) => {
-    setSelectedProducts(selected ? products.map(p => p.id) : []);
+    setSelectedProducts(selected ? paginatedProducts.map(p => p.id) : []);
   };
 
   const handleDeleteSelected = async () => {
