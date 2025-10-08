@@ -332,7 +332,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       }
 
       onSuccess();
-      onOpenChange(false);
+      handleClose();
     } catch (error: any) {
       console.error('Erro ao salvar produto:', error);
       
@@ -372,13 +372,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   };
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (isOpen) {
-        onOpenChange(true);
-      } else {
-        handleClose();
-      }
-    }}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
