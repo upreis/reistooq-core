@@ -136,7 +136,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">
-                          SKU Pai: {group.parentSku}
+                          {hasChildren ? `SKU Pai: ${group.parentSku}` : `SKU Filho: ${group.parentSku}`}
                         </span>
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
