@@ -80,20 +80,11 @@ export function CreateChildProductModal({
   };
 
   const handleCreateVariations = async () => {
-    if (!selectedParentId) {
-      toast({
-        title: "Produto pai não selecionado",
-        description: "Por favor, selecione um produto pai.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const invalidVariations = variations.filter(v => !v.suffix.trim());
     if (invalidVariations.length > 0) {
       toast({
         title: "Variações incompletas",
-        description: "Todas as variações precisam ter um sufixo.",
+        description: "Todas as variações precisam ter um sufixo (nome/SKU).",
         variant: "destructive",
       });
       return;
@@ -101,44 +92,63 @@ export function CreateChildProductModal({
 
     setIsCreating(true);
     try {
-      const parentProduct = parentProducts.find(p => p.id === selectedParentId);
-      if (!parentProduct) throw new Error('Produto pai não encontrado');
+      let parentProduct: Product | undefined = undefined;
+      
+      if (selectedParentId) {
+        parentProduct = parentProducts.find(p => p.id === selectedParentId);
+        if (!parentProduct) throw new Error('Produto pai não encontrado');
+      }
 
-      // Criar todas as variações
+      // Criar todos os produtos
       for (const variation of variations) {
-        const childSku = `${parentProduct.sku_interno}-${variation.suffix.trim().toUpperCase()}`;
+        let childSku: string;
+        let childName: string;
+        
+        if (parentProduct) {
+          // Com produto pai: criar variação
+          childSku = `${parentProduct.sku_interno}-${variation.suffix.trim().toUpperCase()}`;
+          childName = `${parentProduct.nome} - ${variation.suffix}`;
+        } else {
+          // Sem produto pai: criar produto independente usando o sufixo como SKU e nome
+          childSku = variation.suffix.trim().toUpperCase();
+          childName = variation.suffix.trim();
+        }
         
         await createProduct({
           sku_interno: childSku,
-          nome: `${parentProduct.nome} - ${variation.suffix}`,
+          nome: childName,
           quantidade_atual: variation.quantity || 0,
-          estoque_minimo: parentProduct.estoque_minimo || 0,
-          estoque_maximo: parentProduct.estoque_maximo || 0,
-          preco_custo: parentProduct.preco_custo || 0,
-          preco_venda: parentProduct.preco_venda || 0,
-          localizacao: parentProduct.localizacao || '',
+          estoque_minimo: parentProduct?.estoque_minimo || 0,
+          estoque_maximo: parentProduct?.estoque_maximo || 0,
+          preco_custo: parentProduct?.preco_custo || 0,
+          preco_venda: parentProduct?.preco_venda || 0,
+          localizacao: parentProduct?.localizacao || '',
           codigo_barras: variation.barcode || '',
-          unidade_medida_id: parentProduct.unidade_medida_id,
-          categoria: parentProduct.categoria,
-          descricao: parentProduct.descricao,
+          unidade_medida_id: parentProduct?.unidade_medida_id || null,
+          categoria: parentProduct?.categoria || null,
+          descricao: parentProduct?.descricao || null,
           status: 'ativo',
           ativo: true,
-          sku_pai: parentProduct.sku_interno,
+          sku_pai: parentProduct ? parentProduct.sku_interno : null,
           url_imagem: null,
         });
       }
 
+      const messageType = parentProduct 
+        ? `${variations.length} variação(ões) criada(s)`
+        : `${variations.length} produto(s) criado(s)`;
+
       toast({
-        title: "Variações criadas!",
-        description: `${variations.length} variação(ões) criada(s) com sucesso.`,
+        title: "Sucesso!",
+        description: messageType,
       });
 
       handleClose();
       onSuccess?.();
     } catch (error) {
-      console.error('Erro ao criar variações:', error);
+      console.error('Erro ao criar produtos:', error);
       toast({
-        title: "Erro ao criar variações",
+        title: "Erro ao criar produtos",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
@@ -159,22 +169,27 @@ export function CreateChildProductModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Criar Variações (Produtos Filho)
+            Criar Produtos
           </DialogTitle>
           <DialogDescription>
-            Adicione variações a um produto pai existente (ex: tamanhos, cores)
+            Crie produtos vinculados a um pai ou produtos independentes
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Seleção do Produto Pai */}
+          {/* Seleção do Produto Pai (OPCIONAL) */}
           <div className="space-y-2">
-            <Label htmlFor="parent-product">Produto Pai *</Label>
+            <Label htmlFor="parent-product">
+              Produto Pai <span className="text-muted-foreground text-xs">(Opcional)</span>
+            </Label>
             <Select value={selectedParentId} onValueChange={setSelectedParentId}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione um produto pai..." />
+                <SelectValue placeholder="Deixe vazio para criar produtos independentes" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="">
+                  <span className="text-muted-foreground italic">Nenhum (produto independente)</span>
+                </SelectItem>
                 {parentProducts.length === 0 && (
                   <div className="p-2 text-sm text-muted-foreground">
                     Nenhum produto pai disponível
@@ -187,6 +202,16 @@ export function CreateChildProductModal({
                 ))}
               </SelectContent>
             </Select>
+            {selectedParentId && (
+              <p className="text-xs text-muted-foreground">
+                Os produtos serão criados como variações de: <strong>{parentProducts.find(p => p.id === selectedParentId)?.sku_interno}</strong>
+              </p>
+            )}
+            {!selectedParentId && (
+              <p className="text-xs text-muted-foreground">
+                Os produtos serão criados de forma independente
+              </p>
+            )}
           </div>
 
           {/* Lista de Variações */}
@@ -207,10 +232,12 @@ export function CreateChildProductModal({
             {variations.map((variation, index) => (
               <div key={index} className="flex gap-2 items-end">
                 <div className="flex-1 space-y-2">
-                  <Label htmlFor={`suffix-${index}`}>Sufixo *</Label>
+                  <Label htmlFor={`suffix-${index}`}>
+                    {selectedParentId ? 'Sufixo *' : 'SKU/Nome *'}
+                  </Label>
                   <Input
                     id={`suffix-${index}`}
-                    placeholder="Ex: P, M, G ou AZUL, VERMELHO"
+                    placeholder={selectedParentId ? "Ex: P, M, G ou AZUL, VERMELHO" : "Ex: PROD-001, CAMISETA-AZUL"}
                     value={variation.suffix}
                     onChange={(e) => handleVariationChange(index, 'suffix', e.target.value.toUpperCase())}
                   />
@@ -259,9 +286,9 @@ export function CreateChildProductModal({
             </Button>
             <Button
               onClick={handleCreateVariations}
-              disabled={isCreating || !selectedParentId}
+              disabled={isCreating}
             >
-              {isCreating ? "Criando..." : `Criar ${variations.length} Variação(ões)`}
+              {isCreating ? "Criando..." : `Criar ${variations.length} Produto(s)`}
             </Button>
           </div>
         </div>
