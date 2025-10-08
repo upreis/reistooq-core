@@ -24,6 +24,14 @@ interface ProductVariantModalProps {
 interface VariantInput {
   suffix: string;
   quantity: number;
+  codigo_barras?: string;
+  estoque_minimo?: number;
+  estoque_maximo?: number;
+  preco_custo?: number;
+  preco_venda?: number;
+  localizacao?: string;
+  categoria_principal?: string;
+  categoria?: string;
 }
 
 interface ParentProductForm {
@@ -40,13 +48,35 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
     nome: '',
     quantidade_atual: 0,
   });
-  const [variants, setVariants] = useState<VariantInput[]>([{ suffix: '', quantity: 0 }]);
+  const [variants, setVariants] = useState<VariantInput[]>([{ 
+    suffix: '', 
+    quantity: 0,
+    codigo_barras: '',
+    estoque_minimo: 0,
+    estoque_maximo: 0,
+    preco_custo: 0,
+    preco_venda: 0,
+    localizacao: '',
+    categoria_principal: '',
+    categoria: '',
+  }]);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createProduct } = useProducts();
 
   const handleAddVariant = () => {
-    setVariants([...variants, { suffix: '', quantity: 0 }]);
+    setVariants([...variants, { 
+      suffix: '', 
+      quantity: 0,
+      codigo_barras: '',
+      estoque_minimo: 0,
+      estoque_maximo: 0,
+      preco_custo: 0,
+      preco_venda: 0,
+      localizacao: '',
+      categoria_principal: '',
+      categoria: '',
+    }]);
   };
 
   const handleRemoveVariant = (index: number) => {
@@ -133,10 +163,17 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
         
         await createProduct({
           ...parentProduct,
-          id: undefined as any, // New ID will be generated
+          id: undefined as any,
           sku_interno: variantSku,
           nome: `${parentProduct.nome} - ${variant.suffix}`,
           quantidade_atual: variant.quantity,
+          codigo_barras: variant.codigo_barras || '',
+          estoque_minimo: variant.estoque_minimo || 0,
+          estoque_maximo: variant.estoque_maximo || 0,
+          preco_custo: variant.preco_custo || 0,
+          preco_venda: variant.preco_venda || 0,
+          localizacao: variant.localizacao || '',
+          categoria: variant.categoria || parentProduct.categoria,
           sku_pai: parentProduct.sku_interno,
           created_at: undefined as any,
           updated_at: undefined as any,
@@ -166,7 +203,18 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
     setStep('parent');
     setParentProduct(null);
     setParentForm({ sku_interno: '', nome: '', quantidade_atual: 0 });
-    setVariants([{ suffix: '', quantity: 0 }]);
+    setVariants([{ 
+      suffix: '', 
+      quantity: 0,
+      codigo_barras: '',
+      estoque_minimo: 0,
+      estoque_maximo: 0,
+      preco_custo: 0,
+      preco_venda: 0,
+      localizacao: '',
+      categoria_principal: '',
+      categoria: '',
+    }]);
     onOpenChange(false);
   };
 
@@ -301,43 +349,114 @@ export function ProductVariantModal({ open, onOpenChange, onSuccess }: ProductVa
                   </div>
 
                   {variants.map((variant, index) => (
-                    <div key={index} className="flex items-end gap-2 p-3 border rounded-lg">
-                      <div className="flex-1 space-y-2">
-                        <Label htmlFor={`suffix-${index}`}>Sufixo da Variação</Label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium text-muted-foreground">
-                            {parentProduct.sku_interno}-
-                          </span>
+                    <div key={index} className="p-4 border rounded-lg space-y-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium">Variação {index + 1}</h4>
+                        {variants.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleRemoveVariant(index)}
+                          >
+                            <X className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`suffix-${index}`}>Sufixo da Variação *</Label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {parentProduct.sku_interno}-
+                            </span>
+                            <Input
+                              id={`suffix-${index}`}
+                              placeholder="AZUL-P, VERM-M, etc."
+                              value={variant.suffix}
+                              onChange={(e) => handleVariantChange(index, 'suffix', e.target.value.toUpperCase())}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`quantity-${index}`}>Qtd Inicial</Label>
                           <Input
-                            id={`suffix-${index}`}
-                            placeholder="AZUL-P, VERM-M, etc."
-                            value={variant.suffix}
-                            onChange={(e) => handleVariantChange(index, 'suffix', e.target.value.toUpperCase())}
+                            id={`quantity-${index}`}
+                            type="number"
+                            min="0"
+                            value={variant.quantity}
+                            onChange={(e) => handleVariantChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`barcode-${index}`}>Código de Barras</Label>
+                          <Input
+                            id={`barcode-${index}`}
+                            placeholder="123456789012"
+                            value={variant.codigo_barras}
+                            onChange={(e) => handleVariantChange(index, 'codigo_barras', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`location-${index}`}>Localização</Label>
+                          <Input
+                            id={`location-${index}`}
+                            placeholder="Setor A, Prateleira 1"
+                            value={variant.localizacao}
+                            onChange={(e) => handleVariantChange(index, 'localizacao', e.target.value)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`min-stock-${index}`}>Estoque Mínimo</Label>
+                          <Input
+                            id={`min-stock-${index}`}
+                            type="number"
+                            min="0"
+                            value={variant.estoque_minimo}
+                            onChange={(e) => handleVariantChange(index, 'estoque_minimo', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`max-stock-${index}`}>Estoque Máximo</Label>
+                          <Input
+                            id={`max-stock-${index}`}
+                            type="number"
+                            min="0"
+                            value={variant.estoque_maximo}
+                            onChange={(e) => handleVariantChange(index, 'estoque_maximo', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`cost-${index}`}>Preço de Custo</Label>
+                          <Input
+                            id={`cost-${index}`}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={variant.preco_custo}
+                            onChange={(e) => handleVariantChange(index, 'preco_custo', parseFloat(e.target.value) || 0)}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor={`price-${index}`}>Preço de Venda</Label>
+                          <Input
+                            id={`price-${index}`}
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={variant.preco_venda}
+                            onChange={(e) => handleVariantChange(index, 'preco_venda', parseFloat(e.target.value) || 0)}
                           />
                         </div>
                       </div>
-
-                      <div className="w-32 space-y-2">
-                        <Label htmlFor={`quantity-${index}`}>Qtd Inicial</Label>
-                        <Input
-                          id={`quantity-${index}`}
-                          type="number"
-                          min="0"
-                          value={variant.quantity}
-                          onChange={(e) => handleVariantChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-
-                      {variants.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveVariant(index)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
                     </div>
                   ))}
                 </div>
