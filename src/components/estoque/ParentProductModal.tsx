@@ -85,7 +85,10 @@ export function ParentProductModal({ open, onOpenChange, onParentCreated }: Pare
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) handleClose();
+      else onOpenChange(isOpen);
+    }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
