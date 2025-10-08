@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronRight, ChevronDown, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
@@ -101,9 +102,19 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 open={isExpanded}
                 onOpenChange={() => hasChildren && toggleGroup(group.parentSku)}
               >
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center p-4 hover:bg-muted/50 cursor-pointer">
-                    <div className="flex items-center gap-2 flex-1">
+                <div className="flex items-center p-4 hover:bg-muted/50">
+                  {/* Checkbox de seleção do produto pai */}
+                  {group.parentProduct && (
+                    <div className="mr-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={props.selectedProducts.includes(group.parentProduct.id)}
+                        onCheckedChange={() => props.onSelectProduct(group.parentProduct!.id)}
+                      />
+                    </div>
+                  )}
+                  
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center gap-2 flex-1 cursor-pointer">
                       {hasChildren ? (
                         isExpanded ? (
                           <ChevronDown className="w-4 h-4" />
@@ -149,8 +160,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         )}
                       </div>
                     </div>
-                  </div>
-                </CollapsibleTrigger>
+                  </CollapsibleTrigger>
+                </div>
 
                 {/* SKUs Filhos */}
                 {hasChildren && (
