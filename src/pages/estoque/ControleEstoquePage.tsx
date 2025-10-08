@@ -9,6 +9,7 @@ import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
+import { ParentProductModal } from "@/components/estoque/ParentProductModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,7 @@ export default function ControleEstoquePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(20);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [parentModalOpen, setParentModalOpen] = useState(false);
   const [newProductModalOpen, setNewProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   
@@ -336,14 +338,20 @@ export default function ControleEstoquePage() {
 
   const handleNewProductSuccess = () => {
     setNewProductModalOpen(false);
+    setEditingProduct(null);
     loadProducts();
     toast({
-      title: "Produto criado",
-      description: "Produto criado com sucesso!",
+      title: "Produto atualizado",
+      description: "Produto atualizado com sucesso!",
     });
   };
 
   const handleNewProduct = () => {
+    setParentModalOpen(true);
+  };
+
+  const handleParentCreated = (product: Product) => {
+    setEditingProduct(product);
     setNewProductModalOpen(true);
   };
   
@@ -572,14 +580,23 @@ export default function ControleEstoquePage() {
         onSuccess={handleEditSuccess}
       />
       
-      {/* Modal de novo produto */}
+      {/* Modal de criação do produto pai */}
+      <ParentProductModal
+        open={parentModalOpen}
+        onOpenChange={setParentModalOpen}
+        onParentCreated={handleParentCreated}
+      />
+
+      {/* Modal completo de edição/detalhamento do produto */}
       <ProductModal
         open={newProductModalOpen}
         onOpenChange={(open) => {
           if (!open) {
             setNewProductModalOpen(false);
+            setEditingProduct(null);
           }
         }}
+        product={editingProduct}
         onSuccess={handleNewProductSuccess}
       />
     </div>
