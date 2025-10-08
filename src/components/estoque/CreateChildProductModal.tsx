@@ -174,7 +174,7 @@ export function CreateChildProductModal({
           descricao: parentProduct?.descricao || null,
           status: 'ativo',
           ativo: true,
-          sku_pai: parentProduct ? parentProduct.sku_interno : null,
+          sku_pai: selectedParentId ? (parentProduct?.sku_interno || null) : null,
           url_imagem: null,
         });
       }
