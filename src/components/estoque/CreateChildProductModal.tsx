@@ -44,8 +44,6 @@ export function CreateChildProductModal({
   onOpenChange, 
   onSuccess 
 }: CreateChildProductModalProps) {
-  const [parentProducts, setParentProducts] = useState<Product[]>([]);
-  const [selectedParentId, setSelectedParentId] = useState('');
   const [selectedCategoriaPrincipal, setSelectedCategoriaPrincipal] = useState<string>("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
   const [variations, setVariations] = useState<VariationForm[]>([
@@ -62,26 +60,15 @@ export function CreateChildProductModal({
   ]);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
-  const { getProducts, createProduct } = useProducts();
+  const { createProduct } = useProducts();
   const { unidades, getUnidadeBasePorTipo } = useUnidadesMedida();
   const { getCategoriasPrincipais, getCategorias, refreshCategories } = useCatalogCategories();
 
   useEffect(() => {
     if (open) {
-      loadParentProducts();
       refreshCategories?.();
     }
   }, [open]);
-
-  const loadParentProducts = async () => {
-    try {
-      const allProducts = await getProducts({ limit: 10000 });
-      const parents = allProducts.filter(p => !p.sku_pai && p.ativo);
-      setParentProducts(parents);
-    } catch (error) {
-      console.error('Erro ao carregar produtos pai:', error);
-    }
-  };
 
   const handleAddVariation = () => {
     setVariations([...variations, { 
@@ -129,7 +116,7 @@ export function CreateChildProductModal({
     if (invalidVariations.length > 0) {
       toast({
         title: "Campos incompletos",
-        description: "Preencha o SKU/Nome de todos os produtos.",
+        description: "Preencha o SKU de todos os produtos.",
         variant: "destructive",
       });
       return;
@@ -137,51 +124,36 @@ export function CreateChildProductModal({
 
     setIsCreating(true);
     try {
-      let parentProduct: Product | undefined = undefined;
-      
-      if (selectedParentId) {
-        parentProduct = parentProducts.find(p => p.id === selectedParentId);
-        if (!parentProduct) throw new Error('Produto pai não encontrado');
-      }
-      
       const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
       const categoriaCompleta = updateCategoriaCompleta(selectedCategoriaPrincipal, selectedCategoria);
 
       for (const variation of variations) {
-        let childSku: string;
-        let childName: string;
-        
-        if (parentProduct) {
-          childSku = `${parentProduct.sku_interno}-${variation.suffix.trim().toUpperCase()}`;
-          childName = `${parentProduct.nome} - ${variation.suffix}`;
-        } else {
-          childSku = variation.suffix.trim().toUpperCase();
-          childName = variation.suffix.trim();
-        }
+        const productSku = variation.suffix.trim().toUpperCase();
+        const productName = variation.suffix.trim();
         
         await createProduct({
-          sku_interno: childSku,
-          nome: childName,
+          sku_interno: productSku,
+          nome: productName,
           quantidade_atual: variation.quantity || 0,
-          estoque_minimo: variation.estoque_minimo || parentProduct?.estoque_minimo || 0,
-          estoque_maximo: variation.estoque_maximo || parentProduct?.estoque_maximo || 0,
-          preco_custo: variation.preco_custo || parentProduct?.preco_custo || 0,
-          preco_venda: variation.preco_venda || parentProduct?.preco_venda || 0,
-          localizacao: variation.localizacao || parentProduct?.localizacao || '',
+          estoque_minimo: variation.estoque_minimo || 0,
+          estoque_maximo: variation.estoque_maximo || 0,
+          preco_custo: variation.preco_custo || 0,
+          preco_venda: variation.preco_venda || 0,
+          localizacao: variation.localizacao || '',
           codigo_barras: variation.barcode || '',
-          unidade_medida_id: parentProduct?.unidade_medida_id || unidadePadrao?.id || null,
-          categoria: categoriaCompleta || parentProduct?.categoria || null,
-          descricao: parentProduct?.descricao || null,
+          unidade_medida_id: unidadePadrao?.id || null,
+          categoria: categoriaCompleta || null,
+          descricao: null,
           status: 'ativo',
           ativo: true,
-          sku_pai: parentProduct ? parentProduct.sku_interno : null,
+          sku_pai: null,
           url_imagem: null,
         });
       }
 
       toast({
         title: "Sucesso!",
-        description: `${variations.length} produto(s) criado(s) com sucesso.`,
+        description: `${variations.length} produto(s) independente(s) criado(s) com sucesso.`,
       });
 
       handleClose();
@@ -199,7 +171,6 @@ export function CreateChildProductModal({
   };
 
   const handleClose = () => {
-    setSelectedParentId('');
     setSelectedCategoriaPrincipal('');
     setSelectedCategoria('');
     setVariations([{ 
@@ -221,35 +192,14 @@ export function CreateChildProductModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Criar Produtos
+            Criar Produtos Independentes
           </DialogTitle>
           <DialogDescription>
-            Preencha os dados completos do produto
+            Crie produtos independentes. Para agrupá-los posteriormente, use a funcionalidade de agrupamento.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Produto Pai no Cabeçalho */}
-          <div className="space-y-2 pb-4 border-b">
-            <Label>
-              Produto Pai <span className="text-muted-foreground text-xs">(Opcional)</span>
-            </Label>
-            <Select value={selectedParentId} onValueChange={setSelectedParentId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Deixe vazio para criar produtos independentes" />
-              </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-[9999]">
-                <SelectItem value="">
-                  <span className="text-muted-foreground italic">Nenhum (produto independente)</span>
-                </SelectItem>
-                {parentProducts.map((product) => (
-                  <SelectItem key={product.id} value={product.id}>
-                    {product.sku_interno} - {product.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Categorização */}
           <div className="space-y-4">
@@ -330,9 +280,9 @@ export function CreateChildProductModal({
                 {/* SKU e Nome */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{selectedParentId ? 'Sufixo *' : 'SKU Interno *'}</Label>
+                    <Label>SKU Interno *</Label>
                     <Input
-                      placeholder={selectedParentId ? "Ex: P, M, G" : "Ex: PROD-001"}
+                      placeholder="Ex: CAMISETA-P"
                       value={variation.suffix}
                       onChange={(e) => handleVariationChange(index, 'suffix', e.target.value.toUpperCase())}
                     />
@@ -340,11 +290,8 @@ export function CreateChildProductModal({
                   <div className="space-y-2">
                     <Label>Nome *</Label>
                     <Input
-                      placeholder="Gerado automaticamente"
-                      value={selectedParentId && variation.suffix 
-                        ? `${parentProducts.find(p => p.id === selectedParentId)?.nome} - ${variation.suffix}`
-                        : variation.suffix
-                      }
+                      placeholder="Mesmo que o SKU"
+                      value={variation.suffix}
                       disabled
                       className="bg-muted"
                     />
