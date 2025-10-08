@@ -380,8 +380,27 @@ export default function ControleEstoquePage() {
       {/* Botões de ação */}
       <div className="flex flex-wrap justify-between gap-2 mb-4">
         <div className="flex gap-2">
-          {selectedProducts.length > 0 && (
+          {selectedProducts.length === 0 ? (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => handleSelectAll(true)}
+              className="border-primary text-primary hover:bg-primary/10"
+            >
+              <Package className="h-4 w-4 mr-2" />
+              Selecionar Todos
+            </Button>
+          ) : (
             <>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleSelectAll(false)}
+                className="border-muted-foreground text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpar Seleção ({selectedProducts.length})
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm"
