@@ -9,7 +9,6 @@ import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
-import { ProductVariantModal } from "@/components/estoque/ProductVariantModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -573,8 +572,8 @@ export default function ControleEstoquePage() {
         onSuccess={handleEditSuccess}
       />
       
-      {/* Modal de novo produto com variações */}
-      <ProductVariantModal
+      {/* Modal de novo produto */}
+      <ProductModal
         open={newProductModalOpen}
         onOpenChange={(open) => {
           if (!open) {
