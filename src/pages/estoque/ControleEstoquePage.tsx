@@ -417,9 +417,7 @@ export default function ControleEstoquePage() {
       />
 
       {/* Botões de ação principais - SEMPRE VISÍVEIS NO TOPO */}
-      <Card className="border-primary/20">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
         <Button 
           variant="default" 
           size="sm"
@@ -493,9 +491,7 @@ export default function ControleEstoquePage() {
             Gerenciar Categorias
           </Link>
         </Button>
-          </div>
-        </CardContent>
-      </Card>
+      </div>
 
 
       {/* Filtros básicos */}
