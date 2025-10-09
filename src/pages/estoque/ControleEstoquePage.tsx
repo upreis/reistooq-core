@@ -423,6 +423,29 @@ export default function ControleEstoquePage() {
       <EstoqueNotifications 
         products={products}
         onProductClick={handleNotificationProductClick}
+        onFilterByStock={(type) => {
+          if (type === 'out') {
+            setSelectedStatus('out_of_stock');
+          } else if (type === 'low') {
+            setSelectedStatus('low_stock');
+          }
+          // Scroll para a tabela
+          setTimeout(() => {
+            document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }}
+        onOpenPriceModal={(productsWithoutPrice) => {
+          // Selecionar os produtos sem preço
+          setSelectedProducts(productsWithoutPrice.map(p => p.id));
+          // Abrir modal de atualização de preços em massa
+          setBulkPriceModalOpen(true);
+        }}
+        onOpenOrphanModal={(orphanProducts) => {
+          // Selecionar os produtos órfãos
+          setSelectedProducts(orphanProducts.map(p => p.id));
+          // Abrir modal de vincular filhos
+          setLinkChildModalOpen(true);
+        }}
       />
 
       {/* Botões de ação principais */}

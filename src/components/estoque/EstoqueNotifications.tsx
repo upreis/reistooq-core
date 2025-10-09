@@ -17,6 +17,9 @@ import { useProductHierarchy } from "@/hooks/useProductHierarchy";
 interface EstoqueNotificationsProps {
   products: Product[];
   onProductClick: (product: Product) => void;
+  onFilterByStock?: (type: 'out' | 'low') => void;
+  onOpenPriceModal?: (products: Product[]) => void;
+  onOpenOrphanModal?: (products: Product[]) => void;
 }
 
 interface Notification {
@@ -29,7 +32,7 @@ interface Notification {
   actionLabel?: string;
 }
 
-export function EstoqueNotifications({ products, onProductClick }: EstoqueNotificationsProps) {
+export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal }: EstoqueNotificationsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const hierarchy = useProductHierarchy(products);
@@ -50,7 +53,8 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
         title: 'Produtos sem estoque',
         message: `${outOfStock.length} produto${outOfStock.length > 1 ? 's' : ''} sem estoque`,
         products: outOfStock,
-        actionLabel: 'Ver produtos'
+        actionLabel: 'Ver produtos',
+        action: () => onFilterByStock?.('out')
       });
     }
 
@@ -67,7 +71,8 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
         title: 'Estoque baixo',
         message: `${lowStock.length} produto${lowStock.length > 1 ? 's' : ''} com estoque baixo`,
         products: lowStock,
-        actionLabel: 'Ver produtos'
+        actionLabel: 'Ver produtos',
+        action: () => onFilterByStock?.('low')
       });
     }
 
@@ -82,7 +87,8 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
         title: 'Produtos órfãos',
         message: `${orphanProducts.length} produto${orphanProducts.length > 1 ? 's' : ''} filho${orphanProducts.length > 1 ? 's' : ''} sem produto pai`,
         products: orphanProducts,
-        actionLabel: 'Corrigir vínculos'
+        actionLabel: 'Corrigir vínculos',
+        action: () => onOpenOrphanModal?.(orphanProducts)
       });
     }
 
@@ -97,7 +103,8 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
         title: 'Produtos sem preço',
         message: `${noPrice.length} produto${noPrice.length > 1 ? 's' : ''} sem preço de venda`,
         products: noPrice,
-        actionLabel: 'Definir preços'
+        actionLabel: 'Definir preços',
+        action: () => onOpenPriceModal?.(noPrice)
       });
     }
 
