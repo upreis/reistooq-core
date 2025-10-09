@@ -110,17 +110,17 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'critical': return <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />;
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
-      default: return <Bell className="w-5 h-5 text-blue-500 dark:text-blue-400" />;
+      case 'critical': return <AlertTriangle className="w-5 h-5 text-destructive" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-orange-600 dark:text-orange-400" />;
+      default: return <Bell className="w-5 h-5 text-primary" />;
     }
   };
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'critical': return 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50 dark:text-red-100';
-      case 'warning': return 'border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/50 dark:text-yellow-100';
-      default: return 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-100';
+      case 'critical': return 'border-destructive/50 bg-destructive/10';
+      case 'warning': return 'border-orange-500/50 bg-orange-500/10';
+      default: return 'border-primary/50 bg-primary/10';
     }
   };
 
@@ -128,13 +128,13 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
 
   if (visibleNotifications.length === 0) {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-success/50 bg-success/10">
         <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-green-700">
+          <div className="flex items-center gap-2 text-success">
             <Package className="w-5 h-5" />
             <span className="font-medium">Tudo certo com seu estoque!</span>
           </div>
-          <p className="text-sm text-green-600 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Não há alertas ou problemas detectados no momento.
           </p>
         </CardContent>
@@ -184,7 +184,7 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
                 {notification.products.slice(0, 3).map((product) => (
                   <div 
                     key={product.id}
-                    className="text-xs bg-white/50 dark:bg-black/20 p-2 rounded cursor-pointer hover:bg-white/80 dark:hover:bg-black/40 transition-colors"
+                    className="text-xs bg-background/50 border border-border/50 p-2 rounded cursor-pointer hover:bg-muted transition-colors"
                     onClick={() => onProductClick(product)}
                   >
                     <div className="flex items-center justify-between gap-2">
