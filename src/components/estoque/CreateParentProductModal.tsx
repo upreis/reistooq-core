@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CreateParentProductModalProps {
   open: boolean;
@@ -42,6 +43,19 @@ export function CreateParentProductModal({
 
     setIsCreating(true);
     try {
+      // Buscar unidade padrão "un"
+      const { data: unidadePadrao } = await supabase
+        .from('unidades_medida')
+        .select('id')
+        .eq('abreviacao', 'un')
+        .eq('ativo', true)
+        .limit(1)
+        .single();
+
+      if (!unidadePadrao) {
+        throw new Error('Unidade de medida padrão (un) não encontrada');
+      }
+
       const newProduct = {
         sku_interno: skuInterno.trim().toUpperCase(),
         nome: nome.trim(),
@@ -52,7 +66,7 @@ export function CreateParentProductModal({
         preco_venda: 0,
         localizacao: '',
         codigo_barras: '',
-        unidade_medida_id: null,
+        unidade_medida_id: unidadePadrao.id,
         categoria: null,
         descricao: null,
         status: 'ativo',

@@ -417,52 +417,39 @@ export default function ControleEstoquePage() {
 
   
   
-  console.log('🔍 DEBUG: Antes do return - produtos:', products.length);
-  console.log('🔍 DEBUG: Renderizando botões de ação');
-  
   return (
-    <div className="space-y-6 w-full">
-      {/* DEBUG: Container visível para teste */}
-      <div className="p-4 bg-red-500 text-white font-bold">
-        🔍 DEBUG: Se você vê este texto vermelho, o container está renderizando!
-      </div>
-      
+    <div className="space-y-6">
       {/* Notificações do Estoque */}
       <EstoqueNotifications 
         products={products}
         onProductClick={handleNotificationProductClick}
       />
 
-      {/* Botões de ação principais - SEMPRE VISÍVEIS NO TOPO */}
-      <div className="flex flex-wrap gap-2 p-4 bg-yellow-500 border-4 border-red-500 rounded-lg shadow-lg relative z-50">
-        {console.log('🔍 DEBUG: Dentro do container de botões')}
-        {(() => {
-          console.log('🔍 DEBUG: Renderizando Botão Criar Produto Pai');
-          return null;
-        })()}
+      {/* Botões de ação principais */}
+      <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
         <Button 
           variant="default" 
-          size="lg"
-          onClick={() => {
-            console.log('🔍 DEBUG: Botão Criar Produto Pai clicado');
-            setParentProductModalOpen(true);
-          }}
-          className="bg-blue-600 text-white hover:bg-blue-700 font-bold text-lg px-8 py-6 border-4 border-white shadow-2xl"
+          size="sm"
+          onClick={() => setParentProductModalOpen(true)}
         >
-          <Plus className="h-6 w-6 mr-2" />
-          🔵 CRIAR PRODUTO PAI (TESTE)
+          <Plus className="h-4 w-4 mr-2" />
+          Criar Produto Pai
         </Button>
         
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => setLinkChildModalOpen(true)}
+          disabled={selectedProducts.length === 0}
+        >
+          <LinkIcon className="h-4 w-4 mr-2" />
+          Vincular a Pai
+        </Button>
         
-        {(() => {
-          console.log('🔍 DEBUG: Renderizando Botão Criar Produto Filho');
-          return null;
-        })()}
         <Button 
           variant="outline" 
           size="sm"
           onClick={() => {
-            console.log('🔍 DEBUG: Botão Criar Produto Filho clicado');
             setChildProductModalOpen(true);
           }}
         >
