@@ -73,6 +73,7 @@ export function CreateParentProductModal({
         ativo: true,
         sku_pai: null,
         url_imagem: null,
+        eh_produto_pai: true, // Marca como produto pai/agrupador
       };
 
       await createProduct(newProduct);

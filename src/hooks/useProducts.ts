@@ -26,6 +26,7 @@ export interface BaseProduct {
   organization_id: string | null;
   integration_account_id: string | null;
   sku_pai: string | null;
+  eh_produto_pai?: boolean | null;
 }
 
 // Extended interface with additional fields for template import
