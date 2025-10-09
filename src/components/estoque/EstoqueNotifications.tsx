@@ -156,9 +156,10 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-        {visibleNotifications.map((notification) => (
-          <Card key={notification.id} className={`${getNotificationColor(notification.type)} border relative`}>
+      <div className="overflow-x-auto -mx-4 px-4 pb-2">
+        <div className="flex gap-3 min-w-min">
+          {visibleNotifications.map((notification) => (
+            <Card key={notification.id} className={`${getNotificationColor(notification.type)} border relative w-80 shrink-0`}>
             <Button
               variant="ghost"
               size="sm"
@@ -221,6 +222,7 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
             </CardContent>
           </Card>
         ))}
+        </div>
       </div>
     </div>
   );
