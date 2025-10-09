@@ -66,6 +66,8 @@ export function CreateChildProductModal({
 }: CreateChildProductModalProps) {
   const [selectedCategoriaPrincipal, setSelectedCategoriaPrincipal] = useState<string>("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
+  const [selectedParentSku, setSelectedParentSku] = useState<string>("");
+  const [parentProducts, setParentProducts] = useState<Product[]>([]);
   const [variations, setVariations] = useState<VariationForm[]>([
     { 
       suffix: '', 
@@ -97,7 +99,7 @@ export function CreateChildProductModal({
   ]);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
-  const { createProduct } = useProducts();
+  const { createProduct, getProducts } = useProducts();
   const { unidades, getUnidadeBasePorTipo } = useUnidadesMedida();
   const { getCategoriasPrincipais, getCategorias, refreshCategories } = useCatalogCategories();
   const { uploadImage, uploading } = useImageUpload();
@@ -105,8 +107,20 @@ export function CreateChildProductModal({
   useEffect(() => {
     if (open) {
       refreshCategories?.();
+      loadParentProducts();
     }
   }, [open]);
+
+  const loadParentProducts = async () => {
+    try {
+      const result = await getProducts({ ativo: true });
+      // Filtrar apenas produtos marcados como pai
+      const parents = result.filter(p => p.eh_produto_pai === true);
+      setParentProducts(parents);
+    } catch (error) {
+      console.error('Erro ao carregar produtos pai:', error);
+    }
+  };
 
   const handleAddVariation = () => {
     const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
@@ -208,7 +222,8 @@ export function CreateChildProductModal({
           descricao: variation.descricao || null,
           status: 'ativo',
           ativo: true,
-          sku_pai: null,
+          sku_pai: selectedParentSku || null,
+          eh_produto_pai: false,
           url_imagem: imageUrl || null,
           sob_encomenda: variation.sob_encomenda || false,
           dias_preparacao: variation.dias_preparacao || null,
@@ -225,9 +240,10 @@ export function CreateChildProductModal({
         });
       }
 
+      const productType = selectedParentSku ? "filho(s)" : "independente(s)";
       toast({
         title: "Sucesso!",
-        description: `${variations.length} produto(s) independente(s) criado(s) com sucesso.`,
+        description: `${variations.length} produto(s) ${productType} criado(s) com sucesso.`,
       });
 
       handleClose();
@@ -248,6 +264,7 @@ export function CreateChildProductModal({
     const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
     setSelectedCategoriaPrincipal('');
     setSelectedCategoria('');
+    setSelectedParentSku('');
     setVariations([{ 
       suffix: '', 
       nome: '',
@@ -284,14 +301,48 @@ export function CreateChildProductModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Criar Produtos Independentes
+            Criar Produtos {selectedParentSku ? 'Filho (Variações)' : 'Independentes'}
           </DialogTitle>
           <DialogDescription>
-            Crie produtos independentes. Para agrupá-los posteriormente, use a funcionalidade de agrupamento.
+            {selectedParentSku 
+              ? 'Crie produtos filho vinculados a um produto pai.' 
+              : 'Crie produtos independentes. Para agrupá-los posteriormente, selecione um produto pai ou use a funcionalidade de agrupamento.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
+
+          {/* Seleção de Produto Pai */}
+          <div className="space-y-4 border-b pb-4">
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              <Link className="w-4 h-4" />
+              Produto Pai (Opcional)
+            </h4>
+            <div>
+              <Label>Vincular a um Produto Pai</Label>
+              <Select 
+                value={selectedParentSku} 
+                onValueChange={setSelectedParentSku}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Nenhum (criar produto independente)" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-[9999]">
+                  <SelectItem value="">Nenhum (produto independente)</SelectItem>
+                  {parentProducts.map((parent) => (
+                    <SelectItem key={parent.id} value={parent.sku_interno}>
+                      {parent.sku_interno} - {parent.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {selectedParentSku 
+                  ? `Os produtos serão criados como variações de ${selectedParentSku}` 
+                  : 'Deixe em branco para criar produtos independentes'}
+              </p>
+            </div>
+          </div>
 
           {/* Categorização */}
           <div className="space-y-4">
