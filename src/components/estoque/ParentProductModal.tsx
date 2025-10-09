@@ -53,6 +53,7 @@ export function ParentProductModal({ open, onOpenChange, onParentCreated }: Pare
         descricao: null,
         status: 'ativo',
         ativo: true,
+        eh_produto_pai: true,
         sku_pai: null,
         url_imagem: null,
       };
