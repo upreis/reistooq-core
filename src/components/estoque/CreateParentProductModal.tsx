@@ -97,7 +97,7 @@ export function CreateParentProductModal({
             Criar Produto Pai
           </DialogTitle>
           <DialogDescription>
-            Crie um produto pai que agrupará variações (tamanhos, cores, etc.)
+            Crie um produto pai independente. Você poderá agrupar produtos filho posteriormente.
           </DialogDescription>
         </DialogHeader>
 
