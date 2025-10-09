@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package } from "lucide-react";
+import { Package, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,6 +27,8 @@ export function CreateParentProductModal({
 }: CreateParentProductModalProps) {
   const [skuInterno, setSkuInterno] = useState('');
   const [nome, setNome] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createProduct } = useProducts();
@@ -56,6 +58,29 @@ export function CreateParentProductModal({
         throw new Error('Unidade de medida padrão (un) não encontrada');
       }
 
+      let uploadedImageUrl = null;
+
+      // Upload da imagem se fornecida
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `product-images/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(filePath, imageFile);
+
+        if (uploadError) {
+          throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
+        }
+
+        const { data: urlData } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(filePath);
+
+        uploadedImageUrl = urlData.publicUrl;
+      }
+
       const newProduct = {
         sku_interno: skuInterno.trim().toUpperCase(),
         nome: nome.trim(),
@@ -72,7 +97,7 @@ export function CreateParentProductModal({
         status: 'ativo',
         ativo: true,
         sku_pai: null,
-        url_imagem: null,
+        url_imagem: uploadedImageUrl,
         eh_produto_pai: true, // Marca como produto pai/agrupador
       };
 
@@ -97,9 +122,32 @@ export function CreateParentProductModal({
     }
   };
 
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Arquivo muito grande",
+          description: "A imagem deve ter no máximo 5MB.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setImageFile(file);
+      setImageUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImageUrl('');
+  };
+
   const handleClose = () => {
     setSkuInterno('');
     setNome('');
+    setImageUrl('');
+    setImageFile(null);
     onOpenChange(false);
   };
 
@@ -145,6 +193,46 @@ export function CreateParentProductModal({
                 }
               }}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="parent-image">Imagem do Produto</Label>
+            <div className="flex flex-col gap-2">
+              {imageUrl ? (
+                <div className="relative inline-block">
+                  <img 
+                    src={imageUrl} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded-md border border-border"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                    onClick={handleRemoveImage}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                  <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Clique para selecionar uma imagem
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG, GIF até 5MB
+                  </p>
+                  <Input
+                    id="parent-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="mt-2"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
