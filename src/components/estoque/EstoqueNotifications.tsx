@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { useProductHierarchy } from "@/hooks/useProductHierarchy";
+import { useEstoqueSettings } from "@/hooks/useEstoqueSettings";
 
 interface EstoqueNotificationsProps {
   products: Product[];
@@ -36,76 +37,85 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const hierarchy = useProductHierarchy(products);
+  const { config } = useEstoqueSettings();
 
   useEffect(() => {
     generateNotifications();
-  }, [products]);
+  }, [products, config]);
 
   const generateNotifications = () => {
     const newNotifications: Notification[] = [];
 
     // Produtos sem estoque
-    const outOfStock = products.filter(p => p.quantidade_atual === 0 && p.ativo);
-    if (outOfStock.length > 0) {
-      newNotifications.push({
-        id: 'out-of-stock',
-        type: 'critical',
-        title: 'Produtos sem estoque',
-        message: `${outOfStock.length} produto${outOfStock.length > 1 ? 's' : ''} sem estoque`,
-        products: outOfStock,
-        actionLabel: 'Ver produtos',
-        action: () => onFilterByStock?.('out')
-      });
+    if (config.notifications.outOfStockAlert) {
+      const outOfStock = products.filter(p => p.quantidade_atual === 0 && p.ativo);
+      if (outOfStock.length > 0) {
+        newNotifications.push({
+          id: 'out-of-stock',
+          type: 'critical',
+          title: 'Produtos sem estoque',
+          message: `${outOfStock.length} produto${outOfStock.length > 1 ? 's' : ''} sem estoque`,
+          products: outOfStock,
+          actionLabel: 'Ver produtos',
+          action: () => onFilterByStock?.('out')
+        });
+      }
     }
 
     // Estoque baixo
-    const lowStock = products.filter(p => 
-      p.quantidade_atual <= p.estoque_minimo && 
-      p.quantidade_atual > 0 && 
-      p.ativo
-    );
-    if (lowStock.length > 0) {
-      newNotifications.push({
-        id: 'low-stock',
-        type: 'warning',
-        title: 'Estoque baixo',
-        message: `${lowStock.length} produto${lowStock.length > 1 ? 's' : ''} com estoque baixo`,
-        products: lowStock,
-        actionLabel: 'Ver produtos',
-        action: () => onFilterByStock?.('low')
-      });
+    if (config.notifications.lowStockAlert) {
+      const lowStock = products.filter(p => 
+        p.quantidade_atual <= p.estoque_minimo && 
+        p.quantidade_atual > 0 && 
+        p.ativo
+      );
+      if (lowStock.length > 0) {
+        newNotifications.push({
+          id: 'low-stock',
+          type: 'warning',
+          title: 'Estoque baixo',
+          message: `${lowStock.length} produto${lowStock.length > 1 ? 's' : ''} com estoque baixo`,
+          products: lowStock,
+          actionLabel: 'Ver produtos',
+          action: () => onFilterByStock?.('low')
+        });
+      }
     }
 
     // Produtos órfãos
-    const orphanProducts = products.filter(p => 
-      p.sku_pai && !products.some(parent => parent.sku_interno === p.sku_pai)
-    );
-    if (orphanProducts.length > 0) {
-      newNotifications.push({
-        id: 'orphan-products',
-        type: 'warning',
-        title: 'Produtos órfãos',
-        message: `${orphanProducts.length} produto${orphanProducts.length > 1 ? 's' : ''} filho${orphanProducts.length > 1 ? 's' : ''} sem produto pai`,
-        products: orphanProducts,
-        actionLabel: 'Corrigir vínculos',
-        action: () => onOpenOrphanModal?.(orphanProducts)
-      });
+    if (config.notifications.orphanProductsAlert) {
+      const orphanProducts = products.filter(p => 
+        p.sku_pai && !products.some(parent => parent.sku_interno === p.sku_pai)
+      );
+      if (orphanProducts.length > 0) {
+        newNotifications.push({
+          id: 'orphan-products',
+          type: 'warning',
+          title: 'Produtos órfãos',
+          message: `${orphanProducts.length} produto${orphanProducts.length > 1 ? 's' : ''} filho${orphanProducts.length > 1 ? 's' : ''} sem produto pai`,
+          products: orphanProducts,
+          actionLabel: 'Corrigir vínculos',
+          action: () => onOpenOrphanModal?.(orphanProducts)
+        });
+      }
     }
 
     // Produtos sem preço
-    const noPrice = products.filter(p => 
-      (!p.preco_venda || p.preco_venda === 0) && p.ativo
-    );
-    if (noPrice.length > 0) {
-      newNotifications.push({
-        id: 'no-price',
-        type: 'warning',
-        title: 'Produtos sem preço',
-        message: `${noPrice.length} produto${noPrice.length > 1 ? 's' : ''} sem preço de venda`,
-        products: noPrice,
-        actionLabel: 'Definir preços',
-        action: () => onOpenPriceModal?.(noPrice)
-      });
+    if (config.notifications.noPriceAlert) {
+      const noPrice = products.filter(p => 
+        (!p.preco_venda || p.preco_venda === 0) && p.ativo
+      );
+      if (noPrice.length > 0) {
+        newNotifications.push({
+          id: 'no-price',
+          type: 'warning',
+          title: 'Produtos sem preço',
+          message: `${noPrice.length} produto${noPrice.length > 1 ? 's' : ''} sem preço de venda`,
+          products: noPrice,
+          actionLabel: 'Definir preços',
+          action: () => onOpenPriceModal?.(noPrice)
+        });
+      }
     }
 
     setNotifications(newNotifications);
