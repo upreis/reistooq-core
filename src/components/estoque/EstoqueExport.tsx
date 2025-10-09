@@ -13,6 +13,7 @@ import {
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/hooks/useProducts";
+import * as XLSX from 'xlsx';
 
 interface EstoqueExportProps {
   products: Product[];
@@ -38,6 +39,7 @@ const availableFields = [
 export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [includeInactive, setIncludeInactive] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('xlsx');
   const [selectedFields, setSelectedFields] = useState<string[]>([
     'sku_interno', 'nome', 'quantidade_atual', 'preco_custo', 'preco_venda', 'estoque_minimo', 'estoque_maximo'
   ]);
@@ -86,6 +88,39 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
     });
   };
 
+  const exportToExcel = async () => {
+    try {
+      const data = generateExportData();
+
+      if (data.length === 0) {
+        toast({
+          title: "Nenhum produto para exportar",
+          description: "Verifique os filtros aplicados",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(data);
+      XLSX.utils.book_append_sheet(wb, ws, 'Estoque');
+      XLSX.writeFile(wb, `estoque_${new Date().toISOString().split('T')[0]}.xlsx`);
+
+      toast({
+        title: "Exportação concluída",
+        description: `${data.length} produtos exportados para Excel`,
+      });
+
+      setDialogOpen(false);
+    } catch (error) {
+      toast({
+        title: "Erro na exportação",
+        description: "Não foi possível exportar para Excel",
+        variant: "destructive",
+      });
+    }
+  };
+
   const exportToCSV = async () => {
     try {
       const data = generateExportData();
@@ -130,6 +165,14 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
     }
   };
 
+  const handleExport = () => {
+    if (exportFormat === 'xlsx') {
+      exportToExcel();
+    } else {
+      exportToCSV();
+    }
+  };
+
   const productsCount = includeInactive 
     ? filteredProducts.length 
     : filteredProducts.filter(p => p.ativo).length;
@@ -164,6 +207,28 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
                 <p className="text-2xl font-bold">{productsCount}</p>
                 <p className="text-xs text-muted-foreground">produtos</p>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <Label className="text-base font-semibold">Formato de Exportação</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={exportFormat === 'xlsx' ? 'default' : 'outline'}
+                onClick={() => setExportFormat('xlsx')}
+                className="flex-1"
+              >
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                Excel (XLSX)
+              </Button>
+              <Button
+                variant={exportFormat === 'csv' ? 'default' : 'outline'}
+                onClick={() => setExportFormat('csv')}
+                className="flex-1"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                CSV
+              </Button>
             </div>
           </div>
 
@@ -210,8 +275,12 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={exportToCSV} disabled={productsCount === 0}>
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
+            <Button onClick={handleExport} disabled={productsCount === 0}>
+              {exportFormat === 'xlsx' ? (
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+              ) : (
+                <FileText className="w-4 h-4 mr-2" />
+              )}
               Exportar {productsCount} Produto{productsCount !== 1 ? 's' : ''}
             </Button>
           </div>
