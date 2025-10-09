@@ -216,7 +216,7 @@ export function EstoqueTable({
             <div className="font-mono font-semibold">{value}</div>
             {product.sku_pai ? (
               <>
-                <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 w-fit">
+                <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-blue-500/20 text-blue-700 dark:text-blue-300 w-fit">
                   SKU Filho
                 </Badge>
                 <div className="text-muted-foreground text-[9px]">
