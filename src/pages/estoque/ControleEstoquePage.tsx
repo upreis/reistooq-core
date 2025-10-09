@@ -439,16 +439,6 @@ export default function ControleEstoquePage() {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => setLinkChildModalOpen(true)}
-          disabled={selectedProducts.length === 0}
-        >
-          <LinkIcon className="h-4 w-4 mr-2" />
-          Vincular a Pai
-        </Button>
-        
-        <Button 
-          variant="outline" 
-          size="sm"
           onClick={() => {
             setChildProductModalOpen(true);
           }}
