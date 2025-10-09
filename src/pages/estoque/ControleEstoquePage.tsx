@@ -410,53 +410,58 @@ export default function ControleEstoquePage() {
   
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Notificações do Estoque */}
       <EstoqueNotifications 
         products={products}
         onProductClick={handleNotificationProductClick}
       />
 
-      {/* Botões de ação */}
-      <div className="flex flex-wrap justify-between gap-2 mb-4">
-        <div className="flex gap-2">
-          {selectedProducts.length > 0 && (
-            <>
-              <Button 
-                variant="secondary" 
-                size="sm"
-                onClick={() => setLinkChildModalOpen(true)}
-              >
-                <LinkIcon className="h-4 w-4 mr-2" />
-                Vincular a Pai ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleDeleteSelected}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir ({selectedProducts.length})
-              </Button>
-            </>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => setParentProductModalOpen(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Criar Produto Pai
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setChildProductModalOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
+      {/* Botões de ação - SEMPRE VISÍVEIS */}
+      <Card className="p-4">
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          {/* Botões da esquerda - Ações em massa */}
+          <div className="flex flex-wrap gap-2">
+            {selectedProducts.length > 0 && (
+              <>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => setLinkChildModalOpen(true)}
+                >
+                  <LinkIcon className="h-4 w-4 mr-2" />
+                  Vincular a Pai ({selectedProducts.length})
+                </Button>
+                <Button 
+                  variant="destructive" 
+                  size="sm"
+                  onClick={handleDeleteSelected}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir ({selectedProducts.length})
+                </Button>
+              </>
+            )}
+          </div>
+
+          {/* Botões da direita - Criação e configurações */}
+          <div className="flex flex-wrap gap-2 justify-end">
+            <Button 
+              variant="default" 
+              size="sm"
+              onClick={() => setParentProductModalOpen(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Criar Produto Pai
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setChildProductModalOpen(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
               Criar Produto Filho
             </Button>
             
@@ -472,28 +477,30 @@ export default function ControleEstoquePage() {
             <EstoqueSettings />
             
             <ProductImportModal
-            trigger={
-              <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Importar Produtos
-              </Button>
-            }
-            onSuccess={() => {
-              loadProducts();
-              toast({
-                title: "Produtos importados",
-                description: "Os produtos foram importados com sucesso.",
-              });
-            }}
-          />
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/category-manager">
-              <Settings className="h-4 w-4 mr-2" />
-              Gerenciar Categorias
-            </Link>
-          </Button>
+              trigger={
+                <Button variant="outline" size="sm">
+                  <Upload className="h-4 w-4 mr-2" />
+                  Importar Produtos
+                </Button>
+              }
+              onSuccess={() => {
+                loadProducts();
+                toast({
+                  title: "Produtos importados",
+                  description: "Os produtos foram importados com sucesso.",
+                });
+              }}
+            />
+            
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/category-manager">
+                <Settings className="h-4 w-4 mr-2" />
+                Gerenciar Categorias
+              </Link>
+            </Button>
+          </div>
         </div>
-      </div>
+      </Card>
 
 
       {/* Filtros básicos */}
