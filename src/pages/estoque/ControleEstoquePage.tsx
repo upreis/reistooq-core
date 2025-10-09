@@ -72,34 +72,14 @@ export default function ControleEstoquePage() {
       } else if (selectedStatus === "inactive_only") {
         ativoFilter = false;
       } else if (["low", "out", "high", "critical"].includes(selectedStatus)) {
-        ativoFilter = true; // Filtros de estoque só aplicam a produtos ativos
+        ativoFilter = true;
       }
       
-      // Buscar produtos do banco já ordenados por created_at desc
-      let allProducts = await getProducts({
-        search: searchTerm || undefined,
+      // Buscar produtos do banco (removido limit fixo de 10000)
+      const allProducts = await getProducts({
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
-        limit: 10000,
         ativo: ativoFilter,
       });
-
-      // Aplicar filtros adicionais de estoque localmente
-      if (selectedStatus !== "all" && selectedStatus !== "active_only" && selectedStatus !== "inactive_only") {
-        allProducts = allProducts.filter(product => {
-          switch (selectedStatus) {
-            case "low":
-              return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
-            case "out":
-              return product.quantidade_atual === 0;
-            case "high":
-              return product.quantidade_atual >= product.estoque_maximo;
-            case "critical":
-              return product.quantidade_atual <= product.estoque_minimo;
-            default:
-              return true;
-          }
-        });
-      }
 
       setProducts(allProducts);
     } catch (error) {
@@ -111,33 +91,24 @@ export default function ControleEstoquePage() {
     } finally {
       setLoading(false);
     }
-  }, [searchTerm, selectedCategory, selectedStatus, getProducts, toast]);
+  }, [selectedCategory, selectedStatus, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
       const data = await getCategories();
       setCategories(data);
     } catch (error) {
-      console.error("Error loading categories:", error);
+      // Erro ao carregar categorias - silencioso
     }
   }, [getCategories]);
 
   useEffect(() => {
     loadProducts();
     loadCategories();
-  }, []);
-
-  useEffect(() => {
-    const delayedSearch = setTimeout(() => {
-      loadProducts();
-    }, 300);
-
-    return () => clearTimeout(delayedSearch);
-  }, [searchTerm, selectedCategory, selectedStatus, loadProducts]);
+  }, [loadProducts, loadCategories]);
 
   const handleSearch = () => {
     setCurrentPage(1);
-    loadProducts();
   };
 
   const handleSelectProduct = (productId: string) => {
@@ -361,21 +332,40 @@ export default function ControleEstoquePage() {
     });
   };
 
-  // Aplicar busca por termo aos dados já filtrados (manter ordem do banco)
+  // Aplicar filtros de status de estoque e busca aos dados já filtrados pelos filtros inteligentes
   const finalFilteredProducts = useMemo(() => {
     let filtered = [...intelligentFilteredData];
 
-    // Aplicar busca por termo
-    if (searchTerm) {
+    // Aplicar busca por termo (SKU, Nome, Código de Barras)
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(product => 
-        product.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku_interno.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (product.codigo_barras && product.codigo_barras.toLowerCase().includes(searchTerm.toLowerCase()))
+        product.nome.toLowerCase().includes(searchLower) ||
+        product.sku_interno.toLowerCase().includes(searchLower) ||
+        (product.codigo_barras && product.codigo_barras.toLowerCase().includes(searchLower))
       );
     }
 
+    // Aplicar filtros de status de estoque
+    if (selectedStatus && selectedStatus !== "all" && selectedStatus !== "active_only" && selectedStatus !== "inactive_only") {
+      filtered = filtered.filter(product => {
+        switch (selectedStatus) {
+          case "low":
+            return product.quantidade_atual <= product.estoque_minimo && product.quantidade_atual > 0;
+          case "out":
+            return product.quantidade_atual === 0;
+          case "high":
+            return product.quantidade_atual >= product.estoque_maximo;
+          case "critical":
+            return product.quantidade_atual <= product.estoque_minimo;
+          default:
+            return true;
+        }
+      });
+    }
+
     return filtered;
-  }, [intelligentFilteredData, searchTerm]);
+  }, [intelligentFilteredData, searchTerm, selectedStatus]);
 
   const paginatedProducts = useMemo(() => 
     finalFilteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
