@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/pagination";
 
 export default function ControleEstoquePage() {
+  console.log('🔍 DEBUG: ControleEstoquePage renderizando');
+  
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +57,13 @@ export default function ControleEstoquePage() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
   const [bulkCategoryModalOpen, setBulkCategoryModalOpen] = useState(false);
+  
+  console.log('🔍 DEBUG: Estados:', {
+    parentProductModalOpen,
+    childProductModalOpen,
+    linkChildModalOpen,
+    selectedProductsCount: selectedProducts.length
+  });
   
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
@@ -408,6 +417,10 @@ export default function ControleEstoquePage() {
 
   
   
+  
+  console.log('🔍 DEBUG: Antes do return - produtos:', products.length);
+  console.log('🔍 DEBUG: Renderizando botões de ação');
+  
   return (
     <div className="space-y-6">
       {/* Notificações do Estoque */}
@@ -418,27 +431,45 @@ export default function ControleEstoquePage() {
 
       {/* Botões de ação principais - SEMPRE VISÍVEIS NO TOPO */}
       <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
+        {console.log('🔍 DEBUG: Dentro do container de botões')}
+        {(() => {
+          console.log('🔍 DEBUG: Renderizando Botão Criar Produto Pai');
+          return null;
+        })()}
         <Button 
           variant="default" 
           size="sm"
-          onClick={() => setParentProductModalOpen(true)}
+          onClick={() => {
+            console.log('🔍 DEBUG: Botão Criar Produto Pai clicado');
+            setParentProductModalOpen(true);
+          }}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
           <Plus className="h-4 w-4 mr-2" />
           Criar Produto Pai
         </Button>
         
+        
+        {(() => {
+          console.log('🔍 DEBUG: Renderizando Botão Criar Produto Filho');
+          return null;
+        })()}
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => setChildProductModalOpen(true)}
+          onClick={() => {
+            console.log('🔍 DEBUG: Botão Criar Produto Filho clicado');
+            setChildProductModalOpen(true);
+          }}
         >
           <Plus className="h-4 w-4 mr-2" />
           Criar Produto Filho
         </Button>
 
-        {selectedProducts.length > 0 && (
-          <>
+        {selectedProducts.length > 0 && (() => {
+          console.log('🔍 DEBUG: Renderizando botões condicionais - produtos selecionados:', selectedProducts.length);
+          return (
+            <>
             <Button 
               variant="secondary" 
               size="sm"
@@ -456,7 +487,8 @@ export default function ControleEstoquePage() {
               Excluir
             </Button>
           </>
-        )}
+          );
+        })()}
         
         <EstoqueImport onSuccess={loadProducts} />
         
