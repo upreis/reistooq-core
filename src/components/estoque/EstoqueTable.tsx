@@ -207,25 +207,34 @@ export function EstoqueTable({
       key: "sku_interno",
       label: "SKU",
       sortable: true,
-      render: (value: string, product: Product) => (
-        <div className="flex flex-col gap-1 text-[10px] leading-tight">
-          <div className="font-mono font-semibold">{value}</div>
-          {product.sku_pai ? (
-            <>
-              <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 w-fit">
-                SKU Filho
+      render: (value: string, product: Product) => {
+        // Detecta SKU filho órfão: tem mais de 2 partes mas não tem sku_pai definido
+        const isOrphanChild = value.split('-').length > 2 && !product.sku_pai && !product.eh_produto_pai;
+        
+        return (
+          <div className="flex flex-col gap-1 text-[10px] leading-tight">
+            <div className="font-mono font-semibold">{value}</div>
+            {product.sku_pai ? (
+              <>
+                <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 w-fit">
+                  SKU Filho
+                </Badge>
+                <div className="text-muted-foreground text-[9px]">
+                  Pai: {product.sku_pai}
+                </div>
+              </>
+            ) : product.eh_produto_pai ? (
+              <Badge variant="default" className="text-[9px] px-1 py-0 bg-primary/20 text-primary w-fit">
+                SKU Pai
               </Badge>
-              <div className="text-muted-foreground text-[9px]">
-                Pai: {product.sku_pai}
-              </div>
-            </>
-          ) : product.eh_produto_pai ? (
-            <Badge variant="default" className="text-[9px] px-1 py-0 bg-primary/20 text-primary w-fit">
-              SKU Pai
-            </Badge>
-          ) : null}
-        </div>
-      )
+            ) : isOrphanChild ? (
+              <Badge variant="warning" className="text-[9px] px-1 py-0 w-fit">
+                ⚠️ SKU Órfão
+              </Badge>
+            ) : null}
+          </div>
+        );
+      }
     },
     {
       key: "categorias",

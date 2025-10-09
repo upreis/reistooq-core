@@ -145,16 +145,33 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           {group.parentSku}
                         </span>
                         
-                        {/* Badge identificador: SKU Pai ou SKU Filho */}
-                        {group.parentProduct?.sku_pai ? (
-                          <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-300">
-                            SKU Filho
-                          </Badge>
-                        ) : group.parentProduct?.eh_produto_pai ? (
-                          <Badge variant="default" className="text-xs bg-primary/20 text-primary">
-                            SKU Pai
-                          </Badge>
-                        ) : null}
+                        {/* Badge identificador: SKU Pai, SKU Filho ou SKU Órfão */}
+                        {(() => {
+                          const isOrphanChild = group.parentSku.split('-').length > 2 && 
+                                               !group.parentProduct?.sku_pai && 
+                                               !group.parentProduct?.eh_produto_pai;
+                          
+                          if (group.parentProduct?.sku_pai) {
+                            return (
+                              <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                                SKU Filho
+                              </Badge>
+                            );
+                          } else if (group.parentProduct?.eh_produto_pai) {
+                            return (
+                              <Badge variant="default" className="text-xs bg-primary/20 text-primary">
+                                SKU Pai
+                              </Badge>
+                            );
+                          } else if (isOrphanChild) {
+                            return (
+                              <Badge variant="warning" className="text-xs">
+                                ⚠️ SKU Órfão
+                              </Badge>
+                            );
+                          }
+                          return null;
+                        })()}
                         
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
