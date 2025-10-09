@@ -110,17 +110,17 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'critical': return <AlertTriangle className="w-5 h-5 text-red-500" />;
-      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
-      default: return <Bell className="w-5 h-5 text-blue-500" />;
+      case 'critical': return <AlertTriangle className="w-5 h-5 text-red-500 dark:text-red-400" />;
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
+      default: return <Bell className="w-5 h-5 text-blue-500 dark:text-blue-400" />;
     }
   };
 
   const getNotificationColor = (type: string) => {
     switch (type) {
-      case 'critical': return 'border-red-200 bg-red-50';
-      case 'warning': return 'border-yellow-200 bg-yellow-50';
-      default: return 'border-blue-200 bg-blue-50';
+      case 'critical': return 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50 dark:text-red-100';
+      case 'warning': return 'border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/50 dark:text-yellow-100';
+      default: return 'border-blue-200 bg-blue-50 dark:border-blue-900 dark:bg-blue-950/50 dark:text-blue-100';
     }
   };
 
@@ -170,11 +170,11 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
             </Button>
             
             <CardContent className="p-4">
-              <div className="flex items-start gap-3 mb-3">
-                {getNotificationIcon(notification.type)}
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm">{notification.title}</h4>
-                  <p className="text-xs text-muted-foreground mt-1">
+                <div className="flex items-start gap-3 mb-3">
+                  {getNotificationIcon(notification.type)}
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm text-foreground">{notification.title}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
                     {notification.message}
                   </p>
                 </div>
