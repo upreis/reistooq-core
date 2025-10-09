@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EstoqueActions } from "@/components/estoque/EstoqueActions";
 import { EstoqueTable } from "@/components/estoque/EstoqueTable";
 import { HierarchicalEstoqueTable } from "@/components/estoque/HierarchicalEstoqueTable";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
