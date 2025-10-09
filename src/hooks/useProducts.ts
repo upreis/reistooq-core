@@ -161,12 +161,6 @@ export const useProducts = () => {
       .limit(1)
       .single();
 
-    if (existingProduct) {
-      // Se o produto já existe (ativo ou inativo), atualizar com os novos dados
-      console.log(`🔄 Atualizando produto existente: ${product.sku_interno} (${existingProduct.ativo ? 'ativo' : 'inativo'})`);
-      return await updateProduct(existingProduct.id, { ...product, ativo: true });
-    }
-
     // Buscar unidade padrão "un" para a organização atual
     const { data: unidadePadrao } = await supabase
       .from('unidades_medida')
@@ -180,8 +174,22 @@ export const useProducts = () => {
       'sku_interno', 'nome', 'categoria', 'descricao', 'codigo_barras',
       'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
       'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
-      'url_imagem', 'sku_pai'
+      'url_imagem', 'sku_pai', 'eh_produto_pai'
     ];
+
+    if (existingProduct) {
+      // Se o produto já existe (ativo ou inativo), atualizar com os novos dados (apenas campos permitidos)
+      console.log(`🔄 Atualizando produto existente: ${product.sku_interno} (${existingProduct.ativo ? 'ativo' : 'inativo'})`);
+      
+      const filteredUpdates = Object.keys(product).reduce((acc, key) => {
+        if (allowedColumns.includes(key)) {
+          acc[key] = product[key];
+        }
+        return acc;
+      }, {} as any);
+      
+      return await updateProduct(existingProduct.id, { ...filteredUpdates, ativo: true });
+    }
 
     const filteredProduct = Object.keys(product).reduce((acc, key) => {
       if (allowedColumns.includes(key)) {
@@ -219,26 +227,41 @@ export const useProducts = () => {
   const updateProduct = useCallback(async (id: string, updates: Partial<Product>) => {
     const orgId = await getCurrentOrgId();
 
+    // Filtrar apenas colunas que existem na tabela produtos
+    const allowedColumns = [
+      'sku_interno', 'nome', 'categoria', 'descricao', 'codigo_barras',
+      'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
+      'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
+      'url_imagem', 'sku_pai', 'eh_produto_pai'
+    ];
+
+    const filteredUpdates = Object.keys(updates).reduce((acc, key) => {
+      if (allowedColumns.includes(key)) {
+        acc[key] = updates[key];
+      }
+      return acc;
+    }, {} as any);
+
     // Se estiver atualizando o SKU, verificar se não está duplicado
-    if (updates.sku_interno) {
+    if (filteredUpdates.sku_interno) {
       const { data: existingProduct } = await supabase
         .from('produtos')
         .select('id, sku_interno')
-        .eq('sku_interno', updates.sku_interno)
+        .eq('sku_interno', filteredUpdates.sku_interno)
         .eq('organization_id', orgId)
         .neq('id', id) // Excluir o próprio produto
         .limit(1)
         .single();
 
       if (existingProduct) {
-        throw new Error(`Já existe outro produto com o SKU "${updates.sku_interno}" nesta organização.`);
+        throw new Error(`Já existe outro produto com o SKU "${filteredUpdates.sku_interno}" nesta organização.`);
       }
     }
 
     // Primeiro, tentar atualizar com organization_id válido
     let { data, error } = await supabase
       .from('produtos')
-      .update(updates)
+      .update(filteredUpdates)
       .eq('id', id)
       .eq('organization_id', orgId)
       .select()
@@ -251,7 +274,7 @@ export const useProducts = () => {
       // Fallback: atualizar produto órfão e setar organization_id
       const { data: fallbackData, error: fallbackError } = await supabase
         .from('produtos')
-        .update({ ...updates, organization_id: orgId })
+        .update({ ...filteredUpdates, organization_id: orgId })
         .eq('id', id)
         .is('organization_id', null)
         .select()
