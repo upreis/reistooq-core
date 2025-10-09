@@ -123,13 +123,35 @@ export default function ControleEstoquePage() {
 
   const handleDeleteSelected = async () => {
     if (selectedProducts.length === 0) {
+      toast({
+        title: "Nenhum produto selecionado",
+        description: "Selecione ao menos um produto para excluir.",
+        variant: "destructive",
+      });
       return;
     }
+
+    // FILTRAR apenas produtos que existem no estado atual
+    const validProductIds = selectedProducts.filter(id => 
+      products.some(p => p.id === id)
+    );
+
+    if (validProductIds.length === 0) {
+      toast({
+        title: "Produtos não encontrados",
+        description: "Os produtos selecionados não foram encontrados.",
+        variant: "destructive",
+      });
+      setSelectedProducts([]);
+      return;
+    }
+
+    console.log('🗑️ Excluindo produtos:', validProductIds);
     
     try {
-      // Tentar excluir cada produto
+      // Tentar excluir cada produto válido
       const results = await Promise.allSettled(
-        selectedProducts.map(id => deleteProduct(id))
+        validProductIds.map(id => deleteProduct(id))
       );
       
       // Contar sucessos e falhas
@@ -139,12 +161,12 @@ export default function ControleEstoquePage() {
       // Coletar mensagens de erro
       const erros = results
         .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-        .map(r => r.reason.message);
+        .map(r => r.reason?.message || 'Erro desconhecido');
       
       if (falhas > 0) {
         toast({
           title: "Exclusão parcial",
-          description: `${sucessos} produto(s) excluído(s). ${falhas} falhou(aram): ${erros[0] || 'Erro desconhecido'}`,
+          description: `${sucessos} produto(s) excluído(s). ${falhas} falhou(aram): ${erros[0]}`,
           variant: "destructive",
         });
       } else {
@@ -157,6 +179,7 @@ export default function ControleEstoquePage() {
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
+      console.error('❌ Erro ao excluir:', error);
       toast({
         title: "Erro ao excluir",
         description: error instanceof Error ? error.message : "Não foi possível excluir os produtos selecionados.",
@@ -375,8 +398,18 @@ export default function ControleEstoquePage() {
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
 
   const handleSelectAll = (selected: boolean) => {
-    const newSelection = selected ? paginatedProducts.map(p => p.id) : [];
-    setSelectedProducts(newSelection);
+    if (selected) {
+      // Adicionar produtos da página atual à seleção existente
+      const currentPageIds = paginatedProducts.map(p => p.id);
+      setSelectedProducts(prev => {
+        const uniqueIds = new Set([...prev, ...currentPageIds]);
+        return Array.from(uniqueIds);
+      });
+    } else {
+      // Remover apenas produtos da página atual
+      const currentPageIds = new Set(paginatedProducts.map(p => p.id));
+      setSelectedProducts(prev => prev.filter(id => !currentPageIds.has(id)));
+    }
   };
 
   
