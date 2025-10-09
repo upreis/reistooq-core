@@ -282,30 +282,8 @@ export const useProducts = () => {
   const deleteProduct = useCallback(async (id: string) => {
     const orgId = await getCurrentOrgId();
 
-    // Buscar o produto primeiro
-    const produto = await getProduct(id);
-    
-    if (!produto) {
-      throw new Error('Produto não encontrado.');
-    }
-
-    // Verificar se o produto é um SKU pai (tem filhos)
-    const { data: filhos, error: filhosError } = await supabase
-      .from('produtos')
-      .select('id, sku_interno')
-      .eq('sku_pai', produto.sku_interno)
-      .eq('organization_id', orgId);
-
-    if (filhosError) {
-      console.error('Erro ao verificar filhos:', filhosError);
-      throw filhosError;
-    }
-
-    if (filhos && filhos.length > 0) {
-      throw new Error(`Não é possível excluir o SKU pai. Existem ${filhos.length} produto(s) filho(s) vinculado(s). Exclua os filhos primeiro.`);
-    }
-
-    // Fazer soft delete (marcar como inativo)
+    // SIMPLIFICADO: Sem verificação de hierarquia pai/filho
+    // Apenas fazer soft delete (marcar como inativo)
     const { data, error } = await supabase
       .from('produtos')
       .update({ ativo: false })
@@ -320,7 +298,7 @@ export const useProducts = () => {
     }
 
     return data as unknown as Product;
-  }, [getCurrentOrgId, getProduct]);
+  }, [getCurrentOrgId]);
 
   const getProductStats = useCallback(async () => {
     // Total de produtos
