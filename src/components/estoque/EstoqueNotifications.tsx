@@ -14,6 +14,7 @@ import {
 import { Product } from "@/hooks/useProducts";
 import { useProductHierarchy } from "@/hooks/useProductHierarchy";
 import { useEstoqueSettings } from "@/hooks/useEstoqueSettings";
+import { EstoqueSettings } from "./EstoqueSettings";
 
 interface EstoqueNotificationsProps {
   products: Product[];
@@ -37,6 +38,7 @@ interface Notification {
 export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal, onOrphanProductClick }: EstoqueNotificationsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const hierarchy = useProductHierarchy(products);
   const { config } = useEstoqueSettings();
 
@@ -175,10 +177,7 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
           Notificações do Estoque
           <Badge variant="secondary">{visibleNotifications.length}</Badge>
         </h3>
-        <Button variant="ghost" size="sm">
-          <Settings className="w-4 h-4 mr-2" />
-          Configurar Alertas
-        </Button>
+        <EstoqueSettings />
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 pb-2">
