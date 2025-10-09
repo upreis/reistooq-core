@@ -1,8 +1,6 @@
 // 🛡️ PÁGINA PROTEGIDA - NÃO MODIFICAR SEM AUTORIZAÇÃO EXPLÍCITA
 import { useState, useEffect, useCallback, useMemo } from "react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { EstoqueActions } from "@/components/estoque/EstoqueActions";
 import { EstoqueTable } from "@/components/estoque/EstoqueTable";
 import { HierarchicalEstoqueTable } from "@/components/estoque/HierarchicalEstoqueTable";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
@@ -14,12 +12,10 @@ import { CreateChildProductModal } from "@/components/estoque/CreateChildProduct
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2 } from "lucide-react";
+import { Package, Plus, Upload, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
-import { CategoryImportModal } from "@/components/estoque/CategoryImportModal";
 import { ProductImportModal } from "@/components/estoque/ProductImportModal";
 import { EstoqueNotifications } from "@/components/estoque/EstoqueNotifications";
 import { EstoqueExport } from "@/components/estoque/EstoqueExport";
@@ -142,50 +138,22 @@ export default function ControleEstoquePage() {
   };
 
   const handleSelectProduct = (productId: string) => {
-    console.log('🔍 handleSelectProduct chamado com ID:', productId);
-    console.log('📋 Estado atual de selectedProducts:', selectedProducts);
-    
-    setSelectedProducts(prev => {
-      const newSelection = prev.includes(productId) 
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
         ? prev.filter(id => id !== productId)
-        : [...prev, productId];
-      
-      console.log('✅ Nova seleção:', newSelection);
-      return newSelection;
-    });
+        : [...prev, productId]
+    );
   };
 
   const handleSelectAll = (selected: boolean) => {
-    console.log('🔍 handleSelectAll chamado com:', selected);
-    console.log('📋 Produtos paginados:', paginatedProducts.length);
-    
-    const newSelection = selected ? paginatedProducts.map(p => p.id) : [];
-    console.log('✅ Selecionando:', newSelection);
-    setSelectedProducts(newSelection);
+    setSelectedProducts(selected ? paginatedProducts.map(p => p.id) : []);
   };
 
   const handleDeleteSelected = async () => {
-    console.log('🗑️ handleDeleteSelected chamado');
-    console.log('📋 Produtos selecionados:', selectedProducts);
-    
-    if (selectedProducts.length === 0) {
-      console.log('⚠️ Nenhum produto selecionado');
-      return;
-    }
+    if (selectedProducts.length === 0) return;
     
     try {
-      console.log('🔄 Iniciando exclusão de', selectedProducts.length, 'produtos');
-      
-      const deletePromises = selectedProducts.map(async id => {
-        console.log('🗑️ Excluindo produto:', id);
-        const result = await deleteProduct(id);
-        console.log('✅ Resultado da exclusão:', result);
-        return result;
-      });
-      
-      await Promise.all(deletePromises);
-      
-      console.log('✅ Todos os produtos foram excluídos');
+      await Promise.all(selectedProducts.map(id => deleteProduct(id)));
       
       toast({
         title: "Produtos excluídos",
@@ -195,7 +163,6 @@ export default function ControleEstoquePage() {
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
-      console.error('❌ Erro ao excluir produtos:', error);
       toast({
         title: "Erro ao excluir",
         description: error instanceof Error ? error.message : "Não foi possível excluir os produtos selecionados.",
@@ -208,9 +175,7 @@ export default function ControleEstoquePage() {
     if (productIds.length === 0) return;
     
     try {
-      await Promise.all(
-        productIds.map(id => updateProduct(id, { ativo: newStatus }))
-      );
+      await Promise.all(productIds.map(id => updateProduct(id, { ativo: newStatus })));
       
       toast({
         title: "Status atualizado",
@@ -220,7 +185,6 @@ export default function ControleEstoquePage() {
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
-      console.error('Erro ao atualizar status em massa:', error);
       toast({
         title: "Erro ao atualizar status",
         description: error instanceof Error ? error.message : "Não foi possível atualizar o status dos produtos selecionados.",
@@ -259,7 +223,6 @@ export default function ControleEstoquePage() {
     }
 
     try {
-      // Usar StockMovementService para registrar movimento completo
       const { stockMovementService } = await import('@/features/scanner/services/StockMovementService');
       
       let result;
@@ -295,7 +258,6 @@ export default function ControleEstoquePage() {
         });
       }
     } catch (error) {
-      console.error('❌ Erro na movimentação:', error);
       toast({
         title: "Erro na movimentação",
         description: "Não foi possível realizar a movimentação de estoque.",
@@ -393,8 +355,6 @@ export default function ControleEstoquePage() {
   );
   
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
-
-  console.log('🔵 Renderizando ControleEstoquePage - Botões de ação');
   
   return (
     <div className="space-y-6">
@@ -404,114 +364,7 @@ export default function ControleEstoquePage() {
         onProductClick={handleNotificationProductClick}
       />
 
-      {/* Botões de ação */}
-      <div className="flex flex-wrap justify-between gap-2 mb-4">
-        <div className="flex gap-2">
-          {selectedProducts.length === 0 ? (
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => handleSelectAll(true)}
-              className="border-primary text-primary hover:bg-primary/10"
-            >
-              <Package className="h-4 w-4 mr-2" />
-              Selecionar Todos
-            </Button>
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleSelectAll(false)}
-                className="border-muted-foreground text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Limpar Seleção ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleBulkStatusChange(selectedProducts, true)}
-                className="border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Package className="h-4 w-4 mr-2" />
-                Ativar ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleBulkStatusChange(selectedProducts, false)}
-                className="border-orange-500 text-orange-600 hover:bg-orange-50"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Desativar ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleDeleteSelected}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir ({selectedProducts.length})
-              </Button>
-            </>
-          )}
-        </div>
-        <div className="flex gap-2">
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => setParentProductModalOpen(true)}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Criar Produto Pai
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setChildProductModalOpen(true)}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-              Criar Produto Filho
-            </Button>
-            
-            <EstoqueImport onSuccess={loadProducts} />
-            
-            <EstoqueExport 
-              products={products}
-              filteredProducts={finalFilteredProducts}
-            />
-            
-            <EstoqueReports products={products} />
-            
-            <EstoqueSettings />
-            
-            <ProductImportModal
-            trigger={
-              <Button variant="outline" size="sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Importar Produtos
-              </Button>
-            }
-            onSuccess={() => {
-              loadProducts();
-              toast({
-                title: "Produtos importados",
-                description: "Os produtos foram importados com sucesso.",
-              });
-            }}
-          />
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/category-manager">
-              <Settings className="h-4 w-4 mr-2" />
-              Gerenciar Categorias
-            </Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* Ações em Massa */}
+      {/* Ações em Massa - só aparece quando tem produtos selecionados */}
       {selectedProducts.length > 0 && (
         <BulkActions
           selectedProducts={selectedProducts}
@@ -523,6 +376,53 @@ export default function ControleEstoquePage() {
           onClearSelection={() => setSelectedProducts([])}
         />
       )}
+
+      {/* Botões de criação e utilitários */}
+      <div className="flex flex-wrap justify-between gap-2">
+        <div className="flex gap-2">
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => setParentProductModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Criar Produto Pai
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setChildProductModalOpen(true)}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Criar Produto Filho
+          </Button>
+        </div>
+        
+        <div className="flex gap-2">
+          <EstoqueImport onSuccess={loadProducts} />
+          <EstoqueExport 
+            products={products}
+            filteredProducts={finalFilteredProducts}
+          />
+          <EstoqueReports products={products} />
+          <EstoqueSettings />
+          <ProductImportModal
+            trigger={
+              <Button variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-2" />
+                Importar Produtos
+              </Button>
+            }
+            onSuccess={loadProducts}
+          />
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/category-manager">
+              <Settings className="h-4 w-4 mr-2" />
+              Gerenciar Categorias
+            </Link>
+          </Button>
+        </div>
+      </div>
 
       {/* Filtros básicos */}
       <EstoqueFilters
@@ -539,112 +439,96 @@ export default function ControleEstoquePage() {
         hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all"}
       />
 
-      {/* Tabela de produtos */}
-      <TableWrapper>
-        {loading ? (
-          <EstoqueSkeleton />
-        ) : (
+      {/* Filtros Inteligentes */}
+      <EstoqueIntelligentFilters
+        filters={intelligentFilters}
+        onFiltersChange={setIntelligentFilters}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        stats={intelligentStats}
+      />
+
+      {/* Loading State */}
+      {loading && <EstoqueSkeleton />}
+
+      {/* Content */}
+      {!loading && (
+        <TableWrapper>
           <HierarchicalEstoqueTable
             products={paginatedProducts}
-            onSort={() => {}}
-            sortBy=""
-            sortOrder="desc"
             selectedProducts={selectedProducts}
             onSelectProduct={handleSelectProduct}
             onSelectAll={handleSelectAll}
-            onStockMovement={handleStockMovement}
             onEditProduct={handleEditProduct}
             onDeleteProduct={handleDeleteProduct}
+            onStockMovement={handleStockMovement}
+            sortBy={intelligentFilters.orderBy}
+            sortOrder="desc"
+            onSort={(field) => setIntelligentFilters({...intelligentFilters, orderBy: field as any})}
           />
-        )}
-      </TableWrapper>
-
-      {/* Paginação */}
-      {!loading && finalFilteredProducts.length > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, finalFilteredProducts.length)} de {finalFilteredProducts.length} produtos
-          </div>
-          
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious 
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-              
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                let pageNumber;
-                if (totalPages <= 5) {
-                  pageNumber = i + 1;
-                } else if (currentPage <= 3) {
-                  pageNumber = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNumber = totalPages - 4 + i;
-                } else {
-                  pageNumber = currentPage - 2 + i;
-                }
-                
-                return (
-                  <PaginationItem key={pageNumber}>
-                    <PaginationLink
-                      onClick={() => setCurrentPage(pageNumber)}
-                      isActive={currentPage === pageNumber}
-                      className="cursor-pointer"
-                    >
-                      {pageNumber}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              
-              {totalPages > 5 && currentPage < totalPages - 2 && (
-                <PaginationItem>
-                  <PaginationEllipsis />
-                </PaginationItem>
-              )}
-              
-              <PaginationItem>
-                <PaginationNext 
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
+        </TableWrapper>
       )}
 
-      {/* Modal de edição de produto */}
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNumber = currentPage <= 3 
+                ? i + 1 
+                : currentPage >= totalPages - 2 
+                  ? totalPages - 4 + i 
+                  : currentPage - 2 + i;
+              
+              if (pageNumber < 1 || pageNumber > totalPages) return null;
+              
+              return (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    onClick={() => setCurrentPage(pageNumber)}
+                    isActive={currentPage === pageNumber}
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                </PaginationItem>
+              );
+            })}
+            <PaginationItem>
+              <PaginationNext 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
+
+      {/* Modais */}
       <ProductModal
         open={editModalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setEditModalOpen(false);
-            setEditingProduct(null);
-          }
-        }}
+        onOpenChange={setEditModalOpen}
         product={editingProduct}
         onSuccess={handleEditSuccess}
       />
-      
-      {/* Modal de criação de produto pai */}
+
       <CreateParentProductModal
         open={parentProductModalOpen}
         onOpenChange={setParentProductModalOpen}
         onSuccess={handleParentProductSuccess}
       />
 
-      {/* Modal de criação de produto filho (variação) */}
       <CreateChildProductModal
         open={childProductModalOpen}
         onOpenChange={setChildProductModalOpen}
         onSuccess={handleChildProductSuccess}
       />
 
-      {/* Modal de atualização de preços em massa */}
       <BulkPriceUpdateModal
         open={bulkPriceModalOpen}
         onOpenChange={setBulkPriceModalOpen}
@@ -652,7 +536,6 @@ export default function ControleEstoquePage() {
         products={products}
         onSuccess={() => {
           setBulkPriceModalOpen(false);
-          setSelectedProducts([]);
           loadProducts();
         }}
       />
