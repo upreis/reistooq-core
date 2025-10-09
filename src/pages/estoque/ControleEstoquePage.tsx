@@ -21,6 +21,13 @@ import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { CategoryImportModal } from "@/components/estoque/CategoryImportModal";
 import { ProductImportModal } from "@/components/estoque/ProductImportModal";
+import { EstoqueNotifications } from "@/components/estoque/EstoqueNotifications";
+import { EstoqueExport } from "@/components/estoque/EstoqueExport";
+import { EstoqueImport } from "@/components/estoque/EstoqueImport";
+import { EstoqueSettings } from "@/components/estoque/EstoqueSettings";
+import { EstoqueReports } from "@/components/estoque/EstoqueReports";
+import { BulkActions } from "@/components/estoque/BulkActions";
+import { BulkPriceUpdateModal } from "@/components/estoque/BulkPriceUpdateModal";
 import {
   Pagination,
   PaginationContent,
@@ -46,6 +53,8 @@ export default function ControleEstoquePage() {
   const [parentProductModalOpen, setParentProductModalOpen] = useState(false);
   const [childProductModalOpen, setChildProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
+  const [bulkCategoryModalOpen, setBulkCategoryModalOpen] = useState(false);
   
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
@@ -195,17 +204,17 @@ export default function ControleEstoquePage() {
     }
   };
 
-  const handleBulkStatusChange = async (newStatus: boolean) => {
-    if (selectedProducts.length === 0) return;
+  const handleBulkStatusChange = async (productIds: string[], newStatus: boolean) => {
+    if (productIds.length === 0) return;
     
     try {
       await Promise.all(
-        selectedProducts.map(id => updateProduct(id, { ativo: newStatus }))
+        productIds.map(id => updateProduct(id, { ativo: newStatus }))
       );
       
       toast({
         title: "Status atualizado",
-        description: `${selectedProducts.length} produto(s) ${newStatus ? 'ativado(s)' : 'desativado(s)'} com sucesso.`,
+        description: `${productIds.length} produto(s) ${newStatus ? 'ativado(s)' : 'desativado(s)'} com sucesso.`,
       });
       
       setSelectedProducts([]);
@@ -346,6 +355,22 @@ export default function ControleEstoquePage() {
   
   const handleRefresh = () => loadProducts();
 
+  const handleNotificationProductClick = (product: Product) => {
+    setEditingProduct(product);
+    setEditModalOpen(true);
+  };
+
+  const handleBulkPriceUpdate = (productIds: string[]) => {
+    setBulkPriceModalOpen(true);
+  };
+
+  const handleBulkCategoryUpdate = (productIds: string[]) => {
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "Atualização de categorias em massa será implementada em breve.",
+    });
+  };
+
   // Aplicar busca por termo aos dados já filtrados (manter ordem do banco)
   const finalFilteredProducts = useMemo(() => {
     let filtered = [...intelligentFilteredData];
@@ -373,6 +398,12 @@ export default function ControleEstoquePage() {
   
   return (
     <div className="space-y-6">
+      {/* Notificações do Estoque */}
+      <EstoqueNotifications 
+        products={products}
+        onProductClick={handleNotificationProductClick}
+      />
+
       {/* Botões de ação */}
       <div className="flex flex-wrap justify-between gap-2 mb-4">
         <div className="flex gap-2">
@@ -400,7 +431,7 @@ export default function ControleEstoquePage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => handleBulkStatusChange(true)}
+                onClick={() => handleBulkStatusChange(selectedProducts, true)}
                 className="border-green-500 text-green-600 hover:bg-green-50"
               >
                 <Package className="h-4 w-4 mr-2" />
@@ -409,7 +440,7 @@ export default function ControleEstoquePage() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => handleBulkStatusChange(false)}
+                onClick={() => handleBulkStatusChange(selectedProducts, false)}
                 className="border-orange-500 text-orange-600 hover:bg-orange-50"
               >
                 <X className="h-4 w-4 mr-2" />
@@ -442,9 +473,21 @@ export default function ControleEstoquePage() {
             onClick={() => setChildProductModalOpen(true)}
           >
             <Plus className="h-4 w-4 mr-2" />
-            Criar Produto Filho
-          </Button>
-          <ProductImportModal
+              Criar Produto Filho
+            </Button>
+            
+            <EstoqueImport onSuccess={loadProducts} />
+            
+            <EstoqueExport 
+              products={products}
+              filteredProducts={finalFilteredProducts}
+            />
+            
+            <EstoqueReports products={products} />
+            
+            <EstoqueSettings />
+            
+            <ProductImportModal
             trigger={
               <Button variant="outline" size="sm">
                 <Upload className="h-4 w-4 mr-2" />
@@ -467,6 +510,19 @@ export default function ControleEstoquePage() {
           </Button>
         </div>
       </div>
+
+      {/* Ações em Massa */}
+      {selectedProducts.length > 0 && (
+        <BulkActions
+          selectedProducts={selectedProducts}
+          products={products}
+          onBulkStatusChange={handleBulkStatusChange}
+          onBulkDelete={handleDeleteSelected}
+          onBulkPriceUpdate={handleBulkPriceUpdate}
+          onBulkCategoryUpdate={handleBulkCategoryUpdate}
+          onClearSelection={() => setSelectedProducts([])}
+        />
+      )}
 
       {/* Filtros básicos */}
       <EstoqueFilters
@@ -586,6 +642,19 @@ export default function ControleEstoquePage() {
         open={childProductModalOpen}
         onOpenChange={setChildProductModalOpen}
         onSuccess={handleChildProductSuccess}
+      />
+
+      {/* Modal de atualização de preços em massa */}
+      <BulkPriceUpdateModal
+        open={bulkPriceModalOpen}
+        onOpenChange={setBulkPriceModalOpen}
+        selectedProductIds={selectedProducts}
+        products={products}
+        onSuccess={() => {
+          setBulkPriceModalOpen(false);
+          setSelectedProducts([]);
+          loadProducts();
+        }}
       />
     </div>
   );
