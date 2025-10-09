@@ -55,6 +55,7 @@ export default function ControleEstoquePage() {
   const [childProductModalOpen, setChildProductModalOpen] = useState(false);
   const [linkChildModalOpen, setLinkChildModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
   const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
   const [bulkCategoryModalOpen, setBulkCategoryModalOpen] = useState(false);
   
@@ -294,6 +295,11 @@ export default function ControleEstoquePage() {
   const handleEditProduct = (product: Product) => {
     setEditingProduct(product);
     setEditModalOpen(true);
+  };
+
+  const handleEditParentProduct = (product: Product) => {
+    setEditingParentProduct(product);
+    setParentProductModalOpen(true);
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -568,6 +574,7 @@ export default function ControleEstoquePage() {
             onSelectAll={handleSelectAll}
             onStockMovement={handleStockMovement}
             onEditProduct={handleEditProduct}
+            onEditParentProduct={handleEditParentProduct}
             onDeleteProduct={handleDeleteProduct}
           />
         )}
@@ -644,10 +651,16 @@ export default function ControleEstoquePage() {
         onSuccess={handleEditSuccess}
       />
       
-      {/* Modal de criação de produto pai */}
+      {/* Modal de criação/edição de produto pai */}
       <CreateParentProductModal
         open={parentProductModalOpen}
-        onOpenChange={setParentProductModalOpen}
+        onOpenChange={(open) => {
+          setParentProductModalOpen(open);
+          if (!open) {
+            setEditingParentProduct(null);
+          }
+        }}
+        editProduct={editingParentProduct}
         onSuccess={handleParentProductSuccess}
       />
 

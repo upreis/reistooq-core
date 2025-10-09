@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,12 +18,14 @@ interface CreateParentProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  editProduct?: Product | null;
 }
 
 export function CreateParentProductModal({ 
   open, 
   onOpenChange, 
-  onSuccess 
+  onSuccess,
+  editProduct 
 }: CreateParentProductModalProps) {
   const [skuInterno, setSkuInterno] = useState('');
   const [nome, setNome] = useState('');
@@ -31,7 +33,23 @@ export function CreateParentProductModal({
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
-  const { createProduct } = useProducts();
+  const { createProduct, updateProduct } = useProducts();
+
+  // Preencher campos quando editando
+  useEffect(() => {
+    if (editProduct && open) {
+      setSkuInterno(editProduct.sku_interno || '');
+      setNome(editProduct.nome || '');
+      setImageUrl(editProduct.url_imagem || '');
+      setImageFile(null);
+    } else if (!open) {
+      // Limpar quando fechar
+      setSkuInterno('');
+      setNome('');
+      setImageUrl('');
+      setImageFile(null);
+    }
+  }, [editProduct, open]);
 
   const handleCreateParent = async () => {
     if (!skuInterno.trim() || !nome.trim()) {
@@ -45,20 +63,7 @@ export function CreateParentProductModal({
 
     setIsCreating(true);
     try {
-      // Buscar unidade padrão "un"
-      const { data: unidadePadrao } = await supabase
-        .from('unidades_medida')
-        .select('id')
-        .eq('abreviacao', 'un')
-        .eq('ativo', true)
-        .limit(1)
-        .single();
-
-      if (!unidadePadrao) {
-        throw new Error('Unidade de medida padrão (un) não encontrada');
-      }
-
-      let uploadedImageUrl = null;
+      let uploadedImageUrl = imageUrl;
 
       // Upload da imagem se fornecida
       if (imageFile) {
@@ -81,39 +86,67 @@ export function CreateParentProductModal({
         uploadedImageUrl = urlData.publicUrl;
       }
 
-      const newProduct = {
-        sku_interno: skuInterno.trim().toUpperCase(),
-        nome: nome.trim(),
-        quantidade_atual: 0,
-        estoque_minimo: 0,
-        estoque_maximo: 0,
-        preco_custo: 0,
-        preco_venda: 0,
-        localizacao: '',
-        codigo_barras: '',
-        unidade_medida_id: unidadePadrao.id,
-        categoria: null,
-        descricao: null,
-        status: 'ativo',
-        ativo: true,
-        sku_pai: null,
-        url_imagem: uploadedImageUrl,
-        eh_produto_pai: true, // Marca como produto pai/agrupador
-      };
+      if (editProduct) {
+        // Modo edição
+        await updateProduct(editProduct.id, {
+          sku_interno: skuInterno.trim().toUpperCase(),
+          nome: nome.trim(),
+          url_imagem: uploadedImageUrl,
+        });
 
-      await createProduct(newProduct);
-      
-      toast({
-        title: "Produto pai criado!",
-        description: `SKU ${skuInterno.toUpperCase()} criado com sucesso.`,
-      });
+        toast({
+          title: "Produto pai atualizado!",
+          description: `SKU ${skuInterno.toUpperCase()} atualizado com sucesso.`,
+        });
+      } else {
+        // Modo criação
+        // Buscar unidade padrão "un"
+        const { data: unidadePadrao } = await supabase
+          .from('unidades_medida')
+          .select('id')
+          .eq('abreviacao', 'un')
+          .eq('ativo', true)
+          .limit(1)
+          .single();
+
+        if (!unidadePadrao) {
+          throw new Error('Unidade de medida padrão (un) não encontrada');
+        }
+
+        const newProduct = {
+          sku_interno: skuInterno.trim().toUpperCase(),
+          nome: nome.trim(),
+          quantidade_atual: 0,
+          estoque_minimo: 0,
+          estoque_maximo: 0,
+          preco_custo: 0,
+          preco_venda: 0,
+          localizacao: '',
+          codigo_barras: '',
+          unidade_medida_id: unidadePadrao.id,
+          categoria: null,
+          descricao: null,
+          status: 'ativo',
+          ativo: true,
+          sku_pai: null,
+          url_imagem: uploadedImageUrl,
+          eh_produto_pai: true,
+        };
+
+        await createProduct(newProduct);
+        
+        toast({
+          title: "Produto pai criado!",
+          description: `SKU ${skuInterno.toUpperCase()} criado com sucesso.`,
+        });
+      }
 
       handleClose();
       onSuccess?.();
     } catch (error) {
-      console.error('Erro ao criar produto pai:', error);
+      console.error('Erro ao salvar produto pai:', error);
       toast({
-        title: "Erro ao criar produto pai",
+        title: editProduct ? "Erro ao atualizar produto pai" : "Erro ao criar produto pai",
         description: error instanceof Error ? error.message : "Erro desconhecido",
         variant: "destructive",
       });
@@ -157,10 +190,13 @@ export function CreateParentProductModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5" />
-            Criar Produto Pai
+            {editProduct ? 'Editar Produto Pai' : 'Criar Produto Pai'}
           </DialogTitle>
           <DialogDescription>
-            Crie um produto pai independente. Você poderá agrupar produtos filho posteriormente.
+            {editProduct 
+              ? 'Edite as informações do produto pai.'
+              : 'Crie um produto pai independente. Você poderá agrupar produtos filho posteriormente.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -246,7 +282,10 @@ export function CreateParentProductModal({
               onClick={handleCreateParent}
               disabled={isCreating}
             >
-              {isCreating ? "Criando..." : "Criar Produto Pai"}
+              {isCreating 
+                ? (editProduct ? "Salvando..." : "Criando...") 
+                : (editProduct ? "Salvar Alterações" : "Criar Produto Pai")
+              }
             </Button>
           </div>
         </div>

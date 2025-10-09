@@ -15,6 +15,7 @@ interface HierarchicalEstoqueTableProps {
   onSelectProduct: (productId: string) => void;
   onSelectAll: (selected: boolean) => void;
   onEditProduct: (product: Product) => void;
+  onEditParentProduct?: (product: Product) => void;
   onDeleteProduct: (productId: string) => void;
   onStockMovement: (productId: string, type: 'entrada' | 'saida', quantity: number, reason?: string) => void;
   sortBy: string;
@@ -156,10 +157,16 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       <div 
                         className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
                         onClick={(e) => {
-                          // Se existe um produto pai, abrir modal de edição
+                          // Se existe um produto pai, abrir modal de edição apropriado
                           if (group.parentProduct) {
                             e.stopPropagation();
-                            props.onEditProduct(group.parentProduct);
+                            // Se for produto pai e existir callback específico, usar ele
+                            if (group.parentProduct.eh_produto_pai && props.onEditParentProduct) {
+                              props.onEditParentProduct(group.parentProduct);
+                            } else {
+                              // Senão, usar o callback padrão
+                              props.onEditProduct(group.parentProduct);
+                            }
                           }
                         }}
                       >
