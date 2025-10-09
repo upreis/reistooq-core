@@ -16,10 +16,12 @@ import {
   X
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import * as XLSX from 'xlsx';
 
 export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
+  const [templateFormat, setTemplateFormat] = useState<'csv' | 'xlsx'>('xlsx');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -47,22 +49,65 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
-  const downloadTemplate = () => {
-    const template = [
-      'sku_interno,nome,descricao,quantidade_atual,estoque_minimo,estoque_maximo,preco_custo,preco_venda,codigo_barras,localizacao,categoria,sku_pai,ativo',
-      'EXEMPLO-001,Produto Exemplo,Descrição do produto exemplo,10,5,50,15.00,29.90,1234567890123,Setor A,Eletrônicos,,true',
-      'EXEMPLO-002,Produto Filho,Variação do produto pai,5,2,20,12.00,24.90,1234567890124,Setor A,Eletrônicos,EXEMPLO-001,true'
-    ].join('\n');
+  const downloadTemplate = (format: 'csv' | 'xlsx' = templateFormat) => {
+    const headers = ['sku_interno', 'nome', 'descricao', 'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo', 'preco_venda', 'codigo_barras', 'localizacao', 'categoria', 'sku_pai', 'ativo'];
+    const exampleData = [
+      {
+        sku_interno: 'EXEMPLO-001',
+        nome: 'Produto Exemplo',
+        descricao: 'Descrição do produto exemplo',
+        quantidade_atual: 10,
+        estoque_minimo: 5,
+        estoque_maximo: 50,
+        preco_custo: 15.00,
+        preco_venda: 29.90,
+        codigo_barras: '1234567890123',
+        localizacao: 'Setor A',
+        categoria: 'Eletrônicos',
+        sku_pai: '',
+        ativo: true
+      },
+      {
+        sku_interno: 'EXEMPLO-002',
+        nome: 'Produto Filho',
+        descricao: 'Variação do produto pai',
+        quantidade_atual: 5,
+        estoque_minimo: 2,
+        estoque_maximo: 20,
+        preco_custo: 12.00,
+        preco_venda: 24.90,
+        codigo_barras: '1234567890124',
+        localizacao: 'Setor A',
+        categoria: 'Eletrônicos',
+        sku_pai: 'EXEMPLO-001',
+        ativo: true
+      }
+    ];
 
-    const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'template_importacao_estoque.csv');
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (format === 'xlsx') {
+      // Criar workbook Excel
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(exampleData);
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
+      XLSX.writeFile(wb, 'template_importacao_estoque.xlsx');
+    } else {
+      // Criar CSV
+      const template = [
+        headers.join(','),
+        'EXEMPLO-001,Produto Exemplo,Descrição do produto exemplo,10,5,50,15.00,29.90,1234567890123,Setor A,Eletrônicos,,true',
+        'EXEMPLO-002,Produto Filho,Variação do produto pai,5,2,20,12.00,24.90,1234567890124,Setor A,Eletrônicos,EXEMPLO-001,true'
+      ].join('\n');
+
+      const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'template_importacao_estoque.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const resetImport = () => {
@@ -103,10 +148,28 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
               <p className="text-sm text-muted-foreground mb-3">
                 Baixe o template com o formato correto para importação
               </p>
-              <Button variant="outline" onClick={downloadTemplate}>
-                <Download className="w-4 h-4 mr-2" />
-                Baixar Template CSV
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant={templateFormat === 'xlsx' ? 'default' : 'outline'} 
+                  onClick={() => {
+                    setTemplateFormat('xlsx');
+                    downloadTemplate('xlsx');
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Baixar Template Excel
+                </Button>
+                <Button 
+                  variant={templateFormat === 'csv' ? 'default' : 'outline'} 
+                  onClick={() => {
+                    setTemplateFormat('csv');
+                    downloadTemplate('csv');
+                  }}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Baixar Template CSV
+                </Button>
+              </div>
             </CardContent>
           </Card>
 
