@@ -382,7 +382,7 @@ export function CreateChildProductModal({
                   <div className="space-y-2">
                     <Label>Nome *</Label>
                     <Input
-                      placeholder="Ex: JOSE"
+                      placeholder="Ex: Camiseta Azul P"
                       value={variation.nome}
                       onChange={(e) => handleVariationChange(index, 'nome', e.target.value)}
                     />
