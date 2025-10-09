@@ -425,13 +425,16 @@ export default function ControleEstoquePage() {
         onProductClick={handleNotificationProductClick}
         onFilterByStock={(type) => {
           if (type === 'out') {
-            setSelectedStatus('out_of_stock');
+            setSelectedStatus('out');
           } else if (type === 'low') {
-            setSelectedStatus('low_stock');
+            setSelectedStatus('low');
           }
           // Scroll para a tabela
           setTimeout(() => {
-            document.querySelector('.table-wrapper')?.scrollIntoView({ behavior: 'smooth' });
+            const tableWrapper = document.querySelector('[class*="space-y-4"]');
+            if (tableWrapper) {
+              tableWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
           }, 100);
         }}
         onOpenPriceModal={(productsWithoutPrice) => {
