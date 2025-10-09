@@ -409,15 +409,17 @@ export default function ControleEstoquePage() {
   
   
   return (
-    <div className="space-y-6 p-4">
+    <div className="space-y-6">
       {/* Notificações do Estoque */}
       <EstoqueNotifications 
         products={products}
         onProductClick={handleNotificationProductClick}
       />
 
-      {/* Botões de ação principais - SEMPRE VISÍVEIS */}
-      <div className="flex flex-wrap gap-2">
+      {/* Botões de ação principais - SEMPRE VISÍVEIS NO TOPO */}
+      <Card className="border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-2">
         <Button 
           variant="default" 
           size="sm"
@@ -491,7 +493,9 @@ export default function ControleEstoquePage() {
             Gerenciar Categorias
           </Link>
         </Button>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
 
       {/* Filtros básicos */}
