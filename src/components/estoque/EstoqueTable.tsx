@@ -207,10 +207,23 @@ export function EstoqueTable({
       key: "sku_interno",
       label: "SKU",
       sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-nowrap">
-          {value}
-        </span>
+      render: (value: string, product: Product) => (
+        <div className="text-[10px] leading-tight">
+          {product.sku_pai ? (
+            <>
+              <div className="font-mono bg-muted px-1.5 py-0.5 rounded mb-1">
+                SKU Filho: {value}
+              </div>
+              <div className="text-muted-foreground text-[9px]">
+                Pai: {product.sku_pai}
+              </div>
+            </>
+          ) : (
+            <div className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
+              SKU Pai: {value}
+            </div>
+          )}
+        </div>
       )
     },
     {

@@ -11,11 +11,12 @@ import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
 import { CreateChildProductModal } from "@/components/estoque/CreateChildProductModal";
+import { LinkChildToParentModal } from "@/components/estoque/LinkChildToParentModal";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2 } from "lucide-react";
+import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
 import { TableWrapper } from "@/components/ui/table-wrapper";
@@ -51,6 +52,7 @@ export default function ControleEstoquePage() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [parentProductModalOpen, setParentProductModalOpen] = useState(false);
   const [childProductModalOpen, setChildProductModalOpen] = useState(false);
+  const [linkChildModalOpen, setLinkChildModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
   const [bulkCategoryModalOpen, setBulkCategoryModalOpen] = useState(false);
@@ -419,14 +421,24 @@ export default function ControleEstoquePage() {
       <div className="flex flex-wrap justify-between gap-2 mb-4">
         <div className="flex gap-2">
           {selectedProducts.length > 0 && (
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={handleDeleteSelected}
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Excluir ({selectedProducts.length})
-            </Button>
+            <>
+              <Button 
+                variant="secondary" 
+                size="sm"
+                onClick={() => setLinkChildModalOpen(true)}
+              >
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Vincular a Pai ({selectedProducts.length})
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleDeleteSelected}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir ({selectedProducts.length})
+              </Button>
+            </>
           )}
         </div>
         <div className="flex gap-2">
@@ -602,6 +614,15 @@ export default function ControleEstoquePage() {
         open={childProductModalOpen}
         onOpenChange={setChildProductModalOpen}
         onSuccess={handleChildProductSuccess}
+      />
+
+      {/* Modal de vinculação de filho a pai */}
+      <LinkChildToParentModal
+        open={linkChildModalOpen}
+        onOpenChange={setLinkChildModalOpen}
+        selectedProducts={selectedProducts}
+        allProducts={products}
+        onSuccess={handleRefresh}
       />
 
       {/* Modal de atualização de preços em massa */}
