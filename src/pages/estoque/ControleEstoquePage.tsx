@@ -449,6 +449,11 @@ export default function ControleEstoquePage() {
           // Abrir modal de vincular filhos
           setLinkChildModalOpen(true);
         }}
+        onOrphanProductClick={(product) => {
+          // Ao clicar em um produto órfão específico, abrir modal de vinculação com ele selecionado
+          setSelectedProducts([product.id]);
+          setLinkChildModalOpen(true);
+        }}
       />
 
       {/* Botões de ação principais */}

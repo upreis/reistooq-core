@@ -21,6 +21,7 @@ interface EstoqueNotificationsProps {
   onFilterByStock?: (type: 'out' | 'low') => void;
   onOpenPriceModal?: (products: Product[]) => void;
   onOpenOrphanModal?: (products: Product[]) => void;
+  onOrphanProductClick?: (product: Product) => void;
 }
 
 interface Notification {
@@ -33,7 +34,7 @@ interface Notification {
   actionLabel?: string;
 }
 
-export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal }: EstoqueNotificationsProps) {
+export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal, onOrphanProductClick }: EstoqueNotificationsProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const hierarchy = useProductHierarchy(products);
@@ -209,7 +210,14 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
                   <div 
                     key={product.id}
                     className="text-xs bg-background/50 border border-border/50 p-2 rounded cursor-pointer hover:bg-muted transition-colors"
-                    onClick={() => onProductClick(product)}
+                    onClick={() => {
+                      // Se for um produto órfão, abre o modal de vinculação
+                      if (notification.id === 'orphan-products' && onOrphanProductClick) {
+                        onOrphanProductClick(product);
+                      } else {
+                        onProductClick(product);
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium truncate">{product.nome}</span>
