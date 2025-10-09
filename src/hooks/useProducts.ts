@@ -282,11 +282,18 @@ export const useProducts = () => {
   const deleteProduct = useCallback(async (id: string) => {
     const orgId = await getCurrentOrgId();
 
+    // Buscar o produto primeiro
+    const produto = await getProduct(id);
+    
+    if (!produto) {
+      throw new Error('Produto não encontrado.');
+    }
+
     // Verificar se o produto é um SKU pai (tem filhos)
     const { data: filhos, error: filhosError } = await supabase
       .from('produtos')
       .select('id, sku_interno')
-      .eq('sku_pai', (await getProduct(id)).sku_interno)
+      .eq('sku_pai', produto.sku_interno)
       .eq('organization_id', orgId);
 
     if (filhosError) {
