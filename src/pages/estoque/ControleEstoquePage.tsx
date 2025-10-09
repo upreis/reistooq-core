@@ -26,7 +26,6 @@ import { EstoqueExport } from "@/components/estoque/EstoqueExport";
 import { EstoqueImport } from "@/components/estoque/EstoqueImport";
 import { EstoqueSettings } from "@/components/estoque/EstoqueSettings";
 import { EstoqueReports } from "@/components/estoque/EstoqueReports";
-import { BulkActions } from "@/components/estoque/BulkActions";
 import { BulkPriceUpdateModal } from "@/components/estoque/BulkPriceUpdateModal";
 import {
   Pagination,
@@ -407,54 +406,15 @@ export default function ControleEstoquePage() {
       {/* Botões de ação */}
       <div className="flex flex-wrap justify-between gap-2 mb-4">
         <div className="flex gap-2">
-          {selectedProducts.length === 0 ? (
+          {selectedProducts.length > 0 && (
             <Button 
-              variant="outline" 
+              variant="destructive" 
               size="sm"
-              onClick={() => handleSelectAll(true)}
-              className="border-primary text-primary hover:bg-primary/10"
+              onClick={handleDeleteSelected}
             >
-              <Package className="h-4 w-4 mr-2" />
-              Selecionar Todos
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir ({selectedProducts.length})
             </Button>
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleSelectAll(false)}
-                className="border-muted-foreground text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Limpar Seleção ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleBulkStatusChange(selectedProducts, true)}
-                className="border-green-500 text-green-600 hover:bg-green-50"
-              >
-                <Package className="h-4 w-4 mr-2" />
-                Ativar ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleBulkStatusChange(selectedProducts, false)}
-                className="border-orange-500 text-orange-600 hover:bg-orange-50"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Desativar ({selectedProducts.length})
-              </Button>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={handleDeleteSelected}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Excluir ({selectedProducts.length})
-              </Button>
-            </>
           )}
         </div>
         <div className="flex gap-2">
@@ -511,18 +471,6 @@ export default function ControleEstoquePage() {
         </div>
       </div>
 
-      {/* Ações em Massa */}
-      {selectedProducts.length > 0 && (
-        <BulkActions
-          selectedProducts={selectedProducts}
-          products={products}
-          onBulkStatusChange={handleBulkStatusChange}
-          onBulkDelete={handleDeleteSelected}
-          onBulkPriceUpdate={handleBulkPriceUpdate}
-          onBulkCategoryUpdate={handleBulkCategoryUpdate}
-          onClearSelection={() => setSelectedProducts([])}
-        />
-      )}
 
       {/* Filtros básicos */}
       <EstoqueFilters
