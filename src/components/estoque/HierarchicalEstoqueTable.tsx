@@ -153,7 +153,16 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     )}
                     
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={(e) => {
+                          // Se existe um produto pai, abrir modal de edição
+                          if (group.parentProduct) {
+                            e.stopPropagation();
+                            props.onEditProduct(group.parentProduct);
+                          }
+                        }}
+                      >
                         <span className="font-semibold text-sm">
                           {group.parentSku}
                         </span>
