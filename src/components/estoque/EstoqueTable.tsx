@@ -223,8 +223,8 @@ export function EstoqueTable({
               SKU Pai: {value}
             </div>
           ) : (
-            <div className="font-mono bg-muted px-1.5 py-0.5 rounded">
-              SKU: {value}
+            <div className="font-mono px-1.5 py-0.5">
+              {value}
             </div>
           )}
         </div>
