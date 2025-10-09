@@ -1,284 +1,143 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { 
   Package, 
-  AlertTriangle, 
-  TrendingUp, 
-  TrendingDown,
-  BarChart3,
   DollarSign,
-  ShoppingCart,
-  Activity,
-  ChevronUp,
-  ChevronDown,
-  Eye,
-  EyeOff
+  AlertTriangle,
+  BarChart3,
+  Users,
+  Link2
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useProductHierarchy } from "@/hooks/useProductHierarchy";
 
 interface EstoqueStatsProps {
   products: Product[];
 }
 
 export function EstoqueStats({ products }: EstoqueStatsProps) {
-  const isMobile = useIsMobile();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const totalProducts = products.length;
-  const activeProducts = products.filter(p => p.ativo).length;
-  const inactiveProducts = totalProducts - activeProducts;
-  
-  const lowStockProducts = products.filter(p => 
-    p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0
-  ).length;
-  
-  const outOfStockProducts = products.filter(p => p.quantidade_atual === 0).length;
-  
-  const highStockProducts = products.filter(p => 
-    p.quantidade_atual >= p.estoque_maximo
-  ).length;
-  
-  const totalStockValue = products.reduce((total, p) => 
-    total + (p.quantidade_atual * (p.preco_custo || 0)), 0
-  );
-  
-  const totalSaleValue = products.reduce((total, p) => 
-    total + (p.quantidade_atual * (p.preco_venda || 0)), 0
-  );
-  
-  const totalQuantity = products.reduce((total, p) => total + p.quantidade_atual, 0);
-  
-  const averageStockDays = products.filter(p => p.ultima_movimentacao).length > 0
-    ? Math.round(
-        products
-          .filter(p => p.ultima_movimentacao)
-          .reduce((total, p) => {
-            const daysSinceLastMovement = Math.floor(
-              (Date.now() - new Date(p.ultima_movimentacao!).getTime()) / (1000 * 60 * 60 * 24)
-            );
-            return total + daysSinceLastMovement;
-          }, 0) / products.filter(p => p.ultima_movimentacao).length
-      )
-    : 0;
+  const hierarchy = useProductHierarchy(products);
 
-  const formatPrice = (price: number) => {
+  const stats = {
+    totalProducts: products.length,
+    totalParents: hierarchy.parentProducts.length,
+    totalChildren: hierarchy.childProducts.length,
+    totalIndependent: hierarchy.independentProducts.length,
+    totalGroups: hierarchy.productGroups.length,
+    totalStock: products.reduce((sum, p) => sum + p.quantidade_atual, 0),
+    totalValue: products.reduce((sum, p) => sum + (p.preco_venda || 0) * p.quantidade_atual, 0),
+    lowStock: products.filter(p => p.quantidade_atual <= p.estoque_minimo && p.quantidade_atual > 0).length,
+    outOfStock: products.filter(p => p.quantidade_atual === 0).length,
+    stockDistribution: {
+      normal: products.filter(p => 
+        p.quantidade_atual > p.estoque_minimo && 
+        (p.estoque_maximo === 0 || p.quantidade_atual < p.estoque_maximo)
+      ).length,
+      low: products.filter(p => 
+        p.quantidade_atual <= p.estoque_minimo && 
+        p.quantidade_atual > 0
+      ).length,
+      out: products.filter(p => p.quantidade_atual === 0).length,
+    }
+  };
+
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
-    }).format(price);
+    }).format(value);
   };
 
-  const formatNumber = (num: number) => {
-    return new Intl.NumberFormat('pt-BR').format(num);
+  const getStockHealthColor = () => {
+    const healthScore = (stats.stockDistribution.normal / products.length) * 100;
+    if (healthScore >= 70) return "text-green-600";
+    if (healthScore >= 40) return "text-yellow-600";
+    return "text-red-600";
   };
 
-  const stats = [
-    {
-      title: "Total de Produtos",
-      value: formatNumber(totalProducts),
-      subtitle: `${activeProducts} ativos, ${inactiveProducts} inativos`,
-      icon: Package,
-      color: "text-blue-600",
-      bgColor: "bg-blue-50",
-      trend: null
-    },
-    {
-      title: "Alertas de Estoque",
-      value: formatNumber(lowStockProducts + outOfStockProducts),
-      subtitle: `${lowStockProducts} baixo, ${outOfStockProducts} sem estoque`,
-      icon: AlertTriangle,
-      color: lowStockProducts + outOfStockProducts > 0 ? "text-red-600" : "text-green-600",
-      bgColor: lowStockProducts + outOfStockProducts > 0 ? "bg-red-50" : "bg-green-50",
-      trend: lowStockProducts + outOfStockProducts > 0 ? "critical" : "good"
-    },
-    {
-      title: "Valor do Estoque",
-      value: formatPrice(totalStockValue),
-      subtitle: `Valor de venda: ${formatPrice(totalSaleValue)}`,
-      icon: DollarSign,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      trend: "up"
-    },
-    {
-      title: "Quantidade Total",
-      value: formatNumber(totalQuantity),
-      subtitle: `${highStockProducts} produtos com estoque alto`,
-      icon: BarChart3,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      trend: null
-    },
-    {
-      title: "Giro Médio",
-      value: `${averageStockDays} dias`,
-      subtitle: averageStockDays > 30 ? "Estoque parado" : "Boa rotatividade",
-      icon: Activity,
-      color: averageStockDays > 30 ? "text-orange-600" : "text-green-600",
-      bgColor: averageStockDays > 30 ? "bg-orange-50" : "bg-green-50",
-      trend: averageStockDays > 30 ? "warning" : "good"
-    },
-    {
-      title: "Margem Potencial",
-      value: formatPrice(totalSaleValue - totalStockValue),
-      subtitle: `${((totalSaleValue - totalStockValue) / totalStockValue * 100).toFixed(1)}% de margem`,
-      icon: TrendingUp,
-      color: "text-emerald-600",
-      bgColor: "bg-emerald-50",
-      trend: "up"
-    }
-  ];
+  const stockHealthScore = products.length > 0 
+    ? (stats.stockDistribution.normal / products.length) * 100 
+    : 0;
 
-  if (!isVisible) {
-    return (
-      <div className="md:hidden flex justify-end mb-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setIsVisible(true)}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
-        >
-          <Eye className="h-4 w-4" />
-          Mostrar estatísticas
-        </Button>
-      </div>
-    );
-  }
-
-  if (isMobile) {
-    return (
-      <div className="space-y-3 mb-4">
-        {/* Controles mobile */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-muted-foreground">Estatísticas</h3>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsVisible(false)}
-            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-          >
-            <EyeOff className="h-3 w-3" />
-            Ocultar
-          </Button>
-        </div>
-
-        {/* Cards com scroll horizontal */}
-        <div className="overflow-x-auto pb-2">
-          <div className="flex gap-3 min-w-max">
-            {stats.map((stat, index) => {
-              const IconComponent = stat.icon;
-              
-              return (
-                <Card key={index} className="w-[160px] flex-shrink-0">
-                  <CardContent className="p-3">
-                    <div className="space-y-2">
-                      {/* Ícone e badge */}
-                      <div className="flex items-center justify-between">
-                        <div className={`p-1.5 rounded-md ${stat.bgColor}`}>
-                          <IconComponent className={`w-4 h-4 ${stat.color}`} />
-                        </div>
-                        {stat.trend && (
-                          <Badge 
-                            variant={
-                              stat.trend === "critical" ? "destructive" : 
-                              stat.trend === "warning" ? "secondary" : 
-                              "default"
-                            }
-                            className="text-[8px] px-1 py-0.5 h-3 flex-shrink-0"
-                          >
-                            {stat.trend === "critical" && <AlertTriangle className="w-1.5 h-1.5" />}
-                            {stat.trend === "warning" && <TrendingDown className="w-1.5 h-1.5" />}
-                            {stat.trend === "good" && <TrendingUp className="w-1.5 h-1.5" />}
-                            {stat.trend === "up" && <TrendingUp className="w-1.5 h-1.5" />}
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      {/* Título */}
-                      <p className="text-xs font-medium text-muted-foreground leading-tight line-clamp-2">
-                        {stat.title}
-                      </p>
-                      
-                      {/* Valor */}
-                      <p className="text-base font-bold text-foreground leading-tight break-words">
-                        {stat.value}
-                      </p>
-                      
-                      {/* Subtitle */}
-                      <p className="text-[10px] text-muted-foreground/70 leading-tight line-clamp-2 break-words">
-                        {stat.subtitle}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Versão desktop original
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-      {stats.map((stat, index) => {
-        const IconComponent = stat.icon;
-        
-        return (
-          <Card key={index} className="relative overflow-hidden hover:shadow-lg transition-all duration-300 group">
-            <CardContent className="p-4">
-              <div className="space-y-3">
-                {/* Header com ícone e trend */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className={`p-2 rounded-lg ${stat.bgColor} group-hover:scale-105 transition-transform duration-200 flex-shrink-0`}>
-                    <IconComponent className={`w-4 h-4 ${stat.color}`} />
-                  </div>
-                  {stat.trend && (
-                    <Badge 
-                      variant={
-                        stat.trend === "critical" ? "destructive" : 
-                        stat.trend === "warning" ? "secondary" : 
-                        "default"
-                      }
-                      className="text-[9px] px-1.5 py-0.5 h-4 shadow-sm border-0 flex-shrink-0"
-                    >
-                      {stat.trend === "critical" && <AlertTriangle className="w-2 h-2 mr-1" />}
-                      {stat.trend === "warning" && <TrendingDown className="w-2 h-2 mr-1" />}
-                      {stat.trend === "good" && <TrendingUp className="w-2 h-2 mr-1" />}
-                      {stat.trend === "up" && <TrendingUp className="w-2 h-2 mr-1" />}
-                      {stat.trend === "critical" ? "Crítico" : 
-                       stat.trend === "warning" ? "Atenção" : 
-                       stat.trend === "good" ? "Bom" : "Alta"}
-                    </Badge>
-                  )}
-                </div>
-                
-                {/* Conteúdo principal */}
-                <div className="space-y-2 min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground/90 uppercase tracking-wide line-clamp-2">
-                    {stat.title}
-                  </p>
-                  
-                  <p className="text-xl font-bold text-foreground tracking-tight leading-none break-words">
-                    {stat.value}
-                  </p>
-                  
-                  <p className="text-xs text-muted-foreground/70 leading-relaxed line-clamp-3 break-words">
-                    {stat.subtitle}
-                  </p>
-                </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* Resumo Geral */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total de Produtos</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalProducts}</div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+            <Users className="h-3 w-3" />
+            <span>{stats.totalGroups} grupos</span>
+            <Link2 className="h-3 w-3" />
+            <span>{stats.totalChildren} variações</span>
+          </div>
+        </CardContent>
+      </Card>
 
-                {/* Indicador visual sutil */}
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+      {/* Valor Total */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+          <DollarSign className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
+          <div className="text-xs text-muted-foreground mt-2">
+            {stats.totalStock} unidades em estoque
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Alertas de Estoque */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Alertas</CardTitle>
+          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Sem estoque</span>
+              <Badge variant="destructive" className="text-xs">
+                {stats.outOfStock}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Estoque baixo</span>
+              <Badge variant="secondary" className="text-xs">
+                {stats.lowStock}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Saúde do Estoque */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Saúde do Estoque</CardTitle>
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Score</span>
+              <span className={`text-sm font-bold ${getStockHealthColor()}`}>
+                {stockHealthScore.toFixed(1)}%
+              </span>
+            </div>
+            <Progress value={stockHealthScore} className="h-2" />
+            <div className="text-xs text-muted-foreground">
+              {stats.stockDistribution.normal} produtos em nível normal
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
