@@ -208,25 +208,22 @@ export function EstoqueTable({
       label: "SKU",
       sortable: true,
       render: (value: string, product: Product) => (
-        <div className="text-[10px] leading-tight">
+        <div className="flex flex-col gap-1 text-[10px] leading-tight">
+          <div className="font-mono font-semibold">{value}</div>
           {product.sku_pai ? (
             <>
-              <div className="font-mono bg-muted px-1.5 py-0.5 rounded mb-1">
-                SKU Filho: {value}
-              </div>
+              <Badge variant="secondary" className="text-[9px] px-1 py-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 w-fit">
+                SKU Filho
+              </Badge>
               <div className="text-muted-foreground text-[9px]">
                 Pai: {product.sku_pai}
               </div>
             </>
           ) : product.eh_produto_pai ? (
-            <div className="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded font-semibold">
-              SKU Pai: {value}
-            </div>
-          ) : (
-            <div className="font-mono px-1.5 py-0.5">
-              {value}
-            </div>
-          )}
+            <Badge variant="default" className="text-[9px] px-1 py-0 bg-primary/20 text-primary w-fit">
+              SKU Pai
+            </Badge>
+          ) : null}
         </div>
       )
     },
