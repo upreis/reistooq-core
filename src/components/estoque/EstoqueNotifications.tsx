@@ -84,15 +84,22 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
 
     // Produtos órfãos
     if (config.notifications.orphanProductsAlert) {
-      const orphanProducts = products.filter(p => 
-        p.sku_pai && !products.some(parent => parent.sku_interno === p.sku_pai)
-      );
+      const orphanProducts = products.filter(p => {
+        // Tipo 1: Produto tem sku_pai mas o pai não existe
+        const hasMissingParent = p.sku_pai && !products.some(parent => parent.sku_interno === p.sku_pai);
+        
+        // Tipo 2: Produto tem formato de SKU filho (mais de 2 partes) mas não tem sku_pai definido e não é produto pai
+        const isOrphanChild = p.sku_interno.split('-').length > 2 && !p.sku_pai && !p.eh_produto_pai;
+        
+        return hasMissingParent || isOrphanChild;
+      });
+      
       if (orphanProducts.length > 0) {
         newNotifications.push({
           id: 'orphan-products',
           type: 'warning',
           title: 'Produtos órfãos',
-          message: `${orphanProducts.length} produto${orphanProducts.length > 1 ? 's' : ''} filho${orphanProducts.length > 1 ? 's' : ''} sem produto pai`,
+          message: `${orphanProducts.length} produto${orphanProducts.length > 1 ? 's' : ''} órfão${orphanProducts.length > 1 ? 's' : ''} sem vínculo`,
           products: orphanProducts,
           actionLabel: 'Corrigir vínculos',
           action: () => onOpenOrphanModal?.(orphanProducts)
