@@ -65,17 +65,10 @@ export default function ControleEstoquePage() {
     try {
       setLoading(true);
       
-      // Determinar filtro de ativo para busca no banco
-      let ativoFilter: boolean | 'all' = 'all';
-      if (selectedStatus === "active_only") {
-        ativoFilter = true;
-      } else if (selectedStatus === "inactive_only") {
-        ativoFilter = false;
-      } else if (["low", "out", "high", "critical"].includes(selectedStatus)) {
-        ativoFilter = true;
-      }
+      // SEMPRE buscar apenas produtos ativos (filtro padrão)
+      const ativoFilter = true;
       
-      // Buscar produtos do banco (removido limit fixo de 10000)
+      // Buscar produtos do banco
       const allProducts = await getProducts({
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         ativo: ativoFilter,
