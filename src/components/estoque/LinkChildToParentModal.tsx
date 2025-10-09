@@ -39,9 +39,9 @@ export function LinkChildToParentModal({
   const { toast } = useToast();
   const { updateProduct } = useProducts();
 
-  // Filtrar apenas produtos pai disponíveis (produtos sem sku_pai)
+  // Filtrar apenas produtos marcados explicitamente como PAI
   const availableParents = allProducts.filter(p => 
-    !p.sku_pai && p.ativo && !selectedProducts.includes(p.id)
+    p.eh_produto_pai === true && p.ativo && !selectedProducts.includes(p.id)
   );
 
   const handleLink = async () => {
