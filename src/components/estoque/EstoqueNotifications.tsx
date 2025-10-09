@@ -156,70 +156,72 @@ export function EstoqueNotifications({ products, onProductClick }: EstoqueNotifi
         </Button>
       </div>
 
-      {visibleNotifications.map((notification) => (
-        <Alert key={notification.id} className={getNotificationColor(notification.type)}>
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-3 flex-1">
-              {getNotificationIcon(notification.type)}
-              <div className="flex-1">
-                <h4 className="font-medium">{notification.title}</h4>
-                <AlertDescription className="mt-1">
-                  {notification.message}
-                </AlertDescription>
-                
-                <div className="mt-2 space-y-1">
-                  {notification.products.slice(0, 3).map((product) => (
-                    <div 
-                      key={product.id}
-                      className="text-xs bg-white/50 p-2 rounded cursor-pointer hover:bg-white/80 transition-colors"
-                      onClick={() => onProductClick(product)}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">{product.nome}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {product.sku_interno}
-                        </Badge>
-                      </div>
-                      {(notification.type === 'critical' || notification.type === 'warning') && (
-                        <div className="text-muted-foreground">
-                          Estoque: {product.quantidade_atual} | Mínimo: {product.estoque_minimo}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {notification.products.length > 3 && (
-                    <div className="text-xs text-muted-foreground text-center py-1">
-                      ... e mais {notification.products.length - 3} produtos
-                    </div>
-                  )}
-                </div>
-
-                {notification.actionLabel && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-3"
-                    onClick={notification.action}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    {notification.actionLabel}
-                  </Button>
-                )}
-              </div>
-            </div>
-            
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {visibleNotifications.map((notification) => (
+          <Card key={notification.id} className={`${getNotificationColor(notification.type)} border relative`}>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => dismissNotification(notification.id)}
-              className="text-muted-foreground hover:text-foreground"
+              className="absolute top-2 right-2 h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </Button>
-          </div>
-        </Alert>
-      ))}
+            
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3 mb-3">
+                {getNotificationIcon(notification.type)}
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm">{notification.title}</h4>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {notification.message}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="space-y-1 mb-3">
+                {notification.products.slice(0, 3).map((product) => (
+                  <div 
+                    key={product.id}
+                    className="text-xs bg-white/50 dark:bg-black/20 p-2 rounded cursor-pointer hover:bg-white/80 dark:hover:bg-black/40 transition-colors"
+                    onClick={() => onProductClick(product)}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate">{product.nome}</span>
+                      <Badge variant="outline" className="text-[9px] px-1 shrink-0">
+                        {product.sku_interno}
+                      </Badge>
+                    </div>
+                    {(notification.type === 'critical' || notification.type === 'warning') && (
+                      <div className="text-[10px] text-muted-foreground mt-1">
+                        Estoque: {product.quantidade_atual} | Mínimo: {product.estoque_minimo}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                
+                {notification.products.length > 3 && (
+                  <div className="text-[10px] text-muted-foreground text-center py-1">
+                    ... e mais {notification.products.length - 3} produtos
+                  </div>
+                )}
+              </div>
+
+              {notification.actionLabel && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full text-xs h-8"
+                  onClick={notification.action}
+                >
+                  <Eye className="w-3 h-3 mr-2" />
+                  {notification.actionLabel}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
