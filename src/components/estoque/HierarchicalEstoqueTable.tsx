@@ -116,7 +116,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     </div>
                   )}
                   
-                  <div className="flex items-center gap-2 flex-1">
+                  <div className="flex items-center gap-3 flex-1">
                     {/* Expand/collapse icon */}
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" size="sm" className="p-0 h-auto">
@@ -132,11 +132,24 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       </Button>
                     </CollapsibleTrigger>
                     
-                    {/* Ícone diferenciado para pai/filho */}
-                    {group.parentProduct?.eh_produto_pai ? (
-                      <FolderOpen className="w-5 h-5 text-primary" />
+                    {/* Imagem do produto pai */}
+                    {group.parentProduct?.url_imagem ? (
+                      <img 
+                        src={group.parentProduct.url_imagem} 
+                        alt={group.parentProduct.nome || group.parentSku}
+                        className="w-12 h-12 object-cover rounded-md border border-border"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     ) : (
-                      <Box className="w-5 h-5 text-muted-foreground" />
+                      <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md border border-border">
+                        {group.parentProduct?.eh_produto_pai ? (
+                          <FolderOpen className="w-6 h-6 text-primary" />
+                        ) : (
+                          <Box className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
                     )}
                     
                     <div className="flex-1">
