@@ -282,16 +282,20 @@ export const useProducts = () => {
   const deleteProduct = useCallback(async (id: string) => {
     const orgId = await getCurrentOrgId();
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('produtos')
       .update({ ativo: false })
       .eq('id', id)
-      .eq('organization_id', orgId);
+      .eq('organization_id', orgId)
+      .select()
+      .single();
 
     if (error) {
       console.error('Error deleting product:', error);
       throw error;
     }
+
+    return data;
   }, [getCurrentOrgId]);
 
   const getProductStats = useCallback(async () => {
