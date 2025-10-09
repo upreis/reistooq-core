@@ -150,11 +150,6 @@ export default function ControleEstoquePage() {
     });
   };
 
-  const handleSelectAll = (selected: boolean) => {
-    const newSelection = selected ? paginatedProducts.map(p => p.id) : [];
-    setSelectedProducts(newSelection);
-  };
-
   const handleDeleteSelected = async () => {
     if (selectedProducts.length === 0) {
       return;
@@ -388,6 +383,11 @@ export default function ControleEstoquePage() {
   );
   
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
+
+  const handleSelectAll = (selected: boolean) => {
+    const newSelection = selected ? paginatedProducts.map(p => p.id) : [];
+    setSelectedProducts(newSelection);
+  };
 
   
   
