@@ -3585,6 +3585,7 @@ export type Database = {
           created_at: string
           cubagem_cm3: number | null
           descricao: string | null
+          eh_produto_pai: boolean
           estoque_maximo: number
           estoque_minimo: number
           icms: number | null
@@ -3635,6 +3636,7 @@ export type Database = {
           created_at?: string
           cubagem_cm3?: number | null
           descricao?: string | null
+          eh_produto_pai?: boolean
           estoque_maximo?: number
           estoque_minimo?: number
           icms?: number | null
@@ -3685,6 +3687,7 @@ export type Database = {
           created_at?: string
           cubagem_cm3?: number | null
           descricao?: string | null
+          eh_produto_pai?: boolean
           estoque_maximo?: number
           estoque_minimo?: number
           icms?: number | null
@@ -5094,6 +5097,7 @@ export type Database = {
           created_at: string
           cubagem_cm3: number | null
           descricao: string | null
+          eh_produto_pai: boolean
           estoque_maximo: number
           estoque_minimo: number
           icms: number | null

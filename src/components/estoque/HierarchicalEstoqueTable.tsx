@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FolderOpen, Box } from "lucide-react";
 import { ChevronRight, ChevronDown, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -131,13 +132,30 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       </Button>
                     </CollapsibleTrigger>
                     
-                    <Package className="w-5 h-5 text-primary" />
+                    {/* Ícone diferenciado para pai/filho */}
+                    {group.parentProduct?.eh_produto_pai ? (
+                      <FolderOpen className="w-5 h-5 text-primary" />
+                    ) : (
+                      <Box className="w-5 h-5 text-muted-foreground" />
+                    )}
                     
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-sm">
-                          {hasChildren ? `SKU Pai: ${group.parentSku}` : `SKU Filho: ${group.parentSku}`}
+                          {group.parentSku}
                         </span>
+                        
+                        {/* Badge identificador: Produto Pai ou Variação */}
+                        {group.parentProduct?.eh_produto_pai ? (
+                          <Badge variant="default" className="text-xs">
+                            Produto Pai
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-xs">
+                            {group.parentProduct?.sku_pai ? 'Variação' : 'Produto'}
+                          </Badge>
+                        )}
+                        
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
                         </Badge>
