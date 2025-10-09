@@ -12,11 +12,12 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
   const groups = new Map<string, SkuGroup>();
   const ungroupedProducts: Product[] = [];
 
+  // Primeiro, identificar todos os SKUs pai usando o campo sku_pai do banco
   products.forEach(product => {
-    const parentSku = extractParentSku(product.sku_interno);
-    
-    if (parentSku && parentSku !== product.sku_interno) {
-      // É um SKU filho
+    // Se tem sku_pai definido, é um filho
+    if (product.sku_pai) {
+      const parentSku = product.sku_pai;
+      
       if (!groups.has(parentSku)) {
         groups.set(parentSku, {
           parentSku,
@@ -34,10 +35,8 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
         group.hasLowStock = true;
       }
     } else {
-      // Pode ser um SKU pai ou produto independente
-      const hasChildren = products.some(p => 
-        extractParentSku(p.sku_interno) === product.sku_interno
-      );
+      // Não tem sku_pai, pode ser pai ou produto independente
+      const hasChildren = products.some(p => p.sku_pai === product.sku_interno);
       
       if (hasChildren) {
         // É um SKU pai
@@ -50,10 +49,12 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
             hasLowStock: product.quantidade_atual <= product.estoque_minimo
           });
         } else {
-          groups.get(product.sku_interno)!.parentProduct = product;
+          const group = groups.get(product.sku_interno)!;
+          group.parentProduct = product;
+          group.totalStock += product.quantidade_atual;
         }
       } else {
-        // Produto independente
+        // Produto independente (sem pai e sem filhos)
         ungroupedProducts.push(product);
       }
     }
@@ -73,14 +74,4 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
   });
 
   return result.sort((a, b) => a.parentSku.localeCompare(b.parentSku));
-}
-
-function extractParentSku(sku: string): string {
-  // Extrair SKU pai baseado no padrão CMD-29-VERD-1 -> CMD-29
-  // Mas priorizar o campo sku_pai do banco de dados
-  const parts = sku.split('-');
-  if (parts.length >= 3) {
-    return parts.slice(0, 2).join('-');
-  }
-  return sku;
 }

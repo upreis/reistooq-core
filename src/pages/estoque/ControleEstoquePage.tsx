@@ -141,60 +141,56 @@ export default function ControleEstoquePage() {
   };
 
   const handleSelectProduct = (productId: string) => {
-    console.log('🔍 handleSelectProduct chamado com ID:', productId);
-    console.log('📋 Estado atual de selectedProducts:', selectedProducts);
-    
     setSelectedProducts(prev => {
       const newSelection = prev.includes(productId) 
         ? prev.filter(id => id !== productId)
         : [...prev, productId];
       
-      console.log('✅ Nova seleção:', newSelection);
       return newSelection;
     });
   };
 
   const handleSelectAll = (selected: boolean) => {
-    console.log('🔍 handleSelectAll chamado com:', selected);
-    console.log('📋 Produtos paginados:', paginatedProducts.length);
-    
     const newSelection = selected ? paginatedProducts.map(p => p.id) : [];
-    console.log('✅ Selecionando:', newSelection);
     setSelectedProducts(newSelection);
   };
 
   const handleDeleteSelected = async () => {
-    console.log('🗑️ handleDeleteSelected chamado');
-    console.log('📋 Produtos selecionados:', selectedProducts);
-    
     if (selectedProducts.length === 0) {
-      console.log('⚠️ Nenhum produto selecionado');
       return;
     }
     
     try {
-      console.log('🔄 Iniciando exclusão de', selectedProducts.length, 'produtos');
+      // Tentar excluir cada produto
+      const results = await Promise.allSettled(
+        selectedProducts.map(id => deleteProduct(id))
+      );
       
-      const deletePromises = selectedProducts.map(async id => {
-        console.log('🗑️ Excluindo produto:', id);
-        const result = await deleteProduct(id);
-        console.log('✅ Resultado da exclusão:', result);
-        return result;
-      });
+      // Contar sucessos e falhas
+      const sucessos = results.filter(r => r.status === 'fulfilled').length;
+      const falhas = results.filter(r => r.status === 'rejected').length;
       
-      await Promise.all(deletePromises);
+      // Coletar mensagens de erro
+      const erros = results
+        .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+        .map(r => r.reason.message);
       
-      console.log('✅ Todos os produtos foram excluídos');
-      
-      toast({
-        title: "Produtos excluídos",
-        description: `${selectedProducts.length} produto(s) excluído(s) com sucesso.`,
-      });
+      if (falhas > 0) {
+        toast({
+          title: "Exclusão parcial",
+          description: `${sucessos} produto(s) excluído(s). ${falhas} falhou(aram): ${erros[0] || 'Erro desconhecido'}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Produtos excluídos",
+          description: `${sucessos} produto(s) excluído(s) com sucesso.`,
+        });
+      }
       
       setSelectedProducts([]);
       loadProducts();
     } catch (error) {
-      console.error('❌ Erro ao excluir produtos:', error);
       toast({
         title: "Erro ao excluir",
         description: error instanceof Error ? error.message : "Não foi possível excluir os produtos selecionados.",
@@ -393,7 +389,7 @@ export default function ControleEstoquePage() {
   
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
 
-  console.log('🔵 Renderizando ControleEstoquePage - Botões de ação');
+  
   
   return (
     <div className="space-y-6">
