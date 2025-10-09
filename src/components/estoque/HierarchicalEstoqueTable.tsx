@@ -145,16 +145,16 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           {group.parentSku}
                         </span>
                         
-                        {/* Badge identificador: Produto Pai ou Variação */}
-                        {group.parentProduct?.eh_produto_pai ? (
-                          <Badge variant="default" className="text-xs">
-                            Produto Pai
+                        {/* Badge identificador: SKU Pai ou SKU Filho */}
+                        {group.parentProduct?.sku_pai ? (
+                          <Badge variant="secondary" className="text-xs bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                            SKU Filho
                           </Badge>
-                        ) : (
-                          <Badge variant="secondary" className="text-xs">
-                            {group.parentProduct?.sku_pai ? 'Variação' : 'Produto'}
+                        ) : group.parentProduct?.eh_produto_pai ? (
+                          <Badge variant="default" className="text-xs bg-primary/20 text-primary">
+                            SKU Pai
                           </Badge>
-                        )}
+                        ) : null}
                         
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
