@@ -494,7 +494,7 @@ export default function ControleEstoquePage() {
               onClick={() => setLinkChildModalOpen(true)}
             >
               <LinkIcon className="h-4 w-4 mr-2" />
-              Vincular a Pai
+              Gerenciar Vinculação
             </Button>
             <Button 
               variant="destructive" 
