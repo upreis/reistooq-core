@@ -81,6 +81,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
       {/* Controles de visualização */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
+          {/* Checkbox para selecionar todos */}
+          <div className="flex items-center gap-2 border-r pr-3">
+            <Checkbox
+              checked={props.selectedProducts.length === props.products.length && props.products.length > 0}
+              onCheckedChange={props.onSelectAll}
+            />
+            <span className="text-sm text-muted-foreground">
+              Selecionar Todos ({props.selectedProducts.length}/{props.products.length})
+            </span>
+          </div>
+          
           <Button
             variant="outline"
             size="sm"
