@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { formatPt, formatSubstatus, formatLogisticType, formatShippingStatus } from '@/utils/orderFormatters';
 import { translateMLTags } from '@/lib/translations';
-import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search, Database } from 'lucide-react';
+import { Package, RefreshCw, ChevronLeft, ChevronRight, CheckCircle, CheckCircle2, AlertTriangle, AlertCircle, Clock, Filter, Settings, CheckSquare, CalendarIcon, Search, Database } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
@@ -651,7 +651,49 @@ function SimplePedidosPage({ className }: Props) {
     const mapping = mappingData.get(pedidoId);
     if (!mapping) return <span className="text-muted-foreground">-</span>;
 
-    // ✅ CORRIGIDO: Usar valor fixo por enquanto
+    const statusBaixa = mapping.statusBaixa;
+    const baixado = isPedidoProcessado({ id: pedidoId } as any);
+
+    // 🛡️ PRIORIDADE: Status de problemas críticos
+    if (statusBaixa === 'sku_nao_cadastrado') {
+      return (
+        <div className="flex items-center gap-1 text-destructive">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-xs font-medium">SKU não cadastrado no estoque</span>
+        </div>
+      );
+    }
+
+    if (statusBaixa === 'sem_estoque') {
+      return (
+        <div className="flex items-center gap-1 text-orange-600">
+          <AlertCircle className="h-4 w-4" />
+          <span className="text-xs font-medium">Sem Estoque</span>
+        </div>
+      );
+    }
+
+    // ✅ Status já baixado
+    if (baixado) {
+      return (
+        <div className="flex items-center gap-1 text-green-600">
+          <CheckCircle2 className="h-4 w-4" />
+          <span className="text-xs font-medium">Baixado</span>
+        </div>
+      );
+    }
+
+    // ✅ Pronto para baixar (tem mapeamento e não tem problemas)
+    if (statusBaixa === 'pronto_baixar' || (mapping.skuEstoque || mapping.skuKit)) {
+      return (
+        <div className="flex items-center gap-1 text-green-600">
+          <CheckCircle2 className="h-4 w-4" />
+          <span className="text-xs font-medium">Pronto p/ Baixar</span>
+        </div>
+      );
+    }
+
+    // ⚠️ Sem mapear
     return (
       <div className="flex items-center gap-1 text-yellow-600">
         <AlertCircle className="h-4 w-4" />
