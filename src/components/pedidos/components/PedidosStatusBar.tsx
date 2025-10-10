@@ -7,13 +7,13 @@ import { memo, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, AlertTriangle, Package, Filter } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Package, Filter, XCircle, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface PedidosStatusBarProps {
   orders: any[];
   quickFilter: string;
-  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado') => void;
+  onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'sem_estoque' | 'sku_nao_cadastrado') => void;
   className?: string;
   globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number }>;
   mappingData?: Map<string, any>;
@@ -40,7 +40,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     
     if (!orders?.length) {
       console.log('📊 [StatusBar] Nenhum pedido na página');
-      return { total: 0, prontosBaixa: 0, mapeamentoPendente: 0, baixados: 0 };
+      return { total: 0, prontosBaixa: 0, mapeamentoPendente: 0, baixados: 0, semEstoque: 0, skuNaoCadastrado: 0 };
     }
 
     // ✅ LÓGICA SIMPLES: Se quickFilter está ativo, todos os pedidos pertencem a essa categoria
@@ -50,7 +50,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         total: orders.length,
         prontosBaixa: orders.length,
         mapeamentoPendente: 0,
-        baixados: 0
+        baixados: 0,
+        semEstoque: 0,
+        skuNaoCadastrado: 0
       };
     }
     
@@ -60,7 +62,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         total: orders.length,
         prontosBaixa: 0,
         mapeamentoPendente: orders.length,
-        baixados: 0
+        baixados: 0,
+        semEstoque: 0,
+        skuNaoCadastrado: 0
       };
     }
     
@@ -70,7 +74,31 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         total: orders.length,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
-        baixados: orders.length
+        baixados: orders.length,
+        semEstoque: 0,
+        skuNaoCadastrado: 0
+      };
+    }
+    
+    if (quickFilter === 'sem_estoque') {
+      return {
+        total: orders.length,
+        prontosBaixa: 0,
+        mapeamentoPendente: 0,
+        baixados: 0,
+        semEstoque: orders.length,
+        skuNaoCadastrado: 0
+      };
+    }
+    
+    if (quickFilter === 'sku_nao_cadastrado') {
+      return {
+        total: orders.length,
+        prontosBaixa: 0,
+        mapeamentoPendente: 0,
+        baixados: 0,
+        semEstoque: 0,
+        skuNaoCadastrado: orders.length
       };
     }
 
@@ -78,6 +106,8 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     let prontosBaixa = 0;
     let mapeamentoPendente = 0;
     let baixados = 0;
+    let semEstoque = 0;
+    let skuNaoCadastrado = 0;
 
     for (const order of orders) {
       // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
@@ -87,11 +117,15 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
         continue;
       }
       
-      // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
+      // 🗂️ SEGUNDO: Verificar mapeamento e status
       const mapping = mappingData?.get?.(order.id);
-      const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
+      const statusBaixa = mapping?.statusBaixa;
       
-      if (temMapeamentoCompleto) {
+      if (statusBaixa === 'sku_nao_cadastrado') {
+        skuNaoCadastrado++;
+      } else if (statusBaixa === 'sem_estoque') {
+        semEstoque++;
+      } else if (mapping && (mapping.skuEstoque || mapping.skuKit)) {
         prontosBaixa++;
       } else {
         mapeamentoPendente++;
@@ -102,7 +136,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       total: orders.length,
       prontosBaixa,
       mapeamentoPendente,
-      baixados
+      baixados,
+      semEstoque,
+      skuNaoCadastrado
     };
     
     console.log('📊 [StatusBar] Contadores da página atual:', result);
@@ -141,6 +177,22 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       icon: CheckCircle,
       variant: 'outline' as const,
       color: 'success'
+    },
+    {
+      key: 'sem_estoque',
+      label: 'Sem Estoque',
+      count: counters.semEstoque,
+      icon: XCircle,
+      variant: 'outline' as const,
+      color: 'destructive'
+    },
+    {
+      key: 'sku_nao_cadastrado',
+      label: 'SKU sem cadastro no Estoque',
+      count: counters.skuNaoCadastrado,
+      icon: Database,
+      variant: 'outline' as const,
+      color: 'warning'
     }
   ];
 

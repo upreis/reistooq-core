@@ -298,7 +298,7 @@ function SimplePedidosPage({ className }: Props) {
   );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered'>(() => {
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado'>(() => {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
 
@@ -315,11 +315,12 @@ function SimplePedidosPage({ className }: Props) {
         order?.situacao,
         order?.status
       ].filter(Boolean).map((s: any) => String(s).toLowerCase());
+      
       switch (quickFilter) {
         case 'pronto_baixar': {
           const temMapeamentoCompleto = !!(mapping && (mapping.skuEstoque || mapping.skuKit));
           const baixado = isPedidoProcessado(order);
-          return temMapeamentoCompleto && !baixado;
+          return temMapeamentoCompleto && !baixado && mapping.statusBaixa !== 'sku_nao_cadastrado' && mapping.statusBaixa !== 'sem_estoque';
         }
         case 'mapear_incompleto': {
           const temIncompleto = !!(mapping && mapping.temMapeamento && !(mapping.skuEstoque || mapping.skuKit));
@@ -328,6 +329,10 @@ function SimplePedidosPage({ className }: Props) {
         }
         case 'baixado':
           return !!isPedidoProcessado(order) || String(order?.status_baixa || '').toLowerCase().includes('baixado');
+        case 'sem_estoque':
+          return mapping?.statusBaixa === 'sem_estoque';
+        case 'sku_nao_cadastrado':
+          return mapping?.statusBaixa === 'sku_nao_cadastrado';
         case 'shipped':
           return statuses.some((s: string) => s.includes('shipped') || s.includes('ready_to_ship'));
         case 'delivered':
