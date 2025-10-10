@@ -1,28 +1,47 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { HistoricoVenda } from '../types/historicoTypes';
 
 export class HistoricoDeleteService {
   static async deleteItem(id: string): Promise<boolean> {
     try {
       // 🔍 BUSCAR dados do pedido antes de excluir para reverter estoque
-      const { data: vendaData, error: fetchError } = await supabase
-        .from('historico_vendas')
-        .select('*')
-        .eq('id', id)
-        .single();
+      // 🛡️ Usar get_historico_vendas_safe para buscar dados com RLS
+      const hoje = new Date();
+      const umAnoAtras = new Date(hoje.getTime() - 365 * 24 * 60 * 60 * 1000);
       
-      if (fetchError || !vendaData) {
+      // @ts-ignore - RPC função não está nos tipos gerados ainda
+      const { data: historicoData, error: fetchError } = await supabase.rpc('get_historico_vendas_safe', {
+        data_inicio: umAnoAtras.toISOString().split('T')[0],
+        data_fim: hoje.toISOString().split('T')[0],
+        filtro_status: null,
+        page_limit: 9999,
+        page_offset: 0
+      });
+      
+      if (fetchError || !historicoData || !Array.isArray(historicoData)) {
         console.error('Erro ao buscar dados da venda:', fetchError);
-        toast.error('Erro ao buscar dados do pedido');
+        toast.error('Erro ao buscar dados do pedido para reversão de estoque');
+        return false;
+      }
+
+      // Encontrar o registro específico
+      const vendaData = historicoData.find((item: any) => item.id === id);
+      
+      if (!vendaData) {
+        console.error('Venda não encontrada no histórico');
+        toast.error('Pedido não encontrado');
         return false;
       }
 
       console.log('📦 Dados da venda a reverter:', vendaData);
 
       // 🔄 REVERTER ESTOQUE DOS COMPONENTES
-      if (vendaData.sku_estoque) {
-        const skuMapeado = vendaData.sku_estoque;
-        const quantidadePedido = Number(vendaData.quantidade_total || vendaData.quantidade || 0);
+      const vendaDataAny = vendaData as any; // Cast para evitar erros de tipo
+      
+      if (vendaDataAny.sku_estoque) {
+        const skuMapeado = vendaDataAny.sku_estoque as string;
+        const quantidadePedido = Number(vendaDataAny.quantidade_total || vendaDataAny.quantidade || 0);
 
         console.log(`🔄 Revertendo estoque para SKU ${skuMapeado}, quantidade: ${quantidadePedido}`);
 
@@ -48,7 +67,7 @@ export class HistoricoDeleteService {
               .from('produtos')
               .select('id, quantidade_atual, sku_interno')
               .eq('sku_interno', componente.sku_componente)
-              .single();
+              .maybeSingle();
 
             if (!produtoError && produto) {
               const novaQuantidade = (produto.quantidade_atual || 0) + quantidadeReverter;
@@ -74,7 +93,7 @@ export class HistoricoDeleteService {
                   quantidade_nova: novaQuantidade,
                   quantidade_movimentada: quantidadeReverter,
                   motivo: 'exclusao_historico',
-                  observacoes: `Reversão de estoque por exclusão do pedido ${vendaData.numero_pedido || vendaData.id_unico}`
+                  observacoes: `Reversão de estoque por exclusão do pedido ${vendaDataAny.numero_pedido || vendaDataAny.id_unico}`
                 });
               }
             }
@@ -106,18 +125,17 @@ export class HistoricoDeleteService {
 
   static async deleteMultiple(ids: string[]): Promise<boolean> {
     try {
-      // Usar a função RPC segura para excluir múltiplos
-      const { error } = await supabase.rpc('hv_delete_many', { _ids: ids });
-      
-      if (error) {
-        console.error('Erro ao excluir itens do histórico:', error);
-        toast.error('Erro ao excluir itens', {
-          description: error.message || 'Erro desconhecido'
-        });
-        return false;
+      // 🔄 REVERTER ESTOQUE de todos os itens antes de excluir
+      for (const id of ids) {
+        // Buscar dados e reverter estoque individualmente
+        const deleted = await this.deleteItem(id);
+        if (!deleted) {
+          toast.error(`Erro ao excluir item ${id}`);
+          return false;
+        }
       }
 
-      toast.success(`${ids.length} itens excluídos com sucesso`);
+      toast.success(`${ids.length} itens excluídos e estoque revertido com sucesso`);
       return true;
     } catch (error) {
       console.error('Erro inesperado ao excluir itens:', error);
