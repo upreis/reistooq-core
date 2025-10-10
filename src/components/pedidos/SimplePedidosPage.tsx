@@ -684,7 +684,7 @@ function SimplePedidosPage({ className }: Props) {
     }
 
     // ✅ Pronto para baixar (tem mapeamento e não tem problemas)
-    if (statusBaixa === 'pronto_baixar' || (mapping.skuEstoque || mapping.skuKit)) {
+    if (statusBaixa === 'pronto_baixar') {
       return (
         <div className="flex items-center gap-1 text-green-600">
           <CheckCircle2 className="h-4 w-4" />
