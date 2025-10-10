@@ -5,31 +5,23 @@ import { HistoricoVenda } from '../types/historicoTypes';
 export class HistoricoDeleteService {
   static async deleteItem(id: string): Promise<boolean> {
     try {
-      // 🔍 BUSCAR dados do pedido antes de excluir para reverter estoque
-      // 🛡️ Usar get_historico_vendas_masked para buscar dados com RLS
-      const hoje = new Date();
-      const umAnoAtras = new Date(hoje.getTime() - 365 * 24 * 60 * 60 * 1000);
+      console.log('🗑️ Iniciando exclusão do item:', id);
       
-      // @ts-ignore - RPC função não está nos tipos gerados ainda
-      const { data: historicoData, error: fetchError } = await supabase.rpc('get_historico_vendas_masked', {
-        p_start: umAnoAtras.toISOString().split('T')[0],
-        p_end: hoje.toISOString().split('T')[0],
-        p_search: null,
-        p_limit: 9999,
-        p_offset: 0
-      });
+      // 🔍 BUSCAR dados do pedido diretamente pelo ID antes de excluir para reverter estoque
+      const { data: vendaData, error: fetchError } = await supabase
+        .from('historico_vendas')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
       
-      if (fetchError || !historicoData || !Array.isArray(historicoData)) {
-        console.error('Erro ao buscar dados da venda:', fetchError);
+      if (fetchError) {
+        console.error('❌ Erro ao buscar dados da venda:', fetchError);
         toast.error('Erro ao buscar dados do pedido para reversão de estoque');
         return false;
       }
 
-      // Encontrar o registro específico
-      const vendaData = historicoData.find((item: any) => item.id === id);
-      
       if (!vendaData) {
-        console.error('Venda não encontrada no histórico');
+        console.error('❌ Venda não encontrada no histórico para o ID:', id);
         toast.error('Pedido não encontrado');
         return false;
       }
