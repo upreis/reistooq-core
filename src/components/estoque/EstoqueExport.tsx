@@ -33,6 +33,7 @@ const availableFields = [
   { id: 'codigo_barras', label: 'Código de Barras' },
   { id: 'localizacao', label: 'Localização' },
   { id: 'categoria', label: 'Categoria' },
+  { id: 'categoria_principal', label: 'Categoria Principal' },
   { id: 'ativo', label: 'Status' },
   { id: 'peso_liquido', label: 'Peso Líquido (Kg)' },
   { id: 'peso_bruto', label: 'Peso Bruto (Kg)' },
