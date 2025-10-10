@@ -14,6 +14,7 @@ export interface MapeamentoVerificacao {
 export class MapeamentoService {
   /**
    * Verifica se existe mapeamento para uma lista de SKUs de pedido
+   * 🛡️ ATUALIZADO: Agora também verifica se os SKUs estão cadastrados no estoque
    */
   static async verificarMapeamentos(skusPedido: string[]): Promise<MapeamentoVerificacao[]> {
     if (skusPedido.length === 0) return [];
@@ -29,7 +30,8 @@ export class MapeamentoService {
         console.error('Erro ao verificar mapeamentos:', error);
         return skusPedido.map(sku => ({
           skuPedido: sku,
-          temMapeamento: false
+          temMapeamento: false,
+          statusBaixa: 'sem_mapear'
         }));
       }
 
@@ -53,20 +55,64 @@ export class MapeamentoService {
         await this.criarMapeamentosAutomaticos(skusSemMapeamento);
       }
 
-      // Retorna resultado para todos os SKUs
-      return skusPedido.map(sku => ({
-        skuPedido: sku,
-        temMapeamento: mapeamentosMap.has(sku),
-        skuEstoque: mapeamentosMap.get(sku)?.skuEstoque,  // sku_correspondente
-        skuKit: mapeamentosMap.get(sku)?.skuKit,          // sku_simples
-        quantidadeKit: mapeamentosMap.get(sku)?.quantidadeKit
-      }));
+      // 🛡️ VERIFICAÇÃO CRÍTICA: Buscar todos os SKUs que existem na tabela produtos
+      const skusParaVerificar = [...mapeamentosMap.values()]
+        .map(m => m.skuEstoque)
+        .filter((sku): sku is string => !!sku);
+
+      let skusNoProdutos = new Set<string>();
+      
+      if (skusParaVerificar.length > 0) {
+        const { data: produtosExistentes, error: produtosError } = await supabase
+          .from('produtos')
+          .select('sku_interno')
+          .in('sku_interno', skusParaVerificar)
+          .eq('ativo', true);
+
+        if (!produtosError && produtosExistentes) {
+          skusNoProdutos = new Set(produtosExistentes.map(p => p.sku_interno));
+        }
+      }
+
+      // Retorna resultado para todos os SKUs com statusBaixa calculado
+      return skusPedido.map(sku => {
+        const mapeamento = mapeamentosMap.get(sku);
+        const temMapeamento = !!mapeamento;
+        const skuEstoque = mapeamento?.skuEstoque;
+        
+        let statusBaixa: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
+        let skuCadastradoNoEstoque = false;
+
+        if (!temMapeamento || !skuEstoque) {
+          // Sem mapeamento ou sem SKU de estoque definido
+          statusBaixa = 'sem_mapear';
+        } else if (!skusNoProdutos.has(skuEstoque)) {
+          // Tem mapeamento mas o SKU não existe na tabela produtos
+          statusBaixa = 'sku_nao_cadastrado';
+          skuCadastradoNoEstoque = false;
+        } else {
+          // Tem mapeamento e o SKU existe na tabela produtos
+          statusBaixa = 'pronto_baixar';
+          skuCadastradoNoEstoque = true;
+        }
+
+        return {
+          skuPedido: sku,
+          temMapeamento,
+          skuEstoque: mapeamento?.skuEstoque,
+          skuKit: mapeamento?.skuKit,
+          quantidadeKit: mapeamento?.quantidadeKit,
+          skuCadastradoNoEstoque,
+          statusBaixa
+        };
+      });
 
     } catch (error) {
       console.error('Erro inesperado ao verificar mapeamentos:', error);
       return skusPedido.map(sku => ({
         skuPedido: sku,
-        temMapeamento: false
+        temMapeamento: false,
+        statusBaixa: 'sem_mapear'
       }));
     }
   }
