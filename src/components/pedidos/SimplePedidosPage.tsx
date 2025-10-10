@@ -653,6 +653,9 @@ function SimplePedidosPage({ className }: Props) {
 
     const statusBaixa = mapping.statusBaixa;
     const baixado = isPedidoProcessado({ id: pedidoId } as any);
+    
+    // 🔍 DEBUG: Log do status final renderizado
+    console.log(`🎨 [Render] Pedido ${pedidoId} | Status renderizado: ${statusBaixa}`, mapping);
 
     // 🛡️ PRIORIDADE: Status de problemas críticos
     if (statusBaixa === 'sku_nao_cadastrado') {

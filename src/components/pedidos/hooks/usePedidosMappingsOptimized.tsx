@@ -150,10 +150,19 @@ export function usePedidosMappingsOptimized({
             let mapping: MapeamentoVerificacao | undefined;
             if (skuParaVerificar && typeof skuParaVerificar === 'string') {
               // 🛡️ CORREÇÃO: usar verificarMapeamentos (plural) que retorna statusBaixa correto
-              const mappings = await MapeamentoService.verificarMapeamentos([String(skuParaVerificar).trim().toUpperCase()]);
+              const skuNormalizado = String(skuParaVerificar).trim().toUpperCase();
+              const mappings = await MapeamentoService.verificarMapeamentos([skuNormalizado]);
               mapping = mappings[0];
+              
+              // 🔍 DEBUG: Log do statusBaixa calculado
+              console.log(`📊 [Mapping] Pedido ${idUnico} | SKU: ${skuNormalizado} | Status: ${mapping?.statusBaixa}`, {
+                temMapeamento: mapping?.temMapeamento,
+                skuEstoque: mapping?.skuEstoque,
+                skuCadastradoNoEstoque: mapping?.skuCadastradoNoEstoque
+              });
             } else {
               mapping = { skuPedido: '', temMapeamento: false, statusBaixa: 'sem_mapear' };
+              console.warn(`⚠️ [Mapping] Pedido ${idUnico} sem SKU válido`);
             }
             
             if (mapping) {
