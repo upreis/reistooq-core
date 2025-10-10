@@ -40,6 +40,7 @@ interface PedidosTableProps {
   mapeamentosVerificacao?: Map<string, MapeamentoVerificacao>;
   visibleColumns: ColumnConfig[];
   debugInfo?: any;
+  renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -80,7 +81,8 @@ export function PedidosTable({
   onPageChange,
   mapeamentosVerificacao = new Map(),
   visibleColumns,
-  debugInfo
+  debugInfo,
+  renderStatusBaixa
 }: PedidosTableProps) {
   const [page, setPage] = useState(currentPage);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -240,6 +242,7 @@ export function PedidosTable({
                   temMapeamento={temMapeamento}
                   visibleColumns={visibleColumnConfigs}
                   rowId={rowId}
+                  renderStatusBaixa={renderStatusBaixa}
                 />
               );
             })}

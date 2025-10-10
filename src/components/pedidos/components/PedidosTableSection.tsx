@@ -678,39 +678,59 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                              );
                            }
                            
-                           // 🗂️ SEGUNDO: Verificar mapeamento completo (de-para)
-                           const temMapeamentoCompleto = mapping && (mapping.skuEstoque || mapping.skuKit);
-                           const temMapeamentoIncompleto = mapping && mapping.temMapeamento && !temMapeamentoCompleto;
+                           // 🛡️ SEGUNDO: Usar statusBaixa do mapping (sistema centralizado)
+                           const statusBaixa = mapping?.statusBaixa;
                            
                            let variant: "success" | "destructive" | "warning" | "outline" = "outline";
                            let texto = "Indefinido";
+                           let isClickable = false;
 
-                           if (temMapeamentoCompleto) {
+                           // 🛡️ PRIORIDADE 1: SKU não cadastrado no estoque (ERRO CRÍTICO)
+                           if (statusBaixa === 'sku_nao_cadastrado') {
+                             variant = "destructive";
+                             texto = "SKU não cadastrado no estoque";
+                             isClickable = false;
+                           }
+                           // 🛡️ PRIORIDADE 2: Sem estoque
+                           else if (statusBaixa === 'sem_estoque') {
+                             variant = "destructive";
+                             texto = "Sem Estoque";
+                             isClickable = false;
+                           }
+                           // ✅ PRIORIDADE 3: Pronto para baixar (tem mapeamento e SKU existe)
+                           else if (statusBaixa === 'pronto_baixar') {
                              variant = "success";
                              texto = "Pronto p/ Baixar";
-                            } else if (temMapeamentoIncompleto) {
-                              variant = "warning";
-                              texto = "Mapear Incompleto";
-                            } else {
-                              variant = "warning";
-                              texto = "Sem Mapear";
-                            }
+                             isClickable = false;
+                           }
+                           // ⚠️ PRIORIDADE 4: Sem mapear
+                           else if (statusBaixa === 'sem_mapear' || !mapping || !mapping.temMapeamento) {
+                             variant = "warning";
+                             texto = "Sem Mapear";
+                             isClickable = true;
+                           }
+                           // ⚠️ Fallback: Mapeamento incompleto
+                           else {
+                             variant = "warning";
+                             texto = "Mapear Incompleto";
+                             isClickable = true;
+                           }
 
                             return (
                               <Badge 
                                 variant={variant} 
                                 className={`text-xs text-center ${
-                                  (texto === "Mapear Incompleto" || texto === "Sem Mapear") 
+                                  isClickable
                                     ? "cursor-pointer hover:opacity-80 transition-opacity hover:shadow-md border-2 border-dashed border-amber-400" 
                                     : ""
                                 }`}
                                 title={
-                                  (texto === "Mapear Incompleto" || texto === "Sem Mapear")
+                                  isClickable
                                     ? "Clique para criar mapeamento"
                                     : undefined
                                 }
                                 onClick={() => {
-                                  if (texto === "Mapear Incompleto" || texto === "Sem Mapear") {
+                                  if (isClickable) {
                                     console.log('🔗 Abrindo modal de mapeamento para pedido (status_baixa):', {
                                       order,
                                       order_items: order.order_items,
