@@ -53,7 +53,10 @@ export class HistoricoDeleteService {
 
         if (composicaoError) {
           console.error('Erro ao buscar composição:', composicaoError);
-        } else if (composicao && composicao.length > 0) {
+        }
+        
+        // Se tem composição, reverter componentes
+        if (composicao && composicao.length > 0) {
           console.log(`📋 Composição encontrada com ${composicao.length} componentes`);
 
           // Reverter cada componente
@@ -99,7 +102,45 @@ export class HistoricoDeleteService {
             }
           }
         } else {
-          console.warn(`⚠️ Nenhuma composição encontrada para ${skuMapeado}`);
+          // 🔄 Se NÃO tem composição, reverter o produto principal diretamente
+          console.log(`⚠️ Nenhuma composição encontrada para ${skuMapeado} - Revertendo produto principal`);
+          
+          const { data: produtoPrincipal, error: produtoError } = await supabase
+            .from('produtos')
+            .select('id, quantidade_atual, sku_interno')
+            .eq('sku_interno', skuMapeado)
+            .maybeSingle();
+
+          if (!produtoError && produtoPrincipal) {
+            const novaQuantidade = (produtoPrincipal.quantidade_atual || 0) + quantidadePedido;
+
+            const { error: updateError } = await supabase
+              .from('produtos')
+              .update({ 
+                quantidade_atual: novaQuantidade,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', produtoPrincipal.id);
+
+            if (updateError) {
+              console.error(`Erro ao reverter estoque do produto principal ${skuMapeado}:`, updateError);
+            } else {
+              console.log(`✅ Estoque revertido (produto principal): ${skuMapeado} - De ${produtoPrincipal.quantidade_atual} para ${novaQuantidade}`);
+              
+              // Registrar movimentação
+              await supabase.from('movimentacoes_estoque').insert({
+                produto_id: produtoPrincipal.id,
+                tipo_movimentacao: 'entrada',
+                quantidade_anterior: produtoPrincipal.quantidade_atual,
+                quantidade_nova: novaQuantidade,
+                quantidade_movimentada: quantidadePedido,
+                motivo: 'exclusao_historico',
+                observacoes: `Reversão de estoque (produto principal) por exclusão do pedido ${vendaDataAny.numero_pedido || vendaDataAny.id_unico}`
+              });
+            }
+          } else {
+            console.error(`❌ Produto principal ${skuMapeado} não encontrado no estoque`);
+          }
         }
       }
       
