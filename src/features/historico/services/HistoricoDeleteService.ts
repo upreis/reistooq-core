@@ -6,17 +6,17 @@ export class HistoricoDeleteService {
   static async deleteItem(id: string): Promise<boolean> {
     try {
       // 🔍 BUSCAR dados do pedido antes de excluir para reverter estoque
-      // 🛡️ Usar get_historico_vendas_safe para buscar dados com RLS
+      // 🛡️ Usar get_historico_vendas_masked para buscar dados com RLS
       const hoje = new Date();
       const umAnoAtras = new Date(hoje.getTime() - 365 * 24 * 60 * 60 * 1000);
       
       // @ts-ignore - RPC função não está nos tipos gerados ainda
-      const { data: historicoData, error: fetchError } = await supabase.rpc('get_historico_vendas_safe', {
-        data_inicio: umAnoAtras.toISOString().split('T')[0],
-        data_fim: hoje.toISOString().split('T')[0],
-        filtro_status: null,
-        page_limit: 9999,
-        page_offset: 0
+      const { data: historicoData, error: fetchError } = await supabase.rpc('get_historico_vendas_masked', {
+        p_start: umAnoAtras.toISOString().split('T')[0],
+        p_end: hoje.toISOString().split('T')[0],
+        p_search: null,
+        p_limit: 9999,
+        p_offset: 0
       });
       
       if (fetchError || !historicoData || !Array.isArray(historicoData)) {
