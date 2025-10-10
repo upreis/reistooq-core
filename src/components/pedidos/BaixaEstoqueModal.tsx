@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Package, CheckCircle, AlertTriangle, Clock, Zap } from 'lucide-react';
+import { Package, CheckCircle, AlertTriangle, Clock, Zap, Database } from 'lucide-react';
 
 interface BaixaEstoqueModalProps {
   pedidos: Pedido[];
@@ -65,14 +65,15 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       if (!statusBaixaCalc) statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
       const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
-      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado (será validado no backend, mas já mostramos aviso)
+      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado
       let problema = null;
       if (!temMapeamento) {
         problema = 'Sem mapeamento';
+      } else if (statusBaixaCalc === 'sku_nao_cadastrado') {
+        problema = 'SKU não cadastrado no estoque';
       } else if (!temEstoque) {
         problema = 'Sem estoque';
       }
-      // Nota: validação de SKU não cadastrado será feita ao processar (backend)
       
       console.log(`🔍 DIAGNÓSTICO - Pedido ${pedido.numero || pedido.id}:`, {
         mapping_existe: !!mapping,
@@ -163,6 +164,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       case 'pronto_baixar': return <CheckCircle className="h-4 w-4 text-success" />;
       case 'sem_estoque': return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case 'sem_mapear': return <Clock className="h-4 w-4 text-warning" />;
+      case 'sku_nao_cadastrado': return <Database className="h-4 w-4 text-orange-500" />;
       default: return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -172,6 +174,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       case 'pronto_baixar': return <Badge variant="default" className="bg-success/10 text-success border-success/20">Pronto</Badge>;
       case 'sem_estoque': return <Badge variant="destructive">Sem Estoque</Badge>;
       case 'sem_mapear': return <Badge variant="secondary">Sem Mapeamento</Badge>;
+      case 'sku_nao_cadastrado': return <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">SKU sem cadastro no Estoque</Badge>;
       default: return <Badge variant="outline">Indefinido</Badge>;
     }
   };
