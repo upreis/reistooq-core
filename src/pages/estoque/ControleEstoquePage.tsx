@@ -519,22 +519,6 @@ export default function ControleEstoquePage() {
         
         <EstoqueSettings />
         
-        <ProductImportModal
-          trigger={
-            <Button variant="outline" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Importar Produtos
-            </Button>
-          }
-          onSuccess={() => {
-            loadProducts();
-            toast({
-              title: "Produtos importados",
-              description: "Os produtos foram importados com sucesso.",
-            });
-          }}
-        />
-        
         <Button variant="outline" size="sm" asChild>
           <Link to="/category-manager">
             <Settings className="h-4 w-4 mr-2" />
