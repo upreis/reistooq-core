@@ -65,12 +65,14 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       if (!statusBaixaCalc) statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
       const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
-      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado
+      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque
       let problema = null;
       if (!temMapeamento) {
         problema = 'Sem mapeamento';
       } else if (statusBaixaCalc === 'sku_nao_cadastrado') {
         problema = 'SKU não cadastrado no estoque';
+      } else if (statusBaixaCalc === 'sem_estoque') {
+        problema = 'Sem estoque (quantidade = 0)';
       } else if (!temEstoque) {
         problema = 'Sem estoque';
       }
@@ -120,11 +122,15 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
   const handleProcessar = async () => {
     console.log('🚀 Iniciando processamento OTIMIZADO de baixa de estoque');
     
-    // Filtrar apenas pedidos prontos para baixa
-    const pedidosProntos = pedidosAnalise.filter(p => p.temEstoque && p.temMapeamento);
+    // 🛡️ CRÍTICO: Filtrar apenas pedidos prontos (com mapeamento, cadastro E estoque disponível)
+    const pedidosProntos = pedidosAnalise.filter(p => 
+      p.temEstoque && 
+      p.temMapeamento && 
+      p.statusBaixa === 'pronto_baixar' // Só processar se statusBaixa === 'pronto_baixar'
+    );
     
     if (pedidosProntos.length === 0) {
-      alert('❌ Nenhum pedido está pronto para baixa. Verifique os mapeamentos e estoque.');
+      alert('❌ Nenhum pedido está pronto para baixa. Verifique os mapeamentos e estoque disponível.');
       return;
     }
     

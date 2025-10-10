@@ -55,22 +55,27 @@ export class MapeamentoService {
         await this.criarMapeamentosAutomaticos(skusSemMapeamento);
       }
 
-      // 🛡️ VERIFICAÇÃO CRÍTICA: Buscar todos os SKUs que existem na tabela produtos
+      // 🛡️ VERIFICAÇÃO CRÍTICA: Buscar todos os SKUs que existem na tabela produtos COM QUANTIDADE
       const skusParaVerificar = [...mapeamentosMap.values()]
         .map(m => m.skuEstoque)
         .filter((sku): sku is string => !!sku);
 
-      let skusNoProdutos = new Set<string>();
+      let produtosInfoMap = new Map<string, { existe: boolean; quantidade: number }>();
       
       if (skusParaVerificar.length > 0) {
         const { data: produtosExistentes, error: produtosError } = await supabase
           .from('produtos')
-          .select('sku_interno')
+          .select('sku_interno, quantidade_atual')
           .in('sku_interno', skusParaVerificar)
           .eq('ativo', true);
 
         if (!produtosError && produtosExistentes) {
-          skusNoProdutos = new Set(produtosExistentes.map(p => p.sku_interno));
+          produtosExistentes.forEach(p => {
+            produtosInfoMap.set(p.sku_interno, {
+              existe: true,
+              quantidade: p.quantidade_atual || 0
+            });
+          });
         }
       }
 
@@ -86,14 +91,22 @@ export class MapeamentoService {
         if (!temMapeamento || !skuEstoque) {
           // Sem mapeamento ou sem SKU de estoque definido
           statusBaixa = 'sem_mapear';
-        } else if (!skusNoProdutos.has(skuEstoque)) {
-          // Tem mapeamento mas o SKU não existe na tabela produtos
-          statusBaixa = 'sku_nao_cadastrado';
-          skuCadastradoNoEstoque = false;
         } else {
-          // Tem mapeamento e o SKU existe na tabela produtos
-          statusBaixa = 'pronto_baixar';
-          skuCadastradoNoEstoque = true;
+          const produtoInfo = produtosInfoMap.get(skuEstoque);
+          
+          if (!produtoInfo?.existe) {
+            // Tem mapeamento mas o SKU não existe na tabela produtos
+            statusBaixa = 'sku_nao_cadastrado';
+            skuCadastradoNoEstoque = false;
+          } else if (produtoInfo.quantidade <= 0) {
+            // 🛡️ CRÍTICO: SKU existe mas quantidade é zero
+            statusBaixa = 'sem_estoque';
+            skuCadastradoNoEstoque = true;
+          } else {
+            // Tem mapeamento, SKU existe e tem estoque
+            statusBaixa = 'pronto_baixar';
+            skuCadastradoNoEstoque = true;
+          }
         }
 
         return {
@@ -128,11 +141,11 @@ export class MapeamentoService {
       temMapeamento: false
     };
 
-    // 🛡️ VERIFICAÇÃO CRÍTICA: Confirmar se o SKU está cadastrado na tabela produtos
+    // 🛡️ VERIFICAÇÃO CRÍTICA: Confirmar se o SKU está cadastrado na tabela produtos E TEM ESTOQUE
     if (mapeamento.temMapeamento && mapeamento.skuEstoque) {
       const { data: produtoExiste, error } = await supabase
         .from('produtos')
-        .select('id, ativo')
+        .select('id, ativo, quantidade_atual')
         .eq('sku_interno', mapeamento.skuEstoque)
         .eq('ativo', true)
         .maybeSingle();
@@ -142,6 +155,9 @@ export class MapeamentoService {
       // 🛡️ Calcular status da baixa
       if (!mapeamento.skuCadastradoNoEstoque) {
         mapeamento.statusBaixa = 'sku_nao_cadastrado';
+      } else if ((produtoExiste?.quantidade_atual || 0) <= 0) {
+        // 🛡️ CRÍTICO: SKU cadastrado mas sem estoque
+        mapeamento.statusBaixa = 'sem_estoque';
       } else {
         mapeamento.statusBaixa = 'pronto_baixar';
       }

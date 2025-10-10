@@ -157,13 +157,13 @@ export function useProcessarBaixaEstoque() {
           throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
         }
 
-        // 🛡️ VALIDAÇÃO CRÍTICA: Verificar se todos os SKUs existem no estoque ANTES de buscar composições
-        console.log('🔍 Verificando existência dos SKUs no estoque...');
+        // 🛡️ VALIDAÇÃO CRÍTICA: Verificar se todos os SKUs existem no estoque E TÊM QUANTIDADE ANTES de buscar composições
+        console.log('🔍 Verificando existência e quantidade dos SKUs no estoque...');
         const skusParaValidar = baixas.map(b => b.sku);
         
         const { data: produtosExistentes, error: validacaoError } = await supabase
           .from('produtos')
-          .select('sku_interno')
+          .select('sku_interno, quantidade_atual')
           .in('sku_interno', skusParaValidar);
         
         if (validacaoError) {
@@ -171,8 +171,12 @@ export function useProcessarBaixaEstoque() {
           throw new Error('Erro ao validar produtos no estoque');
         }
         
-        const skusExistentes = new Set(produtosExistentes?.map(p => p.sku_interno) || []);
-        const skusNaoEncontrados = skusParaValidar.filter(sku => !skusExistentes.has(sku));
+        const produtosMap = new Map(produtosExistentes?.map(p => [p.sku_interno, p.quantidade_atual || 0]) || []);
+        const skusNaoEncontrados = skusParaValidar.filter(sku => !produtosMap.has(sku));
+        const skusSemEstoque = skusParaValidar.filter(sku => {
+          const qtd = produtosMap.get(sku);
+          return qtd !== undefined && qtd <= 0;
+        });
         
         if (skusNaoEncontrados.length > 0) {
           const erroMsg = `❌ SKU(s) não cadastrado(s) no estoque: ${skusNaoEncontrados.join(', ')}. Por favor, cadastre os produtos antes de fazer a baixa.`;
@@ -180,7 +184,13 @@ export function useProcessarBaixaEstoque() {
           throw new Error(erroMsg);
         }
         
-        console.log('✅ Todos os SKUs estão cadastrados no estoque');
+        if (skusSemEstoque.length > 0) {
+          const erroMsg = `❌ SKU(s) sem estoque disponível (quantidade = 0): ${skusSemEstoque.join(', ')}. Por favor, reponha o estoque antes de fazer a baixa.`;
+          console.error(erroMsg);
+          throw new Error(erroMsg);
+        }
+        
+        console.log('✅ Todos os SKUs estão cadastrados e possuem estoque disponível');
         
         // 🔍 ETAPA NOVA: Buscar composições e preparar baixa dos componentes
         console.log('🔍 Buscando composições dos produtos...');
