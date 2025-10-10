@@ -56,7 +56,24 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
 
   if (!showHierarchy) {
     // Modo tabela tradicional
-    return <EstoqueTable {...props} />;
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowHierarchy(true)}
+          >
+            <Users className="w-4 h-4 mr-2" />
+            Visualização Hierárquica
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            {props.products.length} produtos
+          </div>
+        </div>
+        <EstoqueTable {...props} />
+      </div>
+    );
   }
 
   return (
