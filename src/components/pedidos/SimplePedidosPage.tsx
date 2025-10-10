@@ -320,7 +320,9 @@ function SimplePedidosPage({ className }: Props) {
         case 'pronto_baixar': {
           const temMapeamentoCompleto = !!(mapping && (mapping.skuEstoque || mapping.skuKit));
           const baixado = isPedidoProcessado(order);
-          return temMapeamentoCompleto && !baixado && mapping.statusBaixa !== 'sku_nao_cadastrado' && mapping.statusBaixa !== 'sem_estoque';
+          // ✅ CRÍTICO: Só está pronto se NÃO houver problemas (sku não cadastrado OU sem estoque)
+          const semProblemas = mapping?.statusBaixa !== 'sku_nao_cadastrado' && mapping?.statusBaixa !== 'sem_estoque';
+          return temMapeamentoCompleto && !baixado && semProblemas;
         }
         case 'mapear_incompleto': {
           const temIncompleto = !!(mapping && mapping.temMapeamento && !(mapping.skuEstoque || mapping.skuKit));
