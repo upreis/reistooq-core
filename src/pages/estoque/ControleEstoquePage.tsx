@@ -76,8 +76,15 @@ export default function ControleEstoquePage() {
     try {
       setLoading(true);
       
-      // SEMPRE buscar apenas produtos ativos (filtro padrão)
-      const ativoFilter = true;
+      // Determinar o filtro de ativo/inativo baseado no selectedStatus
+      let ativoFilter: boolean | undefined;
+      
+      if (selectedStatus === "active_only") {
+        ativoFilter = true;
+      } else if (selectedStatus === "inactive_only") {
+        ativoFilter = false;
+      }
+      // Se for "all" ou outros status, não filtra por ativo (undefined)
       
       // Buscar produtos do banco
       const allProducts = await getProducts({
