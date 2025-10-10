@@ -157,6 +157,31 @@ export function useProcessarBaixaEstoque() {
           throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
         }
 
+        // 🛡️ VALIDAÇÃO CRÍTICA: Verificar se todos os SKUs existem no estoque ANTES de buscar composições
+        console.log('🔍 Verificando existência dos SKUs no estoque...');
+        const skusParaValidar = baixas.map(b => b.sku);
+        
+        const { data: produtosExistentes, error: validacaoError } = await supabase
+          .from('produtos')
+          .select('sku_interno')
+          .in('sku_interno', skusParaValidar);
+        
+        if (validacaoError) {
+          console.error('❌ Erro ao validar SKUs no estoque:', validacaoError);
+          throw new Error('Erro ao validar produtos no estoque');
+        }
+        
+        const skusExistentes = new Set(produtosExistentes?.map(p => p.sku_interno) || []);
+        const skusNaoEncontrados = skusParaValidar.filter(sku => !skusExistentes.has(sku));
+        
+        if (skusNaoEncontrados.length > 0) {
+          const erroMsg = `❌ SKU(s) não cadastrado(s) no estoque: ${skusNaoEncontrados.join(', ')}. Por favor, cadastre os produtos antes de fazer a baixa.`;
+          console.error(erroMsg);
+          throw new Error(erroMsg);
+        }
+        
+        console.log('✅ Todos os SKUs estão cadastrados no estoque');
+        
         // 🔍 ETAPA NOVA: Buscar composições e preparar baixa dos componentes
         console.log('🔍 Buscando composições dos produtos...');
         const baixasComponentes: Array<{ sku: string; quantidade: number }> = [];

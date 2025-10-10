@@ -58,20 +58,32 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
     
     return pedidos.map(pedido => {
       const mapping = contextoDaUI?.mappingData?.get(pedido.id);
-      const temMapeamento = !!(mapping?.skuKit || (pedido as any).sku_kit);
+      const skuKit = mapping?.skuKit || (pedido as any).sku_kit;
+      const temMapeamento = !!skuKit;
       const quantidade = Number((pedido as any).total_itens) || 0;
       let statusBaixaCalc = mapping?.statusBaixa as string | undefined;
       if (!statusBaixaCalc) statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
       const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
+      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado (será validado no backend, mas já mostramos aviso)
+      let problema = null;
+      if (!temMapeamento) {
+        problema = 'Sem mapeamento';
+      } else if (!temEstoque) {
+        problema = 'Sem estoque';
+      }
+      // Nota: validação de SKU não cadastrado será feita ao processar (backend)
+      
       console.log(`🔍 DIAGNÓSTICO - Pedido ${pedido.numero || pedido.id}:`, {
         mapping_existe: !!mapping,
         skuKit_map: mapping?.skuKit,
         skuKit_pedido: (pedido as any).sku_kit,
+        skuKit_final: skuKit,
         statusBaixa: statusBaixaCalc,
         temMapeamento,
         temEstoque,
-        total_itens: (pedido as any).total_itens
+        total_itens: (pedido as any).total_itens,
+        problema
       });
       
       return {
@@ -79,10 +91,9 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
         temMapeamento,
         temEstoque,
         statusBaixa: statusBaixaCalc,
-        skuKit: mapping?.skuKit || (pedido as any).sku_kit,
+        skuKit,
         quantidade,
-        problema: !temMapeamento ? 'Sem mapeamento' : 
-                 (!temEstoque ? 'Sem estoque' : null)
+        problema
       } as any;
     });
   }, [pedidos, contextoDaUI]);
