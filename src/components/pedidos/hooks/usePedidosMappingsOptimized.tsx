@@ -133,18 +133,27 @@ export function usePedidosMappingsOptimized({
               }
             }
 
-            // Processar mapeamento - extrair SKU do pedido e consultar serviço
+            // 🛡️ CORREÇÃO CRÍTICA: Extrair SKU do pedido corretamente
             let skuParaVerificar: string | undefined;
+            
             try {
-              const skusExtraidos = extrairSkusDoPedido(order);
-              skuParaVerificar = skusExtraidos[0]?.sku
-                || order?.sku_kit
-                || order?.order_items?.[0]?.item?.seller_sku
-                || order?.itens?.[0]?.sku
-                || order?.sku
-                || order?.seller_sku;
-            } catch (_) {
-              skuParaVerificar = order?.sku_kit || order?.sku || order?.seller_sku;
+              // Primeiro: tentar estrutura order_items (Mercado Livre)
+              if (order?.order_items && Array.isArray(order.order_items) && order.order_items.length > 0) {
+                skuParaVerificar = order.order_items[0]?.item?.seller_sku;
+              }
+              
+              // Segundo: tentar unified.order_items
+              if (!skuParaVerificar && order?.unified?.order_items && Array.isArray(order.unified.order_items)) {
+                skuParaVerificar = order.unified.order_items[0]?.item?.seller_sku;
+              }
+              
+              // Terceiro: tentar campos diretos
+              if (!skuParaVerificar) {
+                skuParaVerificar = order?.sku_kit || order?.sku || order?.seller_sku || order?.unified?.sku;
+              }
+            } catch (extractError) {
+              console.warn(`⚠️ [Mapping] Erro ao extrair SKU do pedido ${idUnico}:`, extractError);
+              skuParaVerificar = undefined;
             }
 
             let mapping: MapeamentoVerificacao | undefined;
