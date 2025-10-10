@@ -210,7 +210,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           
                           if (group.parentProduct?.sku_pai) {
                             return (
-                              <Badge variant="secondary" className="text-xs bg-blue-600/20 dark:bg-blue-400/20 text-blue-900 dark:text-blue-100">
+                              <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
                                 SKU Filho
                               </Badge>
                             );
