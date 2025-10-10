@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -21,6 +21,13 @@ export function EstoqueSettings() {
 
   const { toast } = useToast();
 
+  // Atualizar localConfig quando o dialog abrir ou config mudar
+  useEffect(() => {
+    if (dialogOpen) {
+      setLocalConfig(config);
+    }
+  }, [dialogOpen, config]);
+
   const handleConfigChange = (section: keyof typeof config, key: string, value: any) => {
     setLocalConfig(prev => ({
       ...prev,
@@ -42,6 +49,11 @@ export function EstoqueSettings() {
           description: "As configurações do estoque foram atualizadas com sucesso.",
         });
         setDialogOpen(false);
+        
+        // Forçar reload da página para aplicar as mudanças
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       } else {
         throw new Error("Falha ao salvar");
       }
@@ -57,12 +69,18 @@ export function EstoqueSettings() {
   };
 
   const handleResetToDefaults = () => {
-    resetToDefaults();
-    setLocalConfig(config);
-    toast({
-      title: "Configurações restauradas",
-      description: "As configurações foram restauradas para os valores padrão.",
-    });
+    const success = resetToDefaults();
+    if (success) {
+      // Forçar reload das configurações
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      
+      toast({
+        title: "Configurações restauradas",
+        description: "As configurações foram restauradas para os valores padrão.",
+      });
+    }
   };
 
   return (
