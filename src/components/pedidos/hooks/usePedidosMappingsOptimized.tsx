@@ -149,9 +149,11 @@ export function usePedidosMappingsOptimized({
 
             let mapping: MapeamentoVerificacao | undefined;
             if (skuParaVerificar && typeof skuParaVerificar === 'string') {
-              mapping = await MapeamentoService.verificarMapeamento(String(skuParaVerificar).trim().toUpperCase());
+              // 🛡️ CORREÇÃO: usar verificarMapeamentos (plural) que retorna statusBaixa correto
+              const mappings = await MapeamentoService.verificarMapeamentos([String(skuParaVerificar).trim().toUpperCase()]);
+              mapping = mappings[0];
             } else {
-              mapping = { skuPedido: '', temMapeamento: false };
+              mapping = { skuPedido: '', temMapeamento: false, statusBaixa: 'sem_mapear' };
             }
             
             if (mapping) {
