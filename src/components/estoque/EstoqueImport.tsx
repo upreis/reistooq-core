@@ -50,7 +50,7 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   const downloadTemplate = (format: 'csv' | 'xlsx' = templateFormat) => {
-    const headers = ['sku_interno', 'nome', 'descricao', 'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo', 'preco_venda', 'codigo_barras', 'localizacao', 'categoria', 'sku_pai', 'ativo'];
+    const headers = ['sku_interno', 'nome', 'descricao', 'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo', 'preco_venda', 'codigo_barras', 'localizacao', 'categoria', 'sku_pai', 'ativo', 'peso_liquido', 'peso_bruto', 'ncm', 'codigo_cest', 'sob_encomenda', 'dias_preparacao', 'unidade_medida', 'numero_volumes', 'tipo_embalagem', 'dimensoes', 'origem'];
     const exampleData = [
       {
         sku_interno: 'EXEMPLO-001',
@@ -65,7 +65,18 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
         localizacao: 'Setor A',
         categoria: 'Eletrônicos',
         sku_pai: '',
-        ativo: true
+        ativo: true,
+        peso_liquido: 1.5,
+        peso_bruto: 2.0,
+        ncm: '85171231',
+        codigo_cest: '01.001.00',
+        sob_encomenda: 'Não',
+        dias_preparacao: 5,
+        unidade_medida: 'UN',
+        numero_volumes: 1,
+        tipo_embalagem: 'Caixa',
+        dimensoes: '20x15x10',
+        origem: 'Nacional'
       },
       {
         sku_interno: 'EXEMPLO-002',
@@ -80,7 +91,18 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
         localizacao: 'Setor A',
         categoria: 'Eletrônicos',
         sku_pai: 'EXEMPLO-001',
-        ativo: true
+        ativo: true,
+        peso_liquido: 1.2,
+        peso_bruto: 1.8,
+        ncm: '85171231',
+        codigo_cest: '01.001.00',
+        sob_encomenda: 'Não',
+        dias_preparacao: 3,
+        unidade_medida: 'UN',
+        numero_volumes: 1,
+        tipo_embalagem: 'Caixa',
+        dimensoes: '18x12x8',
+        origem: 'Nacional'
       }
     ];
 
@@ -94,8 +116,8 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
       // Criar CSV
       const template = [
         headers.join(','),
-        'EXEMPLO-001,Produto Exemplo,Descrição do produto exemplo,10,5,50,15.00,29.90,1234567890123,Setor A,Eletrônicos,,true',
-        'EXEMPLO-002,Produto Filho,Variação do produto pai,5,2,20,12.00,24.90,1234567890124,Setor A,Eletrônicos,EXEMPLO-001,true'
+        'EXEMPLO-001,Produto Exemplo,Descrição do produto exemplo,10,5,50,15.00,29.90,1234567890123,Setor A,Eletrônicos,,true,1.5,2.0,85171231,01.001.00,Não,5,UN,1,Caixa,20x15x10,Nacional',
+        'EXEMPLO-002,Produto Filho,Variação do produto pai,5,2,20,12.00,24.90,1234567890124,Setor A,Eletrônicos,EXEMPLO-001,true,1.2,1.8,85171231,01.001.00,Não,3,UN,1,Caixa,18x12x8,Nacional'
       ].join('\n');
 
       const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });

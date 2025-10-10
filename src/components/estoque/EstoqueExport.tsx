@@ -34,6 +34,17 @@ const availableFields = [
   { id: 'localizacao', label: 'Localização' },
   { id: 'categoria', label: 'Categoria' },
   { id: 'ativo', label: 'Status' },
+  { id: 'peso_liquido', label: 'Peso Líquido (Kg)' },
+  { id: 'peso_bruto', label: 'Peso Bruto (Kg)' },
+  { id: 'ncm', label: 'NCM' },
+  { id: 'codigo_cest', label: 'Código CEST' },
+  { id: 'sob_encomenda', label: 'Sob Encomenda' },
+  { id: 'dias_preparacao', label: 'Dias para Preparação' },
+  { id: 'unidade_medida', label: 'Unid. Medida' },
+  { id: 'numero_volumes', label: 'Nº Volumes' },
+  { id: 'tipo_embalagem', label: 'Tipo Embalagem' },
+  { id: 'dimensoes', label: 'Dimensões (cm)' },
+  { id: 'origem', label: 'Origem' },
 ];
 
 export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps) {
