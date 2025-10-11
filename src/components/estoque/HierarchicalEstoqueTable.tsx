@@ -273,10 +273,11 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         <div className="text-xs text-muted-foreground mb-2 pl-6">
                           Variações do {group.parentSku}:
                         </div>
-                        <div className="pl-6 [&_tr]:!bg-[#3a3426] [&_tr]:!border-2 [&_tr]:!border-[#a89968]">
+                        <div className="pl-6">
                           <EstoqueTable
                             {...props}
                             products={group.children}
+                            rowClassName="!bg-[#3a3426] !border-[#a89968] hover:!bg-[#443d2e]"
                           />
                         </div>
                       </div>
