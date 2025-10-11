@@ -124,22 +124,15 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           const isExpanded = expandedGroups.has(group.parentSku);
           const hasChildren = group.children.length > 0;
           const status = getGroupStatus(group);
-          
-          // Alternar cores dos cards
-          const cardBgClass = index % 2 === 0 ? "bg-muted/30" : "bg-background";
-          // Alternar cores das linhas de produto com maior contraste
-          const rowBgClass = index % 2 === 0 
-            ? "bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
-            : "bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]";
 
           return (
-            <div key={group.parentSku} className={`border-2 border-gray-700 rounded-lg ${cardBgClass}`}>
+            <div key={group.parentSku} className="border-2 border-gray-700 rounded-lg bg-[hsl(213_48%_18%)]">
               {/* Linha do SKU Pai */}
               <Collapsible
                 open={isExpanded}
                 onOpenChange={() => hasChildren && toggleGroup(group.parentSku)}
               >
-                <div className={`flex items-center p-4 ${rowBgClass}`}>
+                <div className="flex items-center p-4 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]">
                   {/* Checkbox de seleção do produto pai - APENAS SE NÃO TIVER FILHOS */}
                   {group.parentProduct && !hasChildren && (
                     <div className="mr-3" onClick={(e) => e.stopPropagation()}>
