@@ -127,6 +127,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           
           // Alternar cores dos cards
           const cardBgClass = index % 2 === 0 ? "bg-muted/30" : "bg-background";
+          // Alternar cores das linhas de produto
+          const rowBgClass = index % 2 === 0 ? "bg-black hover:bg-black/90" : "bg-[hsl(213_48%_12%)] hover:bg-[hsl(213_48%_15%)]";
 
           return (
             <div key={group.parentSku} className={`border rounded-lg ${cardBgClass}`}>
@@ -135,7 +137,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 open={isExpanded}
                 onOpenChange={() => hasChildren && toggleGroup(group.parentSku)}
               >
-                <div className="flex items-center p-4 bg-black hover:bg-black/90">
+                <div className={`flex items-center p-4 ${rowBgClass}`}>
                   {/* Checkbox de seleção do produto pai - APENAS SE NÃO TIVER FILHOS */}
                   {group.parentProduct && !hasChildren && (
                     <div className="mr-3" onClick={(e) => e.stopPropagation()}>
