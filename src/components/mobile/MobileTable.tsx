@@ -149,7 +149,9 @@ export default function MobileTable({
                     "grid gap-2 py-2 px-4 rounded-md border-2 transition-colors",
                     isSelected 
                       ? "bg-primary/10 border-primary/20" 
-                      : "border-gray-700 bg-[hsl(213_48%_15%)] hover:bg-[hsl(213_48%_17%)]",
+                      : index % 2 === 0 
+                        ? "border-gray-700 bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
+                        : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
