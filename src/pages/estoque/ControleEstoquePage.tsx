@@ -551,25 +551,27 @@ export default function ControleEstoquePage() {
       />
 
       {/* Tabela de produtos */}
-      <TableWrapper>
-        {loading ? (
-          <EstoqueSkeleton />
-        ) : (
-          <HierarchicalEstoqueTable
-            products={paginatedProducts}
-            onSort={() => {}}
-            sortBy=""
-            sortOrder="desc"
-            selectedProducts={selectedProducts}
-            onSelectProduct={handleSelectProduct}
-            onSelectAll={handleSelectAll}
-            onStockMovement={handleStockMovement}
-            onEditProduct={handleEditProduct}
-            onEditParentProduct={handleEditParentProduct}
-            onDeleteProduct={handleDeleteProduct}
-          />
-        )}
-      </TableWrapper>
+      <div className="bg-[hsl(213_48%_8%)] dark:bg-[hsl(213_48%_8%)] p-4 rounded-lg">
+        <TableWrapper>
+          {loading ? (
+            <EstoqueSkeleton />
+          ) : (
+            <HierarchicalEstoqueTable
+              products={paginatedProducts}
+              onSort={() => {}}
+              sortBy=""
+              sortOrder="desc"
+              selectedProducts={selectedProducts}
+              onSelectProduct={handleSelectProduct}
+              onSelectAll={handleSelectAll}
+              onStockMovement={handleStockMovement}
+              onEditProduct={handleEditProduct}
+              onEditParentProduct={handleEditParentProduct}
+              onDeleteProduct={handleDeleteProduct}
+            />
+          )}
+        </TableWrapper>
+      </div>
 
       {/* Paginação */}
       {!loading && finalFilteredProducts.length > 0 && (
