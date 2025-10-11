@@ -277,7 +277,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           <EstoqueTable
                             {...props}
                             products={group.children}
-                            rowClassName="!bg-[#3a3426] !border-[#a89968] hover:!bg-[#443d2e]"
+                            rowClassName="!bg-primary/10 !border-primary/20"
                           />
                         </div>
                       </div>
