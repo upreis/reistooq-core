@@ -308,18 +308,6 @@ export function EstoqueFilters({
               </div>
             </PopoverContent>
           </Popover>
-
-          {/* Botão Filtros sempre visível - apenas no desktop */}
-          <Button variant="outline" className="gap-2">
-            <Filter className="w-4 h-4" />
-            Filtros
-            {hasActiveFilters && (
-              <Badge variant="secondary" className="ml-1">
-                •
-              </Badge>
-            )}
-          </Button>
-
           {/* Limpar filtros */}
           {hasActiveFilters && (
             <Button variant="outline" onClick={onClearFilters} className="gap-2">
