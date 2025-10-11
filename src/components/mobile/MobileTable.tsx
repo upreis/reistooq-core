@@ -105,7 +105,7 @@ export default function MobileTable({
       <div className="w-full overflow-x-auto">
         <div className="min-w-max">
           {/* Table Header */}
-          <div className="grid gap-2 py-3 px-4 bg-muted/50 rounded-lg text-xs font-medium mb-4"
+          <div className="grid gap-2 py-3 px-4 bg-black rounded-lg text-xs font-medium mb-4"
                style={{ gridTemplateColumns: fullGridTemplate }}>
             {selectableItems && (
               <div className="flex items-center">
@@ -149,9 +149,7 @@ export default function MobileTable({
                     "grid gap-2 py-2 px-4 rounded-md border transition-colors",
                     isSelected 
                       ? "bg-primary/10 border-primary/20" 
-                      : index % 2 === 0 
-                        ? "border-border bg-muted/30 hover:bg-muted/50" 
-                        : "border-border bg-background hover:bg-muted/50",
+                      : "border-border bg-black hover:bg-black/90",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
