@@ -287,10 +287,7 @@
     color: #0F2A4A;
   }
 
-  /* Card Styling */
-  .card {
-    border: 1px solid #E5E7EB;
-  }
+  /* Card Styling - Removed to use component styling */
 
   /* Table Sticky Headers */
   .table thead {
