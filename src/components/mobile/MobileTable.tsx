@@ -146,10 +146,10 @@ export default function MobileTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "grid gap-2 py-2 px-4 rounded-md border-2 transition-colors",
+                    "grid gap-2 py-2 px-4 rounded-md border transition-colors",
                     isSelected 
-                      ? "bg-primary/10 border-primary/40" 
-                      : "border-muted-foreground/25 hover:bg-muted/50 hover:border-muted-foreground/35",
+                      ? "bg-primary/10 border-primary/20" 
+                      : "border-border hover:bg-muted/50",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
@@ -242,10 +242,10 @@ export default function MobileTable({
           <Card 
             key={item[keyField]}
             className={cn(
-              "transition-colors border-l-4 border-2",
+              "transition-colors border-l-4",
               isSelected 
-                ? "border-l-primary bg-primary/5 border-primary/40" 
-                : "border-l-transparent border-muted-foreground/25 hover:bg-muted/50 hover:border-muted-foreground/35",
+                ? "border-l-primary bg-primary/5 border-primary/20" 
+                : "border-l-transparent border-border hover:bg-muted/50",
               onRowClick && "cursor-pointer"
             )}
             onClick={() => onRowClick?.(item)}

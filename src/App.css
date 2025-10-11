@@ -33,7 +33,9 @@
   }
 }
 
-/* Card styling moved to component level */
+.card {
+  padding: 2em;
+}
 
 .read-the-docs {
   color: #888;
