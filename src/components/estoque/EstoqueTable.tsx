@@ -58,6 +58,7 @@ interface EstoqueTableProps {
   sortBy: string;
   sortOrder: 'asc' | 'desc';
   onSort: (field: string) => void;
+  rowClassName?: string; // Nova prop para classes customizadas
 }
 
 export function EstoqueTable({
@@ -71,6 +72,7 @@ export function EstoqueTable({
   sortBy,
   sortOrder,
   onSort,
+  rowClassName,
 }: EstoqueTableProps) {
   const [movementModalOpen, setMovementModalOpen] = useState(false);
   const [selectedProductForMovement, setSelectedProductForMovement] = useState<Product | null>(null);
@@ -474,6 +476,7 @@ export function EstoqueTable({
           setSelectedProductForDetails(product);
           setDetailsModalOpen(true);
         }}
+        rowClassName={rowClassName}
       />
 
       {/* Movement Modal */}
