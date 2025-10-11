@@ -947,7 +947,7 @@ useEffect(() => {
         
         <TabsList className="grid w-full grid-cols-2 max-w-lg">
           <TabsTrigger value="orders" className="flex items-center gap-2">
-            📦 Orders
+            📦 Vendas
           </TabsTrigger>
           <TabsTrigger value="devolucoes" className="flex items-center gap-2">
             🔄 Devoluções de Vendas
