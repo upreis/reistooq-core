@@ -61,13 +61,13 @@ export function DataListCard({
 
   return (
     <Card className={cn(
-      "hover:shadow-sm transition-shadow duration-200",
-      isSelected && "ring-2 ring-primary",
+      "hover:shadow-md hover:border-primary/40 transition-all duration-200 mb-4",
+      isSelected && "ring-2 ring-primary border-primary",
       className
     )}>
       <CardContent className={cn(
-        "p-4",
-        compact && "p-3"
+        "p-4 space-y-4",
+        compact && "p-3 space-y-3"
       )}>
         {/* Header: Checkbox + Main Field + Actions */}
         <div className="flex items-start gap-3 mb-3">
@@ -128,7 +128,7 @@ export function DataListCard({
 
         {/* Fields Grid */}
         <div className={cn(
-          "grid gap-2",
+          "grid gap-3 pt-3 border-t border-border/40",
           compact ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2"
         )}>
           {otherFields.map((field) => (
