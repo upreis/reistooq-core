@@ -49,7 +49,7 @@ export default function ControleEstoquePage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(20);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [parentProductModalOpen, setParentProductModalOpen] = useState(false);
   const [childProductModalOpen, setChildProductModalOpen] = useState(false);
@@ -573,9 +573,28 @@ export default function ControleEstoquePage() {
 
       {/* Paginação */}
       {!loading && finalFilteredProducts.length > 0 && (
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
-            Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, finalFilteredProducts.length)} de {finalFilteredProducts.length} produtos
+        <div className="flex items-center justify-between mt-4 flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, finalFilteredProducts.length)} de {finalFilteredProducts.length} produtos
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Itens por página:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="text-sm border border-input bg-background px-3 py-1 rounded-md"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={200}>200</option>
+              </select>
+            </div>
           </div>
           
           <Pagination>
