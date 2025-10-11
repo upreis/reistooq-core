@@ -94,14 +94,13 @@ export const useProducts = () => {
 
     console.log('🔍 Buscando produtos no banco...', filters);
 
-    // Filtro de ativo/inativo: padrão = apenas ativos; 'all' = todos
-    if (filters?.ativo === 'all') {
-      // não aplicar filtro de ativo
+    // Filtro de ativo/inativo: apenas aplicar se especificado
+    if (filters?.ativo === true) {
+      query = query.eq('ativo', true);
     } else if (filters?.ativo === false) {
       query = query.eq('ativo', false);
-    } else {
-      query = query.eq('ativo', true);
     }
+    // Se ativo for undefined, não aplicar nenhum filtro (mostrar todos)
 
     if (filters?.search) {
       query = query.or(`nome.ilike.%${filters.search}%,sku_interno.ilike.%${filters.search}%,codigo_barras.ilike.%${filters.search}%`);
