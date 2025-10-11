@@ -24,7 +24,7 @@ import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 import { mapMLShippingSubstatus, ML_SHIPPING_SUBSTATUS_MAP, getStatusBadgeVariant as getMLStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { listPedidos } from '@/services/pedidos';
@@ -71,7 +71,7 @@ import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
 
-import { DevolucoesMercadoLivreTab } from './devolucoes/DevolucoesMercadoLivreTab';
+
 import { FEATURES } from '@/config/features';
 import { ProviderSelector } from './components/ProviderSelector';
 
@@ -915,7 +915,7 @@ useEffect(() => {
 
   // Render principal
   return (
-    <Tabs defaultValue="orders" className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col">
       {/* Header com abas */}
       <div className="border-b bg-background sticky top-0 z-10 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
@@ -925,19 +925,10 @@ useEffect(() => {
             Pedidos
           </div>
         </div>
-        
-        <TabsList className="grid w-full grid-cols-2 max-w-lg">
-          <TabsTrigger value="orders" className="flex items-center gap-2">
-            📦 Orders
-          </TabsTrigger>
-          <TabsTrigger value="devolucoes" className="flex items-center gap-2">
-            🔄 Devoluções ML
-          </TabsTrigger>
-        </TabsList>
       </div>
 
-      {/* Conteúdo das abas */}
-      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
+      {/* Conteúdo principal */}
+      <div className="flex-1 overflow-auto m-0 p-6">
         <div className="space-y-6">
           {/* 📊 DASHBOARD INTELIGENTE */}
           <ErrorBoundary name="PedidosDashboardSection">
@@ -1219,15 +1210,10 @@ useEffect(() => {
       />
             </ErrorBoundary>
         </div>
-      </TabsContent>
-
-
-      <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
-        <DevolucoesMercadoLivreTab />
-      </TabsContent>
+      </div>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
-    </Tabs>
+    </div>
   );
 }
 
