@@ -551,7 +551,7 @@ export default function ControleEstoquePage() {
       />
 
       {/* Tabela de produtos */}
-      <div className="bg-black p-4 rounded-lg">
+      <div className="bg-[hsl(213_48%_8%)] dark:bg-[hsl(213_48%_8%)] p-4 rounded-lg">
         <TableWrapper>
           {loading ? (
             <EstoqueSkeleton />
