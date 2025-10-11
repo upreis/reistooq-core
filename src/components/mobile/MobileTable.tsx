@@ -139,7 +139,7 @@ export default function MobileTable({
 
           {/* Table Rows */}
           <div className="space-y-2">
-            {data.map((item) => {
+            {data.map((item, index) => {
               const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
               
               return (
@@ -149,7 +149,9 @@ export default function MobileTable({
                     "grid gap-2 py-2 px-4 rounded-md border transition-colors",
                     isSelected 
                       ? "bg-primary/10 border-primary/20" 
-                      : "border-border hover:bg-muted/50",
+                      : index % 2 === 0 
+                        ? "border-border bg-muted/30 hover:bg-muted/50" 
+                        : "border-border bg-background hover:bg-muted/50",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
