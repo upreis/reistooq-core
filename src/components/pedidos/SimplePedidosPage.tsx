@@ -24,6 +24,7 @@ import { BaixaEstoqueModal } from './BaixaEstoqueModal';
 import { MapeamentoService, MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { Pedido } from '@/types/pedido';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 import { mapMLShippingSubstatus, ML_SHIPPING_SUBSTATUS_MAP, getStatusBadgeVariant as getMLStatusBadgeVariant } from '@/utils/mlStatusMapping';
@@ -70,6 +71,8 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
+import DevolucaoAvancadasTab from '@/components/ml/DevolucaoAvancadasTab';
+import { useQuery } from "@tanstack/react-query";
 
 
 import { FEATURES } from '@/config/features';
@@ -913,9 +916,25 @@ useEffect(() => {
   }, [orders, mappingData]);
 
 
+  // Buscar contas ML para a aba de devoluções
+  const { data: mlAccounts } = useQuery({
+    queryKey: ["ml-accounts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("integration_accounts")
+        .select("id, name, account_identifier, organization_id, is_active")
+        .eq("provider", "mercadolivre")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
   // Render principal
   return (
-    <div className="h-screen flex flex-col">
+    <Tabs defaultValue="orders" className="h-screen flex flex-col">
       {/* Header com abas */}
       <div className="border-b bg-background sticky top-0 z-10 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
@@ -925,10 +944,19 @@ useEffect(() => {
             Pedidos
           </div>
         </div>
+        
+        <TabsList className="grid w-full grid-cols-2 max-w-lg">
+          <TabsTrigger value="orders" className="flex items-center gap-2">
+            📦 Orders
+          </TabsTrigger>
+          <TabsTrigger value="devolucoes" className="flex items-center gap-2">
+            🔄 Devoluções de Vendas
+          </TabsTrigger>
+        </TabsList>
       </div>
 
-      {/* Conteúdo principal */}
-      <div className="flex-1 overflow-auto m-0 p-6">
+      {/* Conteúdo das abas */}
+      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
         <div className="space-y-6">
           {/* 📊 DASHBOARD INTELIGENTE */}
           <ErrorBoundary name="PedidosDashboardSection">
@@ -1210,10 +1238,18 @@ useEffect(() => {
       />
             </ErrorBoundary>
         </div>
-      </div>
+      </TabsContent>
+
+      <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
+        <DevolucaoAvancadasTab 
+          mlAccounts={mlAccounts || []}
+          refetch={async () => {}}
+          existingDevolucoes={[]}
+        />
+      </TabsContent>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
-    </div>
+    </Tabs>
   );
 }
 
