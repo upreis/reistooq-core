@@ -120,13 +120,16 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
 
       {/* Grupos hierárquicos */}
       <div className="space-y-2">
-        {groups.map((group) => {
+        {groups.map((group, index) => {
           const isExpanded = expandedGroups.has(group.parentSku);
           const hasChildren = group.children.length > 0;
           const status = getGroupStatus(group);
+          
+          // Alternar cores dos cards
+          const cardBgClass = index % 2 === 0 ? "bg-muted/30" : "bg-background";
 
           return (
-            <div key={group.parentSku} className="border rounded-lg">
+            <div key={group.parentSku} className={`border rounded-lg ${cardBgClass}`}>
               {/* Linha do SKU Pai */}
               <Collapsible
                 open={isExpanded}
