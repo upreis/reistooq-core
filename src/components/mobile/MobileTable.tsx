@@ -35,7 +35,6 @@ interface MobileTableProps {
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: string) => void;
   onRowClick?: (item: any) => void;
-  rowClassName?: string; // Nova prop para classes customizadas
 }
 
 export default function MobileTable({
@@ -52,7 +51,6 @@ export default function MobileTable({
   sortOrder,
   onSort,
   onRowClick,
-  rowClassName,
 }: MobileTableProps) {
   const isMobile = useIsMobile();
 
@@ -149,11 +147,11 @@ export default function MobileTable({
                   key={item[keyField]}
                   className={cn(
                     "grid gap-2 py-2 px-4 rounded-md border-2 transition-colors",
-                    rowClassName || (isSelected 
+                    isSelected 
                       ? "bg-primary/10 border-primary/20" 
                       : index % 2 === 0 
                         ? "border-gray-700 bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
-                        : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]"),
+                        : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
