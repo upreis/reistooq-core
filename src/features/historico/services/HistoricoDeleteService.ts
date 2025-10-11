@@ -7,12 +7,11 @@ export class HistoricoDeleteService {
     try {
       console.log('🗑️ Iniciando exclusão do item:', id);
       
-      // 🔍 BUSCAR dados do pedido diretamente pelo ID antes de excluir para reverter estoque
-      const { data: vendaData, error: fetchError } = await supabase
-        .from('historico_vendas')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
+      // 🔍 BUSCAR dados do pedido usando RPC segura antes de excluir para reverter estoque
+      const { data: vendaDataArray, error: fetchError } = await supabase
+        .rpc('get_historico_venda_by_id', { p_id: id });
+      
+      const vendaData = vendaDataArray?.[0];
       
       if (fetchError) {
         console.error('❌ Erro ao buscar dados da venda:', fetchError);

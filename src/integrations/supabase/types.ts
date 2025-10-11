@@ -4858,6 +4858,30 @@ export type Database = {
           valor_total_gasto: number
         }[]
       }
+      get_historico_venda_by_id: {
+        Args: { p_id: string }
+        Returns: {
+          cliente_nome: string
+          created_at: string
+          data_pedido: string
+          descricao: string
+          id: string
+          id_unico: string
+          nome_completo: string
+          numero_pedido: string
+          observacoes: string
+          quantidade: number
+          quantidade_total: number
+          sku_estoque: string
+          sku_kit: string
+          sku_produto: string
+          status: string
+          titulo_produto: string
+          updated_at: string
+          valor_total: number
+          valor_unitario: number
+        }[]
+      }
       get_historico_vendas_browse: {
         Args: {
           _end?: string
