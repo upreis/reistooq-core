@@ -119,7 +119,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
       </div>
 
       {/* Grupos hierárquicos */}
-      <div className="space-y-2">
+      <div className="space-y-3">
         {groups.map((group, index) => {
           const isExpanded = expandedGroups.has(group.parentSku);
           const hasChildren = group.children.length > 0;
@@ -127,11 +127,13 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           
           // Alternar cores dos cards
           const cardBgClass = index % 2 === 0 ? "bg-muted/30" : "bg-background";
-          // Alternar cores das linhas de produto
-          const rowBgClass = index % 2 === 0 ? "bg-black hover:bg-black/90" : "bg-[hsl(213_48%_12%)] hover:bg-[hsl(213_48%_15%)]";
+          // Alternar cores das linhas de produto com maior contraste
+          const rowBgClass = index % 2 === 0 
+            ? "bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
+            : "bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]";
 
           return (
-            <div key={group.parentSku} className={`border rounded-lg ${cardBgClass}`}>
+            <div key={group.parentSku} className={`border-2 border-gray-700 rounded-lg ${cardBgClass}`}>
               {/* Linha do SKU Pai */}
               <Collapsible
                 open={isExpanded}

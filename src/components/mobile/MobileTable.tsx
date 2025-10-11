@@ -138,7 +138,7 @@ export default function MobileTable({
           </div>
 
           {/* Table Rows */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {data.map((item, index) => {
               const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
               
@@ -146,12 +146,12 @@ export default function MobileTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "grid gap-2 py-2 px-4 rounded-md border transition-colors",
+                    "grid gap-2 py-2 px-4 rounded-md border-2 transition-colors",
                     isSelected 
                       ? "bg-primary/10 border-primary/20" 
                       : index % 2 === 0 
-                        ? "border-border bg-black hover:bg-black/90" 
-                        : "border-border bg-[hsl(213_48%_12%)] hover:bg-[hsl(213_48%_15%)]",
+                        ? "border-gray-700 bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
+                        : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]",
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}
