@@ -33,6 +33,8 @@ interface EstoqueFiltersProps {
   onCategoryChange: (value: string) => void;
   selectedStatus: string;
   onStatusChange: (value: string) => void;
+  selectedProductType?: string;
+  onProductTypeChange?: (value: string) => void;
   categories: string[];
   onSearch: () => void;
   onClearFilters: () => void;
@@ -58,6 +60,8 @@ export function EstoqueFilters({
   onCategoryChange,
   selectedStatus,
   onStatusChange,
+  selectedProductType = "all",
+  onProductTypeChange,
   categories,
   onSearch,
   onClearFilters,
@@ -188,7 +192,7 @@ export function EstoqueFilters({
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-background z-50">
               {statusOptions.map((option) => {
                 const IconComponent = option.icon;
                 return (
@@ -202,6 +206,41 @@ export function EstoqueFilters({
               })}
             </SelectContent>
           </Select>
+
+          {/* Filtro de tipo de produto (Pai/Filho) */}
+          {onProductTypeChange && (
+            <Select value={selectedProductType} onValueChange={onProductTypeChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Tipo de Produto" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                <SelectItem value="all">
+                  <div className="flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Todos os Produtos
+                  </div>
+                </SelectItem>
+                <SelectItem value="parent">
+                  <div className="flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Apenas Produtos Pai
+                  </div>
+                </SelectItem>
+                <SelectItem value="child">
+                  <div className="flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Apenas Produtos Filho
+                  </div>
+                </SelectItem>
+                <SelectItem value="standalone">
+                  <div className="flex items-center">
+                    <Package className="w-4 h-4 mr-2" />
+                    Produtos Sem Vínculo
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          )}
 
           {/* Filtros avançados */}
           <Popover>
@@ -319,6 +358,19 @@ export function EstoqueFilters({
               <X 
                 className="w-3 h-3 cursor-pointer" 
                 onClick={() => onStatusChange("all")}
+              />
+            </Badge>
+          )}
+          {selectedProductType !== "all" && onProductTypeChange && (
+            <Badge variant="secondary" className="gap-1">
+              Tipo: {
+                selectedProductType === "parent" ? "Produtos Pai" :
+                selectedProductType === "child" ? "Produtos Filho" :
+                selectedProductType === "standalone" ? "Sem Vínculo" : ""
+              }
+              <X 
+                className="w-3 h-3 cursor-pointer" 
+                onClick={() => onProductTypeChange("all")}
               />
             </Badge>
           )}

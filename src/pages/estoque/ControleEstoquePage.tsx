@@ -45,6 +45,7 @@ export default function ControleEstoquePage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedProductType, setSelectedProductType] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   
@@ -239,6 +240,7 @@ export default function ControleEstoquePage() {
     setSearchTerm("");
     setSelectedCategory("all");
     setSelectedStatus("all");
+    setSelectedProductType("all");
     setSelectedProducts([]);
   };
 
@@ -385,6 +387,22 @@ export default function ControleEstoquePage() {
       );
     }
 
+    // Aplicar filtro de tipo de produto (Pai/Filho)
+    if (selectedProductType !== "all") {
+      filtered = filtered.filter(product => {
+        switch (selectedProductType) {
+          case "parent":
+            return product.eh_produto_pai === true;
+          case "child":
+            return product.sku_pai != null && product.sku_pai !== "";
+          case "standalone":
+            return !product.eh_produto_pai && (!product.sku_pai || product.sku_pai === "");
+          default:
+            return true;
+        }
+      });
+    }
+
     // Aplicar filtros de status de estoque
     if (selectedStatus && selectedStatus !== "all" && selectedStatus !== "active_only" && selectedStatus !== "inactive_only") {
       filtered = filtered.filter(product => {
@@ -404,7 +422,7 @@ export default function ControleEstoquePage() {
     }
 
     return filtered;
-  }, [intelligentFilteredData, searchTerm, selectedStatus]);
+  }, [intelligentFilteredData, searchTerm, selectedStatus, selectedProductType]);
 
   const paginatedProducts = useMemo(() => 
     finalFilteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
@@ -540,14 +558,16 @@ export default function ControleEstoquePage() {
         searchTerm={searchTerm}
         selectedCategory={selectedCategory}
         selectedStatus={selectedStatus}
+        selectedProductType={selectedProductType}
         categories={categories}
         onSearchChange={setSearchTerm}
         onCategoryChange={setSelectedCategory}
         onStatusChange={setSelectedStatus}
+        onProductTypeChange={setSelectedProductType}
         onClearFilters={handleClearFilters}
         onSearch={handleSearch}
         useHierarchicalCategories={false}
-        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all"}
+        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || selectedStatus !== "all" || selectedProductType !== "all"}
       />
 
       {/* Tabela de produtos */}
