@@ -242,15 +242,17 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('type', filters.claim_type)
     }
     
-    // Datas (apenas se não forem vazias)
+    // 📅 FILTROS DE DATA (formato ISO 8601 com timezone)
     if (filters?.date_from && filters.date_from.trim().length > 0) {
-      const dateFrom = `${filters.date_from}T00:00:00.000Z`
+      // Converter para formato aceito pela API ML: YYYY-MM-DDTHH:MM:SS.sss-03:00 (BRT)
+      const dateFrom = `${filters.date_from}T00:00:00.000-03:00`
       console.log(`✅ Aplicando filtro date_from: ${dateFrom}`)
       params.append('date_created.from', dateFrom)
     }
     
     if (filters?.date_to && filters.date_to.trim().length > 0) {
-      const dateTo = `${filters.date_to}T23:59:59.999Z`
+      // Converter para formato aceito pela API ML com fim do dia
+      const dateTo = `${filters.date_to}T23:59:59.999-03:00`
       console.log(`✅ Aplicando filtro date_to: ${dateTo}`)
       params.append('date_created.to', dateTo)
     }
