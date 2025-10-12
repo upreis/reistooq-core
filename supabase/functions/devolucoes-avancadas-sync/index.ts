@@ -112,22 +112,39 @@ async function getCachedOrFetchClaims(supabase: any, integration_account_id: str
   // Se não tem cache, buscar via ml-api-direct
   console.log('🔍 Buscando dados via ml-api-direct...');
   
-  const { data: mlData, error: mlError } = await supabase.functions.invoke('ml-api-direct', {
-    body: {
-      action: 'get_claims_and_returns',
-      integration_account_id,
-      limit: Math.min(limit, 100)
-    }
-  });
+  try {
+    const { data: mlData, error: mlError } = await supabase.functions.invoke('ml-api-direct', {
+      body: {
+        action: 'get_claims_and_returns',
+        integration_account_id,
+        limit: Math.min(limit, 100)
+      }
+    });
 
-  if (mlError || !mlData?.success) {
-    console.error('❌ Erro ao buscar dados via ml-api-direct:', mlError);
-    console.log('🔄 Continuando sem dados da API ML (modo graceful)');
-    claims = [];
-  } else {
-    claims = mlData.data || [];
+    if (mlError) {
+      console.error('❌ Erro ao buscar dados via ml-api-direct:', mlError);
+      return [];
+    }
+
+    if (!mlData?.success) {
+      console.error('❌ ml-api-direct retornou erro:', mlData?.error || 'Unknown error');
+      return [];
+    }
+
+    if (!mlData?.data || !Array.isArray(mlData.data)) {
+      console.log('⚠️  Nenhum claim retornado da API');
+      return [];
+    }
+
+    claims = mlData.data;
+    console.log(`✅ ${claims.length} claims retornados da API ML`);
+    
     // Armazenar no cache
     cache.set(cacheKey, { data: claims, timestamp: Date.now() });
+    
+  } catch (error) {
+    console.error('❌ Exceção ao buscar dados:', error);
+    return [];
   }
   
   return claims;
