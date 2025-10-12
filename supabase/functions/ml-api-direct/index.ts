@@ -1,8 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// 🔒 Cliente Supabase para buscar tokens de forma segura
+function makeServiceClient() {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(SUPABASE_URL, SERVICE_KEY, { 
+    auth: { persistSession: false, autoRefreshToken: false } 
+  });
 }
 
 serve(async (req) => {
@@ -11,11 +21,36 @@ serve(async (req) => {
   }
 
   try {
-    const { action, integration_account_id, seller_id, access_token, filters } = await req.json()
+    const { action, integration_account_id, seller_id, filters } = await req.json()
 
     console.log(`🔍 ML API Direct - Action: ${action}, Seller: ${seller_id}`)
 
     if (action === 'get_claims_and_returns') {
+      // 🔒 Obter token de forma segura usando integrations-get-secret
+      console.log(`🔑 Obtendo token ML para conta ${integration_account_id}...`)
+      
+      const supabase = makeServiceClient()
+      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('integrations-get-secret', {
+        body: { 
+          integration_account_id,
+          provider: 'mercadolivre'
+        }
+      })
+      
+      if (tokenError || !tokenData?.success || !tokenData?.secret?.access_token) {
+        console.error('❌ Erro ao obter token ML:', tokenError || 'Token não encontrado')
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível. Reconecte a integração.' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        )
+      }
+      
+      const access_token = tokenData.secret.access_token
+      console.log(`✅ Token ML obtido com sucesso`)
+      
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       const cancelledOrders = await buscarPedidosCancelados(seller_id, access_token, filters)
       
