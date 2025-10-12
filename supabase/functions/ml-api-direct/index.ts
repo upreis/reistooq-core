@@ -222,16 +222,16 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // 🚀 USAR ENDPOINT CORRETO: /post-purchase/v1/claims/search
     const params = new URLSearchParams()
     
-    // ✅ PARÂMETROS OBRIGATÓRIOS NA ORDEM CORRETA
-    // 1. Players (obrigatório)
-    params.append('players.role', 'respondent')
-    params.append('players.user_id', sellerId)
+    // ✅ PARÂMETROS CORRETOS CONFORME ANÁLISE DO MANUS
+    // CRÍTICO: API usa SINGULAR com underscore, NÃO plural com ponto!
+    params.append('player_role', 'respondent')       // ✅ CORRETO: player_role
+    params.append('player_user_id', sellerId)        // ✅ CORRETO: player_user_id
     
-    // 2. Paginação (obrigatório)
+    // Paginação (obrigatório)
     params.append('limit', '50')
     params.append('offset', '0')
     
-    // 3. Filtros OPCIONAIS (apenas se tiverem valor)
+    // Filtros OPCIONAIS (apenas se tiverem valor)
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
       console.log(`✅ Aplicando filtro de status: ${filters.status_claim}`)
       params.append('status', filters.status_claim)
