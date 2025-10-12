@@ -956,15 +956,16 @@ useEffect(() => {
       </div>
 
       {/* Conteúdo das abas */}
-      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6">
-        <div className="space-y-6">
-          {/* 📊 DASHBOARD INTELIGENTE */}
-          <ErrorBoundary name="PedidosDashboardSection">
-            <PedidosDashboardSection 
-              orders={orders || []}
-              loading={loading}
-            />
-          </ErrorBoundary>
+      <TabsContent value="orders" className="flex-1 overflow-auto m-0 p-6" forceMount>
+        <ErrorBoundary name="TabContentOrders">
+          <div className="space-y-6">
+            {/* 📊 DASHBOARD INTELIGENTE */}
+            <ErrorBoundary name="PedidosDashboardSection">
+              <PedidosDashboardSection 
+                orders={orders || []}
+                loading={loading}
+              />
+            </ErrorBoundary>
 
       {/* 🛡️ HEADER BLINDADO */}
       <PedidosHeaderSection
@@ -1237,16 +1238,19 @@ useEffect(() => {
         columnManager={columnManager}
       />
             </ErrorBoundary>
-        </div>
+          </div>
+        </ErrorBoundary>
       </TabsContent>
 
       {/* Aba Devoluções ML */}
-      <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6">
-        <DevolucaoAvancadasTab 
-          mlAccounts={mlAccounts || []}
-          refetch={async () => {}}
-          existingDevolucoes={[]}
-        />
+      <TabsContent value="devolucoes" className="flex-1 overflow-auto m-0 p-6" forceMount>
+        <ErrorBoundary name="TabContentDevolucoes">
+          <DevolucaoAvancadasTab 
+            mlAccounts={mlAccounts || []}
+            refetch={async () => {}}
+            existingDevolucoes={[]}
+          />
+        </ErrorBoundary>
       </TabsContent>
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
