@@ -227,23 +227,28 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // Seller ID é obrigatório
     params.append('seller_id', sellerId)
     
-    // Filtros opcionais - APENAS adicionar se tiverem valor
-    if (filters?.status_claim && filters.status_claim.trim() !== '') {
-      // Status: opened, closed, cancelled, etc
+    // 🛡️ VALIDAÇÃO CRÍTICA: Apenas adicionar parâmetros com valores REAIS
+    if (filters?.status_claim && filters.status_claim.length > 0) {
+      console.log(`✅ Aplicando filtro de status: ${filters.status_claim}`)
       params.append('status', filters.status_claim)
     }
     
-    if (filters?.claim_type && filters.claim_type.trim() !== '') {
-      // Tipo: mediations, returns, ml_case, cancel_sale, cancel_purchase, fulfillment, change
+    if (filters?.claim_type && filters.claim_type.length > 0) {
+      console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
       params.append('status', filters.claim_type)
     }
     
-    // Filtros de data - APENAS adicionar se tiverem valor válido
-    if (filters?.date_from && filters.date_from.trim() !== '') {
-      params.append('date_created.from', `${filters.date_from}T00:00:00.000Z`)
+    // 🛡️ VALIDAÇÃO CRÍTICA DE DATAS: Não enviar strings vazias
+    if (filters?.date_from && filters.date_from.length > 0) {
+      const dateFrom = `${filters.date_from}T00:00:00.000Z`
+      console.log(`✅ Aplicando filtro date_from: ${dateFrom}`)
+      params.append('date_created.from', dateFrom)
     }
-    if (filters?.date_to && filters.date_to.trim() !== '') {
-      params.append('date_created.to', `${filters.date_to}T23:59:59.999Z`)
+    
+    if (filters?.date_to && filters.date_to.length > 0) {
+      const dateTo = `${filters.date_to}T23:59:59.999Z`
+      console.log(`✅ Aplicando filtro date_to: ${dateTo}`)
+      params.append('date_created.to', dateTo)
     }
     
     // Paginação
