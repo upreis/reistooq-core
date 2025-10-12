@@ -85,9 +85,22 @@ serve(async (req) => {
       }
       
       const access_token = tokenData.secret.access_token
-      console.log(`✅ Token ML obtido com sucesso`)
+      console.log(`✅ Token ML obtido com sucesso para seller: ${seller_id}`)
+      
+      // Validação crítica: seller_id deve existir
+      if (!seller_id) {
+        console.error('❌ ERRO CRÍTICO: seller_id não foi fornecido')
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'seller_id é obrigatório para buscar pedidos cancelados' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        )
+      }
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
+      console.log(`🚀 Chamando buscarPedidosCancelados com seller_id: ${seller_id}`)
       const cancelledOrders = await buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id)
       
       console.log(`📊 Total de pedidos cancelados encontrados: ${cancelledOrders.length}`)
