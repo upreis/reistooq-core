@@ -254,9 +254,41 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   headers: { 'Authorization': `Bearer ${accessToken}` }
                 }).then(r => r.ok ? r.json() : null).catch(() => null)
               )
+
+              // 7. Buscar shipment history se houver return com shipment
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(async (r) => {
+                  if (!r.ok) return null
+                  const data = await r.json()
+                  const shipmentId = data?.results?.[0]?.shipments?.[0]?.id
+                  if (!shipmentId) return null
+                  const historyResponse = await fetch(`https://api.mercadolibre.com/shipments/${shipmentId}/history`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                  })
+                  return historyResponse.ok ? await historyResponse.json() : null
+                }).catch(() => null)
+              )
+
+              // 8. Buscar change details se for troca
+              claimPromises.push(
+                fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
+                  headers: { 'Authorization': `Bearer ${accessToken}` }
+                }).then(async (r) => {
+                  if (!r.ok) return null
+                  const data = await r.json()
+                  const changeId = data?.results?.[0]?.id
+                  if (!changeId || data?.results?.[0]?.subtype !== 'change') return null
+                  const changeResponse = await fetch(`https://api.mercadolibre.com/post-purchase/v1/changes/${changeId}`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                  })
+                  return changeResponse.ok ? await changeResponse.json() : null
+                }).catch(() => null)
+              )
               
               try {
-                const [claimDetails, claimMessages, mediationDetails, claimAttachments, returnsV2, returnsV1] = await Promise.all(claimPromises)
+                const [claimDetails, claimMessages, mediationDetails, claimAttachments, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
                 
                 console.log(`📋 Dados obtidos para mediação ${mediationId}:`, {
                   claimDetails: !!claimDetails,
@@ -264,7 +296,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   mediationDetails: !!mediationDetails,
                   claimAttachments: !!claimAttachments,
                   returnsV2: !!returnsV2,
-                  returnsV1: !!returnsV1
+                  returnsV1: !!returnsV1,
+                  shipmentHistory: !!shipmentHistory,
+                  changeDetails: !!changeDetails
                 })
                 
                 // Buscar reviews dos returns se existirem
@@ -297,6 +331,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   return_details_v2: returnsV2,
                   return_details_v1: returnsV1,
                   return_reviews: returnReviews,
+                  shipment_history: shipmentHistory,
+                  change_details: changeDetails,
                   // Campos enriquecidos conforme estratégia do PDF
                   claim_status: claimDetails?.status || null,
                   return_status: returnsV2?.results?.[0]?.status || null,
@@ -305,6 +341,16 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   resolution_reason: claimDetails?.resolution?.reason || null,
                   messages_count: claimMessages?.messages?.length || 0,
                   review_score: returnReviews?.[0]?.score || null,
+                  // Dados de shipment history
+                  tracking_events: shipmentHistory?.history || [],
+                  last_tracking_update: shipmentHistory?.history?.[0]?.date || null,
+                  tracking_status_detail: shipmentHistory?.history?.[0]?.status || null,
+                  // Dados de troca
+                  is_exchange: changeDetails !== null,
+                  exchange_product_id: changeDetails?.substitute_product?.id || null,
+                  exchange_product_title: changeDetails?.substitute_product?.title || null,
+                  exchange_status: changeDetails?.status || null,
+                  exchange_expected_date: changeDetails?.estimated_delivery_date || null,
                   dados_completos: true
                 }
                 
@@ -345,6 +391,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               return_details_v2: safeClaimData?.return_details_v2 || null,
               return_details_v1: safeClaimData?.return_details_v1 || null,
               return_reviews: safeClaimData?.return_reviews || null,
+              shipment_history: safeClaimData?.shipment_history || null,
+              change_details: safeClaimData?.change_details || null,
               
               // CAMPOS ENRIQUECIDOS EXTRAÍDOS
               claim_status: safeClaimData?.claim_status || null,
@@ -381,13 +429,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               mensagens_nao_lidas: (safeClaimData?.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0) +
                                   (safeClaimData?.mediation_details?.messages?.filter((m: any) => !m.read)?.length || 0),
               
-              // DADOS DE RETORNO/TROCA - MÚLTIPLAS FONTES
-              eh_troca: (safeClaimData?.return_details_v2?.results?.[0]?.subtype || 
+              // DADOS DE RETORNO/TROCA - ENRIQUECIDO COM CHANGE DETAILS
+              eh_troca: safeClaimData?.is_exchange || 
+                       (safeClaimData?.return_details_v2?.results?.[0]?.subtype || 
                         safeClaimData?.return_details_v1?.results?.[0]?.subtype || 
                         safeClaimData?.claim_details?.type || '').toLowerCase().includes('change'),
               
-              // DATAS CRÍTICAS - EXTRAIR DE MÚLTIPLAS FONTES
-              data_estimada_troca: safeClaimData?.return_details_v2?.results?.[0]?.estimated_exchange_date || 
+              produto_troca_id: safeClaimData?.exchange_product_id || null,
+              produto_troca_titulo: safeClaimData?.exchange_product_title || null,
+              
+              // DATAS CRÍTICAS - EXTRAIR DE MÚLTIPLAS FONTES INCLUINDO CHANGE
+              data_estimada_troca: safeClaimData?.exchange_expected_date ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.estimated_exchange_date || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.estimated_exchange_date ||
                                   safeClaimData?.claim_details?.estimated_delivery_date ||
                                   safeClaimData?.mediation_details?.estimated_resolution_date || null,
@@ -397,7 +450,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                                 safeClaimData?.claim_details?.expiration_date ||
                                 safeClaimData?.mediation_details?.expiration_date || null,
               
-              // RASTREAMENTO
+              // RASTREAMENTO - ENRIQUECIDO COM HISTORY
               codigo_rastreamento: safeClaimData?.return_details_v2?.results?.[0]?.tracking_number || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.tracking_number ||
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
@@ -408,10 +461,14 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                              safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.carrier || 
                              safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.carrier || null,
               
-              status_rastreamento: safeClaimData?.return_details_v2?.results?.[0]?.status || 
+              status_rastreamento: safeClaimData?.tracking_status_detail || 
+                                  safeClaimData?.return_details_v2?.results?.[0]?.status || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.status ||
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.status || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.status || null,
+              
+              tracking_history: safeClaimData?.tracking_events || [],
+              data_ultima_movimentacao: safeClaimData?.last_tracking_update || null,
               
               // DADOS DE ANEXOS
               anexos_count: safeClaimData?.claim_attachments?.length || 0,
