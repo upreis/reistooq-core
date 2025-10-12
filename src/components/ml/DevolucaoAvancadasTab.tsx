@@ -20,7 +20,7 @@ import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExp
 import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
 import { rodarAuditoriaCompleta } from '@/dev/auditoriaCompleta';
 import { supabase } from '@/integrations/supabase/client';
-import {
+import { 
   RefreshCw, 
   Download, 
   Filter, 
@@ -721,82 +721,1030 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </div>
       </div>
 
-      {/* FILTROS E FERRAMENTAS DE ANÁLISE - Modularizado */}
-      <DevolucaoFilters
-        advancedFilters={advancedFilters}
-        mlAccounts={mlAccounts}
-        loading={loading}
-        updateAdvancedFilters={updateAdvancedFilters}
-        buscarComFiltros={buscarComFiltros}
-        toggleAnalytics={toggleAnalytics}
-        fase2={fase2}
-      />
+      {/* FILTROS E FERRAMENTAS DE ANÁLISE */}
+      <Card className="bg-card border-border">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-foreground">
+              <Filter className="w-5 h-5" />
+              <span className="font-medium">Filtros e Ferramentas de Análise</span>
+            </div>
+          </div>
+          
+          {/* Linha de filtros horizontais */}
+          <div className="flex items-center gap-3 flex-wrap">
+            {/* Campo de busca */}
+            <div className="flex items-center relative min-w-[250px]">
+              <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por Order ID, comprador..."
+                value={advancedFilters.searchTerm || ''}
+                onChange={(e) => updateAdvancedFilters({
+                  searchTerm: e.target.value
+                })}
+                className="pl-10 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-ring"
+              />
+            </div>
 
-      {/* Dashboard de Analytics */}
-      {showAnalytics && (
-        <DevolucaoAnalyticsDashboard analytics={analytics} />
-      )}
+            {/* Status */}
+            <Select 
+              value={advancedFilters.statusClaim || ''} 
+              onValueChange={(value) => updateAdvancedFilters({
+                statusClaim: value
+              })}
+            >
+              <SelectTrigger className="w-[160px] bg-background border-border text-foreground">
+                <SelectValue placeholder="Todos os Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover border-border">
+                <SelectItem value="">Todos os Status</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
+                <SelectItem value="with_claims">Com Claims</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+              </SelectContent>
+            </Select>
 
-      {/* Tabela de devoluções */}
-      <Card>
-        <CardContent className="p-0">
-          {loading && devolucoes.length === 0 ? (
-            <div className="flex items-center justify-center p-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            {/* Contas ML - Seleção múltipla */}
+            <div className="relative">
+              <Select 
+                value={advancedFilters.contasSelecionadas.length === 0 ? "nenhuma" : 
+                       advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "todas" : "multiplas"}
+                onValueChange={() => {}} // Controlado via menu customizado
+              >
+                <SelectTrigger className="min-w-[200px] bg-background border-border text-foreground">
+                  <SelectValue>
+                    {advancedFilters.contasSelecionadas.length === 0 ? "Nenhuma conta" :
+                     advancedFilters.contasSelecionadas.length === mlAccounts?.length ? "Todas as contas" :
+                     `${advancedFilters.contasSelecionadas.length} conta${advancedFilters.contasSelecionadas.length > 1 ? 's' : ''} selecionada${advancedFilters.contasSelecionadas.length > 1 ? 's' : ''}`}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-popover border-border min-w-[300px] z-50">
+                  <div className="p-2">
+                    <div className="flex items-center space-x-2 p-2 hover:bg-muted rounded">
+                      <input
+                        type="checkbox"
+                        id="todas-contas"
+                        checked={advancedFilters.contasSelecionadas.length === mlAccounts?.length}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            updateAdvancedFilters({
+                              contasSelecionadas: mlAccounts?.map(acc => acc.id) || []
+                            });
+                          } else {
+                            updateAdvancedFilters({
+                              contasSelecionadas: []
+                            });
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <label htmlFor="todas-contas" className="text-sm text-foreground font-medium cursor-pointer">
+                        Todas as contas
+                      </label>
+                    </div>
+                    <div className="h-px bg-border my-2"></div>
+                    {mlAccounts?.map((account) => (
+                      <div key={account.id} className="flex items-center space-x-2 p-2 hover:bg-muted rounded">
+                        <input
+                          type="checkbox"
+                          id={`conta-${account.id}`}
+                          checked={advancedFilters.contasSelecionadas.includes(account.id)}
+                          onChange={(e) => {
+                            const currentAccounts = advancedFilters.contasSelecionadas;
+                            const newAccounts = e.target.checked
+                              ? [...currentAccounts, account.id]
+                              : currentAccounts.filter(id => id !== account.id);
+                            
+                            updateAdvancedFilters({
+                              contasSelecionadas: newAccounts
+                            });
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`conta-${account.id}`} className="text-sm text-foreground cursor-pointer">
+                          {account.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
             </div>
-          ) : devolucoes.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <Package className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-lg font-medium text-foreground">Nenhuma devolução encontrada</p>
-              <p className="text-sm text-muted-foreground">Clique em "Buscar da API ML" para carregar os dados</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-muted/50 sticky top-0 z-10">
-                  <tr>
-                    {/* Colunas da tabela - mantidas exatamente como estavam */}
-                    <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
-                    <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
-                    <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
-                    <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
-                    <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
-                    <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
-                    <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
-                    <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-                    <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">Conta ML</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {devolucoes.map((devolucao, index) => (
-                    <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
-                      <td className="px-3 py-3 font-medium text-blue-600 dark:text-blue-400">{devolucao.order_id}</td>
-                      <td className="px-3 py-3">{devolucao.produto_titulo || 'N/A'}</td>
-                      <td className="px-3 py-3">{devolucao.claim_id || 'N/A'}</td>
-                      <td className="px-3 py-3">{devolucao.sku || 'N/A'}</td>
-                      <td className="px-3 py-3">{devolucao.comprador_nickname || 'N/A'}</td>
-                      <td className="px-3 py-3 text-center">{devolucao.quantidade || 1}</td>
-                      <td className="px-3 py-3 text-right">R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}</td>
-                      <td className="px-3 py-3 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          devolucao.status_devolucao === 'completed' 
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                            : devolucao.status_devolucao === 'cancelled'
-                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
-                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-                        }`}>
-                          {devolucao.status_devolucao}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">{devolucao.account_name || 'N/A'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+
+            {/* Data Início */}
+            <Input
+              type="date"
+              value={advancedFilters.dataInicio || ''}
+              onChange={(e) => updateAdvancedFilters({
+                dataInicio: e.target.value
+              })}
+              className="w-[140px] bg-background border-border text-foreground [&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:invert-0"
+            />
+
+            {/* Data Fim */}
+            <Input
+              type="date"
+              value={advancedFilters.dataFim || ''}
+              onChange={(e) => updateAdvancedFilters({
+                dataFim: e.target.value
+              })}
+              className="w-[140px] bg-background border-border text-foreground [&::-webkit-calendar-picker-indicator]:invert dark:[&::-webkit-calendar-picker-indicator]:invert-0"
+            />
+
+            {/* Botão Atualizar */}
+            <Button 
+              onClick={buscarComFiltros}
+              disabled={loading}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-2"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              Atualizar
+            </Button>
+
+            {/* Botão Análise API */}
+            <Button 
+              variant="outline"
+              onClick={toggleAnalytics}
+              className="border-border text-foreground hover:bg-muted flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Análise API
+            </Button>
+
+            {/* 🚀 BOTÕES FASE 2: 42 NOVAS COLUNAS */}
+            <Button
+              variant="outline"
+              onClick={() => fase2.enrichExistingData(50)}
+              disabled={fase2.loading}
+              className="border-blue-500 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
+            >
+              {fase2.loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <TrendingUp className="h-4 w-4" />
+              )}
+              Enriquecer Fase 2
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => fase2.fetchAdvancedMetrics()}
+              disabled={fase2.loading}
+              className="border-green-500 text-green-600 hover:bg-green-50 flex items-center gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Métricas Avançadas
+            </Button>
+
+            {/* 🔍 BOTÃO AUDITORIA COMPLETA - FIXO E VISÍVEL */}
+            <Button
+              variant="outline"
+              onClick={() => {
+                console.log('🔍 Clicou no botão Auditoria Completa');
+                
+                if (devolucoesFiltradas.length === 0) {
+                  toast.error('Nenhuma devolução para auditar. Faça uma busca primeiro.');
+                  return;
+                }
+                
+                console.log('🔍 Executando auditoria completa...');
+                const auditoriaCompleta = rodarAuditoriaCompleta(devolucoesFiltradas);
+                
+                toast.success(`🔍 Auditoria completa! ${auditoriaCompleta.problemas_identificados.length} problemas identificados. Veja o console para detalhes.`);
+              }}
+              className="bg-red-500 text-white hover:bg-red-600 flex items-center gap-2 px-4 py-2"
+            >
+              <Wrench className="h-4 w-4" />
+              🔍 Auditoria Completa
+            </Button>
+
+          </div>
+
         </CardContent>
       </Card>
+
+        {/* Lista de devoluções - Cards ou Tabela */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Devoluções Encontradas ({devolucoesFiltradas.length})</CardTitle>
+            {hasPersistedData && (
+              <CardDescription>
+                🔄 Dados restaurados do cache. Use os botões de sincronização para atualizar.
+              </CardDescription>
+            )}
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="flex justify-center p-8">
+                <Loader2 className="h-8 w-8 animate-spin dark:text-white" />
+              </div>
+            ) : devolucoes.length === 0 ? (
+              <div className="text-center p-8">
+                <Package className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">Nenhuma devolução encontrada</p>
+                <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
+                  Use os filtros para buscar da API ML
+                </p>
+              </div>
+            ) : (
+              /* Visualização em Tabela Detalhada */
+              <div className="overflow-x-auto border rounded-lg">
+                <table className="w-full border-collapse text-sm">
+                  <thead>
+                    <tr className="bg-muted/50 dark:bg-muted border-b">
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
+                         <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
+                         <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
+                         
+                         {/* COLUNAS ORIGINAIS MANTIDAS */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Claim</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Return</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Mediação</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
+                        
+                        {/* MENSAGENS E COMUNICAÇÃO (novas) */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">💬 Mensagens (Texto)</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">💬 Última Mensagem (Texto)</th>
+                       
+                       {/* DATAS E PRAZOS (novas) */}
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Venc. Ação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Est. Troca</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Lim. Troca</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📝 Prazo Rev.</th>
+                       
+                       {/* RASTREAMENTO E LOGÍSTICA (novas) */}
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">🚛 Rastreio</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Transport.</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📍 Status Env.</th>
+                       
+                       {/* CUSTOS E FINANCEIRO (novas) */}
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Custo Env.</th>
+                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Compensação</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
+                       
+                        {/* CLASSIFICAÇÃO E RESOLUÇÃO (novas) */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Em Mediação</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Método Resolução</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
+                       
+                       {/* MÉTRICAS E KPIS (novas) */}
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏁 Total (min)</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
+                       
+                        {/* ESTADOS E FLAGS (novas) */}
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
+                        
+                        {/* 📊 MÉTRICAS ADICIONAIS (13 colunas) */}
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo 1ª Resp</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏁 Tempo Total</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Dias Resolução</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">✅ SLA</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📈 Eficiência</th>
+                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⭐ Score</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Reemb. Total</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Reemb. Produto</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Reemb. Frete</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏦 Taxa ML</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Custo Log.</th>
+                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Impacto Vend.</th>
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Reemb.</th>
+                        
+                        {/* COLUNAS ORIGINAIS MANTIDAS */}
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data da Venda</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo Original</th>
+                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
+                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {devolucoes.map((devolucao, index) => {
+                      const claimData = devolucao.dados_claim || {};
+                      const orderData = devolucao.dados_order || {};
+                      const returnData = devolucao.dados_return || {};
+                      const mensagensData = devolucao.dados_mensagens || {};
+
+                      // 🔍 VERIFICAÇÕES CORRIGIDAS BASEADAS NO PDF E DADOS REAIS
+                      
+                      // 📋 CLAIM (Azul) - Baseado na análise do PDF
+                      const temClaimData = !!(
+                        // Dados primários de claim
+                        (claimData && Object.keys(claimData).length > 0) ||
+                        // Mediações do order (confirmado nos dados reais)
+                        (orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) ||
+                        // Claim ID presente
+                        devolucao.claim_id ||
+                        // Status de cancelamento com reason
+                        (claimData?.reason?.code) ||
+                        // Cancellation type
+                        (claimData?.type === 'cancellation') ||
+                        // Cancel detail presente
+                        (orderData?.cancel_detail?.code)
+                      );
+
+                      // 📦 RETURN (Verde) - Baseado nos endpoints do PDF
+                      const temReturnData = !!(
+                        // Dados primários de return
+                        (returnData && Object.keys(returnData).length > 0) ||
+                         (orderData?.order_request?.return && typeof orderData.order_request.return === 'object') ||
+                         (orderData?.tags && Array.isArray(orderData.tags) && (
+                           orderData.tags.some(tag => typeof tag === 'string' && ['return', 'refund', 'not_delivered', 'fraud_risk_detected'].includes(tag))
+                         )) ||
+                        // Status indicando devolução
+                        (devolucao.status_devolucao && devolucao.status_devolucao !== 'N/A') ||
+                        // Dados de rastreamento de devolução
+                        devolucao.codigo_rastreamento
+                      );
+
+                      // ⚖️ MEDIAÇÃO (Laranja) - Baseado na estrutura do PDF
+                      const temMediationData = !!(
+                         (orderData?.mediations && Array.isArray(orderData.mediations) && 
+                          orderData.mediations.length > 0 && 
+                          orderData.mediations.every(m => typeof m === 'object' && m.id)) ||
+                        // Detalhes de mediação no claim
+                        (claimData?.mediation_details) ||
+                        // Códigos específicos de mediação do PDF
+                        (claimData?.reason?.code === 'buyer_cancel_express') ||
+                        (claimData?.reason?.code === 'fraud') ||
+                        (claimData?.reason?.group === 'buyer') ||
+                        // Flag de mediação
+                        devolucao.em_mediacao ||
+                        // Status de moderação
+                        devolucao.status_moderacao
+                      );
+
+                      // 📎 ANEXOS/MENSAGENS (Cinza/Azul) - Baseado nos endpoints do PDF
+                      const temAttachmentsData = !!(
+                        // Attachments no claim (endpoint /claims/{claim_id}/attachments)
+                        (claimData?.attachments && Array.isArray(claimData.attachments) && claimData.attachments.length > 0) ||
+                        (claimData?.claim_attachments && Array.isArray(claimData.claim_attachments) && claimData.claim_attachments.length > 0) ||
+                        // Mensagens (endpoint /claims/{claim_id}/messages)
+                        (mensagensData && Object.keys(mensagensData).length > 0) ||
+                        (devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0) ||
+                        // Contadores de anexos/mensagens
+                        (devolucao.anexos_count && devolucao.anexos_count > 0) ||
+                        (devolucao.numero_interacoes && devolucao.numero_interacoes > 0) ||
+                        // Anexos específicos por tipo
+                        (devolucao.anexos_comprador && Array.isArray(devolucao.anexos_comprador) && devolucao.anexos_comprador.length > 0) ||
+                        (devolucao.anexos_vendedor && Array.isArray(devolucao.anexos_vendedor) && devolucao.anexos_vendedor.length > 0) ||
+                        (devolucao.anexos_ml && Array.isArray(devolucao.anexos_ml) && devolucao.anexos_ml.length > 0)
+                      );
+
+                       // 🔍 DEBUG: Log simplificado para evitar renderização de objetos + verificação de shipping
+                       if (index === 0) {
+                         console.log('🔍 DEBUG PRIMEIRA DEVOLUÇÃO:', {
+                           order_id: devolucao.order_id,
+                           claim_id: devolucao.claim_id,
+                           temClaimData,
+                           temReturnData, 
+                           temMediationData,
+                           temAttachmentsData,
+                           dados_claim_keys: Object.keys(claimData),
+                           dados_return_keys: Object.keys(returnData),
+                           dados_order_keys: Object.keys(orderData),
+                           dados_mensagens_keys: Object.keys(mensagensData),
+                           orderData_mediations_count: orderData?.mediations?.length || 0,
+                           orderData_tags_count: orderData?.tags?.length || 0,
+                           status_devolucao: devolucao.status_devolucao
+                         });
+                         
+                         // 🚨 DEBUG ESPECÍFICO: Verificar dados de shipping que podem estar causando erro
+                         if (orderData?.shipping) {
+                           console.log('🚨 SHIPPING DATA FOUND:', typeof orderData.shipping, Object.keys(orderData.shipping));
+                         }
+                         if (orderData?.cancel_detail) {
+                           console.log('🚨 CANCEL DETAIL:', typeof orderData.cancel_detail, orderData.cancel_detail);
+                         }
+                         if (claimData?.status_detail) {
+                           console.log('🚨 CLAIM STATUS DETAIL:', typeof claimData.status_detail, claimData.status_detail);
+                         }
+                       }
+
+                      return (
+                        <tr key={`${devolucao.order_id}-${index}`} className="border-b hover:bg-muted/50 dark:border-border">
+                          {/* Order ID */}
+                          <td className="px-3 py-3 font-medium text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                            {devolucao.order_id}
+                          </td>
+                          
+                          {/* Produto */}
+                          <td className="px-3 py-3">
+                            <div className="max-w-[200px]">
+                              <div className="font-medium text-foreground truncate" title={devolucao.produto_titulo}>
+                                {devolucao.produto_titulo || 'N/A'}
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Claim ID */}
+                          <td className="px-3 py-3 font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                            {devolucao.claim_id || 'N/A'}
+                          </td>
+                          
+                          {/* SKU */}
+                          <td className="px-3 py-3 text-foreground font-mono text-sm whitespace-nowrap">
+                            {devolucao.sku || 'N/A'}
+                          </td>
+                          
+                          {/* Comprador */}
+                          <td className="px-3 py-3 text-foreground whitespace-nowrap">
+                            {devolucao.comprador_nickname || 'N/A'}
+                          </td>
+                          
+                          {/* Quantidade */}
+                          <td className="px-3 py-3 text-center text-foreground font-medium">
+                            {devolucao.quantidade || 1}
+                          </td>
+                          
+                          {/* Valor Retido */}
+                          <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                            R$ {devolucao.valor_retido?.toFixed(2) || '0.00'}
+                          </td>
+                          
+                          {/* Status */}
+                          <td className="px-3 py-3 text-center">
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+                              devolucao.status_devolucao === 'completed' 
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                                : devolucao.status_devolucao === 'cancelled'
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
+                                : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                            }`}>
+                              {devolucao.status_devolucao}
+                            </span>
+                          </td>
+                          
+                          {/* Conta ML */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.account_name || 'N/A'}
+                          </td>
+                          
+                          {/* COLUNAS ORIGINAIS MANTIDAS */}
+                          
+                          {/* Claim */}
+                          <td className="px-3 py-3 text-left">
+                            {temClaimData ? (
+                              <div className="text-sm">
+                                <div className="text-blue-600 dark:text-blue-400 font-medium">
+                                  Ativo: {typeof claimData?.status === 'string' ? claimData.status : 'closed'}
+                                </div>
+                                <div className="text-muted-foreground text-xs">
+                                  Tipo: {typeof claimData?.type === 'string' ? claimData.type : 'cancel_purchase'}
+                                </div>
+                                {claimData?.reason_id && typeof claimData.reason_id === 'string' && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Código: {claimData.reason_id}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Sem dados</span>
+                            )}
+                          </td>
+                          
+                          {/* Return */}
+                          <td className="px-3 py-3 text-left">
+                            {temReturnData ? (
+                              <div className="text-sm">
+                                <div className="text-orange-600 dark:text-orange-400 font-medium">
+                                  {Object.keys(returnData).length > 0 ? 'Dados Return' : 'Tags/Status'}
+                                </div>
+                                 {orderData?.tags && Array.isArray(orderData.tags) && (
+                                   <div className="text-muted-foreground text-xs">
+                                     {orderData.tags.filter(tag => 
+                                       typeof tag === 'string' && ['return', 'refund', 'not_delivered', 'fraud_risk_detected'].includes(tag)
+                                     ).join(', ') || 'Outros'}
+                                   </div>
+                                 )}
+                                {devolucao.codigo_rastreamento && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Rastreio ativo
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Sem dados</span>
+                            )}
+                          </td>
+                          
+                          {/* Mediação Original */}
+                          <td className="px-3 py-3 text-left">
+                            {temMediationData ? (
+                              <div className="text-sm">
+                                <div className="text-purple-600 dark:text-purple-400 font-medium">
+                                   {(orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) 
+                                     ? `${orderData.mediations.length} Mediação(ões)` : 'Em mediação'}
+                                </div>
+                                {devolucao.em_mediacao && (
+                                  <div className="text-muted-foreground text-xs">Ativa</div>
+                                )}
+                                {devolucao.status_moderacao && (
+                                  <div className="text-muted-foreground text-xs">
+                                    Mod: {devolucao.status_moderacao}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Sem mediação</span>
+                            )}
+                          </td>
+                          
+                          {/* Anexos Original */}
+                          <td className="px-3 py-3 text-left">
+                            {temAttachmentsData ? (
+                              <div className="text-sm">
+                                <div className="text-green-600 dark:text-green-400 font-medium">
+                                  {devolucao.anexos_count || 0} Anexo(s)
+                                </div>
+                                {devolucao.anexos_comprador?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {devolucao.anexos_comprador.length} do comprador
+                                  </div>
+                                )}
+                                {devolucao.anexos_vendedor?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {devolucao.anexos_vendedor.length} do vendedor
+                                  </div>
+                                )}
+                                {devolucao.anexos_ml?.length > 0 && (
+                                  <div className="text-muted-foreground text-xs">
+                                    {devolucao.anexos_ml.length} do ML
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">Sem anexos</span>
+                            )}
+                          </td>
+                          
+                          {/* MENSAGENS E COMUNICAÇÃO (novas colunas) */}
+                          
+                           {/* Mensagens */}
+                           <td className="px-3 py-3 text-left">
+                             {(devolucao.numero_interacoes && devolucao.numero_interacoes > 0) ? (
+                               <div className="text-sm max-w-[300px]">
+                                 <div className="text-blue-600 dark:text-blue-400 font-medium mb-1">
+                                   {devolucao.numero_interacoes} Mensagem(ns)
+                                 </div>
+                                  <div className="text-foreground text-xs border-l-2 border-blue-200 pl-2 line-clamp-3">
+                                    {(() => {
+                                      const texto = getTextoMensagens(devolucao);
+                                      console.log('🔍 DEBUG TEXTO MENSAGENS:', typeof texto, texto);
+                                      return String(texto);
+                                    })()}
+                                  </div>
+                                 {devolucao.ultima_mensagem_remetente && (
+                                   <div className="text-muted-foreground text-xs mt-1">
+                                     Última por: {devolucao.ultima_mensagem_remetente}
+                                   </div>
+                                 )}
+                               </div>
+                             ) : (
+                               <span className="text-muted-foreground">Sem mensagens</span>
+                             )}
+                           </td>
+                          
+                          {/* Mensagens Não Lidas */}
+                          <td className="px-3 py-3 text-center">
+                            {(devolucao.mensagens_nao_lidas && devolucao.mensagens_nao_lidas > 0) ? (
+                              <span className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 px-2 py-1 rounded-full text-xs font-semibold">
+                                {devolucao.mensagens_nao_lidas}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                           {/* Status Moderação */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.status_moderacao ? (
+                               <span className={`px-2 py-1 rounded text-xs ${
+                                 String(devolucao.status_moderacao) === 'approved' ? 'bg-green-100 text-green-800' :
+                                 String(devolucao.status_moderacao) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                 'bg-red-100 text-red-800'
+                               }`}>
+                                 {String(devolucao.status_moderacao)}
+                               </span>
+                             ) : (
+                               <span className="text-muted-foreground">-</span>
+                             )}
+                           </td>
+                          
+                           {/* Última Mensagem Data */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.ultima_mensagem_data ? (() => {
+                               try {
+                                 return new Date(devolucao.ultima_mensagem_data).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric',
+                                   hour: '2-digit',
+                                   minute: '2-digit'
+                                 });
+                               } catch (error) {
+                                 return devolucao.ultima_mensagem_data;
+                               }
+                             })() : '-'}
+                           </td>
+                          
+                           {/* Última Mensagem Texto */}
+                           <td className="px-3 py-3 text-foreground text-sm">
+                             <div className="max-w-[250px]">
+                               <div className="text-xs text-muted-foreground mb-1">
+                                 De: {devolucao.ultima_mensagem_remetente || 'N/A'}
+                               </div>
+                                <div className="text-foreground line-clamp-3 border-l-2 border-gray-200 pl-2">
+                                  {(() => {
+                                    const texto = getUltimaMensagemTexto(devolucao);
+                                    console.log('🔍 DEBUG ÚLTIMA MENSAGEM:', typeof texto, texto);
+                                    return String(texto);
+                                  })()}
+                                </div>
+                             </div>
+                           </td>
+                          
+                          {/* DATAS E PRAZOS (5 colunas) */}
+                          
+                          {/* Dias Restantes */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.dias_restantes_acao !== null && devolucao.dias_restantes_acao !== undefined ? (
+                              <span className={`font-medium ${
+                                devolucao.dias_restantes_acao <= 3 
+                                  ? 'text-red-600 dark:text-red-400' 
+                                  : devolucao.dias_restantes_acao <= 7 
+                                  ? 'text-yellow-600 dark:text-yellow-400' 
+                                  : 'text-green-600 dark:text-green-400'
+                              }`}>
+                                {devolucao.dias_restantes_acao}d
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                           {/* Data Vencimento Ação */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_vencimento_acao ? (() => {
+                               try {
+                                 return new Date(devolucao.data_vencimento_acao).toLocaleDateString('pt-BR');
+                               } catch (error) {
+                                 return devolucao.data_vencimento_acao;
+                               }
+                             })() : '-'}
+                           </td>
+                          
+                           {/* Data Estimada Troca */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_estimada_troca ? (() => { try { return new Date(devolucao.data_estimada_troca).toLocaleDateString('pt-BR'); } catch { return devolucao.data_estimada_troca; } })() : '-'}
+                           </td>
+                          
+                           {/* Data Limite Troca */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_limite_troca ? (() => { try { return new Date(devolucao.data_limite_troca).toLocaleDateString('pt-BR'); } catch { return devolucao.data_limite_troca; } })() : '-'}
+                           </td>
+                          
+                          {/* Prazo Revisão Dias */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.prazo_revisao_dias || '-'}
+                          </td>
+                          
+                          {/* RASTREAMENTO E LOGÍSTICA (3 colunas) */}
+                          
+                          {/* Rastreamento */}
+                          <td className="px-3 py-3 text-center">
+                             {devolucao.codigo_rastreamento ? (
+                              <div className="text-xs">
+                                <div className="font-mono text-blue-600 dark:text-blue-400" title={String(devolucao.codigo_rastreamento)}>
+                                  {String(devolucao.codigo_rastreamento)}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {String(devolucao.transportadora || 'N/A')}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Transportadora */}
+                           <td className="px-3 py-3 text-foreground text-sm">
+                             {String(devolucao.transportadora || '-')}
+                           </td>
+                          
+                          {/* Status Rastreamento */}
+                          <td className="px-3 py-3 text-center">
+                             {devolucao.status_rastreamento ? (
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                String(devolucao.status_rastreamento) === 'delivered' ? 'bg-green-100 text-green-800' :
+                                String(devolucao.status_rastreamento) === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+                                String(devolucao.status_rastreamento) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {String(devolucao.status_rastreamento)}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* CUSTOS E FINANCEIRO (4 colunas) */}
+                          
+                          {/* Custo Envio */}
+                          <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">
+                            {devolucao.custo_envio_devolucao ? `R$ ${devolucao.custo_envio_devolucao.toFixed(2)}` : '-'}
+                          </td>
+                          
+                          {/* Valor Compensação */}
+                          <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                            {devolucao.valor_compensacao ? `R$ ${devolucao.valor_compensacao.toFixed(2)}` : '-'}
+                          </td>
+                          
+                          {/* Moeda */}
+                          <td className="px-3 py-3 text-center font-medium">
+                            {devolucao.moeda_custo || 'BRL'}
+                          </td>
+                          
+                          {/* Responsável Custo */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.responsavel_custo || '-'}
+                          </td>
+                          
+                          {/* CLASSIFICAÇÃO E RESOLUÇÃO (5 colunas) */}
+                          
+                          {/* Tipo Claim */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.tipo_claim || '-'}
+                          </td>
+                          
+                          {/* Subtipo Claim */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.subtipo_claim || '-'}
+                          </td>
+                          
+                          {/* Em Mediação */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.em_mediacao ? (
+                              <span className="text-orange-600 dark:text-orange-400">⚖️</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Método Resolução */}
+                          <td className="px-3 py-3 text-foreground text-sm">
+                            {devolucao.metodo_resolucao || '-'}
+                          </td>
+                          
+                          {/* Nível Prioridade */}
+                          <td className="px-3 py-3 text-center">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              devolucao.nivel_prioridade === 'critical' ? 'bg-red-100 text-red-800' :
+                              devolucao.nivel_prioridade === 'high' ? 'bg-orange-100 text-orange-800' :
+                              devolucao.nivel_prioridade === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }`}>
+                              {devolucao.nivel_prioridade || 'medium'}
+                            </span>
+                          </td>
+                          
+                          {/* MÉTRICAS E KPIS (4 colunas) */}
+                          
+                          {/* Tempo Resposta */}
+                          <td className="px-3 py-3 text-center text-sm">
+                            {devolucao.tempo_resposta_medio ? `${devolucao.tempo_resposta_medio}min` : '-'}
+                          </td>
+                          
+                          {/* Tempo Total */}
+                          <td className="px-3 py-3 text-center text-sm">
+                            {devolucao.tempo_total_resolucao ? `${devolucao.tempo_total_resolucao}min` : '-'}
+                          </td>
+                          
+                          {/* Total Evidências */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.total_evidencias || 0}
+                          </td>
+                          
+                          {/* Taxa Satisfação */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.taxa_satisfacao ? (
+                              <span className={`font-medium ${
+                                devolucao.taxa_satisfacao >= 80 ? 'text-green-600' :
+                                devolucao.taxa_satisfacao >= 60 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {devolucao.taxa_satisfacao}%
+                              </span>
+                            ) : '-'}
+                          </td>
+                          
+                          {/* ESTADOS E FLAGS (3 colunas) */}
+                          
+                          {/* É Troca */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.eh_troca ? (
+                              <span className="text-blue-600 dark:text-blue-400">🔄</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                          {/* Escalado para ML */}
+                          <td className="px-3 py-3 text-center">
+                            {devolucao.escalado_para_ml ? (
+                              <span className="text-purple-600 dark:text-purple-400">🚀</span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </td>
+                          
+                           {/* Ação Seller Necessária */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.acao_seller_necessaria ? (
+                               <span className="text-orange-600 dark:text-orange-400">✋</span>
+                             ) : (
+                               <span className="text-muted-foreground">-</span>
+                             )}
+                           </td>
+                           
+                           {/* === 📊 MÉTRICAS ADICIONAIS (13 colunas) === */}
+                           
+                           {/* Tempo 1ª Resposta Vendedor */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.tempo_primeira_resposta_vendedor ? `${devolucao.tempo_primeira_resposta_vendedor}min` : '-'}
+                           </td>
+                           
+                           {/* Tempo Total Resolução */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.tempo_total_resolucao ? `${Math.round(devolucao.tempo_total_resolucao / 60)}h` : '-'}
+                           </td>
+                           
+                           {/* Dias até Resolução */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.dias_ate_resolucao ? `${devolucao.dias_ate_resolucao}d` : '-'}
+                           </td>
+                           
+                           {/* SLA Cumprido */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.sla_cumprido !== null && devolucao.sla_cumprido !== undefined ? (
+                               <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                 devolucao.sla_cumprido ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                               }`}>
+                                 {devolucao.sla_cumprido ? '✅' : '❌'}
+                               </span>
+                             ) : (
+                               <span className="text-muted-foreground">-</span>
+                             )}
+                           </td>
+                           
+                           {/* Eficiência Resolução */}
+                           <td className="px-3 py-3 text-center text-sm">
+                             {devolucao.eficiencia_resolucao || '-'}
+                           </td>
+                           
+                           {/* Score Qualidade */}
+                           <td className="px-3 py-3 text-center">
+                             {devolucao.score_qualidade ? (
+                               <span className={`font-medium ${
+                                 devolucao.score_qualidade >= 80 ? 'text-green-600' :
+                                 devolucao.score_qualidade >= 60 ? 'text-yellow-600' :
+                                 'text-red-600'
+                               }`}>
+                                 {devolucao.score_qualidade}/100
+                               </span>
+                             ) : '-'}
+                           </td>
+                           
+                           {/* Valor Reembolso Total */}
+                           <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+                             {devolucao.valor_reembolso_total ? `R$ ${devolucao.valor_reembolso_total.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Valor Reembolso Produto */}
+                           <td className="px-3 py-3 text-right text-blue-600 dark:text-blue-400 font-semibold whitespace-nowrap">
+                             {devolucao.valor_reembolso_produto ? `R$ ${devolucao.valor_reembolso_produto.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Valor Reembolso Frete */}
+                           <td className="px-3 py-3 text-right text-orange-600 dark:text-orange-400 font-semibold whitespace-nowrap">
+                             {devolucao.valor_reembolso_frete ? `R$ ${devolucao.valor_reembolso_frete.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Taxa ML Reembolso */}
+                           <td className="px-3 py-3 text-right text-purple-600 dark:text-purple-400 font-semibold whitespace-nowrap">
+                             {devolucao.taxa_ml_reembolso ? `R$ ${devolucao.taxa_ml_reembolso.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Custo Logístico Total */}
+                           <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">
+                             {devolucao.custo_logistico_total ? `R$ ${devolucao.custo_logistico_total.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Impacto Financeiro Vendedor */}
+                           <td className="px-3 py-3 text-right text-gray-600 dark:text-gray-400 font-semibold whitespace-nowrap">
+                             {devolucao.impacto_financeiro_vendedor ? `R$ ${devolucao.impacto_financeiro_vendedor.toFixed(2)}` : '-'}
+                           </td>
+                           
+                           {/* Data Processamento Reembolso */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {devolucao.data_processamento_reembolso ? (() => {
+                               try {
+                                 return new Date(devolucao.data_processamento_reembolso).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric'
+                                 });
+                               } catch {
+                                 return devolucao.data_processamento_reembolso;
+                               }
+                             })() : '-'}
+                           </td>
+                           
+                            {/* Data da Venda */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {(() => {
+                               try {
+                                 return new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric'
+                                 });
+                               } catch {
+                                 return devolucao.data_criacao;
+                               }
+                             })()}
+                           </td>
+                          
+                           {/* Data Atualização (ORIGINAL RESTAURADA) */}
+                           <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                             {(() => {
+                               try {
+                                 return new Date(devolucao.updated_at).toLocaleDateString('pt-BR', {
+                                   day: '2-digit',
+                                   month: '2-digit',
+                                   year: 'numeric'
+                                 });
+                               } catch {
+                                 return devolucao.updated_at;
+                               }
+                             })()}
+                           </td>
+                          
+                          {/* Tipo Original (ORIGINAL RESTAURADA) */}
+                          <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+                            {claimData.type || 'N/A'}
+                          </td>
+                          
+                          {/* Motivo Cancelamento (ORIGINAL RESTAURADA) */}
+                          <td className="px-3 py-3">
+                            <div className="max-w-[200px] text-sm text-foreground line-clamp-2" title={String(getMotivoCancelamento(devolucao))}>
+                              {String(getMotivoCancelamento(devolucao))}
+                            </div>
+                          </td>
+                          
+                          {/* Ações */}
+                          <td className="px-3 py-3 text-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedDevolucao(devolucao);
+                                setShowDetails(true);
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
       {/* Paginação */}
       {totalPages > 1 && (
@@ -806,16 +1754,22 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             size="sm"
             onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
+            className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
           >
             <ChevronLeft className="h-4 w-4" />
             Anterior
           </Button>
-          <span className="text-sm">Página {currentPage} de {totalPages}</span>
+          
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            Página {currentPage} de {totalPages}
+          </span>
+          
           <Button
             variant="outline"
             size="sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
             disabled={currentPage === totalPages}
+            className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
           >
             Próxima
             <ChevronRight className="h-4 w-4" />
@@ -835,7 +1789,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           
           {selectedDevolucao && (
             <div className="space-y-6">
-              {/* Informações básicas */}
+              {/* Informações básicas com ícones */}
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
@@ -844,26 +1798,103 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label>Order ID</Label>
-                      <p className="font-medium">{selectedDevolucao.order_id}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                    <div className="flex items-center gap-3">
+                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <div>
+                        <Label className="text-sm text-gray-500 dark:text-gray-400">Order ID</Label>
+                        <p className="font-medium text-lg dark:text-white">{selectedDevolucao.order_id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Claim ID</Label>
-                      <p className="font-medium">{selectedDevolucao.claim_id || 'N/A'}</p>
+                    
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                      <div>
+                        <Label className="text-sm text-gray-500 dark:text-gray-400">Claim ID</Label>
+                        <p className="font-medium dark:text-white">{selectedDevolucao.claim_id || 'N/A'}</p>
+                      </div>
                     </div>
-                    <div>
-                      <Label>Status</Label>
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedDevolucao.status_devolucao === 'completed' 
-                          ? 'bg-green-100 text-green-800'
-                          : selectedDevolucao.status_devolucao === 'cancelled'
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {selectedDevolucao.status_devolucao}
-                      </span>
+                    
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <div>
+                        <Label className="text-sm text-gray-500 dark:text-gray-400">Status</Label>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          selectedDevolucao.status_devolucao === 'completed' 
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                            : selectedDevolucao.status_devolucao === 'cancelled'
+                            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
+                            : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                        }`}>
+                          {selectedDevolucao.status_devolucao}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Search className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">SKU</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.sku || 'N/A'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <CheckSquare className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Quantidade</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.quantidade}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Valor Retido</Label>
+                        <p className="font-medium text-lg text-green-600 dark:text-green-400">R$ {selectedDevolucao.valor_retido?.toFixed(2) || '0.00'}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Wrench className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Comprador</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.comprador_nickname}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-muted-foreground" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Data da Venda</Label>
+                        <p className="font-medium text-foreground">{(() => { try { return new Date(selectedDevolucao.data_criacao).toLocaleString(); } catch { return selectedDevolucao.data_criacao; } })()}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Motivo do Cancelamento</Label>
+                        <p className="font-medium text-foreground">{String(getMotivoCancelamento(selectedDevolucao))}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-1" />
+                      <div className="flex-1">
+                        <Label className="text-sm text-muted-foreground">Descrição Detalhada do Motivo</Label>
+                        <p className="font-medium text-sm leading-relaxed text-foreground">
+                          {String(getTextoMotivoDetalhado(selectedDevolucao))}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Wrench className="h-5 w-5 text-blue-500 dark:text-blue-400" />
+                      <div>
+                        <Label className="text-sm text-muted-foreground">Conta ML</Label>
+                        <p className="font-medium text-foreground">{selectedDevolucao.account_name || 'N/A'}</p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
