@@ -214,12 +214,19 @@ async function fetchMLWithRetry(url: string, accessToken: string, integrationAcc
   throw new Error('Fetch com retry falhou inesperadamente')
 }
 
-// ============ FUNÇÃO PARA BUSCAR PEDIDOS CANCELADOS DA API ML ============
+// ============ FUNÇÃO PARA BUSCAR PEDIDOS COM CLAIMS/DEVOLUÇÕES DA API ML ============
 async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
   try {
-    console.log(`🔍 Buscando pedidos cancelados para seller ${sellerId}...`)
+    console.log(`🔍 Buscando pedidos com claims/devoluções para seller ${sellerId}...`)
     
-    let url = `https://api.mercadolibre.com/orders/search?seller=${sellerId}&order.status=cancelled`
+    // 🎯 BUSCAR TODOS OS PEDIDOS COM MEDIATIONS (não apenas cancelados)
+    // Claims podem existir em: paid, shipped, delivered, cancelled
+    let url = `https://api.mercadolibre.com/orders/search?seller=${sellerId}`
+    
+    // Adicionar filtro de status do claim se fornecido
+    if (filters?.status_claim) {
+      url += `&mediations.status=${filters.status_claim}`
+    }
     
     // Adicionar filtros de data se fornecidos
     if (filters?.date_from) {
@@ -232,7 +239,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // Limitar a 50 resultados por requisição
     url += `&limit=50&sort=date_desc`
     
-    console.log(`📞 URL da API Orders Cancelados: ${url}`)
+    console.log(`📞 URL da API Orders com Claims: ${url}`)
     
     const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
     
@@ -250,17 +257,24 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     }
     
     const data = await response.json()
-    console.log(`📋 Orders cancelados encontrados: ${data?.results?.length || 0}`)
+    console.log(`📋 Orders com claims encontrados: ${data?.results?.length || 0}`)
     
     if (!data?.results || data.results.length === 0) {
-      console.log('ℹ️ Nenhum pedido cancelado encontrado')
+      console.log('ℹ️ Nenhum pedido com claim encontrado')
       return []
     }
+    
+    // 🔍 FILTRAR APENAS PEDIDOS QUE REALMENTE TÊM MEDIATIONS
+    const ordersComMediation = data.results.filter(order => 
+      order.mediations && order.mediations.length > 0
+    )
+    
+    console.log(`📊 Orders filtrados com mediations: ${ordersComMediation.length} de ${data.results.length}`)
 
-      // Processar cada order cancelado para obter detalhes completos
+      // Processar cada order com claim para obter detalhes completos
       const ordersCancelados = []
       
-      for (const order of data.results) {
+      for (const order of ordersComMediation) {
         try {
           // Proteção contra orders inválidos
           if (!order || !order.id) {
@@ -708,8 +722,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         }
       }
     
-    console.log(`🎉 Total de pedidos cancelados processados: ${ordersCancelados.length}`)
-    return ordersCancelados
+      console.log(`🎉 Total de pedidos com claims processados: ${ordersCancelados.length}`)
+      return ordersCancelados
     
   } catch (error) {
     console.error('❌ Erro ao buscar pedidos cancelados:', error)
