@@ -242,23 +242,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Última Mensagem Data */}
-      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.ultima_mensagem_data ? (() => {
-          try {
-            return new Date(devolucao.ultima_mensagem_data).toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit'
-            });
-          } catch (error) {
-            return devolucao.ultima_mensagem_data;
-          }
-        })() : '-'}
-      </td>
-      
       {/* Última Mensagem Texto */}
       <td className="px-3 py-3 text-foreground text-sm">
         <div className="max-w-[250px]">
@@ -288,39 +271,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         ) : (
           <span className="text-muted-foreground">-</span>
         )}
-      </td>
-      
-      {/* Data Vencimento Ação */}
-      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.data_vencimento_acao ? (() => {
-          try {
-            return new Date(devolucao.data_vencimento_acao).toLocaleDateString('pt-BR');
-          } catch (error) {
-            return devolucao.data_vencimento_acao;
-          }
-        })() : '-'}
-      </td>
-      
-      {/* Data Estimada Troca */}
-      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.data_estimada_troca ? (() => { 
-          try { 
-            return new Date(devolucao.data_estimada_troca).toLocaleDateString('pt-BR'); 
-          } catch { 
-            return devolucao.data_estimada_troca; 
-          } 
-        })() : '-'}
-      </td>
-      
-      {/* Data Limite Troca */}
-      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.data_limite_troca ? (() => { 
-          try { 
-            return new Date(devolucao.data_limite_troca).toLocaleDateString('pt-BR'); 
-          } catch { 
-            return devolucao.data_limite_troca; 
-          } 
-        })() : '-'}
       </td>
       
       {/* Prazo Revisão Dias */}

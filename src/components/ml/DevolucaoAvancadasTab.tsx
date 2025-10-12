@@ -525,48 +525,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               Análise API
             </Button>
 
-            {/* 🚀 BOTÕES FASE 2: 42 NOVAS COLUNAS */}
-            <Button
-              variant="outline"
-              onClick={() => fase2.enrichExistingData(50)}
-              disabled={fase2.loading}
-              className="border-blue-500 text-blue-600 hover:bg-blue-50 flex items-center gap-2"
-            >
-              {fase2.loading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <TrendingUp className="h-4 w-4" />
-              )}
-              Enriquecer Fase 2
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => fase2.fetchAdvancedMetrics()}
-              disabled={fase2.loading}
-              className="border-green-500 text-green-600 hover:bg-green-50 flex items-center gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Métricas Avançadas
-            </Button>
-
-            {/* 🔍 BOTÃO AUDITORIA COMPLETA - FIXO E VISÍVEL */}
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (devolucoesFiltradas.length === 0) {
-                  toast.error('Nenhuma devolução para auditar. Faça uma busca primeiro.');
-                  return;
-                }
-                
-                const auditoriaCompleta = rodarAuditoriaCompleta(devolucoesFiltradas);
-                toast.success(`🔍 Auditoria completa! ${auditoriaCompleta.problemas_identificados.length} problemas identificados. Veja o console para detalhes.`);
-              }}
-              className="bg-red-500 text-white hover:bg-red-600 flex items-center gap-2 px-4 py-2"
-            >
-              <Wrench className="h-4 w-4" />
-              🔍 Auditoria Completa
-            </Button>
 
           </div>
 
