@@ -28,6 +28,7 @@ import { DevolucaoToolbar } from '@/components/ml/devolucao/DevolucaoToolbar';
 import { DevolucaoDetailsModal } from '@/components/ml/devolucao/DevolucaoDetailsModal';
 import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPagination';
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
+import { DevolucoesFiltrosAvancados } from '@/features/devolucoes/components/DevolucoesFiltrosAvancados';
 
 // ✨ Utilities de extração
 import { 
@@ -370,6 +371,39 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           </Button>
         </div>
       </div>
+
+      {/* ✨ NOVO SISTEMA DE FILTROS AVANÇADOS - COMPLETO E FUNCIONAL */}
+      <DevolucoesFiltrosAvancados
+        filtros={advancedFilters}
+        onFiltrosChange={updateAdvancedFilters}
+        onLimpar={clearFilters}
+        mlAccounts={mlAccounts}
+      />
+
+      {/* 🚀 BOTÃO DE APLICAR FILTROS */}
+      <div className="flex justify-end">
+        <Button
+          onClick={buscarComFiltros}
+          disabled={loading}
+          size="lg"
+          className="w-full sm:w-auto"
+        >
+          {loading ? (
+            <>
+              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+              Buscando...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="h-5 w-5 mr-2" />
+              Aplicar Filtros e Buscar
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Divider */}
+      <div className="border-t my-4" />
 
       {/* FILTROS E FERRAMENTAS DE ANÁLISE */}
       <Card className="bg-card border-border">
