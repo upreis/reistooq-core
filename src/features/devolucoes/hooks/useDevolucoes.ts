@@ -120,13 +120,26 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     enabled: performanceSettings.enableLazyLoading
   });
 
-  // Atualizar contas selecionadas quando selectedAccountId mudar
+  // Atualizar contas selecionadas quando selectedAccountId mudar e buscar automaticamente
   useEffect(() => {
     if (selectedAccountId && advancedFilters.contasSelecionadas[0] !== selectedAccountId) {
       setAdvancedFilters(prev => ({
         ...prev,
         contasSelecionadas: [selectedAccountId]
       }));
+      
+      // Buscar automaticamente quando a conta mudar
+      const buscarAutomaticamente = async () => {
+        const dadosAPI = await busca.buscarDaAPI(
+          { ...advancedFilters, contasSelecionadas: [selectedAccountId] },
+          mlAccounts
+        );
+        setDevolucoes(dadosAPI);
+        setCurrentPage(1);
+        persistence.saveApiData(dadosAPI, { ...advancedFilters, contasSelecionadas: [selectedAccountId] });
+      };
+      
+      buscarAutomaticamente();
     }
   }, [selectedAccountId]);
 
