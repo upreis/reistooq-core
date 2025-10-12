@@ -283,113 +283,85 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
   console.log('📈 Enriquecendo dados existentes...');
   
   try {
-    // 🔍 Buscar registros EXISTENTES do banco (não da API)
-    const { data: existingRecords, error } = await supabase
-      .from('devolucoes_avancadas')
-      .select('*')
-      .eq('integration_account_id', integration_account_id)
-      .order('created_at', { ascending: false })
-      .limit(limit || 50);
+    // 🔑 PASSO 1: Buscar dados DA API primeiro (não do banco)
+    console.log('📡 Buscando claims da API ML...');
+    const apiClaims = await getCachedOrFetchClaims(supabase, integration_account_id, limit || 50);
     
-    if (error) throw error;
-    
-    if (!existingRecords || existingRecords.length === 0) {
+    if (apiClaims.length === 0) {
+      console.log('⚠️  Nenhum claim retornado da API');
       return ok({
         success: true,
         enriched_count: 0,
-        message: 'Nenhum registro encontrado para enriquecer'
+        message: 'Nenhum claim encontrado na API ML'
       });
     }
     
-    console.log(`📊 Reprocessando ${existingRecords.length} registros existentes...`);
+    console.log(`📊 Processando ${apiClaims.length} claims/returns da API...`);
     
     let enrichedCount = 0;
-    let updatedCount = 0;
+    let savedCount = 0;
     
-    // Reprocessar cada registro com a lógica melhorada
-    for (const record of existingRecords) {
+    // 🔑 PASSO 2: Processar e SALVAR cada claim com dados enriquecidos
+    for (const claimData of apiClaims) {
       console.log(`🔄 Processando registro ${record.order_id}...`);
       
-      // DEBUG: Log do que encontramos
-      const hasClaimInOrderData = !!(record.dados_order?.cancel_detail || record.dados_order?.mediations?.length);
-      const hasExistingClaim = !!(record.dados_claim && record.dados_claim.id);
-      console.log(`  📋 Claim em orderData? ${hasClaimInOrderData} | Claim original preenchido? ${hasExistingClaim}`);
+      console.log(`🔄 Processando claim ${claimData.order_id}...`);
       
-      // 🔑 IMPORTANTE: Se já tem dados_claim preenchido, pular
-      if (hasExistingClaim && !hasClaimInOrderData) {
-        console.log(`  ⏭️  Já tem claim, pulando...`);
-        continue;
-      }
-      
-      // Reconstruir estrutura de claim a partir dos dados salvos
-      // 🔑 CRÍTICO: Passar claim_details VAZIO se queremos forçar extração de orderData
-      const claimData = {
-        order_id: record.order_id,
-        order_data: record.dados_order || {},
-        claim_details: hasClaimInOrderData ? {} : (record.dados_claim || {}), // Forçar vazio se tem em orderData
-        claim_messages: record.dados_mensagens || {},
-        return_data: record.dados_return || {},
-        mediation_data: record.dados_mediacao || {},
-        attachments: record.anexos_comprador || []
-      };
-      
-      // Processar com a lógica melhorada (que agora extrai de orderData)
-      const processedData = await processClaimData(claimData, integration_account_id);
-      
-      if (processedData) {
-        // DEBUG: Ver o que foi processado
-        const hasNewClaimData = !!processedData.dados_claim && Object.keys(processedData.dados_claim).length > 0;
-        console.log(`  ✅ Processado - dados_claim preenchido? ${hasNewClaimData}`);
+      try {
+        // Processar dados para extrair TODOS os campos necessários
+        const processedData = await processClaimData(claimData, integration_account_id);
         
-        if (hasNewClaimData) {
-          console.log(`  📊 Estrutura do claim: id=${processedData.dados_claim.id}, type=${processedData.dados_claim.type}`);
+        if (!processedData) {
+          console.log(`  ⏭️  Sem dados processados`);
+          continue;
         }
         
-        // Atualizar registro com os novos campos
-        const { error: updateError } = await supabase
-          .from('devolucoes_avancadas')
-          .update({
-            // Campos extraídos da nova lógica
-            dados_claim: processedData.dados_claim,
-            claim_status: processedData.claim_status,
-            claim_id: processedData.claim_id,
-            tipo_claim: processedData.tipo_claim,
-            motivo_categoria: processedData.motivo_categoria,
-            
-            // Outros campos que podem ter sido calculados
-            nivel_prioridade: processedData.nivel_prioridade,
-            dias_restantes_acao: processedData.dias_restantes_acao,
-            escalado_para_ml: processedData.escalado_para_ml,
-            em_mediacao: processedData.em_mediacao,
-            
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', record.id);
+        // DEBUG: Ver o que foi processado
+        const hasClaimData = !!processedData.dados_claim && Object.keys(processedData.dados_claim).length > 0;
+        console.log(`  ${hasClaimData ? '✅' : '⚠️'}  Claim extraído: ${hasClaimData ? 'SIM' : 'NÃO'}`);
         
-        if (!updateError) {
-          updatedCount++;
-          if (hasNewClaimData) {
+        if (hasClaimData) {
+          console.log(`  📊 Claim: id=${processedData.dados_claim.id}, type=${processedData.dados_claim.type}, status=${processedData.claim_status}`);
+        }
+        
+        // SALVAR ou ATUALIZAR no banco com UPSERT
+        const { error: upsertError } = await supabase
+          .from('devolucoes_avancadas')
+          .upsert({
+            integration_account_id,
+            order_id: claimData.order_id,
+            // Todos os campos processados
+            ...processedData,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'order_id,integration_account_id',
+            ignoreDuplicates: false  // Atualizar se já existe
+          });
+        
+        if (!upsertError) {
+          savedCount++;
+          if (hasClaimData) {
             enrichedCount++;
-            console.log(`  💾 Atualizado com dados_claim extraídos!`);
+            console.log(`  💾 SALVO com claim extraído!`);
           } else {
-            console.log(`  💾 Atualizado (sem dados_claim novos)`);
+            console.log(`  💾 Salvo (sem claim)`);
           }
         } else {
-          console.error(`  ❌ Erro ao atualizar registro ${record.id}:`, updateError);
+          console.error(`  ❌ Erro ao salvar:`, upsertError);
         }
-      } else {
-        console.log(`  ⚠️  processedData é null/undefined`);
+      } catch (error) {
+        console.error(`  ❌ Erro processando order ${claimData.order_id}:`, error);
       }
     }
     
-    console.log(`✅ Enriquecimento completo: ${enrichedCount} registros com novos dados de claim`);
+    console.log(`\n✅ Finalizado: ${savedCount} salvos, ${enrichedCount} enriquecidos de ${apiClaims.length} processados`);
     
     return ok({
       success: true,
       enriched_count: enrichedCount,
-      updated_count: updatedCount,
-      total_processed: existingRecords.length,
-      message: `${enrichedCount}/${existingRecords.length} registros enriquecidos com dados extraídos de orderData`
+      saved_count: savedCount,
+      total_processed: apiClaims.length,
+      message: `${enrichedCount} claims enriquecidos de ${savedCount} salvos`
     });
     
   } catch (error) {
