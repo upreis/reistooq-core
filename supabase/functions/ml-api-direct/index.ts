@@ -252,7 +252,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
           const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
           console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
           
-          const orderDetailResponse = await fetchMLWithRetry(orderDetailUrl, accessToken, integration_account_id)
+          const orderDetailResponse = await fetchMLWithRetry(orderDetailUrl, accessToken, integrationAccountId)
           
           if (orderDetailResponse.ok) {
             const orderDetail = await orderDetailResponse.json()
