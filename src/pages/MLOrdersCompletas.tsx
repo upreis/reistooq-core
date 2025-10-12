@@ -5,7 +5,6 @@ import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
-import { Package } from "lucide-react";
 
 export default function MLOrdersCompletas() {
   // Estado para contas selecionadas
@@ -66,32 +65,6 @@ export default function MLOrdersCompletas() {
           Sistema de gestão Mercado Livre - Devoluções Avançadas
         </p>
       </div>
-
-      {/* Informações das Contas ML */}
-      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Package className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">Contas Mercado Livre</h3>
-                <p className="text-sm text-muted-foreground">
-                  {mlAccounts.length} {mlAccounts.length === 1 ? 'conta ativa' : 'contas ativas'}
-                </p>
-              </div>
-            </div>
-            {selectedAccountIds.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                {selectedAccountIds.length === 1 
-                  ? `1 conta selecionada` 
-                  : `${selectedAccountIds.length} contas selecionadas`}
-              </div>
-            )}
-          </div>
-        </Card>
-      )}
 
       {/* Loading States */}
       {(loadingAccounts || loadingDevolucoes) && (
