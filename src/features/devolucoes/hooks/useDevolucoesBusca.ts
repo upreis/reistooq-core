@@ -30,15 +30,29 @@ export function useDevolucoesBusca() {
         }
       });
       
-      if (error || !data?.success || !data?.access_token) {
-        console.warn(`⚠️ Token não disponível para ${accountName}`);
+      if (error) {
+        console.error(`❌ Erro ao buscar token para ${accountName}:`, error);
+        
+        // Verificar se é erro de permissão
+        if (error.message?.includes('Insufficient permissions')) {
+          toast.error(`Sem permissão para acessar tokens ML. Entre em contato com o administrador.`);
+        } else {
+          toast.error(`Erro ao obter token para ${accountName}: ${error.message}`);
+        }
+        return null;
+      }
+      
+      if (!data?.success || !data?.access_token) {
+        console.warn(`⚠️ Token não disponível para ${accountName}:`, data?.error || 'Sem dados');
+        toast.warning(`Token não configurado para ${accountName}. Configure a integração ML primeiro.`);
         return null;
       }
 
-      console.log(`✅ Token obtido para ${accountName}`);
+      console.log(`✅ Token obtido com sucesso para ${accountName}`);
       return data.access_token;
     } catch (error) {
       console.error(`❌ Erro ao obter token para ${accountName}:`, error);
+      toast.error(`Falha ao conectar com servidor para ${accountName}`);
       return null;
     }
   }, []);

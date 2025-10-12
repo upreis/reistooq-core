@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 import { ProviderSelector } from "@/components/pedidos/components/ProviderSelector";
+import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 
@@ -98,15 +99,49 @@ export default function MLOrdersCompletas() {
         )}
       </div>
 
-      <DevolucaoAvancadasTab 
-        mlAccounts={mlAccounts || []}
-        selectedAccountId={selectedAccountIds[0] || ''}
-        refetch={async () => { 
-          await refetchDevolucoes();
-          logger.info('Devoluções recarregadas com sucesso');
-        }}
-        existingDevolucoes={existingDevolucoes || []}
-      />
+      {/* Loading States */}
+      {(loadingAccounts || loadingDevolucoes) && (
+        <div className="flex items-center justify-center py-8">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-sm text-muted-foreground">
+              {loadingAccounts ? 'Carregando contas...' : 'Carregando devoluções...'}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Erro: Sem contas */}
+      {!loadingAccounts && (!mlAccounts || mlAccounts.length === 0) && (
+        <Card className="p-6">
+          <div className="flex flex-col items-center gap-4 text-center">
+            <div className="rounded-full bg-yellow-100 p-3">
+              <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg">Nenhuma conta ML encontrada</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure uma conta do Mercado Livre para começar a gerenciar devoluções
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Conteúdo Principal */}
+      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
+        <DevolucaoAvancadasTab 
+          mlAccounts={mlAccounts || []}
+          selectedAccountId={selectedAccountIds[0] || ''}
+          refetch={async () => { 
+            await refetchDevolucoes();
+            logger.info('Devoluções recarregadas com sucesso');
+          }}
+          existingDevolucoes={existingDevolucoes || []}
+        />
+      )}
     </div>
   );
 }
