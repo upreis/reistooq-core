@@ -66,7 +66,7 @@ serve(async (req) => {
       
       const tokenData = await secretResponse.json();
       
-      if (!tokenData?.success || !tokenData?.secret?.access_token) {
+      if (!tokenData?.found || !tokenData?.secret?.access_token) {
         console.error('❌ Token ML não encontrado na resposta:', tokenData)
         return new Response(
           JSON.stringify({ 
