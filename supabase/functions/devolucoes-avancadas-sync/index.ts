@@ -620,6 +620,13 @@ async function upsertOrderData(supabase: any, processedClaim: any) {
         impacto_financeiro_vendedor: processedClaim.impacto_financeiro_vendedor,
         data_processamento_reembolso: processedClaim.data_processamento_reembolso,
         
+        // 🆕 Novos campos extraídos de orderData
+        dados_claim: processedClaim.dados_claim,
+        claim_status: processedClaim.claim_status,
+        tipo_claim: processedClaim.tipo_claim,
+        motivo_categoria: processedClaim.motivo_categoria,
+        resolution_reason: processedClaim.resolution_reason,
+        
         data_criacao: processedClaim.data_criacao,
         updated_at: new Date().toISOString()
       }, {
