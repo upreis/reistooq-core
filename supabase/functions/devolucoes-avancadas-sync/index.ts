@@ -717,22 +717,6 @@ async function processClaimData(claim: any, integration_account_id: string) {
     updated_at: new Date().toISOString()
   };
 }
-  
-  return {
-    order_id: claim.order_id,
-    claim_id: effectiveClaimData.id,
-    ...calculations,
-    integration_account_id: integration_account_id,
-    data_criacao: dataCreated.toISOString(),
-    updated_at: new Date().toISOString(),
-    // 📝 Adicionar dados de claim construídos a partir de orderData
-    dados_claim: hasClaimInOrderData ? effectiveClaimData : claimDetails,
-    claim_status: effectiveClaimData.status,
-    tipo_claim: effectiveClaimData.type,
-    motivo_categoria: effectiveClaimData.reason_id,
-    resolution_reason: effectiveClaimData.resolution?.reason
-  };
-}
 
 function calculateMetrics(messages: any[], dataCreated: Date, dataResolution: Date | null, sellerId: string, orderData: any) {
   // 1. Tempo primeira resposta (otimizado com find ao invés de filter)
