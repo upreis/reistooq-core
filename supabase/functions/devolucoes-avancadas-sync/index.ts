@@ -579,8 +579,15 @@ async function processClaimData(claim: any, integration_account_id: string) {
   const claimDetails = claim?.claim_details || {};
   const returnDetailsV2 = claim?.return_details_v2 || {};
   const returnDetailsV1 = claim?.return_details_v1 || {};
+  
+  // 🔧 CORREÇÃO: Acessar o array de mensagens corretamente
   const messagesData = claim?.claim_messages || {};
-  const attachmentsData = claim?.claim_attachments || {};
+  const messages = messagesData?.messages || [];
+  
+  // 🔧 CORREÇÃO: Attachments já vem como array direto
+  const attachmentsData = claim?.claim_attachments || [];
+  const attachments = Array.isArray(attachmentsData) ? attachmentsData : [];
+  
   const mediationDetails = claim?.mediation_details || {};
   const changeDetails = claim?.change_details || {};
   const shipmentHistory = claim?.shipment_history || {};
@@ -620,21 +627,38 @@ async function processClaimData(claim: any, integration_account_id: string) {
   const hasReturn = returnDetailsV2?.results?.length > 0 || returnDetailsV1?.length > 0;
   const returnData = hasReturn ? (returnDetailsV2?.results?.[0] || returnDetailsV1?.[0] || {}) : {};
   
-  // Extrair mensagens e anexos
-  const messages = messagesData?.messages || [];
-  const attachments = Array.isArray(attachmentsData) ? attachmentsData : [];
+  // Contar mensagens e anexos
   const totalMessages = messages.length;
   const totalAttachments = attachments.length;
   
-  // Última mensagem
+  // 🔧 CORREÇÃO: Última mensagem com paginação (a última é a mais recente)
   const ultimaMensagem = messages.length > 0 ? messages[messages.length - 1] : null;
-  const ultimaMensagemData = ultimaMensagem?.date_created;
-  const ultimaMensagemTexto = ultimaMensagem?.text || ultimaMensagem?.message?.text;
+  const ultimaMensagemData = ultimaMensagem?.date_created || null;
+  const ultimaMensagemRemetente = ultimaMensagem?.from?.role || null;
   
-  // Extrair datas importantes dos novos endpoints
-  const dataEstimadaTroca = changeDetails?.estimated_delivery_date || returnData?.estimated_delivery?.date;
-  const dataLimiteTroca = changeDetails?.deadline || returnData?.deadline;
-  const dataVencimentoAcao = claimDetails?.resolution?.deadline || mediationDetails?.deadline;
+  // Separar anexos por tipo de usuário
+  const anexosComprador = attachments.filter((a: any) => a.user_type === 'buyer');
+  const anexosVendedor = attachments.filter((a: any) => a.user_type === 'seller');
+  const anexosMl = attachments.filter((a: any) => a.user_type === 'moderator' || a.user_type === 'meli');
+  
+  // 🔧 CORREÇÃO: Extrair datas importantes dos novos endpoints
+  const dataEstimadaTroca = changeDetails?.estimated_delivery_date || returnData?.estimated_delivery?.date || null;
+  const dataLimiteTroca = changeDetails?.deadline || returnData?.deadline || null;
+  const dataVencimentoAcao = claimDetails?.resolution?.deadline || mediationDetails?.deadline || null;
+  
+  // Rastreamento de envio
+  const codigoRastreamento = returnData?.tracking_number || 
+                              returnData?.shipments?.[0]?.tracking_number ||
+                              claim?.return_tracking || null;
+  
+  const statusRastreamento = returnData?.shipments?.[0]?.substatus || 
+                              returnData?.shipments?.[0]?.status ||
+                              shipmentHistory?.history?.[0]?.status || 
+                              claim?.tracking_status_detail || null;
+  
+  const transportadora = returnData?.carrier || 
+                          shipmentHistory?.carrier_info?.name || 
+                          null;
   
   // Calcular dias restantes
   const calcularDiasRestantes = (dataFutura: string | null) => {
@@ -680,16 +704,18 @@ async function processClaimData(claim: any, integration_account_id: string) {
     motivo_categoria: motivoCategoria,
     
     // RETURN
-    status_devolucao: returnData?.status || 'N/A',
-    codigo_rastreamento: returnData?.tracking_number || claim?.return_tracking,
-    status_rastreamento: returnData?.shipment_status || claim?.tracking_status_detail,
+    status_devolucao: returnData?.status || null,
+    codigo_rastreamento: codigoRastreamento,
+    status_rastreamento: statusRastreamento,
+    transportadora: transportadora,
     
-    // ANEXOS
-    anexos_count: totalMessages + totalAttachments,
-    anexos_comprador: attachments.filter((a: any) => a.user_type === 'buyer'),
-    anexos_vendedor: attachments.filter((a: any) => a.user_type === 'seller'),
-    anexos_ml: attachments.filter((a: any) => a.user_type === 'moderator'),
+    // 🔧 CORREÇÃO: ANEXOS E MENSAGENS
+    anexos_count: totalAttachments,
+    anexos_comprador: anexosComprador.length > 0 ? anexosComprador : [],
+    anexos_vendedor: anexosVendedor.length > 0 ? anexosVendedor : [],
+    anexos_ml: anexosMl.length > 0 ? anexosMl : [],
     numero_interacoes: totalMessages,
+    mensagens_nao_lidas: 0, // TODO: calcular baseado em leitura
     
     // PRIORIDADE
     nivel_prioridade: nivelPrioridade,
@@ -698,22 +724,21 @@ async function processClaimData(claim: any, integration_account_id: string) {
     em_mediacao: !!(mediationDetails && Object.keys(mediationDetails).length > 0),
     status_moderacao: mediationDetails?.status,
     
-    // DATAS (CORRIGIDAS - campos que estavam faltando)
-    data_criacao: orderData?.date_created || claimDetails?.date_created,
-    data_atualizacao: orderData?.last_updated || claimDetails?.last_updated,
-    data_resolucao: claimDetails?.resolution?.date || claim?.resolution_date,
+    // 🔧 CORREÇÃO: DATAS - campos que estavam faltando
+    data_criacao: orderData?.date_created || claimDetails?.date_created || null,
+    data_atualizacao: orderData?.last_updated || claimDetails?.last_updated || null,
+    data_resolucao: claimDetails?.resolution?.date || claim?.resolution_date || null,
     ultima_mensagem_data: ultimaMensagemData,
-    ultima_mensagem_texto: ultimaMensagemTexto,
+    ultima_mensagem_remetente: ultimaMensagemRemetente,
     data_estimada_troca: dataEstimadaTroca,
     data_limite_troca: dataLimiteTroca,
     data_vencimento_acao: dataVencimentoAcao,
+    data_ultima_movimentacao: shipmentHistory?.history?.[0]?.date || null,
     
-    // TROCA
-    is_exchange: !!(changeDetails && Object.keys(changeDetails).length > 0),
-    exchange_product_id: changeDetails?.substitute_product?.id,
-    exchange_product_title: changeDetails?.substitute_product?.title,
-    exchange_status: changeDetails?.status,
-    exchange_expected_date: changeDetails?.estimated_delivery_date,
+    // 🔧 CORREÇÃO: TROCA
+    eh_troca: !!(changeDetails && Object.keys(changeDetails).length > 0),
+    produto_troca_id: changeDetails?.substitute_product?.id || null,
+    produto_troca_titulo: changeDetails?.substitute_product?.title || null,
     
     // PEDIDO
     nome_comprador: orderData?.buyer?.nickname || orderData?.buyer?.first_name,
@@ -722,10 +747,14 @@ async function processClaimData(claim: any, integration_account_id: string) {
     quantidade: orderData?.order_items?.[0]?.quantity || 1,
     valor_total: orderData?.total_amount || 0,
     
-    // TRACKING
-    tracking_events: shipmentHistory?.history || [],
-    last_tracking_update: shipmentHistory?.history?.[0]?.date,
-    tracking_status_detail: shipmentHistory?.history?.[0]?.status,
+    // 🔧 CORREÇÃO: TRACKING
+    tracking_history: shipmentHistory?.history || [],
+    tracking_events: (shipmentHistory?.history || []).map((event: any) => ({
+      date: event.date,
+      status: event.status,
+      description: event.description,
+      location: event.location
+    })),
     
     // METADADOS
     dados_completos: true,
