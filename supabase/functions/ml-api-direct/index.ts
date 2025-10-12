@@ -220,12 +220,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`🎯 Buscando claims diretamente da API Claims Search para seller ${sellerId}...`)
     
     // 🚀 USAR ENDPOINT CORRETO: /post-purchase/v1/claims/search
-    // 🛡️ IMPORTANTE: A API NÃO aceita seller_id diretamente!
-    // Deve usar: players.role=respondent e players.user_id={seller_id}
     const params = new URLSearchParams()
     
-    // 🔑 PARÂMETROS CORRETOS CONFORME DOCUMENTAÇÃO ML
-    // O seller é o "respondent" (respondente) nos claims
+    // ✅ PARÂMETROS CORRETOS CONFORME ANÁLISE DO MANUS
+    // Seller como respondente (obrigatório)
     params.append('players.role', 'respondent')
     params.append('players.user_id', sellerId)
     
