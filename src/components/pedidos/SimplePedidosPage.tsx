@@ -921,7 +921,7 @@ useEffect(() => {
   // Render principal
   return (
     <div className="h-screen flex flex-col">
-      {/* Header com navegação */}
+      {/* Header com abas */}
       <div className="border-b bg-background sticky top-0 z-10 px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -958,13 +958,13 @@ useEffect(() => {
       {/* Conteúdo */}
       <div className="flex-1 overflow-auto m-0 p-6">
         <div className="space-y-6">
-            {/* 📊 DASHBOARD INTELIGENTE */}
-            <ErrorBoundary name="PedidosDashboardSection">
-              <PedidosDashboardSection 
-                orders={orders || []}
-                loading={loading}
-              />
-            </ErrorBoundary>
+          {/* 📊 DASHBOARD INTELIGENTE */}
+          <ErrorBoundary name="PedidosDashboardSection">
+            <PedidosDashboardSection 
+              orders={orders || []}
+              loading={loading}
+            />
+          </ErrorBoundary>
 
       {/* 🛡️ HEADER BLINDADO */}
       <PedidosHeaderSection
