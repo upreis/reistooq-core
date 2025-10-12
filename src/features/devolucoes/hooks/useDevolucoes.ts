@@ -83,30 +83,57 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   const devolucoesFiltradas = useMemo(() => {
     let resultados = [...devolucoes];
 
+    // 🔍 BUSCA TEXTUAL EXPANDIDA
     if (debouncedSearchTerm) {
       const searchTerm = debouncedSearchTerm.toLowerCase();
       resultados = resultados.filter(dev => 
         dev.produto_titulo?.toLowerCase().includes(searchTerm) ||
         dev.order_id?.toString().includes(searchTerm) ||
+        dev.claim_id?.toString().includes(searchTerm) ||
         dev.sku?.toLowerCase().includes(searchTerm) ||
-        dev.comprador_nickname?.toLowerCase().includes(searchTerm)
+        dev.comprador_nickname?.toLowerCase().includes(searchTerm) ||
+        dev.codigo_rastreamento?.toLowerCase().includes(searchTerm) ||
+        dev.transportadora?.toLowerCase().includes(searchTerm)
       );
     }
 
+    // 🎯 FILTRO DE STATUS CORRIGIDO
     if (advancedFilters.statusClaim) {
-      resultados = resultados.filter(dev => dev.status_devolucao === advancedFilters.statusClaim);
+      if (advancedFilters.statusClaim === 'with_claims') {
+        // Filtrar apenas devoluções que TÊM claim_id
+        resultados = resultados.filter(dev => 
+          dev.claim_id !== null && 
+          dev.claim_id !== undefined && 
+          dev.claim_id !== ''
+        );
+      } else {
+        // Filtrar por status específico
+        resultados = resultados.filter(dev => dev.status_devolucao === advancedFilters.statusClaim);
+      }
     }
 
+    // 📅 FILTRO DE DATA INÍCIO (com validação)
     if (advancedFilters.dataInicio) {
-      resultados = resultados.filter(dev => 
-        new Date(dev.data_criacao) >= new Date(advancedFilters.dataInicio)
-      );
+      resultados = resultados.filter(dev => {
+        if (!dev.data_criacao) return false;
+        try {
+          return new Date(dev.data_criacao) >= new Date(advancedFilters.dataInicio);
+        } catch {
+          return false;
+        }
+      });
     }
 
+    // 📅 FILTRO DE DATA FIM (com validação e hora final do dia)
     if (advancedFilters.dataFim) {
-      resultados = resultados.filter(dev => 
-        new Date(dev.data_criacao) <= new Date(advancedFilters.dataFim)
-      );
+      resultados = resultados.filter(dev => {
+        if (!dev.data_criacao) return false;
+        try {
+          return new Date(dev.data_criacao) <= new Date(advancedFilters.dataFim + 'T23:59:59');
+        } catch {
+          return false;
+        }
+      });
     }
 
     return resultados;
