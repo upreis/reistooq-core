@@ -231,14 +231,32 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               claimPromises.push(
                 fetch(`https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`, {
                   headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(r => r.ok ? r.json() : null).catch(() => null)
+                }).then(async r => {
+                  if (r.ok) return r.json();
+                  console.log(`⚠️  Mediation failed (${r.status}): ${mediationId}`);
+                  return null;
+                }).catch(e => {
+                  console.error(`❌ Mediation error: ${e.message}`);
+                  return null;
+                })
               )
               
               // 4. Buscar anexos do claim
               claimPromises.push(
                 fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/attachments`, {
                   headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(r => r.ok ? r.json() : null).catch(() => null)
+                }).then(async r => {
+                  if (r.ok) {
+                    const data = await r.json();
+                    console.log(`📎 Attachments encontrados: ${Array.isArray(data) ? data.length : 0}`);
+                    return data;
+                  }
+                  console.log(`⚠️  Attachments failed (${r.status}): ${mediationId}`);
+                  return null;
+                }).catch(e => {
+                  console.error(`❌ Attachments error: ${e.message}`);
+                  return null;
+                })
               )
 
               // 5. Buscar returns v2 usando claim ID (novo)
@@ -260,15 +278,29 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
                   headers: { 'Authorization': `Bearer ${accessToken}` }
                 }).then(async (r) => {
-                  if (!r.ok) return null
+                  if (!r.ok) {
+                    console.log(`⚠️  Shipment history (returns) failed (${r.status}): ${mediationId}`);
+                    return null;
+                  }
                   const data = await r.json()
-                  const shipmentId = data?.results?.[0]?.shipments?.[0]?.id
-                  if (!shipmentId) return null
+                  const shipmentId = data?.results?.[0]?.shipments?.[0]?.id || data?.results?.[0]?.shipments?.[0]?.shipment_id
+                  if (!shipmentId) {
+                    console.log(`⚠️  Sem shipment ID para ${mediationId}`);
+                    return null;
+                  }
+                  console.log(`🚚 Buscando histórico para shipment ${shipmentId}...`);
                   const historyResponse = await fetch(`https://api.mercadolibre.com/shipments/${shipmentId}/history`, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                   })
-                  return historyResponse.ok ? await historyResponse.json() : null
-                }).catch(() => null)
+                  if (!historyResponse.ok) {
+                    console.log(`⚠️  Shipment history failed (${historyResponse.status}): ${shipmentId}`);
+                    return null;
+                  }
+                  return await historyResponse.json();
+                }).catch(e => {
+                  console.error(`❌ Shipment history error: ${e.message}`);
+                  return null;
+                })
               )
 
               // 8. Buscar change details se for troca
