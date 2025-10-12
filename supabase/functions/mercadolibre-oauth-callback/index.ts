@@ -209,9 +209,11 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         integration_account_id: account.id,
         provider: 'mercadolivre',
-        access_token: tokenData.access_token,
-        refresh_token: tokenData.refresh_token,
-        expires_at: expiresAt.toISOString()
+        payload: {
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token,
+          expires_at: expiresAt.toISOString()
+        }
       })
     });
 
