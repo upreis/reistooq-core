@@ -124,43 +124,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   // 🔍 HOOK DE BUSCA AVANÇADA
   const devolucoesBusca = useDevolucoesBusca();
-  
-  // 🔄 SINCRONIZAÇÃO COM ML
-  const [isSyncing, setIsSyncing] = React.useState(false);
-  
-  const sincronizarDadosML = async () => {
-    if (!selectedAccountId) {
-      toast.error('Selecione uma conta ML primeiro');
-      return;
-    }
-    
-    setIsSyncing(true);
-    toast.info('🚀 Iniciando enriquecimento com dados do Mercado Livre...');
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
-        body: {
-          action: 'enrich_existing_data',
-          integration_account_id: selectedAccountId,
-          limit: 50 // Processar 50 devoluções por vez
-        }
-      });
-      
-      if (error) throw error;
-      
-      if (data?.success) {
-        toast.success(`✅ ${data.enriched_count} devoluções enriquecidas com sucesso!`);
-        await refetch(); // Recarregar dados
-      } else {
-        toast.error(`Erro: ${data?.error || 'Falha na sincronização'}`);
-      }
-    } catch (error) {
-      console.error('Erro na sincronização:', error);
-      toast.error('Erro ao sincronizar com Mercado Livre');
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   // 🚀 FASE 2: HOOK PARA AS 42 NOVAS COLUNAS
   const fase2 = useDevolucoesFase2({
@@ -562,20 +525,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               Análise API
             </Button>
 
-            {/* 🚀 BOTÃO DE SINCRONIZAÇÃO COM ML - ENRIQUECER 87 COLUNAS */}
-            <Button
-              variant="default"
-              onClick={sincronizarDadosML}
-              disabled={isSyncing || loading}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white flex items-center gap-2"
-            >
-              {isSyncing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Zap className="h-4 w-4" />
-              )}
-              {isSyncing ? 'Sincronizando ML...' : '⚡ Enriquecer com ML'}
-            </Button>
 
             <Button
               variant="outline"
