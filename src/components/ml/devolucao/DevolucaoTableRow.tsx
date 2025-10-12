@@ -23,7 +23,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
   const claimData = devolucao.dados_claim || {};
   const returnData = devolucao.dados_return || {};
   
-  const temClaimData = claimData && Object.keys(claimData).length > 0;
+  // 🛡️ DETECÇÃO MELHORADA: Verificar dados de claim tanto em claimData quanto em orderData
+  const temClaimData = (
+    (claimData && Object.keys(claimData).length > 0) || // Dados diretos do claim
+    !!devolucao.claim_id || // Tem claim_id
+    !!orderData?.cancel_detail?.code || // Dados de cancelamento no order
+    (orderData?.status === 'cancelled') || // Order cancelado
+    (orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0) // Tem mediações
+  );
+  
   const temReturnData = returnData && Object.keys(returnData).length > 0;
   const temMediationData = orderData?.mediations || devolucao.em_mediacao;
   const temAttachmentsData = devolucao.anexos_count && devolucao.anexos_count > 0;

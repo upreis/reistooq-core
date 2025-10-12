@@ -34,14 +34,16 @@ export function auditarIndicadores(devolucao: any): IndicadorAuditResult {
     dados_mensagens_keys: Object.keys(mensagensData)
   };
 
-  // 📋 AUDITORIA CLAIM
+  // 📋 AUDITORIA CLAIM (verificando também dados em orderData)
   const claim_conditions = {
     has_claim_data: claimData && Object.keys(claimData).length > 0,
     has_mediations: orderData?.mediations && Array.isArray(orderData.mediations) && orderData.mediations.length > 0,
     has_claim_id: !!devolucao.claim_id,
     has_reason_code: !!claimData?.reason?.code,
     is_cancellation: claimData?.type === 'cancellation',
-    has_cancel_detail: !!orderData?.cancel_detail?.code
+    has_cancel_detail: !!orderData?.cancel_detail?.code, // 🔍 VERIFICAÇÃO EM ORDERDATA
+    order_is_cancelled: orderData?.status === 'cancelled', // 🔍 VERIFICAÇÃO EM ORDERDATA
+    has_order_request_cancel: !!orderData?.order_request?.change // 🔍 VERIFICAÇÃO EM ORDERDATA
   };
 
   // 📦 AUDITORIA RETURN  
