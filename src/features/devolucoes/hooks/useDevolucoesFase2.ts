@@ -6,6 +6,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface DevolucoesFase2Config {
   integration_account_id: string;
@@ -43,7 +44,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
     setEnrichmentProgress(0);
 
     try {
-      console.log(`🔄 Iniciando enriquecimento para conta: ${config.integration_account_id}`);
+      logger.info(`Iniciando enriquecimento para conta: ${config.integration_account_id}`);
 
       const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
@@ -54,14 +55,14 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       });
 
       if (error) {
-        console.error('❌ Erro na edge function:', error);
+        logger.error('Erro na edge function', error);
         toast.error(`Erro no enriquecimento: ${error.message}`);
         return { success: false, error: error.message };
       }
 
       if (!data?.success) {
         const errorMsg = data?.error || 'Erro desconhecido no enriquecimento';
-        console.error('❌ Resposta de erro:', errorMsg);
+        logger.error('Resposta de erro', errorMsg);
         toast.error(errorMsg);
         return { success: false, error: errorMsg };
       }
@@ -74,7 +75,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
         { duration: 5000 }
       );
 
-      console.log('✅ Enriquecimento concluído:', data);
+      logger.info('Enriquecimento concluído', data);
 
       return {
         success: true,
@@ -84,7 +85,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       };
 
     } catch (error) {
-      console.error('❌ Erro no enriquecimento:', error);
+      logger.error('Erro no enriquecimento', error);
       toast.error(`Erro no enriquecimento: ${error.message}`);
       return { success: false, error: error.message };
     } finally {
@@ -102,7 +103,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
     setLoading(true);
 
     try {
-      console.log(`🔄 Sincronizando campos avançados para: ${config.integration_account_id}`);
+      logger.info(`Sincronizando campos avançados para: ${config.integration_account_id}`);
 
       const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
@@ -112,7 +113,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       });
 
       if (error) {
-        console.error('❌ Erro na sincronização:', error);
+        logger.error('Erro na sincronização', error);
         toast.error(`Erro na sincronização: ${error.message}`);
         return { success: false, error: error.message };
       }
@@ -125,7 +126,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       return data;
 
     } catch (error) {
-      console.error('❌ Erro na sincronização:', error);
+      logger.error('Erro na sincronização', error);
       toast.error(`Erro na sincronização: ${error.message}`);
       return { success: false, error: error.message };
     } finally {
@@ -143,7 +144,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
     setLoading(true);
 
     try {
-      console.log(`📈 Buscando métricas avançadas para: ${config.integration_account_id}`);
+      logger.info(`Buscando métricas avançadas para: ${config.integration_account_id}`);
 
       const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
@@ -155,7 +156,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       });
 
       if (error) {
-        console.error('❌ Erro ao buscar métricas:', error);
+        logger.error('Erro ao buscar métricas', error);
         toast.error(`Erro ao buscar métricas: ${error.message}`);
         return { success: false, error: error.message };
       }
@@ -164,7 +165,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
         setMetrics(data.metrics);
         toast.success('📊 Métricas avançadas carregadas!');
         
-        console.log('📊 Métricas recebidas:', data.metrics);
+        logger.info('Métricas recebidas', data.metrics);
         
         return {
           success: true,
@@ -176,7 +177,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       return data;
 
     } catch (error) {
-      console.error('❌ Erro ao buscar métricas:', error);
+      logger.error('Erro ao buscar métricas', error);
       toast.error(`Erro ao buscar métricas: ${error.message}`);
       return { success: false, error: error.message };
     } finally {
@@ -199,7 +200,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
     setLoading(true);
 
     try {
-      console.log(`🔄 Atualizando ${updates.length} registros da Fase 2...`);
+      logger.info(`Atualizando ${updates.length} registros da Fase 2`);
 
       const { data, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
         body: {
@@ -210,7 +211,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       });
 
       if (error) {
-        console.error('❌ Erro na atualização:', error);
+        logger.error('Erro na atualização', error);
         toast.error(`Erro na atualização: ${error.message}`);
         return { success: false, error: error.message };
       }
@@ -223,7 +224,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       return data;
 
     } catch (error) {
-      console.error('❌ Erro na atualização:', error);
+      logger.error('Erro na atualização', error);
       toast.error(`Erro na atualização: ${error.message}`);
       return { success: false, error: error.message };
     } finally {
@@ -245,7 +246,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       toast.info(`🔄 Iniciando processamento em ${totalBatches} lotes de ${batchSize} registros...`);
 
       for (let i = 0; i < totalBatches; i++) {
-        console.log(`📦 Processando lote ${i + 1}/${totalBatches}...`);
+        logger.info(`Processando lote ${i + 1}/${totalBatches}`);
 
         const result = await enrichExistingData(batchSize);
         
@@ -261,7 +262,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
             await new Promise(resolve => setTimeout(resolve, 1000));
           }
         } else {
-          console.warn(`⚠️ Erro no lote ${i + 1}:`, result.error);
+          logger.warn(`Erro no lote ${i + 1}`, result.error);
           // Continua com próximo lote mesmo se houver erro
         }
       }
@@ -279,7 +280,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       };
 
     } catch (error) {
-      console.error('❌ Erro no processamento em lote:', error);
+      logger.error('Erro no processamento em lote', error);
       toast.error(`Erro no processamento em lote: ${error.message}`);
       return { success: false, error: error.message };
     } finally {
@@ -291,7 +292,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
   // 🎯 AUTO-ENRIQUECIMENTO (se habilitado)
   useEffect(() => {
     if (config.auto_enrich && config.integration_account_id) {
-      console.log('🎯 Auto-enriquecimento habilitado, iniciando...');
+      logger.info('Auto-enriquecimento habilitado, iniciando');
       
       // Delay inicial para evitar múltiplas chamadas
       const timer = setTimeout(() => {
@@ -305,7 +306,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
   // 📊 CARREGAR MÉTRICAS AUTOMATICAMENTE
   useEffect(() => {
     if (config.integration_account_id && !metrics) {
-      console.log('📊 Carregando métricas iniciais...');
+      logger.info('Carregando métricas iniciais');
       
       const timer = setTimeout(() => {
         fetchAdvancedMetrics();

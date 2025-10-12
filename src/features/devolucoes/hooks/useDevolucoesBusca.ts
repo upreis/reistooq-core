@@ -449,35 +449,35 @@ export function useDevolucoesBusca() {
                 .eq('order_id', devolucao.order_id);
 
               if (updateError) {
-                console.error(`❌ Erro ao atualizar order ${devolucao.order_id}:`, updateError);
+                logger.error(`Erro ao atualizar order ${devolucao.order_id}`, updateError);
               } else {
                 totalEnriquecidas++;
-                console.log(`✅ Order ${devolucao.order_id} enriquecida com sucesso`);
+                logger.info(`Order ${devolucao.order_id} enriquecida com sucesso`);
               }
 
               // Pausa entre atualizações
               await new Promise(resolve => setTimeout(resolve, 100));
             } else {
-              console.log(`ℹ️ Sem claim encontrado para order ${devolucao.order_id}`);
+              logger.info(`Sem claim encontrado para order ${devolucao.order_id}`);
             }
           }
 
         } catch (error) {
-          console.error(`❌ Erro ao processar conta ${conta.name}:`, error);
+          logger.error(`Erro ao processar conta ${conta.name}`, error);
         }
 
         // Pausa entre contas
         await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      console.log(`🎉 Enriquecimento finalizado: ${totalEnriquecidas} devoluções enriquecidas`);
+      logger.info(`Enriquecimento finalizado: ${totalEnriquecidas} devoluções enriquecidas`);
       
       if (totalEnriquecidas > 0) {
         toast.success(`🔍 ${totalEnriquecidas} devoluções enriquecidas com dados completos!`);
       }
 
     } catch (error) {
-      console.error('❌ Erro no enriquecimento:', error);
+      logger.error('Erro no enriquecimento', error);
       toast.error('Erro durante o enriquecimento dos dados');
     }
   };

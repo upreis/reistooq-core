@@ -6,6 +6,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export function useDevolucoesDemostracao(
   enabled: boolean,
@@ -25,7 +26,7 @@ export function useDevolucoesDemostracao(
       return;
     }
 
-    console.log('🔄 Configurando listener tempo real para devoluções...');
+    logger.info('Configurando listener tempo real para devoluções');
     
     const channel = supabase
       .channel('devolucoes-realtime')
@@ -37,7 +38,7 @@ export function useDevolucoesDemostracao(
           table: 'devolucoes_avancadas'
         },
         (payload) => {
-          console.log('📡 Atualização tempo real:', payload);
+          logger.info('Atualização tempo real', payload);
           
           if (payload.eventType === 'INSERT') {
             const novaDevolucao = payload.new;
@@ -73,7 +74,7 @@ export function useDevolucoesDemostracao(
     channelRef.current = channel;
 
     return () => {
-      console.log('🔄 Removendo listener tempo real');
+      logger.info('Removendo listener tempo real');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;

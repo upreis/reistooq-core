@@ -4,6 +4,7 @@
  */
 
 import { DevolucaoAvancada } from '../types/devolucao-avancada.types';
+import { logger } from '@/utils/logger';
 
 /**
  * Extrai o motivo do cancelamento de forma segura
@@ -55,7 +56,7 @@ export function extractCancelReason(devolucao: DevolucaoAvancada): string {
     
     return 'N/A';
   } catch (error) {
-    console.error('Erro ao extrair motivo:', error);
+    logger.error('Erro ao extrair motivo', error);
     return 'N/A';
   }
 }
@@ -101,7 +102,7 @@ export function extractDetailedReason(devolucao: DevolucaoAvancada): string {
     
     return 'Sem detalhes disponíveis';
   } catch (error) {
-    console.error('Erro ao extrair texto detalhado:', error);
+    logger.error('Erro ao extrair texto detalhado', error);
     return 'Sem detalhes disponíveis';
   }
 }
@@ -145,7 +146,7 @@ export function extractMessageText(devolucao: DevolucaoAvancada): string {
     
     return mensagens.length > 0 ? mensagens.join(' | ') : 'Sem mensagens de texto';
   } catch (error) {
-    console.error('Erro ao extrair mensagens:', error);
+    logger.error('Erro ao extrair mensagens', error);
     return 'Erro ao carregar mensagens';
   }
 }
@@ -168,7 +169,7 @@ export function extractLastMessageText(devolucao: DevolucaoAvancada): string {
     
     return 'Sem texto da última mensagem';
   } catch (error) {
-    console.error('Erro ao extrair última mensagem:', error);
+    logger.error('Erro ao extrair última mensagem', error);
     return 'Erro ao carregar última mensagem';
   }
 }

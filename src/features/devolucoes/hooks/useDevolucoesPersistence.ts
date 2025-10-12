@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '@/utils/logger';
 
 interface DevolucoesPersistentState {
   data: any[];
@@ -36,19 +37,19 @@ export function useDevolucoesPersistence() {
           const isExpired = now - parsed.lastApiCall > CACHE_DURATION;
           
           if (!isExpired || parsed.dataSource === 'database') {
-            console.log('🔄 Estado devoluções carregado:', {
+            logger.info('Estado devoluções carregado', {
               dataCount: parsed.data.length,
               source: parsed.dataSource,
               cacheAge: Math.round((now - parsed.lastApiCall) / 1000) + 's'
             });
             setPersistedState(parsed);
           } else {
-            console.log('⏰ Cache de devoluções expirado');
+            logger.info('Cache de devoluções expirado');
             localStorage.removeItem(STORAGE_KEY);
           }
         }
       } catch (error) {
-        console.warn('Erro ao carregar estado devoluções:', error);
+        logger.warn('Erro ao carregar estado devoluções', error);
         localStorage.removeItem(STORAGE_KEY);
       } finally {
         setIsStateLoaded(true);
@@ -81,12 +82,12 @@ export function useDevolucoesPersistence() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       setPersistedState(newState);
       
-      console.log('💾 Estado devoluções salvo:', {
+      logger.info('Estado devoluções salvo', {
         dataCount: newState.data.length,
         source: newState.dataSource
       });
     } catch (error) {
-      console.warn('Erro ao salvar estado devoluções:', error);
+      logger.warn('Erro ao salvar estado devoluções', error);
     }
   }, [persistedState]);
 
@@ -136,9 +137,9 @@ export function useDevolucoesPersistence() {
     try {
       localStorage.removeItem(STORAGE_KEY);
       setPersistedState(null);
-      console.log('🗑️ Cache devoluções limpo');
+      logger.info('Cache devoluções limpo');
     } catch (error) {
-      console.warn('Erro ao limpar cache:', error);
+      logger.warn('Erro ao limpar cache', error);
     }
   }, []);
 
