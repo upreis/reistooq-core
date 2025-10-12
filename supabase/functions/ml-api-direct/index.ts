@@ -241,17 +241,23 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 })
               )
               
-              // 4. Buscar anexos do claim
+              // 4. Buscar anexos do claim (pode retornar 404/405 se não houver)
               claimPromises.push(
                 fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/attachments`, {
                   headers: { 'Authorization': `Bearer ${accessToken}` }
                 }).then(async r => {
                   if (r.ok) {
                     const data = await r.json();
-                    console.log(`📎 Attachments encontrados: ${Array.isArray(data) ? data.length : 0}`);
-                    return data;
+                    if (Array.isArray(data) && data.length > 0) {
+                      console.log(`📎 ${data.length} anexos encontrados para ${mediationId}`);
+                      return data;
+                    }
                   }
-                  console.log(`⚠️  Attachments failed (${r.status}): ${mediationId}`);
+                  // 404/405 são normais - nem todo claim tem anexos disponíveis via API
+                  if (r.status === 404 || r.status === 405) {
+                    return null;
+                  }
+                  console.log(`⚠️  Attachments (${r.status}): ${mediationId}`);
                   return null;
                 }).catch(e => {
                   console.error(`❌ Attachments error: ${e.message}`);
