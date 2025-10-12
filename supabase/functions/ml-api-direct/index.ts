@@ -220,12 +220,14 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`🎯 Buscando claims diretamente da API Claims Search para seller ${sellerId}...`)
     
     // 🚀 USAR ENDPOINT CORRETO: /post-purchase/v1/claims/search
-    // Mais eficiente - busca APENAS claims, não todos os pedidos
-    // Pega claims de TODOS os recursos (order, shipment, payment)
+    // 🛡️ IMPORTANTE: A API NÃO aceita seller_id diretamente!
+    // Deve usar: players.role=respondent e players.user_id={seller_id}
     const params = new URLSearchParams()
     
-    // Seller ID é obrigatório
-    params.append('seller_id', sellerId)
+    // 🔑 PARÂMETROS CORRETOS CONFORME DOCUMENTAÇÃO ML
+    // O seller é o "respondent" (respondente) nos claims
+    params.append('players.role', 'respondent')
+    params.append('players.user_id', sellerId)
     
     // 🛡️ VALIDAÇÃO CRÍTICA: Apenas adicionar parâmetros com valores REAIS
     if (filters?.status_claim && filters.status_claim.length > 0) {
@@ -235,7 +237,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     
     if (filters?.claim_type && filters.claim_type.length > 0) {
       console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
-      params.append('status', filters.claim_type)
+      params.append('type', filters.claim_type)  // Mudei de 'status' para 'type'
     }
     
     // 🛡️ VALIDAÇÃO CRÍTICA DE DATAS: Não enviar strings vazias
