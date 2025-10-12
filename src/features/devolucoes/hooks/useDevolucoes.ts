@@ -30,7 +30,7 @@ export interface PerformanceSettings {
   debounceDelay: number;
 }
 
-export function useDevolucoes(mlAccounts: any[]) {
+export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // Estados principais
   const [devolucoes, setDevolucoes] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -38,7 +38,7 @@ export function useDevolucoes(mlAccounts: any[]) {
   
   // Filtros avançados unificados
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>({
-    contasSelecionadas: [],
+    contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
     dataInicio: '',
     dataFim: '',
     statusClaim: '',
@@ -120,17 +120,29 @@ export function useDevolucoes(mlAccounts: any[]) {
     enabled: performanceSettings.enableLazyLoading
   });
 
+  // Atualizar contas selecionadas quando selectedAccountId mudar
+  useEffect(() => {
+    if (selectedAccountId && advancedFilters.contasSelecionadas[0] !== selectedAccountId) {
+      setAdvancedFilters(prev => ({
+        ...prev,
+        contasSelecionadas: [selectedAccountId]
+      }));
+    }
+  }, [selectedAccountId]);
+
   // Inicialização sem busca automática do banco
   useEffect(() => {
     if (!persistence.isStateLoaded || !mlAccounts?.length) return;
 
-    // Configurar contas ativas automaticamente
-    const contasAtivas = mlAccounts.filter(acc => acc.is_active);
-    if (contasAtivas.length > 0 && advancedFilters.contasSelecionadas.length === 0) {
-      setAdvancedFilters(prev => ({
-        ...prev,
-        contasSelecionadas: contasAtivas.map(acc => acc.id)
-      }));
+    // Configurar contas ativas automaticamente APENAS se não tiver selectedAccountId
+    if (!selectedAccountId) {
+      const contasAtivas = mlAccounts.filter(acc => acc.is_active);
+      if (contasAtivas.length > 0 && advancedFilters.contasSelecionadas.length === 0) {
+        setAdvancedFilters(prev => ({
+          ...prev,
+          contasSelecionadas: contasAtivas.map(acc => acc.id)
+        }));
+      }
     }
 
     // Restaurar apenas dados da API se existirem

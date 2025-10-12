@@ -215,12 +215,14 @@ interface MLAccount {
 
 interface DevolucaoAvancadasTabProps {
   mlAccounts: MLAccount[];
+  selectedAccountId?: string;
   refetch: () => Promise<void>;
   existingDevolucoes: DevolucaoAvancada[];
 }
 
 const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   mlAccounts,
+  selectedAccountId,
   refetch,
   existingDevolucoes
 }) => {
@@ -249,7 +251,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     hasPersistedData,
     autoRefresh,
     lazyLoading
-  } = useDevolucoes(mlAccounts);
+  } = useDevolucoes(mlAccounts, selectedAccountId);
 
   // Analytics e exportação
   const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
