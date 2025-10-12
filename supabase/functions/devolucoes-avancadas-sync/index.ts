@@ -464,6 +464,29 @@ async function processClaimData(claim: any, integration_account_id: string) {
   const claimMessages = claim.claim_messages || {};
   const messages = claimMessages.messages || [];
   
+  // 🔍 DETECÇÃO MELHORADA: Verificar dados em MÚLTIPLAS fontes
+  // Se claim_details está vazio mas temos dados em orderData, usar orderData
+  const hasClaimInOrderData = !claimDetails.id && (
+    orderData.cancel_detail?.code || 
+    orderData.status === 'cancelled' || 
+    (orderData.mediations && orderData.mediations.length > 0)
+  );
+  
+  // 📋 Montar estrutura de claim a partir de orderData quando necessário
+  const effectiveClaimData = hasClaimInOrderData ? {
+    id: orderData.mediations?.[0]?.id || `${claim.order_id}_claim`,
+    type: orderData.cancel_detail?.group || 'cancellation',
+    reason_id: orderData.cancel_detail?.code,
+    status: orderData.status,
+    date_created: orderData.cancel_detail?.date || orderData.date_created,
+    last_updated: orderData.last_updated,
+    resolution: orderData.cancel_detail ? {
+      reason: orderData.cancel_detail.description,
+      date_created: orderData.cancel_detail.date,
+      requested_by: orderData.cancel_detail.requested_by
+    } : null
+  } : claimDetails;
+  
   // Usar Promise.all para operações paralelas quando possível
   const [dataCreated, dataUpdated, sellerId] = await Promise.resolve([
     new Date(claim.date_created || orderData.date_created),
@@ -471,18 +494,24 @@ async function processClaimData(claim: any, integration_account_id: string) {
     claim.order_data?.seller?.id?.toString()
   ]);
   
-  const dataResolution = claimDetails.last_updated ? new Date(claimDetails.last_updated) : null;
+  const dataResolution = effectiveClaimData.last_updated ? new Date(effectiveClaimData.last_updated) : null;
   
   // Cálculos rápidos em paralelo
   const calculations = calculateMetrics(messages, dataCreated, dataResolution, sellerId, orderData);
   
   return {
     order_id: claim.order_id,
-    claim_id: claimDetails.id,
+    claim_id: effectiveClaimData.id,
     ...calculations,
     integration_account_id: integration_account_id,
     data_criacao: dataCreated.toISOString(),
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
+    // 📝 Adicionar dados de claim construídos a partir de orderData
+    dados_claim: hasClaimInOrderData ? effectiveClaimData : claimDetails,
+    claim_status: effectiveClaimData.status,
+    tipo_claim: effectiveClaimData.type,
+    motivo_categoria: effectiveClaimData.reason_id,
+    resolution_reason: effectiveClaimData.resolution?.reason
   };
 }
 
