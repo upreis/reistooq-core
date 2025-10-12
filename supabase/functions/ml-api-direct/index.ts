@@ -734,12 +734,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             }
             
             ordersCancelados.push(devolucao)
-            console.log(`✅ Processado pedido cancelado: ${order.id}`)
+            console.log(`✅ Processado pedido cancelado: ${orderId}`)
           } else {
-            console.warn(`⚠️ Erro ao buscar detalhes do pedido ${order.id}: ${orderDetailResponse.status}`)
+            console.warn(`⚠️ Erro ao buscar detalhes do pedido ${orderId}: ${orderDetailResponse.status}`)
           }
         } catch (orderError) {
-          console.error(`❌ Erro ao processar pedido ${order.id}:`, orderError)
+          const orderId = claim.resource_id || claim.order_id || 'unknown'
+          console.error(`❌ Erro ao processar pedido ${orderId}:`, orderError)
         }
       }
     
