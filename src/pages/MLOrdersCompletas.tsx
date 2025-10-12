@@ -4,9 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 import { ProviderSelector } from "@/components/pedidos/components/ProviderSelector";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PermissoesMLGuide } from "@/components/ml/PermissoesMLGuide";
-import { PermissionFixButton } from "@/components/integrations/PermissionFixButton";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 
@@ -14,7 +11,6 @@ export default function MLOrdersCompletas() {
   // Estado para provider e contas selecionadas
   const [selectedProvider, setSelectedProvider] = useState<string>('all');
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-  const [showPermissionsGuide, setShowPermissionsGuide] = useState(false);
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
@@ -76,41 +72,11 @@ export default function MLOrdersCompletas() {
 
   return (
     <div className="space-y-6">
-      {/* Guia de Permissões */}
-      {showPermissionsGuide && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-background border-b p-4 flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Como Conceder Permissões</h2>
-              <Button variant="ghost" onClick={() => setShowPermissionsGuide(false)}>
-                Fechar
-              </Button>
-            </div>
-            <PermissoesMLGuide />
-          </div>
-        </div>
-      )}
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Sistema ML - Mercado Livre</h1>
-          <p className="text-muted-foreground">
-            Sistema de gestão Mercado Livre - Devoluções Avançadas
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <PermissionFixButton />
-          <Button 
-            variant="outline" 
-            onClick={() => setShowPermissionsGuide(true)}
-            className="gap-2"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Como Configurar Permissões
-          </Button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold">Sistema ML - Mercado Livre</h1>
+        <p className="text-muted-foreground">
+          Sistema de gestão Mercado Livre - Devoluções Avançadas
+        </p>
       </div>
 
       {/* Seletor de Provider/Contas */}
