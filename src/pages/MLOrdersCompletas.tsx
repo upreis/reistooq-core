@@ -2,14 +2,13 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
-import { ProviderSelector } from "@/components/pedidos/components/ProviderSelector";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
+import { Package } from "lucide-react";
 
 export default function MLOrdersCompletas() {
-  // Estado para provider e contas selecionadas
-  const [selectedProvider, setSelectedProvider] = useState<string>('all');
+  // Estado para contas selecionadas
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
 
   // Buscar contas ML disponíveis
@@ -59,17 +58,6 @@ export default function MLOrdersCompletas() {
     enabled: !!selectedAccountIds[0], // Só busca se tiver conta selecionada
   });
 
-  // Handler para mudança de provider
-  const handleProviderChange = (provider: string) => {
-    setSelectedProvider(provider);
-    if (provider === 'all' && mlAccounts) {
-      setSelectedAccountIds(mlAccounts.map(acc => acc.id));
-    } else if (mlAccounts) {
-      const filtered = mlAccounts.filter(acc => acc.provider === provider);
-      setSelectedAccountIds(filtered.map(acc => acc.id));
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -79,23 +67,31 @@ export default function MLOrdersCompletas() {
         </p>
       </div>
 
-      {/* Seletor de Provider/Contas */}
-      <div className="bg-card rounded-lg border p-4">
-        <ProviderSelector
-          selectedProvider={selectedProvider}
-          onProviderChange={handleProviderChange}
-          accounts={mlAccounts || []}
-          loading={loadingAccounts}
-        />
-        
-        {selectedAccountIds.length > 0 && (
-          <div className="mt-2 text-sm text-muted-foreground">
-            {selectedAccountIds.length === 1 
-              ? `1 conta selecionada` 
-              : `${selectedAccountIds.length} contas selecionadas`}
+      {/* Informações das Contas ML */}
+      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">Contas Mercado Livre</h3>
+                <p className="text-sm text-muted-foreground">
+                  {mlAccounts.length} {mlAccounts.length === 1 ? 'conta ativa' : 'contas ativas'}
+                </p>
+              </div>
+            </div>
+            {selectedAccountIds.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {selectedAccountIds.length === 1 
+                  ? `1 conta selecionada` 
+                  : `${selectedAccountIds.length} contas selecionadas`}
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </Card>
+      )}
 
       {/* Loading States */}
       {(loadingAccounts || loadingDevolucoes) && (
