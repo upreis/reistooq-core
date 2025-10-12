@@ -6,6 +6,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface DevolucaoBuscaFilters {
   contasSelecionadas: string[];
@@ -35,13 +36,13 @@ export function useDevolucoesBusca() {
     const todasDevolucoes: any[] = [];
     
     try {
-      console.log('🔍 Iniciando busca da API ML em tempo real...');
+      logger.info('Iniciando busca da API ML em tempo real');
       
       for (const accountId of filtros.contasSelecionadas) {
         const account = mlAccounts?.find(acc => acc.id === accountId);
         if (!account) continue;
 
-        console.log(`🔍 Processando conta: ${account.name}`);
+        logger.info(`Processando conta: ${account.name}`);
         
         try {
           // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
@@ -60,7 +61,7 @@ export function useDevolucoesBusca() {
           });
 
           if (apiError) {
-            console.error(`❌ Erro API para ${account.name}:`, apiError);
+            logger.error(`Erro API para ${account.name}`, apiError);
             toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
             // Continue com próxima conta em vez de falhar
             continue;
@@ -155,21 +156,21 @@ export function useDevolucoesBusca() {
             todasDevolucoes.push(...devolucoesProcesadas);
             toast.success(`✅ ${devolucoesProcesadas.length} devoluções da API para ${account.name}`);
           } else {
-            console.log(`ℹ️ Nenhuma devolução encontrada para ${account.name}`);
+            logger.info(`Nenhuma devolução encontrada para ${account.name}`);
             toast.info(`Nenhuma devolução encontrada para ${account.name}`);
           }
 
         } catch (accountError) {
-          console.error(`❌ Erro ao processar ${account.name}:`, accountError);
+          logger.error(`Erro ao processar ${account.name}`, accountError);
           toast.error(`Erro na conta ${account.name}`);
         }
       }
 
-      console.log(`🎉 Total da API: ${todasDevolucoes.length} devoluções`);
+      logger.info(`Total da API: ${todasDevolucoes.length} devoluções`);
       return todasDevolucoes;
 
     } catch (error) {
-      console.error('❌ Erro geral na busca da API:', error);
+      logger.error('Erro geral na busca da API', error);
       toast.error(`Erro na busca da API: ${error.message}`);
       return [];
     } finally {
@@ -182,7 +183,7 @@ export function useDevolucoesBusca() {
     setLoading(true);
     
     try {
-      console.log('🔍 Buscando devoluções do banco...');
+      logger.info('Buscando devoluções do banco');
       
       const { data, error } = await supabase
         .from('devolucoes_avancadas')
@@ -190,16 +191,16 @@ export function useDevolucoesBusca() {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('❌ Erro ao buscar do banco:', error);
+        logger.error('Erro ao buscar do banco', error);
         toast.error('Erro ao buscar devoluções do banco');
         return [];
       }
       
-      console.log(`✅ ${data.length} devoluções carregadas do banco`);
+      logger.info(`${data.length} devoluções carregadas do banco`);
       return data;
       
     } catch (error) {
-      console.error('❌ Erro ao buscar do banco:', error);
+      logger.error('Erro ao buscar do banco', error);
       toast.error('Erro ao carregar devoluções');
       return [];
     } finally {
@@ -212,14 +213,14 @@ export function useDevolucoesBusca() {
     setLoading(true);
     
     try {
-      console.log('🔄 Iniciando sincronização avançada com enriquecimento...');
+      logger.info('Iniciando sincronização avançada com enriquecimento');
       let totalProcessadas = 0;
 
       // FASE 1: Sincronização básica
-      console.log('📊 FASE 1: Sincronização básica dos pedidos...');
+      logger.info('FASE 1: Sincronização básica dos pedidos');
       
       for (const account of mlAccounts) {
-        console.log(`🔍 Sincronizando conta: ${account.name}`);
+        logger.info(`Sincronizando conta: ${account.name}`);
         
         try {
           // Buscar orders com claims
@@ -230,7 +231,7 @@ export function useDevolucoesBusca() {
             .limit(100); // Aumentado para 100
 
           if (ordersError) {
-            console.error(`❌ Erro ao buscar orders:`, ordersError);
+            logger.error('Erro ao buscar orders', ordersError);
             continue;
           }
 
@@ -271,20 +272,20 @@ export function useDevolucoesBusca() {
                 }
 
               } catch (orderError) {
-                console.error(`❌ Erro ao processar order:`, orderError);
+                logger.error('Erro ao processar order', orderError);
               }
             }
           }
 
         } catch (accountError) {
-          console.error(`❌ Erro ao processar conta:`, accountError);
+          logger.error('Erro ao processar conta', accountError);
         }
       }
 
-      console.log(`✅ FASE 1 concluída: ${totalProcessadas} registros básicos sincronizados`);
+      logger.info(`FASE 1 concluída: ${totalProcessadas} registros básicos sincronizados`);
 
       // FASE 2: Enriquecimento com dados da API ML
-      console.log('🔍 FASE 2: Enriquecimento com dados da API ML...');
+      logger.info('FASE 2: Enriquecimento com dados da API ML');
       await enriquecerDevolucoesSincronizadas(mlAccounts);
 
       if (totalProcessadas > 0) {
@@ -297,7 +298,7 @@ export function useDevolucoesBusca() {
       return await buscarDoBanco();
 
     } catch (error) {
-      console.error('❌ Erro na sincronização:', error);
+      logger.error('Erro na sincronização', error);
       toast.error(`Erro na sincronização: ${error.message}`);
       return [];
     } finally {
@@ -307,7 +308,7 @@ export function useDevolucoesBusca() {
 
   // 🔍 NOVA FUNÇÃO: Enriquecimento automático de devoluções
   const enriquecerDevolucoesSincronizadas = async (mlAccounts: any[]) => {
-    console.log(`🔍 Iniciando enriquecimento das devoluções sincronizadas...`);
+    logger.info('Iniciando enriquecimento das devoluções sincronizadas');
     
     try {
       // Buscar devoluções que precisam de enriquecimento
@@ -319,16 +320,16 @@ export function useDevolucoesBusca() {
         .limit(50); // Processar em lotes de 50
 
       if (error) {
-        console.error('Erro ao buscar devoluções pendentes:', error);
+        logger.error('Erro ao buscar devoluções pendentes', error);
         return;
       }
 
       if (!devolucoesPendentes || devolucoesPendentes.length === 0) {
-        console.log(`ℹ️ Nenhuma devolução pendente de enriquecimento`);
+        logger.info('Nenhuma devolução pendente de enriquecimento');
         return;
       }
 
-      console.log(`🔄 ${devolucoesPendentes.length} devoluções serão enriquecidas`);
+      logger.info(`${devolucoesPendentes.length} devoluções serão enriquecidas`);
 
       // Organizar por integration_account_id
       const devolucoesPorConta = devolucoesPendentes.reduce((acc, dev) => {
@@ -342,11 +343,11 @@ export function useDevolucoesBusca() {
 
       // Processar cada conta
       for (const [accountId, devolucoes] of Object.entries(devolucoesPorConta)) {
-        console.log(`🏢 Processando conta ${accountId}: ${devolucoes.length} devoluções`);
+        logger.info(`Processando conta ${accountId}: ${devolucoes.length} devoluções`);
         
         const conta = mlAccounts.find(acc => acc.id === accountId);
         if (!conta) {
-          console.warn(`⚠️ Conta ${accountId} não encontrada`);
+          logger.warn(`Conta ${accountId} não encontrada`);
           continue;
         }
 
@@ -363,11 +364,11 @@ export function useDevolucoesBusca() {
           });
 
           if (apiError || !apiResponse?.success || !apiResponse?.data) {
-            console.warn(`⚠️ Sem dados de claims para conta ${conta.name}`);
+            logger.warn(`Sem dados de claims para conta ${conta.name}`);
             continue;
           }
 
-          console.log(`📋 ${apiResponse.data.length} claims encontrados para ${conta.name}`);
+          logger.info(`${apiResponse.data.length} claims encontrados para ${conta.name}`);
 
           // Mapear claims por order_id
           const claimsPorOrder = apiResponse.data.reduce((acc: any, claim: any) => {
@@ -382,7 +383,7 @@ export function useDevolucoesBusca() {
             const claimData = claimsPorOrder[devolucao.order_id];
             
             if (claimData && claimData.claim_details?.id) {
-              console.log(`🔍 Enriquecendo order ${devolucao.order_id} com claim ${claimData.claim_details.id}`);
+              logger.info(`Enriquecendo order ${devolucao.order_id} com claim ${claimData.claim_details.id}`);
               
               // Preparar dados enriquecidos seguindo o fluxo sequencial
               const dadosAtualizados: any = {

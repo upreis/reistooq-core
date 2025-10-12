@@ -7,7 +7,7 @@ interface DevolucaoTableProps {
   onViewDetails: (devolucao: DevolucaoAvancada) => void;
 }
 
-export const DevolucaoTable: React.FC<DevolucaoTableProps> = ({
+export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
   devolucoes,
   onViewDetails
 }) => {
@@ -103,4 +103,4 @@ export const DevolucaoTable: React.FC<DevolucaoTableProps> = ({
       </table>
     </div>
   );
-};
+});

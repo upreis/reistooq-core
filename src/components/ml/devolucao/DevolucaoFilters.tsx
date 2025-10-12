@@ -21,7 +21,7 @@ interface DevolucaoFiltersProps {
   isLoading?: boolean;
 }
 
-export const DevolucaoFilters: React.FC<DevolucaoFiltersProps> = ({
+export const DevolucaoFilters = React.memo<DevolucaoFiltersProps>(({
   filters,
   onFilterChange,
   onClearFilters,
@@ -115,4 +115,4 @@ export const DevolucaoFilters: React.FC<DevolucaoFiltersProps> = ({
       </div>
     </Card>
   );
-};
+});

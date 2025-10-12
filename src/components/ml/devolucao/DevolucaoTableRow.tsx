@@ -14,7 +14,7 @@ interface DevolucaoTableRowProps {
   onViewDetails: (devolucao: DevolucaoAvancada) => void;
 }
 
-export const DevolucaoTableRow: React.FC<DevolucaoTableRowProps> = ({
+export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
   devolucao,
   onViewDetails
 }) => {
@@ -569,4 +569,4 @@ export const DevolucaoTableRow: React.FC<DevolucaoTableRowProps> = ({
       </td>
     </tr>
   );
-};
+});

@@ -11,7 +11,7 @@ interface DevolucaoToolbarProps {
   totalItems: number;
 }
 
-export const DevolucaoToolbar: React.FC<DevolucaoToolbarProps> = ({
+export const DevolucaoToolbar = React.memo<DevolucaoToolbarProps>(({
   onRefresh,
   onExport,
   onToggleAnalytics,
@@ -59,4 +59,4 @@ export const DevolucaoToolbar: React.FC<DevolucaoToolbarProps> = ({
       </div>
     </div>
   );
-};
+});

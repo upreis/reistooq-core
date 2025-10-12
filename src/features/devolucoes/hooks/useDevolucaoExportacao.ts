@@ -7,6 +7,7 @@ import { useCallback } from 'react';
 import { format } from 'date-fns';
 import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 export interface ExportOptions {
   format: 'csv' | 'excel' | 'json';
@@ -32,7 +33,7 @@ export function useDevolucaoExportacao() {
       toast.success(`Dados exportados para CSV: ${filename}.csv`);
     } catch (error) {
       toast.error('Erro ao exportar para CSV');
-      console.error('Export CSV error:', error);
+      logger.error('Export CSV error', error);
     }
   }, []);
 
@@ -78,7 +79,7 @@ export function useDevolucaoExportacao() {
       toast.success(`Dados exportados para Excel: ${filename}.xlsx`);
     } catch (error) {
       toast.error('Erro ao exportar para Excel');
-      console.error('Export Excel error:', error);
+      logger.error('Export Excel error', error);
     }
   }, []);
 
@@ -104,7 +105,7 @@ export function useDevolucaoExportacao() {
       toast.success(`Dados exportados para JSON: ${filename}.json`);
     } catch (error) {
       toast.error('Erro ao exportar para JSON');
-      console.error('Export JSON error:', error);
+      logger.error('Export JSON error', error);
     }
   }, []);
 
@@ -175,7 +176,7 @@ export function useDevolucaoExportacao() {
       toast.success('Relatório completo exportado com sucesso!');
     } catch (error) {
       toast.error('Erro ao exportar relatório completo');
-      console.error('Export full report error:', error);
+      logger.error('Export full report error', error);
     }
   }, []);
 

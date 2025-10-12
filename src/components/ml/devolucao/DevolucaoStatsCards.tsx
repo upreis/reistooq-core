@@ -13,7 +13,7 @@ interface DevolucaoStatsCardsProps {
   stats: DevolucaoStats;
 }
 
-export const DevolucaoStatsCards: React.FC<DevolucaoStatsCardsProps> = ({ stats }) => {
+export const DevolucaoStatsCards = React.memo<DevolucaoStatsCardsProps>(({ stats }) => {
   return (
     <div className="grid gap-4 md:grid-cols-4">
       <Card>
@@ -61,4 +61,4 @@ export const DevolucaoStatsCards: React.FC<DevolucaoStatsCardsProps> = ({ stats 
       </Card>
     </div>
   );
-};
+});

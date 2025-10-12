@@ -8,7 +8,7 @@ interface DevolucaoPaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export const DevolucaoPagination: React.FC<DevolucaoPaginationProps> = ({
+export const DevolucaoPagination = React.memo<DevolucaoPaginationProps>(({
   currentPage,
   totalPages,
   onPageChange
@@ -44,4 +44,4 @@ export const DevolucaoPagination: React.FC<DevolucaoPaginationProps> = ({
       </Button>
     </div>
   );
-};
+});

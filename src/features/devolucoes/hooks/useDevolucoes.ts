@@ -171,7 +171,6 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
           ...state.searchFilters,
           buscarEmTempoReal: true
         }));
-        console.log(`🔄 ${state.data.length} devoluções restauradas da API`);
       }
     }
     

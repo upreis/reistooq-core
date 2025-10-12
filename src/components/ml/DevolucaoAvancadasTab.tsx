@@ -144,7 +144,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     advancedFilters.buscarEmTempoReal,
     useCallback((payload) => {
       // Atualização automática será implementada se necessário
-      console.log('📡 Atualização tempo real:', payload);
     }, [])
   );
 
@@ -555,16 +554,12 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             <Button
               variant="outline"
               onClick={() => {
-                console.log('🔍 Clicou no botão Auditoria Completa');
-                
                 if (devolucoesFiltradas.length === 0) {
                   toast.error('Nenhuma devolução para auditar. Faça uma busca primeiro.');
                   return;
                 }
                 
-                console.log('🔍 Executando auditoria completa...');
                 const auditoriaCompleta = rodarAuditoriaCompleta(devolucoesFiltradas);
-                
                 toast.success(`🔍 Auditoria completa! ${auditoriaCompleta.problemas_identificados.length} problemas identificados. Veja o console para detalhes.`);
               }}
               className="bg-red-500 text-white hover:bg-red-600 flex items-center gap-2 px-4 py-2"
