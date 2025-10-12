@@ -222,38 +222,38 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // 🚀 USAR ENDPOINT CORRETO: /post-purchase/v1/claims/search
     const params = new URLSearchParams()
     
-    // ✅ PARÂMETROS CORRETOS CONFORME ANÁLISE DO MANUS
-    // Seller como respondente (obrigatório)
+    // ✅ PARÂMETROS OBRIGATÓRIOS NA ORDEM CORRETA
+    // 1. Players (obrigatório)
     params.append('players.role', 'respondent')
     params.append('players.user_id', sellerId)
     
-    // 🛡️ VALIDAÇÃO CRÍTICA: Apenas adicionar parâmetros com valores REAIS
-    if (filters?.status_claim && filters.status_claim.length > 0) {
+    // 2. Paginação (obrigatório)
+    params.append('limit', '50')
+    params.append('offset', '0')
+    
+    // 3. Filtros OPCIONAIS (apenas se tiverem valor)
+    if (filters?.status_claim && filters.status_claim.trim().length > 0) {
       console.log(`✅ Aplicando filtro de status: ${filters.status_claim}`)
       params.append('status', filters.status_claim)
     }
     
-    if (filters?.claim_type && filters.claim_type.length > 0) {
+    if (filters?.claim_type && filters.claim_type.trim().length > 0) {
       console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
-      params.append('type', filters.claim_type)  // Mudei de 'status' para 'type'
+      params.append('type', filters.claim_type)
     }
     
-    // 🛡️ VALIDAÇÃO CRÍTICA DE DATAS: Não enviar strings vazias
-    if (filters?.date_from && filters.date_from.length > 0) {
+    // Datas (apenas se não forem vazias)
+    if (filters?.date_from && filters.date_from.trim().length > 0) {
       const dateFrom = `${filters.date_from}T00:00:00.000Z`
       console.log(`✅ Aplicando filtro date_from: ${dateFrom}`)
       params.append('date_created.from', dateFrom)
     }
     
-    if (filters?.date_to && filters.date_to.length > 0) {
+    if (filters?.date_to && filters.date_to.trim().length > 0) {
       const dateTo = `${filters.date_to}T23:59:59.999Z`
       console.log(`✅ Aplicando filtro date_to: ${dateTo}`)
       params.append('date_created.to', dateTo)
     }
-    
-    // Paginação
-    params.append('limit', '50')
-    params.append('offset', '0')
     
     const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
     console.log(`📞 URL da API Claims Search: ${url}`)
