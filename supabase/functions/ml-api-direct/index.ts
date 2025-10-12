@@ -29,11 +29,17 @@ serve(async (req) => {
       // 🔒 Obter token de forma segura usando integrations-get-secret
       console.log(`🔑 Obtendo token ML para conta ${integration_account_id}...`)
       
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      
       const supabase = makeServiceClient()
       const { data: tokenData, error: tokenError } = await supabase.functions.invoke('integrations-get-secret', {
         body: { 
           integration_account_id,
           provider: 'mercadolivre'
+        },
+        headers: {
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
         }
       })
       
