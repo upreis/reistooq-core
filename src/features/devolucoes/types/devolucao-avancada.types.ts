@@ -99,6 +99,24 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   eh_troca?: boolean | null;
   valor_diferenca_troca?: number | null;
   account_name?: string | null;
+  
+  // ⏱️ ANÁLISE TEMPORAL E PERFORMANCE (Novas colunas)
+  tempo_primeira_resposta_vendedor?: number | null;
+  tempo_resposta_comprador?: number | null;
+  tempo_analise_ml?: number | null;
+  dias_ate_resolucao?: number | null;
+  sla_cumprido?: boolean | null;
+  tempo_limite_acao?: string | null;
+  score_satisfacao_final?: number | null;
+  eficiencia_resolucao?: string | null;
+  
+  // 🔍 REVIEW E QUALIDADE (Novas colunas)
+  score_qualidade?: number | null;
+  necessita_acao_manual?: boolean | null;
+  revisor_responsavel?: string | null;
+  
+  // 📊 TIMELINE CONSOLIDADO
+  timeline_consolidado?: any | null;
 }
 
 // ===== TIPOS AUXILIARES =====

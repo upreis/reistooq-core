@@ -27,6 +27,7 @@ import { DevolucaoFilters } from '@/components/ml/devolucao/DevolucaoFilters';
 import { DevolucaoToolbar } from '@/components/ml/devolucao/DevolucaoToolbar';
 import { DevolucaoDetailsModal } from '@/components/ml/devolucao/DevolucaoDetailsModal';
 import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPagination';
+import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
 
 // ✨ Utilities de extração
 import { 
@@ -755,104 +756,15 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 </p>
               </div>
             ) : (
-              /* Visualização em Tabela Detalhada */
-              <div className="overflow-x-auto border rounded-lg">
-                <table className="w-full border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-muted/50 dark:bg-muted border-b">
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
-                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
-                         <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-                         <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
-                         
-                         {/* COLUNAS ORIGINAIS MANTIDAS */}
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Claim</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Return</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Mediação</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
-                        
-                        {/* MENSAGENS E COMUNICAÇÃO (novas) */}
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">💬 Mensagens (Texto)</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">💬 Última Mensagem (Texto)</th>
-                       
-                       {/* DATAS E PRAZOS (novas) */}
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Venc. Ação</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Est. Troca</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Lim. Troca</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📝 Prazo Rev.</th>
-                       
-                       {/* RASTREAMENTO E LOGÍSTICA (novas) */}
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">🚛 Rastreio</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Transport.</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📍 Status Env.</th>
-                       
-                       {/* CUSTOS E FINANCEIRO (novas) */}
-                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Custo Env.</th>
-                       <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Compensação</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
-                       
-                        {/* CLASSIFICAÇÃO E RESOLUÇÃO (novas) */}
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Em Mediação</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Método Resolução</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
-                       
-                       {/* MÉTRICAS E KPIS (novas) */}
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏁 Total (min)</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
-                       
-                        {/* ESTADOS E FLAGS (novas) */}
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
-                        
-                        {/* 📊 MÉTRICAS ADICIONAIS (13 colunas) */}
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo 1ª Resp</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏁 Tempo Total</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Dias Resolução</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">✅ SLA</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📈 Eficiência</th>
-                        <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⭐ Score</th>
-                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Reemb. Total</th>
-                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Reemb. Produto</th>
-                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Reemb. Frete</th>
-                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏦 Taxa ML</th>
-                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Custo Log.</th>
-                        <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Impacto Vend.</th>
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Reemb.</th>
-                        
-                        {/* COLUNAS ORIGINAIS MANTIDAS */}
-                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data da Venda</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Data Atualização</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Tipo Original</th>
-                       <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Motivo Cancelamento</th>
-                       <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {devolucoes.map((devolucao, index) => {
-                      const claimData = devolucao.dados_claim || {};
-                      const orderData = devolucao.dados_order || {};
-                      const returnData = devolucao.dados_return || {};
-                      const mensagensData = devolucao.dados_mensagens || {};
-
-                      // 🔍 VERIFICAÇÕES CORRIGIDAS BASEADAS NO PDF E DADOS REAIS
-                      
-                      // 📋 CLAIM (Azul) - Baseado na análise do PDF
-                      const temClaimData = !!(
+              /* ✨ TABELA MODULARIZADA */
+              <DevolucaoTable
+                devolucoes={devolucoesFiltradas}
+                onViewDetails={(dev) => {
+                  setSelectedDevolucao(dev);
+                  setShowDetails(true);
+                }}
+              />
+            }
                         // Dados primários de claim
                         (claimData && Object.keys(claimData).length > 0) ||
                         // Mediações do order (confirmado nos dados reais)
