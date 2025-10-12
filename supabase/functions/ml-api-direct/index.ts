@@ -214,32 +214,44 @@ async function fetchMLWithRetry(url: string, accessToken: string, integrationAcc
   throw new Error('Fetch com retry falhou inesperadamente')
 }
 
-// ============ FUNÇÃO PARA BUSCAR PEDIDOS COM CLAIMS/DEVOLUÇÕES DA API ML ============
+// ============ FUNÇÃO PARA BUSCAR CLAIMS/DEVOLUÇÕES DIRETAMENTE DA API ML ============
 async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
   try {
-    console.log(`🔍 Buscando pedidos com claims/devoluções para seller ${sellerId}...`)
+    console.log(`🎯 Buscando claims diretamente da API Claims Search para seller ${sellerId}...`)
     
-    // 🎯 BUSCAR TODOS OS PEDIDOS COM MEDIATIONS (não apenas cancelados)
-    // Claims podem existir em: paid, shipped, delivered, cancelled
-    let url = `https://api.mercadolibre.com/orders/search?seller=${sellerId}`
+    // 🚀 USAR ENDPOINT CORRETO: /post-purchase/v1/claims/search
+    // Mais eficiente - busca APENAS claims, não todos os pedidos
+    // Pega claims de TODOS os recursos (order, shipment, payment)
+    const params = new URLSearchParams()
     
-    // Adicionar filtro de status do claim se fornecido
+    // Seller ID é obrigatório
+    params.append('seller_id', sellerId)
+    
+    // Filtros opcionais
     if (filters?.status_claim) {
-      url += `&mediations.status=${filters.status_claim}`
+      // Status: opened, closed, cancelled, etc
+      params.append('status', filters.status_claim)
     }
     
-    // Adicionar filtros de data se fornecidos
+    if (filters?.claim_type) {
+      // Tipo: mediations, returns, ml_case, cancel_sale, cancel_purchase, fulfillment, change
+      params.append('status', filters.claim_type)
+    }
+    
+    // Filtros de data
     if (filters?.date_from) {
-      url += `&order.date_created.from=${filters.date_from}T00:00:00.000Z`
+      params.append('date_created.from', `${filters.date_from}T00:00:00.000Z`)
     }
     if (filters?.date_to) {
-      url += `&order.date_created.to=${filters.date_to}T23:59:59.999Z`
+      params.append('date_created.to', `${filters.date_to}T23:59:59.999Z`)
     }
     
-    // Limitar a 50 resultados por requisição
-    url += `&limit=50&sort=date_desc`
+    // Paginação
+    params.append('limit', '50')
+    params.append('offset', '0')
     
-    console.log(`📞 URL da API Orders com Claims: ${url}`)
+    const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
+    console.log(`📞 URL da API Claims Search: ${url}`)
     
     const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
     
@@ -257,48 +269,53 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     }
     
     const data = await response.json()
-    console.log(`📋 Orders com claims encontrados: ${data?.results?.length || 0}`)
+    console.log(`✅ Claims encontrados: ${data?.data?.length || 0}`)
     
-    if (!data?.results || data.results.length === 0) {
-      console.log('ℹ️ Nenhum pedido com claim encontrado')
+    if (!data?.data || data.data.length === 0) {
+      console.log('ℹ️ Nenhum claim encontrado')
       return []
     }
     
-    // 🔍 FILTRAR APENAS PEDIDOS QUE REALMENTE TÊM MEDIATIONS
-    const ordersComMediation = data.results.filter(order => 
-      order.mediations && order.mediations.length > 0
-    )
-    
-    console.log(`📊 Orders filtrados com mediations: ${ordersComMediation.length} de ${data.results.length}`)
+    console.log(`📊 Total de claims retornados: ${data.data.length}`)
+    console.log(`📄 Paginação: total=${data.paging?.total || 0}, limit=${data.paging?.limit || 0}, offset=${data.paging?.offset || 0}`)
 
-      // Processar cada order com claim para obter detalhes completos
-      const ordersCancelados = []
-      
-      for (const order of ordersComMediation) {
-        try {
-          // Proteção contra orders inválidos
-          if (!order || !order.id) {
-            console.warn(`⚠️ Order inválido encontrado:`, order)
-            continue
-          }
-          
-          // Buscar detalhes completos do pedido com retry
-          const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
-          console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
+    // Processar cada claim para obter detalhes completos
+    const ordersCancelados = []
+    
+    for (const claim of data.data) {
+      try {
+        // Proteção contra claims inválidos
+        if (!claim || !claim.id) {
+          console.warn(`⚠️ Claim inválido encontrado:`, claim)
+          continue
+        }
+        
+        // Extrair order_id do claim
+        const orderId = claim.resource_id || claim.order_id
+        
+        if (!orderId) {
+          console.warn(`⚠️ Claim ${claim.id} sem order_id/resource_id`)
+          continue
+        }
+        
+        console.log(`📦 Processando claim ${claim.id} para order ${orderId}...`)
+        
+        // Buscar detalhes completos do pedido
+        const orderDetailUrl = `https://api.mercadolibre.com/orders/${orderId}`
+        console.log(`📞 Buscando detalhes do pedido: ${orderId}`)
           
           const orderDetailResponse = await fetchMLWithRetry(orderDetailUrl, accessToken, integrationAccountId)
           
           if (orderDetailResponse.ok) {
             const orderDetail = await orderDetailResponse.json()
             
-            // Buscar dados completos do claim se houver mediação
+            // Buscar dados completos do claim (já temos o ID do claim do search)
             let claimData = null
-            if (orderDetail.mediations && orderDetail.mediations.length > 0) {
-              const mediationId = orderDetail.mediations[0].id
-              const packId = orderDetail.pack_id
-              const sellerId = orderDetail.seller.id
-              
-              console.log(`🔍 Buscando dados completos do claim - Mediation ID: ${mediationId}`)
+            const mediationId = claim.id
+            const packId = orderDetail.pack_id
+            const sellerId = orderDetail.seller?.id || claim.seller_id
+            
+            console.log(`🔍 Buscando dados completos do claim ${mediationId}...`)
               
               // Buscar todos os dados do claim em paralelo incluindo returns
               const claimPromises = []
@@ -443,8 +460,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 }).catch(() => null)
               )
               
-              try {
-                const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
+            try {
+              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
                 
                 // Consolidar mensagens de ambas as fontes
                 const allMessages = [
@@ -539,12 +556,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   dados_completos: true
                 }
                 
-                console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
-              } catch (claimError) {
-                console.error(`❌ Erro crítico ao buscar dados do claim ${mediationId}:`, claimError)
-                // Definir claimData como null em caso de erro crítico
-                claimData = null
-              }
+              console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
+            } catch (claimError) {
+              console.error(`❌ Erro crítico ao buscar dados do claim ${mediationId}:`, claimError)
+              // Definir claimData como null em caso de erro crítico
+              claimData = null
             }
             
             // Processar como devolução/cancelamento com DADOS ENRIQUECIDOS COMPLETOS
@@ -722,11 +738,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         }
       }
     
-      console.log(`🎉 Total de pedidos com claims processados: ${ordersCancelados.length}`)
-      return ordersCancelados
+    console.log(`🎉 Total de claims processados: ${ordersCancelados.length}`)
+    return ordersCancelados
     
   } catch (error) {
-    console.error('❌ Erro ao buscar pedidos cancelados:', error)
+    console.error('❌ Erro ao buscar claims:', error)
     throw error
   }
 }
