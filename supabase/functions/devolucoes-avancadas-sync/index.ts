@@ -304,9 +304,12 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
     console.log(`📊 Reprocessando ${existingRecords.length} registros existentes...`);
     
     let enrichedCount = 0;
+    let updatedCount = 0;
     
     // Reprocessar cada registro com a lógica melhorada
     for (const record of existingRecords) {
+      console.log(`🔄 Processando registro ${record.order_id}...`);
+      
       // Reconstruir estrutura de claim a partir dos dados salvos
       const claimData = {
         order_id: record.order_id,
@@ -318,10 +321,17 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
         attachments: record.anexos_comprador || []
       };
       
+      // DEBUG: Log do que encontramos
+      const hasClaimInOrderData = !!(claimData.order_data?.cancel_detail || claimData.order_data?.mediations?.length);
+      console.log(`  📋 Claim em orderData? ${hasClaimInOrderData} | Claim original vazio? ${!claimData.claim_details?.id}`);
+      
       // Processar com a lógica melhorada (que agora extrai de orderData)
       const processedData = await processClaimData(claimData, integration_account_id);
       
       if (processedData) {
+        // DEBUG: Ver o que foi processado
+        console.log(`  ✅ Processado - dados_claim preenchido? ${!!processedData.dados_claim}`);
+        
         // Atualizar registro com os novos campos
         const { error: updateError } = await supabase
           .from('devolucoes_avancadas')
@@ -329,9 +339,9 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
             // Campos extraídos da nova lógica
             dados_claim: processedData.dados_claim,
             claim_status: processedData.claim_status,
+            claim_id: processedData.claim_id,
             tipo_claim: processedData.tipo_claim,
             motivo_categoria: processedData.motivo_categoria,
-            resolution_reason: processedData.resolution_reason,
             
             // Outros campos que podem ter sido calculados
             nivel_prioridade: processedData.nivel_prioridade,
@@ -344,18 +354,23 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
           .eq('id', record.id);
         
         if (!updateError) {
-          enrichedCount++;
+          updatedCount++;
+          if (processedData.dados_claim) enrichedCount++;
+          console.log(`  💾 Atualizado no banco!`);
         } else {
-          console.error(`❌ Erro ao atualizar registro ${record.id}:`, updateError);
+          console.error(`  ❌ Erro ao atualizar registro ${record.id}:`, updateError);
         }
       }
     }
     
+    console.log(`✅ Enriquecimento completo: ${enrichedCount} registros com novos dados de claim`);
+    
     return ok({
       success: true,
       enriched_count: enrichedCount,
+      updated_count: updatedCount,
       total_processed: existingRecords.length,
-      message: `${enrichedCount}/${existingRecords.length} registros enriquecidos com dados de orderData`
+      message: `${enrichedCount}/${existingRecords.length} registros enriquecidos com dados extraídos de orderData`
     });
     
   } catch (error) {
