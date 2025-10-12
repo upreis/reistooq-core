@@ -20,6 +20,22 @@ import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExp
 import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
 import { rodarAuditoriaCompleta } from '@/dev/auditoriaCompleta';
 import { supabase } from '@/integrations/supabase/client';
+
+// ✨ Componentes modulares
+import { DevolucaoStatsCards } from '@/components/ml/devolucao/DevolucaoStatsCards';
+import { DevolucaoFilters } from '@/components/ml/devolucao/DevolucaoFilters';
+import { DevolucaoToolbar } from '@/components/ml/devolucao/DevolucaoToolbar';
+
+// ✨ Utilities de extração
+import { 
+  extractCancelReason, 
+  extractDetailedReason, 
+  extractMessageText,
+  extractLastMessageText,
+  formatCurrency,
+  formatDate
+} from '@/features/devolucoes/utils/extractDevolucaoData';
+
 import { 
   RefreshCw, 
   Download, 
@@ -268,225 +284,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     enable_real_time: false
   });
 
-  // Função para extrair motivo do cancelamento completo (garantindo string)
-  const getMotivoCancelamento = useCallback((devolucao: DevolucaoAvancada) => {
-    try {
-      // Buscar primeiro a descrição completa do motivo
-      if (devolucao.dados_claim) {
-        const claim = devolucao.dados_claim;
-        
-        // Buscar descrição detalhada primeiro
-        if (claim.reason?.description && typeof claim.reason.description === 'string') {
-          return claim.reason.description;
-        }
-        if (claim.resolution?.description && typeof claim.resolution.description === 'string') {
-          return claim.resolution.description;
-        }
-        if (claim.cancel_detail?.description && typeof claim.cancel_detail.description === 'string') {
-          return claim.cancel_detail.description;
-        }
-        if (claim.cancellation_description && typeof claim.cancellation_description === 'string') {
-          return claim.cancellation_description;
-        }
-        if (claim.reason_description && typeof claim.reason_description === 'string') {
-          return claim.reason_description;
-        }
-        if (claim.description && typeof claim.description === 'string') {
-          return claim.description;
-        }
-        
-        // Se não tiver descrição, usar o código/motivo simples
-        if (claim.reason && typeof claim.reason === 'string') return claim.reason;
-        if (claim.cancel_reason && typeof claim.cancel_reason === 'string') return claim.cancel_reason;
-        if (claim.cancellation_reason && typeof claim.cancellation_reason === 'string') return claim.cancellation_reason;
-        if (claim.resolution?.reason && typeof claim.resolution.reason === 'string') return claim.resolution.reason;
-      }
-      
-      if (devolucao.dados_order) {
-        const order = devolucao.dados_order;
-        
-        // Buscar descrição detalhada primeiro
-        if (order.cancel_detail?.description && typeof order.cancel_detail.description === 'string') {
-          return order.cancel_detail.description;
-        }
-        if (order.cancellation_description && typeof order.cancellation_description === 'string') {
-          return order.cancellation_description;
-        }
-        if (order.cancel_description && typeof order.cancel_description === 'string') {
-          return order.cancel_description;
-        }
-        
-        // Se não tiver descrição, usar o código simples
-        if (order.cancel_reason && typeof order.cancel_reason === 'string') return order.cancel_reason;
-        if (order.cancellation_reason && typeof order.cancellation_reason === 'string') return order.cancellation_reason;
-      }
-      
-      if (devolucao.dados_return) {
-        const returnData = devolucao.dados_return;
-        
-        // Buscar descrição detalhada primeiro
-        if (returnData.reason_description && typeof returnData.reason_description === 'string') {
-          return returnData.reason_description;
-        }
-        if (returnData.description && typeof returnData.description === 'string') {
-          return returnData.description;
-        }
-        
-        // Se não tiver descrição, usar o código simples
-        if (returnData.reason && typeof returnData.reason === 'string') return returnData.reason;
-        if (returnData.cancel_reason && typeof returnData.cancel_reason === 'string') return returnData.cancel_reason;
-        if (returnData.cancellation_reason && typeof returnData.cancellation_reason === 'string') return returnData.cancellation_reason;
-      }
-
-      // Se não tiver motivo específico mas estiver cancelado
-      if (devolucao.status_devolucao === 'cancelled') {
-        return 'Cancelado - motivo não especificado';
-      }
-      
-      return 'N/A';
-    } catch (error) {
-      console.error('Erro ao extrair motivo:', error);
-      return 'N/A';
-    }
-  }, []);
-
-  // Função para extrair texto detalhado do motivo (garantindo string)
-  const getTextoMotivoDetalhado = useCallback((devolucao: DevolucaoAvancada) => {
-    try {
-      // Buscar texto mais detalhado nos dados JSON
-      if (devolucao.dados_claim) {
-        const claim = devolucao.dados_claim;
-        if (claim.reason_description && typeof claim.reason_description === 'string') return claim.reason_description;
-        if (claim.resolution?.description && typeof claim.resolution.description === 'string') return claim.resolution.description;
-        if (claim.resolution?.comments && typeof claim.resolution.comments === 'string') return claim.resolution.comments;
-        if (claim.reason_detail && typeof claim.reason_detail === 'string') return claim.reason_detail;
-        if (claim.description && typeof claim.description === 'string') return claim.description;
-        if (claim.comments && typeof claim.comments === 'string') return claim.comments;
-        if (claim.explanation && typeof claim.explanation === 'string') return claim.explanation;
-      }
-      
-      if (devolucao.dados_return) {
-        const returnData = devolucao.dados_return;
-        if (returnData.reason_description && typeof returnData.reason_description === 'string') return returnData.reason_description;
-        if (returnData.description && typeof returnData.description === 'string') return returnData.description;
-        if (returnData.comments && typeof returnData.comments === 'string') return returnData.comments;
-        if (returnData.explanation && typeof returnData.explanation === 'string') return returnData.explanation;
-        if (returnData.details && typeof returnData.details === 'string') return returnData.details;
-      }
-
-      if (devolucao.dados_order) {
-        const order = devolucao.dados_order;
-        if (order.cancel_description && typeof order.cancel_description === 'string') return order.cancel_description;
-        if (order.cancellation_description && typeof order.cancellation_description === 'string') return order.cancellation_description;
-         if (order.cancel_detail && typeof order.cancel_detail === 'string') return order.cancel_detail;
-        if (order.comments && typeof order.comments === 'string') return order.comments;
-      }
-
-      // Buscar em mensagens se disponível
-      if (devolucao.dados_mensagens && Array.isArray(devolucao.dados_mensagens) && devolucao.dados_mensagens.length > 0) {
-        const ultimaMensagem = devolucao.dados_mensagens[devolucao.dados_mensagens.length - 1];
-        if (ultimaMensagem?.text && typeof ultimaMensagem.text === 'string') return ultimaMensagem.text;
-        if (ultimaMensagem?.message && typeof ultimaMensagem.message === 'string') return ultimaMensagem.message;
-      }
-      
-      return 'Sem detalhes disponíveis';
-    } catch (error) {
-      console.error('Erro ao extrair texto detalhado:', error);
-      return 'Sem detalhes disponíveis';
-    }
-  }, []);
-
-  // Função para extrair mensagens de texto das conversas
-  const getTextoMensagens = useCallback((devolucao: DevolucaoAvancada) => {
-    try {
-      const mensagens = [];
-      
-      // Debug log para identificar o problema
-      console.log('🔍 DEBUG dados_mensagens structure:', {
-        type: typeof devolucao.dados_mensagens,
-        isArray: Array.isArray(devolucao.dados_mensagens),
-        keys: devolucao.dados_mensagens ? Object.keys(devolucao.dados_mensagens) : [],
-        value: devolucao.dados_mensagens
-      });
-      
-      // Buscar mensagens nos dados_mensagens
-      if (devolucao.dados_mensagens?.messages && Array.isArray(devolucao.dados_mensagens.messages)) {
-        for (const msg of devolucao.dados_mensagens.messages) {
-          if (msg && typeof msg === 'object' && msg.text && typeof msg.text === 'string') {
-            const remetente = msg.sender || msg.from || 'Não identificado';
-            mensagens.push(`[${String(remetente)}]: ${String(msg.text).substring(0, 100)}...`);
-          }
-        }
-      }
-      
-      // Se não encontrou mensagens, buscar em outros lugares
-      if (mensagens.length === 0) {
-        // Buscar em dados_claim
-        if (devolucao.dados_claim?.messages && Array.isArray(devolucao.dados_claim.messages)) {
-          for (const msg of devolucao.dados_claim.messages) {
-            if (msg && typeof msg === 'object' && msg.text && typeof msg.text === 'string') {
-              const remetente = msg.sender || msg.from || 'Não identificado';
-              mensagens.push(`[${String(remetente)}]: ${String(msg.text).substring(0, 100)}...`);
-            }
-          }
-        }
-        
-        // Buscar em dados_return
-        if (devolucao.dados_return?.messages && Array.isArray(devolucao.dados_return.messages)) {
-          for (const msg of devolucao.dados_return.messages) {
-            if (msg && typeof msg === 'object' && msg.text && typeof msg.text === 'string') {
-              const remetente = msg.sender || msg.from || 'Não identificado';
-              mensagens.push(`[${String(remetente)}]: ${String(msg.text).substring(0, 100)}...`);
-            }
-          }
-        }
-      }
-      
-      const resultado = mensagens.length > 0 ? String(mensagens.join(' | ')) : 'Sem mensagens de texto';
-      console.log('🔍 DEBUG resultado getTextoMensagens:', typeof resultado, resultado);
-      return resultado;
-    } catch (error) {
-      console.error('Erro ao extrair mensagens:', error);
-      return 'Erro ao carregar mensagens';
-    }
-  }, []);
-
-  // Função para extrair última mensagem completa
-  const getUltimaMensagemTexto = useCallback((devolucao: DevolucaoAvancada) => {
-    try {
-      // Debug log
-      console.log('🔍 DEBUG getUltimaMensagemTexto entrada:', {
-        hasDados: !!devolucao.dados_mensagens,
-        hasMessages: !!(devolucao.dados_mensagens?.messages),
-        messagesCount: devolucao.dados_mensagens?.messages?.length || 0
-      });
-      
-      // Buscar última mensagem nos dados_mensagens
-      if (devolucao.dados_mensagens?.messages && Array.isArray(devolucao.dados_mensagens.messages) && devolucao.dados_mensagens.messages.length > 0) {
-        const ultimaMensagem = devolucao.dados_mensagens.messages[devolucao.dados_mensagens.messages.length - 1];
-        console.log('🔍 DEBUG última mensagem:', typeof ultimaMensagem, ultimaMensagem);
-        
-        if (ultimaMensagem && typeof ultimaMensagem === 'object' && ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
-          const texto = String(ultimaMensagem.text);
-          return texto.substring(0, 200) + (texto.length > 200 ? '...' : '');
-        }
-      }
-      
-      // Se não encontrou, buscar em timeline_mensagens
-      if (devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0) {
-        const ultimaMensagem = devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1];
-        if (ultimaMensagem && typeof ultimaMensagem === 'object' && ultimaMensagem.text && typeof ultimaMensagem.text === 'string') {
-          const texto = String(ultimaMensagem.text);
-          return texto.substring(0, 200) + (texto.length > 200 ? '...' : '');
-        }
-      }
-      
-      return 'Sem texto da última mensagem';
-    } catch (error) {
-      console.error('Erro ao extrair última mensagem:', error);
-      return 'Erro ao carregar última mensagem';
-    }
-  }, []);
+  // ✨ Usar utilities de extração (removendo funções duplicadas)
+  const getMotivoCancelamento = useCallback((dev: DevolucaoAvancada) => extractCancelReason(dev), []);
+  const getTextoMotivoDetalhado = useCallback((dev: DevolucaoAvancada) => extractDetailedReason(dev), []);
+  const getTextoMensagens = useCallback((dev: DevolucaoAvancada) => extractMessageText(dev), []);
+  const getUltimaMensagemTexto = useCallback((dev: DevolucaoAvancada) => extractLastMessageText(dev), []);
 
   // Tempo real para demonstração - corrigir dependências
   useDevolucoesDemostracao(

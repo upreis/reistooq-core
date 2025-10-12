@@ -12,8 +12,8 @@ export interface DevolucaoBasica {
   status_devolucao?: string | null;
   produto_titulo?: string | null;
   sku?: string | null;
-  quantidade: number;
-  valor_retido: number;
+  quantidade?: number | null;
+  valor_retido?: number | null;
   data_criacao?: string | null;
   dados_order?: any;
   dados_claim?: any;
@@ -21,6 +21,9 @@ export interface DevolucaoBasica {
   dados_return?: any;
   created_at?: string;
   updated_at?: string;
+  comprador_nickname?: string | null;
+  claim_status?: string | null;
+  numero_interacoes?: number | null;
 }
 
 // ===== TIPOS AVANÇADOS (42 NOVAS COLUNAS) =====
@@ -56,7 +59,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   tipo_claim?: string | null;
   subtipo_claim?: string | null;
   motivo_categoria?: string | null;
-  nivel_prioridade?: 'low' | 'medium' | 'high' | 'critical' | null;
+  nivel_prioridade?: string | null;
   tags_automaticas?: string[] | null;
 
   // 📊 MÉTRICAS E KPIS (4 colunas)
@@ -78,7 +81,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   metodo_resolucao?: string | null;
   resultado_final?: string | null;
   resultado_mediacao?: string | null;
-  impacto_reputacao?: 'low' | 'medium' | 'high' | 'critical' | null;
+  impacto_reputacao?: string | null;
   satisfacao_comprador?: string | null;
   seller_reputation?: any | null;
   buyer_reputation?: any | null;
