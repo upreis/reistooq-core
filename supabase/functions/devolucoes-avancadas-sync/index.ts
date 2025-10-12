@@ -280,92 +280,101 @@ async function handleRealEnrichClaims(supabase: any, integration_account_id: str
 }
 
 async function handleEnrichExistingData(supabase: any, integration_account_id: string, limit: number) {
-  console.log('📈 Enriquecendo dados existentes...');
+  console.log('📈 Enriquecendo dados existentes com TODOS os endpoints da API ML...');
   
   try {
-    // 🔑 PASSO 1: Buscar dados DA API primeiro (não do banco)
-    console.log('📡 Buscando claims da API ML...');
+    // PASSO 1: Buscar dados da API ML (pedidos cancelados)
+    console.log('📡 Buscando pedidos cancelados da API ML...');
     const apiClaims = await getCachedOrFetchClaims(supabase, integration_account_id, limit || 50);
     
     if (apiClaims.length === 0) {
-      console.log('⚠️  Nenhum claim retornado da API');
+      console.log('⚠️  Nenhum pedido cancelado encontrado');
       return ok({
         success: true,
         enriched_count: 0,
-        message: 'Nenhum claim encontrado na API ML'
+        message: 'Nenhum pedido cancelado encontrado na API ML'
       });
     }
     
-    console.log(`📊 Processando ${apiClaims.length} claims/returns da API...`);
+    console.log(`📊 Processando ${apiClaims.length} pedidos cancelados com enriquecimento completo...`);
     
     let enrichedCount = 0;
     let savedCount = 0;
+    const errors = [];
     
-    // 🔑 PASSO 2: Processar e SALVAR cada claim com dados enriquecidos
+    // PASSO 2: Processar cada claim COM TODOS OS DADOS ADICIONAIS
     for (const claimData of apiClaims) {
-      console.log(`🔄 Processando registro ${record.order_id}...`);
-      
-      console.log(`🔄 Processando claim ${claimData.order_id}...`);
+      console.log(`\n🔄 [${savedCount + 1}/${apiClaims.length}] Processando order ${claimData.order_id}...`);
       
       try {
-        // Processar dados para extrair TODOS os campos necessários
+        // Processar dados básicos primeiro
         const processedData = await processClaimData(claimData, integration_account_id);
         
         if (!processedData) {
-          console.log(`  ⏭️  Sem dados processados`);
+          console.log(`  ⏭️  Sem dados processados - pulando`);
           continue;
         }
         
-        // DEBUG: Ver o que foi processado
-        const hasClaimData = !!processedData.dados_claim && Object.keys(processedData.dados_claim).length > 0;
-        console.log(`  ${hasClaimData ? '✅' : '⚠️'}  Claim extraído: ${hasClaimData ? 'SIM' : 'NÃO'}`);
+        // Verificar o que foi extraído
+        const hasClaimData = processedData.dados_claim && Object.keys(processedData.dados_claim).length > 0;
+        const hasReturnData = processedData.dados_return && Object.keys(processedData.dados_return).length > 0;
+        const hasMessages = processedData.dados_mensagens && Object.keys(processedData.dados_mensagens).length > 0;
         
-        if (hasClaimData) {
-          console.log(`  📊 Claim: id=${processedData.dados_claim.id}, type=${processedData.dados_claim.type}, status=${processedData.claim_status}`);
-        }
+        console.log(`  📊 Dados extraídos:`);
+        console.log(`     Claim: ${hasClaimData ? '✅' : '⚠️'}`);
+        console.log(`     Return: ${hasReturnData ? '✅' : '⚠️'}`);
+        console.log(`     Mensagens: ${hasMessages ? '✅' : '⚠️'}`);
         
-        // SALVAR ou ATUALIZAR no banco com UPSERT
+        // SALVAR no banco com UPSERT
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
           .upsert({
             integration_account_id,
             order_id: claimData.order_id,
-            // Todos os campos processados
             ...processedData,
             updated_at: new Date().toISOString()
           }, {
             onConflict: 'order_id,integration_account_id',
-            ignoreDuplicates: false  // Atualizar se já existe
+            ignoreDuplicates: false
           });
         
-        if (!upsertError) {
-          savedCount++;
-          if (hasClaimData) {
-            enrichedCount++;
-            console.log(`  💾 SALVO com claim extraído!`);
-          } else {
-            console.log(`  💾 Salvo (sem claim)`);
-          }
-        } else {
-          console.error(`  ❌ Erro ao salvar:`, upsertError);
+        if (upsertError) {
+          console.error(`  ❌ Erro ao salvar:`, upsertError.message);
+          errors.push({ order_id: claimData.order_id, error: upsertError.message });
+          continue;
         }
+        
+        savedCount++;
+        if (hasClaimData || hasReturnData || hasMessages) {
+          enrichedCount++;
+        }
+        
+        console.log(`  ✅ Salvo com sucesso!`);
+        
       } catch (error) {
-        console.error(`  ❌ Erro processando order ${claimData.order_id}:`, error);
+        const errorMsg = error instanceof Error ? error.message : 'Erro desconhecido';
+        console.error(`  ❌ Erro processando:`, errorMsg);
+        errors.push({ order_id: claimData.order_id, error: errorMsg });
       }
     }
     
-    console.log(`\n✅ Finalizado: ${savedCount} salvos, ${enrichedCount} enriquecidos de ${apiClaims.length} processados`);
+    console.log(`\n🎉 Enriquecimento concluído:`);
+    console.log(`   📦 Total processados: ${apiClaims.length}`);
+    console.log(`   💾 Salvos com sucesso: ${savedCount}`);
+    console.log(`   ✨ Enriquecidos: ${enrichedCount}`);
+    console.log(`   ❌ Erros: ${errors.length}`);
     
     return ok({
       success: true,
       enriched_count: enrichedCount,
       saved_count: savedCount,
       total_processed: apiClaims.length,
-      message: `${enrichedCount} claims enriquecidos de ${savedCount} salvos`
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${enrichedCount} registros enriquecidos de ${savedCount} salvos (${apiClaims.length} processados)`
     });
     
   } catch (error) {
-    console.error('❌ Erro ao enriquecer dados existentes:', error);
+    console.error('❌ Erro crítico no enriquecimento:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return ok({ success: false, error: errorMessage });
   }
@@ -546,45 +555,168 @@ async function handleUpdatePhase2Columns(supabase: any, integration_account_id: 
 // ======= FUNÇÕES DE PROCESSAMENTO =======
 
 async function processClaimData(claim: any, integration_account_id: string) {
-  const orderData = claim.order_data || {};
-  const claimDetails = claim.claim_details || {};
-  const claimMessages = claim.claim_messages || {};
-  const messages = claimMessages.messages || [];
+  console.log(`  🔧 Processando dados do claim/order ${claim.order_id}...`);
   
-  // 🔍 DETECÇÃO MELHORADA: Verificar dados em MÚLTIPLAS fontes
-  // Se claim_details está vazio mas temos dados em orderData, usar orderData
-  const hasClaimInOrderData = !claimDetails.id && (
-    orderData.cancel_detail?.code || 
-    orderData.status === 'cancelled' || 
-    (orderData.mediations && orderData.mediations.length > 0)
-  );
+  // Extrair todos os objetos de dados disponíveis
+  const orderData = claim?.order_data || {};
+  const claimDetails = claim?.claim_details || {};
+  const returnDetailsV2 = claim?.return_details_v2 || {};
+  const returnDetailsV1 = claim?.return_details_v1 || {};
+  const messagesData = claim?.claim_messages || {};
+  const attachmentsData = claim?.claim_attachments || {};
+  const mediationDetails = claim?.mediation_details || {};
+  const changeDetails = claim?.change_details || {};
+  const shipmentHistory = claim?.shipment_history || {};
   
-  // 📋 Montar estrutura de claim a partir de orderData quando necessário
-  const effectiveClaimData = hasClaimInOrderData ? {
-    id: orderData.mediations?.[0]?.id || `${claim.order_id}_claim`,
-    type: orderData.cancel_detail?.group || 'cancellation',
-    reason_id: orderData.cancel_detail?.code,
-    status: orderData.status,
-    date_created: orderData.cancel_detail?.date || orderData.date_created,
-    last_updated: orderData.last_updated,
-    resolution: orderData.cancel_detail ? {
-      reason: orderData.cancel_detail.description,
-      date_created: orderData.cancel_detail.date,
-      requested_by: orderData.cancel_detail.requested_by
-    } : null
-  } : claimDetails;
+  // Determinar origem dos dados (claim_details vs order_data)
+  const hasClaimInDetails = claimDetails && Object.keys(claimDetails).length > 0;
+  const hasClaimInOrder = orderData?.cancel_detail || orderData?.mediations?.length > 0;
   
-  // Usar Promise.all para operações paralelas quando possível
-  const [dataCreated, dataUpdated, sellerId] = await Promise.resolve([
-    new Date(claim.date_created || orderData.date_created),
-    new Date(orderData.last_updated || claim.date_created),
-    claim.order_data?.seller?.id?.toString()
-  ]);
+  console.log(`     Fonte: ${hasClaimInDetails ? 'claim_api' : hasClaimInOrder ? 'order_data' : 'incompleta'}`);
   
-  const dataResolution = effectiveClaimData.last_updated ? new Date(effectiveClaimData.last_updated) : null;
+  // Construir dados de claim efetivos (priorizar API, fallback para orderData)
+  let dadosClaim = {};
+  let claimId = null;
+  let claimStatus = null;
+  let tipoClaim = null;
+  let motivoCategoria = null;
   
-  // Cálculos rápidos em paralelo
-  const calculations = calculateMetrics(messages, dataCreated, dataResolution, sellerId, orderData);
+  if (hasClaimInDetails) {
+    dadosClaim = claimDetails;
+    claimId = claimDetails.id;
+    claimStatus = claimDetails.status;
+    tipoClaim = claimDetails.type || 'claim';
+    motivoCategoria = claimDetails.reason?.description || claimDetails.reason?.code;
+  } else if (hasClaimInOrder) {
+    dadosClaim = {
+      cancel_detail: orderData.cancel_detail,
+      mediations: orderData.mediations,
+      order_request: orderData.order_request
+    };
+    claimId = orderData.mediations?.[0]?.id || `${claim.order_id}_claim`;
+    claimStatus = orderData.status;
+    tipoClaim = orderData.cancel_detail?.code === 'buyer_cancel' ? 'cancellation' : 'claim';
+    motivoCategoria = orderData.cancel_detail?.description;
+  }
+  
+  // Extrair dados de return (V2 tem prioridade)
+  const hasReturn = returnDetailsV2?.results?.length > 0 || returnDetailsV1?.length > 0;
+  const returnData = hasReturn ? (returnDetailsV2?.results?.[0] || returnDetailsV1?.[0] || {}) : {};
+  
+  // Extrair mensagens e anexos
+  const messages = messagesData?.messages || [];
+  const attachments = Array.isArray(attachmentsData) ? attachmentsData : [];
+  const totalMessages = messages.length;
+  const totalAttachments = attachments.length;
+  
+  // Última mensagem
+  const ultimaMensagem = messages.length > 0 ? messages[messages.length - 1] : null;
+  const ultimaMensagemData = ultimaMensagem?.date_created;
+  const ultimaMensagemTexto = ultimaMensagem?.text || ultimaMensagem?.message?.text;
+  
+  // Extrair datas importantes dos novos endpoints
+  const dataEstimadaTroca = changeDetails?.estimated_delivery_date || returnData?.estimated_delivery?.date;
+  const dataLimiteTroca = changeDetails?.deadline || returnData?.deadline;
+  const dataVencimentoAcao = claimDetails?.resolution?.deadline || mediationDetails?.deadline;
+  
+  // Calcular dias restantes
+  const calcularDiasRestantes = (dataFutura: string | null) => {
+    if (!dataFutura) return null;
+    const hoje = new Date();
+    const futuro = new Date(dataFutura);
+    const diff = Math.ceil((futuro.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+  
+  // Determinar prioridade baseada em múltiplos fatores
+  const diasRestantes = calcularDiasRestantes(dataVencimentoAcao);
+  const temMediacao = orderData?.mediations?.length > 0;
+  const valorAlto = (orderData?.total_amount || 0) > 200;
+  
+  let nivelPrioridade = 'low';
+  if (temMediacao || (diasRestantes !== null && diasRestantes < 2)) {
+    nivelPrioridade = 'critical';
+  } else if (diasRestantes !== null && diasRestantes < 5) {
+    nivelPrioridade = 'high';
+  } else if (valorAlto) {
+    nivelPrioridade = 'medium';
+  }
+  
+  console.log(`     Prioridade: ${nivelPrioridade}, Claim: ${claimId ? '✅' : '⚠️'}, Return: ${hasReturn ? '✅' : '⚠️'}, Msgs: ${totalMessages}`);
+  
+  // Retornar dados processados completos
+  return {
+    integration_account_id,
+    order_id: claim.order_id,
+    
+    // DADOS BRUTOS COMPLETOS
+    dados_claim: dadosClaim,
+    dados_return: returnData,
+    dados_order: orderData,
+    dados_mensagens: messagesData,
+    timeline_mensagens: messages,
+    
+    // IDENTIFICAÇÃO
+    claim_id: claimId,
+    claim_status: claimStatus,
+    tipo_claim: tipoClaim,
+    motivo_categoria: motivoCategoria,
+    
+    // RETURN
+    status_devolucao: returnData?.status || 'N/A',
+    codigo_rastreamento: returnData?.tracking_number || claim?.return_tracking,
+    status_rastreamento: returnData?.shipment_status || claim?.tracking_status_detail,
+    
+    // ANEXOS
+    anexos_count: totalMessages + totalAttachments,
+    anexos_comprador: attachments.filter((a: any) => a.user_type === 'buyer'),
+    anexos_vendedor: attachments.filter((a: any) => a.user_type === 'seller'),
+    anexos_ml: attachments.filter((a: any) => a.user_type === 'moderator'),
+    numero_interacoes: totalMessages,
+    
+    // PRIORIDADE
+    nivel_prioridade: nivelPrioridade,
+    dias_restantes_acao: diasRestantes,
+    escalado_para_ml: temMediacao,
+    em_mediacao: !!(mediationDetails && Object.keys(mediationDetails).length > 0),
+    status_moderacao: mediationDetails?.status,
+    
+    // DATAS (CORRIGIDAS - campos que estavam faltando)
+    data_criacao: orderData?.date_created || claimDetails?.date_created,
+    data_atualizacao: orderData?.last_updated || claimDetails?.last_updated,
+    data_resolucao: claimDetails?.resolution?.date || claim?.resolution_date,
+    ultima_mensagem_data: ultimaMensagemData,
+    ultima_mensagem_texto: ultimaMensagemTexto,
+    data_estimada_troca: dataEstimadaTroca,
+    data_limite_troca: dataLimiteTroca,
+    data_vencimento_acao: dataVencimentoAcao,
+    
+    // TROCA
+    is_exchange: !!(changeDetails && Object.keys(changeDetails).length > 0),
+    exchange_product_id: changeDetails?.substitute_product?.id,
+    exchange_product_title: changeDetails?.substitute_product?.title,
+    exchange_status: changeDetails?.status,
+    exchange_expected_date: changeDetails?.estimated_delivery_date,
+    
+    // PEDIDO
+    nome_comprador: orderData?.buyer?.nickname || orderData?.buyer?.first_name,
+    produto_titulo: orderData?.order_items?.[0]?.item?.title,
+    produto_sku: orderData?.order_items?.[0]?.item?.seller_sku,
+    quantidade: orderData?.order_items?.[0]?.quantity || 1,
+    valor_total: orderData?.total_amount || 0,
+    
+    // TRACKING
+    tracking_events: shipmentHistory?.history || [],
+    last_tracking_update: shipmentHistory?.history?.[0]?.date,
+    tracking_status_detail: shipmentHistory?.history?.[0]?.status,
+    
+    // METADADOS
+    dados_completos: true,
+    fonte_dados: hasClaimInDetails ? 'claim_api' : hasClaimInOrder ? 'order_data' : 'incompleto',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+}
   
   return {
     order_id: claim.order_id,
