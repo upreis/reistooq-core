@@ -95,7 +95,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.account_name || 'N/A'}
       </td>
       
-      {/* COLUNAS ORIGINAIS MANTIDAS */}
+      {/* COLUNAS ORIGINAIS */}
       
       {/* Claim */}
       <td className="px-3 py-3 text-left">
@@ -143,7 +143,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Mediação Original */}
+      {/* Mediação */}
       <td className="px-3 py-3 text-left">
         {temMediationData ? (
           <div className="text-sm">
@@ -165,7 +165,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Anexos Original */}
+      {/* Anexos */}
       <td className="px-3 py-3 text-left">
         {temAttachmentsData ? (
           <div className="text-sm">
@@ -193,7 +193,18 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* MENSAGENS E COMUNICAÇÃO (novas colunas) */}
+      {/* Necessita Ação Manual */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.necessita_acao_manual ? (
+          <span className="text-red-600 dark:text-red-400 font-semibold">✓</span>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* ============ 87 NOVAS COLUNAS ENRIQUECIDAS ============ */}
+      
+      {/* MENSAGENS E COMUNICAÇÃO */}
       
       {/* Mensagens */}
       <td className="px-3 py-3 text-left">
@@ -554,13 +565,84 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.score_qualidade || '-'}
       </td>
       
-      {/* Necessita Ação Manual */}
+      {/* FINANCEIRO AVANÇADO */}
+      
+      {/* Valor Reembolso Total */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
+        {devolucao.valor_reembolso_total ? `R$ ${devolucao.valor_reembolso_total.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Valor Reembolso Produto */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
+        {devolucao.valor_reembolso_produto ? `R$ ${devolucao.valor_reembolso_produto.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Valor Reembolso Frete */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
+        {devolucao.valor_reembolso_frete ? `R$ ${devolucao.valor_reembolso_frete.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Taxa ML Reembolso */}
+      <td className="px-3 py-3 text-right text-orange-600 dark:text-orange-400 whitespace-nowrap">
+        {devolucao.taxa_ml_reembolso ? `R$ ${devolucao.taxa_ml_reembolso.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Custo Logístico Total */}
+      <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 whitespace-nowrap">
+        {devolucao.custo_logistico_total ? `R$ ${devolucao.custo_logistico_total.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Impacto Financeiro Vendedor */}
+      <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">
+        {devolucao.impacto_financeiro_vendedor ? `R$ ${devolucao.impacto_financeiro_vendedor.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Data Processamento Reembolso */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_processamento_reembolso ? (() => {
+          try {
+            return new Date(devolucao.data_processamento_reembolso).toLocaleDateString('pt-BR');
+          } catch {
+            return devolucao.data_processamento_reembolso;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* DADOS TÉCNICOS */}
+      
+      {/* Dados Incompletos */}
       <td className="px-3 py-3 text-center">
-        {devolucao.necessita_acao_manual ? (
-          <span className="text-red-600 dark:text-red-400 font-semibold">✓</span>
+        {devolucao.dados_incompletos ? (
+          <span className="text-yellow-600 dark:text-yellow-400 font-semibold">⚠️</span>
         ) : (
-          <span className="text-muted-foreground">-</span>
+          <span className="text-green-600 dark:text-green-400">✓</span>
         )}
+      </td>
+      
+      {/* Campos Faltantes */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[150px] truncate" title={devolucao.campos_faltantes ? JSON.stringify(devolucao.campos_faltantes) : '-'}>
+          {devolucao.campos_faltantes && Array.isArray(devolucao.campos_faltantes) && devolucao.campos_faltantes.length > 0 
+            ? devolucao.campos_faltantes.join(', ') 
+            : '-'}
+        </div>
+      </td>
+      
+      {/* Última Sincronização */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.ultima_sincronizacao ? (() => {
+          try {
+            return new Date(devolucao.ultima_sincronizacao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return devolucao.ultima_sincronizacao;
+          }
+        })() : '-'}
       </td>
       
       {/* Botão de Ações */}

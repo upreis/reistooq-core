@@ -115,6 +115,20 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   necessita_acao_manual?: boolean | null;
   revisor_responsavel?: string | null;
   
+  // 💵 FINANCEIRO AVANÇADO (7 novas colunas)
+  valor_reembolso_total?: number | null;
+  valor_reembolso_produto?: number | null;
+  valor_reembolso_frete?: number | null;
+  taxa_ml_reembolso?: number | null;
+  custo_logistico_total?: number | null;
+  impacto_financeiro_vendedor?: number | null;
+  data_processamento_reembolso?: string | null;
+  
+  // 📋 DADOS TÉCNICOS (3 novas colunas)
+  dados_incompletos?: boolean | null;
+  campos_faltantes?: string[] | null;
+  ultima_sincronizacao?: string | null;
+  
   // 📊 TIMELINE CONSOLIDADO
   timeline_consolidado?: any | null;
 }

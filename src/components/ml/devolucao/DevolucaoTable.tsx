@@ -26,68 +26,90 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
             
-            {/* COLUNAS ORIGINAIS MANTIDAS */}
+            {/* COLUNAS ORIGINAIS */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Claim</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Return</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Mediação</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚠️ Ação Manual</th>
             
-            {/* MENSAGENS E COMUNICAÇÃO (novas) */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">💬 Mensagens (Texto)</th>
+            {/* 87 NOVAS COLUNAS - DADOS ENRIQUECIDOS */}
+            
+            {/* MENSAGENS E COMUNICAÇÃO */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">💬 Mensagens</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">💬 Última Mensagem (Texto)</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">💬 Última Mensagem</th>
             
-            {/* DATAS E PRAZOS (novas) */}
+            {/* DATAS E PRAZOS */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Venc. Ação</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Est. Troca</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Lim. Troca</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📝 Prazo Rev.</th>
             
-            {/* RASTREAMENTO E LOGÍSTICA (novas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">🚛 Rastreio</th>
+            {/* RASTREAMENTO E LOGÍSTICA */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚛 Rastreio</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Transport.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📍 Status Env.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📍 Status Env.</th>
             
-            {/* CUSTOS E FINANCEIRO (novas) */}
+            {/* CUSTOS E FINANCEIRO */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Custo Env.</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Compensação</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
             
-            {/* CLASSIFICAÇÃO E RESOLUÇÃO (novas) */}
+            {/* CLASSIFICAÇÃO E RESOLUÇÃO */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Em Mediação</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Método Resolução</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
             
-            {/* MÉTRICAS E KPIS (novas) */}
+            {/* MÉTRICAS E KPIS */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏁 Total (min)</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
             
-            {/* ESTADOS E FLAGS (novas) */}
+            {/* ESTADOS E FLAGS */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
             
-            {/* 📊 MÉTRICAS ADICIONAIS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo 1ª Resp</th>
+            {/* MÉTRICAS TEMPORAIS AVANÇADAS */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ 1ª Resp</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏁 Tempo Total</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Dias Resolução</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">✅ SLA</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⭐ Score Satisfação</th>
+            
+            {/* SATISFAÇÃO E QUALIDADE */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⭐ Score Satisf.</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💨 Eficiência</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Resultado</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🌟 Reputação</th>
+            
+            {/* AÇÕES E GESTÃO */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📝 Próx Ação</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🛠️ Revisor</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Score Qual.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚠️ Ação Manual</th>
+            
+            {/* FINANCEIRO AVANÇADO */}
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💵 Reemb. Total</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Reemb. Produto</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Reemb. Frete</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Taxa ML</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Custo Log.</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚖️ Impacto Vend.</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Proc. Reemb.</th>
+            
+            {/* DADOS TÉCNICOS */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚠️ Incompleto</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Campos Falt.</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔄 Últ Sync</th>
+            
+            {/* AÇÕES FINAIS */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
           </tr>
         </thead>
