@@ -30,21 +30,44 @@ serve(async (req) => {
       console.log(`🔑 Obtendo token ML para conta ${integration_account_id}...`)
       
       const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       
-      const supabase = makeServiceClient()
-      const { data: tokenData, error: tokenError } = await supabase.functions.invoke('integrations-get-secret', {
-        body: { 
-          integration_account_id,
-          provider: 'mercadolivre'
-        },
+      console.log(`🔐 INTERNAL_TOKEN configurado: ${INTERNAL_TOKEN ? 'Sim' : 'Não'}`)
+      
+      // Fazer chamada HTTP direta para a função usando fetch
+      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+      const secretResponse = await fetch(secretUrl, {
+        method: 'POST',
         headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
           'x-internal-call': 'true',
           'x-internal-token': INTERNAL_TOKEN
-        }
-      })
+        },
+        body: JSON.stringify({
+          integration_account_id,
+          provider: 'mercadolivre'
+        })
+      });
       
-      if (tokenError || !tokenData?.success || !tokenData?.secret?.access_token) {
-        console.error('❌ Erro ao obter token ML:', tokenError || 'Token não encontrado')
+      if (!secretResponse.ok) {
+        const errorText = await secretResponse.text();
+        console.error(`❌ Erro ao obter token ML (${secretResponse.status}):`, errorText)
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível. Reconecte a integração.',
+            details: errorText
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        )
+      }
+      
+      const tokenData = await secretResponse.json();
+      
+      if (!tokenData?.success || !tokenData?.secret?.access_token) {
+        console.error('❌ Token ML não encontrado na resposta:', tokenData)
         return new Response(
           JSON.stringify({ 
             success: false, 
