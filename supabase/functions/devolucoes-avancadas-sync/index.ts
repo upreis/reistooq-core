@@ -281,7 +281,88 @@ async function handleRealEnrichClaims(supabase: any, integration_account_id: str
 
 async function handleEnrichExistingData(supabase: any, integration_account_id: string, limit: number) {
   console.log('📈 Enriquecendo dados existentes...');
-  return await handleRealEnrichClaims(supabase, integration_account_id, limit, false);
+  
+  try {
+    // 🔍 Buscar registros EXISTENTES do banco (não da API)
+    const { data: existingRecords, error } = await supabase
+      .from('devolucoes_avancadas')
+      .select('*')
+      .eq('integration_account_id', integration_account_id)
+      .order('created_at', { ascending: false })
+      .limit(limit || 50);
+    
+    if (error) throw error;
+    
+    if (!existingRecords || existingRecords.length === 0) {
+      return ok({
+        success: true,
+        enriched_count: 0,
+        message: 'Nenhum registro encontrado para enriquecer'
+      });
+    }
+    
+    console.log(`📊 Reprocessando ${existingRecords.length} registros existentes...`);
+    
+    let enrichedCount = 0;
+    
+    // Reprocessar cada registro com a lógica melhorada
+    for (const record of existingRecords) {
+      // Reconstruir estrutura de claim a partir dos dados salvos
+      const claimData = {
+        order_id: record.order_id,
+        order_data: record.dados_order || {},
+        claim_details: record.dados_claim || {},
+        claim_messages: record.dados_mensagens || {},
+        return_data: record.dados_return || {},
+        mediation_data: record.dados_mediacao || {},
+        attachments: record.anexos_comprador || []
+      };
+      
+      // Processar com a lógica melhorada (que agora extrai de orderData)
+      const processedData = await processClaimData(claimData, integration_account_id);
+      
+      if (processedData) {
+        // Atualizar registro com os novos campos
+        const { error: updateError } = await supabase
+          .from('devolucoes_avancadas')
+          .update({
+            // Campos extraídos da nova lógica
+            dados_claim: processedData.dados_claim,
+            claim_status: processedData.claim_status,
+            tipo_claim: processedData.tipo_claim,
+            motivo_categoria: processedData.motivo_categoria,
+            resolution_reason: processedData.resolution_reason,
+            
+            // Outros campos que podem ter sido calculados
+            nivel_prioridade: processedData.nivel_prioridade,
+            dias_restantes_acao: processedData.dias_restantes_acao,
+            escalado_para_ml: processedData.escalado_para_ml,
+            em_mediacao: processedData.em_mediacao,
+            
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', record.id);
+        
+        if (!updateError) {
+          enrichedCount++;
+        } else {
+          console.error(`❌ Erro ao atualizar registro ${record.id}:`, updateError);
+        }
+      }
+    }
+    
+    return ok({
+      success: true,
+      enriched_count: enrichedCount,
+      total_processed: existingRecords.length,
+      message: `${enrichedCount}/${existingRecords.length} registros enriquecidos com dados de orderData`
+    });
+    
+  } catch (error) {
+    console.error('❌ Erro ao enriquecer dados existentes:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return ok({ success: false, error: errorMessage });
+  }
 }
 
 async function handleSyncAdvancedFields(supabase: any, integration_account_id: string) {
