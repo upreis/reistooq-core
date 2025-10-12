@@ -274,7 +274,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}`,
                   accessToken,
-                  integration_account_id
+                  integrationAccountId
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
               
@@ -283,7 +283,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/messages`,
                   accessToken,
-                  integration_account_id
+                  integrationAccountId
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
               
@@ -293,7 +293,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   fetchMLWithRetry(
                     `https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`,
                     accessToken,
-                    integration_account_id
+                    integrationAccountId
                   ).then(r => r.ok ? r.json() : null).catch(() => null)
                 )
               } else {
@@ -305,7 +305,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`,
                   accessToken,
-                  integration_account_id
+                  integrationAccountId
                 ).then(async r => {
                   if (r.ok) return r.json();
                   console.log(`⚠️  Mediation failed (${r.status}): ${mediationId}`);
@@ -321,7 +321,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
                   accessToken,
-                  integration_account_id
+                  integrationAccountId
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
 
@@ -330,7 +330,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/returns`,
                   accessToken,
-                  integration_account_id
+                  integrationAccountId
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
 
@@ -344,7 +344,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                       const response = await fetchMLWithRetry(
                         `https://api.mercadolibre.com/shipments/${originalShipmentId}/history`,
                         accessToken,
-                        integration_account_id
+                        integrationAccountId
                       )
                       if (response.ok) {
                         console.log(`🚚 Histórico do envio original encontrado: ${originalShipmentId}`)
@@ -360,7 +360,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                     const returnsResponse = await fetchMLWithRetry(
                       `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
                       accessToken,
-                      integration_account_id
+                      integrationAccountId
                     )
                     if (returnsResponse.ok) {
                       const returnsData = await returnsResponse.json()
@@ -371,7 +371,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                         const historyResponse = await fetchMLWithRetry(
                           `https://api.mercadolibre.com/shipments/${shipmentId}/history`,
                           accessToken,
-                          integration_account_id
+                          integrationAccountId
                         )
                         if (historyResponse.ok) {
                           return { type: 'return', data: await historyResponse.json() }
@@ -391,7 +391,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/changes`,
                   accessToken,
-                  integration_account_id
+                  integrationAccountId
                 ).then(async (r) => {
                   if (!r.ok) return null
                   const data = await r.json()
@@ -401,7 +401,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                     const changeResponse = await fetchMLWithRetry(
                       `https://api.mercadolibre.com/post-purchase/v1/changes/${changeId}`,
                       accessToken,
-                      integration_account_id
+                      integrationAccountId
                     )
                     return changeResponse.ok ? await changeResponse.json() : null
                   }

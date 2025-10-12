@@ -254,7 +254,7 @@ const SidebarContent = memo(({
     if (path.startsWith('/configuracoes/integracoes')) return 'integrations:read';
     if (path.startsWith('/configuracoes/anuncios')) return 'system:announce';
     if (path.startsWith('/configuracoes/administracao')) return 'admin:access';
-    if (path.startsWith('/ml-orders-completas')) return 'historico:read_full';
+    if (path.startsWith('/ml-orders-completas')) return 'integrations:manage';
     
     // Admin permissions
     if (path.startsWith('/admin')) return 'admin:access';
