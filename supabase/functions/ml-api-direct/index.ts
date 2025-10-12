@@ -21,9 +21,16 @@ serve(async (req) => {
   }
 
   try {
-    const { action, integration_account_id, seller_id, filters } = await req.json()
+    const requestBody = await req.json()
+    const { action, integration_account_id, seller_id, filters } = requestBody
 
-    console.log(`🔍 ML API Direct - Action: ${action}, Seller: ${seller_id}`)
+    console.log(`🔍 ML API Direct Request:`, {
+      action,
+      integration_account_id,
+      seller_id,
+      filters,
+      raw_body: requestBody
+    })
 
     if (action === 'get_claims_and_returns') {
       // 🔒 Obter token de forma segura usando integrations-get-secret
