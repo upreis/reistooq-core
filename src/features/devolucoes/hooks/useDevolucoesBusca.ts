@@ -18,44 +18,8 @@ export interface DevolucaoBuscaFilters {
 export function useDevolucoesBusca() {
   const [loading, setLoading] = useState(false);
 
-  // Obter token ML
-  const obterTokenML = useCallback(async (accountId: string, accountName: string): Promise<string | null> => {
-    try {
-      console.log(`🔍 Obtendo token para ${accountName}...`);
-      
-      const { data, error } = await supabase.functions.invoke('get-ml-token', {
-        body: { 
-          integration_account_id: accountId,
-          provider: 'mercadolivre'
-        }
-      });
-      
-      if (error) {
-        console.error(`❌ Erro ao buscar token para ${accountName}:`, error);
-        
-        // Verificar se é erro de permissão
-        if (error.message?.includes('Insufficient permissions')) {
-          toast.error(`Sem permissão para acessar tokens ML. Entre em contato com o administrador.`);
-        } else {
-          toast.error(`Erro ao obter token para ${accountName}: ${error.message}`);
-        }
-        return null;
-      }
-      
-      if (!data?.success || !data?.access_token) {
-        console.warn(`⚠️ Token não disponível para ${accountName}:`, data?.error || 'Sem dados');
-        toast.warning(`Token não configurado para ${accountName}. Configure a integração ML primeiro.`);
-        return null;
-      }
-
-      console.log(`✅ Token obtido com sucesso para ${accountName}`);
-      return data.access_token;
-    } catch (error) {
-      console.error(`❌ Erro ao obter token para ${accountName}:`, error);
-      toast.error(`Falha ao conectar com servidor para ${accountName}`);
-      return null;
-    }
-  }, []);
+  // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
+  // A função ml-api-direct já obtém o token internamente de forma segura
 
   // Buscar da API ML em tempo real
   const buscarDaAPI = useCallback(async (
@@ -80,20 +44,13 @@ export function useDevolucoesBusca() {
         console.log(`🔍 Processando conta: ${account.name}`);
         
         try {
-          // Obter token
-          const token = await obterTokenML(accountId, account.name);
-          if (!token) {
-            toast.warning(`Token não disponível para ${account.name}`);
-            continue;
-          }
-
-          // Chamar API ML via edge function
+          // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
               action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: account.account_identifier,
-              access_token: token,
+              // NÃO passamos access_token - a edge function obtém automaticamente
               filters: {
                 date_from: filtros.dataInicio,
                 date_to: filtros.dataFim,
@@ -218,7 +175,7 @@ export function useDevolucoesBusca() {
     } finally {
       setLoading(false);
     }
-  }, [obterTokenML]);
+  }, []); // Sem dependências pois não usa obterTokenML mais
 
   // Buscar do banco de dados
   const buscarDoBanco = useCallback(async () => {
@@ -394,20 +351,13 @@ export function useDevolucoesBusca() {
         }
 
         try {
-          // Obter token
-          const token = await obterTokenML(accountId, conta.name);
-          if (!token) {
-            console.warn(`⚠️ Token não encontrado para conta ${conta.name}`);
-            continue;
-          }
-
-          // Buscar claims da API ML
+          // ✅ Buscar claims da API ML (token obtido automaticamente pela edge function)
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
               action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: conta.account_identifier,
-              access_token: token,
+              // NÃO passamos access_token - a edge function obtém automaticamente
               filters: { date_from: '', date_to: '', status: '' }
             }
           });
