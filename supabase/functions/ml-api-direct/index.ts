@@ -227,22 +227,22 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // Seller ID é obrigatório
     params.append('seller_id', sellerId)
     
-    // Filtros opcionais
-    if (filters?.status_claim) {
+    // Filtros opcionais - APENAS adicionar se tiverem valor
+    if (filters?.status_claim && filters.status_claim.trim() !== '') {
       // Status: opened, closed, cancelled, etc
       params.append('status', filters.status_claim)
     }
     
-    if (filters?.claim_type) {
+    if (filters?.claim_type && filters.claim_type.trim() !== '') {
       // Tipo: mediations, returns, ml_case, cancel_sale, cancel_purchase, fulfillment, change
       params.append('status', filters.claim_type)
     }
     
-    // Filtros de data
-    if (filters?.date_from) {
+    // Filtros de data - APENAS adicionar se tiverem valor válido
+    if (filters?.date_from && filters.date_from.trim() !== '') {
       params.append('date_created.from', `${filters.date_from}T00:00:00.000Z`)
     }
-    if (filters?.date_to) {
+    if (filters?.date_to && filters.date_to.trim() !== '') {
       params.append('date_created.to', `${filters.date_to}T23:59:59.999Z`)
     }
     
