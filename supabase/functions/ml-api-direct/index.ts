@@ -81,7 +81,7 @@ serve(async (req) => {
       console.log(`✅ Token ML obtido com sucesso`)
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
-      const cancelledOrders = await buscarPedidosCancelados(seller_id, access_token, filters)
+      const cancelledOrders = await buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id)
       
       console.log(`📊 Total de pedidos cancelados encontrados: ${cancelledOrders.length}`)
       
@@ -122,8 +122,80 @@ serve(async (req) => {
   }
 })
 
+// ============ FUNÇÃO AUXILIAR: REFRESH TOKEN ============
+async function refreshMLToken(integrationAccountId: string): Promise<string | null> {
+  try {
+    console.log(`🔄 Tentando refresh do token ML para conta ${integrationAccountId}...`)
+    
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    const refreshResponse = await fetch(`${SUPABASE_URL}/functions/v1/mercadolibre-token-refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ANON_KEY}`
+      },
+      body: JSON.stringify({ integration_account_id: integrationAccountId })
+    });
+    
+    if (!refreshResponse.ok) {
+      console.error(`❌ Falha no refresh do token: ${refreshResponse.status}`)
+      return null
+    }
+    
+    const refreshData = await refreshResponse.json()
+    console.log(`✅ Token ML refreshed com sucesso`)
+    return refreshData.access_token || null
+  } catch (error) {
+    console.error(`❌ Erro ao fazer refresh do token:`, error)
+    return null
+  }
+}
+
+// ============ FUNÇÃO AUXILIAR: FETCH COM RETRY E REFRESH ============
+async function fetchMLWithRetry(url: string, accessToken: string, integrationAccountId: string, maxRetries = 1): Promise<Response> {
+  let currentToken = accessToken
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${currentToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    // Se sucesso, retornar
+    if (response.ok) {
+      return response
+    }
+    
+    // Se 401 (token expirado) e ainda tem tentativas, fazer refresh
+    if (response.status === 401 && attempt < maxRetries) {
+      console.warn(`⚠️ Token expirado (401) na URL: ${url}. Tentando refresh...`)
+      const newToken = await refreshMLToken(integrationAccountId)
+      
+      if (newToken) {
+        currentToken = newToken
+        console.log(`🔄 Retry ${attempt + 1}/${maxRetries} com novo token`)
+        continue
+      } else {
+        console.error(`❌ Não foi possível fazer refresh do token`)
+        return response
+      }
+    }
+    
+    // Qualquer outro erro ou última tentativa, retornar resposta
+    return response
+  }
+  
+  // Fallback (nunca deve chegar aqui)
+  throw new Error('Fetch com retry falhou inesperadamente')
+}
+
 // ============ FUNÇÃO PARA BUSCAR PEDIDOS CANCELADOS DA API ML ============
-async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any) {
+async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
   try {
     console.log(`🔍 Buscando pedidos cancelados para seller ${sellerId}...`)
     
@@ -142,19 +214,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     
     console.log(`📞 URL da API Orders Cancelados: ${url}`)
     
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      }
-    })
+    const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
     
     if (!response.ok) {
       console.error(`❌ Erro na API Orders: ${response.status} - ${response.statusText}`)
       
       if (response.status === 401) {
-        throw new Error('Token de acesso inválido ou expirado')
+        throw new Error('Token de acesso inválido ou expirado - reconecte a integração')
       }
       if (response.status === 403) {
         throw new Error('Sem permissão para acessar orders')
@@ -182,17 +248,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             continue
           }
           
-          // Buscar detalhes completos do pedido
+          // Buscar detalhes completos do pedido com retry
           const orderDetailUrl = `https://api.mercadolibre.com/orders/${order.id}`
           console.log(`📞 Buscando detalhes do pedido: ${order.id}`)
           
-          const orderDetailResponse = await fetch(orderDetailUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          })
+          const orderDetailResponse = await fetchMLWithRetry(orderDetailUrl, accessToken, integration_account_id)
           
           if (orderDetailResponse.ok) {
             const orderDetail = await orderDetailResponse.json()
@@ -206,32 +266,47 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               
               console.log(`🔍 Buscando dados completos do claim - Mediation ID: ${mediationId}`)
               
-              // Buscar todos os dados do claim em paralelo incluindo returns (estratégia do PDF)
+              // Buscar todos os dados do claim em paralelo incluindo returns
               const claimPromises = []
               
               // 1. Buscar claim principal
               claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(r => r.ok ? r.json() : null).catch(() => null)
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}`,
+                  accessToken,
+                  integration_account_id
+                ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
               
-              // 2. Buscar mensagens se tiver pack_id
+              // 2. Buscar mensagens DIRETO do claim (FONTE PRINCIPAL)
+              claimPromises.push(
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/messages`,
+                  accessToken,
+                  integration_account_id
+                ).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+              
+              // 3. Buscar mensagens via pack_id (FONTE BACKUP)
               if (packId) {
                 claimPromises.push(
-                  fetch(`https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                  }).then(r => r.ok ? r.json() : null).catch(() => null)
+                  fetchMLWithRetry(
+                    `https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`,
+                    accessToken,
+                    integration_account_id
+                  ).then(r => r.ok ? r.json() : null).catch(() => null)
                 )
               } else {
                 claimPromises.push(Promise.resolve(null))
               }
               
-              // 3. Buscar detalhes da mediação
+              // 4. Buscar detalhes da mediação
               claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(async r => {
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`,
+                  accessToken,
+                  integration_account_id
+                ).then(async r => {
                   if (r.ok) return r.json();
                   console.log(`⚠️  Mediation failed (${r.status}): ${mediationId}`);
                   return null;
@@ -240,99 +315,137 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   return null;
                 })
               )
-              
-              // 4. Buscar anexos do claim (pode retornar 404/405 se não houver)
+
+              // 5. Buscar returns v2 usando claim ID
               claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/attachments`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(async r => {
-                  if (r.ok) {
-                    const data = await r.json();
-                    if (Array.isArray(data) && data.length > 0) {
-                      console.log(`📎 ${data.length} anexos encontrados para ${mediationId}`);
-                      return data;
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
+                  accessToken,
+                  integration_account_id
+                ).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+
+              // 6. Buscar returns v1 usando claim ID
+              claimPromises.push(
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/returns`,
+                  accessToken,
+                  integration_account_id
+                ).then(r => r.ok ? r.json() : null).catch(() => null)
+              )
+
+              // 7. Buscar shipment history do pedido original E devolução
+              claimPromises.push(
+                (async () => {
+                  // Tentar buscar histórico do envio original primeiro
+                  const originalShipmentId = orderDetail?.shipping?.id
+                  if (originalShipmentId) {
+                    try {
+                      const response = await fetchMLWithRetry(
+                        `https://api.mercadolibre.com/shipments/${originalShipmentId}/history`,
+                        accessToken,
+                        integration_account_id
+                      )
+                      if (response.ok) {
+                        console.log(`🚚 Histórico do envio original encontrado: ${originalShipmentId}`)
+                        return { type: 'original', data: await response.json() }
+                      }
+                    } catch (e) {
+                      console.warn(`⚠️ Erro ao buscar histórico do envio original:`, e)
                     }
                   }
-                  // 404/405 são normais - nem todo claim tem anexos disponíveis via API
-                  if (r.status === 404 || r.status === 405) {
-                    return null;
+                  
+                  // Buscar histórico do shipment de devolução
+                  try {
+                    const returnsResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
+                      accessToken,
+                      integration_account_id
+                    )
+                    if (returnsResponse.ok) {
+                      const returnsData = await returnsResponse.json()
+                      const shipmentId = returnsData?.results?.[0]?.shipments?.[0]?.id || 
+                                        returnsData?.results?.[0]?.shipments?.[0]?.shipment_id
+                      if (shipmentId) {
+                        console.log(`🚚 Buscando histórico do return shipment ${shipmentId}...`)
+                        const historyResponse = await fetchMLWithRetry(
+                          `https://api.mercadolibre.com/shipments/${shipmentId}/history`,
+                          accessToken,
+                          integration_account_id
+                        )
+                        if (historyResponse.ok) {
+                          return { type: 'return', data: await historyResponse.json() }
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn(`⚠️ Erro ao buscar histórico de devolução:`, e)
                   }
-                  console.log(`⚠️  Attachments (${r.status}): ${mediationId}`);
-                  return null;
-                }).catch(e => {
-                  console.error(`❌ Attachments error: ${e.message}`);
-                  return null;
-                })
-              )
-
-              // 5. Buscar returns v2 usando claim ID (novo)
-              claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(r => r.ok ? r.json() : null).catch(() => null)
-              )
-
-              // 6. Buscar returns v1 usando claim ID (novo)
-              claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/returns`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(r => r.ok ? r.json() : null).catch(() => null)
-              )
-
-              // 7. Buscar shipment history se houver return com shipment
-              claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(async (r) => {
-                  if (!r.ok) {
-                    console.log(`⚠️  Shipment history (returns) failed (${r.status}): ${mediationId}`);
-                    return null;
-                  }
-                  const data = await r.json()
-                  const shipmentId = data?.results?.[0]?.shipments?.[0]?.id || data?.results?.[0]?.shipments?.[0]?.shipment_id
-                  if (!shipmentId) {
-                    console.log(`⚠️  Sem shipment ID para ${mediationId}`);
-                    return null;
-                  }
-                  console.log(`🚚 Buscando histórico para shipment ${shipmentId}...`);
-                  const historyResponse = await fetch(`https://api.mercadolibre.com/shipments/${shipmentId}/history`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                  })
-                  if (!historyResponse.ok) {
-                    console.log(`⚠️  Shipment history failed (${historyResponse.status}): ${shipmentId}`);
-                    return null;
-                  }
-                  return await historyResponse.json();
-                }).catch(e => {
-                  console.error(`❌ Shipment history error: ${e.message}`);
-                  return null;
-                })
+                  
+                  return null
+                })()
               )
 
               // 8. Buscar change details se for troca
               claimPromises.push(
-                fetch(`https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`, {
-                  headers: { 'Authorization': `Bearer ${accessToken}` }
-                }).then(async (r) => {
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/changes`,
+                  accessToken,
+                  integration_account_id
+                ).then(async (r) => {
                   if (!r.ok) return null
                   const data = await r.json()
-                  const changeId = data?.results?.[0]?.id
-                  if (!changeId || data?.results?.[0]?.subtype !== 'change') return null
-                  const changeResponse = await fetch(`https://api.mercadolibre.com/post-purchase/v1/changes/${changeId}`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                  })
-                  return changeResponse.ok ? await changeResponse.json() : null
+                  if (data?.results?.length > 0) {
+                    const changeId = data.results[0].id
+                    console.log(`🔄 Buscando detalhes da troca ${changeId}...`)
+                    const changeResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v1/changes/${changeId}`,
+                      accessToken,
+                      integration_account_id
+                    )
+                    return changeResponse.ok ? await changeResponse.json() : null
+                  }
+                  return null
                 }).catch(() => null)
               )
               
               try {
-                const [claimDetails, claimMessages, mediationDetails, claimAttachments, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
+                const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
+                
+                // Consolidar mensagens de ambas as fontes
+                const allMessages = [
+                  ...(claimMessagesDirect?.messages || []),
+                  ...(claimMessagesPack?.messages || [])
+                ].sort((a, b) => new Date(b.date_created).getTime() - new Date(a.date_created).getTime())
+                
+                // Remover duplicatas por ID
+                const uniqueMessages = allMessages.filter((msg, index, self) => 
+                  index === self.findIndex((m) => m.id === msg.id)
+                )
+                
+                const consolidatedMessages = {
+                  messages: uniqueMessages,
+                  unread_messages: (claimMessagesDirect?.unread_messages || 0) + (claimMessagesPack?.unread_messages || 0)
+                }
+                
+                // Extrair anexos das mensagens
+                const extractedAttachments = []
+                consolidatedMessages.messages.forEach(msg => {
+                  if (msg.attachments && Array.isArray(msg.attachments)) {
+                    extractedAttachments.push(...msg.attachments.map(att => ({
+                      ...att,
+                      source: msg.from?.role || 'unknown',
+                      message_id: msg.id,
+                      date_created: msg.date_created
+                    })))
+                  }
+                })
                 
                 console.log(`📋 Dados obtidos para mediação ${mediationId}:`, {
                   claimDetails: !!claimDetails,
-                  claimMessages: !!claimMessages,
+                  messagesCount: consolidatedMessages.messages.length,
+                  attachmentsCount: extractedAttachments.length,
                   mediationDetails: !!mediationDetails,
-                  claimAttachments: !!claimAttachments,
                   returnsV2: !!returnsV2,
                   returnsV1: !!returnsV1,
                   shipmentHistory: !!shipmentHistory,
@@ -363,9 +476,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 
                 claimData = {
                   claim_details: claimDetails,
-                  claim_messages: claimMessages,
+                  claim_messages: consolidatedMessages,
                   mediation_details: mediationDetails,
-                  claim_attachments: claimAttachments,
+                  claim_attachments: extractedAttachments,
                   return_details_v2: returnsV2,
                   return_details_v1: returnsV1,
                   return_reviews: returnReviews,
@@ -377,7 +490,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   return_tracking: returnsV2?.results?.[0]?.tracking_number || null,
                   resolution_date: claimDetails?.date_closed || claimDetails?.resolution?.date || null,
                   resolution_reason: claimDetails?.resolution?.reason || null,
-                  messages_count: claimMessages?.messages?.length || 0,
+                  messages_count: consolidatedMessages.messages.length,
                   review_score: returnReviews?.[0]?.score || null,
                   // Dados de shipment history
                   tracking_events: shipmentHistory?.history || [],
