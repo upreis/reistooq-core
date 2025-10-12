@@ -310,27 +310,40 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
     for (const record of existingRecords) {
       console.log(`🔄 Processando registro ${record.order_id}...`);
       
+      // DEBUG: Log do que encontramos
+      const hasClaimInOrderData = !!(record.dados_order?.cancel_detail || record.dados_order?.mediations?.length);
+      const hasExistingClaim = !!(record.dados_claim && record.dados_claim.id);
+      console.log(`  📋 Claim em orderData? ${hasClaimInOrderData} | Claim original preenchido? ${hasExistingClaim}`);
+      
+      // 🔑 IMPORTANTE: Se já tem dados_claim preenchido, pular
+      if (hasExistingClaim && !hasClaimInOrderData) {
+        console.log(`  ⏭️  Já tem claim, pulando...`);
+        continue;
+      }
+      
       // Reconstruir estrutura de claim a partir dos dados salvos
+      // 🔑 CRÍTICO: Passar claim_details VAZIO se queremos forçar extração de orderData
       const claimData = {
         order_id: record.order_id,
         order_data: record.dados_order || {},
-        claim_details: record.dados_claim || {},
+        claim_details: hasClaimInOrderData ? {} : (record.dados_claim || {}), // Forçar vazio se tem em orderData
         claim_messages: record.dados_mensagens || {},
         return_data: record.dados_return || {},
         mediation_data: record.dados_mediacao || {},
         attachments: record.anexos_comprador || []
       };
       
-      // DEBUG: Log do que encontramos
-      const hasClaimInOrderData = !!(claimData.order_data?.cancel_detail || claimData.order_data?.mediations?.length);
-      console.log(`  📋 Claim em orderData? ${hasClaimInOrderData} | Claim original vazio? ${!claimData.claim_details?.id}`);
-      
       // Processar com a lógica melhorada (que agora extrai de orderData)
       const processedData = await processClaimData(claimData, integration_account_id);
       
       if (processedData) {
         // DEBUG: Ver o que foi processado
-        console.log(`  ✅ Processado - dados_claim preenchido? ${!!processedData.dados_claim}`);
+        const hasNewClaimData = !!processedData.dados_claim && Object.keys(processedData.dados_claim).length > 0;
+        console.log(`  ✅ Processado - dados_claim preenchido? ${hasNewClaimData}`);
+        
+        if (hasNewClaimData) {
+          console.log(`  📊 Estrutura do claim: id=${processedData.dados_claim.id}, type=${processedData.dados_claim.type}`);
+        }
         
         // Atualizar registro com os novos campos
         const { error: updateError } = await supabase
@@ -355,11 +368,17 @@ async function handleEnrichExistingData(supabase: any, integration_account_id: s
         
         if (!updateError) {
           updatedCount++;
-          if (processedData.dados_claim) enrichedCount++;
-          console.log(`  💾 Atualizado no banco!`);
+          if (hasNewClaimData) {
+            enrichedCount++;
+            console.log(`  💾 Atualizado com dados_claim extraídos!`);
+          } else {
+            console.log(`  💾 Atualizado (sem dados_claim novos)`);
+          }
         } else {
           console.error(`  ❌ Erro ao atualizar registro ${record.id}:`, updateError);
         }
+      } else {
+        console.log(`  ⚠️  processedData é null/undefined`);
       }
     }
     
