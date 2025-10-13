@@ -1,6 +1,6 @@
 /**
  * 🔄 HOOK DE PERSISTÊNCIA PARA DEVOLUÇÕES AVANÇADAS
- * Sistema focado em tempo real com cache inteligente
+ * DESABILITADO - Sistema agora é 100% manual controlado pelo usuário
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -19,7 +19,7 @@ interface DevolucoesPersistentState {
 }
 
 const STORAGE_KEY = 'devolucoes_avancadas_state';
-const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 horas para persistência
+const CACHE_DURATION = 0; // ❌ CACHE DESABILITADO - Sempre expirado
 const RESTORE_PROMPT_KEY = 'devolucoes_restore_prompt_shown';
 
 export function useDevolucoesPersistence() {
@@ -27,44 +27,17 @@ export function useDevolucoesPersistence() {
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const [showRestorePrompt, setShowRestorePrompt] = useState(false);
 
-  // Carregar estado inicial
+  // ❌ CARREGAR ESTADO DESABILITADO - Sempre retorna vazio
   useEffect(() => {
     const loadPersistedState = () => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed: DevolucoesPersistentState = JSON.parse(saved);
-          
-          // Verificar validade do cache
-          const now = Date.now();
-          const cacheAge = now - parsed.lastApiCall;
-          const isExpired = cacheAge > CACHE_DURATION;
-          
-          if (!isExpired) {
-            const promptShown = sessionStorage.getItem(RESTORE_PROMPT_KEY);
-            
-            logger.info('Estado devoluções encontrado', {
-              dataCount: parsed.data.length,
-              source: parsed.dataSource,
-              cacheAge: Math.round(cacheAge / 1000 / 60) + ' minutos',
-              page: parsed.currentPage,
-              itemsPerPage: parsed.itemsPerPage
-            });
-            
-            setPersistedState(parsed);
-            
-            // Mostrar prompt apenas uma vez por sessão
-            if (!promptShown && parsed.data.length > 0) {
-              setShowRestorePrompt(true);
-            }
-          } else {
-            logger.info('Cache de devoluções expirado (24h)');
-            localStorage.removeItem(STORAGE_KEY);
-          }
-        }
-      } catch (error) {
-        logger.warn('Erro ao carregar estado devoluções', error);
+        // Limpar qualquer cache antigo
         localStorage.removeItem(STORAGE_KEY);
+        sessionStorage.removeItem(RESTORE_PROMPT_KEY);
+        
+        logger.info('✅ Persistência desabilitada - sistema manual');
+      } catch (error) {
+        logger.warn('Erro ao limpar cache antigo', error);
       } finally {
         setIsStateLoaded(true);
       }
@@ -73,38 +46,11 @@ export function useDevolucoesPersistence() {
     loadPersistedState();
   }, []);
 
-  // Salvar estado
+  // ❌ SALVAR ESTADO DESABILITADO - Não persiste mais nada
   const saveState = useCallback((state: Partial<DevolucoesPersistentState>) => {
-    try {
-      const currentState = persistedState || {
-        data: [],
-        filters: {},
-        searchFilters: {},
-        currentPage: 1,
-        itemsPerPage: 25,
-        total: 0,
-        lastApiCall: 0,
-        dataSource: 'database' as const,
-        selectedAccounts: []
-      };
-
-      const newState: DevolucoesPersistentState = {
-        ...currentState,
-        ...state,
-        lastApiCall: state.dataSource === 'api' ? Date.now() : currentState.lastApiCall
-      };
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
-      setPersistedState(newState);
-      
-      logger.info('Estado devoluções salvo', {
-        dataCount: newState.data.length,
-        source: newState.dataSource
-      });
-    } catch (error) {
-      logger.warn('Erro ao salvar estado devoluções', error);
-    }
-  }, [persistedState]);
+    // Não fazer nada - persistência desabilitada
+    logger.info('✅ Salvamento ignorado - sistema manual');
+  }, []);
 
   // Salvar dados da API com página e itemsPerPage
   const saveApiData = useCallback((data: any[], searchFilters: any, currentPage?: number, itemsPerPage?: number) => {
