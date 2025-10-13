@@ -264,7 +264,7 @@ export function DevolucoesFiltrosAvancados({
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {draftFilters.dataInicio ? (
-                      format(new Date(draftFilters.dataInicio), "dd/MM/yyyy", { locale: ptBR })
+                      format(new Date(draftFilters.dataInicio + 'T12:00:00'), "dd/MM/yyyy", { locale: ptBR })
                     ) : (
                       <span>Selecione a data inicial</span>
                     )}
@@ -273,7 +273,7 @@ export function DevolucoesFiltrosAvancados({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={draftFilters.dataInicio ? new Date(draftFilters.dataInicio) : undefined}
+                    selected={draftFilters.dataInicio ? new Date(draftFilters.dataInicio + 'T12:00:00') : undefined}
                     onSelect={(date) => {
                       if (date) {
                         updateDraft({ dataInicio: format(date, 'yyyy-MM-dd') });
@@ -300,7 +300,7 @@ export function DevolucoesFiltrosAvancados({
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {draftFilters.dataFim ? (
-                      format(new Date(draftFilters.dataFim), "dd/MM/yyyy", { locale: ptBR })
+                      format(new Date(draftFilters.dataFim + 'T12:00:00'), "dd/MM/yyyy", { locale: ptBR })
                     ) : (
                       <span>Selecione a data final</span>
                     )}
@@ -309,7 +309,7 @@ export function DevolucoesFiltrosAvancados({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={draftFilters.dataFim ? new Date(draftFilters.dataFim) : undefined}
+                    selected={draftFilters.dataFim ? new Date(draftFilters.dataFim + 'T12:00:00') : undefined}
                     onSelect={(date) => {
                       if (date) {
                         updateDraft({ dataFim: format(date, 'yyyy-MM-dd') });
@@ -317,7 +317,7 @@ export function DevolucoesFiltrosAvancados({
                     }}
                     disabled={(date) => {
                       if (!draftFilters.dataInicio) return false;
-                      return date < new Date(draftFilters.dataInicio);
+                      return date < new Date(draftFilters.dataInicio + 'T12:00:00');
                     }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
@@ -469,12 +469,12 @@ export function DevolucoesFiltrosAvancados({
               )}
               {draftFilters.dataInicio && (
                 <Badge variant="secondary">
-                  De: {format(new Date(draftFilters.dataInicio), "dd/MM/yyyy")}
+                  De: {format(new Date(draftFilters.dataInicio + 'T12:00:00'), "dd/MM/yyyy")}
                 </Badge>
               )}
               {draftFilters.dataFim && (
                 <Badge variant="secondary">
-                  Até: {format(new Date(draftFilters.dataFim), "dd/MM/yyyy")}
+                  Até: {format(new Date(draftFilters.dataFim + 'T12:00:00'), "dd/MM/yyyy")}
                 </Badge>
               )}
               {draftFilters.statusClaim && (
