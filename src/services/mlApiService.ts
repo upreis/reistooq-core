@@ -115,12 +115,38 @@ export class MLApiService {
     }
   }
 
+  // ✅ CORREÇÃO: Buscar anexos via /messages (conforme documentação oficial ML)
   async getClaimAttachments(claimId: string) {
     try {
-      return await this.makeRequest(`/post-purchase/v1/claims/${claimId}/attachments`);
+      // Buscar mensagens que contêm os anexos
+      const messagesData = await this.makeRequest(`/post-purchase/v1/claims/${claimId}/messages`);
+      
+      if (!messagesData?.messages) {
+        return [];
+      }
+      
+      // Extrair anexos das mensagens com sender_role
+      const attachments: any[] = [];
+      messagesData.messages.forEach((msg: any) => {
+        if (msg.attachments && Array.isArray(msg.attachments)) {
+          const senderRole = msg.sender_role || msg.from?.role || 'unknown';
+          
+          attachments.push(...msg.attachments.map((att: any) => ({
+            ...att,
+            sender_role: senderRole,
+            source: senderRole === 'complainant' ? 'buyer' : 
+                    senderRole === 'respondent' ? 'seller' : 
+                    senderRole === 'mediator' ? 'meli' : 'unknown',
+            message_id: msg.id,
+            date_created: msg.date_created
+          })));
+        }
+      });
+      
+      return attachments;
     } catch (error) {
       console.warn(`Erro ao buscar anexos do claim ${claimId}:`, error);
-      return null;
+      return [];
     }
   }
 
@@ -305,17 +331,23 @@ export class MLApiService {
         console.log(`ℹ️ Sem change_id, pulando busca de dados de troca`);
       }
 
-      // 📎 ETAPA 4: Buscar Anexos (usa claim_id)
+      // 📎 ETAPA 4: Buscar Anexos via /messages (usa claim_id)
       console.log(`📎 Etapa 4: Buscando anexos para claim ${claimId}`);
       try {
         const anexos = await this.getClaimAttachments(claimId);
-        if (anexos) {
-          dadosEnriquecidos.anexos_count = anexos.length || 0;
-          dadosEnriquecidos.anexos_comprador = anexos.filter((a: any) => a.source === 'buyer') || [];
-          dadosEnriquecidos.anexos_vendedor = anexos.filter((a: any) => a.source === 'seller') || [];
-          dadosEnriquecidos.anexos_ml = anexos.filter((a: any) => a.source === 'meli') || [];
+        if (anexos && anexos.length > 0) {
+          // Anexos já vêm categorizados pelo método getClaimAttachments
+          dadosEnriquecidos.anexos_count = anexos.length;
+          dadosEnriquecidos.anexos_comprador = anexos.filter((a: any) => 
+            a.sender_role === 'complainant' || a.source === 'buyer');
+          dadosEnriquecidos.anexos_vendedor = anexos.filter((a: any) => 
+            a.sender_role === 'respondent' || a.source === 'seller');
+          dadosEnriquecidos.anexos_ml = anexos.filter((a: any) => 
+            a.sender_role === 'mediator' || a.source === 'meli');
           dadosEnriquecidos.etapas_executadas.push('anexos_ok');
-          console.log(`✅ Anexos obtidos: ${anexos.length || 0} anexos`);
+          console.log(`✅ Anexos obtidos via /messages: ${anexos.length} (Comprador: ${dadosEnriquecidos.anexos_comprador.length}, Vendedor: ${dadosEnriquecidos.anexos_vendedor.length}, ML: ${dadosEnriquecidos.anexos_ml.length})`);
+        } else {
+          console.log(`ℹ️ Nenhum anexo encontrado nas mensagens`);
         }
       } catch (error) {
         dadosEnriquecidos.erros.push(`Erro ao buscar anexos: ${error}`);
