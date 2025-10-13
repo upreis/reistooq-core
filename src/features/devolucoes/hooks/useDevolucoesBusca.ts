@@ -153,8 +153,28 @@ export function useDevolucoesBusca() {
               return { ...dadosBase, ...dadosEnriquecidos };
             });
 
+            // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
+            if (devolucoesProcesadas.length > 0) {
+              try {
+                const { error: upsertError } = await supabase
+                  .from('devolucoes_avancadas')
+                  .upsert(devolucoesProcesadas, {
+                    onConflict: 'order_id,integration_account_id',
+                    ignoreDuplicates: false
+                  });
+
+                if (upsertError) {
+                  logger.error('Erro ao salvar dados enriquecidos no banco', upsertError);
+                } else {
+                  logger.info(`✅ ${devolucoesProcesadas.length} devoluções SALVAS no banco com dados enriquecidos`);
+                }
+              } catch (saveError) {
+                logger.error('Erro ao persistir dados', saveError);
+              }
+            }
+
             todasDevolucoes.push(...devolucoesProcesadas);
-            toast.success(`✅ ${devolucoesProcesadas.length} devoluções da API para ${account.name}`);
+            toast.success(`✅ ${devolucoesProcesadas.length} devoluções enriquecidas para ${account.name}`);
           } else {
             logger.info(`Nenhuma devolução encontrada para ${account.name}`);
             toast.info(`Nenhuma devolução encontrada para ${account.name}`);
@@ -166,7 +186,7 @@ export function useDevolucoesBusca() {
         }
       }
 
-      logger.info(`Total da API: ${todasDevolucoes.length} devoluções`);
+      logger.info(`Total da API: ${todasDevolucoes.length} devoluções enriquecidas e salvas`);
       return todasDevolucoes;
 
     } catch (error) {
