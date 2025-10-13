@@ -79,6 +79,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // Estados principais
   const [devolucoes, setDevolucoes] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
   // Filtros avançados unificados com valores padrão completos
@@ -477,7 +478,6 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   }, [persistence, lazyLoading, mlAccounts]);
 
   // Paginação otimizada
-  const itemsPerPage = performanceSettings.chunkSize;
   const totalPages = Math.ceil(devolucoesFiltradas.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   
@@ -485,6 +485,12 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   const devolucoesPaginadas = performanceSettings.enableLazyLoading 
     ? lazyLoading.visibleData
     : devolucoesFiltradas.slice(startIndex, startIndex + itemsPerPage);
+  
+  // Handler para mudança de itens por página
+  const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset para primeira página
+  }, []);
 
   // Estatísticas otimizadas
   const stats = useMemo(() => ({
@@ -514,6 +520,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     loading: busca.loading,
     currentPage,
     totalPages,
+    itemsPerPage,
     showAnalytics,
     
     // Filtros unificados
@@ -527,6 +534,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     // Ações (somente API)
     buscarComFiltros,
     setCurrentPage,
+    setItemsPerPage: handleItemsPerPageChange,
     toggleAnalytics,
     
     // Performance & Auto-refresh

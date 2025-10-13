@@ -80,6 +80,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     loading,
     currentPage,
     totalPages,
+    itemsPerPage,
     showAnalytics,
     filters,
     advancedFilters,
@@ -89,6 +90,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearFilters,
     buscarComFiltros,
     setCurrentPage,
+    setItemsPerPage,
     toggleAnalytics,
     hasPersistedData,
     autoRefresh,
@@ -370,11 +372,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       )}
 
       {/* Paginação */}
-      <DevolucaoPagination 
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={setCurrentPage}
-      />
+      {shouldShowData && (
+        <DevolucaoPagination 
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={devolucoesFiltradas.length}
+          itemsPerPage={itemsPerPage}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
+        />
+      )}
 
       {/* Modal de detalhes - componente modular */}
       <DevolucaoDetailsModal 
