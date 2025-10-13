@@ -207,8 +207,85 @@ export const TrackingTab: React.FC<TrackingTabProps> = ({ devolucao }) => {
         </Card>
       )}
 
-      {/* Informações Adicionais */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Informações Adicionais - FASE 1 ENRIQUECIDA */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Shipment ID */}
+        {devolucao?.shipment_id && (
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">ID do Envio</p>
+              <p className="font-mono text-sm font-medium">{devolucao.shipment_id}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Localização Atual */}
+        {devolucao?.localizacao_atual && (
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Localização Atual</p>
+              <p className="font-medium flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-blue-500" />
+                {devolucao.localizacao_atual}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Status Transporte Detalhado */}
+        {devolucao?.status_transporte_atual && (
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Status Detalhado</p>
+              <Badge variant="secondary" className="mt-1">
+                {devolucao.status_transporte_atual}
+              </Badge>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Tempo em Trânsito */}
+        {devolucao?.tempo_transito_dias !== null && devolucao?.tempo_transito_dias !== undefined && (
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Tempo em Trânsito</p>
+              <p className="font-semibold text-lg">
+                {devolucao.tempo_transito_dias} {devolucao.tempo_transito_dias === 1 ? 'dia' : 'dias'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Transportadora Detalhada */}
+        {devolucao?.carrier_info?.name && (
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">Transportadora</p>
+              <div>
+                <p className="font-semibold">{devolucao.carrier_info.name}</p>
+                {devolucao.carrier_info.type && (
+                  <Badge variant="outline" className="mt-1 text-xs">
+                    {devolucao.carrier_info.type}
+                  </Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Atrasos Detectados */}
+        {devolucao?.shipment_delays && devolucao.shipment_delays.length > 0 && (
+          <Card className="border-orange-200 dark:border-orange-800">
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground mb-1">⚠️ Atrasos Detectados</p>
+              <p className="font-semibold text-orange-600 dark:text-orange-400">
+                {devolucao.shipment_delays.length} {devolucao.shipment_delays.length === 1 ? 'atraso' : 'atrasos'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Modo de Envio */}
         {shipmentHistory?.mode && (
           <Card>
             <CardContent className="p-4">
@@ -217,6 +294,8 @@ export const TrackingTab: React.FC<TrackingTabProps> = ({ devolucao }) => {
             </CardContent>
           </Card>
         )}
+
+        {/* ID do Serviço */}
         {shipmentHistory?.service_id && (
           <Card>
             <CardContent className="p-4">
@@ -225,17 +304,8 @@ export const TrackingTab: React.FC<TrackingTabProps> = ({ devolucao }) => {
             </CardContent>
           </Card>
         )}
-        {devolucao?.localizacao_atual && (
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-sm text-muted-foreground mb-1">Localização Atual</p>
-              <p className="font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {devolucao.localizacao_atual}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+
+        {/* Última Movimentação */}
         {devolucao?.data_ultima_movimentacao && (
           <Card>
             <CardContent className="p-4">
@@ -245,6 +315,60 @@ export const TrackingTab: React.FC<TrackingTabProps> = ({ devolucao }) => {
           </Card>
         )}
       </div>
+
+      {/* Histórico de Localizações */}
+      {devolucao?.historico_localizacoes && devolucao.historico_localizacoes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" />
+              Histórico de Localizações ({devolucao.historico_localizacoes.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {devolucao.historico_localizacoes.map((loc: any, index: number) => (
+                <div key={index} className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                  <span className="font-medium">{loc.city || loc.location || 'Localização desconhecida'}</span>
+                  {loc.state && <span className="text-muted-foreground">- {loc.state}</span>}
+                  {loc.date && <span className="text-muted-foreground ml-auto">{formatDate(loc.date)}</span>}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Detalhes de Atrasos */}
+      {devolucao?.shipment_delays && devolucao.shipment_delays.length > 0 && (
+        <Card className="border-orange-200 dark:border-orange-800">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
+              ⚠️ Detalhes de Atrasos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {devolucao.shipment_delays.map((delay: any, index: number) => (
+                <div key={index} className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg">
+                  <p className="font-medium">{delay.reason || 'Atraso detectado'}</p>
+                  {delay.duration && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Duração: {delay.duration}
+                    </p>
+                  )}
+                  {delay.date && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDate(delay.date)}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
