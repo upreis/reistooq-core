@@ -43,6 +43,23 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.order_id}
       </td>
       
+      {/* Data da Venda */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_criacao ? (() => {
+          try {
+            return new Date(devolucao.data_criacao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch (error) {
+            return devolucao.data_criacao;
+          }
+        })() : '-'}
+      </td>
+      
       {/* Produto */}
       <td className="px-3 py-3">
         <div className="max-w-[200px]">

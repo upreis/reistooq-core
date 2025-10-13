@@ -17,6 +17,7 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
         <thead>
           <tr className="bg-muted/50 dark:bg-muted border-b">
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[140px]">📅 Data Venda</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
