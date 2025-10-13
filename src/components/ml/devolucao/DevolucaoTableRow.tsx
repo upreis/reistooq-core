@@ -568,44 +568,111 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* FINANCEIRO AVANÇADO */}
       
       {/* Valor Reembolso Total */}
-      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold whitespace-nowrap">
-        {devolucao.valor_reembolso_total ? `R$ ${devolucao.valor_reembolso_total.toFixed(2)}` : '-'}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        {devolucao.valor_reembolso_total ? (
+          <div className="flex flex-col items-end">
+            <span className="text-red-600 dark:text-red-400 font-bold text-base">
+              R$ {devolucao.valor_reembolso_total.toFixed(2)}
+            </span>
+            <span className="text-xs text-muted-foreground">{devolucao.moeda_reembolso || 'BRL'}</span>
+          </div>
+        ) : '-'}
       </td>
       
       {/* Valor Reembolso Produto */}
-      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
-        {devolucao.valor_reembolso_produto ? `R$ ${devolucao.valor_reembolso_produto.toFixed(2)}` : '-'}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        {devolucao.valor_reembolso_produto ? (
+          <div className="flex flex-col items-end">
+            <span className="text-orange-600 dark:text-orange-400 font-semibold">
+              R$ {devolucao.valor_reembolso_produto.toFixed(2)}
+            </span>
+            {devolucao.valor_reembolso_total && (
+              <span className="text-xs text-muted-foreground">
+                {((devolucao.valor_reembolso_produto / devolucao.valor_reembolso_total) * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
+        ) : '-'}
       </td>
       
       {/* Valor Reembolso Frete */}
-      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 whitespace-nowrap">
-        {devolucao.valor_reembolso_frete ? `R$ ${devolucao.valor_reembolso_frete.toFixed(2)}` : '-'}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        {devolucao.valor_reembolso_frete ? (
+          <div className="flex flex-col items-end">
+            <span className="text-blue-600 dark:text-blue-400 font-semibold">
+              R$ {devolucao.valor_reembolso_frete.toFixed(2)}
+            </span>
+            {devolucao.valor_reembolso_total && (
+              <span className="text-xs text-muted-foreground">
+                {((devolucao.valor_reembolso_frete / devolucao.valor_reembolso_total) * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
+        ) : '-'}
       </td>
       
       {/* Taxa ML Reembolso */}
-      <td className="px-3 py-3 text-right text-orange-600 dark:text-orange-400 whitespace-nowrap">
-        {devolucao.taxa_ml_reembolso ? `R$ ${devolucao.taxa_ml_reembolso.toFixed(2)}` : '-'}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        {devolucao.taxa_ml_reembolso ? (
+          <div className="flex flex-col items-end">
+            <span className="text-purple-600 dark:text-purple-400 font-semibold">
+              R$ {devolucao.taxa_ml_reembolso.toFixed(2)}
+            </span>
+            <span className="text-xs text-green-600 dark:text-green-400">Devolvida</span>
+          </div>
+        ) : '-'}
       </td>
       
       {/* Custo Logístico Total */}
-      <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 whitespace-nowrap">
-        {devolucao.custo_logistico_total ? `R$ ${devolucao.custo_logistico_total.toFixed(2)}` : '-'}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        {devolucao.custo_logistico_total ? (
+          <div className="flex flex-col items-end">
+            <span className="text-orange-600 dark:text-orange-400 font-semibold">
+              R$ {devolucao.custo_logistico_total.toFixed(2)}
+            </span>
+            <span className="text-xs text-muted-foreground">Logística</span>
+          </div>
+        ) : '-'}
       </td>
       
       {/* Impacto Financeiro Vendedor */}
-      <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold whitespace-nowrap">
-        {devolucao.impacto_financeiro_vendedor ? `R$ ${devolucao.impacto_financeiro_vendedor.toFixed(2)}` : '-'}
+      <td className="px-3 py-3 text-right whitespace-nowrap">
+        {devolucao.impacto_financeiro_vendedor !== null && devolucao.impacto_financeiro_vendedor !== undefined ? (
+          <div className="flex flex-col items-end">
+            <span className={`font-bold text-base ${
+              devolucao.impacto_financeiro_vendedor < 0 
+                ? 'text-red-600 dark:text-red-400' 
+                : 'text-green-600 dark:text-green-400'
+            }`}>
+              {devolucao.impacto_financeiro_vendedor < 0 ? '-' : '+'}R$ {Math.abs(devolucao.impacto_financeiro_vendedor).toFixed(2)}
+            </span>
+            <span className={`text-xs font-medium ${
+              devolucao.impacto_financeiro_vendedor < 0 
+                ? 'text-red-500 dark:text-red-400' 
+                : 'text-green-500 dark:text-green-400'
+            }`}>
+              {devolucao.impacto_financeiro_vendedor < 0 ? 'Prejuízo' : 'Benefício'}
+            </span>
+          </div>
+        ) : '-'}
       </td>
       
       {/* Data Processamento Reembolso */}
       <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.data_processamento_reembolso ? (() => {
-          try {
-            return new Date(devolucao.data_processamento_reembolso).toLocaleDateString('pt-BR');
-          } catch {
-            return devolucao.data_processamento_reembolso;
-          }
-        })() : '-'}
+        {devolucao.data_processamento_reembolso ? (
+          <div className="flex flex-col">
+            <span className="font-medium">
+              {(() => {
+                try {
+                  return new Date(devolucao.data_processamento_reembolso).toLocaleDateString('pt-BR');
+                } catch {
+                  return devolucao.data_processamento_reembolso;
+                }
+              })()}
+            </span>
+            <span className="text-xs text-muted-foreground">{devolucao.metodo_reembolso || 'N/A'}</span>
+          </div>
+        ) : '-'}
       </td>
       
       {/* REVIEWS E QUALIDADE (FASE 2) */}
