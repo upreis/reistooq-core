@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useOptimizedDebounce';
 import { useAutoRefresh } from '@/hooks/useAutoRefresh';
 import { useLazyLoading } from '@/hooks/useLazyLoading';
+import { useLoadingState } from '@/hooks/useLoadingState';
 import { useDevolucoesPersistence } from './useDevolucoesPersistence';
 import { useDevolucoesBusca, DevolucaoBuscaFilters } from './useDevolucoesBusca';
 
@@ -135,6 +136,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // Hooks
   const persistence = useDevolucoesPersistence();
   const busca = useDevolucoesBusca();
+  const loadingState = useLoadingState();
 
   // Debounce otimizado para busca unificada
   const { 
@@ -401,17 +403,26 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
 
   // Buscar com filtros (SOMENTE da API quando acionada) E ENRIQUECER AUTOMATICAMENTE
   const buscarComFiltros = useCallback(async () => {
-    flushDebounce(); // Aplicar busca imediatamente
-    const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
-    setDevolucoes(dadosAPI);
-    const newPage = 1;
-    setCurrentPage(newPage);
-    persistence.saveApiData(dadosAPI, advancedFilters, newPage, itemsPerPage);
-    
-    // ⚠️ NÃO ENRIQUECER AUTOMATICAMENTE - causava erro 400
-    // Apenas exibir os dados buscados da API
-    console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas com sucesso`);
-  }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence, itemsPerPage]);
+    try {
+      loadingState.setLoading(true);
+      loadingState.clearError();
+      flushDebounce(); // Aplicar busca imediatamente
+      
+      const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
+      setDevolucoes(dadosAPI);
+      const newPage = 1;
+      setCurrentPage(newPage);
+      persistence.saveApiData(dadosAPI, advancedFilters, newPage, itemsPerPage);
+      
+      console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas com sucesso`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar devoluções';
+      loadingState.setError(errorMessage);
+      console.error('[useDevolucoes] ❌ Erro ao buscar:', error);
+    } finally {
+      loadingState.setLoading(false);
+    }
+  }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence, itemsPerPage, loadingState]);
 
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
@@ -522,7 +533,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     stats,
     
     // Estados
-    loading: busca.loading,
+    loading: busca.loading || loadingState.isLoading,
+    isRefreshing: loadingState.isRefreshing,
+    error: loadingState.error,
     currentPage,
     totalPages,
     itemsPerPage,
@@ -541,6 +554,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     setCurrentPage,
     setItemsPerPage: handleItemsPerPageChange,
     toggleAnalytics,
+    clearError: loadingState.clearError,
     
     // Performance & Auto-refresh
     autoRefresh,
