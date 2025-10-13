@@ -304,6 +304,8 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
   }, [config.auto_enrich, config.integration_account_id, enrichExistingData]);
 
   // 📊 CARREGAR MÉTRICAS AUTOMATICAMENTE
+  // TEMPORARIAMENTE DESABILITADO - Edge function não suporta fetch_advanced_metrics ainda
+  /*
   useEffect(() => {
     if (config.integration_account_id && !metrics) {
       logger.info('Carregando métricas iniciais');
@@ -315,6 +317,7 @@ export function useDevolucoesFase2(config: DevolucoesFase2Config) {
       return () => clearTimeout(timer);
     }
   }, [config.integration_account_id, metrics, fetchAdvancedMetrics]);
+  */
 
   return {
     // Estados
