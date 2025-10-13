@@ -290,10 +290,10 @@ export function useDevolucoesBusca() {
                 // DADOS DE RETURN E TROCA
                 eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
                 produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id || null,
-                produto_troca_titulo: item.return_details_v2?.change_details?.substitute_product?.title || null,
+                // produto_troca_titulo - REMOVIDO: coluna não existe no schema
                 data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
                 data_limite_troca: item.return_details_v2?.date_closed || null,
-                valor_diferenca_troca: item.return_details_v2?.price_difference || null,
+                // valor_diferenca_troca - REMOVIDO: coluna não existe no schema
 
                 // CUSTOS E FINANCEIRO BÁSICO
                 custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
