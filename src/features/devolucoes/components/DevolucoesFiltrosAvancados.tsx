@@ -109,8 +109,12 @@ export function DevolucoesFiltrosAvancados({
 
   // Aplicar os filtros do draft
   const handleAplicar = () => {
+    // Primeiro sincroniza o estado global
     onFiltrosChange(draftFilters);
-    onAplicar();
+    // Usa setTimeout para garantir que o React processou a atualização
+    setTimeout(() => {
+      onAplicar();
+    }, 10);
   };
 
   // Limpar todos os filtros

@@ -99,6 +99,12 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     autoRefresh
   } = useDevolucoes(mlAccounts, selectedAccountId);
 
+  // Função para aplicar filtros e buscar (garante sincronização)
+  const handleAplicarEBuscar = useCallback(() => {
+    // A busca já usa os filtros mais recentes do estado
+    buscarComFiltros();
+  }, [buscarComFiltros]);
+
 
   const exportarCSV = useCallback(() => {
     if (!devolucoesFiltradas.length) {
@@ -288,7 +294,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         filtros={advancedFilters}
         onFiltrosChange={updateAdvancedFilters}
         onLimpar={clearFilters}
-        onAplicar={buscarComFiltros}
+        onAplicar={handleAplicarEBuscar}
         mlAccounts={mlAccounts}
       />
 
