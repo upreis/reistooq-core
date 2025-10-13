@@ -105,7 +105,15 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
             <TabsContent value="mediation" className="mt-0"><MediationTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="reputation" className="mt-0"><ReputationTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="attachments" className="mt-0"><AttachmentsTab devolucao={devolucao} /></TabsContent>
-            <TabsContent value="timeline" className="mt-0"><TimelineVisualization devolucao={devolucao} /></TabsContent>
+            <TabsContent value="timeline" className="mt-0">
+              <TimelineVisualization 
+                timelineData={{
+                  timeline_events: devolucao.timeline_events || [],
+                  timeline_consolidado: devolucao.timeline_consolidado,
+                  metricas_temporais: devolucao.metricas_temporais
+                }} 
+              />
+            </TabsContent>
             <TabsContent value="advanced" className="mt-0"><AdvancedDataTab devolucao={devolucao} /></TabsContent>
           </div>
         </Tabs>
