@@ -250,8 +250,8 @@ export interface DevolucaoFiltrosAvancados {
   // Filtros básicos (compatibilidade)
   search?: string;
   status?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  dataInicio?: string;
+  dataFim?: string;
   accountIds?: string[];
 
   // Filtros avançados (novas colunas)

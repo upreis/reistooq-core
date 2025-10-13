@@ -281,23 +281,75 @@ export function DevolucaoAdvancedFilters({
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="dateFrom">Data inicial</Label>
+                  <Label htmlFor="dataInicio">Data inicial</Label>
                   <Input
-                    id="dateFrom"
+                    id="dataInicio"
                     type="date"
-                    value={filtros.dateFrom || ''}
-                    onChange={(e) => onFiltrosChange({ dateFrom: e.target.value })}
+                    value={filtros.dataInicio || ''}
+                    onChange={(e) => onFiltrosChange({ dataInicio: e.target.value })}
                   />
                 </div>
                 <div>
-                  <Label htmlFor="dateTo">Data final</Label>
+                  <Label htmlFor="dataFim">Data final</Label>
                   <Input
-                    id="dateTo"
+                    id="dataFim"
                     type="date"
-                    value={filtros.dateTo || ''}
-                    onChange={(e) => onFiltrosChange({ dateTo: e.target.value })}
+                    value={filtros.dataFim || ''}
+                    onChange={(e) => onFiltrosChange({ dataFim: e.target.value })}
                   />
                 </div>
+              </div>
+              
+              {/* Atalhos de data */}
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const umMesAtras = new Date();
+                    umMesAtras.setDate(hoje.getDate() - 30);
+                    onFiltrosChange({
+                      dataInicio: umMesAtras.toISOString().split('T')[0],
+                      dataFim: hoje.toISOString().split('T')[0]
+                    });
+                  }}
+                >
+                  Últimos 30 dias
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const trintaDiasAtras = new Date();
+                    trintaDiasAtras.setDate(hoje.getDate() - 90);
+                    onFiltrosChange({
+                      dataInicio: trintaDiasAtras.toISOString().split('T')[0],
+                      dataFim: hoje.toISOString().split('T')[0]
+                    });
+                  }}
+                >
+                  Últimos 90 dias
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const umAnoAtras = new Date();
+                    umAnoAtras.setFullYear(hoje.getFullYear() - 1);
+                    onFiltrosChange({
+                      dataInicio: umAnoAtras.toISOString().split('T')[0],
+                      dataFim: hoje.toISOString().split('T')[0]
+                    });
+                  }}
+                >
+                  Último ano
+                </Button>
               </div>
             </FilterSection>
 
