@@ -33,29 +33,8 @@ export default function MLOrdersCompletas() {
     }
   }, [mlAccounts, selectedAccountIds.length]);
 
-  // Buscar devoluções existentes filtradas pela conta selecionada
-  const { data: existingDevolucoes, isLoading: loadingDevolucoes, refetch: refetchDevolucoes } = useQuery({
-    queryKey: ["devolucoes-avancadas", selectedAccountIds[0]],
-    queryFn: async () => {
-      if (!selectedAccountIds[0]) return [];
-      
-      const { data, error } = await supabase
-        .from("devolucoes_avancadas")
-        .select("*")
-        .eq("integration_account_id", selectedAccountIds[0])
-        .order("created_at", { ascending: false });
-      
-      if (error) {
-        logger.error("Erro ao buscar devoluções:", error);
-        toast.error("Erro ao carregar devoluções");
-        throw error;
-      }
-      
-      logger.info(`${data?.length || 0} devoluções carregadas da conta ${selectedAccountIds[0]}`);
-      return (data || []) as any[];
-    },
-    enabled: !!selectedAccountIds[0], // Só busca se tiver conta selecionada
-  });
+  // Não buscar devoluções do banco - sempre usar API
+  const loadingDevolucoes = false;
 
   return (
     <div className="space-y-6">
@@ -128,10 +107,9 @@ export default function MLOrdersCompletas() {
           mlAccounts={mlAccounts || []}
           selectedAccountId={selectedAccountIds[0] || ''}
           refetch={async () => { 
-            await refetchDevolucoes();
             logger.info('Devoluções recarregadas com sucesso');
           }}
-          existingDevolucoes={existingDevolucoes || []}
+          existingDevolucoes={[]}
         />
       )}
     </div>
