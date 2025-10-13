@@ -608,6 +608,81 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })() : '-'}
       </td>
       
+      {/* REVIEWS E QUALIDADE (FASE 2) */}
+      
+      {/* Review ID */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs whitespace-nowrap">
+        {devolucao.review_id || '-'}
+      </td>
+      
+      {/* Status Review */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.review_status ? (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            devolucao.review_status === 'completed' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            devolucao.review_status === 'pending' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+            'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+          }`}>
+            {devolucao.review_status}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Resultado Review */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.review_result ? (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+            devolucao.review_result === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            devolucao.review_result === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+            'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300'
+          }`}>
+            {devolucao.review_result}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Score Qualidade */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.score_qualidade ? (
+          <div className="flex items-center justify-center gap-1">
+            <span className={`font-semibold ${
+              devolucao.score_qualidade >= 80 ? 'text-green-600 dark:text-green-400' :
+              devolucao.score_qualidade >= 50 ? 'text-yellow-600 dark:text-yellow-400' :
+              'text-red-600 dark:text-red-400'
+            }`}>
+              {devolucao.score_qualidade}
+            </span>
+            <span className="text-xs text-muted-foreground">/100</span>
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Necessita Ação Manual */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.necessita_acao_manual ? (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-medium">
+            <span>🔧</span>
+            <span>SIM</span>
+          </span>
+        ) : (
+          <span className="text-green-600 dark:text-green-400">✓</span>
+        )}
+      </td>
+      
+      {/* Problemas Encontrados */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.problemas_encontrados && Array.isArray(devolucao.problemas_encontrados) && devolucao.problemas_encontrados.length > 0 ? (
+          <div className="flex items-center justify-center gap-1">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium">
+              <span>⚠️</span>
+              <span>{devolucao.problemas_encontrados.length}</span>
+            </span>
+          </div>
+        ) : (
+          <span className="text-green-600 dark:text-green-400">✓</span>
+        )}
+      </td>
+      
       {/* DADOS TÉCNICOS */}
       
       {/* Dados Incompletos */}
@@ -652,7 +727,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           size="sm"
           onClick={() => onViewDetails(devolucao)}
           className="h-8 w-8 p-0"
-          title="Ver detalhes"
+          title="Ver detalhes completos (todas as fases)"
         >
           <Eye className="h-4 w-4" />
         </Button>

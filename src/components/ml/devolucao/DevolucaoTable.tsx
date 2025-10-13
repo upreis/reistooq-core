@@ -104,6 +104,14 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚖️ Impacto Vend.</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Proc. Reemb.</th>
             
+            {/* REVIEWS E QUALIDADE (FASE 2) */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔍 Review ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📋 Status Review</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">✅ Resultado</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⭐ Score Qual.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔧 Ação Manual</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚠️ Problemas</th>
+            
             {/* DADOS TÉCNICOS */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚠️ Incompleto</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Campos Falt.</th>

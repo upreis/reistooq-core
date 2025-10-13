@@ -110,7 +110,13 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   score_satisfacao_final?: number | null;
   eficiencia_resolucao?: string | null;
   
-  // 🔍 REVIEW E QUALIDADE (Novas colunas)
+  // 🔍 REVIEW E QUALIDADE (Novas colunas - FASE 2)
+  review_id?: string | null;
+  review_status?: string | null;
+  review_result?: string | null;
+  problemas_encontrados?: any[] | null;
+  acoes_necessarias_review?: any[] | null;
+  data_inicio_review?: string | null;
   score_qualidade?: number | null;
   necessita_acao_manual?: boolean | null;
   revisor_responsavel?: string | null;
