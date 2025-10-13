@@ -4,11 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useDebounce } from '@/hooks/useOptimizedDebounce';
-import { useAutoRefresh } from '@/hooks/useAutoRefresh';
-import { useLazyLoading } from '@/hooks/useLazyLoading';
-import { useLoadingState } from '@/hooks/useLoadingState';
-import { useDevolucoesPersistence } from './useDevolucoesPersistence';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useDevolucoesBusca, DevolucaoBuscaFilters } from './useDevolucoesBusca';
 
 export interface DevolucaoFilters {
@@ -135,16 +131,15 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     debounceDelay: 300 // Delay otimizado para responsividade
   };
 
+  // Estados de carregamento
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   // Hooks
-  const persistence = useDevolucoesPersistence();
   const busca = useDevolucoesBusca();
-  const loadingState = useLoadingState();
 
-  // Debounce otimizado para busca unificada
-  const { 
-    debouncedValue: debouncedSearchTerm, 
-    flushDebounce 
-  } = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
+  // Debounce para busca unificada
+  const debouncedSearchTerm = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
 
   // Auto-refresh DESABILITADO - usuário controla manualmente
   const autoRefresh = {
@@ -309,13 +304,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     return resultados;
   }, [devolucoes, debouncedSearchTerm, advancedFilters]);
 
-  // Lazy loading para grandes datasets
-  const lazyLoading = useLazyLoading({
-    data: devolucoesFiltradas,
-    chunkSize: performanceSettings.chunkSize,
-    initialChunks: 2,
-    enabled: performanceSettings.enableLazyLoading
-  });
+  // Paginação manual (sem lazy loading)
 
   // Atualizar contas selecionadas quando selectedAccountId mudar SEM buscar automaticamente
   useEffect(() => {
@@ -349,9 +338,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // 🔍 BUSCAR COM FILTROS - SEMPRE USAR OS FILTROS ATUAIS DA UI
   const buscarComFiltros = useCallback(async () => {
     try {
-      loadingState.setLoading(true);
-      loadingState.clearError();
-      flushDebounce();
+      setLoading(true);
+      setError(null);
       
       // 📅 VALIDAR DATAS ANTES DE ENVIAR
       if (!advancedFilters.dataInicio || !advancedFilters.dataFim) {
@@ -368,16 +356,15 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
       setDevolucoes(dadosAPI);
       setCurrentPage(1);
       
-      // NÃO PERSISTIR DATAS - Deixar o localStorage limpo
       console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas`);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar devoluções';
-      loadingState.setError(errorMessage);
-      console.error('[useDevolucoes] ❌ Erro:', error);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar devoluções';
+      setError(errorMessage);
+      console.error('[useDevolucoes] ❌ Erro:', err);
     } finally {
-      loadingState.setLoading(false);
+      setLoading(false);
     }
-  }, [flushDebounce, busca, advancedFilters, mlAccounts, loadingState]);
+  }, [busca, advancedFilters, mlAccounts]);
 
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
@@ -428,28 +415,21 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     });
     setDevolucoes([]);
     setCurrentPage(1);
-    lazyLoading.reset();
     console.log('[useDevolucoes] 🗑️ Filtros e dados limpos');
-  }, [lazyLoading, mlAccounts]);
+  }, [mlAccounts]);
 
   // Paginação otimizada
   const totalPages = Math.ceil(devolucoesFiltradas.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   
-  // Usar lazy loading ou paginação tradicional
-  const devolucoesPaginadas = performanceSettings.enableLazyLoading 
-    ? lazyLoading.visibleData
-    : devolucoesFiltradas.slice(startIndex, startIndex + itemsPerPage);
+  // Paginação tradicional
+  const devolucoesPaginadas = devolucoesFiltradas.slice(startIndex, startIndex + itemsPerPage);
   
   // Handler para mudança de itens por página
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset para primeira página
-    // Salvar preferência
-    if (devolucoes.length > 0) {
-      persistence.saveApiData(devolucoes, advancedFilters, 1, newItemsPerPage);
-    }
-  }, [persistence, devolucoes, advancedFilters]);
+  }, []);
 
   // Estatísticas otimizadas
   const stats = useMemo(() => ({
@@ -476,9 +456,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     stats,
     
     // Estados
-    loading: busca.loading || loadingState.isLoading,
-    isRefreshing: loadingState.isRefreshing,
-    error: loadingState.error,
+    loading: busca.loading || loading,
+    isRefreshing: false,
+    error: error,
     currentPage,
     totalPages,
     itemsPerPage,
@@ -497,16 +477,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     setCurrentPage,
     setItemsPerPage: handleItemsPerPageChange,
     toggleAnalytics,
-    clearError: loadingState.clearError,
+    clearError: () => setError(null),
     
     // Performance & Auto-refresh
-    autoRefresh,
-    lazyLoading,
-    
-    // Persistência
-    hasPersistedData: persistence.hasValidData(),
-    showRestorePrompt: persistence.showRestorePrompt,
-    acceptRestore: persistence.acceptRestore,
-    rejectRestore: persistence.rejectRestore
+    autoRefresh
   };
 }

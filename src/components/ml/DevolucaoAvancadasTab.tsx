@@ -96,12 +96,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     setItemsPerPage,
     toggleAnalytics,
     clearError,
-    hasPersistedData,
-    showRestorePrompt,
-    acceptRestore,
-    rejectRestore,
-    autoRefresh,
-    lazyLoading
+    autoRefresh
   } = useDevolucoes(mlAccounts, selectedAccountId);
 
 
@@ -191,28 +186,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const shouldShowNoResultsState = !loading && devolucoes.length === 0 && hasFiltersApplied;
   const shouldShowData = !loading && devolucoes.length > 0;
 
-  // Dados para o diálogo de restauração
-  const persistedState = hasPersistedData ? {
-    dataCount: stats.totalLoaded || 0,
-    lastUpdate: Date.now(),
-    currentPage,
-    itemsPerPage
-  } : null;
+  // Dados para o diálogo de restauração removidos (não usado mais)
 
   return (
     <div className="space-y-6">
-      {/* Diálogo de restauração de dados */}
-      {showRestorePrompt && persistedState && (
-        <RestoreDataDialog
-          open={showRestorePrompt}
-          onAccept={acceptRestore}
-          onReject={rejectRestore}
-          dataCount={persistedState.dataCount}
-          lastUpdate={persistedState.lastUpdate}
-          currentPage={persistedState.currentPage}
-          itemsPerPage={persistedState.itemsPerPage}
-        />
-      )}
       {/* Header com estatísticas melhoradas */}
       {loading && <DevolucaoStatsLoading />}
       
@@ -358,11 +335,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 <CardDescription className="flex items-center gap-2 mt-1">
                   <Package className="h-4 w-4" />
                   {devolucoesFiltradas.length} resultado{devolucoesFiltradas.length !== 1 ? 's' : ''} encontrado{devolucoesFiltradas.length !== 1 ? 's' : ''}
-                  {hasPersistedData && (
-                    <span className="text-muted-foreground ml-2">
-                      • Dados do cache
-                    </span>
-                  )}
                 </CardDescription>
               </div>
               {hasFiltersApplied && (
