@@ -11,14 +11,8 @@ import { translateCancelReason } from '@/lib/translations';
 import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
 import TimelineVisualization from '@/components/ml/TimelineVisualization';
 import { useDevolucoesDemostracao } from '@/features/devolucoes/hooks/useDevolucoesDemostracao';
-import { useDevolucaoAnalytics } from '@/features/devolucoes/hooks/useDevolucaoAnalytics';
 import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucaoExportacao';
-import { useDevolucoesFase2 } from '@/features/devolucoes/hooks/useDevolucoesFase2';
 import { useDevolucoesBusca } from '@/features/devolucoes/hooks/useDevolucoesBusca';
-import DevolucaoAnalyticsDashboard from '@/features/devolucoes/components/DevolucaoAnalyticsDashboard';
-import DevolucaoExportDialog from '@/features/devolucoes/components/DevolucaoExportDialog';
-import { auditarLoteIndicadores, debugIndicadores } from '@/dev/auditIndicadoresDevoluções';
-import { rodarAuditoriaCompleta } from '@/dev/auditoriaCompleta';
 import { supabase } from '@/integrations/supabase/client';
 
 // ✨ Componentes modulares
@@ -29,16 +23,6 @@ import { DevolucaoDetailsModal } from '@/components/ml/devolucao/DevolucaoDetail
 import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPagination';
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
 import { DevolucoesFiltrosAvancados } from '@/features/devolucoes/components/DevolucoesFiltrosAvancados';
-
-// ✨ Utilities de extração
-import { 
-  extractCancelReason, 
-  extractDetailedReason, 
-  extractMessageText,
-  extractLastMessageText,
-  formatCurrency,
-  formatDate
-} from '@/features/devolucoes/utils/extractDevolucaoData';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -119,34 +103,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     lazyLoading
   } = useDevolucoes(mlAccounts, selectedAccountId);
 
-  // Analytics e exportação
-  const analytics = useDevolucaoAnalytics(devolucoesFiltradas);
+  // Exportação
   const exportacao = useDevolucaoExportacao();
-
-  // 🔍 HOOK DE BUSCA AVANÇADA
-  const devolucoesBusca = useDevolucoesBusca();
-
-  // 🚀 FASE 2: HOOK PARA AS 42 NOVAS COLUNAS
-  const fase2 = useDevolucoesFase2({
-    integration_account_id: mlAccounts?.[0]?.id || '',
-    auto_enrich: false, // Desabilitado por padrão para não interferir no sistema atual
-    batch_size: 25,
-    enable_real_time: false
-  });
-
-  // ✨ Usar utilities de extração (removendo funções duplicadas)
-  const getMotivoCancelamento = useCallback((dev: DevolucaoAvancada) => extractCancelReason(dev), []);
-  const getTextoMotivoDetalhado = useCallback((dev: DevolucaoAvancada) => extractDetailedReason(dev), []);
-  const getTextoMensagens = useCallback((dev: DevolucaoAvancada) => extractMessageText(dev), []);
-  const getUltimaMensagemTexto = useCallback((dev: DevolucaoAvancada) => extractLastMessageText(dev), []);
-
-  // Tempo real para demonstração - corrigir dependências
-  useDevolucoesDemostracao(
-    advancedFilters.buscarEmTempoReal,
-    useCallback((payload) => {
-      // Atualização automática será implementada se necessário
-    }, [])
-  );
 
   const exportarCSV = useCallback(() => {
     if (!devolucoesFiltradas.length) {
