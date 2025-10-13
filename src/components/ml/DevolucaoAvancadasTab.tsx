@@ -358,18 +358,21 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               <div className="flex justify-center p-8">
                 <Loader2 className="h-8 w-8 animate-spin dark:text-white" />
               </div>
-            ) : devolucoes.length === 0 ? (
+            ) : devolucoesFiltradas.length === 0 ? (
               <div className="text-center p-8">
                 <Package className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
                 <p className="text-gray-500 dark:text-gray-400">Nenhuma devolução encontrada</p>
                 <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
-                  Use os filtros para buscar da API ML
+                  {advancedFilters.dataInicio || advancedFilters.dataFim 
+                    ? 'Nenhum resultado para o período selecionado. Tente ajustar os filtros de data.'
+                    : 'Use o botão "Aplicar Filtros e Buscar" para buscar dados da API ML'
+                  }
                 </p>
               </div>
             ) : (
               /* ✨ TABELA MODULARIZADA */
               <DevolucaoTable
-                devolucoes={devolucoesFiltradas}
+                devolucoes={devolucoes}
                 onViewDetails={(dev) => {
                   setSelectedDevolucao(dev);
                   setShowDetails(true);
