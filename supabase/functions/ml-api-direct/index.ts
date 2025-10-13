@@ -536,13 +536,19 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   unread_messages: (claimMessagesDirect?.unread_messages || 0) + (claimMessagesPack?.unread_messages || 0)
                 }
                 
-                // Extrair anexos das mensagens
+                // ✅ CORREÇÃO: Extrair anexos das mensagens usando sender_role (documentação ML)
                 const extractedAttachments = []
                 consolidatedMessages.messages.forEach(msg => {
                   if (msg.attachments && Array.isArray(msg.attachments)) {
+                    // sender_role pode ser: 'complainant' (comprador), 'respondent' (vendedor), 'mediator' (ML)
+                    const senderRole = msg.sender_role || msg.from?.role || 'unknown'
+                    
                     extractedAttachments.push(...msg.attachments.map(att => ({
                       ...att,
-                      source: msg.from?.role || 'unknown',
+                      sender_role: senderRole, // ✅ Usar sender_role conforme documentação
+                      source: senderRole === 'complainant' ? 'buyer' : 
+                              senderRole === 'respondent' ? 'seller' : 
+                              senderRole === 'mediator' ? 'meli' : 'unknown',
                       message_id: msg.id,
                       date_created: msg.date_created
                     })))
@@ -1117,11 +1123,14 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 total_cost: safeClaimData?.return_details_v2?.results?.[0]?.total_cost || null
               },
               
-              // DADOS DE ANEXOS
+              // ✅ DADOS DE ANEXOS - Extraídos de /messages (conforme documentação ML)
               anexos_count: safeClaimData?.claim_attachments?.length || 0,
-              anexos_comprador: safeClaimData?.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
-              anexos_vendedor: safeClaimData?.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
-              anexos_ml: safeClaimData?.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
+              anexos_comprador: safeClaimData?.claim_attachments?.filter((a: any) => 
+                a.sender_role === 'complainant' || a.source === 'buyer') || [],
+              anexos_vendedor: safeClaimData?.claim_attachments?.filter((a: any) => 
+                a.sender_role === 'respondent' || a.source === 'seller') || [],
+              anexos_ml: safeClaimData?.claim_attachments?.filter((a: any) => 
+                a.sender_role === 'mediator' || a.source === 'meli') || [],
               
               // DADOS FINANCEIROS - MÚLTIPLAS FONTES
               custo_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || 
