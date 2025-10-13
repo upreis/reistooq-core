@@ -41,33 +41,42 @@ export function DevolucoesFiltrosAvancados({
     setDraftFilters(prev => ({ ...prev, ...updates }));
   };
   
-  // Atalhos de data
-  const aplicarAtalhoData = (tipo: string) => {
+  // 🎯 ATALHOS DE DATA - SEMPRE RECALCULA BASEADO NA DATA ATUAL
+  const aplicarAtalhoData = (preset: string) => {
     const hoje = new Date();
     let dataInicio = '';
     let dataFim = hoje.toISOString().split('T')[0];
 
-    switch(tipo) {
+    switch(preset) {
       case 'hoje':
         dataInicio = dataFim;
         break;
       case 'ultimos7dias':
-        dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const seteAtras = new Date(hoje);
+        seteAtras.setDate(hoje.getDate() - 7);
+        dataInicio = seteAtras.toISOString().split('T')[0];
         break;
       case 'ultimos30dias':
-        dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const trintaAtras = new Date(hoje);
+        trintaAtras.setDate(hoje.getDate() - 30);
+        dataInicio = trintaAtras.toISOString().split('T')[0];
         break;
       case 'ultimos90dias':
-        dataInicio = new Date(hoje.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const noventaAtras = new Date(hoje);
+        noventaAtras.setDate(hoje.getDate() - 90);
+        dataInicio = noventaAtras.toISOString().split('T')[0];
         break;
       case 'ultimos180dias':
-        dataInicio = new Date(hoje.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const centoOitentaAtras = new Date(hoje);
+        centoOitentaAtras.setDate(hoje.getDate() - 180);
+        dataInicio = centoOitentaAtras.toISOString().split('T')[0];
         break;
       case 'esteAno':
         dataInicio = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
         break;
     }
 
+    console.log(`[Filtros] 📅 Preset "${preset}" aplicado: ${dataInicio} até ${dataFim}`);
     updateDraft({ dataInicio, dataFim });
   };
 

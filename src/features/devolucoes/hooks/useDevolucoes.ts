@@ -83,21 +83,16 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
-  // Filtros avançados unificados com valores padrão completos
+  // 🎯 FILTROS VAZIOS POR PADRÃO - Usuário define tudo via interface
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
-    // 📅 DEFINIR DATAS PADRÃO: Últimos 365 dias (1 ano completo incluindo 2025)
-    const hoje = new Date();
-    const umAnoAtras = new Date();
-    umAnoAtras.setFullYear(hoje.getFullYear() - 1);
-    
     return {
       // Busca
       searchTerm: '',
       // Contas
       contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
-      // Datas - PADRÃO: Últimos 365 dias para pegar dados de 2024 E 2025
-      dataInicio: umAnoAtras.toISOString().split('T')[0], // YYYY-MM-DD
-      dataFim: hoje.toISOString().split('T')[0],           // YYYY-MM-DD
+      // 📅 DATAS VAZIAS - Sem valores padrão, usuário deve escolher o período
+      dataInicio: '',
+      dataFim: '',
       // Status e Classificação
       statusClaim: '',
       tipoClaim: '',
@@ -332,9 +327,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     }
   }, [selectedAccountId]);
 
-  // Inicialização SEM busca automática
+  // ✅ INICIALIZAÇÃO LIMPA - Sem persistência de datas
   useEffect(() => {
-    if (!persistence.isStateLoaded || !mlAccounts?.length) return;
+    if (!mlAccounts?.length) return;
 
     // Configurar contas ativas automaticamente APENAS se não tiver selectedAccountId
     if (!selectedAccountId) {
@@ -347,32 +342,42 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
       }
     }
     
-    // NÃO restaurar dados automaticamente - usuário deve clicar em "Aplicar Filtros"
-  }, [persistence.isStateLoaded, mlAccounts]);
+    console.log('[useDevolucoes] ✅ Inicialização sem dados persistidos - tela limpa');
+  }, [mlAccounts, selectedAccountId]);
 
 
-  // Buscar com filtros (SOMENTE da API quando acionada) E ENRIQUECER AUTOMATICAMENTE
+  // 🔍 BUSCAR COM FILTROS - SEMPRE USAR OS FILTROS ATUAIS DA UI
   const buscarComFiltros = useCallback(async () => {
     try {
       loadingState.setLoading(true);
       loadingState.clearError();
-      flushDebounce(); // Aplicar busca imediatamente
+      flushDebounce();
+      
+      // 📅 VALIDAR DATAS ANTES DE ENVIAR
+      if (!advancedFilters.dataInicio || !advancedFilters.dataFim) {
+        throw new Error('Por favor, selecione um período de datas antes de buscar');
+      }
+      
+      console.log('[useDevolucoes] 🔍 Buscando com filtros:', {
+        dataInicio: advancedFilters.dataInicio,
+        dataFim: advancedFilters.dataFim,
+        contas: advancedFilters.contasSelecionadas
+      });
       
       const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
       setDevolucoes(dadosAPI);
-      const newPage = 1;
-      setCurrentPage(newPage);
-      persistence.saveApiData(dadosAPI, advancedFilters, newPage, itemsPerPage);
+      setCurrentPage(1);
       
-      console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas com sucesso`);
+      // NÃO PERSISTIR DATAS - Deixar o localStorage limpo
+      console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao buscar devoluções';
       loadingState.setError(errorMessage);
-      console.error('[useDevolucoes] ❌ Erro ao buscar:', error);
+      console.error('[useDevolucoes] ❌ Erro:', error);
     } finally {
       loadingState.setLoading(false);
     }
-  }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence, itemsPerPage, loadingState]);
+  }, [flushDebounce, busca, advancedFilters, mlAccounts, loadingState]);
 
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
@@ -380,64 +385,52 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // Busca automática inicial REMOVIDA - usuário deve clicar em "Aplicar Filtros"
   // A busca agora é totalmente controlada pelo usuário através do botão
 
-  // Atualizar filtros unificados
+  // ✏️ ATUALIZAR FILTROS - SEM PERSISTÊNCIA DE DATAS
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
     setAdvancedFilters(prev => ({ ...prev, ...newFilters }));
     
-    // Salvar contas selecionadas
-    if (newFilters.contasSelecionadas) {
-      persistence.saveSelectedAccounts(newFilters.contasSelecionadas);
-    }
-  }, [persistence]);
+    console.log('[useDevolucoes] ✏️ Filtros atualizados (apenas em memória):', newFilters);
+  }, []);
 
   // Atualizar configurações de performance removido - valores fixos otimizados
 
-  // Limpar filtros unificados
+  // 🗑️ LIMPAR FILTROS - Resetar tudo
   const clearFilters = useCallback(() => {
     setAdvancedFilters({
-      // Busca
       searchTerm: '',
-      // Contas
       contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
-      // Datas
       dataInicio: '',
       dataFim: '',
-      // Status e Classificação
       statusClaim: '',
       tipoClaim: '',
       subtipoClaim: '',
       motivoCategoria: '',
-      // Financeiro
       valorRetidoMin: '',
       valorRetidoMax: '',
       tipoReembolso: '',
       responsavelCusto: '',
-      // Rastreamento
       temRastreamento: '',
       statusRastreamento: '',
       transportadora: '',
-      // Anexos e Comunicação
       temAnexos: '',
       mensagensNaoLidasMin: '',
-      // Prioridade e Ação
       nivelPrioridade: '',
       acaoSellerNecessaria: '',
       escaladoParaML: '',
       emMediacao: '',
-      // Prazos
       prazoVencido: '',
       slaNaoCumprido: '',
-      // Métricas
       eficienciaResolucao: '',
       scoreQualidadeMin: '',
-      // Controle
       buscarEmTempoReal: true,
       autoRefreshEnabled: false,
       autoRefreshInterval: 3600
     });
+    setDevolucoes([]);
+    setCurrentPage(1);
     lazyLoading.reset();
-    persistence.clearPersistedState();
-  }, [persistence, lazyLoading, mlAccounts]);
+    console.log('[useDevolucoes] 🗑️ Filtros e dados limpos');
+  }, [lazyLoading, mlAccounts]);
 
   // Paginação otimizada
   const totalPages = Math.ceil(devolucoesFiltradas.length / itemsPerPage);
