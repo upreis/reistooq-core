@@ -336,6 +336,13 @@ export function useDevolucoesBusca() {
               return itemCompleto;
             });
 
+            // 📅 ORDENAR POR DATA (MAIS RECENTE PRIMEIRO)
+            devolucoesProcesadas.sort((a, b) => {
+              const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+              const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+              return dataB - dataA; // Ordem decrescente
+            });
+
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
             if (devolucoesProcesadas.length > 0) {
               try {
@@ -368,6 +375,13 @@ export function useDevolucoesBusca() {
           toast.error(`Erro na conta ${account.name}`);
         }
       }
+
+      // 📅 ORDENAR RESULTADO FINAL (MAIS RECENTE PRIMEIRO)
+      todasDevolucoes.sort((a, b) => {
+        const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+        const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+        return dataB - dataA;
+      });
 
       logger.info(`Total da API: ${todasDevolucoes.length} devoluções enriquecidas e salvas`);
       return todasDevolucoes;
