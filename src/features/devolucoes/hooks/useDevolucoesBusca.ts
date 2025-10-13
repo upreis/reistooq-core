@@ -317,12 +317,7 @@ export function useDevolucoesBusca() {
                 
                 // CONTROLE DE QUALIDADE
                 dados_completos: true,
-                marketplace_origem: 'ML_BRASIL',
-                
-                // DADOS ADICIONAIS
-                change_details: item.change_details || null,
-                mediation_details: item.mediation_details || null,
-                return_details_v1: item.return_details_v1 || null
+                marketplace_origem: 'ML_BRASIL'
               };
 
               const itemCompleto = { ...dadosBase, ...dadosEnriquecidos };
