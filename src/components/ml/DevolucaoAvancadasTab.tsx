@@ -306,18 +306,32 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             ) : devolucoesFiltradas.length === 0 ? (
               <div className="text-center p-8">
                 <Package className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-                <p className="text-gray-500 dark:text-gray-400">Nenhuma devolução encontrada</p>
+                <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">Nenhuma devolução encontrada</p>
                 <p className="text-sm text-gray-400 dark:text-gray-500 mt-2">
                   {advancedFilters.dataInicio || advancedFilters.dataFim 
                     ? 'Nenhum resultado para o período selecionado. Tente ajustar os filtros de data.'
                     : 'Use o botão "Aplicar Filtros e Buscar" para buscar dados da API ML'
                   }
                 </p>
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-sm text-blue-900 dark:text-blue-100 font-medium mb-2">
+                    💡 Para visualizar as colunas financeiras avançadas:
+                  </p>
+                  <ol className="text-xs text-blue-800 dark:text-blue-200 text-left space-y-1 max-w-md mx-auto">
+                    <li>1️⃣ Selecione uma conta Mercado Livre acima</li>
+                    <li>2️⃣ Configure as datas desejadas nos filtros</li>
+                    <li>3️⃣ Clique em "Aplicar Filtros e Buscar"</li>
+                    <li>4️⃣ As colunas financeiras aparecerão automaticamente na tabela:</li>
+                  </ol>
+                  <div className="mt-3 text-xs text-blue-700 dark:text-blue-300 font-mono bg-blue-100 dark:bg-blue-900/40 p-2 rounded">
+                    💵 Reemb. Total | 📦 Reemb. Produto | 🚚 Reemb. Frete | 💸 Taxa ML | 📊 Custo Log. | ⚖️ Impacto Vend.
+                  </div>
+                </div>
               </div>
             ) : (
               /* ✨ TABELA MODULARIZADA */
               <DevolucaoTable
-                devolucoes={devolucoes}
+                devolucoes={devolucoesFiltradas}
                 onViewDetails={(dev) => {
                   setSelectedDevolucao(dev);
                   setShowDetails(true);
