@@ -563,6 +563,71 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   }
                 }
                 
+                // ============================================
+                // 📋 FASE 2: ENRIQUECIMENTO DE REVIEW DATA
+                // ============================================
+                const enrichedReviewData = (() => {
+                  if (!returnReviews || returnReviews.length === 0) {
+                    return {
+                      warehouseReviewStatus: null,
+                      sellerReviewStatus: null,
+                      reviewResult: null,
+                      reviewProblems: [],
+                      reviewRequiredActions: [],
+                      reviewStartDate: null,
+                      reviewQualityScore: null,
+                      reviewNeedsManualAction: false
+                    }
+                  }
+                  
+                  const firstReview = returnReviews[0]
+                  const warehouseReview = firstReview?.warehouse_review
+                  const sellerReview = firstReview?.seller_review
+                  
+                  // Calcular problemas encontrados
+                  const problems = []
+                  if (warehouseReview?.issues) {
+                    problems.push(...warehouseReview.issues.map((i: any) => i.type || i.description))
+                  }
+                  if (sellerReview?.issues) {
+                    problems.push(...sellerReview.issues.map((i: any) => i.type || i.description))
+                  }
+                  
+                  // Calcular ações necessárias
+                  const actions = []
+                  if (warehouseReview?.required_actions) {
+                    actions.push(...warehouseReview.required_actions)
+                  }
+                  if (sellerReview?.required_actions) {
+                    actions.push(...sellerReview.required_actions)
+                  }
+                  
+                  // Calcular score de qualidade (0-100)
+                  let qualityScore = 70 // Score padrão
+                  if (warehouseReview?.result === 'approved' || sellerReview?.result === 'approved') {
+                    qualityScore = 90
+                  } else if (problems.length > 0) {
+                    qualityScore = Math.max(30, 70 - (problems.length * 10))
+                  }
+                  
+                  const needsManualAction = 
+                    warehouseReview?.status === 'pending_review' || 
+                    sellerReview?.status === 'pending_review' ||
+                    actions.length > 0 ||
+                    problems.length > 3
+                  
+                  return {
+                    warehouseReviewStatus: warehouseReview?.status,
+                    sellerReviewStatus: sellerReview?.status,
+                    reviewResult: warehouseReview?.result || sellerReview?.result,
+                    reviewProblems: problems,
+                    reviewRequiredActions: actions,
+                    reviewStartDate: firstReview?.date_created,
+                    reviewQualityScore: qualityScore,
+                    reviewNeedsManualAction: needsManualAction
+                  }
+                })()
+                
                 claimData = {
                   claim_details: claimDetails,
                   claim_messages: consolidatedMessages,
@@ -585,6 +650,107 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   review_start_date: enrichedReviewData.reviewStartDate,
                   review_quality_score: enrichedReviewData.reviewQualityScore,
                   review_needs_manual_action: enrichedReviewData.reviewNeedsManualAction,
+                  
+                  // ============================================
+                  // ⏱️ FASE 3: MÉTRICAS TEMPORAIS E SLA
+                  // ============================================
+                  sla_metrics: (() => {
+                    const dataCriacao = orderDetail?.date_created ? new Date(orderDetail.date_created) : new Date()
+                    const dataAtual = new Date()
+                    
+                    // Calcular tempo de primeira resposta do vendedor
+                    let tempoPrimeiraRespostaVendedor = null
+                    let tempoRespostaComprador = null
+                    let dataPrimeiraAcao = null
+                    
+                    if (consolidatedMessages?.messages?.length > 0) {
+                      const messages = consolidatedMessages.messages
+                      const primeiraMsg = messages[messages.length - 1] // Mensagens estão ordenadas desc
+                      dataPrimeiraAcao = primeiraMsg.date_created
+                      
+                      // Buscar primeira resposta do vendedor
+                      const vendorMsg = messages.find((m: any) => m.from?.role === 'seller')
+                      if (vendorMsg) {
+                        const tempoResposta = new Date(vendorMsg.date_created).getTime() - new Date(primeiraMsg.date_created).getTime()
+                        tempoPrimeiraRespostaVendedor = Math.floor(tempoResposta / (1000 * 60 * 60)) // em horas
+                      }
+                      
+                      // Buscar resposta do comprador
+                      const compradorMsg = messages.find((m: any) => m.from?.role === 'buyer')
+                      if (compradorMsg && vendorMsg) {
+                        const tempoResposta = new Date(compradorMsg.date_created).getTime() - new Date(vendorMsg.date_created).getTime()
+                        tempoRespostaComprador = Math.floor(tempoResposta / (1000 * 60 * 60)) // em horas
+                      }
+                    }
+                    
+                    // Calcular tempo de análise ML
+                    let tempoAnaliseML = null
+                    if (mediationDetails) {
+                      const dataInicio = mediationDetails.date_created || orderDetail?.date_created
+                      const dataFim = mediationDetails.date_closed || dataAtual
+                      if (dataInicio && dataFim) {
+                        tempoAnaliseML = Math.floor((new Date(dataFim).getTime() - new Date(dataInicio).getTime()) / (1000 * 60 * 60))
+                      }
+                    }
+                    
+                    // Calcular dias até resolução
+                    let diasAteResolucao = null
+                    let tempoTotalResolucao = 0
+                    if (orderDetail?.date_closed) {
+                      const tempoTotal = new Date(orderDetail.date_closed).getTime() - dataCriacao.getTime()
+                      diasAteResolucao = Math.floor(tempoTotal / (1000 * 60 * 60 * 24))
+                      tempoTotalResolucao = Math.floor(tempoTotal / (1000 * 60 * 60)) // em horas
+                    }
+                    
+                    // Calcular SLA compliance (SLA padrão do ML: 48h primeira resposta, 7 dias resolução)
+                    const SLA_PRIMEIRA_RESPOSTA_HORAS = 48
+                    const SLA_RESOLUCAO_DIAS = 7
+                    
+                    let slaCumprido = true
+                    if (tempoPrimeiraRespostaVendedor && tempoPrimeiraRespostaVendedor > SLA_PRIMEIRA_RESPOSTA_HORAS) {
+                      slaCumprido = false
+                    }
+                    if (diasAteResolucao && diasAteResolucao > SLA_RESOLUCAO_DIAS) {
+                      slaCumprido = false
+                    }
+                    
+                    // Calcular tempo limite para ação
+                    let tempoLimiteAcao = null
+                    if (orderDetail?.status !== 'cancelled' && orderDetail?.status !== 'paid') {
+                      const limiteAcao = new Date(dataCriacao)
+                      limiteAcao.setHours(limiteAcao.getHours() + SLA_PRIMEIRA_RESPOSTA_HORAS)
+                      tempoLimiteAcao = limiteAcao.toISOString()
+                    }
+                    
+                    // Determinar eficiência da resolução
+                    let eficienciaResolucao = 'excelente'
+                    if (diasAteResolucao) {
+                      if (diasAteResolucao <= 2) eficienciaResolucao = 'excelente'
+                      else if (diasAteResolucao <= 5) eficienciaResolucao = 'boa'
+                      else if (diasAteResolucao <= 7) eficienciaResolucao = 'regular'
+                      else eficienciaResolucao = 'ruim'
+                    }
+                    
+                    // Timeline consolidado
+                    const timelineConsolidado = {
+                      data_inicio: orderDetail?.date_created,
+                      data_fim: orderDetail?.date_closed || null,
+                      duracao_total_dias: Math.floor((dataAtual.getTime() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24))
+                    }
+                    
+                    return {
+                      tempo_primeira_resposta_vendedor: tempoPrimeiraRespostaVendedor,
+                      tempo_resposta_comprador: tempoRespostaComprador,
+                      tempo_analise_ml: tempoAnaliseML,
+                      dias_ate_resolucao: diasAteResolucao,
+                      tempo_total_resolucao: tempoTotalResolucao,
+                      sla_cumprido: slaCumprido,
+                      tempo_limite_acao: tempoLimiteAcao,
+                      eficiencia_resolucao: eficienciaResolucao,
+                      data_primeira_acao: dataPrimeiraAcao,
+                      timeline_consolidado: timelineConsolidado
+                    }
+                  })(),
                   
                   // Campos enriquecidos conforme estratégia do PDF
                   claim_status: claimDetails?.status || null,
