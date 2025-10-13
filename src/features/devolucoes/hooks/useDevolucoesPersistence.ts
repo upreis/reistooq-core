@@ -11,6 +11,7 @@ interface DevolucoesPersistentState {
   filters: any;
   searchFilters: any;
   currentPage: number;
+  itemsPerPage: number;
   total: number;
   lastApiCall: number;
   dataSource: 'api' | 'database';
@@ -18,11 +19,13 @@ interface DevolucoesPersistentState {
 }
 
 const STORAGE_KEY = 'devolucoes_avancadas_state';
-const CACHE_DURATION = 10 * 60 * 1000; // 10 minutos para dados da API
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 horas para persistência
+const RESTORE_PROMPT_KEY = 'devolucoes_restore_prompt_shown';
 
 export function useDevolucoesPersistence() {
   const [persistedState, setPersistedState] = useState<DevolucoesPersistentState | null>(null);
   const [isStateLoaded, setIsStateLoaded] = useState(false);
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
 
   // Carregar estado inicial
   useEffect(() => {
@@ -34,17 +37,28 @@ export function useDevolucoesPersistence() {
           
           // Verificar validade do cache
           const now = Date.now();
-          const isExpired = now - parsed.lastApiCall > CACHE_DURATION;
+          const cacheAge = now - parsed.lastApiCall;
+          const isExpired = cacheAge > CACHE_DURATION;
           
-          if (!isExpired || parsed.dataSource === 'database') {
-            logger.info('Estado devoluções carregado', {
+          if (!isExpired) {
+            const promptShown = sessionStorage.getItem(RESTORE_PROMPT_KEY);
+            
+            logger.info('Estado devoluções encontrado', {
               dataCount: parsed.data.length,
               source: parsed.dataSource,
-              cacheAge: Math.round((now - parsed.lastApiCall) / 1000) + 's'
+              cacheAge: Math.round(cacheAge / 1000 / 60) + ' minutos',
+              page: parsed.currentPage,
+              itemsPerPage: parsed.itemsPerPage
             });
+            
             setPersistedState(parsed);
+            
+            // Mostrar prompt apenas uma vez por sessão
+            if (!promptShown && parsed.data.length > 0) {
+              setShowRestorePrompt(true);
+            }
           } else {
-            logger.info('Cache de devoluções expirado');
+            logger.info('Cache de devoluções expirado (24h)');
             localStorage.removeItem(STORAGE_KEY);
           }
         }
@@ -67,6 +81,7 @@ export function useDevolucoesPersistence() {
         filters: {},
         searchFilters: {},
         currentPage: 1,
+        itemsPerPage: 25,
         total: 0,
         lastApiCall: 0,
         dataSource: 'database' as const,
@@ -91,13 +106,14 @@ export function useDevolucoesPersistence() {
     }
   }, [persistedState]);
 
-  // Salvar dados da API
-  const saveApiData = useCallback((data: any[], searchFilters: any) => {
+  // Salvar dados da API com página e itemsPerPage
+  const saveApiData = useCallback((data: any[], searchFilters: any, currentPage?: number, itemsPerPage?: number) => {
     saveState({
       data,
       searchFilters,
       total: data.length,
-      currentPage: 1,
+      currentPage: currentPage || 1,
+      itemsPerPage: itemsPerPage || 25,
       dataSource: 'api'
     });
   }, [saveState]);
@@ -136,21 +152,39 @@ export function useDevolucoesPersistence() {
   const clearPersistedState = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY);
+      sessionStorage.removeItem(RESTORE_PROMPT_KEY);
       setPersistedState(null);
+      setShowRestorePrompt(false);
       logger.info('Cache devoluções limpo');
     } catch (error) {
       logger.warn('Erro ao limpar cache', error);
     }
   }, []);
 
+  // Aceitar restauração
+  const acceptRestore = useCallback(() => {
+    sessionStorage.setItem(RESTORE_PROMPT_KEY, 'true');
+    setShowRestorePrompt(false);
+  }, []);
+
+  // Recusar restauração
+  const rejectRestore = useCallback(() => {
+    sessionStorage.setItem(RESTORE_PROMPT_KEY, 'true');
+    setShowRestorePrompt(false);
+    clearPersistedState();
+  }, [clearPersistedState]);
+
   return {
     persistedState,
     isStateLoaded,
+    showRestorePrompt,
     hasValidData,
     shouldRefreshData,
     saveApiData,
     saveDatabaseData,
     saveSelectedAccounts,
-    clearPersistedState
+    clearPersistedState,
+    acceptRestore,
+    rejectRestore
   };
 }

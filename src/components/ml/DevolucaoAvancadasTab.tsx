@@ -14,6 +14,7 @@ import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
 import { DevolucoesFiltrosAvancados } from '@/features/devolucoes/components/DevolucoesFiltrosAvancados';
 import { DevolucaoStatsLoading, DevolucaoLoadingState } from '@/components/ml/devolucao/DevolucaoLoadingState';
 import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } from '@/components/ml/devolucao/DevolucaoEmptyStates';
+import { RestoreDataDialog } from '@/components/ml/devolucao/RestoreDataDialog';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -75,7 +76,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const {
     devolucoes,
     devolucoesFiltradas,
-    devolucoesPaginadas, // ✅ RECEBER DADOS PAGINADOS
+    devolucoesPaginadas,
     stats,
     loading,
     currentPage,
@@ -93,6 +94,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     setItemsPerPage,
     toggleAnalytics,
     hasPersistedData,
+    showRestorePrompt,
+    acceptRestore,
+    rejectRestore,
     autoRefresh,
     lazyLoading
   } = useDevolucoes(mlAccounts, selectedAccountId);
@@ -184,8 +188,28 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const shouldShowNoResultsState = !loading && devolucoes.length === 0 && hasFiltersApplied;
   const shouldShowData = !loading && devolucoes.length > 0;
 
+  // Dados para o diálogo de restauração
+  const persistedState = hasPersistedData ? {
+    dataCount: stats.totalLoaded || 0,
+    lastUpdate: Date.now(),
+    currentPage,
+    itemsPerPage
+  } : null;
+
   return (
     <div className="space-y-6">
+      {/* Diálogo de restauração de dados */}
+      {showRestorePrompt && persistedState && (
+        <RestoreDataDialog
+          open={showRestorePrompt}
+          onAccept={acceptRestore}
+          onReject={rejectRestore}
+          dataCount={persistedState.dataCount}
+          lastUpdate={persistedState.lastUpdate}
+          currentPage={persistedState.currentPage}
+          itemsPerPage={persistedState.itemsPerPage}
+        />
+      )}
       {/* Header com estatísticas melhoradas */}
       {loading && <DevolucaoStatsLoading />}
       

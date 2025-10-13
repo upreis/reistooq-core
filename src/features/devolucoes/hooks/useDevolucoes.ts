@@ -404,13 +404,14 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     flushDebounce(); // Aplicar busca imediatamente
     const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
     setDevolucoes(dadosAPI);
-    setCurrentPage(1);
-    persistence.saveApiData(dadosAPI, advancedFilters);
+    const newPage = 1;
+    setCurrentPage(newPage);
+    persistence.saveApiData(dadosAPI, advancedFilters, newPage, itemsPerPage);
     
     // ⚠️ NÃO ENRIQUECER AUTOMATICAMENTE - causava erro 400
     // Apenas exibir os dados buscados da API
     console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas com sucesso`);
-  }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence]);
+  }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence, itemsPerPage]);
 
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
@@ -490,7 +491,11 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   const handleItemsPerPageChange = useCallback((newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset para primeira página
-  }, []);
+    // Salvar preferência
+    if (devolucoes.length > 0) {
+      persistence.saveApiData(devolucoes, advancedFilters, 1, newItemsPerPage);
+    }
+  }, [persistence, devolucoes, advancedFilters]);
 
   // Estatísticas otimizadas
   const stats = useMemo(() => ({
@@ -542,6 +547,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     lazyLoading,
     
     // Persistência
-    hasPersistedData: persistence.hasValidData()
+    hasPersistedData: persistence.hasValidData(),
+    showRestorePrompt: persistence.showRestorePrompt,
+    acceptRestore: persistence.acceptRestore,
+    rejectRestore: persistence.rejectRestore
   };
 }
