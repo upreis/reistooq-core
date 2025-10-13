@@ -53,9 +53,9 @@ export function useDevolucoesBusca() {
               seller_id: account.account_identifier,
               // NÃO passamos access_token - a edge function obtém automaticamente
               filters: {
-                date_from: filtros.dataInicio,
-                date_to: filtros.dataFim,
-                status: filtros.statusClaim
+                date_from: filtros.dataInicio || '',
+                date_to: filtros.dataFim || '',
+                status: filtros.statusClaim || ''
               }
             }
           });
