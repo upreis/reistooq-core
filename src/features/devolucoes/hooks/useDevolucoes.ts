@@ -407,6 +407,14 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
 
+  // Busca automática inicial
+  useEffect(() => {
+    if (mlAccounts?.length > 0 && devolucoes.length === 0) {
+      console.log('[useDevolucoes] 🚀 Carregando dados iniciais automaticamente...');
+      buscarComFiltros();
+    }
+  }, [mlAccounts?.length]); // Só executa uma vez quando mlAccounts carrega
+
   // Atualizar filtros unificados
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
     setAdvancedFilters(prev => ({ ...prev, ...newFilters }));
