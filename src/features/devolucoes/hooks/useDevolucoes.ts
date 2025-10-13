@@ -84,46 +84,53 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   const [showAnalytics, setShowAnalytics] = useState(false);
   
   // Filtros avançados unificados com valores padrão completos
-  const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>({
-    // Busca
-    searchTerm: '',
-    // Contas
-    contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
-    // Datas - Iniciam vazias, usuário define quando desejar
-    dataInicio: '',
-    dataFim: '',
-    // Status e Classificação
-    statusClaim: '',
-    tipoClaim: '',
-    subtipoClaim: '',
-    motivoCategoria: '',
-    // Financeiro
-    valorRetidoMin: '',
-    valorRetidoMax: '',
-    tipoReembolso: '',
-    responsavelCusto: '',
-    // Rastreamento
-    temRastreamento: '',
-    statusRastreamento: '',
-    transportadora: '',
-    // Anexos e Comunicação
-    temAnexos: '',
-    mensagensNaoLidasMin: '',
-    // Prioridade e Ação
-    nivelPrioridade: '',
-    acaoSellerNecessaria: '',
-    escaladoParaML: '',
-    emMediacao: '',
-    // Prazos
-    prazoVencido: '',
-    slaNaoCumprido: '',
-    // Métricas
-    eficienciaResolucao: '',
-    scoreQualidadeMin: '',
-    // Controle
-    buscarEmTempoReal: true,
-    autoRefreshEnabled: false,
-    autoRefreshInterval: 3600
+  const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
+    // 📅 DEFINIR DATAS PADRÃO: Últimos 365 dias (1 ano completo incluindo 2025)
+    const hoje = new Date();
+    const umAnoAtras = new Date();
+    umAnoAtras.setFullYear(hoje.getFullYear() - 1);
+    
+    return {
+      // Busca
+      searchTerm: '',
+      // Contas
+      contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
+      // Datas - PADRÃO: Últimos 365 dias para pegar dados de 2024 E 2025
+      dataInicio: umAnoAtras.toISOString().split('T')[0], // YYYY-MM-DD
+      dataFim: hoje.toISOString().split('T')[0],           // YYYY-MM-DD
+      // Status e Classificação
+      statusClaim: '',
+      tipoClaim: '',
+      subtipoClaim: '',
+      motivoCategoria: '',
+      // Financeiro
+      valorRetidoMin: '',
+      valorRetidoMax: '',
+      tipoReembolso: '',
+      responsavelCusto: '',
+      // Rastreamento
+      temRastreamento: '',
+      statusRastreamento: '',
+      transportadora: '',
+      // Anexos e Comunicação
+      temAnexos: '',
+      mensagensNaoLidasMin: '',
+      // Prioridade e Ação
+      nivelPrioridade: '',
+      acaoSellerNecessaria: '',
+      escaladoParaML: '',
+      emMediacao: '',
+      // Prazos
+      prazoVencido: '',
+      slaNaoCumprido: '',
+      // Métricas
+      eficienciaResolucao: '',
+      scoreQualidadeMin: '',
+      // Controle
+      buscarEmTempoReal: true,
+      autoRefreshEnabled: false,
+      autoRefreshInterval: 3600
+    };
   });
 
   // Configurações de performance otimizadas (fixas)
