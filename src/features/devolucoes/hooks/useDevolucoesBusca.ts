@@ -170,6 +170,83 @@ export function useDevolucoesBusca() {
                              new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60)) : null
               };
 
+              // 🚚 DADOS DE RASTREAMENTO COMPLETOS (TRACKING)
+              const dadosRastreamento = {
+                shipment_id: item.shipment_history?.id || item.order_data?.shipping?.id || null,
+                codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
+                codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
+                transportadora: item.return_details_v2?.shipments?.[0]?.carrier || item.shipment_history?.tracking_method || null,
+                transportadora_devolucao: item.return_details_v2?.shipments?.[0]?.carrier || null,
+                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || item.shipment_history?.status || null,
+                url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
+                localizacao_atual: item.tracking_history?.[0]?.location || null,
+                status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,
+                tracking_history: item.tracking_history || [],
+                tracking_events: item.tracking_events || [],
+                shipment_history: item.shipment_history || {},
+                data_ultima_movimentacao: item.tracking_events?.[0]?.date || item.tracking_history?.[0]?.date || null,
+                historico_localizacoes: item.tracking_history || [],
+                carrier_info: {
+                  name: item.return_details_v2?.shipments?.[0]?.carrier || null,
+                  type: item.shipment_history?.mode || null
+                },
+                tempo_transito_dias: item.shipment_history?.transit_time || null,
+                shipment_delays: item.shipment_delays || [],
+                shipment_costs: {
+                  shipping_cost: item.shipment_history?.cost || null,
+                  handling_cost: null,
+                  total_cost: item.return_details_v2?.shipping_cost || null
+                },
+                previsao_entrega_vendedor: item.return_details_v2?.estimated_delivery_date || null
+              };
+
+              // ⚖️ DADOS DE MEDIAÇÃO COMPLETOS (MEDIATION)
+              const dadosMediacao = {
+                em_mediacao: item.claim_details?.type === 'mediations',
+                data_inicio_mediacao: item.claim_details?.type === 'mediations' ? item.claim_details?.date_created : null,
+                mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id || null,
+                resultado_mediacao: item.claim_details?.resolution?.reason || null,
+                detalhes_mediacao: item.mediation_details || (item.claim_details?.type === 'mediations' ? item.claim_details : {}),
+                escalado_para_ml: item.claim_details?.type === 'mediations'
+              };
+
+              // ⭐ DADOS DE REPUTAÇÃO (REPUTATION)
+              const dadosReputacao = {
+                seller_reputation: item.order_data?.seller?.reputation || {},
+                buyer_reputation: item.buyer?.reputation || {}
+              };
+
+              // 📎 DADOS DE ANEXOS (ATTACHMENTS)
+              const dadosAnexos = {
+                anexos_count: item.claim_attachments?.length || 0,
+                anexos_comprador: item.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
+                anexos_vendedor: item.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
+                anexos_ml: item.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
+                claim_attachments: item.claim_attachments || [],
+                total_evidencias: (item.claim_attachments?.length || 0) + (item.claim_messages?.messages?.length || 0)
+              };
+
+              // 📊 DADOS DE TIMELINE CONSOLIDADO
+              const dadosTimeline = {
+                timeline_events: item.timeline_events || [],
+                timeline_consolidado: {
+                  data_inicio: item.date_created || item.claim_details?.date_created,
+                  data_fim: item.claim_details?.resolution?.date_created || null,
+                  duracao_total_dias: item.claim_details?.resolution ? 
+                    Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
+                               new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60 * 24)) : null
+                },
+                marcos_temporais: {
+                  data_criacao_claim: item.claim_details?.date_created || null,
+                  data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
+                  data_finalizacao_timeline: item.claim_details?.resolution?.date_created || null
+                },
+                eventos_sistema: item.timeline_events || [],
+                data_criacao_claim: item.claim_details?.date_created || null,
+                data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
+                data_finalizacao_timeline: item.claim_details?.resolution?.date_created || null
+              };
+
               // DADOS ENRIQUECIDOS CONSOLIDADOS
               const dadosEnriquecidos = {
                 // Dados estruturados principais
@@ -187,6 +264,21 @@ export function useDevolucoesBusca() {
                 // ⭐ FASE 3 - SLA
                 ...dadosSLA,
 
+                // ⭐ RASTREAMENTO (TRACKING)
+                ...dadosRastreamento,
+
+                // ⭐ MEDIAÇÃO (MEDIATION)
+                ...dadosMediacao,
+
+                // ⭐ REPUTAÇÃO (REPUTATION)  
+                ...dadosReputacao,
+
+                // ⭐ ANEXOS (ATTACHMENTS)
+                ...dadosAnexos,
+
+                // ⭐ TIMELINE
+                ...dadosTimeline,
+
                 // MENSAGENS E COMUNICAÇÃO
                 timeline_mensagens: item.claim_messages?.messages || [],
                 ultima_mensagem_data: item.claim_messages?.messages?.length > 0 ? 
@@ -198,20 +290,11 @@ export function useDevolucoesBusca() {
 
                 // DADOS DE RETURN E TROCA
                 eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
+                produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id || null,
+                produto_troca_titulo: item.return_details_v2?.change_details?.substitute_product?.title || null,
                 data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
                 data_limite_troca: item.return_details_v2?.date_closed || null,
                 valor_diferenca_troca: item.return_details_v2?.price_difference || null,
-                codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
-                transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
-                url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
-
-                // ANEXOS E EVIDÊNCIAS
-                anexos_count: item.claim_attachments?.length || 0,
-                anexos_comprador: item.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
-                anexos_vendedor: item.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
-                anexos_ml: item.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
-                total_evidencias: (item.claim_attachments?.length || 0) + (item.claim_messages?.messages?.length || 0),
 
                 // CUSTOS E FINANCEIRO BÁSICO
                 custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
@@ -223,7 +306,6 @@ export function useDevolucoesBusca() {
                 tipo_claim: item.type || item.claim_details?.type,
                 subtipo_claim: item.claim_details?.stage || null,
                 motivo_categoria: item.claim_details?.reason_id || null,
-                em_mediacao: item.claim_details?.type === 'mediations',
                 metodo_resolucao: item.claim_details?.resolution?.reason || null,
                 resultado_final: item.claim_details?.status || null,
                 nivel_prioridade: item.claim_details?.type === 'mediations' ? 'high' : 'medium',
@@ -232,11 +314,15 @@ export function useDevolucoesBusca() {
                 data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
                 dias_restantes_acao: null, // Calculado via trigger
                 acao_seller_necessaria: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-                escalado_para_ml: item.claim_details?.type === 'mediations',
                 
                 // CONTROLE DE QUALIDADE
                 dados_completos: true,
-                marketplace_origem: 'ML_BRASIL'
+                marketplace_origem: 'ML_BRASIL',
+                
+                // DADOS ADICIONAIS
+                change_details: item.change_details || null,
+                mediation_details: item.mediation_details || null,
+                return_details_v1: item.return_details_v1 || null
               };
 
               const itemCompleto = { ...dadosBase, ...dadosEnriquecidos };
