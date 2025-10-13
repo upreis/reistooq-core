@@ -1,68 +1,21 @@
-/**
- * 🎯 COMPONENTE DE FILTROS AVANÇADOS - DEVOLUÇÕES
- * Sistema completo de filtros organizados por categoria
- */
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { FilterSheet } from "@/components/mobile/standard/FilterSheet";
-import { Filter, Search, DollarSign, Calendar, Package, TrendingUp } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-export interface FiltrosAvancados {
-  // 🔍 BUSCA TEXTUAL
-  searchTerm: string;
-  
-  // 📊 CONTAS ML
-  contasSelecionadas: string[];
-  
-  // 📅 DATAS
-  dataInicio: string;
-  dataFim: string;
-  
-  // 🎯 STATUS E CLASSIFICAÇÃO
-  statusClaim: string;
-  tipoClaim: string;
-  subtipoClaim: string;
-  motivoCategoria: string;
-  
-  // 💰 FINANCEIRO
-  valorRetidoMin: string;
-  valorRetidoMax: string;
-  tipoReembolso: string;
-  responsavelCusto: string;
-  
-  // 🚚 RASTREAMENTO
-  temRastreamento: string;
-  statusRastreamento: string;
-  transportadora: string;
-  
-  // 📎 ANEXOS E COMUNICAÇÃO
-  temAnexos: string;
-  mensagensNaoLidasMin: string;
-  
-  // ⚠️ PRIORIDADE E AÇÃO
-  nivelPrioridade: string;
-  acaoSellerNecessaria: string;
-  escaladoParaML: string;
-  emMediacao: string;
-  
-  // ⏰ PRAZOS
-  prazoVencido: string;
-  slaNaoCumprido: string;
-  
-  // 📈 MÉTRICAS
-  eficienciaResolucao: string;
-  scoreQualidadeMin: string;
-}
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon, X, Filter, Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { DevolucaoAdvancedFilters } from '@/features/devolucoes/hooks/useDevolucoes';
 
 interface DevolucoesFiltrosAvancadosProps {
-  filtros: FiltrosAvancados;
-  onFiltrosChange: (filtros: Partial<FiltrosAvancados>) => void;
+  filtros: DevolucaoAdvancedFilters;
+  onFiltrosChange: (filtros: Partial<DevolucaoAdvancedFilters>) => void;
   onLimpar: () => void;
   mlAccounts: any[];
 }
@@ -73,138 +26,366 @@ export function DevolucoesFiltrosAvancados({
   onLimpar,
   mlAccounts
 }: DevolucoesFiltrosAvancadosProps) {
+  
+  // Atalhos de data
+  const aplicarAtalhoData = (tipo: string) => {
+    const hoje = new Date();
+    let dataInicio = '';
+    let dataFim = hoje.toISOString().split('T')[0];
+
+    switch(tipo) {
+      case 'hoje':
+        dataInicio = dataFim;
+        break;
+      case 'ultimos7dias':
+        dataInicio = new Date(hoje.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'ultimos30dias':
+        dataInicio = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'ultimos90dias':
+        dataInicio = new Date(hoje.getTime() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'ultimos180dias':
+        dataInicio = new Date(hoje.getTime() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        break;
+      case 'esteAno':
+        dataInicio = new Date(hoje.getFullYear(), 0, 1).toISOString().split('T')[0];
+        break;
+    }
+
+    onFiltrosChange({ dataInicio, dataFim });
+  };
+
+  // Limpar apenas datas
+  const limparDatas = () => {
+    onFiltrosChange({ dataInicio: '', dataFim: '' });
+  };
+
   // Contar filtros ativos
   const contarFiltrosAtivos = () => {
     let count = 0;
     if (filtros.searchTerm) count++;
-    if (filtros.contasSelecionadas.length > 0) count++;
     if (filtros.dataInicio) count++;
     if (filtros.dataFim) count++;
     if (filtros.statusClaim) count++;
     if (filtros.tipoClaim) count++;
-    if (filtros.nivelPrioridade) count++;
-    if (filtros.acaoSellerNecessaria) count++;
     if (filtros.valorRetidoMin) count++;
     if (filtros.valorRetidoMax) count++;
     if (filtros.temRastreamento) count++;
-    if (filtros.temAnexos) count++;
-    if (filtros.subtipoClaim) count++;
-    if (filtros.responsavelCusto) count++;
-    if (filtros.statusRastreamento) count++;
+    if (filtros.nivelPrioridade) count++;
+    if (filtros.acaoSellerNecessaria) count++;
     if (filtros.emMediacao) count++;
-    if (filtros.escaladoParaML) count++;
-    if (filtros.prazoVencido) count++;
     return count;
   };
 
   const filtrosAtivos = contarFiltrosAtivos();
 
   return (
-    <div className="space-y-4">
-      {/* Desktop: Filtros sempre visíveis */}
-      <div className="hidden md:block">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 border rounded-lg bg-card">
-          {/* Busca */}
-          <div className="lg:col-span-3">
-            <Label htmlFor="searchTerm" className="flex items-center gap-2 mb-2">
-              <Search className="h-4 w-4" />
-              Busca Geral
-            </Label>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-primary" />
+            <CardTitle>Filtros de Busca</CardTitle>
+            {filtrosAtivos > 0 && (
+              <Badge variant="secondary">{filtrosAtivos} ativo{filtrosAtivos > 1 ? 's' : ''}</Badge>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onLimpar}
+            disabled={filtrosAtivos === 0}
+          >
+            <X className="h-4 w-4 mr-2" />
+            Limpar Todos
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        
+        {/* Busca Textual */}
+        <div className="space-y-2">
+          <Label htmlFor="search">Busca Textual</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              id="searchTerm"
-              placeholder="Order ID, Claim ID, SKU, Comprador, Rastreio..."
+              id="search"
+              placeholder="Buscar por produto, order ID, claim ID, SKU, comprador..."
               value={filtros.searchTerm}
               onChange={(e) => onFiltrosChange({ searchTerm: e.target.value })}
-              className="w-full"
+              className="pl-10"
             />
           </div>
+        </div>
 
-          {/* Período */}
-          <div>
-            <Label htmlFor="dataInicio" className="flex items-center gap-2 mb-2">
-              <Calendar className="h-4 w-4" />
-              Data Início
-            </Label>
-            <Input
-              id="dataInicio"
-              type="date"
-              value={filtros.dataInicio}
-              onChange={(e) => onFiltrosChange({ dataInicio: e.target.value })}
-            />
+        {/* Filtros de Data */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <Label>Período</Label>
+            {(filtros.dataInicio || filtros.dataFim) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={limparDatas}
+                className="h-auto p-1 text-xs"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Limpar datas
+              </Button>
+            )}
           </div>
 
-          <div>
-            <Label htmlFor="dataFim" className="mb-2 block">Data Fim</Label>
-            <Input
-              id="dataFim"
-              type="date"
-              value={filtros.dataFim}
-              onChange={(e) => onFiltrosChange({ dataFim: e.target.value })}
-            />
+          {/* Atalhos rápidos */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => aplicarAtalhoData('hoje')}
+            >
+              Hoje
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => aplicarAtalhoData('ultimos7dias')}
+            >
+              Últimos 7 dias
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => aplicarAtalhoData('ultimos30dias')}
+            >
+              Últimos 30 dias
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => aplicarAtalhoData('ultimos90dias')}
+            >
+              Últimos 90 dias
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => aplicarAtalhoData('ultimos180dias')}
+            >
+              Últimos 180 dias
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => aplicarAtalhoData('esteAno')}
+            >
+              Este Ano
+            </Button>
           </div>
 
-          {/* Status */}
-          <div>
-            <Label htmlFor="statusClaim" className="flex items-center gap-2 mb-2">
-              <Package className="h-4 w-4" />
-              Status
-            </Label>
-            <Select value={filtros.statusClaim} onValueChange={(value) => onFiltrosChange({ statusClaim: value })}>
+          {/* Seletores de data */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Data Início */}
+            <div className="space-y-2">
+              <Label htmlFor="dataInicio">Data Início</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filtros.dataInicio && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filtros.dataInicio ? (
+                      format(new Date(filtros.dataInicio), "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecione a data inicial</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filtros.dataInicio ? new Date(filtros.dataInicio) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        onFiltrosChange({ dataInicio: format(date, 'yyyy-MM-dd') });
+                      }
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Data Fim */}
+            <div className="space-y-2">
+              <Label htmlFor="dataFim">Data Fim</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !filtros.dataFim && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filtros.dataFim ? (
+                      format(new Date(filtros.dataFim), "dd/MM/yyyy", { locale: ptBR })
+                    ) : (
+                      <span>Selecione a data final</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filtros.dataFim ? new Date(filtros.dataFim) : undefined}
+                    onSelect={(date) => {
+                      if (date) {
+                        onFiltrosChange({ dataFim: format(date, 'yyyy-MM-dd') });
+                      }
+                    }}
+                    disabled={(date) => {
+                      if (!filtros.dataInicio) return false;
+                      return date < new Date(filtros.dataInicio);
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros de Status e Tipo */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Status do Claim */}
+          <div className="space-y-2">
+            <Label htmlFor="statusClaim">Status do Claim</Label>
+            <Select
+              value={filtros.statusClaim}
+              onValueChange={(value) => onFiltrosChange({ statusClaim: value })}
+            >
               <SelectTrigger id="statusClaim">
                 <SelectValue placeholder="Todos os status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="">Todos os status</SelectItem>
                 <SelectItem value="with_claims">Com Claims</SelectItem>
-                <SelectItem value="cancelled">Cancelado</SelectItem>
-                <SelectItem value="paid">Pago</SelectItem>
+                <SelectItem value="opened">Aberto</SelectItem>
                 <SelectItem value="closed">Fechado</SelectItem>
-                <SelectItem value="pending">Pendente</SelectItem>
+                <SelectItem value="processing">Em Processamento</SelectItem>
+                <SelectItem value="completed">Concluído</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           {/* Tipo de Claim */}
-          <div>
-            <Label htmlFor="tipoClaim" className="mb-2 block">Tipo de Claim</Label>
-            <Select value={filtros.tipoClaim} onValueChange={(value) => onFiltrosChange({ tipoClaim: value })}>
+          <div className="space-y-2">
+            <Label htmlFor="tipoClaim">Tipo de Claim</Label>
+            <Select
+              value={filtros.tipoClaim}
+              onValueChange={(value) => onFiltrosChange({ tipoClaim: value })}
+            >
               <SelectTrigger id="tipoClaim">
                 <SelectValue placeholder="Todos os tipos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
-                <SelectItem value="mediations">Mediação</SelectItem>
-                <SelectItem value="claim">Reclamação</SelectItem>
+                <SelectItem value="">Todos os tipos</SelectItem>
                 <SelectItem value="return">Devolução</SelectItem>
-                <SelectItem value="cancellation">Cancelamento</SelectItem>
+                <SelectItem value="refund">Reembolso</SelectItem>
+                <SelectItem value="not_received">Não Recebido</SelectItem>
+                <SelectItem value="damaged">Produto Danificado</SelectItem>
+                <SelectItem value="different">Produto Diferente</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Filtros Financeiros */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="valorMin">Valor Retido Mínimo (R$)</Label>
+            <Input
+              id="valorMin"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={filtros.valorRetidoMin}
+              onChange={(e) => onFiltrosChange({ valorRetidoMin: e.target.value })}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="valorMax">Valor Retido Máximo (R$)</Label>
+            <Input
+              id="valorMax"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              value={filtros.valorRetidoMax}
+              onChange={(e) => onFiltrosChange({ valorRetidoMax: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {/* Filtros Adicionais */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="rastreamento">Rastreamento</Label>
+            <Select
+              value={filtros.temRastreamento}
+              onValueChange={(value) => onFiltrosChange({ temRastreamento: value })}
+            >
+              <SelectTrigger id="rastreamento">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="sim">Com Rastreamento</SelectItem>
+                <SelectItem value="nao">Sem Rastreamento</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Prioridade */}
-          <div>
-            <Label htmlFor="nivelPrioridade" className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4" />
-              Prioridade
-            </Label>
-            <Select value={filtros.nivelPrioridade} onValueChange={(value) => onFiltrosChange({ nivelPrioridade: value })}>
-              <SelectTrigger id="nivelPrioridade">
+          <div className="space-y-2">
+            <Label htmlFor="prioridade">Prioridade</Label>
+            <Select
+              value={filtros.nivelPrioridade}
+              onValueChange={(value) => onFiltrosChange({ nivelPrioridade: value })}
+            >
+              <SelectTrigger id="prioridade">
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="">Todas</SelectItem>
-                <SelectItem value="high">Alta</SelectItem>
-                <SelectItem value="medium">Média</SelectItem>
-                <SelectItem value="low">Baixa</SelectItem>
+                <SelectItem value="alta">Alta</SelectItem>
+                <SelectItem value="media">Média</SelectItem>
+                <SelectItem value="baixa">Baixa</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          {/* Ação Necessária */}
-          <div>
-            <Label htmlFor="acaoSellerNecessaria" className="mb-2 block">Ação Necessária</Label>
-            <Select value={filtros.acaoSellerNecessaria} onValueChange={(value) => onFiltrosChange({ acaoSellerNecessaria: value })}>
-              <SelectTrigger id="acaoSellerNecessaria">
+          <div className="space-y-2">
+            <Label htmlFor="mediacao">Em Mediação</Label>
+            <Select
+              value={filtros.emMediacao}
+              onValueChange={(value) => onFiltrosChange({ emMediacao: value })}
+            >
+              <SelectTrigger id="mediacao">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -214,255 +395,45 @@ export function DevolucoesFiltrosAvancados({
               </SelectContent>
             </Select>
           </div>
-
-          <Separator className="lg:col-span-3 my-2" />
-
-          {/* Valores Financeiros */}
-          <div>
-            <Label htmlFor="valorRetidoMin" className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-4 w-4" />
-              Valor Mínimo (R$)
-            </Label>
-            <Input
-              id="valorRetidoMin"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={filtros.valorRetidoMin}
-              onChange={(e) => onFiltrosChange({ valorRetidoMin: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="valorRetidoMax" className="mb-2 block">Valor Máximo (R$)</Label>
-            <Input
-              id="valorRetidoMax"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              value={filtros.valorRetidoMax}
-              onChange={(e) => onFiltrosChange({ valorRetidoMax: e.target.value })}
-            />
-          </div>
-
-          {/* Contas ML */}
-          <div>
-            <Label className="mb-2 block">Contas ML ({filtros.contasSelecionadas.length})</Label>
-            <div className="border rounded-md p-2 max-h-32 overflow-y-auto space-y-2">
-              {mlAccounts.map(account => (
-                <label key={account.id} className="flex items-center gap-2 cursor-pointer text-sm">
-                  <input
-                    type="checkbox"
-                    checked={filtros.contasSelecionadas.includes(account.id)}
-                    onChange={(e) => {
-                      const newContas = e.target.checked
-                        ? [...filtros.contasSelecionadas, account.id]
-                        : filtros.contasSelecionadas.filter(id => id !== account.id);
-                      onFiltrosChange({ contasSelecionadas: newContas });
-                    }}
-                    className="rounded"
-                  />
-                  <span>{account.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {filtrosAtivos > 0 && (
-            <div className="lg:col-span-3 flex justify-end">
-              <Button variant="outline" size="sm" onClick={onLimpar}>
-                Limpar Filtros ({filtrosAtivos})
-              </Button>
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Mobile: FilterSheet */}
-      <div className="md:hidden">
-        <FilterSheet
-          title="Filtros de Devoluções"
-          activeFiltersCount={filtrosAtivos}
-          onClear={onLimpar}
-          applyButtonText="Aplicar"
-          clearButtonText="Limpar"
-        >
-          <div className="space-y-6">
-            {/* Busca */}
-            <div>
-              <Label htmlFor="searchTermMobile" className="flex items-center gap-2 mb-2">
-                <Search className="h-4 w-4" />
-                Busca Geral
-              </Label>
-              <Input
-                id="searchTermMobile"
-                placeholder="Order ID, Claim ID, SKU..."
-                value={filtros.searchTerm}
-                onChange={(e) => onFiltrosChange({ searchTerm: e.target.value })}
-              />
-            </div>
-
-            {/* Datas */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Período
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="dataInicioMobile" className="text-xs text-muted-foreground">Início</Label>
-                  <Input
-                    id="dataInicioMobile"
-                    type="date"
-                    value={filtros.dataInicio}
-                    onChange={(e) => onFiltrosChange({ dataInicio: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="dataFimMobile" className="text-xs text-muted-foreground">Fim</Label>
-                  <Input
-                    id="dataFimMobile"
-                    type="date"
-                    value={filtros.dataFim}
-                    onChange={(e) => onFiltrosChange({ dataFim: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Status */}
-            <div>
-              <Label htmlFor="statusClaimMobile" className="flex items-center gap-2 mb-2">
-                <Package className="h-4 w-4" />
-                Status
-              </Label>
-              <Select value={filtros.statusClaim} onValueChange={(value) => onFiltrosChange({ statusClaim: value })}>
-                <SelectTrigger id="statusClaimMobile">
-                  <SelectValue placeholder="Todos os status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="with_claims">Com Claims</SelectItem>
-                  <SelectItem value="cancelled">Cancelado</SelectItem>
-                  <SelectItem value="paid">Pago</SelectItem>
-                  <SelectItem value="closed">Fechado</SelectItem>
-                  <SelectItem value="pending">Pendente</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Tipo */}
-            <div>
-              <Label htmlFor="tipoClaimMobile" className="mb-2 block">Tipo de Claim</Label>
-              <Select value={filtros.tipoClaim} onValueChange={(value) => onFiltrosChange({ tipoClaim: value })}>
-                <SelectTrigger id="tipoClaimMobile">
-                  <SelectValue placeholder="Todos os tipos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="mediations">Mediação</SelectItem>
-                  <SelectItem value="claim">Reclamação</SelectItem>
-                  <SelectItem value="return">Devolução</SelectItem>
-                  <SelectItem value="cancellation">Cancelamento</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Prioridade */}
-            <div>
-              <Label htmlFor="nivelPrioridadeMobile" className="flex items-center gap-2 mb-2">
-                <TrendingUp className="h-4 w-4" />
-                Prioridade
-              </Label>
-              <Select value={filtros.nivelPrioridade} onValueChange={(value) => onFiltrosChange({ nivelPrioridade: value })}>
-                <SelectTrigger id="nivelPrioridadeMobile">
-                  <SelectValue placeholder="Todas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todas</SelectItem>
-                  <SelectItem value="high">Alta</SelectItem>
-                  <SelectItem value="medium">Média</SelectItem>
-                  <SelectItem value="low">Baixa</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Ação Necessária */}
-            <div>
-              <Label htmlFor="acaoSellerNecessariaMobile" className="mb-2 block">Ação Necessária</Label>
-              <Select value={filtros.acaoSellerNecessaria} onValueChange={(value) => onFiltrosChange({ acaoSellerNecessaria: value })}>
-                <SelectTrigger id="acaoSellerNecessariaMobile">
-                  <SelectValue placeholder="Todos" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">Todos</SelectItem>
-                  <SelectItem value="sim">Sim</SelectItem>
-                  <SelectItem value="nao">Não</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Separator />
-
-            {/* Valores */}
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4" />
-                Faixa de Valor
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="valorRetidoMinMobile" className="text-xs text-muted-foreground">Mínimo</Label>
-                  <Input
-                    id="valorRetidoMinMobile"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={filtros.valorRetidoMin}
-                    onChange={(e) => onFiltrosChange({ valorRetidoMin: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="valorRetidoMaxMobile" className="text-xs text-muted-foreground">Máximo</Label>
-                  <Input
-                    id="valorRetidoMaxMobile"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={filtros.valorRetidoMax}
-                    onChange={(e) => onFiltrosChange({ valorRetidoMax: e.target.value })}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Contas ML */}
-            <div>
-              <Label className="mb-2 block">Contas ML ({filtros.contasSelecionadas.length})</Label>
-              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-3">
-                {mlAccounts.map(account => (
-                  <label key={account.id} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={filtros.contasSelecionadas.includes(account.id)}
-                      onChange={(e) => {
-                        const newContas = e.target.checked
-                          ? [...filtros.contasSelecionadas, account.id]
-                          : filtros.contasSelecionadas.filter(id => id !== account.id);
-                        onFiltrosChange({ contasSelecionadas: newContas });
-                      }}
-                      className="rounded"
-                    />
-                    <span className="text-sm">{account.name}</span>
-                  </label>
-                ))}
-              </div>
+        {/* Resumo dos Filtros Ativos */}
+        {filtrosAtivos > 0 && (
+          <div className="pt-4 border-t">
+            <p className="text-sm text-muted-foreground mb-2">Filtros aplicados:</p>
+            <div className="flex flex-wrap gap-2">
+              {filtros.searchTerm && (
+                <Badge variant="secondary">
+                  Busca: {filtros.searchTerm.substring(0, 20)}
+                  {filtros.searchTerm.length > 20 ? '...' : ''}
+                </Badge>
+              )}
+              {filtros.dataInicio && (
+                <Badge variant="secondary">
+                  De: {format(new Date(filtros.dataInicio), "dd/MM/yyyy")}
+                </Badge>
+              )}
+              {filtros.dataFim && (
+                <Badge variant="secondary">
+                  Até: {format(new Date(filtros.dataFim), "dd/MM/yyyy")}
+                </Badge>
+              )}
+              {filtros.statusClaim && (
+                <Badge variant="secondary">Status: {filtros.statusClaim}</Badge>
+              )}
+              {filtros.tipoClaim && (
+                <Badge variant="secondary">Tipo: {filtros.tipoClaim}</Badge>
+              )}
+              {filtros.valorRetidoMin && (
+                <Badge variant="secondary">Mín: R$ {filtros.valorRetidoMin}</Badge>
+              )}
+              {filtros.valorRetidoMax && (
+                <Badge variant="secondary">Máx: R$ {filtros.valorRetidoMax}</Badge>
+              )}
             </div>
           </div>
-        </FilterSheet>
-      </div>
-    </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
