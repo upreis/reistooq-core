@@ -218,11 +218,11 @@ export function useDevolucoesBusca() {
 
               // 📎 DADOS DE ANEXOS (ATTACHMENTS)
               const dadosAnexos = {
-                anexos_count: item.claim_attachments?.length || 0,
-                anexos_comprador: item.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
-                anexos_vendedor: item.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
-                anexos_ml: item.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
-                total_evidencias: (item.claim_attachments?.length || 0) + (item.claim_messages?.messages?.length || 0)
+                anexos_count: 0,
+                anexos_comprador: [],
+                anexos_vendedor: [],
+                anexos_ml: [],
+                total_evidencias: (item.claim_messages?.messages?.length || 0)
               };
 
               // 📊 DADOS DE TIMELINE CONSOLIDADO
@@ -637,13 +637,11 @@ export function useDevolucoesBusca() {
                 dadosAtualizados.valor_compensacao = claimData.return_details_v2.refund_amount;
               }
 
-              // 📎 Dados de anexos (Etapa 4)
-              if (claimData.claim_attachments) {
-                dadosAtualizados.anexos_count = claimData.claim_attachments.length || 0;
-                dadosAtualizados.anexos_comprador = claimData.claim_attachments.filter((a: any) => a.source === 'buyer') || [];
-                dadosAtualizados.anexos_vendedor = claimData.claim_attachments.filter((a: any) => a.source === 'seller') || [];
-                dadosAtualizados.anexos_ml = claimData.claim_attachments.filter((a: any) => a.source === 'meli') || [];
-              }
+              // 📎 Dados de anexos (Etapa 4) - Dados virão de outras fontes
+              dadosAtualizados.anexos_count = 0;
+              dadosAtualizados.anexos_comprador = [];
+              dadosAtualizados.anexos_vendedor = [];
+              dadosAtualizados.anexos_ml = [];
 
               // ⚖️ Dados de mediação (Etapa 5)
               if (claimData.mediation_details) {
