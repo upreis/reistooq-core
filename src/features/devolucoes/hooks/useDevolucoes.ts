@@ -87,9 +87,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     searchTerm: '',
     // Contas
     contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
-    // Datas - Buscar últimos 6 meses por padrão para incluir dados recentes
-    dataInicio: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    dataFim: new Date().toISOString().split('T')[0],
+    // Datas - Iniciam vazias, usuário define quando desejar
+    dataInicio: '',
+    dataFim: '',
     // Status e Classificação
     statusClaim: '',
     tipoClaim: '',
@@ -414,13 +414,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
 
-  // Busca automática inicial
-  useEffect(() => {
-    if (mlAccounts?.length > 0 && devolucoes.length === 0) {
-      console.log('[useDevolucoes] 🚀 Carregando dados iniciais automaticamente...');
-      buscarComFiltros();
-    }
-  }, [mlAccounts?.length]); // Só executa uma vez quando mlAccounts carrega
+  // Busca automática inicial REMOVIDA - usuário deve clicar em "Aplicar Filtros"
+  // A busca agora é totalmente controlada pelo usuário através do botão
 
   // Atualizar filtros unificados
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
