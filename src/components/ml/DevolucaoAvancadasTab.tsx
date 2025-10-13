@@ -7,18 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { translateCancelReason } from '@/lib/translations';
 import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
-import TimelineVisualization from '@/components/ml/TimelineVisualization';
-import { useDevolucoesDemostracao } from '@/features/devolucoes/hooks/useDevolucoesDemostracao';
-import { useDevolucaoExportacao } from '@/features/devolucoes/hooks/useDevolucaoExportacao';
-import { useDevolucoesBusca } from '@/features/devolucoes/hooks/useDevolucoesBusca';
-import { supabase } from '@/integrations/supabase/client';
-
-// ✨ Componentes modulares
-import { DevolucaoStatsCards } from '@/components/ml/devolucao/DevolucaoStatsCards';
-import { DevolucaoFilters } from '@/components/ml/devolucao/DevolucaoFilters';
-import { DevolucaoToolbar } from '@/components/ml/devolucao/DevolucaoToolbar';
 import { DevolucaoDetailsModal } from '@/components/ml/devolucao/DevolucaoDetailsModal';
 import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPagination';
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
@@ -103,8 +92,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     lazyLoading
   } = useDevolucoes(mlAccounts, selectedAccountId);
 
-  // Exportação
-  const exportacao = useDevolucaoExportacao();
 
   const exportarCSV = useCallback(() => {
     if (!devolucoesFiltradas.length) {
