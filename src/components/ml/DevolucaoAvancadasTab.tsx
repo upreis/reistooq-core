@@ -311,52 +311,30 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         filtros={advancedFilters}
         onFiltrosChange={updateAdvancedFilters}
         onLimpar={clearFilters}
+        onAplicar={buscarComFiltros}
         mlAccounts={mlAccounts}
       />
 
-      {/* 🚀 BOTÃO DE APLICAR FILTROS E ERRO */}
-      <div className="space-y-3">
-        {error && (
-          <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
-            <div className="flex items-start gap-3">
-              <XCircle className="h-5 w-5 text-destructive mt-0.5" />
-              <div className="flex-1">
-                <p className="font-medium text-sm text-destructive">Erro ao buscar devoluções</p>
-                <p className="text-sm text-destructive/80 mt-1">{error}</p>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={clearError}
-                  className="mt-3"
-                >
-                  Fechar
-                </Button>
-              </div>
+      {/* ERRO */}
+      {error && (
+        <div className="rounded-lg border border-destructive/20 bg-destructive/10 p-4">
+          <div className="flex items-start gap-3">
+            <XCircle className="h-5 w-5 text-destructive mt-0.5" />
+            <div className="flex-1">
+              <p className="font-medium text-sm text-destructive">Erro ao buscar devoluções</p>
+              <p className="text-sm text-destructive/80 mt-1">{error}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={clearError}
+                className="mt-3"
+              >
+                Fechar
+              </Button>
             </div>
           </div>
-        )}
-        
-        <div className="flex justify-end">
-          <Button
-            onClick={buscarComFiltros}
-            disabled={loading}
-            size="lg"
-            className="w-full sm:w-auto"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="h-5 w-5 mr-2" />
-                Aplicar Filtros e Buscar
-              </>
-            )}
-          </Button>
         </div>
-      </div>
+      )}
 
 
       {/* Estados de carregamento e vazios */}

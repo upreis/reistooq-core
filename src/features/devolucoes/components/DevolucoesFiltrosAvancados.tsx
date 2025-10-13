@@ -17,6 +17,7 @@ interface DevolucoesFiltrosAvancadosProps {
   filtros: DevolucaoAdvancedFilters;
   onFiltrosChange: (filtros: Partial<DevolucaoAdvancedFilters>) => void;
   onLimpar: () => void;
+  onAplicar: () => void;
   mlAccounts: any[];
 }
 
@@ -24,8 +25,21 @@ export function DevolucoesFiltrosAvancados({
   filtros,
   onFiltrosChange,
   onLimpar,
+  onAplicar,
   mlAccounts
 }: DevolucoesFiltrosAvancadosProps) {
+  // Estado local para os filtros (rascunho)
+  const [draftFilters, setDraftFilters] = React.useState<DevolucaoAdvancedFilters>(filtros);
+
+  // Sincronizar draft quando filtros externos mudarem (reset, limpar, etc)
+  React.useEffect(() => {
+    setDraftFilters(filtros);
+  }, [filtros]);
+
+  // Atualizar apenas o draft local
+  const updateDraft = (updates: Partial<DevolucaoAdvancedFilters>) => {
+    setDraftFilters(prev => ({ ...prev, ...updates }));
+  };
   
   // Atalhos de data
   const aplicarAtalhoData = (tipo: string) => {
@@ -54,32 +68,61 @@ export function DevolucoesFiltrosAvancados({
         break;
     }
 
-    onFiltrosChange({ dataInicio, dataFim });
+    updateDraft({ dataInicio, dataFim });
   };
 
   // Limpar apenas datas
   const limparDatas = () => {
-    onFiltrosChange({ dataInicio: '', dataFim: '' });
+    updateDraft({ dataInicio: '', dataFim: '' });
   };
 
-  // Contar filtros ativos
+  // Contar filtros ativos no draft
   const contarFiltrosAtivos = () => {
     let count = 0;
-    if (filtros.searchTerm) count++;
-    if (filtros.dataInicio) count++;
-    if (filtros.dataFim) count++;
-    if (filtros.statusClaim) count++;
-    if (filtros.tipoClaim) count++;
-    if (filtros.valorRetidoMin) count++;
-    if (filtros.valorRetidoMax) count++;
-    if (filtros.temRastreamento) count++;
-    if (filtros.nivelPrioridade) count++;
-    if (filtros.acaoSellerNecessaria) count++;
-    if (filtros.emMediacao) count++;
+    if (draftFilters.searchTerm) count++;
+    if (draftFilters.dataInicio) count++;
+    if (draftFilters.dataFim) count++;
+    if (draftFilters.statusClaim) count++;
+    if (draftFilters.tipoClaim) count++;
+    if (draftFilters.valorRetidoMin) count++;
+    if (draftFilters.valorRetidoMax) count++;
+    if (draftFilters.temRastreamento) count++;
+    if (draftFilters.nivelPrioridade) count++;
+    if (draftFilters.acaoSellerNecessaria) count++;
+    if (draftFilters.emMediacao) count++;
     return count;
   };
 
   const filtrosAtivos = contarFiltrosAtivos();
+
+  // Verificar se há mudanças pendentes
+  const temMudancasPendentes = JSON.stringify(draftFilters) !== JSON.stringify(filtros);
+
+  // Aplicar os filtros do draft
+  const handleAplicar = () => {
+    onFiltrosChange(draftFilters);
+    onAplicar();
+  };
+
+  // Limpar todos os filtros
+  const handleLimpar = () => {
+    const filtrosVazios: Partial<DevolucaoAdvancedFilters> = {
+      searchTerm: '',
+      dataInicio: '',
+      dataFim: '',
+      statusClaim: '',
+      tipoClaim: '',
+      valorRetidoMin: '',
+      valorRetidoMax: '',
+      temRastreamento: '',
+      nivelPrioridade: '',
+      acaoSellerNecessaria: '',
+      emMediacao: ''
+    };
+    setDraftFilters(prev => ({ ...prev, ...filtrosVazios }));
+    onFiltrosChange(filtrosVazios);
+    onLimpar();
+  };
 
   return (
     <Card>
@@ -92,15 +135,22 @@ export function DevolucoesFiltrosAvancados({
               <Badge variant="secondary">{filtrosAtivos} ativo{filtrosAtivos > 1 ? 's' : ''}</Badge>
             )}
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onLimpar}
-            disabled={filtrosAtivos === 0}
-          >
-            <X className="h-4 w-4 mr-2" />
-            Limpar Todos
-          </Button>
+          <div className="flex gap-2">
+            {temMudancasPendentes && (
+              <Badge variant="outline" className="text-orange-600">
+                Alterações pendentes
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLimpar}
+              disabled={filtrosAtivos === 0}
+            >
+              <X className="h-4 w-4 mr-2" />
+              Limpar Todos
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -113,8 +163,8 @@ export function DevolucoesFiltrosAvancados({
             <Input
               id="search"
               placeholder="Buscar por produto, order ID, claim ID, SKU, comprador..."
-              value={filtros.searchTerm}
-              onChange={(e) => onFiltrosChange({ searchTerm: e.target.value })}
+              value={draftFilters.searchTerm}
+              onChange={(e) => updateDraft({ searchTerm: e.target.value })}
               className="pl-10"
             />
           </div>
@@ -124,7 +174,7 @@ export function DevolucoesFiltrosAvancados({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <Label>Período</Label>
-            {(filtros.dataInicio || filtros.dataFim) && (
+            {(draftFilters.dataInicio || draftFilters.dataFim) && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -200,12 +250,12 @@ export function DevolucoesFiltrosAvancados({
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !filtros.dataInicio && "text-muted-foreground"
+                      !draftFilters.dataInicio && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filtros.dataInicio ? (
-                      format(new Date(filtros.dataInicio), "dd/MM/yyyy", { locale: ptBR })
+                    {draftFilters.dataInicio ? (
+                      format(new Date(draftFilters.dataInicio), "dd/MM/yyyy", { locale: ptBR })
                     ) : (
                       <span>Selecione a data inicial</span>
                     )}
@@ -214,10 +264,10 @@ export function DevolucoesFiltrosAvancados({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={filtros.dataInicio ? new Date(filtros.dataInicio) : undefined}
+                    selected={draftFilters.dataInicio ? new Date(draftFilters.dataInicio) : undefined}
                     onSelect={(date) => {
                       if (date) {
-                        onFiltrosChange({ dataInicio: format(date, 'yyyy-MM-dd') });
+                        updateDraft({ dataInicio: format(date, 'yyyy-MM-dd') });
                       }
                     }}
                     initialFocus
@@ -236,12 +286,12 @@ export function DevolucoesFiltrosAvancados({
                     variant="outline"
                     className={cn(
                       "w-full justify-start text-left font-normal",
-                      !filtros.dataFim && "text-muted-foreground"
+                      !draftFilters.dataFim && "text-muted-foreground"
                     )}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {filtros.dataFim ? (
-                      format(new Date(filtros.dataFim), "dd/MM/yyyy", { locale: ptBR })
+                    {draftFilters.dataFim ? (
+                      format(new Date(draftFilters.dataFim), "dd/MM/yyyy", { locale: ptBR })
                     ) : (
                       <span>Selecione a data final</span>
                     )}
@@ -250,15 +300,15 @@ export function DevolucoesFiltrosAvancados({
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
-                    selected={filtros.dataFim ? new Date(filtros.dataFim) : undefined}
+                    selected={draftFilters.dataFim ? new Date(draftFilters.dataFim) : undefined}
                     onSelect={(date) => {
                       if (date) {
-                        onFiltrosChange({ dataFim: format(date, 'yyyy-MM-dd') });
+                        updateDraft({ dataFim: format(date, 'yyyy-MM-dd') });
                       }
                     }}
                     disabled={(date) => {
-                      if (!filtros.dataInicio) return false;
-                      return date < new Date(filtros.dataInicio);
+                      if (!draftFilters.dataInicio) return false;
+                      return date < new Date(draftFilters.dataInicio);
                     }}
                     initialFocus
                     className={cn("p-3 pointer-events-auto")}
@@ -275,8 +325,8 @@ export function DevolucoesFiltrosAvancados({
           <div className="space-y-2">
             <Label htmlFor="statusClaim">Status do Claim</Label>
             <Select
-              value={filtros.statusClaim}
-              onValueChange={(value) => onFiltrosChange({ statusClaim: value })}
+              value={draftFilters.statusClaim}
+              onValueChange={(value) => updateDraft({ statusClaim: value })}
             >
               <SelectTrigger id="statusClaim">
                 <SelectValue placeholder="Todos os status" />
@@ -297,8 +347,8 @@ export function DevolucoesFiltrosAvancados({
           <div className="space-y-2">
             <Label htmlFor="tipoClaim">Tipo de Claim</Label>
             <Select
-              value={filtros.tipoClaim}
-              onValueChange={(value) => onFiltrosChange({ tipoClaim: value })}
+              value={draftFilters.tipoClaim}
+              onValueChange={(value) => updateDraft({ tipoClaim: value })}
             >
               <SelectTrigger id="tipoClaim">
                 <SelectValue placeholder="Todos os tipos" />
@@ -324,8 +374,8 @@ export function DevolucoesFiltrosAvancados({
               type="number"
               step="0.01"
               placeholder="0.00"
-              value={filtros.valorRetidoMin}
-              onChange={(e) => onFiltrosChange({ valorRetidoMin: e.target.value })}
+              value={draftFilters.valorRetidoMin}
+              onChange={(e) => updateDraft({ valorRetidoMin: e.target.value })}
             />
           </div>
 
@@ -336,8 +386,8 @@ export function DevolucoesFiltrosAvancados({
               type="number"
               step="0.01"
               placeholder="0.00"
-              value={filtros.valorRetidoMax}
-              onChange={(e) => onFiltrosChange({ valorRetidoMax: e.target.value })}
+              value={draftFilters.valorRetidoMax}
+              onChange={(e) => updateDraft({ valorRetidoMax: e.target.value })}
             />
           </div>
         </div>
@@ -347,8 +397,8 @@ export function DevolucoesFiltrosAvancados({
           <div className="space-y-2">
             <Label htmlFor="rastreamento">Rastreamento</Label>
             <Select
-              value={filtros.temRastreamento}
-              onValueChange={(value) => onFiltrosChange({ temRastreamento: value })}
+              value={draftFilters.temRastreamento}
+              onValueChange={(value) => updateDraft({ temRastreamento: value })}
             >
               <SelectTrigger id="rastreamento">
                 <SelectValue placeholder="Todos" />
@@ -364,8 +414,8 @@ export function DevolucoesFiltrosAvancados({
           <div className="space-y-2">
             <Label htmlFor="prioridade">Prioridade</Label>
             <Select
-              value={filtros.nivelPrioridade}
-              onValueChange={(value) => onFiltrosChange({ nivelPrioridade: value })}
+              value={draftFilters.nivelPrioridade}
+              onValueChange={(value) => updateDraft({ nivelPrioridade: value })}
             >
               <SelectTrigger id="prioridade">
                 <SelectValue placeholder="Todas" />
@@ -382,8 +432,8 @@ export function DevolucoesFiltrosAvancados({
           <div className="space-y-2">
             <Label htmlFor="mediacao">Em Mediação</Label>
             <Select
-              value={filtros.emMediacao}
-              onValueChange={(value) => onFiltrosChange({ emMediacao: value })}
+              value={draftFilters.emMediacao}
+              onValueChange={(value) => updateDraft({ emMediacao: value })}
             >
               <SelectTrigger id="mediacao">
                 <SelectValue placeholder="Todos" />
@@ -400,39 +450,51 @@ export function DevolucoesFiltrosAvancados({
         {/* Resumo dos Filtros Ativos */}
         {filtrosAtivos > 0 && (
           <div className="pt-4 border-t">
-            <p className="text-sm text-muted-foreground mb-2">Filtros aplicados:</p>
+            <p className="text-sm text-muted-foreground mb-2">Filtros selecionados:</p>
             <div className="flex flex-wrap gap-2">
-              {filtros.searchTerm && (
+              {draftFilters.searchTerm && (
                 <Badge variant="secondary">
-                  Busca: {filtros.searchTerm.substring(0, 20)}
-                  {filtros.searchTerm.length > 20 ? '...' : ''}
+                  Busca: {draftFilters.searchTerm.substring(0, 20)}
+                  {draftFilters.searchTerm.length > 20 ? '...' : ''}
                 </Badge>
               )}
-              {filtros.dataInicio && (
+              {draftFilters.dataInicio && (
                 <Badge variant="secondary">
-                  De: {format(new Date(filtros.dataInicio), "dd/MM/yyyy")}
+                  De: {format(new Date(draftFilters.dataInicio), "dd/MM/yyyy")}
                 </Badge>
               )}
-              {filtros.dataFim && (
+              {draftFilters.dataFim && (
                 <Badge variant="secondary">
-                  Até: {format(new Date(filtros.dataFim), "dd/MM/yyyy")}
+                  Até: {format(new Date(draftFilters.dataFim), "dd/MM/yyyy")}
                 </Badge>
               )}
-              {filtros.statusClaim && (
-                <Badge variant="secondary">Status: {filtros.statusClaim}</Badge>
+              {draftFilters.statusClaim && (
+                <Badge variant="secondary">Status: {draftFilters.statusClaim}</Badge>
               )}
-              {filtros.tipoClaim && (
-                <Badge variant="secondary">Tipo: {filtros.tipoClaim}</Badge>
+              {draftFilters.tipoClaim && (
+                <Badge variant="secondary">Tipo: {draftFilters.tipoClaim}</Badge>
               )}
-              {filtros.valorRetidoMin && (
-                <Badge variant="secondary">Mín: R$ {filtros.valorRetidoMin}</Badge>
+              {draftFilters.valorRetidoMin && (
+                <Badge variant="secondary">Mín: R$ {draftFilters.valorRetidoMin}</Badge>
               )}
-              {filtros.valorRetidoMax && (
-                <Badge variant="secondary">Máx: R$ {filtros.valorRetidoMax}</Badge>
+              {draftFilters.valorRetidoMax && (
+                <Badge variant="secondary">Máx: R$ {draftFilters.valorRetidoMax}</Badge>
               )}
             </div>
           </div>
         )}
+
+        {/* Botão Aplicar Filtros */}
+        <div className="pt-4 border-t">
+          <Button
+            onClick={handleAplicar}
+            className="w-full"
+            disabled={!temMudancasPendentes && filtrosAtivos === 0}
+          >
+            <Search className="h-4 w-4 mr-2" />
+            Aplicar Filtros e Buscar
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
