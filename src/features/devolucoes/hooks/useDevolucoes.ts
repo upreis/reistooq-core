@@ -196,7 +196,10 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
       resultados = resultados.filter(dev => {
         if (!dev.data_criacao) return false;
         try {
-          return new Date(dev.data_criacao) >= new Date(advancedFilters.dataInicio);
+          const dataCriacao = new Date(dev.data_criacao);
+          const dataInicio = new Date(advancedFilters.dataInicio);
+          dataInicio.setHours(0, 0, 0, 0);
+          return dataCriacao >= dataInicio;
         } catch {
           return false;
         }
@@ -208,7 +211,10 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
       resultados = resultados.filter(dev => {
         if (!dev.data_criacao) return false;
         try {
-          return new Date(dev.data_criacao) <= new Date(advancedFilters.dataFim + 'T23:59:59');
+          const dataCriacao = new Date(dev.data_criacao);
+          const dataFim = new Date(advancedFilters.dataFim);
+          dataFim.setHours(23, 59, 59, 999);
+          return dataCriacao <= dataFim;
         } catch {
           return false;
         }
