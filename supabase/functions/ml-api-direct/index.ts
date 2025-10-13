@@ -296,13 +296,43 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       return []
     }
     
-    console.log(`📊 Total de claims retornados: ${data.data.length}`)
+    console.log(`📊 Total de claims retornados ANTES DO FILTRO LOCAL: ${data.data.length}`)
     console.log(`📄 Paginação: total=${data.paging?.total || 0}, limit=${data.paging?.limit || 0}, offset=${data.paging?.offset || 0}`)
+    
+    // 🎯 FILTRO LOCAL ADICIONAL - A API ML não está respeitando os filtros de data
+    // Aplicar filtro local para garantir que apenas dados dentro do período sejam processados
+    let claimsParaProcessar = data.data
+    
+    if (filters?.date_from || filters?.date_to) {
+      const dateFrom = filters.date_from ? new Date(`${filters.date_from}T00:00:00.000-03:00`) : null
+      const dateTo = filters.date_to ? new Date(`${filters.date_to}T23:59:59.999-03:00`) : null
+      
+      claimsParaProcessar = data.data.filter((claim: any) => {
+        if (!claim.date_created) return false
+        
+        const claimDate = new Date(claim.date_created)
+        
+        // Verificar se está dentro do range
+        if (dateFrom && claimDate < dateFrom) {
+          console.log(`⚠️ Claim ${claim.id} FORA DO PERÍODO (antes): ${claim.date_created} < ${filters.date_from}`)
+          return false
+        }
+        
+        if (dateTo && claimDate > dateTo) {
+          console.log(`⚠️ Claim ${claim.id} FORA DO PERÍODO (depois): ${claim.date_created} > ${filters.date_to}`)
+          return false
+        }
+        
+        return true
+      })
+      
+      console.log(`✅ FILTRO LOCAL APLICADO: ${data.data.length} → ${claimsParaProcessar.length} claims dentro do período ${filters.date_from} até ${filters.date_to}`)
+    }
 
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
     
-    for (const claim of data.data) {
+    for (const claim of claimsParaProcessar) {
       try {
         // Proteção contra claims inválidos
         if (!claim || !claim.id) {
