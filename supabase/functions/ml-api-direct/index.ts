@@ -392,9 +392,15 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
 
-              // 7. Buscar shipment history do pedido original E devolução
+              // 7. Buscar shipment history do pedido original E devolução (ENRIQUECIDO FASE 1)
               claimPromises.push(
                 (async () => {
+                  const historyResults = {
+                    original: null,
+                    return: null,
+                    combined_events: []
+                  }
+                  
                   // Tentar buscar histórico do envio original primeiro
                   const originalShipmentId = orderDetail?.shipping?.id
                   if (originalShipmentId) {
@@ -405,8 +411,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                         integrationAccountId
                       )
                       if (response.ok) {
+                        const historyData = await response.json()
+                        historyResults.original = historyData
                         console.log(`🚚 Histórico do envio original encontrado: ${originalShipmentId}`)
-                        return { type: 'original', data: await response.json() }
+                        
+                        // Extrair eventos do histórico original
+                        if (Array.isArray(historyData)) {
+                          historyResults.combined_events.push(...historyData.map(event => ({
+                            ...event,
+                            shipment_type: 'original',
+                            shipment_id: originalShipmentId
+                          })))
+                        }
                       }
                     } catch (e) {
                       console.warn(`⚠️ Erro ao buscar histórico do envio original:`, e)
@@ -432,7 +448,17 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                           integrationAccountId
                         )
                         if (historyResponse.ok) {
-                          return { type: 'return', data: await historyResponse.json() }
+                          const returnHistory = await historyResponse.json()
+                          historyResults.return = returnHistory
+                          
+                          // Extrair eventos do histórico de devolução
+                          if (Array.isArray(returnHistory)) {
+                            historyResults.combined_events.push(...returnHistory.map(event => ({
+                              ...event,
+                              shipment_type: 'return',
+                              shipment_id: shipmentId
+                            })))
+                          }
                         }
                       }
                     }
@@ -440,7 +466,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                     console.warn(`⚠️ Erro ao buscar histórico de devolução:`, e)
                   }
                   
-                  return null
+                  // Ordenar eventos combinados por data (mais recente primeiro)
+                  historyResults.combined_events.sort((a, b) => 
+                    new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+                  )
+                  
+                  return historyResults.combined_events.length > 0 ? historyResults : null
                 })()
               )
 
@@ -658,25 +689,160 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                                 safeClaimData?.claim_details?.expiration_date ||
                                 safeClaimData?.mediation_details?.expiration_date || null,
               
-              // RASTREAMENTO - ENRIQUECIDO COM HISTORY
+              // ==================== RASTREAMENTO ENRIQUECIDO - FASE 1 ====================
+              
+              // 🚚 SHIPMENT ID - Extrair de múltiplas fontes
+              shipment_id: safeOrderDetail?.shipping?.id || 
+                          safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id ||
+                          safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id || null,
+              
+              // 📦 CÓDIGO DE RASTREAMENTO
               codigo_rastreamento: safeClaimData?.return_details_v2?.results?.[0]?.tracking_number || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.tracking_number ||
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
               
+              // 🚚 TRANSPORTADORA
               transportadora: safeClaimData?.return_details_v2?.results?.[0]?.carrier || 
                              safeClaimData?.return_details_v1?.results?.[0]?.carrier ||
                              safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.carrier || 
                              safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.carrier || null,
               
-              status_rastreamento: safeClaimData?.tracking_status_detail || 
-                                  safeClaimData?.return_details_v2?.results?.[0]?.status || 
-                                  safeClaimData?.return_details_v1?.results?.[0]?.status ||
-                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.status || 
-                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.status || null,
+              // 📊 STATUS DE RASTREAMENTO
+              status_rastreamento: (() => {
+                // Priorizar dados do shipment history
+                if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
+                  return safeClaimData.shipment_history.combined_events[0].status
+                }
+                // Fallback para outros campos
+                return safeClaimData?.tracking_status_detail || 
+                       safeClaimData?.return_details_v2?.results?.[0]?.status || 
+                       safeClaimData?.return_details_v1?.results?.[0]?.status ||
+                       safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.status || 
+                       safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.status || null
+              })(),
               
-              tracking_history: safeClaimData?.tracking_events || [],
-              data_ultima_movimentacao: safeClaimData?.last_tracking_update || null,
+              // 📍 LOCALIZAÇÃO ATUAL
+              localizacao_atual: (() => {
+                if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
+                  const lastEvent = safeClaimData.shipment_history.combined_events[0]
+                  return lastEvent.tracking?.checkpoint || lastEvent.tracking?.location || null
+                }
+                return null
+              })(),
+              
+              // 🔄 SUBSTATUS DE TRANSPORTE
+              status_transporte_atual: (() => {
+                if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
+                  return safeClaimData.shipment_history.combined_events[0].substatus
+                }
+                return null
+              })(),
+              
+              // 📋 HISTÓRICO COMPLETO DE TRACKING (FASE 1 - ENRIQUECIDO)
+              tracking_history: safeClaimData?.shipment_history?.combined_events || [],
+              
+              // 📊 EVENTOS DE TRACKING PROCESSADOS
+              tracking_events: (() => {
+                if (!safeClaimData?.shipment_history?.combined_events?.length) return []
+                
+                return safeClaimData.shipment_history.combined_events.map((event: any) => ({
+                  date: event.date_created,
+                  status: event.status,
+                  substatus: event.substatus,
+                  checkpoint: event.tracking?.checkpoint || event.tracking?.description,
+                  location: event.tracking?.location,
+                  shipment_type: event.shipment_type, // 'original' ou 'return'
+                  shipment_id: event.shipment_id
+                }))
+              })(),
+              
+              // 🕐 DATA DA ÚLTIMA MOVIMENTAÇÃO
+              data_ultima_movimentacao: (() => {
+                if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
+                  return safeClaimData.shipment_history.combined_events[0].date_created
+                }
+                return safeClaimData?.last_tracking_update || null
+              })(),
+              
+              // 📍 HISTÓRICO DE LOCALIZAÇÕES
+              historico_localizacoes: (() => {
+                if (!safeClaimData?.shipment_history?.combined_events?.length) return []
+                
+                return safeClaimData.shipment_history.combined_events
+                  .filter((event: any) => event.tracking?.location)
+                  .map((event: any) => ({
+                    data: event.date_created,
+                    localizacao: event.tracking.location,
+                    status: event.status,
+                    checkpoint: event.tracking.checkpoint
+                  }))
+              })(),
+              
+              // 📦 INFORMAÇÕES DA TRANSPORTADORA
+              carrier_info: (() => {
+                if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
+                  const firstEvent = safeClaimData.shipment_history.combined_events[0]
+                  return {
+                    name: firstEvent.carrier_info?.name || safeClaimData?.return_details_v2?.results?.[0]?.carrier,
+                    tracking_method: firstEvent.tracking_method,
+                    service_id: firstEvent.service_id
+                  }
+                }
+                return {}
+              })(),
+              
+              // ⏱️ TEMPO DE TRÂNSITO (FASE 1)
+              tempo_transito_dias: (() => {
+                if (!safeClaimData?.shipment_history?.combined_events?.length) return null
+                
+                const events = safeClaimData.shipment_history.combined_events
+                const firstEvent = events[events.length - 1]
+                const lastEvent = events[0]
+                
+                if (!firstEvent?.date_created || !lastEvent?.date_created) return null
+                
+                const diffTime = new Date(lastEvent.date_created).getTime() - new Date(firstEvent.date_created).getTime()
+                return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+              })(),
+              
+              // 🚧 ATRASOS NO SHIPMENT
+              shipment_delays: (() => {
+                if (!safeClaimData?.shipment_history?.combined_events?.length) return []
+                
+                // Detectar atrasos comparando datas estimadas vs reais
+                const delays = []
+                const events = safeClaimData.shipment_history.combined_events
+                
+                for (let i = 0; i < events.length - 1; i++) {
+                  const currentEvent = events[i]
+                  const previousEvent = events[i + 1]
+                  
+                  const timeDiff = new Date(currentEvent.date_created).getTime() - 
+                                  new Date(previousEvent.date_created).getTime()
+                  const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
+                  
+                  // Considerar atraso se passar mais de 3 dias entre eventos
+                  if (daysDiff > 3) {
+                    delays.push({
+                      from_status: previousEvent.status,
+                      to_status: currentEvent.status,
+                      days_delayed: daysDiff,
+                      from_date: previousEvent.date_created,
+                      to_date: currentEvent.date_created
+                    })
+                  }
+                }
+                
+                return delays
+              })(),
+              
+              // 💰 CUSTOS DE SHIPMENT
+              shipment_costs: {
+                shipping_cost: safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || null,
+                handling_cost: safeClaimData?.return_details_v2?.results?.[0]?.handling_cost || null,
+                total_cost: safeClaimData?.return_details_v2?.results?.[0]?.total_cost || null
+              },
               
               // DADOS DE ANEXOS
               anexos_count: safeClaimData?.claim_attachments?.length || 0,
