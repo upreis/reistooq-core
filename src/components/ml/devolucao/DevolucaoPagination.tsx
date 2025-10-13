@@ -1,6 +1,12 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 
 interface DevolucaoPaginationProps {
   currentPage: number;
@@ -16,32 +22,28 @@ export const DevolucaoPagination = React.memo<DevolucaoPaginationProps>(({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex justify-center items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Anterior
-      </Button>
-      
-      <span className="text-sm text-gray-600 dark:text-gray-300">
-        Página {currentPage} de {totalPages}
-      </span>
-      
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="dark:border-gray-600 dark:text-white dark:hover:bg-gray-700"
-      >
-        Próxima
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </div>
+    <Pagination>
+      <PaginationContent>
+        <PaginationItem>
+          <PaginationPrevious 
+            onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+            className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+          />
+        </PaginationItem>
+        
+        <PaginationItem>
+          <span className="text-sm px-4">
+            Página {currentPage} de {totalPages}
+          </span>
+        </PaginationItem>
+        
+        <PaginationItem>
+          <PaginationNext 
+            onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+            className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+          />
+        </PaginationItem>
+      </PaginationContent>
+    </Pagination>
   );
 });
