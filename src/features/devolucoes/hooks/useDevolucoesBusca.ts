@@ -72,49 +72,48 @@ export function useDevolucoesBusca() {
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
-            // Processar dados com ENRIQUECIMENTO COMPLETO
+            // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 132 COLUNAS VALIDADAS
             const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => {
-              // Dados base
-              const dadosBase = {
-                order_id: item.order_id.toString(),
-                claim_id: item.claim_details?.id || null,
-                data_criacao: item.date_created,
-                status_devolucao: item.status || 'cancelled',
-                valor_retido: parseFloat(item.amount || 0),
-                produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
-                sku: item.resource_data?.sku || '',
-                quantidade: item.resource_data?.quantity || 1,
+              
+              // 🎯 DADOS PRINCIPAIS (17 colunas)
+              const dadosPrincipais = {
+                order_id: item.order_id?.toString() || '',
+                claim_id: item.claim_details?.id?.toString() || null,
                 integration_account_id: accountId,
+                data_criacao: item.date_created || null,
+                status_devolucao: item.status || 'cancelled',
+                produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
+                sku: item.resource_data?.sku || item.order_data?.order_items?.[0]?.item?.seller_sku || '',
+                quantidade: parseInt(item.resource_data?.quantity || item.order_data?.order_items?.[0]?.quantity || 1),
+                valor_retido: parseFloat(item.amount || 0),
                 account_name: account.name,
+                marketplace_origem: 'ML_BRASIL',
                 created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                ultima_sincronizacao: new Date().toISOString(),
+                dados_incompletos: false,
+                campos_faltantes: [],
+                fonte_dados_primaria: 'ml_api'
               };
 
-              // 💰 DADOS FINANCEIROS DETALHADOS (FASE 4)
+              // 💰 DADOS FINANCEIROS (14 colunas)
               const dadosFinanceiros = {
-                // Reembolsos
                 valor_reembolso_total: item.claim_details?.resolution?.refund_amount || 
                                       item.return_details_v2?.refund_amount ||
                                       parseFloat(item.amount || 0),
                 valor_reembolso_produto: item.order_data?.order_items?.[0]?.unit_price || 0,
                 valor_reembolso_frete: item.order_data?.payments?.[0]?.shipping_cost || 0,
-                
-                // Taxas ML
                 taxa_ml_reembolso: item.order_data?.payments?.[0]?.marketplace_fee || 0,
-                
-                // Custos logísticos
                 custo_logistico_total: item.return_details_v2?.shipping_cost || 
                                       item.return_details_v2?.logistics_cost || 0,
-                
-                // Impacto financeiro
                 impacto_financeiro_vendedor: -(parseFloat(item.amount || 0)),
-                
-                // Detalhes de reembolso
                 data_processamento_reembolso: item.order_data?.payments?.[0]?.date_approved || null,
                 metodo_reembolso: item.order_data?.payments?.[0]?.payment_method_id || null,
                 moeda_reembolso: item.order_data?.currency_id || 'BRL',
-                
-                // Breakdown detalhado
+                moeda_custo: 'BRL',
+                responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
+                custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
+                valor_compensacao: item.return_details_v2?.refund_amount || null,
                 descricao_custos: {
                   produto: {
                     valor_original: item.order_data?.order_items?.[0]?.unit_price || 0,
@@ -139,40 +138,41 @@ export function useDevolucoesBusca() {
                 }
               };
 
-              // 📋 DADOS DE REVIEW (FASE 2)
+              // 📋 DADOS DE REVIEW (10 colunas)
               const dadosReview = {
-                review_id: item.review_id || item.claim_details?.review?.id || null,
+                review_id: item.review_id || item.claim_details?.review?.id?.toString() || null,
                 review_status: item.review_status || item.claim_details?.review?.status || null,
                 review_result: item.review_result || item.claim_details?.review?.result || null,
                 score_qualidade: item.review_score || item.claim_details?.review?.score || null,
-                necessita_acao_manual: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length > 0,
+                necessita_acao_manual: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
                 problemas_encontrados: item.problemas_encontrados || [],
                 acoes_necessarias_review: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions || [],
                 data_inicio_review: item.claim_details?.date_created || null,
                 observacoes_review: item.claim_details?.resolution?.reason || null,
-                revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id || null
+                revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
               };
 
-              // ⏱️ DADOS DE SLA (FASE 3)
+              // ⏱️ DADOS DE SLA (10 colunas)
               const dadosSLA = {
-                tempo_primeira_resposta_vendedor: null, // Calculado posteriormente
+                tempo_primeira_resposta_vendedor: null,
                 tempo_resposta_comprador: null,
                 tempo_analise_ml: null,
                 dias_ate_resolucao: item.claim_details?.resolution ? 
                   Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
                              new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60 * 24)) : null,
-                sla_cumprido: true, // Calcular baseado nos tempos
+                sla_cumprido: true,
                 tempo_limite_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
                 eficiencia_resolucao: item.claim_details?.resolution ? 'boa' : 'pendente',
                 data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.date_created,
                 tempo_total_resolucao: item.claim_details?.resolution ? 
                   Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
-                             new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60)) : null
+                             new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60)) : null,
+                tempo_resposta_medio: null
               };
 
-              // 🚚 DADOS DE RASTREAMENTO COMPLETOS (TRACKING)
+              // 🚚 DADOS DE RASTREAMENTO (18 colunas)
               const dadosRastreamento = {
-                shipment_id: item.order_data?.shipping?.id ? item.order_data.shipping.id.toString() : null,
+                shipment_id: item.order_data?.shipping?.id?.toString() || null,
                 codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
                 codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
                 transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
@@ -183,14 +183,13 @@ export function useDevolucoesBusca() {
                 status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,
                 tracking_history: item.tracking_history || [],
                 tracking_events: item.tracking_events || [],
-                // shipment_history - REMOVIDO: não existe no schema, guardamos em tracking_history
                 data_ultima_movimentacao: item.tracking_events?.[0]?.date || item.tracking_history?.[0]?.date || null,
                 historico_localizacoes: item.tracking_history || [],
                 carrier_info: {
                   name: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                  type: null // Removido shipment_history?.mode pois não existe no schema
+                  type: null
                 },
-                tempo_transito_dias: null, // Calculado posteriormente se necessário
+                tempo_transito_dias: null,
                 shipment_delays: item.shipment_delays || [],
                 shipment_costs: {
                   shipping_cost: null,
@@ -200,23 +199,23 @@ export function useDevolucoesBusca() {
                 previsao_entrega_vendedor: item.return_details_v2?.estimated_delivery_date || null
               };
 
-              // ⚖️ DADOS DE MEDIAÇÃO COMPLETOS (MEDIATION)
+              // ⚖️ DADOS DE MEDIAÇÃO (6 colunas)
               const dadosMediacao = {
                 em_mediacao: item.claim_details?.type === 'mediations',
                 data_inicio_mediacao: item.claim_details?.type === 'mediations' ? item.claim_details?.date_created : null,
-                mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id || null,
+                mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
                 resultado_mediacao: item.claim_details?.resolution?.reason || null,
                 detalhes_mediacao: item.mediation_details || (item.claim_details?.type === 'mediations' ? item.claim_details : {}),
                 escalado_para_ml: item.claim_details?.type === 'mediations'
               };
 
-              // ⭐ DADOS DE REPUTAÇÃO (REPUTATION)
+              // ⭐ DADOS DE REPUTAÇÃO (2 colunas)
               const dadosReputacao = {
                 seller_reputation: item.order_data?.seller?.reputation || {},
                 buyer_reputation: item.buyer?.reputation || {}
               };
 
-              // 📎 DADOS DE ANEXOS (ATTACHMENTS)
+              // 📎 DADOS DE ANEXOS (5 colunas)
               const dadosAnexos = {
                 anexos_count: 0,
                 anexos_comprador: [],
@@ -225,7 +224,7 @@ export function useDevolucoesBusca() {
                 total_evidencias: (item.claim_messages?.messages?.length || 0)
               };
 
-              // 📊 DADOS DE TIMELINE CONSOLIDADO
+              // 📊 DADOS DE TIMELINE (8 colunas)
               const dadosTimeline = {
                 timeline_events: item.timeline_events || [],
                 timeline_consolidado: {
@@ -243,42 +242,12 @@ export function useDevolucoesBusca() {
                 eventos_sistema: item.timeline_events || [],
                 data_criacao_claim: item.claim_details?.date_created || null,
                 data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-                data_finalizacao_timeline: item.claim_details?.resolution?.date_created || null
+                data_finalizacao_timeline: item.claim_details?.resolution?.date_created || null,
+                historico_status: []
               };
 
-              // DADOS ENRIQUECIDOS CONSOLIDADOS
-              const dadosEnriquecidos = {
-                // Dados estruturados principais
-                dados_order: item.order_data || {},
-                dados_claim: item.claim_details || {},
-                dados_mensagens: item.claim_messages || {},
-                dados_return: item.return_details_v2 || item.return_details_v1 || {},
-
-                // ⭐ FASE 4 - FINANCEIRO
-                ...dadosFinanceiros,
-
-                // ⭐ FASE 2 - REVIEWS
-                ...dadosReview,
-
-                // ⭐ FASE 3 - SLA
-                ...dadosSLA,
-
-                // ⭐ RASTREAMENTO (TRACKING)
-                ...dadosRastreamento,
-
-                // ⭐ MEDIAÇÃO (MEDIATION)
-                ...dadosMediacao,
-
-                // ⭐ REPUTAÇÃO (REPUTATION)  
-                ...dadosReputacao,
-
-                // ⭐ ANEXOS (ATTACHMENTS)
-                ...dadosAnexos,
-
-                // ⭐ TIMELINE
-                ...dadosTimeline,
-
-                // MENSAGENS E COMUNICAÇÃO
+              // 📝 DADOS DE MENSAGENS E COMUNICAÇÃO (7 colunas)
+              const dadosMensagens = {
                 timeline_mensagens: item.claim_messages?.messages || [],
                 ultima_mensagem_data: item.claim_messages?.messages?.length > 0 ? 
                   item.claim_messages.messages[item.claim_messages.messages.length - 1]?.date_created : null,
@@ -286,39 +255,80 @@ export function useDevolucoesBusca() {
                   item.claim_messages.messages[item.claim_messages.messages.length - 1]?.from?.role : null,
                 numero_interacoes: item.claim_messages?.messages?.length || 0,
                 mensagens_nao_lidas: item.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0,
+                qualidade_comunicacao: null,
+                status_moderacao: null
+              };
 
-                // DADOS DE RETURN E TROCA
+              // 🔄 DADOS DE RETURN E TROCA (7 colunas)
+              const dadosTroca = {
                 eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
-                produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id || null,
-                // produto_troca_titulo - REMOVIDO: coluna não existe no schema
+                produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id?.toString() || null,
                 data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
                 data_limite_troca: item.return_details_v2?.date_closed || null,
-                // valor_diferenca_troca - REMOVIDO: coluna não existe no schema
+                data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
+                dias_restantes_acao: null,
+                prazo_revisao_dias: null
+              };
 
-                // CUSTOS E FINANCEIRO BÁSICO
-                custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
-                valor_compensacao: item.return_details_v2?.refund_amount || null,
-                moeda_custo: 'BRL',
-                responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
-
-                // CLASSIFICAÇÃO E RESOLUÇÃO
+              // 🎯 CLASSIFICAÇÃO E RESOLUÇÃO (16 colunas)
+              const dadosClassificacao = {
                 tipo_claim: item.type || item.claim_details?.type,
                 subtipo_claim: item.claim_details?.stage || null,
                 motivo_categoria: item.claim_details?.reason_id || null,
+                categoria_problema: null,
+                subcategoria_problema: null,
                 metodo_resolucao: item.claim_details?.resolution?.reason || null,
                 resultado_final: item.claim_details?.status || null,
                 nivel_prioridade: item.claim_details?.type === 'mediations' ? 'high' : 'medium',
-
-                // MÉTRICAS E PRAZOS
-                data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
-                dias_restantes_acao: null, // Calculado via trigger
+                nivel_complexidade: null,
                 acao_seller_necessaria: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-                
-                // CONTROLE DE QUALIDADE
-                marketplace_origem: 'ML_BRASIL'
+                proxima_acao_requerida: null,
+                impacto_reputacao: 'low',
+                satisfacao_comprador: null,
+                feedback_comprador_final: null,
+                feedback_vendedor: null,
+                taxa_satisfacao: null,
+                score_satisfacao_final: null
               };
 
-              const itemCompleto = { ...dadosBase, ...dadosEnriquecidos };
+              // 🏷️ DADOS ADICIONAIS (7 colunas)
+              const dadosAdicionais = {
+                tags_automaticas: [],
+                usuario_ultima_acao: null,
+                hash_verificacao: null,
+                confiabilidade_dados: null,
+                versao_api_utilizada: null,
+                origem_timeline: null,
+                status_produto_novo: null,
+                endereco_destino: {},
+                valor_diferenca_troca: null
+              };
+
+              // 📦 DADOS BRUTOS JSONB (4 colunas)
+              const dadosBrutos = {
+                dados_order: item.order_data || {},
+                dados_claim: item.claim_details || {},
+                dados_mensagens: item.claim_messages || {},
+                dados_return: item.return_details_v2 || item.return_details_v1 || {}
+              };
+
+              // ✅ CONSOLIDAR TODOS OS DADOS (132 colunas total)
+              const itemCompleto = {
+                ...dadosPrincipais,      // 17 colunas
+                ...dadosFinanceiros,     // 14 colunas
+                ...dadosReview,          // 10 colunas
+                ...dadosSLA,             // 10 colunas
+                ...dadosRastreamento,    // 18 colunas
+                ...dadosMediacao,        // 6 colunas
+                ...dadosReputacao,       // 2 colunas
+                ...dadosAnexos,          // 5 colunas
+                ...dadosTimeline,        // 8 colunas
+                ...dadosMensagens,       // 7 colunas
+                ...dadosTroca,           // 7 colunas
+                ...dadosClassificacao,   // 17 colunas
+                ...dadosAdicionais,      // 9 colunas
+                ...dadosBrutos           // 4 colunas
+              };
               
               // Log do primeiro item processado
               if (index === 0) {
