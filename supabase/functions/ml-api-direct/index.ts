@@ -573,6 +573,19 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   return_reviews: returnReviews,
                   shipment_history: shipmentHistory,
                   change_details: changeDetails,
+                  
+                  // ============================================
+                  // 📋 FASE 2: DADOS DE REVIEW ENRIQUECIDOS
+                  // ============================================
+                  review_id: returnReviews[0]?.id?.toString() || null,
+                  review_status: enrichedReviewData.warehouseReviewStatus || enrichedReviewData.sellerReviewStatus,
+                  review_result: enrichedReviewData.reviewResult,
+                  review_problems: enrichedReviewData.reviewProblems,
+                  review_required_actions: enrichedReviewData.reviewRequiredActions,
+                  review_start_date: enrichedReviewData.reviewStartDate,
+                  review_quality_score: enrichedReviewData.reviewQualityScore,
+                  review_needs_manual_action: enrichedReviewData.reviewNeedsManualAction,
+                  
                   // Campos enriquecidos conforme estratégia do PDF
                   claim_status: claimDetails?.status || null,
                   return_status: returnsV2?.results?.[0]?.status || null,
@@ -580,7 +593,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   resolution_date: claimDetails?.date_closed || claimDetails?.resolution?.date || null,
                   resolution_reason: claimDetails?.resolution?.reason || null,
                   messages_count: consolidatedMessages.messages.length,
-                  review_score: returnReviews?.[0]?.score || null,
+                  review_score: returnReviews?.[0]?.score || enrichedReviewData.reviewQualityScore,
                   // Dados de shipment history
                   tracking_events: shipmentHistory?.history || [],
                   last_tracking_update: shipmentHistory?.history?.[0]?.date || null,

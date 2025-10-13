@@ -10,10 +10,11 @@ import { ReputationTab } from './tabs/ReputationTab';
 import { TrackingTab } from './tabs/TrackingTab';
 import { AttachmentsTab } from './tabs/AttachmentsTab';
 import { MediationTab } from './tabs/MediationTab';
+import { ReviewsTab } from './tabs/ReviewsTab';
 import { 
   Package, FileText, CheckCircle, Search, CheckSquare, DollarSign, 
   Wrench, Clock, XCircle, MessageCircle, Truck, Star, Scale, 
-  Paperclip, TrendingUp
+  Paperclip, TrendingUp, FileCheck
 } from 'lucide-react';
 import { 
   extractCancelReason, extractDetailedReason, formatCurrency, formatDate
@@ -46,10 +47,11 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-7 w-full">
+          <TabsList className="grid grid-cols-8 w-full">
             <TabsTrigger value="overview"><Package className="h-4 w-4 mr-1" />Visão Geral</TabsTrigger>
             <TabsTrigger value="financial"><DollarSign className="h-4 w-4 mr-1" />Financeiro</TabsTrigger>
             <TabsTrigger value="tracking"><Truck className="h-4 w-4 mr-1" />Rastreamento</TabsTrigger>
+            <TabsTrigger value="reviews"><FileCheck className="h-4 w-4 mr-1" />Reviews</TabsTrigger>
             <TabsTrigger value="mediation"><Scale className="h-4 w-4 mr-1" />Mediação</TabsTrigger>
             <TabsTrigger value="reputation"><Star className="h-4 w-4 mr-1" />Reputação</TabsTrigger>
             <TabsTrigger value="attachments">
@@ -94,6 +96,7 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
 
             <TabsContent value="financial" className="mt-0"><FinancialDetailsTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="tracking" className="mt-0"><TrackingTab devolucao={devolucao} /></TabsContent>
+            <TabsContent value="reviews" className="mt-0"><ReviewsTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="mediation" className="mt-0"><MediationTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="reputation" className="mt-0"><ReputationTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="attachments" className="mt-0"><AttachmentsTab devolucao={devolucao} /></TabsContent>
