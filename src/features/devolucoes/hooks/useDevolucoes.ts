@@ -151,19 +151,17 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     flushDebounce 
   } = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
 
-  // Busca principal - SEMPRE da API ML 
-  const autoRefresh = useAutoRefresh({
-    enabled: advancedFilters.autoRefreshEnabled,
-    interval: advancedFilters.autoRefreshInterval,
-    onRefresh: useCallback(async () => {
-      const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
-      setDevolucoes(dadosAPI);
-      setCurrentPage(1);
-      persistence.saveApiData(dadosAPI, advancedFilters);
-    }, [advancedFilters, busca, mlAccounts, persistence]),
-    maxRetries: 3,
-    retryDelay: 10
-  });
+  // Auto-refresh DESABILITADO - usuário controla manualmente
+  const autoRefresh = {
+    isRefreshing: false,
+    lastRefresh: null,
+    nextRefresh: null,
+    retryCount: 0,
+    timeUntilRefresh: null,
+    manualRefresh: async () => {},
+    pauseRefresh: () => {},
+    resumeRefresh: () => {}
+  };
 
   // Filtrar dados localmente com debounce E TODOS OS NOVOS FILTROS
   const devolucoesFiltradas = useMemo(() => {
@@ -324,30 +322,17 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     enabled: performanceSettings.enableLazyLoading
   });
 
-  // Atualizar contas selecionadas quando selectedAccountId mudar e buscar automaticamente
+  // Atualizar contas selecionadas quando selectedAccountId mudar SEM buscar automaticamente
   useEffect(() => {
     if (selectedAccountId && advancedFilters.contasSelecionadas[0] !== selectedAccountId) {
       setAdvancedFilters(prev => ({
         ...prev,
         contasSelecionadas: [selectedAccountId]
       }));
-      
-      // Buscar automaticamente quando a conta mudar
-      const buscarAutomaticamente = async () => {
-        const dadosAPI = await busca.buscarDaAPI(
-          { ...advancedFilters, contasSelecionadas: [selectedAccountId] },
-          mlAccounts
-        );
-        setDevolucoes(dadosAPI);
-        setCurrentPage(1);
-        persistence.saveApiData(dadosAPI, { ...advancedFilters, contasSelecionadas: [selectedAccountId] });
-      };
-      
-      buscarAutomaticamente();
     }
   }, [selectedAccountId]);
 
-  // Inicialização sem busca automática do banco
+  // Inicialização SEM busca automática
   useEffect(() => {
     if (!persistence.isStateLoaded || !mlAccounts?.length) return;
 
@@ -361,24 +346,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
         }));
       }
     }
-
-    // Restaurar apenas dados da API se existirem
-    if (persistence.hasValidData()) {
-      const state = persistence.persistedState!;
-      
-      // Só restaurar se for dados da API
-      if (state.dataSource === 'api') {
-        setDevolucoes(state.data);
-        setCurrentPage(state.currentPage);
-        setAdvancedFilters(prev => ({
-          ...prev,
-          ...state.searchFilters,
-          buscarEmTempoReal: true
-        }));
-      }
-    }
     
-    // Não buscar dados iniciais do banco automaticamente
+    // NÃO restaurar dados automaticamente - usuário deve clicar em "Aplicar Filtros"
   }, [persistence.isStateLoaded, mlAccounts]);
 
 
