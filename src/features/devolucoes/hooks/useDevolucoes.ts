@@ -87,9 +87,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     searchTerm: '',
     // Contas
     contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
-    // Datas
-    dataInicio: '',
-    dataFim: '',
+    // Datas - Buscar últimos 6 meses por padrão para incluir dados recentes
+    dataInicio: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dataFim: new Date().toISOString().split('T')[0],
     // Status e Classificação
     statusClaim: '',
     tipoClaim: '',
