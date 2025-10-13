@@ -126,8 +126,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
 
   // Configurações de performance otimizadas (fixas)
   const performanceSettings: PerformanceSettings = {
-    enableLazyLoading: true,
-    chunkSize: 25, // Tamanho otimizado para boa performance
+    enableLazyLoading: false, // Desabilitado para paginação tradicional
+    chunkSize: 100, // 100 itens por página
     debounceDelay: 300 // Delay otimizado para responsividade
   };
 
