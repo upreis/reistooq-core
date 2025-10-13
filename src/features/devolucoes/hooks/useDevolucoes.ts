@@ -201,35 +201,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
       resultados = resultados.filter(dev => dev.tipo_claim === advancedFilters.tipoClaim);
     }
 
-    // 📅 FILTRO DE DATA INÍCIO (com validação)
-    if (advancedFilters.dataInicio) {
-      resultados = resultados.filter(dev => {
-        if (!dev.data_criacao) return false;
-        try {
-          const dataCriacao = new Date(dev.data_criacao);
-          const dataInicio = new Date(advancedFilters.dataInicio);
-          dataInicio.setHours(0, 0, 0, 0);
-          return dataCriacao >= dataInicio;
-        } catch {
-          return false;
-        }
-      });
-    }
-
-    // 📅 FILTRO DE DATA FIM (com validação e hora final do dia)
-    if (advancedFilters.dataFim) {
-      resultados = resultados.filter(dev => {
-        if (!dev.data_criacao) return false;
-        try {
-          const dataCriacao = new Date(dev.data_criacao);
-          const dataFim = new Date(advancedFilters.dataFim);
-          dataFim.setHours(23, 59, 59, 999);
-          return dataCriacao <= dataFim;
-        } catch {
-          return false;
-        }
-      });
-    }
+    // ⚠️ FILTROS DE DATA REMOVIDOS - A API JÁ FILTRA POR DATA
+    // Os filtros dataInicio e dataFim são enviados para a API e ela retorna apenas dados dentro do período
+    // Não devemos filtrar novamente aqui, pois isso remove dados válidos
 
     // 💰 FILTRO DE VALOR MÍNIMO
     if (advancedFilters.valorRetidoMin) {
