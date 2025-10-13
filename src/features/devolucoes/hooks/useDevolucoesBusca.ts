@@ -74,7 +74,6 @@ export function useDevolucoesBusca() {
             const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => {
               // Dados base
               const dadosBase = {
-                id: `api_${item.order_id}_${accountId}_${index}`,
                 order_id: item.order_id.toString(),
                 claim_id: item.claim_details?.id || null,
                 data_criacao: item.date_created,
@@ -83,7 +82,6 @@ export function useDevolucoesBusca() {
                 produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
                 sku: item.resource_data?.sku || '',
                 quantidade: item.resource_data?.quantity || 1,
-                comprador_nickname: item.buyer?.nickname || 'Desconhecido',
                 integration_account_id: accountId,
                 account_name: account.name,
                 created_at: new Date().toISOString(),
