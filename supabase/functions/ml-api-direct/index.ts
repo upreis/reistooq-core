@@ -1203,6 +1203,25 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       }
     
     console.log(`🎉 Total de claims processados: ${ordersCancelados.length}`)
+    
+    // 📅 DEBUG: Mostrar datas encontradas nos claims
+    if (ordersCancelados.length > 0) {
+      const datas = ordersCancelados
+        .map(c => c.date_created)
+        .filter(d => d)
+        .sort()
+      
+      console.log(`\n📅 ========== ANÁLISE DE DATAS DOS CLAIMS ==========`)
+      console.log(`📅 CLAIM MAIS ANTIGO: ${datas[0]}`)
+      console.log(`📅 CLAIM MAIS RECENTE: ${datas[datas.length - 1]}`)
+      console.log(`📅 TOTAL DE CLAIMS COM DATA: ${datas.length}`)
+      console.log(`\n📅 PRIMEIROS 10 CLAIMS (por data de criação):`)
+      ordersCancelados.slice(0, 10).forEach((c, i) => {
+        console.log(`   ${i + 1}. Order ${c.order_id} - Data: ${c.date_created} - Claim: ${c.claim_details?.id || 'N/A'}`)
+      })
+      console.log(`📅 ================================================\n`)
+    }
+    
     return ordersCancelados
     
   } catch (error) {
