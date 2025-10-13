@@ -752,6 +752,81 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                     }
                   })(),
                   
+                  // ============================================
+                  // 💰 FASE 4: ENRIQUECIMENTO FINANCEIRO AVANÇADO
+                  // ============================================
+                  financial_data: (() => {
+                    // Extrair dados de pagamento
+                    const payments = orderDetail?.payments || []
+                    const firstPayment = payments[0] || {}
+                    
+                    // Calcular valores de reembolso
+                    const valorReembolsoTotal = firstPayment.transaction_amount_refunded || 0
+                    const valorProduto = orderDetail?.total_amount || 0
+                    const valorFrete = firstPayment.shipping_cost || 0
+                    const valorReembolsoProduto = valorProduto > 0 ? Math.min(valorReembolsoTotal, valorProduto) : 0
+                    const valorReembolsoFrete = valorReembolsoTotal > valorReembolsoProduto ? valorReembolsoTotal - valorReembolsoProduto : 0
+                    
+                    // Calcular taxas ML
+                    const taxaML = orderDetail?.order_items?.[0]?.sale_fee || 0
+                    const taxaMLReembolso = valorReembolsoProduto > 0 ? (taxaML / valorProduto) * valorReembolsoProduto : 0
+                    
+                    // Calcular custos logísticos
+                    const custoEnvioDevolucao = returnsV2?.results?.[0]?.shipping_cost || 
+                                               returnsV1?.results?.[0]?.shipping_cost || 0
+                    const custoEnvioOriginal = valorFrete
+                    const custoLogisticoTotal = custoEnvioDevolucao + custoEnvioOriginal
+                    
+                    // Calcular impacto financeiro para o vendedor
+                    const receitaPerdida = valorProduto
+                    const taxasRecuperadas = taxaMLReembolso
+                    const custosLogisticos = custoLogisticoTotal
+                    const impactoFinanceiroVendedor = -(receitaPerdida - taxasRecuperadas + custosLogisticos)
+                    
+                    // Determinar método e moeda de reembolso
+                    const metodoReembolso = firstPayment.payment_method_id || 'desconhecido'
+                    const moedaReembolso = firstPayment.currency_id || 'BRL'
+                    const dataProcessamentoReembolso = firstPayment.date_last_modified || orderDetail?.date_closed
+                    
+                    // Breakdown detalhado de custos
+                    const descricaoCustos = {
+                      produto: {
+                        valor_original: valorProduto,
+                        valor_reembolsado: valorReembolsoProduto,
+                        percentual_reembolsado: valorProduto > 0 ? (valorReembolsoProduto / valorProduto * 100).toFixed(2) : 0
+                      },
+                      frete: {
+                        valor_original: valorFrete,
+                        valor_reembolsado: valorReembolsoFrete,
+                        custo_devolucao: custoEnvioDevolucao,
+                        custo_total_logistica: custoLogisticoTotal
+                      },
+                      taxas: {
+                        taxa_ml_original: taxaML,
+                        taxa_ml_reembolsada: taxaMLReembolso,
+                        taxa_ml_retida: taxaML - taxaMLReembolso
+                      },
+                      resumo: {
+                        valor_total_reembolsado: valorReembolsoTotal,
+                        impacto_vendedor: impactoFinanceiroVendedor,
+                        moeda: moedaReembolso
+                      }
+                    }
+                    
+                    return {
+                      valor_reembolso_total: valorReembolsoTotal,
+                      valor_reembolso_produto: valorReembolsoProduto,
+                      valor_reembolso_frete: valorReembolsoFrete,
+                      taxa_ml_reembolso: taxaMLReembolso,
+                      custo_logistico_total: custoLogisticoTotal,
+                      impacto_financeiro_vendedor: impactoFinanceiroVendedor,
+                      moeda_reembolso: moedaReembolso,
+                      metodo_reembolso: metodoReembolso,
+                      data_processamento_reembolso: dataProcessamentoReembolso,
+                      descricao_custos: descricaoCustos
+                    }
+                  })(),
+                  
                   // Campos enriquecidos conforme estratégia do PDF
                   claim_status: claimDetails?.status || null,
                   return_status: returnsV2?.results?.[0]?.status || null,

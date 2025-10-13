@@ -1,236 +1,295 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { DollarSign, CreditCard, TrendingDown, Calculator, Receipt } from 'lucide-react';
-import { formatCurrency } from '@/features/devolucoes/utils/extractDevolucaoData';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { DollarSign, TrendingDown, TrendingUp, Percent, CreditCard, Calendar, AlertCircle, Package, Truck } from "lucide-react";
+import { DevolucaoAvancada } from "@/features/devolucoes/types/devolucao-avancada.types";
 
 interface FinancialDetailsTabProps {
-  devolucao: any;
+  devolucao: DevolucaoAvancada;
 }
 
-export const FinancialDetailsTab: React.FC<FinancialDetailsTabProps> = ({ devolucao }) => {
-  const payments = devolucao?.dados_order?.payments || [];
-  const orderItems = devolucao?.dados_order?.order_items || [];
-  const totalAmount = devolucao?.dados_order?.total_amount || 0;
-  const paidAmount = devolucao?.dados_order?.paid_amount || 0;
+export function FinancialDetailsTab({ devolucao }: FinancialDetailsTabProps) {
+  // Verificar se há dados financeiros detalhados
+  const hasAdvancedFinancialData = devolucao.descricao_custos && typeof devolucao.descricao_custos === 'object';
 
-  return (
-    <div className="space-y-6">
-      {/* Resumo Financeiro */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Valor Total</p>
-                <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                  {formatCurrency(totalAmount)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const formatCurrency = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: devolucao.moeda_reembolso || 'BRL'
+    }).format(value);
+  };
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Valor Pago</p>
-                <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                  {formatCurrency(paidAmount)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const getImpactColor = (value: number | null) => {
+    if (!value) return 'text-gray-600 dark:text-gray-400';
+    return value < 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400';
+  };
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <TrendingDown className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Taxa ML</p>
-                <p className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                  {formatCurrency(orderItems[0]?.sale_fee || 0)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+  const getImpactIcon = (value: number | null) => {
+    if (!value) return null;
+    return value < 0 ? <TrendingDown className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />;
+  };
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <Calculator className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Custo Envio</p>
-                <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
-                  {formatCurrency(devolucao?.custo_envio_devolucao || 0)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Detalhes de Pagamentos */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5" />
-            Detalhes de Pagamentos ({payments.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {payments.map((payment: any, index: number) => (
-              <div key={index} className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="font-semibold">{payment.payment_method_id?.toUpperCase()}</p>
-                      <p className="text-sm text-muted-foreground">{payment.payment_type}</p>
-                    </div>
-                  </div>
-                  <Badge variant={payment.status === 'approved' ? 'default' : payment.status === 'refunded' ? 'destructive' : 'secondary'}>
-                    {payment.status}
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Valor Transação</p>
-                    <p className="font-semibold">{formatCurrency(payment.transaction_amount)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Frete</p>
-                    <p className="font-semibold">{formatCurrency(payment.shipping_cost)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Taxa Marketplace</p>
-                    <p className="font-semibold text-purple-600 dark:text-purple-400">
-                      -{formatCurrency(payment.marketplace_fee)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Parcelas</p>
-                    <p className="font-semibold">{payment.installments}x</p>
-                  </div>
-                </div>
-
-                {payment.date_approved && (
-                  <div className="text-sm">
-                    <p className="text-muted-foreground">Aprovado em:</p>
-                    <p className="font-medium">{new Date(payment.date_approved).toLocaleString('pt-BR')}</p>
-                  </div>
-                )}
-
-                {payment.transaction_amount_refunded > 0 && (
-                  <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                      Valor Reembolsado: {formatCurrency(payment.transaction_amount_refunded)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Custos de Devolução/Troca */}
-      {(devolucao?.custo_envio_devolucao || devolucao?.valor_compensacao) && (
+  if (!hasAdvancedFinancialData) {
+    // Exibir dados financeiros básicos
+    return (
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              Custos de Devolução
+              <DollarSign className="w-5 h-5" />
+              Informações Financeiras Básicas
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {devolucao.custo_envio_devolucao && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Custo de Envio</p>
-                  <p className="text-lg font-bold">{formatCurrency(devolucao.custo_envio_devolucao)}</p>
-                </div>
-              )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Valor Retido</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {formatCurrency(devolucao.valor_retido)}
+                </p>
+              </div>
+              
               {devolucao.valor_compensacao && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Compensação</p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Valor de Compensação</p>
+                  <p className="text-2xl font-bold">
                     {formatCurrency(devolucao.valor_compensacao)}
                   </p>
                 </div>
               )}
-              {devolucao.responsavel_custo && (
-                <div>
-                  <p className="text-sm text-muted-foreground">Responsável</p>
-                  <Badge>{devolucao.responsavel_custo}</Badge>
-                </div>
-              )}
+            </div>
+            
+            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p className="text-sm text-blue-900 dark:text-blue-100">
+                💡 Sincronize novamente para obter dados financeiros detalhados
+              </p>
             </div>
           </CardContent>
         </Card>
-      )}
+      </div>
+    );
+  }
 
-      {/* Detalhes dos Itens */}
+  // Extrair dados do breakdown detalhado
+  const breakdown = devolucao.descricao_custos as any;
+  const produto = breakdown.produto || {};
+  const frete = breakdown.frete || {};
+  const taxas = breakdown.taxas || {};
+  const resumo = breakdown.resumo || {};
+
+  return (
+    <div className="space-y-6">
+      {/* Resumo Financeiro */}
       <Card>
         <CardHeader>
-          <CardTitle>Itens do Pedido</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Resumo Financeiro
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {orderItems.map((item: any, index: number) => (
-              <div key={index} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <p className="font-semibold">{item.item?.title}</p>
-                    <p className="text-sm text-muted-foreground">SKU: {item.item?.seller_sku || 'N/A'}</p>
-                    {item.item?.warranty && (
-                      <p className="text-xs text-muted-foreground mt-1">Garantia: {item.item.warranty}</p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-lg">{formatCurrency(item.unit_price)}</p>
-                    <p className="text-sm text-muted-foreground">Qtd: {item.quantity}</p>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Tipo Anúncio</p>
-                    <Badge variant="outline">{item.listing_type_id}</Badge>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Taxa Venda</p>
-                    <p className="font-semibold text-purple-600">{formatCurrency(item.sale_fee)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Preço Cheio</p>
-                    <p className="font-semibold">{formatCurrency(item.full_unit_price)}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Condição</p>
-                    <Badge variant="secondary">{item.item?.condition}</Badge>
-                  </div>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Valor Total Reembolsado</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(devolucao.valor_reembolso_total)}
+              </p>
+              <Badge variant="secondary" className="mt-2">
+                {devolucao.moeda_reembolso || 'BRL'}
+              </Badge>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                Impacto para o Vendedor
+                {devolucao.impacto_financeiro_vendedor && devolucao.impacto_financeiro_vendedor < 0 && (
+                  <AlertCircle className="w-4 h-4 text-orange-500" />
+                )}
+              </p>
+              <p className={`text-3xl font-bold flex items-center gap-2 ${getImpactColor(devolucao.impacto_financeiro_vendedor)}`}>
+                {getImpactIcon(devolucao.impacto_financeiro_vendedor)}
+                {formatCurrency(Math.abs(devolucao.impacto_financeiro_vendedor || 0))}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {(devolucao.impacto_financeiro_vendedor || 0) < 0 ? 'Prejuízo' : 'Benefício'}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Custo Logístico Total</p>
+              <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(devolucao.custo_logistico_total)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Breakdown de Produto */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="w-5 h-5" />
+            Detalhamento do Produto
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Valor Original</p>
+                <p className="text-xl font-bold">
+                  {formatCurrency(produto.valor_original)}
+                </p>
               </div>
-            ))}
+
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">Valor Reembolsado</p>
+                <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                  {formatCurrency(produto.valor_reembolsado)}
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Percent className="w-4 h-4" />
+                  Percentual Reembolsado
+                </p>
+                <p className="text-xl font-bold">
+                  {produto.percentual_reembolsado || 0}%
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+              <div
+                className="bg-red-500 h-3 rounded-full transition-all"
+                style={{ width: `${Math.min(produto.percentual_reembolsado || 0, 100)}%` }}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Breakdown de Frete */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Truck className="w-5 h-5" />
+            Custos de Logística e Frete
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Frete Original</p>
+              <p className="text-lg font-bold">
+                {formatCurrency(frete.valor_original)}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Frete Reembolsado</p>
+              <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(frete.valor_reembolsado)}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Custo Devolução</p>
+              <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(frete.custo_devolucao)}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Total Logística</p>
+              <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                {formatCurrency(frete.custo_total_logistica)}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Breakdown de Taxas ML */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Percent className="w-5 h-5" />
+            Taxas Mercado Livre
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Taxa ML Original</p>
+              <p className="text-lg font-bold">
+                {formatCurrency(taxas.taxa_ml_original)}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Taxa ML Reembolsada</p>
+              <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(taxas.taxa_ml_reembolsada)}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Taxa ML Retida</p>
+              <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(taxas.taxa_ml_retida)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-900 dark:text-blue-100">
+              💡 Taxas reembolsadas são devolvidas ao vendedor pelo Mercado Livre
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Informações de Pagamento */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCard className="w-5 h-5" />
+            Informações de Reembolso
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Método de Reembolso</p>
+              <Badge variant="outline" className="text-sm">
+                {devolucao.metodo_reembolso || 'N/A'}
+              </Badge>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Moeda</p>
+              <Badge variant="secondary">
+                {devolucao.moeda_reembolso || 'BRL'}
+              </Badge>
+            </div>
+
+            {devolucao.data_processamento_reembolso && (
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  Data de Processamento
+                </p>
+                <p className="text-sm font-medium">
+                  {new Date(devolucao.data_processamento_reembolso).toLocaleString('pt-BR')}
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   );
-};
+}
