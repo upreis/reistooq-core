@@ -222,7 +222,6 @@ export function useDevolucoesBusca() {
                 anexos_comprador: item.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
                 anexos_vendedor: item.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
                 anexos_ml: item.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
-                claim_attachments: item.claim_attachments || [],
                 total_evidencias: (item.claim_attachments?.length || 0) + (item.claim_messages?.messages?.length || 0)
               };
 
