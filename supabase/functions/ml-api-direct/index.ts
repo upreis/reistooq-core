@@ -242,24 +242,32 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('type', filters.claim_type)
     }
     
-    // 📅 FILTROS DE DATA (formato ISO 8601 com timezone)
+    // 📅 FILTROS DE DATA - TESTE 1: UTC FORMAT
     if (filters?.date_from && filters.date_from.trim().length > 0) {
-      // Converter para formato aceito pela API ML: YYYY-MM-DDTHH:MM:SS.sss-03:00 (BRT)
-      const dateFrom = `${filters.date_from}T00:00:00.000-03:00`
-      console.log(`📅 FILTRO DATE_FROM APLICADO: ${dateFrom} (original: ${filters.date_from})`)
+      const dateFrom = `${filters.date_from}T00:00:00.000Z`
+      console.log(`📅 [TESTE 1 - UTC] FILTRO DATE_FROM: ${dateFrom} (original: ${filters.date_from})`)
       params.append('date_created.from', dateFrom)
     } else {
       console.log(`⚠️  Nenhum filtro date_from foi aplicado`)
     }
     
     if (filters?.date_to && filters.date_to.trim().length > 0) {
-      // Converter para formato aceito pela API ML com fim do dia
-      const dateTo = `${filters.date_to}T23:59:59.999-03:00`
-      console.log(`📅 FILTRO DATE_TO APLICADO: ${dateTo} (original: ${filters.date_to})`)
+      const dateTo = `${filters.date_to}T23:59:59.999Z`
+      console.log(`📅 [TESTE 1 - UTC] FILTRO DATE_TO: ${dateTo} (original: ${filters.date_to})`)
       params.append('date_created.to', dateTo)
     } else {
       console.log(`⚠️  Nenhum filtro date_to foi aplicado`)
     }
+    
+    // 🔍 DEBUG: Log completo dos parâmetros aplicados
+    console.log(`🔍 PARÂMETROS COMPLETOS:`, {
+      seller_id: sellerId,
+      status: filters?.status || 'all',
+      claim_type: filters?.claim_type || 'all',
+      date_from: filters?.date_from,
+      date_to: filters?.date_to,
+      params_string: params.toString()
+    })
     
     const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
     console.log(`🌐 URL COMPLETA ENVIADA PARA ML API: ${url}`)
