@@ -172,28 +172,28 @@ export function useDevolucoesBusca() {
 
               // 🚚 DADOS DE RASTREAMENTO COMPLETOS (TRACKING)
               const dadosRastreamento = {
-                shipment_id: item.shipment_history?.id || item.order_data?.shipping?.id || null,
+                shipment_id: item.order_data?.shipping?.id ? item.order_data.shipping.id.toString() : null,
                 codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
                 codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
-                transportadora: item.return_details_v2?.shipments?.[0]?.carrier || item.shipment_history?.tracking_method || null,
+                transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
                 transportadora_devolucao: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || item.shipment_history?.status || null,
+                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
                 url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
                 localizacao_atual: item.tracking_history?.[0]?.location || null,
                 status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,
                 tracking_history: item.tracking_history || [],
                 tracking_events: item.tracking_events || [],
-                shipment_history: item.shipment_history || {},
+                // shipment_history - REMOVIDO: não existe no schema, guardamos em tracking_history
                 data_ultima_movimentacao: item.tracking_events?.[0]?.date || item.tracking_history?.[0]?.date || null,
                 historico_localizacoes: item.tracking_history || [],
                 carrier_info: {
                   name: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                  type: item.shipment_history?.mode || null
+                  type: null // Removido shipment_history?.mode pois não existe no schema
                 },
-                tempo_transito_dias: item.shipment_history?.transit_time || null,
+                tempo_transito_dias: null, // Calculado posteriormente se necessário
                 shipment_delays: item.shipment_delays || [],
                 shipment_costs: {
-                  shipping_cost: item.shipment_history?.cost || null,
+                  shipping_cost: null,
                   handling_cost: null,
                   total_cost: item.return_details_v2?.shipping_cost || null
                 },
