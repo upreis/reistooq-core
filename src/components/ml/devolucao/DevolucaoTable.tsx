@@ -120,6 +120,91 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             
             {/* AÇÕES FINAIS */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
+            
+            {/* ========== 60 COLUNAS FALTANTES DO BANCO ========== */}
+            
+            {/* RASTREAMENTO AVANÇADO */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Cód Rastreio Dev</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Transport. Dev</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📍 Localização Atual</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚦 Status Transp.</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🆔 Shipment ID</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔗 URL Rastreio</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Movim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Prev Entrega Vend</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Dias Trânsito</th>
+            
+            {/* MOTIVOS E CATEGORIAS */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🔖 Motivo Categoria</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Categoria Problema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📌 Subcat Problema</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Nível Complex.</th>
+            
+            {/* TROCA E PRODUTO NOVO */}
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💱 Valor Dif. Troca</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🆔 Produto Troca ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Status Prod Novo</th>
+            
+            {/* ENDEREÇO E CUSTOS DETALHADOS */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏠 Endereço Destino</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">💰 Descr. Custos</th>
+            
+            {/* MEDIAÇÃO DETALHADA */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Início Mediação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📋 Detalhes Mediação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Resultado Mediação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👨‍⚖️ Mediador ML</th>
+            
+            {/* FEEDBACK E COMUNICAÇÃO */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Comprador</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Vendedor</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Qual. Comunic.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">😊 Satisf. Comprador</th>
+            
+            {/* TEMPOS ADICIONAIS */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Resp Comprador</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Análise ML</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 1ª Ação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⏰ Tempo Limite Ação</th>
+            
+            {/* HISTÓRICO E EVENTOS */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📊 Histórico Status</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🎯 Timeline Events</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🔄 Timeline Consol.</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Criação Claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Início Return</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Final Timeline</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⚙️ Eventos Sistema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📍 Marcos Temporais</th>
+            
+            {/* TRACKING DETALHADO */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📊 Tracking History</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">💰 Shipment Costs</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⏰ Shipment Delays</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🚚 Carrier Info</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📌 Tracking Events</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📍 Hist. Localizações</th>
+            
+            {/* REVIEW DETALHADO */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🔧 Ações Review</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Início Review</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📝 Obs Review</th>
+            
+            {/* REPUTAÇÃO */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⭐ Seller Reputation</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⭐ Buyer Reputation</th>
+            
+            {/* TAGS E ORIGEM */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏷️ Tags Automáticas</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🌎 Marketplace</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📡 Fonte Primária</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📜 Origem Timeline</th>
+            
+            {/* DADOS TÉCNICOS E QUALIDADE */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">👤 Últ Usuário</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔐 Hash Verif.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Confiabilidade</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔧 Versão API</th>
           </tr>
         </thead>
         <tbody>

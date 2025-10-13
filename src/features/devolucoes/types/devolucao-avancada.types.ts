@@ -139,6 +139,54 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   
   // 📊 TIMELINE CONSOLIDADO
   timeline_consolidado?: any | null;
+  
+  // ========== 60 COLUNAS FALTANTES DO BANCO ==========
+  
+  // RASTREAMENTO DETALHADO
+  codigo_rastreamento_devolucao?: string | null;
+  transportadora_devolucao?: string | null;
+  localizacao_atual?: string | null;
+  status_transporte_atual?: string | null;
+  shipment_id?: string | null;
+  data_ultima_movimentacao?: string | null;
+  previsao_entrega_vendedor?: string | null;
+  tempo_transito_dias?: number | null;
+  
+  // CATEGORIAS E COMPLEXIDADE
+  categoria_problema?: string | null;
+  subcategoria_problema?: string | null;
+  nivel_complexidade?: string | null;
+  
+  // FEEDBACK E COMUNICAÇÃO
+  feedback_comprador_final?: string | null;
+  feedback_vendedor?: string | null;
+  qualidade_comunicacao?: string | null;
+  
+  // TIMELINE E EVENTOS
+  timeline_events?: any[] | null;
+  data_criacao_claim?: string | null;
+  data_inicio_return?: string | null;
+  data_finalizacao_timeline?: string | null;
+  eventos_sistema?: any[] | null;
+  marcos_temporais?: any | null;
+  
+  // TRACKING DETALHADO
+  tracking_history?: any[] | null;
+  shipment_costs?: any | null;
+  shipment_delays?: any[] | null;
+  carrier_info?: any | null;
+  tracking_events?: any[] | null;
+  historico_localizacoes?: any[] | null;
+  
+  // REVIEW DETALHADO
+  observacoes_review?: string | null;
+  
+  // ORIGEM E TÉCNICO
+  fonte_dados_primaria?: string | null;
+  origem_timeline?: string | null;
+  hash_verificacao?: string | null;
+  confiabilidade_dados?: string | null;
+  versao_api_utilizada?: string | null;
 }
 
 // ===== TIPOS AUXILIARES =====

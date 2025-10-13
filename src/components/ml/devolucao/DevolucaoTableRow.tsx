@@ -816,6 +816,65 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           <Eye className="h-4 w-4" />
         </Button>
       </td>
+      
+      {/* ========== 60 COLUNAS FALTANTES ========== */}
+      <td className="px-3 py-3">{devolucao.codigo_rastreamento_devolucao || '-'}</td>
+      <td className="px-3 py-3">{devolucao.transportadora_devolucao || '-'}</td>
+      <td className="px-3 py-3">{devolucao.localizacao_atual || '-'}</td>
+      <td className="px-3 py-3">{devolucao.status_transporte_atual || '-'}</td>
+      <td className="px-3 py-3">{devolucao.shipment_id || '-'}</td>
+      <td className="px-3 py-3">{devolucao.url_rastreamento || '-'}</td>
+      <td className="px-3 py-3">{devolucao.data_ultima_movimentacao ? new Date(devolucao.data_ultima_movimentacao).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.previsao_entrega_vendedor ? new Date(devolucao.previsao_entrega_vendedor).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.tempo_transito_dias || '-'}</td>
+      <td className="px-3 py-3">{devolucao.motivo_categoria || '-'}</td>
+      <td className="px-3 py-3">{devolucao.categoria_problema || '-'}</td>
+      <td className="px-3 py-3">{devolucao.subcategoria_problema || '-'}</td>
+      <td className="px-3 py-3">{devolucao.nivel_complexidade || '-'}</td>
+      <td className="px-3 py-3">{devolucao.valor_diferenca_troca ? `R$ ${devolucao.valor_diferenca_troca.toFixed(2)}` : '-'}</td>
+      <td className="px-3 py-3">{devolucao.produto_troca_id || '-'}</td>
+      <td className="px-3 py-3">{devolucao.status_produto_novo || '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.endereco_destino || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.descricao_custos || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.data_inicio_mediacao ? new Date(devolucao.data_inicio_mediacao).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.detalhes_mediacao || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.resultado_mediacao || '-'}</td>
+      <td className="px-3 py-3">{devolucao.mediador_ml || '-'}</td>
+      <td className="px-3 py-3">{devolucao.feedback_comprador_final || '-'}</td>
+      <td className="px-3 py-3">{devolucao.feedback_vendedor || '-'}</td>
+      <td className="px-3 py-3">{devolucao.qualidade_comunicacao || '-'}</td>
+      <td className="px-3 py-3">{devolucao.satisfacao_comprador || '-'}</td>
+      <td className="px-3 py-3">{devolucao.tempo_resposta_comprador || '-'}</td>
+      <td className="px-3 py-3">{devolucao.tempo_analise_ml || '-'}</td>
+      <td className="px-3 py-3">{devolucao.data_primeira_acao ? new Date(devolucao.data_primeira_acao).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.tempo_limite_acao ? new Date(devolucao.tempo_limite_acao).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.historico_status && Array.isArray(devolucao.historico_status) ? `${devolucao.historico_status.length} eventos` : '-'}</td>
+      <td className="px-3 py-3">{devolucao.timeline_events && Array.isArray(devolucao.timeline_events) ? `${devolucao.timeline_events.length} eventos` : '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.timeline_consolidado || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.data_criacao_claim ? new Date(devolucao.data_criacao_claim).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.data_inicio_return ? new Date(devolucao.data_inicio_return).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.data_finalizacao_timeline ? new Date(devolucao.data_finalizacao_timeline).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.eventos_sistema && Array.isArray(devolucao.eventos_sistema) ? `${devolucao.eventos_sistema.length} eventos` : '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.marcos_temporais || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.tracking_history && Array.isArray(devolucao.tracking_history) ? `${devolucao.tracking_history.length} registros` : '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.shipment_costs || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.shipment_delays && Array.isArray(devolucao.shipment_delays) ? `${devolucao.shipment_delays.length} atrasos` : '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.carrier_info || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.tracking_events && Array.isArray(devolucao.tracking_events) ? `${devolucao.tracking_events.length} eventos` : '-'}</td>
+      <td className="px-3 py-3">{devolucao.historico_localizacoes && Array.isArray(devolucao.historico_localizacoes) ? `${devolucao.historico_localizacoes.length} locais` : '-'}</td>
+      <td className="px-3 py-3">{devolucao.acoes_necessarias_review && Array.isArray(devolucao.acoes_necessarias_review) ? `${devolucao.acoes_necessarias_review.length} ações` : '-'}</td>
+      <td className="px-3 py-3">{devolucao.data_inicio_review ? new Date(devolucao.data_inicio_review).toLocaleDateString('pt-BR') : '-'}</td>
+      <td className="px-3 py-3">{devolucao.observacoes_review || '-'}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.seller_reputation || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{JSON.stringify(devolucao.buyer_reputation || {}).substring(0,50)}</td>
+      <td className="px-3 py-3">{devolucao.tags_automaticas?.join(', ') || '-'}</td>
+      <td className="px-3 py-3">{devolucao.marketplace_origem || '-'}</td>
+      <td className="px-3 py-3">{devolucao.fonte_dados_primaria || '-'}</td>
+      <td className="px-3 py-3">{devolucao.origem_timeline || '-'}</td>
+      <td className="px-3 py-3">{devolucao.usuario_ultima_acao || '-'}</td>
+      <td className="px-3 py-3">{devolucao.hash_verificacao || '-'}</td>
+      <td className="px-3 py-3">{devolucao.confiabilidade_dados || '-'}</td>
+      <td className="px-3 py-3">{devolucao.versao_api_utilizada || '-'}</td>
     </tr>
   );
 });
