@@ -66,6 +66,31 @@ export default function MLOrdersCompletas() {
         </p>
       </div>
 
+      {/* Seletor de Contas ML */}
+      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Conta Mercado Livre</label>
+              <select 
+                className="w-full px-3 py-2 border rounded-md bg-background"
+                value={selectedAccountIds[0] || ''}
+                onChange={(e) => setSelectedAccountIds([e.target.value])}
+              >
+                {mlAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.name} ({account.account_identifier})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="text-sm text-muted-foreground pt-6">
+              {mlAccounts.length} conta{mlAccounts.length !== 1 ? 's' : ''} disponível{mlAccounts.length !== 1 ? 'eis' : ''}
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Loading States */}
       {(loadingAccounts || loadingDevolucoes) && (
         <div className="flex items-center justify-center py-8">
