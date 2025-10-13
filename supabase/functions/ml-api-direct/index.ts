@@ -246,18 +246,23 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     if (filters?.date_from && filters.date_from.trim().length > 0) {
       // Converter para formato aceito pela API ML: YYYY-MM-DDTHH:MM:SS.sss-03:00 (BRT)
       const dateFrom = `${filters.date_from}T00:00:00.000-03:00`
-      console.log(`✅ Aplicando filtro date_from: ${dateFrom}`)
+      console.log(`📅 FILTRO DATE_FROM APLICADO: ${dateFrom} (original: ${filters.date_from})`)
       params.append('date_created.from', dateFrom)
+    } else {
+      console.log(`⚠️  Nenhum filtro date_from foi aplicado`)
     }
     
     if (filters?.date_to && filters.date_to.trim().length > 0) {
       // Converter para formato aceito pela API ML com fim do dia
       const dateTo = `${filters.date_to}T23:59:59.999-03:00`
-      console.log(`✅ Aplicando filtro date_to: ${dateTo}`)
+      console.log(`📅 FILTRO DATE_TO APLICADO: ${dateTo} (original: ${filters.date_to})`)
       params.append('date_created.to', dateTo)
+    } else {
+      console.log(`⚠️  Nenhum filtro date_to foi aplicado`)
     }
     
     const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
+    console.log(`🌐 URL COMPLETA ENVIADA PARA ML API: ${url}`)
     console.log(`📞 URL da API Claims Search: ${url}`)
     
     const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
@@ -276,7 +281,15 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     }
     
     const data = await response.json()
-    console.log(`✅ Claims encontrados: ${data?.data?.length || 0}`)
+    console.log(`✅ RESPOSTA DA API ML:`, {
+      total_encontrados: data?.data?.length || 0,
+      filtros_enviados: {
+        date_from: filters?.date_from,
+        date_to: filters?.date_to
+      },
+      primeira_data_retornada: data?.data?.[0]?.date_created,
+      ultima_data_retornada: data?.data?.[data?.data?.length - 1]?.date_created
+    })
     
     if (!data?.data || data.data.length === 0) {
       console.log('ℹ️ Nenhum claim encontrado')
