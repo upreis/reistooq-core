@@ -322,6 +322,13 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
       }
     }
 
+    // 📅 ORDENAR POR DATA DE CRIAÇÃO (MAIS RECENTE PRIMEIRO)
+    resultados.sort((a, b) => {
+      const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
+      const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
+      return dataB - dataA; // Ordem decrescente (mais recente primeiro)
+    });
+
     return resultados;
   }, [devolucoes, debouncedSearchTerm, advancedFilters]);
 
