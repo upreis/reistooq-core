@@ -393,34 +393,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     setCurrentPage(1);
     persistence.saveApiData(dadosAPI, advancedFilters);
     
-    // 🚀 ENRIQUECER AUTOMATICAMENTE APÓS BUSCAR
-    if (dadosAPI.length > 0 && advancedFilters.contasSelecionadas.length > 0) {
-      try {
-        const { supabase } = await import('@/integrations/supabase/client');
-        
-        // Chamar edge function para enriquecer
-        const { data: enrichData, error } = await supabase.functions.invoke('devolucoes-avancadas-sync', {
-          body: {
-            action: 'enrich_existing_data',
-            integration_account_id: advancedFilters.contasSelecionadas[0],
-            limit: 50
-          }
-        });
-        
-        if (error) {
-          console.error('[useDevolucoes] Erro ao enriquecer:', error);
-        } else if (enrichData?.success) {
-          console.log(`[useDevolucoes] ✅ ${enrichData.enriched_count} devoluções enriquecidas automaticamente`);
-          
-          // Recarregar dados após enriquecimento
-          const dadosAtualizados = await busca.buscarDaAPI(advancedFilters, mlAccounts);
-          setDevolucoes(dadosAtualizados);
-          persistence.saveApiData(dadosAtualizados, advancedFilters);
-        }
-      } catch (error) {
-        console.error('[useDevolucoes] Erro no enriquecimento automático:', error);
-      }
-    }
+    // ⚠️ NÃO ENRIQUECER AUTOMATICAMENTE - causava erro 400
+    // Apenas exibir os dados buscados da API
+    console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas com sucesso`);
   }, [flushDebounce, busca, advancedFilters, mlAccounts, persistence]);
 
   // Remover sincronização automática com banco
