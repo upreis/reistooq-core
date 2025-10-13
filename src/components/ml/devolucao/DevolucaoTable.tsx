@@ -118,10 +118,8 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Campos Falt.</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔄 Últ Sync</th>
             
-            {/* AÇÕES FINAIS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
             
-            {/* ========== 60 COLUNAS FALTANTES DO BANCO ========== */}
+            {/* ========== 60 COLUNAS FALTANTES DO BANCO ========== */
             
             {/* RASTREAMENTO AVANÇADO */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Cód Rastreio Dev</th>
@@ -205,6 +203,9 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔐 Hash Verif.</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Confiabilidade</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔧 Versão API</th>
+            
+            {/* AÇÕES FINAIS - MOVIDA PARA O FINAL */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
           </tr>
         </thead>
         <tbody>

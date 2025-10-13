@@ -12,10 +12,11 @@ import { AttachmentsTab } from './tabs/AttachmentsTab';
 import { MediationTab } from './tabs/MediationTab';
 import { ReviewsTab } from './tabs/ReviewsTab';
 import { SLAMetricsTab } from './tabs/SLAMetricsTab';
+import { AdvancedDataTab } from './tabs/AdvancedDataTab';
 import { 
-  Package, FileText, CheckCircle, Search, CheckSquare, DollarSign, 
-  Wrench, Clock, XCircle, MessageCircle, Truck, Star, Scale, 
-  Paperclip, TrendingUp, FileCheck
+  Package, FileText, CheckCircle, DollarSign, 
+  Truck, Star, Scale, 
+  Paperclip, TrendingUp, FileCheck, Database, Clock
 } from 'lucide-react';
 import { 
   extractCancelReason, extractDetailedReason, formatCurrency, formatDate
@@ -48,7 +49,7 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-9 w-full">
+          <TabsList className="grid grid-cols-10 w-full">
             <TabsTrigger value="overview"><Package className="h-4 w-4 mr-1" />Geral</TabsTrigger>
             <TabsTrigger value="financial"><DollarSign className="h-4 w-4 mr-1" />Financeiro</TabsTrigger>
             <TabsTrigger value="tracking"><Truck className="h-4 w-4 mr-1" />Rastreio</TabsTrigger>
@@ -61,6 +62,7 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
               {devolucao.anexos_count > 0 && <Badge variant="secondary" className="ml-1">{devolucao.anexos_count}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="timeline"><TrendingUp className="h-4 w-4 mr-1" />Timeline</TabsTrigger>
+            <TabsTrigger value="advanced"><Database className="h-4 w-4 mr-1" />Avançados</TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto mt-4">
@@ -103,20 +105,8 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
             <TabsContent value="mediation" className="mt-0"><MediationTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="reputation" className="mt-0"><ReputationTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="attachments" className="mt-0"><AttachmentsTab devolucao={devolucao} /></TabsContent>
-            <TabsContent value="timeline" className="mt-0">
-              <Card>
-                <CardHeader><CardTitle>Timeline Completa</CardTitle></CardHeader>
-                <CardContent>
-                  <TimelineVisualization 
-                    timelineData={{
-                      timeline_events: devolucao.timeline_events || [],
-                      timeline_consolidado: devolucao.timeline_consolidado,
-                      metricas_temporais: devolucao.marcos_temporais
-                    }} 
-                  />
-                </CardContent>
-              </Card>
-            </TabsContent>
+            <TabsContent value="timeline" className="mt-0"><TimelineVisualization devolucao={devolucao} /></TabsContent>
+            <TabsContent value="advanced" className="mt-0"><AdvancedDataTab devolucao={devolucao} /></TabsContent>
           </div>
         </Tabs>
       </DialogContent>

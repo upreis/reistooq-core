@@ -804,18 +804,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })() : '-'}
       </td>
       
-      {/* Botão de Ações */}
-      <td className="px-3 py-3 text-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onViewDetails(devolucao)}
-          className="h-8 w-8 p-0"
-          title="Ver detalhes completos (todas as fases)"
-        >
-          <Eye className="h-4 w-4" />
-        </Button>
-      </td>
       
       {/* ========== 60 COLUNAS FALTANTES ========== */}
       <td className="px-3 py-3">{devolucao.codigo_rastreamento_devolucao || '-'}</td>
@@ -875,6 +863,19 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3">{devolucao.hash_verificacao || '-'}</td>
       <td className="px-3 py-3">{devolucao.confiabilidade_dados || '-'}</td>
       <td className="px-3 py-3">{devolucao.versao_api_utilizada || '-'}</td>
+      
+      {/* Botão de Ações - MOVIDO PARA O FINAL */}
+      <td className="px-3 py-3 text-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onViewDetails(devolucao)}
+          className="h-8 w-8 p-0"
+          title="Ver detalhes completos (todas as fases)"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </td>
     </tr>
   );
 });
