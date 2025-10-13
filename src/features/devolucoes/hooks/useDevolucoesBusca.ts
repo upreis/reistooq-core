@@ -70,6 +70,8 @@ export function useDevolucoesBusca() {
           if (apiResponse?.success && apiResponse?.data) {
             const devolucoesDaAPI = apiResponse.data;
             
+            logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
+            
             // Processar dados com ENRIQUECIMENTO COMPLETO
             const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => {
               // Dados base
@@ -88,7 +90,87 @@ export function useDevolucoesBusca() {
                 updated_at: new Date().toISOString()
               };
 
-              // DADOS ENRIQUECIDOS EXTRAÍDOS DA API
+              // 💰 DADOS FINANCEIROS DETALHADOS (FASE 4)
+              const dadosFinanceiros = {
+                // Reembolsos
+                valor_reembolso_total: item.claim_details?.resolution?.refund_amount || 
+                                      item.return_details_v2?.refund_amount ||
+                                      parseFloat(item.amount || 0),
+                valor_reembolso_produto: item.order_data?.order_items?.[0]?.unit_price || 0,
+                valor_reembolso_frete: item.order_data?.payments?.[0]?.shipping_cost || 0,
+                
+                // Taxas ML
+                taxa_ml_reembolso: item.order_data?.payments?.[0]?.marketplace_fee || 0,
+                
+                // Custos logísticos
+                custo_logistico_total: item.return_details_v2?.shipping_cost || 
+                                      item.return_details_v2?.logistics_cost || 0,
+                
+                // Impacto financeiro
+                impacto_financeiro_vendedor: -(parseFloat(item.amount || 0)),
+                
+                // Detalhes de reembolso
+                data_processamento_reembolso: item.order_data?.payments?.[0]?.date_approved || null,
+                metodo_reembolso: item.order_data?.payments?.[0]?.payment_method_id || null,
+                moeda_reembolso: item.order_data?.currency_id || 'BRL',
+                
+                // Breakdown detalhado
+                descricao_custos: {
+                  produto: {
+                    valor_original: item.order_data?.order_items?.[0]?.unit_price || 0,
+                    valor_reembolsado: item.order_data?.order_items?.[0]?.unit_price || 0,
+                    percentual_reembolsado: 100
+                  },
+                  frete: {
+                    valor_original: item.order_data?.payments?.[0]?.shipping_cost || 0,
+                    valor_reembolsado: item.order_data?.payments?.[0]?.shipping_cost || 0,
+                    custo_devolucao: item.return_details_v2?.shipping_cost || 0,
+                    custo_total_logistica: item.return_details_v2?.shipping_cost || 0
+                  },
+                  taxas: {
+                    taxa_ml_original: item.order_data?.payments?.[0]?.marketplace_fee || 0,
+                    taxa_ml_reembolsada: item.order_data?.payments?.[0]?.marketplace_fee || 0,
+                    taxa_ml_retida: 0
+                  },
+                  resumo: {
+                    total_custos: parseFloat(item.amount || 0),
+                    total_receita_perdida: parseFloat(item.amount || 0)
+                  }
+                }
+              };
+
+              // 📋 DADOS DE REVIEW (FASE 2)
+              const dadosReview = {
+                review_id: item.review_id || item.claim_details?.review?.id || null,
+                review_status: item.review_status || item.claim_details?.review?.status || null,
+                review_result: item.review_result || item.claim_details?.review?.result || null,
+                score_qualidade: item.review_score || item.claim_details?.review?.score || null,
+                necessita_acao_manual: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length > 0,
+                problemas_encontrados: item.problemas_encontrados || [],
+                acoes_necessarias_review: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions || [],
+                data_inicio_review: item.claim_details?.date_created || null,
+                observacoes_review: item.claim_details?.resolution?.reason || null,
+                revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id || null
+              };
+
+              // ⏱️ DADOS DE SLA (FASE 3)
+              const dadosSLA = {
+                tempo_primeira_resposta_vendedor: null, // Calculado posteriormente
+                tempo_resposta_comprador: null,
+                tempo_analise_ml: null,
+                dias_ate_resolucao: item.claim_details?.resolution ? 
+                  Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
+                             new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60 * 24)) : null,
+                sla_cumprido: true, // Calcular baseado nos tempos
+                tempo_limite_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
+                eficiencia_resolucao: item.claim_details?.resolution ? 'boa' : 'pendente',
+                data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.date_created,
+                tempo_total_resolucao: item.claim_details?.resolution ? 
+                  Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
+                             new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60)) : null
+              };
+
+              // DADOS ENRIQUECIDOS CONSOLIDADOS
               const dadosEnriquecidos = {
                 // Dados estruturados principais
                 dados_order: item.order_data || {},
@@ -96,7 +178,16 @@ export function useDevolucoesBusca() {
                 dados_mensagens: item.claim_messages || {},
                 dados_return: item.return_details_v2 || item.return_details_v1 || {},
 
-                // MENSAGENS E COMUNICAÇÃO (extraído de dados_mensagens)
+                // ⭐ FASE 4 - FINANCEIRO
+                ...dadosFinanceiros,
+
+                // ⭐ FASE 2 - REVIEWS
+                ...dadosReview,
+
+                // ⭐ FASE 3 - SLA
+                ...dadosSLA,
+
+                // MENSAGENS E COMUNICAÇÃO
                 timeline_mensagens: item.claim_messages?.messages || [],
                 ultima_mensagem_data: item.claim_messages?.messages?.length > 0 ? 
                   item.claim_messages.messages[item.claim_messages.messages.length - 1]?.date_created : null,
@@ -105,7 +196,7 @@ export function useDevolucoesBusca() {
                 numero_interacoes: item.claim_messages?.messages?.length || 0,
                 mensagens_nao_lidas: item.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0,
 
-                // DADOS DE RETURN E TROCA (extraído de dados_return)
+                // DADOS DE RETURN E TROCA
                 eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
                 data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
                 data_limite_troca: item.return_details_v2?.date_closed || null,
@@ -115,14 +206,14 @@ export function useDevolucoesBusca() {
                 status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
                 url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
 
-                // ANEXOS E EVIDÊNCIAS (extraído de dados_claim/anexos)
+                // ANEXOS E EVIDÊNCIAS
                 anexos_count: item.claim_attachments?.length || 0,
                 anexos_comprador: item.claim_attachments?.filter((a: any) => a.source === 'buyer') || [],
                 anexos_vendedor: item.claim_attachments?.filter((a: any) => a.source === 'seller') || [],
                 anexos_ml: item.claim_attachments?.filter((a: any) => a.source === 'meli') || [],
                 total_evidencias: (item.claim_attachments?.length || 0) + (item.claim_messages?.messages?.length || 0),
 
-                // CUSTOS E FINANCEIRO
+                // CUSTOS E FINANCEIRO BÁSICO
                 custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
                 valor_compensacao: item.return_details_v2?.refund_amount || null,
                 moeda_custo: 'BRL',
@@ -148,7 +239,20 @@ export function useDevolucoesBusca() {
                 marketplace_origem: 'ML_BRASIL'
               };
 
-              return { ...dadosBase, ...dadosEnriquecidos };
+              const itemCompleto = { ...dadosBase, ...dadosEnriquecidos };
+              
+              // Log do primeiro item processado
+              if (index === 0) {
+                logger.info(`✅ PRIMEIRO ITEM PROCESSADO COMPLETO:`, {
+                  order_id: itemCompleto.order_id,
+                  tem_financeiro: !!itemCompleto.valor_reembolso_total,
+                  tem_review: !!itemCompleto.review_id,
+                  tem_sla: itemCompleto.sla_cumprido !== null,
+                  descricao_custos: itemCompleto.descricao_custos
+                });
+              }
+
+              return itemCompleto;
             });
 
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
