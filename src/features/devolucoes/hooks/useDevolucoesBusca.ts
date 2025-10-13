@@ -46,24 +46,11 @@ export function useDevolucoesBusca() {
         
         try {
           // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
-          // 📅 Formatar datas para ISO 8601 com timezone (formato que ML API aceita)
-          const formatarDataParaML = (data: string) => {
-            if (!data) return '';
-            try {
-              const d = new Date(data);
-              // Adicionar hora inicial (00:00) ou final (23:59:59) dependendo se é início ou fim
-              return d.toISOString();
-            } catch {
-              return '';
-            }
-          };
-
-          const dateFrom = filtros.dataInicio ? formatarDataParaML(filtros.dataInicio + 'T00:00:00') : '';
-          const dateTo = filtros.dataFim ? formatarDataParaML(filtros.dataFim + 'T23:59:59') : '';
-
+          // 📅 IMPORTANTE: Enviar datas no formato YYYY-MM-DD (a edge function converte internamente)
+          
           logger.info(`🔍 Buscando devoluções para ${account.name}`, {
-            dateFrom,
-            dateTo,
+            dateFrom: filtros.dataInicio || '',
+            dateTo: filtros.dataFim || '',
             status: filtros.statusClaim || 'todos'
           });
 
@@ -74,8 +61,8 @@ export function useDevolucoesBusca() {
               seller_id: account.account_identifier,
               // NÃO passamos access_token - a edge function obtém automaticamente
               filters: {
-                date_from: dateFrom,
-                date_to: dateTo,
+                date_from: filtros.dataInicio || '',  // YYYY-MM-DD
+                date_to: filtros.dataFim || '',        // YYYY-MM-DD
                 status: filtros.statusClaim || ''
               }
             }
