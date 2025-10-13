@@ -9,8 +9,6 @@ import { Card } from '@/components/ui/card';
 export interface DevolucaoFilterValues {
   searchTerm: string;
   statusClaim: string;
-  dataInicio: string;
-  dataFim: string;
 }
 
 interface DevolucaoFiltersProps {
@@ -35,7 +33,7 @@ export const DevolucaoFilters = React.memo<DevolucaoFiltersProps>(({
         <h3 className="font-semibold">Filtros de Busca</h3>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Busca Unificada */}
         <div className="space-y-2">
           <Label htmlFor="search">Buscar</Label>
@@ -69,28 +67,6 @@ export const DevolucaoFilters = React.memo<DevolucaoFiltersProps>(({
               <SelectItem value="pending">Pendente</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        {/* Data Início */}
-        <div className="space-y-2">
-          <Label htmlFor="dataInicio">Data Início</Label>
-          <Input
-            id="dataInicio"
-            type="date"
-            value={filters.dataInicio}
-            onChange={(e) => onFilterChange({ dataInicio: e.target.value })}
-          />
-        </div>
-
-        {/* Data Fim */}
-        <div className="space-y-2">
-          <Label htmlFor="dataFim">Data Fim</Label>
-          <Input
-            id="dataFim"
-            type="date"
-            value={filters.dataFim}
-            onChange={(e) => onFilterChange({ dataFim: e.target.value })}
-          />
         </div>
       </div>
 
