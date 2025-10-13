@@ -73,6 +73,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const {
     devolucoes,
     devolucoesFiltradas,
+    devolucoesPaginadas, // ✅ RECEBER DADOS PAGINADOS
     stats,
     loading,
     currentPage,
@@ -305,9 +306,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </div>
             ) : (
               <>
-                {/* ✨ TABELA SEMPRE VISÍVEL - Mesmo sem dados */}
+                {/* ✨ TABELA COM DADOS PAGINADOS */}
                 <DevolucaoTable
-                  devolucoes={devolucoesFiltradas}
+                  devolucoes={devolucoesPaginadas}
                   onViewDetails={(dev) => {
                     setSelectedDevolucao(dev);
                     setShowDetails(true);
@@ -315,7 +316,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
                 />
                 
                 {/* Mensagem quando não há dados */}
-                {devolucoesFiltradas.length === 0 && (
+                {devolucoesPaginadas.length === 0 && (
                   <div className="text-center p-8 mt-4 border-t">
                     <Package className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
                     <p className="text-gray-500 dark:text-gray-400 font-semibold text-lg">Nenhuma devolução encontrada</p>

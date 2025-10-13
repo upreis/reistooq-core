@@ -315,7 +315,6 @@ export function useDevolucoesBusca() {
                 acao_seller_necessaria: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
                 
                 // CONTROLE DE QUALIDADE
-                dados_completos: true,
                 marketplace_origem: 'ML_BRASIL'
               };
 
@@ -472,7 +471,6 @@ export function useDevolucoesBusca() {
                   },
                   integration_account_id: account.id,
                   account_name: account.name,
-                  dados_completos: false, // Será marcado como true após enriquecimento
                   updated_at: new Date().toISOString()
                 };
 
@@ -531,7 +529,7 @@ export function useDevolucoesBusca() {
       const { data: devolucoesPendentes, error } = await supabase
         .from('devolucoes_avancadas')
         .select('*')
-        .or('claim_id.is.null,dados_completos.eq.false')
+        .is('claim_id', null)
         .order('created_at', { ascending: false })
         .limit(50); // Processar em lotes de 50
 
@@ -611,7 +609,6 @@ export function useDevolucoesBusca() {
                 tipo_claim: claimData.type,
                 subtipo_claim: claimData.claim_details?.type,
                 em_mediacao: claimData.claim_details?.type === 'mediations',
-                dados_completos: true,
                 updated_at: new Date().toISOString()
               };
 

@@ -512,6 +512,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     // Dados
     devolucoes: devolucoesPaginadas,
     devolucoesFiltradas,
+    devolucoesPaginadas,
     stats,
     
     // Estados
