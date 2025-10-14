@@ -219,17 +219,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
   try {
     console.log(`🎯 Buscando claims diretamente da API Claims Search para seller ${sellerId}...`)
     
-    // 🚀 USAR ENDPOINT CORRETO: /post-purchase/v1/claims/search
+    // 🚀 BUSCAR CLAIMS COM PAGINAÇÃO COMPLETA
     const params = new URLSearchParams()
-    
-    // ✅ PARÂMETROS CORRETOS CONFORME ANÁLISE DO MANUS
-    // CRÍTICO: API usa SINGULAR com underscore, NÃO plural com ponto!
-    params.append('player_role', 'respondent')       // ✅ CORRETO: player_role
-    params.append('player_user_id', sellerId)        // ✅ CORRETO: player_user_id
-    
-    // Paginação (obrigatório)
+    params.append('player_role', 'respondent')
+    params.append('player_user_id', sellerId)
     params.append('limit', '50')
-    params.append('offset', '0')
     
     // Filtros OPCIONAIS (apenas se tiverem valor)
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
@@ -241,67 +235,80 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
       params.append('type', filters.claim_type)
     }
-    
-    // 📅 NOTA: A API /claims/search NÃO ACEITA filtros de data
-    // Os filtros de data serão aplicados APÓS receber os dados
-    console.log(`⚠️  API Claims Search NÃO suporta filtros de data - filtraremos localmente`)
-    if (filters?.date_from) {
-      console.log(`📅 Filtro local de data_from será aplicado: ${filters.date_from}`)
-    }
-    if (filters?.date_to) {
-      console.log(`📅 Filtro local de data_to será aplicado: ${filters.date_to}`)
-    }
-    
-    // 🔍 DEBUG: Log completo dos parâmetros aplicados
-    console.log(`🔍 PARÂMETROS COMPLETOS:`, {
-      seller_id: sellerId,
-      status: filters?.status || 'all',
-      claim_type: filters?.claim_type || 'all',
-      date_from: filters?.date_from,
-      date_to: filters?.date_to,
-      params_string: params.toString()
-    })
-    
-    const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
-    console.log(`🌐 URL COMPLETA ENVIADA PARA ML API: ${url}`)
-    console.log(`📞 URL da API Claims Search: ${url}`)
-    
-    const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
-    
-    if (!response.ok) {
-      console.error(`❌ Erro na API Orders: ${response.status} - ${response.statusText}`)
+
+    // 📚 BUSCAR TODAS AS PÁGINAS DA API
+    let allClaims: any[] = []
+    let offset = 0
+    const limit = 50
+    const MAX_CLAIMS = 500 // Limite de segurança
+
+    console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
+    console.log(`📋 Filtros aplicados na API:`)
+    console.log(`   • player_role: respondent`)
+    console.log(`   • player_user_id: ${sellerId}`)
+    console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
+    console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
+    console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca\n`)
+
+    do {
+      params.set('offset', offset.toString())
+      const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
       
-      if (response.status === 401) {
-        throw new Error('Token de acesso inválido ou expirado - reconecte a integração')
-      }
-      if (response.status === 403) {
-        throw new Error('Sem permissão para acessar orders')
+      console.log(`📄 Buscando página: offset=${offset}, limit=${limit}`)
+      
+      const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
+      
+      if (!response.ok) {
+        console.error(`❌ Erro na API: ${response.status} - ${response.statusText}`)
+        
+        if (response.status === 401) {
+          throw new Error('Token de acesso inválido ou expirado - reconecte a integração')
+        }
+        if (response.status === 403) {
+          throw new Error('Sem permissão para acessar claims')
+        }
+        
+        throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`)
       }
       
-      throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`)
-    }
-    
-    const data = await response.json()
-    console.log(`✅ RESPOSTA DA API ML:`, {
-      total_encontrados: data?.data?.length || 0,
-      filtros_enviados: {
-        date_from: filters?.date_from,
-        date_to: filters?.date_to
-      },
-      primeira_data_retornada: data?.data?.[0]?.date_created,
-      ultima_data_retornada: data?.data?.[data?.data?.length - 1]?.date_created
-    })
-    
-    if (!data?.data || data.data.length === 0) {
-      console.log('ℹ️ Nenhum claim encontrado')
+      const data = await response.json()
+      
+      if (!data.data || !Array.isArray(data.data)) {
+        console.log('⚠️  Resposta sem dados válidos, encerrando paginação')
+        break
+      }
+      
+      console.log(`   ✅ Retornou: ${data.data.length} claims (total acumulado: ${allClaims.length + data.data.length})`)
+      
+      allClaims.push(...data.data)
+      offset += limit
+      
+      // Parar se não há mais dados
+      if (data.data.length < limit) {
+        console.log(`   🏁 Última página (retornou menos que ${limit} claims)`)
+        break
+      }
+      
+      // Limite de segurança
+      if (allClaims.length >= MAX_CLAIMS) {
+        console.log(`   ⚠️  Limite de segurança de ${MAX_CLAIMS} claims alcançado`)
+        break
+      }
+      
+    } while (true)
+
+    console.log(`\n📊 RESULTADO DA BUSCA PAGINADA:`)
+    console.log(`   • Total de claims buscados: ${allClaims.length}`)
+    console.log(`   • Páginas consultadas: ${Math.ceil(offset / limit)}`)
+    console.log(`🔄 ============================================================\n`)
+
+    if (allClaims.length === 0) {
+      console.log('ℹ️ Nenhum claim encontrado na API')
       return []
     }
     
-    console.log(`📊 Total de claims retornados pela API ML (SEM FILTRO DE DATA): ${data.data.length}`)
-    console.log(`📄 Paginação: total=${data.paging?.total || 0}, limit=${data.paging?.limit || 0}, offset=${data.paging?.offset || 0}`)
-    
     // 🔥 FILTRAR LOCALMENTE POR DATA - A API não suporta filtros de data
-    let claimsParaProcessar = data.data
+    let claimsParaProcessar = allClaims
     
     if (filters?.date_from || filters?.date_to) {
       console.log(`\n🔍 ========== APLICANDO FILTRO LOCAL DE DATA (CORRIGIDO) ==========`)
