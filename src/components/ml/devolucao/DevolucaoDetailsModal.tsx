@@ -13,6 +13,8 @@ import { MediationTab } from './tabs/MediationTab';
 import { ReviewsTab } from './tabs/ReviewsTab';
 import { SLAMetricsTab } from './tabs/SLAMetricsTab';
 import { AdvancedDataTab } from './tabs/AdvancedDataTab';
+import { BuyerPaymentTab } from './tabs/BuyerPaymentTab';
+import { ProductQualityTab } from './tabs/ProductQualityTab';
 import { 
   Package, FileText, CheckCircle, DollarSign, 
   Truck, Star, Scale, 
@@ -49,9 +51,11 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-10 w-full">
+          <TabsList className="grid grid-cols-12 w-full">
             <TabsTrigger value="overview"><Package className="h-4 w-4 mr-1" />Geral</TabsTrigger>
             <TabsTrigger value="financial"><DollarSign className="h-4 w-4 mr-1" />Financeiro</TabsTrigger>
+            <TabsTrigger value="buyer">👤 Comprador</TabsTrigger>
+            <TabsTrigger value="product">📦 Produto</TabsTrigger>
             <TabsTrigger value="tracking"><Truck className="h-4 w-4 mr-1" />Rastreio</TabsTrigger>
             <TabsTrigger value="reviews"><FileCheck className="h-4 w-4 mr-1" />Reviews</TabsTrigger>
             <TabsTrigger value="sla"><Clock className="h-4 w-4 mr-1" />SLA</TabsTrigger>
@@ -99,6 +103,8 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
             </TabsContent>
 
             <TabsContent value="financial" className="mt-0"><FinancialDetailsTab devolucao={devolucao} /></TabsContent>
+            <TabsContent value="buyer" className="mt-0"><BuyerPaymentTab devolucao={devolucao} /></TabsContent>
+            <TabsContent value="product" className="mt-0"><ProductQualityTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="tracking" className="mt-0"><TrackingTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="reviews" className="mt-0"><ReviewsTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="sla" className="mt-0"><SLAMetricsTab devolucao={devolucao} /></TabsContent>
