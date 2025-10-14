@@ -1580,6 +1580,48 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
               })(),
               
+              // ============================================
+              // 🟡 FASE 2: CAMPOS ESSENCIAIS ADICIONAIS
+              // ============================================
+              
+              // DADOS COMPLETOS DO COMPRADOR
+              comprador_cpf_cnpj: safeOrderDetail?.buyer?.billing_info?.doc_number || null,
+              comprador_nome_completo: `${safeOrderDetail?.buyer?.first_name || ''} ${safeOrderDetail?.buyer?.last_name || ''}`.trim() || null,
+              comprador_nickname: safeOrderDetail?.buyer?.nickname || null,
+              
+              // DADOS DE PAGAMENTO DETALHADOS
+              metodo_pagamento: safeOrderDetail?.payments?.[0]?.payment_method_id || null,
+              tipo_pagamento: safeOrderDetail?.payments?.[0]?.payment_type || null,
+              numero_parcelas: safeOrderDetail?.payments?.[0]?.installments || null,
+              valor_parcela: safeOrderDetail?.payments?.[0]?.installment_amount || null,
+              transaction_id: safeOrderDetail?.payments?.[0]?.transaction_id || null,
+              
+              // CUSTOS DETALHADOS - Extrair de descricao_custos ou calcular
+              percentual_reembolsado: (() => {
+                // Tentar extrair de múltiplas fontes
+                const fromRefund = safeClaimData?.return_details_v2?.results?.[0]?.refund?.percentage ||
+                                  safeClaimData?.return_details_v1?.results?.[0]?.refund?.percentage
+                if (fromRefund) return fromRefund
+                
+                // Calcular baseado em valores
+                const totalAmount = safeOrderDetail?.total_amount || 0
+                const refundAmount = safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
+                                    safeClaimData?.return_details_v1?.results?.[0]?.refund_amount || 0
+                
+                if (totalAmount > 0 && refundAmount > 0) {
+                  return Math.round((refundAmount / totalAmount) * 100)
+                }
+                
+                return null
+              })(),
+              
+              // TAGS DO PEDIDO - Para filtros avançados
+              tags_pedido: safeOrderDetail?.tags || [],
+              
+              // ============================================
+              // FIM FASE 2
+              // ============================================
+              
               // MARCADORES DE QUALIDADE
               dados_completos: safeClaimData?.dados_completos || false,
               marketplace_origem: 'ML_BRASIL'
