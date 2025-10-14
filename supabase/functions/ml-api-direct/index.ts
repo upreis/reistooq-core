@@ -242,21 +242,14 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('type', filters.claim_type)
     }
     
-    // 📅 FILTROS DE DATA - TESTE 1: UTC FORMAT
-    if (filters?.date_from && filters.date_from.trim().length > 0) {
-      const dateFrom = `${filters.date_from}T00:00:00.000Z`
-      console.log(`📅 [TESTE 1 - UTC] FILTRO DATE_FROM: ${dateFrom} (original: ${filters.date_from})`)
-      params.append('date_created.from', dateFrom)
-    } else {
-      console.log(`⚠️  Nenhum filtro date_from foi aplicado`)
+    // 📅 NOTA: A API /claims/search NÃO ACEITA filtros de data
+    // Os filtros de data serão aplicados APÓS receber os dados
+    console.log(`⚠️  API Claims Search NÃO suporta filtros de data - filtraremos localmente`)
+    if (filters?.date_from) {
+      console.log(`📅 Filtro local de data_from será aplicado: ${filters.date_from}`)
     }
-    
-    if (filters?.date_to && filters.date_to.trim().length > 0) {
-      const dateTo = `${filters.date_to}T23:59:59.999Z`
-      console.log(`📅 [TESTE 1 - UTC] FILTRO DATE_TO: ${dateTo} (original: ${filters.date_to})`)
-      params.append('date_created.to', dateTo)
-    } else {
-      console.log(`⚠️  Nenhum filtro date_to foi aplicado`)
+    if (filters?.date_to) {
+      console.log(`📅 Filtro local de data_to será aplicado: ${filters.date_to}`)
     }
     
     // 🔍 DEBUG: Log completo dos parâmetros aplicados
@@ -304,14 +297,48 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       return []
     }
     
-    console.log(`📊 Total de claims retornados pela API ML: ${data.data.length}`)
+    console.log(`📊 Total de claims retornados pela API ML (SEM FILTRO DE DATA): ${data.data.length}`)
     console.log(`📄 Paginação: total=${data.paging?.total || 0}, limit=${data.paging?.limit || 0}, offset=${data.paging?.offset || 0}`)
     
-    // ✅ REMOVIDO FILTRO LOCAL - A API do Mercado Livre já retorna os dados corretos
-    // Confiar nos dados retornados pela API sem filtrar novamente
-    const claimsParaProcessar = data.data
+    // 🔥 FILTRAR LOCALMENTE POR DATA - A API não suporta filtros de data
+    let claimsParaProcessar = data.data
     
-    console.log(`✅ Todos os ${claimsParaProcessar.length} claims da API serão processados`)
+    if (filters?.date_from || filters?.date_to) {
+      const dateFrom = filters?.date_from ? new Date(`${filters.date_from}T00:00:00.000Z`) : null
+      const dateTo = filters?.date_to ? new Date(`${filters.date_to}T23:59:59.999Z`) : null
+      
+      console.log(`\n🔍 ========== APLICANDO FILTRO LOCAL DE DATA ==========`)
+      console.log(`📅 Data FROM: ${dateFrom ? dateFrom.toISOString() : 'N/A'}`)
+      console.log(`📅 Data TO: ${dateTo ? dateTo.toISOString() : 'N/A'}`)
+      
+      const claimsAntesFiltro = claimsParaProcessar.length
+      
+      claimsParaProcessar = claimsParaProcessar.filter((claim: any) => {
+        if (!claim.date_created) return false
+        
+        const claimDate = new Date(claim.date_created)
+        
+        if (dateFrom && claimDate < dateFrom) {
+          console.log(`   ❌ Claim ${claim.id} REJEITADO: ${claim.date_created} < ${dateFrom.toISOString()}`)
+          return false
+        }
+        if (dateTo && claimDate > dateTo) {
+          console.log(`   ❌ Claim ${claim.id} REJEITADO: ${claim.date_created} > ${dateTo.toISOString()}`)
+          return false
+        }
+        
+        console.log(`   ✅ Claim ${claim.id} ACEITO: ${claim.date_created}`)
+        return true
+      })
+      
+      console.log(`\n📊 RESULTADO DO FILTRO:`)
+      console.log(`   • Claims antes do filtro: ${claimsAntesFiltro}`)
+      console.log(`   • Claims após filtro de data: ${claimsParaProcessar.length}`)
+      console.log(`   • Claims removidos: ${claimsAntesFiltro - claimsParaProcessar.length}`)
+      console.log(`🔍 ====================================================\n`)
+    } else {
+      console.log(`ℹ️  Nenhum filtro de data aplicado - processando todos os ${claimsParaProcessar.length} claims`)
+    }
 
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
