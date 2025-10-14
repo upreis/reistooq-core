@@ -426,11 +426,28 @@ export function useDevolucoesBusca() {
                 prazo_revisao_dias: null
               };
 
+              // 🔍 REASONS API - FASE 4 (8 novos campos) - PROCESSAR PRIMEIRO
+              const reasonId = item.claim_details?.reason_id || null;
+              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`);
+              
+              // 🎯 Usar mapeamento local em vez de chamada à API
+              const reasonsAPI = mapReasonDetails(reasonId);
+              
+              if (reasonId) {
+                logger.info(`✅ Reason mapeado para ${reasonId}:`, {
+                  category: reasonsAPI.reason_category,
+                  name: reasonsAPI.reason_name,
+                  priority: reasonsAPI.reason_priority
+                });
+              } else {
+                logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
+              }
+
               // 🎯 CLASSIFICAÇÃO E RESOLUÇÃO (16 colunas)
               const dadosClassificacao = {
                 tipo_claim: item.type || item.claim_details?.type,
                 subtipo_claim: item.claim_details?.stage || null,
-                motivo_categoria: item.claim_details?.reason_id || null,
+                motivo_categoria: reasonId, // ✅ Mantém compatibilidade com código antigo
                 categoria_problema: null,
                 subcategoria_problema: null,
                 metodo_resolucao: item.claim_details?.resolution?.reason || null,
@@ -460,23 +477,7 @@ export function useDevolucoesBusca() {
                 valor_diferenca_troca: null
               };
 
-              // 🔍 REASONS API - FASE 4 (8 novos campos)
-              // ✅ SOLUÇÃO: Mapeamento local (mais rápido e confiável)
-              const reasonId = item.claim_details?.reason_id || null;
-              
-              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`);
-              
-              // 🎯 Usar mapeamento local em vez de chamada à API
-              const reasonsAPI = mapReasonDetails(reasonId);
-              
-              if (reasonId) {
-                logger.info(`✅ Reason mapeado para ${reasonId}:`, {
-                  category: reasonsAPI.reason_category,
-                  name: reasonsAPI.reason_name
-                });
-              } else {
-                logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
-              }
+              // ⚠️ REASONS API já foi processado acima, antes de dadosClassificacao
 
               // 📦 DADOS BRUTOS JSONB (4 colunas)
               const dadosBrutos = {
