@@ -114,7 +114,7 @@ export const BuyerPaymentTab: React.FC<BuyerPaymentTabProps> = ({ devolucao }) =
           <div className="flex flex-wrap gap-2">
             {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
               devolucao.tags_pedido.map((tag: string, index: number) => (
-                <Badge key={index} variant="outline">
+                <Badge key={`buyer-tag-${tag}-${index}`} variant="outline">
                   {tag}
                 </Badge>
               ))

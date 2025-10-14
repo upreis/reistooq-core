@@ -808,61 +808,521 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* ========== 60 COLUNAS FALTANTES ========== */}
       <td className="px-3 py-3">{devolucao.codigo_rastreamento_devolucao || '-'}</td>
       <td className="px-3 py-3">{devolucao.transportadora_devolucao || '-'}</td>
-      <td className="px-3 py-3">{devolucao.localizacao_atual || '-'}</td>
-      <td className="px-3 py-3">{devolucao.status_transporte_atual || '-'}</td>
-      <td className="px-3 py-3">{devolucao.shipment_id || '-'}</td>
-      <td className="px-3 py-3">{devolucao.url_rastreamento || '-'}</td>
-      <td className="px-3 py-3">{devolucao.data_ultima_movimentacao ? new Date(devolucao.data_ultima_movimentacao).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.previsao_entrega_vendedor ? new Date(devolucao.previsao_entrega_vendedor).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.tempo_transito_dias || '-'}</td>
-      <td className="px-3 py-3">{devolucao.motivo_categoria || '-'}</td>
-      <td className="px-3 py-3">{devolucao.categoria_problema || '-'}</td>
-      <td className="px-3 py-3">{devolucao.subcategoria_problema || '-'}</td>
-      <td className="px-3 py-3">{devolucao.nivel_complexidade || '-'}</td>
-      <td className="px-3 py-3">{devolucao.valor_diferenca_troca ? `R$ ${devolucao.valor_diferenca_troca.toFixed(2)}` : '-'}</td>
-      <td className="px-3 py-3">{devolucao.produto_troca_id || '-'}</td>
-      <td className="px-3 py-3">{devolucao.status_produto_novo || '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.endereco_destino || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.descricao_custos || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.data_inicio_mediacao ? new Date(devolucao.data_inicio_mediacao).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.detalhes_mediacao || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.resultado_mediacao || '-'}</td>
-      <td className="px-3 py-3">{devolucao.mediador_ml || '-'}</td>
-      <td className="px-3 py-3">{devolucao.feedback_comprador_final || '-'}</td>
-      <td className="px-3 py-3">{devolucao.feedback_vendedor || '-'}</td>
-      <td className="px-3 py-3">{devolucao.qualidade_comunicacao || '-'}</td>
-      <td className="px-3 py-3">{devolucao.satisfacao_comprador || '-'}</td>
-      <td className="px-3 py-3">{devolucao.tempo_resposta_comprador || '-'}</td>
-      <td className="px-3 py-3">{devolucao.tempo_analise_ml || '-'}</td>
-      <td className="px-3 py-3">{devolucao.data_primeira_acao ? new Date(devolucao.data_primeira_acao).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.tempo_limite_acao ? new Date(devolucao.tempo_limite_acao).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.historico_status && Array.isArray(devolucao.historico_status) ? `${devolucao.historico_status.length} eventos` : '-'}</td>
-      <td className="px-3 py-3">{devolucao.timeline_events && Array.isArray(devolucao.timeline_events) ? `${devolucao.timeline_events.length} eventos` : '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.timeline_consolidado || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.data_criacao_claim ? new Date(devolucao.data_criacao_claim).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.data_inicio_return ? new Date(devolucao.data_inicio_return).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.data_finalizacao_timeline ? new Date(devolucao.data_finalizacao_timeline).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.eventos_sistema && Array.isArray(devolucao.eventos_sistema) ? `${devolucao.eventos_sistema.length} eventos` : '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.marcos_temporais || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.tracking_history && Array.isArray(devolucao.tracking_history) ? `${devolucao.tracking_history.length} registros` : '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.shipment_costs || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.shipment_delays && Array.isArray(devolucao.shipment_delays) ? `${devolucao.shipment_delays.length} atrasos` : '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.carrier_info || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.tracking_events && Array.isArray(devolucao.tracking_events) ? `${devolucao.tracking_events.length} eventos` : '-'}</td>
-      <td className="px-3 py-3">{devolucao.historico_localizacoes && Array.isArray(devolucao.historico_localizacoes) ? `${devolucao.historico_localizacoes.length} locais` : '-'}</td>
-      <td className="px-3 py-3">{devolucao.acoes_necessarias_review && Array.isArray(devolucao.acoes_necessarias_review) ? `${devolucao.acoes_necessarias_review.length} ações` : '-'}</td>
-      <td className="px-3 py-3">{devolucao.data_inicio_review ? new Date(devolucao.data_inicio_review).toLocaleDateString('pt-BR') : '-'}</td>
-      <td className="px-3 py-3">{devolucao.observacoes_review || '-'}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.seller_reputation || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{JSON.stringify(devolucao.buyer_reputation || {}).substring(0,50)}</td>
-      <td className="px-3 py-3">{devolucao.tags_automaticas?.join(', ') || '-'}</td>
-      <td className="px-3 py-3">{devolucao.marketplace_origem || '-'}</td>
-      <td className="px-3 py-3">{devolucao.fonte_dados_primaria || '-'}</td>
-      <td className="px-3 py-3">{devolucao.origem_timeline || '-'}</td>
-      <td className="px-3 py-3">{devolucao.usuario_ultima_acao || '-'}</td>
-      <td className="px-3 py-3">{devolucao.hash_verificacao || '-'}</td>
-      <td className="px-3 py-3">{devolucao.confiabilidade_dados || '-'}</td>
-      <td className="px-3 py-3">{devolucao.versao_api_utilizada || '-'}</td>
+      
+      {/* Localização Atual */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.localizacao_atual || '-'}
+      </td>
+      
+      {/* Status Transporte */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.status_transporte_atual ? (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+            devolucao.status_transporte_atual === 'delivered' 
+              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+              : devolucao.status_transporte_atual === 'in_transit'
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+              : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+          }`}>
+            {devolucao.status_transporte_atual}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Shipment ID */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs">
+        {devolucao.shipment_id || '-'}
+      </td>
+      
+      {/* URL Rastreamento */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.url_rastreamento ? (
+          <a 
+            href={devolucao.url_rastreamento} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            🔗 Ver
+          </a>
+        ) : '-'}
+      </td>
+      
+      {/* Última Movimentação */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_ultima_movimentacao ? (() => {
+          try {
+            return new Date(devolucao.data_ultima_movimentacao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_ultima_movimentacao;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Previsão Entrega Vendedor */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.previsao_entrega_vendedor ? (() => {
+          try {
+            return new Date(devolucao.previsao_entrega_vendedor).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.previsao_entrega_vendedor;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Tempo Trânsito Dias */}
+      <td className="px-3 py-3 text-center text-foreground font-medium">
+        {devolucao.tempo_transito_dias ? `${devolucao.tempo_transito_dias} dias` : '-'}
+      </td>
+      
+      {/* Motivo Categoria */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.motivo_categoria || '-'}
+      </td>
+      
+      {/* Categoria Problema */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.categoria_problema || '-'}
+      </td>
+      
+      {/* Subcategoria Problema */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.subcategoria_problema || '-'}
+      </td>
+      
+      {/* Nível Complexidade */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.nivel_complexidade ? (
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            devolucao.nivel_complexidade === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+            devolucao.nivel_complexidade === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+            'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+          }`}>
+            {devolucao.nivel_complexidade}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Valor Diferença Troca */}
+      <td className="px-3 py-3 text-right text-orange-600 dark:text-orange-400 font-semibold whitespace-nowrap">
+        {devolucao.valor_diferenca_troca ? `R$ ${devolucao.valor_diferenca_troca.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Produto Troca ID */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs">
+        {devolucao.produto_troca_id || '-'}
+      </td>
+      
+      {/* Status Produto Novo */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.status_produto_novo ? (
+          <span className="px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+            {devolucao.status_produto_novo}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Endereço Destino */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.endereco_destino && typeof devolucao.endereco_destino === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.endereco_destino)}>
+            {devolucao.endereco_destino.street_name || devolucao.endereco_destino.city || 'Endereço disponível'}
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Descrição Custos */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.descricao_custos && typeof devolucao.descricao_custos === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.descricao_custos)}>
+            {Object.keys(devolucao.descricao_custos).length} item(ns)
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Data Início Mediação */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_inicio_mediacao ? (() => {
+          try {
+            return new Date(devolucao.data_inicio_mediacao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_inicio_mediacao;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Detalhes Mediação */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.detalhes_mediacao && typeof devolucao.detalhes_mediacao === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.detalhes_mediacao)}>
+            {devolucao.detalhes_mediacao.status || Object.keys(devolucao.detalhes_mediacao).length + ' campo(s)'}
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Resultado Mediação */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.resultado_mediacao ? (
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            devolucao.resultado_mediacao === 'won' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            devolucao.resultado_mediacao === 'lost' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+            'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+          }`}>
+            {devolucao.resultado_mediacao}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Mediador ML */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.mediador_ml || '-'}
+      </td>
+      
+      {/* Feedback Comprador Final */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[150px] truncate" title={devolucao.feedback_comprador_final}>
+          {devolucao.feedback_comprador_final || '-'}
+        </div>
+      </td>
+      
+      {/* Feedback Vendedor */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[150px] truncate" title={devolucao.feedback_vendedor}>
+          {devolucao.feedback_vendedor || '-'}
+        </div>
+      </td>
+      
+      {/* Qualidade Comunicação */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.qualidade_comunicacao ? (
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            devolucao.qualidade_comunicacao === 'excellent' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            devolucao.qualidade_comunicacao === 'good' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' :
+            devolucao.qualidade_comunicacao === 'poor' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+            'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+          }`}>
+            {devolucao.qualidade_comunicacao}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Satisfação Comprador */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.satisfacao_comprador || '-'}
+      </td>
+      
+      {/* Tempo Resposta Comprador */}
+      <td className="px-3 py-3 text-center text-foreground">
+        {devolucao.tempo_resposta_comprador ? `${devolucao.tempo_resposta_comprador} min` : '-'}
+      </td>
+      
+      {/* Tempo Análise ML */}
+      <td className="px-3 py-3 text-center text-foreground">
+        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml} min` : '-'}
+      </td>
+      
+      {/* Data Primeira Ação */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_primeira_acao ? (() => {
+          try {
+            return new Date(devolucao.data_primeira_acao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_primeira_acao;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Tempo Limite Ação */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.tempo_limite_acao ? (() => {
+          try {
+            return new Date(devolucao.tempo_limite_acao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.tempo_limite_acao;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Histórico Status */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.historico_status && Array.isArray(devolucao.historico_status) ? (
+          <span className="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-medium">
+            {devolucao.historico_status.length} eventos
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Timeline Events */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.timeline_events && Array.isArray(devolucao.timeline_events) ? (
+          <span className="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 text-xs font-medium">
+            {devolucao.timeline_events.length} eventos
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Timeline Consolidado */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.timeline_consolidado && typeof devolucao.timeline_consolidado === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.timeline_consolidado)}>
+            {Object.keys(devolucao.timeline_consolidado).length} fases
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Data Criação Claim */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_criacao_claim ? (() => {
+          try {
+            return new Date(devolucao.data_criacao_claim).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_criacao_claim;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Data Início Return */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_inicio_return ? (() => {
+          try {
+            return new Date(devolucao.data_inicio_return).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_inicio_return;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Data Finalização Timeline */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_finalizacao_timeline ? (() => {
+          try {
+            return new Date(devolucao.data_finalizacao_timeline).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_finalizacao_timeline;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Eventos Sistema */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.eventos_sistema && Array.isArray(devolucao.eventos_sistema) ? (
+          <span className="px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-medium">
+            {devolucao.eventos_sistema.length} eventos
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Marcos Temporais */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.marcos_temporais && typeof devolucao.marcos_temporais === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.marcos_temporais)}>
+            {Object.keys(devolucao.marcos_temporais).length} marcos
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Tracking History */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.tracking_history && Array.isArray(devolucao.tracking_history) ? (
+          <span className="px-2 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-medium">
+            {devolucao.tracking_history.length} registros
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Shipment Costs */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.shipment_costs && typeof devolucao.shipment_costs === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.shipment_costs)}>
+            {Object.keys(devolucao.shipment_costs).length} custo(s)
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Shipment Delays */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.shipment_delays && Array.isArray(devolucao.shipment_delays) ? (
+          <span className="px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 text-xs font-medium">
+            {devolucao.shipment_delays.length} atrasos
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Carrier Info */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.carrier_info && typeof devolucao.carrier_info === 'object' ? (
+          <div className="max-w-[200px] truncate" title={JSON.stringify(devolucao.carrier_info)}>
+            {devolucao.carrier_info.name || Object.keys(devolucao.carrier_info).length + ' campo(s)'}
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Tracking Events */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.tracking_events && Array.isArray(devolucao.tracking_events) ? (
+          <span className="px-2 py-1 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 text-xs font-medium">
+            {devolucao.tracking_events.length} eventos
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Histórico Localizações */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.historico_localizacoes && Array.isArray(devolucao.historico_localizacoes) ? (
+          <span className="px-2 py-1 rounded bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 text-xs font-medium">
+            {devolucao.historico_localizacoes.length} locais
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Ações Necessárias Review */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.acoes_necessarias_review && Array.isArray(devolucao.acoes_necessarias_review) ? (
+          <span className="px-2 py-1 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-medium">
+            {devolucao.acoes_necessarias_review.length} ações
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Data Início Review */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_inicio_review ? (() => {
+          try {
+            return new Date(devolucao.data_inicio_review).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric'
+            });
+          } catch {
+            return devolucao.data_inicio_review;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Observações Review */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[150px] truncate" title={devolucao.observacoes_review}>
+          {devolucao.observacoes_review || '-'}
+        </div>
+      </td>
+      
+      {/* Seller Reputation */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.seller_reputation && typeof devolucao.seller_reputation === 'object' ? (
+          <div className="flex flex-col gap-1">
+            {devolucao.seller_reputation.level_id && (
+              <span className="text-xs">
+                Nível: <span className="font-medium">{devolucao.seller_reputation.level_id}</span>
+              </span>
+            )}
+            {devolucao.seller_reputation.power_seller_status && (
+              <span className="text-xs text-blue-600 dark:text-blue-400">⭐ {devolucao.seller_reputation.power_seller_status}</span>
+            )}
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Buyer Reputation */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.buyer_reputation && typeof devolucao.buyer_reputation === 'object' ? (
+          <div className="flex flex-col gap-1">
+            {devolucao.buyer_reputation.level_id && (
+              <span className="text-xs">
+                Nível: <span className="font-medium">{devolucao.buyer_reputation.level_id}</span>
+              </span>
+            )}
+            {devolucao.buyer_reputation.tags && Array.isArray(devolucao.buyer_reputation.tags) && devolucao.buyer_reputation.tags.length > 0 && (
+              <span className="text-xs text-green-600 dark:text-green-400">{devolucao.buyer_reputation.tags.length} tags</span>
+            )}
+          </div>
+        ) : '-'}
+      </td>
+      
+      {/* Tags Automáticas */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[200px] truncate" title={devolucao.tags_automaticas?.join(', ')}>
+          {devolucao.tags_automaticas && Array.isArray(devolucao.tags_automaticas) && devolucao.tags_automaticas.length > 0 
+            ? devolucao.tags_automaticas.join(', ') 
+            : '-'}
+        </div>
+      </td>
+      
+      {/* Marketplace Origem */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.marketplace_origem || '-'}
+      </td>
+      
+      {/* Fonte Dados Primária */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.fonte_dados_primaria || '-'}
+      </td>
+      
+      {/* Origem Timeline */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.origem_timeline || '-'}
+      </td>
+      
+      {/* Usuário Última Ação */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.usuario_ultima_acao || '-'}
+      </td>
+      
+      {/* Hash Verificação */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs">
+        <div className="max-w-[120px] truncate" title={devolucao.hash_verificacao}>
+          {devolucao.hash_verificacao || '-'}
+        </div>
+      </td>
+      
+      {/* Confiabilidade Dados */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.confiabilidade_dados ? (
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            devolucao.confiabilidade_dados === 'high' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            devolucao.confiabilidade_dados === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+            'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+          }`}>
+            {devolucao.confiabilidade_dados}
+          </span>
+        ) : '-'}
+      </td>
+      
+      {/* Versão API Utilizada */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.versao_api_utilizada || '-'}
+      </td>
       
       {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
       
@@ -928,7 +1388,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         <div className="flex flex-wrap gap-1">
           {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
             devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
-              <span key={idx} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 rounded text-xs">
+              <span key={`${devolucao.id}-tag-${tag}-${idx}`} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 rounded text-xs">
                 {tag}
               </span>
             ))
@@ -970,7 +1430,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         <div className="flex flex-wrap gap-1">
           {devolucao.internal_tags && Array.isArray(devolucao.internal_tags) && devolucao.internal_tags.length > 0 ? (
             devolucao.internal_tags.slice(0, 3).map((tag: string, idx: number) => (
-              <span key={idx} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded text-xs">
+              <span key={`${devolucao.id}-internal-${tag}-${idx}`} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded text-xs">
                 {tag}
               </span>
             ))
