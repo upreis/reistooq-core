@@ -3360,6 +3360,233 @@ export type Database = {
           },
         ]
       }
+      pedidos_cancelados_ml: {
+        Row: {
+          acao_seller_necessaria: boolean | null
+          anexos_comprador: Json | null
+          anexos_count: number | null
+          anexos_ml: Json | null
+          anexos_vendedor: Json | null
+          buyer_id: string | null
+          buyer_nickname: string | null
+          carrier_info: Json | null
+          categoria_problema: string | null
+          claim_id: string | null
+          codigo_rastreamento: string | null
+          comprador_cpf_cnpj: string | null
+          comprador_nickname: string | null
+          comprador_nome_completo: string | null
+          created_at: string | null
+          custo_envio_devolucao: number | null
+          dados_completos: boolean | null
+          data_estimada_troca: string | null
+          data_limite_troca: string | null
+          data_ultima_movimentacao: string | null
+          data_vencimento_acao: string | null
+          date_closed: string | null
+          date_created: string | null
+          dias_restantes_acao: number | null
+          eh_troca: boolean | null
+          em_mediacao: boolean | null
+          escalado_para_ml: boolean | null
+          historico_localizacoes: Json | null
+          id: string
+          integration_account_id: string | null
+          item_id: string | null
+          item_title: string | null
+          localizacao_atual: string | null
+          marketplace_origem: string | null
+          mensagens_nao_lidas: number | null
+          metodo_pagamento: string | null
+          motivo_categoria: string | null
+          nivel_prioridade: string | null
+          numero_parcelas: number | null
+          order_id: string
+          percentual_reembolsado: number | null
+          produto_troca_id: string | null
+          produto_troca_titulo: string | null
+          quantity: number | null
+          responsavel_custo: string | null
+          shipment_costs: Json | null
+          shipment_delays: Json | null
+          shipment_id: string | null
+          sku: string | null
+          status: string | null
+          status_devolucao: string | null
+          status_dinheiro: string | null
+          status_rastreamento: string | null
+          status_transporte_atual: string | null
+          subcategoria_problema: string | null
+          subtipo_claim: string | null
+          tags_pedido: string[] | null
+          tempo_transito_dias: number | null
+          timeline_mensagens: Json | null
+          tipo_claim: string | null
+          tipo_pagamento: string | null
+          total_amount: number | null
+          tracking_events: Json | null
+          tracking_history: Json | null
+          transaction_id: string | null
+          transportadora: string | null
+          ultima_mensagem_data: string | null
+          updated_at: string | null
+          valor_compensacao: number | null
+          valor_parcela: number | null
+        }
+        Insert: {
+          acao_seller_necessaria?: boolean | null
+          anexos_comprador?: Json | null
+          anexos_count?: number | null
+          anexos_ml?: Json | null
+          anexos_vendedor?: Json | null
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          carrier_info?: Json | null
+          categoria_problema?: string | null
+          claim_id?: string | null
+          codigo_rastreamento?: string | null
+          comprador_cpf_cnpj?: string | null
+          comprador_nickname?: string | null
+          comprador_nome_completo?: string | null
+          created_at?: string | null
+          custo_envio_devolucao?: number | null
+          dados_completos?: boolean | null
+          data_estimada_troca?: string | null
+          data_limite_troca?: string | null
+          data_ultima_movimentacao?: string | null
+          data_vencimento_acao?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          dias_restantes_acao?: number | null
+          eh_troca?: boolean | null
+          em_mediacao?: boolean | null
+          escalado_para_ml?: boolean | null
+          historico_localizacoes?: Json | null
+          id?: string
+          integration_account_id?: string | null
+          item_id?: string | null
+          item_title?: string | null
+          localizacao_atual?: string | null
+          marketplace_origem?: string | null
+          mensagens_nao_lidas?: number | null
+          metodo_pagamento?: string | null
+          motivo_categoria?: string | null
+          nivel_prioridade?: string | null
+          numero_parcelas?: number | null
+          order_id: string
+          percentual_reembolsado?: number | null
+          produto_troca_id?: string | null
+          produto_troca_titulo?: string | null
+          quantity?: number | null
+          responsavel_custo?: string | null
+          shipment_costs?: Json | null
+          shipment_delays?: Json | null
+          shipment_id?: string | null
+          sku?: string | null
+          status?: string | null
+          status_devolucao?: string | null
+          status_dinheiro?: string | null
+          status_rastreamento?: string | null
+          status_transporte_atual?: string | null
+          subcategoria_problema?: string | null
+          subtipo_claim?: string | null
+          tags_pedido?: string[] | null
+          tempo_transito_dias?: number | null
+          timeline_mensagens?: Json | null
+          tipo_claim?: string | null
+          tipo_pagamento?: string | null
+          total_amount?: number | null
+          tracking_events?: Json | null
+          tracking_history?: Json | null
+          transaction_id?: string | null
+          transportadora?: string | null
+          ultima_mensagem_data?: string | null
+          updated_at?: string | null
+          valor_compensacao?: number | null
+          valor_parcela?: number | null
+        }
+        Update: {
+          acao_seller_necessaria?: boolean | null
+          anexos_comprador?: Json | null
+          anexos_count?: number | null
+          anexos_ml?: Json | null
+          anexos_vendedor?: Json | null
+          buyer_id?: string | null
+          buyer_nickname?: string | null
+          carrier_info?: Json | null
+          categoria_problema?: string | null
+          claim_id?: string | null
+          codigo_rastreamento?: string | null
+          comprador_cpf_cnpj?: string | null
+          comprador_nickname?: string | null
+          comprador_nome_completo?: string | null
+          created_at?: string | null
+          custo_envio_devolucao?: number | null
+          dados_completos?: boolean | null
+          data_estimada_troca?: string | null
+          data_limite_troca?: string | null
+          data_ultima_movimentacao?: string | null
+          data_vencimento_acao?: string | null
+          date_closed?: string | null
+          date_created?: string | null
+          dias_restantes_acao?: number | null
+          eh_troca?: boolean | null
+          em_mediacao?: boolean | null
+          escalado_para_ml?: boolean | null
+          historico_localizacoes?: Json | null
+          id?: string
+          integration_account_id?: string | null
+          item_id?: string | null
+          item_title?: string | null
+          localizacao_atual?: string | null
+          marketplace_origem?: string | null
+          mensagens_nao_lidas?: number | null
+          metodo_pagamento?: string | null
+          motivo_categoria?: string | null
+          nivel_prioridade?: string | null
+          numero_parcelas?: number | null
+          order_id?: string
+          percentual_reembolsado?: number | null
+          produto_troca_id?: string | null
+          produto_troca_titulo?: string | null
+          quantity?: number | null
+          responsavel_custo?: string | null
+          shipment_costs?: Json | null
+          shipment_delays?: Json | null
+          shipment_id?: string | null
+          sku?: string | null
+          status?: string | null
+          status_devolucao?: string | null
+          status_dinheiro?: string | null
+          status_rastreamento?: string | null
+          status_transporte_atual?: string | null
+          subcategoria_problema?: string | null
+          subtipo_claim?: string | null
+          tags_pedido?: string[] | null
+          tempo_transito_dias?: number | null
+          timeline_mensagens?: Json | null
+          tipo_claim?: string | null
+          tipo_pagamento?: string | null
+          total_amount?: number | null
+          tracking_events?: Json | null
+          tracking_history?: Json | null
+          transaction_id?: string | null
+          transportadora?: string | null
+          ultima_mensagem_data?: string | null
+          updated_at?: string | null
+          valor_compensacao?: number | null
+          valor_parcela?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_cancelados_ml_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pedidos_compra: {
         Row: {
           created_at: string | null

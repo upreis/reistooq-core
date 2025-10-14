@@ -181,9 +181,27 @@ serve(async (req) => {
             quantity: devolucao.quantity,
             sku: devolucao.sku,
             
-            // Dados do Comprador
+            // Dados do Comprador (Básicos)
             buyer_id: devolucao.buyer_id,
             buyer_nickname: devolucao.buyer_nickname,
+            
+            // 🟡 FASE 2: Dados Adicionais do Comprador
+            comprador_cpf_cnpj: devolucao.order_data?.buyer?.billing_info?.doc_number,
+            comprador_nome_completo: `${devolucao.order_data?.buyer?.first_name || ''} ${devolucao.order_data?.buyer?.last_name || ''}`.trim(),
+            comprador_nickname: devolucao.order_data?.buyer?.nickname,
+            
+            // 🟡 FASE 2: Dados de Pagamento
+            metodo_pagamento: devolucao.order_data?.payments?.[0]?.payment_method_id,
+            tipo_pagamento: devolucao.order_data?.payments?.[0]?.payment_type,
+            numero_parcelas: devolucao.order_data?.payments?.[0]?.installments,
+            valor_parcela: devolucao.order_data?.payments?.[0]?.installment_amount,
+            transaction_id: devolucao.order_data?.payments?.[0]?.transaction_id,
+            
+            // 🟡 FASE 2: Dados Financeiros Adicionais
+            percentual_reembolsado: devolucao.descricao_custos?.produto?.percentual_reembolsado,
+            
+            // 🟡 FASE 2: Tags
+            tags_pedido: devolucao.order_data?.tags || [],
             
             // Status e Classificação
             status_devolucao: devolucao.status_devolucao,
