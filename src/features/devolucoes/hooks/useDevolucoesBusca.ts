@@ -23,11 +23,81 @@ export function useDevolucoesBusca() {
   // A função ml-api-direct já obtém o token internamente de forma segura
 
   /**
-   * 🎯 Mapeia reason_id para categoria e detalhes
-   * Baseado na documentação oficial do Mercado Livre
-   * Solução de mapeamento local - mais rápida e confiável
+   * 🔍 Busca detalhes de um reason específico na API do ML
    */
-  const mapReasonDetails = (reasonId: string | null): {
+  const fetchReasonDetails = async (
+    reasonId: string,
+    integrationAccountId: string
+  ): Promise<{
+    id: string;
+    name: string;
+    detail: string;
+    flow: string;
+  } | null> => {
+    try {
+      logger.info(`🔍 Buscando reason ${reasonId} na API...`);
+
+      const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
+        body: {
+          action: 'get_reason_detail',
+          integration_account_id: integrationAccountId,
+          reason_id: reasonId
+        }
+      });
+
+      if (apiError || !apiResponse?.success) {
+        logger.warn(`⚠️ Reason ${reasonId} não encontrado na API`, apiError);
+        return null;
+      }
+
+      if (apiResponse?.data) {
+        logger.info(`✅ Reason ${reasonId} encontrado:`, apiResponse.data.detail);
+        return apiResponse.data;
+      }
+
+      return null;
+    } catch (error) {
+      logger.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
+      return null;
+    }
+  };
+
+  /**
+   * 🎯 Busca múltiplos reasons em paralelo
+   */
+  const fetchMultipleReasons = async (
+    reasonIds: string[],
+    integrationAccountId: string
+  ): Promise<Map<string, any>> => {
+    logger.info(`📦 Buscando ${reasonIds.length} reasons únicos...`);
+
+    const reasonsMap = new Map<string, any>();
+
+    // Buscar todos em paralelo
+    const promises = reasonIds.map(reasonId =>
+      fetchReasonDetails(reasonId, integrationAccountId)
+        .then(data => {
+          if (data) {
+            reasonsMap.set(reasonId, data);
+          }
+        })
+    );
+
+    await Promise.all(promises);
+
+    logger.info(`✅ ${reasonsMap.size} reasons encontrados com sucesso`);
+
+    return reasonsMap;
+  };
+
+  /**
+   * 🗺️ Mapeia reason_id para categoria e detalhes
+   * Usa dados da API se disponíveis, senão usa mapeamento local
+   */
+  const mapReasonWithApiData = (
+    reasonId: string | null,
+    apiData: any | null
+  ): {
     reason_id: string | null;
     reason_category: string | null;
     reason_name: string | null;
@@ -35,7 +105,7 @@ export function useDevolucoesBusca() {
     reason_type: string | null;
     reason_priority: string | null;
     reason_expected_resolutions: string[] | null;
-    reason_rules_engine: string[] | null;
+    reason_flow: string | null;
   } => {
     if (!reasonId) {
       return {
@@ -46,14 +116,34 @@ export function useDevolucoesBusca() {
         reason_type: null,
         reason_priority: null,
         reason_expected_resolutions: null,
-        reason_rules_engine: null
+        reason_flow: null
       };
     }
 
-    // Extrair prefixo (PNR, PDD, CS, PD)
+    // Se temos dados da API, usar eles
+    if (apiData) {
+      const prefix = reasonId.substring(0, 3);
+
+      return {
+        reason_id: apiData.id,
+        reason_category: prefix === 'PNR' ? 'not_received' :
+                        prefix === 'PDD' ? 'defective_or_different' :
+                        prefix === 'CS' ? 'cancellation' : 'other',
+        reason_name: apiData.name || null,
+        reason_detail: apiData.detail || null,
+        reason_type: 'buyer_initiated',
+        reason_priority: prefix === 'PNR' || prefix === 'PDD' ? 'high' : 'medium',
+        reason_expected_resolutions: prefix === 'PNR' ? ['refund', 'resend'] :
+                                     prefix === 'PDD' ? ['replacement', 'refund', 'repair'] :
+                                     prefix === 'CS' ? ['refund'] : ['contact_seller'],
+        reason_flow: apiData.flow || null
+      };
+    }
+
+    // Fallback: mapeamento local
     const prefix = reasonId.substring(0, 3);
 
-    // Mapeamento baseado na documentação oficial
+    // Mapeamento local como fallback
     const categoryMap: Record<string, any> = {
       'PNR': {
         category: 'not_received',
@@ -62,7 +152,7 @@ export function useDevolucoesBusca() {
         type: 'buyer_initiated',
         priority: 'high',
         expected_resolutions: ['refund', 'resend'],
-        rules_engine: ['automatic_refund_eligible']
+        flow: 'post_purchase'
       },
       'PDD': {
         category: 'defective_or_different',
@@ -71,7 +161,7 @@ export function useDevolucoesBusca() {
         type: 'buyer_initiated',
         priority: 'high',
         expected_resolutions: ['replacement', 'refund', 'repair'],
-        rules_engine: ['quality_check_required']
+        flow: 'post_purchase_delivered'
       },
       'CS': {
         category: 'cancellation',
@@ -80,7 +170,7 @@ export function useDevolucoesBusca() {
         type: 'buyer_initiated',
         priority: 'medium',
         expected_resolutions: ['refund'],
-        rules_engine: ['automatic_cancellation']
+        flow: 'pre_purchase'
       },
       'PD0': {
         category: 'defective_or_different',
@@ -89,7 +179,7 @@ export function useDevolucoesBusca() {
         type: 'buyer_initiated',
         priority: 'high',
         expected_resolutions: ['replacement', 'refund'],
-        rules_engine: ['quality_check_required']
+        flow: 'post_purchase_delivered'
       }
     };
 
@@ -109,7 +199,7 @@ export function useDevolucoesBusca() {
         reason_type: 'buyer_initiated',
         reason_priority: 'medium',
         reason_expected_resolutions: ['contact_seller'],
-        reason_rules_engine: ['manual_review']
+        reason_flow: null
       };
     }
 
@@ -121,7 +211,7 @@ export function useDevolucoesBusca() {
       reason_type: mapping.type,
       reason_priority: mapping.priority,
       reason_expected_resolutions: mapping.expected_resolutions,
-      reason_rules_engine: mapping.rules_engine
+      reason_flow: mapping.flow
     };
   };
 
@@ -183,6 +273,23 @@ export function useDevolucoesBusca() {
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
+            // 🔍 FASE 0: BUSCAR REASONS DA API EM LOTE
+            const reasonIdsSet = new Set<string>();
+            devolucoesDaAPI.forEach((item: any) => {
+              const reasonId = item.claim_details?.reason_id;
+              if (reasonId && typeof reasonId === 'string') {
+                reasonIdsSet.add(reasonId);
+              }
+            });
+            const uniqueReasonIds = Array.from(reasonIdsSet);
+
+            logger.info(`🎯 Encontrados ${uniqueReasonIds.length} reason_ids únicos para buscar`);
+
+            // Buscar todos os reasons em paralelo
+            const reasonsApiData = await fetchMultipleReasons(uniqueReasonIds, accountId);
+
+            logger.info(`✅ Reasons API carregados: ${reasonsApiData.size}/${uniqueReasonIds.length}`);
+
             // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 165 COLUNAS VALIDADAS
             // FASE 1: Processar todos os dados básicos
             const devolucoesProcesadas = await Promise.all(devolucoesDaAPI.map(async (item: any, index: number) => {
@@ -426,17 +533,25 @@ export function useDevolucoesBusca() {
                 prazo_revisao_dias: null
               };
 
-              // 🔍 REASONS API - FASE 4 (8 novos campos) - PROCESSAR PRIMEIRO
+              // 🔍 REASONS API - FASE 4 (8 novos campos) - BUSCAR DA API
               const reasonId = item.claim_details?.reason_id || null;
-              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`);
+              const apiReasonData = reasonId ? reasonsApiData.get(reasonId) : null;
               
-              // 🎯 Usar mapeamento local em vez de chamada à API
-              const reasonsAPI = mapReasonDetails(reasonId);
+              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`, {
+                temDadosAPI: !!apiReasonData,
+                nomeAPI: apiReasonData?.name,
+                detalheAPI: apiReasonData?.detail
+              });
+              
+              // 🎯 Mapear com dados da API (prioridade) ou fallback local
+              const reasonsAPI = mapReasonWithApiData(reasonId, apiReasonData);
               
               if (reasonId) {
-                logger.info(`✅ Reason mapeado para ${reasonId}:`, {
+                logger.info(`✅ Reason ${reasonId} processado:`, {
+                  fonte: apiReasonData ? 'API' : 'Local',
                   category: reasonsAPI.reason_category,
                   name: reasonsAPI.reason_name,
+                  detail: reasonsAPI.reason_detail,
                   priority: reasonsAPI.reason_priority
                 });
               } else {
