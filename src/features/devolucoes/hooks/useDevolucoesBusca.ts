@@ -22,39 +22,107 @@ export function useDevolucoesBusca() {
   // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
   // A função ml-api-direct já obtém o token internamente de forma segura
 
-  // 🔍 Função auxiliar para buscar detalhes do reason
-  const buscarReasonDetails = async (reasonId: string, accountId: string) => {
-    try {
-      logger.info(`🔍 Buscando detalhes do reason: ${reasonId}`);
-      
-      const reasonResponse = await supabase.functions.invoke('ml-api-direct', {
-        body: {
-          accountId: accountId,
-          endpoint: `/post-purchase/v1/claims/reasons/${reasonId}`
-        }
-      });
-
-      if (reasonResponse.data?.success && reasonResponse.data?.data) {
-        const reasonData = reasonResponse.data.data;
-        logger.info(`✅ Reason encontrado:`, { id: reasonData.id, name: reasonData.name });
-        return {
-          reason_id: reasonData.id || reasonId,
-          reason_detail: reasonData.description || null,
-          reason_name: reasonData.name || null,
-          reason_category: reasonData.category || null,
-          reason_expected_resolutions: reasonData.expected_resolutions || null,
-          reason_rules_engine: reasonData.rules_engine || null,
-          reason_priority: reasonData.priority || null,
-          reason_type: reasonData.type || null
-        };
-      } else {
-        logger.warn(`⚠️ Erro ao buscar reason ${reasonId}:`, reasonResponse.error);
-        return null;
-      }
-    } catch (error) {
-      logger.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
-      return null;
+  /**
+   * 🎯 Mapeia reason_id para categoria e detalhes
+   * Baseado na documentação oficial do Mercado Livre
+   * Solução de mapeamento local - mais rápida e confiável
+   */
+  const mapReasonDetails = (reasonId: string | null): {
+    reason_id: string | null;
+    reason_category: string | null;
+    reason_name: string | null;
+    reason_detail: string | null;
+    reason_type: string | null;
+    reason_priority: string | null;
+    reason_expected_resolutions: string[] | null;
+    reason_rules_engine: string[] | null;
+  } => {
+    if (!reasonId) {
+      return {
+        reason_id: null,
+        reason_category: null,
+        reason_name: null,
+        reason_detail: null,
+        reason_type: null,
+        reason_priority: null,
+        reason_expected_resolutions: null,
+        reason_rules_engine: null
+      };
     }
+
+    // Extrair prefixo (PNR, PDD, CS, PD)
+    const prefix = reasonId.substring(0, 3);
+
+    // Mapeamento baseado na documentação oficial
+    const categoryMap: Record<string, any> = {
+      'PNR': {
+        category: 'not_received',
+        name: 'Produto Não Recebido',
+        detail: 'O comprador não recebeu o produto',
+        type: 'buyer_initiated',
+        priority: 'high',
+        expected_resolutions: ['refund', 'resend'],
+        rules_engine: ['automatic_refund_eligible']
+      },
+      'PDD': {
+        category: 'defective_or_different',
+        name: 'Produto Defeituoso ou Diferente',
+        detail: 'Produto veio com defeito ou diferente do anunciado',
+        type: 'buyer_initiated',
+        priority: 'high',
+        expected_resolutions: ['replacement', 'refund', 'repair'],
+        rules_engine: ['quality_check_required']
+      },
+      'CS': {
+        category: 'cancellation',
+        name: 'Cancelamento de Compra',
+        detail: 'Cancelamento da compra solicitado',
+        type: 'buyer_initiated',
+        priority: 'medium',
+        expected_resolutions: ['refund'],
+        rules_engine: ['automatic_cancellation']
+      },
+      'PD0': {
+        category: 'defective_or_different',
+        name: 'Produto Defeituoso ou Diferente',
+        detail: 'Produto veio com defeito ou diferente do anunciado',
+        type: 'buyer_initiated',
+        priority: 'high',
+        expected_resolutions: ['replacement', 'refund'],
+        rules_engine: ['quality_check_required']
+      }
+    };
+
+    // Tentar match com 3 caracteres, depois 2
+    let mapping = categoryMap[prefix];
+    if (!mapping && prefix.length >= 2) {
+      mapping = categoryMap[prefix.substring(0, 2)];
+    }
+
+    if (!mapping) {
+      // Fallback genérico
+      return {
+        reason_id: reasonId,
+        reason_category: 'other',
+        reason_name: 'Outros Motivos',
+        reason_detail: `Motivo não categorizado: ${reasonId}`,
+        reason_type: 'buyer_initiated',
+        reason_priority: 'medium',
+        reason_expected_resolutions: ['contact_seller'],
+        reason_rules_engine: ['manual_review']
+      };
+    }
+
+    return {
+      reason_id: reasonId,
+      reason_category: mapping.category,
+      reason_name: mapping.name,
+      reason_detail: mapping.detail,
+      reason_type: mapping.type,
+      reason_priority: mapping.priority,
+      reason_expected_resolutions: mapping.expected_resolutions,
+      reason_rules_engine: mapping.rules_engine
+    };
   };
 
   // Buscar da API ML em tempo real
@@ -393,31 +461,19 @@ export function useDevolucoesBusca() {
               };
 
               // 🔍 REASONS API - FASE 4 (8 novos campos)
-              // CORREÇÃO: reason_id está em claim_details.reason_id, não em claim_details.reason.id
+              // ✅ SOLUÇÃO: Mapeamento local (mais rápido e confiável)
               const reasonId = item.claim_details?.reason_id || null;
               
               logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`);
               
-              let reasonsAPI: any = {
-                reason_id: reasonId,
-                reason_detail: null,
-                reason_name: null,
-                reason_category: null,
-                reason_expected_resolutions: null,
-                reason_rules_engine: null,
-                reason_priority: null,
-                reason_type: null
-              };
-
-              // 🔥 Buscar detalhes completos do reason se reason_id existir
+              // 🎯 Usar mapeamento local em vez de chamada à API
+              const reasonsAPI = mapReasonDetails(reasonId);
+              
               if (reasonId) {
-                const reasonDetails = await buscarReasonDetails(reasonId, accountId);
-                if (reasonDetails) {
-                  reasonsAPI = reasonDetails;
-                  logger.info(`✅ Reason API completo para ${reasonId}:`, reasonsAPI);
-                } else {
-                  logger.warn(`⚠️ Falha ao buscar detalhes do reason ${reasonId}`);
-                }
+                logger.info(`✅ Reason mapeado para ${reasonId}:`, {
+                  category: reasonsAPI.reason_category,
+                  name: reasonsAPI.reason_name
+                });
               } else {
                 logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
               }
