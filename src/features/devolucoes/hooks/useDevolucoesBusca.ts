@@ -267,6 +267,50 @@ export function useDevolucoesBusca() {
                 status_moderacao: null
               };
 
+              // 👤 DADOS DO COMPRADOR - FASE 2 (3 colunas)
+              const buyer = item.order_data?.buyer;
+              const dadosComprador = {
+                comprador_cpf: buyer?.billing_info?.doc_number || null,
+                comprador_nome_completo: buyer ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() : null,
+                comprador_nickname: buyer?.nickname || null
+              };
+
+              // 💳 DADOS DE PAGAMENTO - FASE 2 (7 colunas) 
+              const payment = item.order_data?.payments?.[0];
+              const dadosPagamento = {
+                metodo_pagamento: payment?.payment_method_id || null,
+                tipo_pagamento: payment?.payment_type || null,
+                parcelas: payment?.installments || null,
+                valor_parcela: payment?.installment_amount || null,
+                transaction_id: payment?.id?.toString() || null,
+                percentual_reembolsado: item.descricao_custos?.produto?.percentual_reembolsado || null,
+                tags_pedido: item.order_data?.tags || []
+              };
+
+              // 🏷️ DADOS DO PRODUTO - FASE 3 (5 colunas)
+              const orderItem = item.order_data?.order_items?.[0];
+              const dadosProduto = {
+                custo_frete_devolucao: item.descricao_custos?.frete?.custo_devolucao || null,
+                custo_logistico_total: item.descricao_custos?.frete?.custo_total_logistica || null,
+                valor_original_produto: orderItem?.unit_price || null,
+                valor_reembolso_produto: item.descricao_custos?.produto?.valor_reembolsado || null,
+                taxa_ml_reembolso: item.descricao_custos?.taxas?.taxa_ml_reembolsada || null
+              };
+
+              // 🔖 TAGS E FLAGS - FASE 3 (5 colunas)
+              const dadosFlags = {
+                internal_tags: item.order_data?.internal_tags || [],
+                tem_financeiro: !!(item.valor_reembolso_total || item.amount),
+                tem_review: !!item.review_id,
+                tem_sla: item.sla_cumprido !== null,
+                nota_fiscal_autorizada: (item.order_data?.internal_tags || []).includes('invoice_authorized')
+              };
+
+              // 📊 QUALIDADE - FASE 3 (1 coluna)
+              const dadosQualidade = {
+                eficiencia_resolucao: item.claim_details?.resolution ? 'boa' : 'pendente'
+              };
+
               // 🔄 DADOS DE RETURN E TROCA (7 colunas)
               const dadosTroca = {
                 eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
@@ -320,7 +364,7 @@ export function useDevolucoesBusca() {
                 dados_return: item.return_details_v2 || item.return_details_v1 || {}
               };
 
-              // ✅ CONSOLIDAR TODOS OS DADOS (132 colunas total)
+              // ✅ CONSOLIDAR TODOS OS DADOS (157 colunas total incluindo Fase 2 e 3)
               const itemCompleto = {
                 ...dadosPrincipais,      // 17 colunas
                 ...dadosFinanceiros,     // 14 colunas
@@ -335,6 +379,11 @@ export function useDevolucoesBusca() {
                 ...dadosTroca,           // 7 colunas
                 ...dadosClassificacao,   // 17 colunas
                 ...dadosAdicionais,      // 9 colunas
+                ...dadosComprador,       // 3 colunas - FASE 2
+                ...dadosPagamento,       // 7 colunas - FASE 2
+                ...dadosProduto,         // 5 colunas - FASE 3
+                ...dadosFlags,           // 5 colunas - FASE 3
+                ...dadosQualidade,       // 1 coluna  - FASE 3
                 ...dadosBrutos           // 4 colunas
               };
               
