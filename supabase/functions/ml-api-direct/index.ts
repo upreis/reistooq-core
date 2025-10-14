@@ -1081,6 +1081,135 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               mensagens_nao_lidas: (safeClaimData?.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0) +
                                   (safeClaimData?.mediation_details?.messages?.filter((m: any) => !m.read)?.length || 0),
               
+              // ============================================
+              // 📋 17 NOVAS COLUNAS DE STATUS DE DEVOLUÇÃO
+              // ============================================
+              
+              // 🔄 STATUS DA DEVOLUÇÃO
+              status_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.status || 
+                               safeClaimData?.return_details_v1?.results?.[0]?.status || null,
+              
+              // 💰 STATUS DO DINHEIRO
+              status_dinheiro: safeClaimData?.return_details_v2?.results?.[0]?.status_money || 
+                              safeClaimData?.return_details_v1?.results?.[0]?.status_money || null,
+              
+              // 📑 SUBTIPO DA DEVOLUÇÃO
+              subtipo_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.subtype || 
+                                safeClaimData?.return_details_v1?.results?.[0]?.subtype || null,
+              
+              // 📅 DATA CRIAÇÃO DA DEVOLUÇÃO
+              data_criacao_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.date_created || 
+                                     safeClaimData?.return_details_v1?.results?.[0]?.date_created || null,
+              
+              // 📅 DATA ATUALIZAÇÃO DA DEVOLUÇÃO  
+              data_atualizacao_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.last_updated || 
+                                         safeClaimData?.return_details_v1?.results?.[0]?.last_updated || null,
+              
+              // 📅 DATA FECHAMENTO DA DEVOLUÇÃO
+              data_fechamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.date_closed || 
+                                        safeClaimData?.return_details_v1?.results?.[0]?.date_closed || null,
+              
+              // 💵 QUANDO SERÁ REEMBOLSADO
+              reembolso_quando: safeClaimData?.return_details_v2?.results?.[0]?.refund_at || 
+                               safeClaimData?.return_details_v1?.results?.[0]?.refund_at || null,
+              
+              // 📦 ID DO SHIPMENT DE DEVOLUÇÃO
+              shipment_id_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
+                                    safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
+                                    safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
+                                    safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id || null,
+              
+              // 📊 STATUS DO ENVIO DA DEVOLUÇÃO
+              status_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.status || 
+                                     safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.status || null,
+              
+              // 📦 CÓDIGO DE RASTREAMENTO DA DEVOLUÇÃO
+              codigo_rastreamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
+                                            safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
+              
+              // 🚚 TIPO DE ENVIO DA DEVOLUÇÃO
+              tipo_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.type || 
+                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.type || null,
+              
+              // 📍 DESTINO DA DEVOLUÇÃO
+              destino_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.destination?.name || 
+                                safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.destination?.name || null,
+              
+              // 🏠 ENDEREÇO COMPLETO DO DESTINO
+              endereco_destino_devolucao: (() => {
+                const shipment = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0] || 
+                                safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]
+                if (shipment?.destination?.shipping_address) {
+                  return JSON.stringify(shipment.destination.shipping_address)
+                }
+                return null
+              })(),
+              
+              // 📜 TIMELINE COMPLETO DE RASTREAMENTO (JSON)
+              timeline_rastreamento: (() => {
+                const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id
+                
+                if (!shipmentId) return null
+                
+                // Buscar no shipment_history os eventos deste shipment específico de devolução
+                const returnEvents = safeClaimData?.shipment_history?.combined_events?.filter((e: any) => 
+                  e.shipment_id == shipmentId && e.shipment_type === 'return'
+                ) || []
+                
+                return returnEvents.length > 0 ? JSON.stringify(returnEvents) : null
+              })(),
+              
+              // 📊 ÚLTIMO STATUS DE RASTREAMENTO
+              ultimo_status_rastreamento: (() => {
+                const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id
+                
+                if (!shipmentId) return null
+                
+                const returnEvents = safeClaimData?.shipment_history?.combined_events?.filter((e: any) => 
+                  e.shipment_id == shipmentId && e.shipment_type === 'return'
+                ) || []
+                
+                return returnEvents.length > 0 ? returnEvents[0]?.status : null
+              })(),
+              
+              // 📅 DATA DO ÚLTIMO STATUS
+              data_ultimo_status: (() => {
+                const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id
+                
+                if (!shipmentId) return null
+                
+                const returnEvents = safeClaimData?.shipment_history?.combined_events?.filter((e: any) => 
+                  e.shipment_id == shipmentId && e.shipment_type === 'return'
+                ) || []
+                
+                return returnEvents.length > 0 ? returnEvents[0]?.date_created : null
+              })(),
+              
+              // 📝 DESCRIÇÃO DO ÚLTIMO STATUS
+              descricao_ultimo_status: (() => {
+                const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
+                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id
+                
+                if (!shipmentId) return null
+                
+                const returnEvents = safeClaimData?.shipment_history?.combined_events?.filter((e: any) => 
+                  e.shipment_id == shipmentId && e.shipment_type === 'return'
+                ) || []
+                
+                return returnEvents.length > 0 ? (returnEvents[0]?.tracking?.description || returnEvents[0]?.tracking?.checkpoint) : null
+              })(),
+              
               // DADOS DE RETORNO/TROCA - ENRIQUECIDO COM CHANGE DETAILS
               eh_troca: safeClaimData?.is_exchange || 
                        (safeClaimData?.return_details_v2?.results?.[0]?.subtype || 
