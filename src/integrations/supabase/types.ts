@@ -1104,6 +1104,7 @@ export type Database = {
           marketplace_origem: string | null
           mediador_ml: string | null
           mensagens_nao_lidas: number | null
+          metodo_pagamento: string | null
           metodo_reembolso: string | null
           metodo_resolucao: string | null
           moeda_custo: string | null
@@ -1192,6 +1193,7 @@ export type Database = {
           valor_compensacao: number | null
           valor_diferenca_troca: number | null
           valor_original_produto: number | null
+          valor_parcela: number | null
           valor_reembolso_frete: number | null
           valor_reembolso_produto: number | null
           valor_reembolso_total: number | null
@@ -1271,6 +1273,7 @@ export type Database = {
           marketplace_origem?: string | null
           mediador_ml?: string | null
           mensagens_nao_lidas?: number | null
+          metodo_pagamento?: string | null
           metodo_reembolso?: string | null
           metodo_resolucao?: string | null
           moeda_custo?: string | null
@@ -1359,6 +1362,7 @@ export type Database = {
           valor_compensacao?: number | null
           valor_diferenca_troca?: number | null
           valor_original_produto?: number | null
+          valor_parcela?: number | null
           valor_reembolso_frete?: number | null
           valor_reembolso_produto?: number | null
           valor_reembolso_total?: number | null
@@ -1438,6 +1442,7 @@ export type Database = {
           marketplace_origem?: string | null
           mediador_ml?: string | null
           mensagens_nao_lidas?: number | null
+          metodo_pagamento?: string | null
           metodo_reembolso?: string | null
           metodo_resolucao?: string | null
           moeda_custo?: string | null
@@ -1526,6 +1531,7 @@ export type Database = {
           valor_compensacao?: number | null
           valor_diferenca_troca?: number | null
           valor_original_produto?: number | null
+          valor_parcela?: number | null
           valor_reembolso_frete?: number | null
           valor_reembolso_produto?: number | null
           valor_reembolso_total?: number | null
