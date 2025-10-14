@@ -3378,6 +3378,8 @@ export type Database = {
           comprador_nome_completo: string | null
           created_at: string | null
           custo_envio_devolucao: number | null
+          custo_frete_devolucao: number | null
+          custo_logistica_total: number | null
           dados_completos: boolean | null
           data_estimada_troca: string | null
           data_limite_troca: string | null
@@ -3386,12 +3388,14 @@ export type Database = {
           date_closed: string | null
           date_created: string | null
           dias_restantes_acao: number | null
+          eficiencia_resolucao: string | null
           eh_troca: boolean | null
           em_mediacao: boolean | null
           escalado_para_ml: boolean | null
           historico_localizacoes: Json | null
           id: string
           integration_account_id: string | null
+          internal_tags: string[] | null
           item_id: string | null
           item_title: string | null
           localizacao_atual: string | null
@@ -3400,11 +3404,16 @@ export type Database = {
           metodo_pagamento: string | null
           motivo_categoria: string | null
           nivel_prioridade: string | null
+          nota_fiscal_autorizada: boolean | null
           numero_parcelas: number | null
           order_id: string
           percentual_reembolsado: number | null
+          produto_categoria: string | null
+          produto_thumbnail: string | null
           produto_troca_id: string | null
           produto_troca_titulo: string | null
+          produto_warranty: string | null
+          qualidade_comunicacao: string | null
           quantity: number | null
           responsavel_custo: string | null
           shipment_costs: Json | null
@@ -3419,6 +3428,10 @@ export type Database = {
           subcategoria_problema: string | null
           subtipo_claim: string | null
           tags_pedido: string[] | null
+          taxa_ml_reembolso: number | null
+          tem_financeiro: boolean | null
+          tem_review: boolean | null
+          tem_sla: boolean | null
           tempo_transito_dias: number | null
           timeline_mensagens: Json | null
           tipo_claim: string | null
@@ -3431,7 +3444,9 @@ export type Database = {
           ultima_mensagem_data: string | null
           updated_at: string | null
           valor_compensacao: number | null
+          valor_original_produto: number | null
           valor_parcela: number | null
+          valor_reembolsado_produto: number | null
         }
         Insert: {
           acao_seller_necessaria?: boolean | null
@@ -3450,6 +3465,8 @@ export type Database = {
           comprador_nome_completo?: string | null
           created_at?: string | null
           custo_envio_devolucao?: number | null
+          custo_frete_devolucao?: number | null
+          custo_logistica_total?: number | null
           dados_completos?: boolean | null
           data_estimada_troca?: string | null
           data_limite_troca?: string | null
@@ -3458,12 +3475,14 @@ export type Database = {
           date_closed?: string | null
           date_created?: string | null
           dias_restantes_acao?: number | null
+          eficiencia_resolucao?: string | null
           eh_troca?: boolean | null
           em_mediacao?: boolean | null
           escalado_para_ml?: boolean | null
           historico_localizacoes?: Json | null
           id?: string
           integration_account_id?: string | null
+          internal_tags?: string[] | null
           item_id?: string | null
           item_title?: string | null
           localizacao_atual?: string | null
@@ -3472,11 +3491,16 @@ export type Database = {
           metodo_pagamento?: string | null
           motivo_categoria?: string | null
           nivel_prioridade?: string | null
+          nota_fiscal_autorizada?: boolean | null
           numero_parcelas?: number | null
           order_id: string
           percentual_reembolsado?: number | null
+          produto_categoria?: string | null
+          produto_thumbnail?: string | null
           produto_troca_id?: string | null
           produto_troca_titulo?: string | null
+          produto_warranty?: string | null
+          qualidade_comunicacao?: string | null
           quantity?: number | null
           responsavel_custo?: string | null
           shipment_costs?: Json | null
@@ -3491,6 +3515,10 @@ export type Database = {
           subcategoria_problema?: string | null
           subtipo_claim?: string | null
           tags_pedido?: string[] | null
+          taxa_ml_reembolso?: number | null
+          tem_financeiro?: boolean | null
+          tem_review?: boolean | null
+          tem_sla?: boolean | null
           tempo_transito_dias?: number | null
           timeline_mensagens?: Json | null
           tipo_claim?: string | null
@@ -3503,7 +3531,9 @@ export type Database = {
           ultima_mensagem_data?: string | null
           updated_at?: string | null
           valor_compensacao?: number | null
+          valor_original_produto?: number | null
           valor_parcela?: number | null
+          valor_reembolsado_produto?: number | null
         }
         Update: {
           acao_seller_necessaria?: boolean | null
@@ -3522,6 +3552,8 @@ export type Database = {
           comprador_nome_completo?: string | null
           created_at?: string | null
           custo_envio_devolucao?: number | null
+          custo_frete_devolucao?: number | null
+          custo_logistica_total?: number | null
           dados_completos?: boolean | null
           data_estimada_troca?: string | null
           data_limite_troca?: string | null
@@ -3530,12 +3562,14 @@ export type Database = {
           date_closed?: string | null
           date_created?: string | null
           dias_restantes_acao?: number | null
+          eficiencia_resolucao?: string | null
           eh_troca?: boolean | null
           em_mediacao?: boolean | null
           escalado_para_ml?: boolean | null
           historico_localizacoes?: Json | null
           id?: string
           integration_account_id?: string | null
+          internal_tags?: string[] | null
           item_id?: string | null
           item_title?: string | null
           localizacao_atual?: string | null
@@ -3544,11 +3578,16 @@ export type Database = {
           metodo_pagamento?: string | null
           motivo_categoria?: string | null
           nivel_prioridade?: string | null
+          nota_fiscal_autorizada?: boolean | null
           numero_parcelas?: number | null
           order_id?: string
           percentual_reembolsado?: number | null
+          produto_categoria?: string | null
+          produto_thumbnail?: string | null
           produto_troca_id?: string | null
           produto_troca_titulo?: string | null
+          produto_warranty?: string | null
+          qualidade_comunicacao?: string | null
           quantity?: number | null
           responsavel_custo?: string | null
           shipment_costs?: Json | null
@@ -3563,6 +3602,10 @@ export type Database = {
           subcategoria_problema?: string | null
           subtipo_claim?: string | null
           tags_pedido?: string[] | null
+          taxa_ml_reembolso?: number | null
+          tem_financeiro?: boolean | null
+          tem_review?: boolean | null
+          tem_sla?: boolean | null
           tempo_transito_dias?: number | null
           timeline_mensagens?: Json | null
           tipo_claim?: string | null
@@ -3575,7 +3618,9 @@ export type Database = {
           ultima_mensagem_data?: string | null
           updated_at?: string | null
           valor_compensacao?: number | null
+          valor_original_produto?: number | null
           valor_parcela?: number | null
+          valor_reembolsado_produto?: number | null
         }
         Relationships: [
           {

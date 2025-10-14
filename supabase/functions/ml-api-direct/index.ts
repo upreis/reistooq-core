@@ -203,6 +203,29 @@ serve(async (req) => {
             // 🟡 FASE 2: Tags
             tags_pedido: devolucao.order_data?.tags || [],
             
+            // 🟢 FASE 3: Custos Detalhados
+            custo_frete_devolucao: devolucao.custo_frete_devolucao,
+            custo_logistica_total: devolucao.custo_logistica_total,
+            valor_original_produto: devolucao.valor_original_produto,
+            valor_reembolsado_produto: devolucao.valor_reembolsado_produto,
+            taxa_ml_reembolso: devolucao.taxa_ml_reembolso,
+            
+            // 🟢 FASE 3: Internal Tags e Metadados
+            internal_tags: devolucao.internal_tags,
+            tem_financeiro: devolucao.tem_financeiro,
+            tem_review: devolucao.tem_review,
+            tem_sla: devolucao.tem_sla,
+            nota_fiscal_autorizada: devolucao.nota_fiscal_autorizada,
+            
+            // 🟢 FASE 3: Dados de Produto
+            produto_warranty: devolucao.produto_warranty,
+            produto_categoria: devolucao.produto_categoria,
+            produto_thumbnail: devolucao.produto_thumbnail,
+            
+            // 🟢 FASE 3: Análise e Qualidade
+            qualidade_comunicacao: devolucao.qualidade_comunicacao,
+            eficiencia_resolucao: devolucao.eficiencia_resolucao,
+            
             // Status e Classificação
             status_devolucao: devolucao.status_devolucao,
             status_dinheiro: devolucao.status_dinheiro,
@@ -1619,7 +1642,107 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               tags_pedido: safeOrderDetail?.tags || [],
               
               // ============================================
-              // FIM FASE 2
+              // 🟢 FASE 3: CAMPOS AVANÇADOS
+              // ============================================
+              
+              // 1. CUSTOS DETALHADOS
+              custo_frete_devolucao: (() => {
+                const shipping = safeShipmentData?.shipping_items?.[0]
+                return shipping?.cost || safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || null
+              })(),
+              
+              custo_logistica_total: (() => {
+                const freteDevolucao = safeShipmentData?.shipping_items?.[0]?.cost || 0
+                const freteOriginal = safeOrderDetail?.shipping?.cost || 0
+                return freteDevolucao + freteOriginal || null
+              })(),
+              
+              valor_original_produto: (() => {
+                const item = safeOrderDetail?.order_items?.[0]
+                return item?.full_unit_price || item?.unit_price || null
+              })(),
+              
+              valor_reembolsado_produto: (() => {
+                return safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
+                       safeClaimData?.return_details_v1?.results?.[0]?.refund_amount || null
+              })(),
+              
+              taxa_ml_reembolso: (() => {
+                const refundAmount = safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
+                                   safeClaimData?.return_details_v1?.results?.[0]?.refund_amount || 0
+                const originalAmount = safeOrderDetail?.total_amount || 0
+                const taxaPercentual = safeOrderDetail?.payments?.[0]?.marketplace_fee || 0
+                return (refundAmount * taxaPercentual / 100) || null
+              })(),
+              
+              // 2. INTERNAL TAGS E METADADOS
+              internal_tags: (() => {
+                const tags = []
+                if (safeClaimData?.resolution) tags.push('resolved')
+                if (safeClaimData?.mediation) tags.push('mediated')
+                if (safeOrderDetail?.tags?.includes('paid')) tags.push('paid')
+                if (safeShipmentData) tags.push('has_shipping')
+                return tags.length > 0 ? tags : null
+              })(),
+              
+              tem_financeiro: (() => {
+                return !!(safeOrderDetail?.payments?.[0] && 
+                         (safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
+                          safeClaimData?.return_details_v1?.results?.[0]?.refund_amount))
+              })(),
+              
+              tem_review: (() => {
+                return !!(safeClaimData?.mediation || safeClaimData?.resolution)
+              })(),
+              
+              tem_sla: (() => {
+                const dueDate = safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date
+                if (!dueDate) return false
+                return new Date(dueDate) > new Date()
+              })(),
+              
+              nota_fiscal_autorizada: (() => {
+                return safeOrderDetail?.tags?.includes('authorized_invoice') || false
+              })(),
+              
+              // 3. DADOS DE PRODUTO
+              produto_warranty: (() => {
+                const item = safeOrderDetail?.order_items?.[0]?.item
+                return item?.warranty || null
+              })(),
+              
+              produto_categoria: (() => {
+                const item = safeOrderDetail?.order_items?.[0]?.item
+                return item?.category_id || null
+              })(),
+              
+              produto_thumbnail: (() => {
+                const item = safeOrderDetail?.order_items?.[0]?.item
+                return item?.thumbnail || item?.picture_url || null
+              })(),
+              
+              // 4. ANÁLISE E QUALIDADE
+              qualidade_comunicacao: (() => {
+                const messages = safeClaimData?.messages || []
+                if (messages.length === 0) return 'none'
+                if (messages.length > 5) return 'excellent'
+                if (messages.length > 2) return 'good'
+                return 'fair'
+              })(),
+              
+              eficiencia_resolucao: (() => {
+                if (!safeClaimData?.date_created || !safeClaimData?.resolution?.date) return null
+                const created = new Date(safeClaimData.date_created).getTime()
+                const resolved = new Date(safeClaimData.resolution.date).getTime()
+                const diffDays = Math.floor((resolved - created) / (1000 * 60 * 60 * 24))
+                
+                if (diffDays <= 2) return 'fast'
+                if (diffDays <= 7) return 'normal'
+                return 'slow'
+              })(),
+              
+              // ============================================
+              // FIM FASE 3
               // ============================================
               
               // MARCADORES DE QUALIDADE
