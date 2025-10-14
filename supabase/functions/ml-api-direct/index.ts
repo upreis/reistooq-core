@@ -361,6 +361,27 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       console.log(`ℹ️  Nenhum filtro de data aplicado - processando todos os ${claimsParaProcessar.length} claims`)
     }
 
+    // 🛡️ PROTEÇÃO CONTRA TIMEOUT: Limitar quantidade de claims processados
+    const MAX_CLAIMS_TO_PROCESS = 500
+    if (claimsParaProcessar.length > MAX_CLAIMS_TO_PROCESS) {
+      console.log(`\n⚠️  ============= LIMITE DE PROCESSAMENTO ATINGIDO =============`)
+      console.log(`   • Claims filtrados: ${claimsParaProcessar.length}`)
+      console.log(`   • Limite máximo: ${MAX_CLAIMS_TO_PROCESS}`)
+      console.log(`   • Motivo: Evitar timeout da Edge Function (limite de 30s)`)
+      console.log(`   • Ação: Processando apenas os ${MAX_CLAIMS_TO_PROCESS} mais recentes`)
+      console.log(`   • Recomendação: Use filtros de data mais específicos para ver todos`)
+      console.log(`🛡️  ============================================================\n`)
+      
+      // Ordenar por data decrescente e pegar os mais recentes
+      claimsParaProcessar = claimsParaProcessar
+        .sort((a: any, b: any) => {
+          const dateA = new Date(a.date_created || 0).getTime()
+          const dateB = new Date(b.date_created || 0).getTime()
+          return dateB - dateA // Mais recente primeiro
+        })
+        .slice(0, MAX_CLAIMS_TO_PROCESS)
+    }
+
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
     
