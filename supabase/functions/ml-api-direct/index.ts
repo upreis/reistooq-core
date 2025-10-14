@@ -304,38 +304,59 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let claimsParaProcessar = data.data
     
     if (filters?.date_from || filters?.date_to) {
-      const dateFrom = filters?.date_from ? new Date(`${filters.date_from}T00:00:00.000Z`) : null
-      const dateTo = filters?.date_to ? new Date(`${filters.date_to}T23:59:59.999Z`) : null
-      
-      console.log(`\n🔍 ========== APLICANDO FILTRO LOCAL DE DATA ==========`)
-      console.log(`📅 Data FROM: ${dateFrom ? dateFrom.toISOString() : 'N/A'}`)
-      console.log(`📅 Data TO: ${dateTo ? dateTo.toISOString() : 'N/A'}`)
+      console.log(`\n🔍 ========== APLICANDO FILTRO LOCAL DE DATA (CORRIGIDO) ==========`)
+      console.log(`📅 Filtro date_from recebido: ${filters.date_from || 'N/A'}`)
+      console.log(`📅 Filtro date_to recebido: ${filters.date_to || 'N/A'}`)
       
       const claimsAntesFiltro = claimsParaProcessar.length
       
       claimsParaProcessar = claimsParaProcessar.filter((claim: any) => {
-        if (!claim.date_created) return false
-        
-        const claimDate = new Date(claim.date_created)
-        
-        if (dateFrom && claimDate < dateFrom) {
-          console.log(`   ❌ Claim ${claim.id} REJEITADO: ${claim.date_created} < ${dateFrom.toISOString()}`)
-          return false
-        }
-        if (dateTo && claimDate > dateTo) {
-          console.log(`   ❌ Claim ${claim.id} REJEITADO: ${claim.date_created} > ${dateTo.toISOString()}`)
+        if (!claim.date_created) {
+          console.log(`   ⚠️  Claim ${claim.id} sem date_created - REJEITADO`)
           return false
         }
         
-        console.log(`   ✅ Claim ${claim.id} ACEITO: ${claim.date_created}`)
-        return true
+        // Extrair apenas a data (YYYY-MM-DD) do claim, ignorando horário
+        const claimDateStr = claim.date_created.split('T')[0]
+        
+        // Comparar strings de data diretamente (YYYY-MM-DD format)
+        let aceito = true
+        
+        if (filters.date_from && claimDateStr < filters.date_from) {
+          console.log(`   ❌ Claim ${claim.id} REJEITADO: ${claimDateStr} < ${filters.date_from}`)
+          aceito = false
+        }
+        
+        if (aceito && filters.date_to && claimDateStr > filters.date_to) {
+          console.log(`   ❌ Claim ${claim.id} REJEITADO: ${claimDateStr} > ${filters.date_to}`)
+          aceito = false
+        }
+        
+        if (aceito) {
+          console.log(`   ✅ Claim ${claim.id} ACEITO: ${claimDateStr} está no intervalo`)
+        }
+        
+        return aceito
       })
       
       console.log(`\n📊 RESULTADO DO FILTRO:`)
       console.log(`   • Claims antes do filtro: ${claimsAntesFiltro}`)
       console.log(`   • Claims após filtro de data: ${claimsParaProcessar.length}`)
       console.log(`   • Claims removidos: ${claimsAntesFiltro - claimsParaProcessar.length}`)
-      console.log(`🔍 ====================================================\n`)
+      
+      // Mostrar intervalo de datas dos claims aceitos
+      if (claimsParaProcessar.length > 0) {
+        const datas = claimsParaProcessar
+          .map((c: any) => c.date_created?.split('T')[0])
+          .filter(Boolean)
+          .sort()
+        
+        console.log(`\n📅 CLAIMS ACEITOS - INTERVALO DE DATAS:`)
+        console.log(`   • Data mais antiga: ${datas[0]}`)
+        console.log(`   • Data mais recente: ${datas[datas.length - 1]}`)
+      }
+      
+      console.log(`🔍 ============================================================\n`)
     } else {
       console.log(`ℹ️  Nenhum filtro de data aplicado - processando todos os ${claimsParaProcessar.length} claims`)
     }
