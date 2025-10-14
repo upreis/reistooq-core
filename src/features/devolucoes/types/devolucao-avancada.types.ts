@@ -187,6 +187,35 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   hash_verificacao?: string | null;
   confiabilidade_dados?: string | null;
   versao_api_utilizada?: string | null;
+  
+  // ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ==========
+  comprador_cpf?: string | null;
+  comprador_nome_completo?: string | null;
+  metodo_pagamento?: string | null;
+  tipo_pagamento?: string | null;
+  parcelas?: number | null;
+  valor_parcela?: number | null;
+  transaction_id?: string | null;
+  percentual_reembolsado?: number | null;
+  tags_pedido?: string[] | null;
+  
+  // ========== FASE 3: CAMPOS AVANÇADOS (15 COLUNAS) ==========
+  
+  // Custos Detalhados (5 campos)
+  custo_frete_devolucao?: number | null;
+  valor_original_produto?: number | null;
+  
+  // Internal Tags e Metadados (5 campos)
+  internal_tags?: string[] | null;
+  tem_financeiro?: boolean | null;
+  tem_review?: boolean | null;
+  tem_sla?: boolean | null;
+  nota_fiscal_autorizada?: boolean | null;
+  
+  // Dados de Produto (3 campos)
+  produto_warranty?: string | null;
+  produto_categoria?: string | null;
+  produto_thumbnail?: string | null;
 }
 
 // ===== TIPOS AUXILIARES =====

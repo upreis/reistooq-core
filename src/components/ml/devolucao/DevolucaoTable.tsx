@@ -118,6 +118,43 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Campos Falt.</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔄 Últ Sync</th>
             
+            {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📝 CPF/CNPJ</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">👤 Nome Completo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🏷️ Nickname</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💳 Método Pgto</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💰 Tipo Pgto</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔢 Parcelas</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💵 Valor Parcela</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🆔 Transaction ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 % Reembolsado</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏷️ Tags Pedido</th>
+            
+            {/* ========== FASE 3: CAMPOS AVANÇADOS (15 COLUNAS) ========== */}
+            
+            {/* Custos Detalhados */}
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Custo Frete Dev</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Custo Log Total</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💰 Valor Original</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💵 Reemb Produto</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Taxa ML Reemb</th>
+            
+            {/* Internal Tags e Metadados */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏷️ Tags Internas</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💰 Tem Financ</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📋 Tem Review</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Tem SLA</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📄 NF Autor</th>
+            
+            {/* Dados de Produto */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🛡️ Garantia</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📦 Categoria Prod</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🖼️ Thumbnail</th>
+            
+            {/* Análise e Qualidade */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💬 Qual Comunic</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚡ Efic Resolução</th>
+            
             {/* ========== 60 COLUNAS FALTANTES DO BANCO ========== */}
             
             {/* RASTREAMENTO AVANÇADO */}

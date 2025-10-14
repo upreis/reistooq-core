@@ -864,6 +864,218 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3">{devolucao.confiabilidade_dados || '-'}</td>
       <td className="px-3 py-3">{devolucao.versao_api_utilizada || '-'}</td>
       
+      {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
+      
+      {/* CPF/CNPJ */}
+      <td className="px-3 py-3 text-foreground font-mono text-sm">
+        {devolucao.comprador_cpf || '-'}
+      </td>
+      
+      {/* Nome Completo */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.comprador_nome_completo || '-'}
+      </td>
+      
+      {/* Nickname */}
+      <td className="px-3 py-3 text-blue-600 dark:text-blue-400">
+        {devolucao.comprador_nickname || '-'}
+      </td>
+      
+      {/* Método Pagamento */}
+      <td className="px-3 py-3 text-foreground">
+        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
+          {devolucao.metodo_pagamento || '-'}
+        </span>
+      </td>
+      
+      {/* Tipo Pagamento */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.tipo_pagamento || '-'}
+      </td>
+      
+      {/* Parcelas */}
+      <td className="px-3 py-3 text-center text-foreground font-medium">
+        {devolucao.parcelas ? `${devolucao.parcelas}x` : '-'}
+      </td>
+      
+      {/* Valor Parcela */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold">
+        {devolucao.valor_parcela ? `R$ ${devolucao.valor_parcela.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Transaction ID */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs truncate" title={devolucao.transaction_id}>
+        {devolucao.transaction_id || '-'}
+      </td>
+      
+      {/* % Reembolsado */}
+      <td className="px-3 py-3 text-center">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="bg-green-500 h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(devolucao.percentual_reembolsado || 0, 100)}%` }}
+            />
+          </div>
+          <span className="font-semibold text-sm text-foreground">
+            {devolucao.percentual_reembolsado?.toFixed(0) || 0}%
+          </span>
+        </div>
+      </td>
+      
+      {/* Tags Pedido */}
+      <td className="px-3 py-3">
+        <div className="flex flex-wrap gap-1">
+          {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
+            devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
+              <span key={idx} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 rounded text-xs">
+                {tag}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-xs">-</span>
+          )}
+        </div>
+      </td>
+      
+      {/* ========== FASE 3: CAMPOS AVANÇADOS (15 COLUNAS) ========== */}
+      
+      {/* Custo Frete Devolução */}
+      <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
+        {devolucao.custo_frete_devolucao ? `R$ ${devolucao.custo_frete_devolucao.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Custo Logístico Total */}
+      <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
+        {devolucao.custo_logistico_total ? `R$ ${devolucao.custo_logistico_total.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Valor Original */}
+      <td className="px-3 py-3 text-right text-foreground font-semibold">
+        {devolucao.valor_original_produto ? `R$ ${devolucao.valor_original_produto.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Reembolso Produto */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold">
+        {devolucao.valor_reembolso_produto ? `R$ ${devolucao.valor_reembolso_produto.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Taxa ML Reembolso */}
+      <td className="px-3 py-3 text-right text-orange-600 dark:text-orange-400 font-semibold">
+        {devolucao.taxa_ml_reembolso ? `R$ ${devolucao.taxa_ml_reembolso.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Tags Internas */}
+      <td className="px-3 py-3">
+        <div className="flex flex-wrap gap-1">
+          {devolucao.internal_tags && Array.isArray(devolucao.internal_tags) && devolucao.internal_tags.length > 0 ? (
+            devolucao.internal_tags.slice(0, 3).map((tag: string, idx: number) => (
+              <span key={idx} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded text-xs">
+                {tag}
+              </span>
+            ))
+          ) : (
+            <span className="text-muted-foreground text-xs">-</span>
+          )}
+        </div>
+      </td>
+      
+      {/* Tem Financeiro */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.tem_financeiro 
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }`}>
+          {devolucao.tem_financeiro ? '✓' : '✗'}
+        </span>
+      </td>
+      
+      {/* Tem Review */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.tem_review 
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }`}>
+          {devolucao.tem_review ? '✓' : '✗'}
+        </span>
+      </td>
+      
+      {/* Tem SLA */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.tem_sla 
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }`}>
+          {devolucao.tem_sla ? '✓' : '✗'}
+        </span>
+      </td>
+      
+      {/* NF Autorizada */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.nota_fiscal_autorizada 
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        }`}>
+          {devolucao.nota_fiscal_autorizada ? '✓' : '✗'}
+        </span>
+      </td>
+      
+      {/* Garantia Produto */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.produto_warranty || '-'}
+      </td>
+      
+      {/* Categoria Produto */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.produto_categoria || '-'}
+      </td>
+      
+      {/* Thumbnail */}
+      <td className="px-3 py-3">
+        {devolucao.produto_thumbnail ? (
+          <img 
+            src={devolucao.produto_thumbnail} 
+            alt="Produto" 
+            className="h-12 w-12 object-cover rounded border"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+          />
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        )}
+      </td>
+      
+      {/* Qualidade Comunicação */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.qualidade_comunicacao === 'excellent' || devolucao.qualidade_comunicacao === 'good'
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : devolucao.qualidade_comunicacao === 'fair'
+            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+        }`}>
+          {devolucao.qualidade_comunicacao || '-'}
+        </span>
+      </td>
+      
+      {/* Eficiência Resolução */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.eficiencia_resolucao === 'fast'
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : devolucao.eficiencia_resolucao === 'normal'
+            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+        }`}>
+          {devolucao.eficiencia_resolucao || '-'}
+        </span>
+      </td>
+
       {/* Botão de Ações - MOVIDO PARA O FINAL */}
       <td className="px-3 py-3 text-center">
         <Button
