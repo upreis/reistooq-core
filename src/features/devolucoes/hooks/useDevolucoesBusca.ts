@@ -356,6 +356,18 @@ export function useDevolucoesBusca() {
                 valor_diferenca_troca: null
               };
 
+              // 🔍 REASONS API - FASE 4 (8 novos campos)
+              const reasonsAPI = {
+                reason_id: item.claim_details?.reason?.id || null,
+                reason_detail: item.claim_details?.reason?.description || null,
+                reason_name: item.claim_details?.reason?.name || null,
+                reason_category: item.claim_details?.reason?.category || null,
+                reason_expected_resolutions: item.claim_details?.reason?.expected_resolutions || null,
+                reason_rules_engine: item.claim_details?.reason?.rules_engine || null,
+                reason_priority: item.claim_details?.reason?.priority || null,
+                reason_type: item.claim_details?.reason?.type || null
+              };
+
               // 📦 DADOS BRUTOS JSONB (4 colunas)
               const dadosBrutos = {
                 dados_order: item.order_data || {},
@@ -364,7 +376,7 @@ export function useDevolucoesBusca() {
                 dados_return: item.return_details_v2 || item.return_details_v1 || {}
               };
 
-              // ✅ CONSOLIDAR TODOS OS DADOS (157 colunas total incluindo Fase 2 e 3)
+              // ✅ CONSOLIDAR TODOS OS DADOS (165 colunas total incluindo Fase 2, 3 e 4)
               const itemCompleto = {
                 ...dadosPrincipais,      // 17 colunas
                 ...dadosFinanceiros,     // 14 colunas
@@ -378,6 +390,7 @@ export function useDevolucoesBusca() {
                 ...dadosMensagens,       // 7 colunas
                 ...dadosTroca,           // 7 colunas
                 ...dadosClassificacao,   // 17 colunas
+                ...reasonsAPI,           // 8 colunas - FASE 4
                 ...dadosAdicionais,      // 9 colunas
                 ...dadosComprador,       // 3 colunas - FASE 2
                 ...dadosPagamento,       // 7 colunas - FASE 2
