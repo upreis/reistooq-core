@@ -155,6 +155,127 @@ serve(async (req) => {
       
       console.log(`📊 Total de pedidos cancelados encontrados: ${cancelledOrders.length}`)
       
+      // ============ 🔴 FASE 1: SALVAMENTO NO SUPABASE ============
+      if (cancelledOrders.length > 0) {
+        console.log(`💾 Iniciando salvamento de ${cancelledOrders.length} pedidos cancelados no Supabase...`)
+        
+        try {
+          const supabaseAdmin = makeServiceClient()
+          
+          // Preparar dados para inserção
+          const recordsToInsert = cancelledOrders.map(devolucao => ({
+            // IDs e Controle
+            order_id: devolucao.order_id,
+            claim_id: devolucao.claim_id,
+            integration_account_id: integration_account_id,
+            
+            // Dados Básicos do Pedido
+            status: devolucao.status,
+            date_created: devolucao.date_created,
+            date_closed: devolucao.date_closed,
+            total_amount: devolucao.total_amount,
+            
+            // Dados do Produto
+            item_id: devolucao.item_id,
+            item_title: devolucao.item_title,
+            quantity: devolucao.quantity,
+            sku: devolucao.sku,
+            
+            // Dados do Comprador
+            buyer_id: devolucao.buyer_id,
+            buyer_nickname: devolucao.buyer_nickname,
+            
+            // Status e Classificação
+            status_devolucao: devolucao.status_devolucao,
+            status_dinheiro: devolucao.status_dinheiro,
+            categoria_problema: devolucao.categoria_problema,
+            subcategoria_problema: devolucao.subcategoria_problema,
+            motivo_categoria: devolucao.motivo_categoria,
+            
+            // Devolução e Troca
+            eh_troca: devolucao.eh_troca,
+            produto_troca_id: devolucao.produto_troca_id,
+            produto_troca_titulo: devolucao.produto_troca_titulo,
+            
+            // Datas Importantes
+            data_estimada_troca: devolucao.data_estimada_troca,
+            data_limite_troca: devolucao.data_limite_troca,
+            data_vencimento_acao: devolucao.data_vencimento_acao,
+            dias_restantes_acao: devolucao.dias_restantes_acao,
+            
+            // Rastreamento
+            shipment_id: devolucao.shipment_id,
+            codigo_rastreamento: devolucao.codigo_rastreamento,
+            transportadora: devolucao.transportadora,
+            status_rastreamento: devolucao.status_rastreamento,
+            localizacao_atual: devolucao.localizacao_atual,
+            status_transporte_atual: devolucao.status_transporte_atual,
+            data_ultima_movimentacao: devolucao.data_ultima_movimentacao,
+            tempo_transito_dias: devolucao.tempo_transito_dias,
+            
+            // Dados Estruturados (JSONB)
+            tracking_history: devolucao.tracking_history,
+            tracking_events: devolucao.tracking_events,
+            historico_localizacoes: devolucao.historico_localizacoes,
+            carrier_info: devolucao.carrier_info,
+            shipment_delays: devolucao.shipment_delays,
+            shipment_costs: devolucao.shipment_costs,
+            
+            // Financeiro
+            custo_envio_devolucao: devolucao.custo_envio_devolucao,
+            valor_compensacao: devolucao.valor_compensacao,
+            responsavel_custo: devolucao.responsavel_custo,
+            
+            // Mensagens e Anexos
+            mensagens_nao_lidas: devolucao.mensagens_nao_lidas,
+            ultima_mensagem_data: devolucao.ultima_mensagem_data,
+            timeline_mensagens: devolucao.timeline_mensagens,
+            anexos_count: devolucao.anexos_count,
+            anexos_comprador: devolucao.anexos_comprador,
+            anexos_vendedor: devolucao.anexos_vendedor,
+            anexos_ml: devolucao.anexos_ml,
+            
+            // Mediação e Ações
+            em_mediacao: devolucao.em_mediacao,
+            escalado_para_ml: devolucao.escalado_para_ml,
+            acao_seller_necessaria: devolucao.acao_seller_necessaria,
+            nivel_prioridade: devolucao.nivel_prioridade,
+            
+            // Tipo e Subtipo
+            tipo_claim: devolucao.tipo_claim,
+            subtipo_claim: devolucao.subtipo_claim,
+            
+            // Controle de Qualidade
+            dados_completos: devolucao.dados_completos,
+            marketplace_origem: devolucao.marketplace_origem,
+            
+            // Timestamps
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }))
+          
+          // Fazer upsert (inserir ou atualizar baseado em order_id + integration_account_id)
+          const { data, error } = await supabaseAdmin
+            .from('pedidos_cancelados_ml')
+            .upsert(recordsToInsert, {
+              onConflict: 'order_id,integration_account_id',
+              ignoreDuplicates: false
+            })
+          
+          if (error) {
+            console.error('❌ Erro ao salvar pedidos cancelados:', error)
+            throw error
+          }
+          
+          console.log(`✅ ${recordsToInsert.length} pedidos cancelados salvos com sucesso no Supabase!`)
+          
+        } catch (saveError) {
+          console.error('❌ Erro ao salvar dados no Supabase:', saveError)
+          // Não falhar a requisição, apenas logar o erro
+        }
+      }
+      // ============ FIM FASE 1: SALVAMENTO ============
+      
       return new Response(
         JSON.stringify({
           success: true,
