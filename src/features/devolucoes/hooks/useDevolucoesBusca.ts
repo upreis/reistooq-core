@@ -3,7 +3,7 @@
  * Une toda lógica de busca em um só lugar com otimização para tempo real
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -16,14 +16,19 @@ export interface DevolucaoBuscaFilters {
   searchTerm?: string; // Adicionado campo de busca
 }
 
+// 🎯 CACHE GLOBAL DE REASONS - Evita chamadas repetidas à API
+const reasonsCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60 * 30; // 30 minutos
+
 export function useDevolucoesBusca() {
   const [loading, setLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
   // A função ml-api-direct já obtém o token internamente de forma segura
 
   /**
-   * 🔍 Busca detalhes de um reason específico na API do ML
+   * 🔍 Busca detalhes de um reason específico na API do ML (com cache)
    */
   const fetchReasonDetails = async (
     reasonId: string,
@@ -34,9 +39,16 @@ export function useDevolucoesBusca() {
     detail: string;
     flow: string;
   } | null> => {
-    try {
-      logger.info(`🔍 Buscando reason ${reasonId} na API...`);
+    // 🎯 VERIFICAR CACHE PRIMEIRO
+    const cacheKey = `${integrationAccountId}:${reasonId}`;
+    const cached = reasonsCache.get(cacheKey);
+    
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+      logger.info(`💾 Cache hit para reason ${reasonId}`);
+      return cached.data;
+    }
 
+    try {
       const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
         body: {
           action: 'get_reason_detail',
@@ -54,7 +66,12 @@ export function useDevolucoesBusca() {
       }
 
       if (apiResponse?.data) {
-        logger.info(`✅ Reason ${reasonId} encontrado:`, apiResponse.data.detail);
+        // 💾 SALVAR NO CACHE
+        reasonsCache.set(cacheKey, {
+          data: apiResponse.data,
+          timestamp: Date.now()
+        });
+        
         return apiResponse.data;
       }
 
@@ -66,29 +83,43 @@ export function useDevolucoesBusca() {
   };
 
   /**
-   * 🎯 Busca múltiplos reasons em paralelo
+   * 🎯 Busca múltiplos reasons em paralelo (com limite para evitar sobrecarga)
    */
   const fetchMultipleReasons = async (
     reasonIds: string[],
     integrationAccountId: string
   ): Promise<Map<string, any>> => {
-    logger.info(`📦 Buscando ${reasonIds.length} reasons únicos...`);
-
     const reasonsMap = new Map<string, any>();
+    
+    // 🎯 PROCESSAR EM LOTES PARA EVITAR SOBRECARGA
+    const BATCH_SIZE = 10;
+    const batches: string[][] = [];
+    
+    for (let i = 0; i < reasonIds.length; i += BATCH_SIZE) {
+      batches.push(reasonIds.slice(i, i + BATCH_SIZE));
+    }
 
-    // Buscar todos em paralelo
-    const promises = reasonIds.map(reasonId =>
-      fetchReasonDetails(reasonId, integrationAccountId)
-        .then(data => {
-          if (data) {
-            reasonsMap.set(reasonId, data);
-          }
-        })
-    );
+    logger.info(`📦 Buscando ${reasonIds.length} reasons em ${batches.length} lotes...`);
 
-    await Promise.all(promises);
+    // Processar lotes sequencialmente para não sobrecarregar
+    for (const batch of batches) {
+      const promises = batch.map(reasonId =>
+        fetchReasonDetails(reasonId, integrationAccountId)
+          .then(data => {
+            if (data) {
+              reasonsMap.set(reasonId, data);
+            }
+          })
+          .catch(err => {
+            // Silenciar erros individuais para não travar todo o lote
+            logger.warn(`Erro ao buscar reason ${reasonId}:`, err);
+          })
+      );
 
-    logger.info(`✅ ${reasonsMap.size} reasons encontrados com sucesso`);
+      await Promise.all(promises);
+    }
+
+    logger.info(`✅ ${reasonsMap.size}/${reasonIds.length} reasons encontrados`);
 
     return reasonsMap;
   };
@@ -223,11 +254,17 @@ export function useDevolucoesBusca() {
       return [];
     }
 
+    // 🛑 CANCELAR QUALQUER BUSCA ANTERIOR
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setLoading(true);
     const todasDevolucoes: any[] = [];
     
     try {
-      logger.info('Iniciando busca da API ML em tempo real');
+      logger.info('🚀 Iniciando busca otimizada da API ML');
       
       for (const accountId of filtros.contasSelecionadas) {
         const account = mlAccounts?.find(acc => acc.id === accountId);
@@ -271,7 +308,7 @@ export function useDevolucoesBusca() {
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
-            // 🔍 FASE 0: BUSCAR REASONS DA API EM LOTE
+            // 🔍 FASE 0: IDENTIFICAR REASONS ÚNICOS
             const reasonIdsSet = new Set<string>();
             devolucoesDaAPI.forEach((item: any) => {
               const reasonId = item.claim_details?.reason_id;
@@ -281,12 +318,21 @@ export function useDevolucoesBusca() {
             });
             const uniqueReasonIds = Array.from(reasonIdsSet);
 
-            logger.info(`🎯 Encontrados ${uniqueReasonIds.length} reason_ids únicos para buscar`);
+            // 🎯 OTIMIZAÇÃO: Só buscar reasons que não estão em cache
+            const uncachedReasons = uniqueReasonIds.filter(reasonId => {
+              const cacheKey = `${accountId}:${reasonId}`;
+              const cached = reasonsCache.get(cacheKey);
+              return !cached || (Date.now() - cached.timestamp) >= CACHE_TTL;
+            });
 
-            // Buscar todos os reasons em paralelo
-            const reasonsApiData = await fetchMultipleReasons(uniqueReasonIds, accountId);
+            logger.info(`🎯 ${uniqueReasonIds.length} reasons únicos | ${uncachedReasons.length} para buscar | ${uniqueReasonIds.length - uncachedReasons.length} em cache`);
 
-            logger.info(`✅ Reasons API carregados: ${reasonsApiData.size}/${uniqueReasonIds.length}`);
+            // Buscar apenas os que não estão em cache
+            const reasonsApiData = uncachedReasons.length > 0 
+              ? await fetchMultipleReasons(uncachedReasons, accountId)
+              : new Map();
+
+            logger.info(`✅ Busca concluída: ${reasonsApiData.size} novos + ${uniqueReasonIds.length - uncachedReasons.length} do cache`);
 
             // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 165 COLUNAS VALIDADAS
             // FASE 1: Processar todos os dados básicos
