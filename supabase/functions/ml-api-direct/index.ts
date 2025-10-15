@@ -302,6 +302,27 @@ serve(async (req) => {
             dados_completos: devolucao.dados_completos,
             marketplace_origem: devolucao.marketplace_origem,
             
+            // ======== TEMPORAL E MARCOS (3 CAMPOS CRÍTICOS FALTANTES) ========
+            data_criacao_claim: (() => {
+              const value = devolucao.claim_details?.date_created || 
+                           devolucao.dados_claim?.date_created || null;
+              if (value) console.log(`[DEBUG] data_criacao_claim encontrado: ${value}`);
+              return value;
+            })(),
+            data_inicio_return: (() => {
+              const value = devolucao.return_details?.date_created || 
+                           devolucao.dados_return?.date_created || null;
+              if (value) console.log(`[DEBUG] data_inicio_return encontrado: ${value}`);
+              return value;
+            })(),
+            data_finalizacao_timeline: (() => {
+              const value = devolucao.claim_details?.date_closed || 
+                           devolucao.order_data?.date_closed || null;
+              if (value) console.log(`[DEBUG] data_finalizacao_timeline encontrado: ${value}`);
+              return value;
+            })(),
+            marcos_temporais: devolucao.marcos_temporais || null,
+            
             // Timestamps
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
