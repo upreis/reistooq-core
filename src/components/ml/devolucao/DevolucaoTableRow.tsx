@@ -379,16 +379,16 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {String(devolucao.transportadora || '-')}
       </td>
       
-      {/* Status Rastreamento */}
+      {/* Status Rastreamento Pedido */}
       <td className="px-3 py-3 text-center">
-        {devolucao.status_rastreamento ? (
+        {devolucao.status_rastreamento_pedido ? (
           <span className={`px-2 py-1 rounded text-xs ${
-            String(devolucao.status_rastreamento) === 'delivered' ? 'bg-green-100 text-green-800' :
-            String(devolucao.status_rastreamento) === 'in_transit' ? 'bg-blue-100 text-blue-800' :
-            String(devolucao.status_rastreamento) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+            String(devolucao.status_rastreamento_pedido) === 'delivered' ? 'bg-green-100 text-green-800' :
+            String(devolucao.status_rastreamento_pedido) === 'in_transit' ? 'bg-blue-100 text-blue-800' :
+            String(devolucao.status_rastreamento_pedido) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
             'bg-gray-100 text-gray-800'
           }`}>
-            {String(devolucao.status_rastreamento)}
+            {String(devolucao.status_rastreamento_pedido)}
           </span>
         ) : (
           <span className="text-muted-foreground">-</span>
@@ -1192,28 +1192,19 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })() : '-'}
       </td>
       
-      {/* Data Finalização Timeline */}
+      {/* Data Fechamento Claim */}
       <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.data_finalizacao_timeline ? (() => {
+        {devolucao.data_fechamento_claim ? (() => {
           try {
-            return new Date(devolucao.data_finalizacao_timeline).toLocaleDateString('pt-BR', {
+            return new Date(devolucao.data_fechamento_claim).toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: '2-digit',
               year: 'numeric'
             });
           } catch {
-            return devolucao.data_finalizacao_timeline;
+            return devolucao.data_fechamento_claim;
           }
         })() : '-'}
-      </td>
-      
-      {/* Eventos Sistema */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.eventos_sistema && Array.isArray(devolucao.eventos_sistema) ? (
-          <span className="px-2 py-1 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 text-xs font-medium">
-            {devolucao.eventos_sistema.length} eventos
-          </span>
-        ) : '-'}
       </td>
       
       {/* Marcos Temporais */}

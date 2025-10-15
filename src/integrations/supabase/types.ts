@@ -1163,7 +1163,8 @@ export type Database = {
           status_envio_devolucao: string | null
           status_moderacao: string | null
           status_produto_novo: string | null
-          status_rastreamento: string | null
+          status_rastreamento_devolucao: string | null
+          status_rastreamento_pedido: string | null
           status_transporte_atual: string | null
           subcategoria_problema: string | null
           subtipo_claim: string | null
@@ -1198,7 +1199,6 @@ export type Database = {
           ultima_mensagem_data: string | null
           ultima_mensagem_remetente: string | null
           ultima_sincronizacao: string | null
-          ultimo_status_rastreamento: string | null
           updated_at: string | null
           url_rastreamento: string | null
           usuario_ultima_acao: string | null
@@ -1344,7 +1344,8 @@ export type Database = {
           status_envio_devolucao?: string | null
           status_moderacao?: string | null
           status_produto_novo?: string | null
-          status_rastreamento?: string | null
+          status_rastreamento_devolucao?: string | null
+          status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
           subcategoria_problema?: string | null
           subtipo_claim?: string | null
@@ -1379,7 +1380,6 @@ export type Database = {
           ultima_mensagem_data?: string | null
           ultima_mensagem_remetente?: string | null
           ultima_sincronizacao?: string | null
-          ultimo_status_rastreamento?: string | null
           updated_at?: string | null
           url_rastreamento?: string | null
           usuario_ultima_acao?: string | null
@@ -1525,7 +1525,8 @@ export type Database = {
           status_envio_devolucao?: string | null
           status_moderacao?: string | null
           status_produto_novo?: string | null
-          status_rastreamento?: string | null
+          status_rastreamento_devolucao?: string | null
+          status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
           subcategoria_problema?: string | null
           subtipo_claim?: string | null
@@ -1560,7 +1561,6 @@ export type Database = {
           ultima_mensagem_data?: string | null
           ultima_mensagem_remetente?: string | null
           ultima_sincronizacao?: string | null
-          ultimo_status_rastreamento?: string | null
           updated_at?: string | null
           url_rastreamento?: string | null
           usuario_ultima_acao?: string | null

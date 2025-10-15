@@ -1702,8 +1702,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 return returnEvents.length > 0 ? JSON.stringify(returnEvents) : null
               })(),
               
-              // 📊 ÚLTIMO STATUS DE RASTREAMENTO
-              ultimo_status_rastreamento: (() => {
+              // 📊 STATUS DE RASTREAMENTO DA DEVOLUÇÃO
+              status_rastreamento_devolucao: (() => {
                 const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
@@ -1811,8 +1811,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                              safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.carrier || 
                              safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.carrier || null,
               
-              // 📊 STATUS DE RASTREAMENTO
-              status_rastreamento: (() => {
+              // 📊 STATUS DE RASTREAMENTO DO PEDIDO
+              status_rastreamento_pedido: (() => {
                 // Priorizar dados do shipment history
                 if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
                   return safeClaimData.shipment_history.combined_events[0].status

@@ -46,7 +46,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   // 📦 RASTREAMENTO E LOGÍSTICA (4 colunas)
   codigo_rastreamento?: string | null;
   transportadora?: string | null;
-  status_rastreamento?: string | null;
+  status_rastreamento_pedido?: string | null;
   url_rastreamento?: string | null;
 
   // 💰 CUSTOS E FINANCEIRO (4 colunas)
@@ -176,8 +176,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   timeline_events?: any[] | null;
   data_criacao_claim?: string | null;
   data_inicio_return?: string | null;
-  data_finalizacao_timeline?: string | null;
-  eventos_sistema?: any[] | null;
+  data_fechamento_claim?: string | null;
   marcos_temporais?: any | null;
   
   // TRACKING DETALHADO
