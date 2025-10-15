@@ -1128,14 +1128,6 @@ export type Database = {
           proxima_acao_requerida: string | null
           qualidade_comunicacao: string | null
           quantidade: number | null
-          reason_category: string | null
-          reason_detail: string | null
-          reason_expected_resolutions: string[] | null
-          reason_id: string | null
-          reason_name: string | null
-          reason_priority: string | null
-          reason_rules_engine: string[] | null
-          reason_type: string | null
           reembolso_quando: string | null
           responsavel_custo: string | null
           resultado_final: string | null
@@ -1305,14 +1297,6 @@ export type Database = {
           proxima_acao_requerida?: string | null
           qualidade_comunicacao?: string | null
           quantidade?: number | null
-          reason_category?: string | null
-          reason_detail?: string | null
-          reason_expected_resolutions?: string[] | null
-          reason_id?: string | null
-          reason_name?: string | null
-          reason_priority?: string | null
-          reason_rules_engine?: string[] | null
-          reason_type?: string | null
           reembolso_quando?: string | null
           responsavel_custo?: string | null
           resultado_final?: string | null
@@ -1482,14 +1466,6 @@ export type Database = {
           proxima_acao_requerida?: string | null
           qualidade_comunicacao?: string | null
           quantidade?: number | null
-          reason_category?: string | null
-          reason_detail?: string | null
-          reason_expected_resolutions?: string[] | null
-          reason_id?: string | null
-          reason_name?: string | null
-          reason_priority?: string | null
-          reason_rules_engine?: string[] | null
-          reason_type?: string | null
           reembolso_quando?: string | null
           responsavel_custo?: string | null
           resultado_final?: string | null

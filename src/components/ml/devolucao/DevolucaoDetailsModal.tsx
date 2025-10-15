@@ -15,11 +15,10 @@ import { SLAMetricsTab } from './tabs/SLAMetricsTab';
 import { AdvancedDataTab } from './tabs/AdvancedDataTab';
 import { BuyerPaymentTab } from './tabs/BuyerPaymentTab';
 import { ProductQualityTab } from './tabs/ProductQualityTab';
-import { ReasonTab } from './tabs/ReasonTab';
 import { 
   Package, FileText, CheckCircle, DollarSign, 
   Truck, Star, Scale, 
-  Paperclip, TrendingUp, FileCheck, Database, Clock, AlertCircle
+  Paperclip, TrendingUp, FileCheck, Database, Clock
 } from 'lucide-react';
 import { 
   extractCancelReason, extractDetailedReason, formatCurrency, formatDate
@@ -54,7 +53,6 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
           <TabsList className="grid grid-cols-12 w-full">
             <TabsTrigger value="overview"><Package className="h-4 w-4 mr-1" />Geral</TabsTrigger>
-            <TabsTrigger value="reason"><AlertCircle className="h-4 w-4 mr-1" />Motivo</TabsTrigger>
             <TabsTrigger value="financial"><DollarSign className="h-4 w-4 mr-1" />Financeiro</TabsTrigger>
             <TabsTrigger value="buyer">👤 Comprador</TabsTrigger>
             <TabsTrigger value="product">📦 Produto</TabsTrigger>
@@ -104,7 +102,6 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
               </Card>
             </TabsContent>
 
-            <TabsContent value="reason" className="mt-0"><ReasonTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="financial" className="mt-0"><FinancialDetailsTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="buyer" className="mt-0"><BuyerPaymentTab devolucao={devolucao} /></TabsContent>
             <TabsContent value="product" className="mt-0"><ProductQualityTab devolucao={devolucao} /></TabsContent>
