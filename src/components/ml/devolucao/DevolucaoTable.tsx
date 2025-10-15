@@ -240,6 +240,16 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Confiabilidade</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔧 Versão API</th>
             
+            {/* ========== FASE 4: REASONS API (8 COLUNAS) ========== */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔍 Reason ID</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Reason Nome</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📝 Reason Detalhe</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🏷️ Reason Categoria</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚡ Reason Prioridade</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔖 Reason Tipo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">✅ Resoluções Esperadas</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⚙️ Regras Motor</th>
+            
             {/* AÇÕES FINAIS - MOVIDA PARA O FINAL */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
           </tr>
