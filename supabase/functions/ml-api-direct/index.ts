@@ -233,6 +233,18 @@ serve(async (req) => {
             subcategoria_problema: devolucao.subcategoria_problema,
             motivo_categoria: devolucao.motivo_categoria,
             
+            // ========================================
+            // 🔍 REASONS - DADOS DA API
+            // ========================================
+            reason_id: devolucao.reason_id,
+            reason_category: devolucao.reason_category,
+            reason_name: devolucao.reason_name,
+            reason_detail: devolucao.reason_detail,
+            reason_type: devolucao.reason_type,
+            reason_priority: devolucao.reason_priority,
+            reason_expected_resolutions: devolucao.reason_expected_resolutions,
+            reason_flow: devolucao.reason_flow,
+            
             // Devolução e Troca
             eh_troca: devolucao.eh_troca,
             produto_troca_id: devolucao.produto_troca_id,
@@ -510,6 +522,179 @@ async function fetchMLWithRetry(url: string, accessToken: string, integrationAcc
   throw new Error('Fetch com retry falhou inesperadamente')
 }
 
+// ============ 🔧 FUNÇÕES DE BUSCA DE REASONS DA API ML ============
+
+/**
+ * 🔍 Busca detalhes de um reason específico na API do ML
+ */
+async function fetchReasonDetails(
+  reasonId: string,
+  accessToken: string,
+  integrationAccountId: string
+): Promise<{
+  id: string;
+  name: string;
+  detail: string;
+  flow?: string;
+  expected_resolutions?: string[];
+} | null> {
+  try {
+    console.log(`[REISTOM INFO] 🔍 Buscando reason ${reasonId} na API ML...`);
+    
+    const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`;
+    
+    const response = await fetchMLWithRetry(
+      reasonUrl,
+      accessToken,
+      integrationAccountId
+    );
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`[REISTOM INFO] ✅ Reason ${reasonId} encontrado:`, {
+        name: data.name,
+        detail: data.detail?.substring(0, 50) + '...'
+      });
+      return data;
+    } else {
+      const status = response.status;
+      console.warn(`[REISTOM INFO] ⚠ Reason ${reasonId} não encontrado (HTTP ${status})`);
+      return null;
+    }
+  } catch (error) {
+    console.error(`[REISTOM ERROR] ❌ Erro ao buscar reason ${reasonId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * 🎯 Busca múltiplos reasons em paralelo
+ */
+async function fetchMultipleReasons(
+  reasonIds: string[],
+  accessToken: string,
+  integrationAccountId: string
+): Promise<Map<string, any>> {
+  console.log(`[REISTOM INFO] 📦 Buscando ${reasonIds.length} reasons únicos da API ML...`);
+  
+  const reasonsMap = new Map<string, any>();
+  
+  // Buscar todos em paralelo com Promise.allSettled para não falhar se um reason der erro
+  const promises = reasonIds.map(reasonId =>
+    fetchReasonDetails(reasonId, accessToken, integrationAccountId)
+      .then(data => ({ reasonId, data, status: 'fulfilled' }))
+      .catch(error => ({ reasonId, error, status: 'rejected' }))
+  );
+  
+  const results = await Promise.allSettled(promises);
+  
+  // Processar resultados
+  results.forEach((result) => {
+    if (result.status === 'fulfilled' && result.value.data) {
+      reasonsMap.set(result.value.reasonId, result.value.data);
+    }
+  });
+  
+  console.log(`[REISTOM INFO] ✅ ${reasonsMap.size}/${reasonIds.length} reasons encontrados com sucesso`);
+  
+  return reasonsMap;
+}
+
+/**
+ * 🗺 Mapeia reason_id para categoria e detalhes
+ * Usa dados da API se disponíveis, senão usa mapeamento local como fallback
+ */
+function mapReasonWithApiData(
+  reasonId: string | null,
+  apiData: any | null
+): {
+  reason_id: string | null;
+  reason_category: string | null;
+  reason_name: string | null;
+  reason_detail: string | null;
+  reason_type: string | null;
+  reason_priority: string | null;
+  reason_expected_resolutions: string[] | null;
+  reason_flow: string | null;
+} {
+  // Se não tem reason_id, retornar tudo null
+  if (!reasonId) {
+    return {
+      reason_id: null,
+      reason_category: null,
+      reason_name: null,
+      reason_detail: null,
+      reason_type: null,
+      reason_priority: null,
+      reason_expected_resolutions: null,
+      reason_flow: null
+    };
+  }
+  
+  // Extrair prefixo para categorização
+  const prefix = reasonId.substring(0, 3);
+  
+  // Se temos dados da API, usar eles (PRIORIDADE)
+  if (apiData) {
+    console.log(`[REISTOM INFO] 🎯 Usando dados da API para reason ${reasonId}`);
+    return {
+      reason_id: apiData.id || reasonId,
+      reason_category: prefix === 'PNR' ? 'not_received' :
+                      prefix === 'PDD' ? 'defective_or_different' :
+                      prefix === 'CS' ? 'cancellation' : 'other',
+      reason_name: apiData.name || null,
+      reason_detail: apiData.detail || null,
+      reason_type: 'buyer_initiated',
+      reason_priority: prefix === 'PNR' || prefix === 'PDD' ? 'high' : 'medium',
+      reason_expected_resolutions: apiData.expected_resolutions || null,
+      reason_flow: apiData.flow || null
+    };
+  }
+  
+  // Fallback: mapeamento genérico por prefixo (quando API falha)
+  console.log(`[REISTOM INFO] ⚠ Usando mapeamento genérico para reason ${reasonId} (API não retornou dados)`);
+  
+  // Mapeamento genérico por prefixo
+  const fallbackMap: Record<string, any> = {
+    'PNR': {
+      category: 'not_received',
+      name: 'Produto Não Recebido',
+      detail: 'O comprador não recebeu o produto',
+      priority: 'high'
+    },
+    'PDD': {
+      category: 'defective_or_different',
+      name: 'Produto Defeituoso ou Diferente',
+      detail: 'Produto veio com defeito ou diferente do anunciado',
+      priority: 'high'
+    },
+    'CS': {
+      category: 'cancellation',
+      name: 'Cancelamento de Compra',
+      detail: 'Cancelamento da compra solicitado',
+      priority: 'medium'
+    }
+  };
+  
+  const fallback = fallbackMap[prefix] || {
+    category: 'other',
+    name: 'Outro Motivo',
+    detail: 'Outro motivo de reclamação',
+    priority: 'medium'
+  };
+  
+  return {
+    reason_id: reasonId,
+    reason_category: fallback.category,
+    reason_name: fallback.name,
+    reason_detail: fallback.detail,
+    reason_type: 'buyer_initiated',
+    reason_priority: fallback.priority,
+    reason_expected_resolutions: null,
+    reason_flow: null
+  };
+}
+
 // ============ FUNÇÃO PARA BUSCAR CLAIMS/DEVOLUÇÕES DIRETAMENTE DA API ML ============
 async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
   try {
@@ -685,6 +870,45 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         .slice(0, MAX_CLAIMS_TO_PROCESS)
     }
 
+    // ========================================
+    // 🔍 BUSCAR REASONS EM LOTE DA API ML
+    // ========================================
+    
+    console.log(`[REISTOM INFO] 📊 Processando ${claimsParaProcessar.length} claims...`);
+    
+    // 1. Coletar todos os reason_ids únicos dos claims
+    const uniqueReasonIds = new Set<string>();
+    for (const claim of claimsParaProcessar) {
+      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
+      if (reasonId && typeof reasonId === 'string') {
+        uniqueReasonIds.add(reasonId);
+      }
+    }
+    
+    console.log(`[REISTOM INFO] 🔍 ${uniqueReasonIds.size} reason_ids únicos encontrados:`, Array.from(uniqueReasonIds));
+    
+    // 2. Buscar todos os reasons em paralelo da API ML
+    let reasonsMap = new Map<string, any>();
+    
+    if (uniqueReasonIds.size > 0) {
+      try {
+        reasonsMap = await fetchMultipleReasons(
+          Array.from(uniqueReasonIds),
+          accessToken,
+          integrationAccountId
+        );
+        console.log(`[REISTOM INFO] ✅ Reasons carregados e prontos para uso`);
+      } catch (error) {
+        console.error(`[REISTOM ERROR] ❌ Erro ao buscar reasons em lote:`, error);
+        // Continuar mesmo se falhar - usará mapeamento genérico
+      }
+    } else {
+      console.log(`[REISTOM INFO] ℹ Nenhum reason_id encontrado nos claims`);
+    }
+    
+    // 3. Agora processar cada claim com os reasons já carregados
+    console.log(`[REISTOM INFO] 🔄 Iniciando processamento de ${claimsParaProcessar.length} claims com reasons enriquecidos...`);
+    
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
     
@@ -1660,7 +1884,69 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // CLASSIFICAÇÃO
               tipo_claim: safeClaimData?.claim_details?.type || safeOrderDetail.status,
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
-              motivo_categoria: safeClaimData?.claim_details?.reason_id || null,
+              
+              // ========================================
+              // 🔍 REASONS - ENRIQUECIDOS COM DADOS DA API ML
+              // ========================================
+              ...(() => {
+                // Extrair reason_id do claim
+                const reasonId = safeClaimData?.claim_details?.reason_id || null;
+                
+                if (!reasonId) {
+                  console.log(`[REISTOM INFO] ⚠ Claim ${mediationId} não tem reason_id`);
+                  return {
+                    reason_id: null,
+                    reason_category: null,
+                    reason_name: null,
+                    reason_detail: null,
+                    reason_type: null,
+                    reason_priority: null,
+                    reason_expected_resolutions: null,
+                    reason_flow: null,
+                    motivo_categoria: null
+                  };
+                }
+                
+                // Buscar dados da API no cache de reasons
+                const apiData = reasonsMap.get(reasonId) || null;
+                
+                // Mapear com dados da API ou fallback para genérico
+                const mappedReason = mapReasonWithApiData(reasonId, apiData);
+                
+                // Log para debug
+                if (apiData) {
+                  console.log(`[REISTOM INFO] 🎯 Claim ${mediationId}: Reason ${reasonId} mapeado com dados da API:`, {
+                    name: mappedReason.reason_name,
+                    detail: mappedReason.reason_detail?.substring(0, 50) + '...'
+                  });
+                } else {
+                  console.log(`[REISTOM INFO] ⚠ Claim ${mediationId}: Reason ${reasonId} usando mapeamento genérico (API não retornou)`);
+                }
+                
+                return {
+                  // ID do motivo
+                  reason_id: mappedReason.reason_id,
+                  
+                  // Categoria
+                  reason_category: mappedReason.reason_category,
+                  
+                  // Nome e descrição (ESPECÍFICOS DA API!)
+                  reason_name: mappedReason.reason_name,
+                  reason_detail: mappedReason.reason_detail,
+                  
+                  // Tipo e prioridade
+                  reason_type: mappedReason.reason_type,
+                  reason_priority: mappedReason.reason_priority,
+                  
+                  // Arrays
+                  reason_expected_resolutions: mappedReason.reason_expected_resolutions,
+                  reason_flow: mappedReason.reason_flow,
+                  
+                  // Compatibilidade com código antigo
+                  motivo_categoria: reasonId
+                };
+              })(),
+              
               em_mediacao: safeClaimData?.claim_details?.type === 'mediations' || safeClaimData?.mediation_details !== null,
               nivel_prioridade: safeClaimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
               
