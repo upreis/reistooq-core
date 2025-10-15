@@ -100,12 +100,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   } = useDevolucoes(mlAccounts, selectedAccountId);
 
   // Função para aplicar filtros e buscar (garante sincronização)
-  // Agora busca com os filtros atuais imediatamente após a atualização
   const handleAplicarEBuscar = useCallback(() => {
-    // ⚡ CORREÇÃO: Usar os filtros atualizados do estado advancedFilters
-    // que já foram sincronizados pelo updateAdvancedFilters
-    buscarComFiltros(advancedFilters);
-  }, [buscarComFiltros, advancedFilters]);
+    // A busca já usa os filtros mais recentes do estado
+    buscarComFiltros();
+  }, [buscarComFiltros]);
 
 
   const exportarCSV = useCallback(() => {
