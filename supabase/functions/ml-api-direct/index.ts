@@ -853,7 +853,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       return []
     }
     
-    console.log(`[REISTOM INFO] ✅ ${allClaims.length} claims recebidos da API`);
+    console.log(`[REISTOM INFO] ✅ ${allClaims.length} claims recebidos da API ML`);
     
     // 🔥 NÃO FILTRAR POR DATA NA EDGE FUNCTION
     // O filtro de data será aplicado no FRONTEND após receber os dados
