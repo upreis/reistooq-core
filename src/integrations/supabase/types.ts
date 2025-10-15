@@ -1067,8 +1067,8 @@ export type Database = {
           data_criacao_claim: string | null
           data_criacao_devolucao: string | null
           data_estimada_troca: string | null
+          data_fechamento_claim: string | null
           data_fechamento_devolucao: string | null
-          data_finalizacao_timeline: string | null
           data_inicio_mediacao: string | null
           data_inicio_return: string | null
           data_inicio_review: string | null
@@ -1090,7 +1090,6 @@ export type Database = {
           endereco_destino: Json | null
           endereco_destino_devolucao: string | null
           escalado_para_ml: boolean | null
-          eventos_sistema: Json | null
           feedback_comprador_final: string | null
           feedback_vendedor: string | null
           fonte_dados_primaria: string | null
@@ -1249,8 +1248,8 @@ export type Database = {
           data_criacao_claim?: string | null
           data_criacao_devolucao?: string | null
           data_estimada_troca?: string | null
+          data_fechamento_claim?: string | null
           data_fechamento_devolucao?: string | null
-          data_finalizacao_timeline?: string | null
           data_inicio_mediacao?: string | null
           data_inicio_return?: string | null
           data_inicio_review?: string | null
@@ -1272,7 +1271,6 @@ export type Database = {
           endereco_destino?: Json | null
           endereco_destino_devolucao?: string | null
           escalado_para_ml?: boolean | null
-          eventos_sistema?: Json | null
           feedback_comprador_final?: string | null
           feedback_vendedor?: string | null
           fonte_dados_primaria?: string | null
@@ -1431,8 +1429,8 @@ export type Database = {
           data_criacao_claim?: string | null
           data_criacao_devolucao?: string | null
           data_estimada_troca?: string | null
+          data_fechamento_claim?: string | null
           data_fechamento_devolucao?: string | null
-          data_finalizacao_timeline?: string | null
           data_inicio_mediacao?: string | null
           data_inicio_return?: string | null
           data_inicio_review?: string | null
@@ -1454,7 +1452,6 @@ export type Database = {
           endereco_destino?: Json | null
           endereco_destino_devolucao?: string | null
           escalado_para_ml?: boolean | null
-          eventos_sistema?: Json | null
           feedback_comprador_final?: string | null
           feedback_vendedor?: string | null
           fonte_dados_primaria?: string | null
