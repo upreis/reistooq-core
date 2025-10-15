@@ -539,7 +539,9 @@ async function fetchReasonDetails(
   expected_resolutions?: string[];
 } | null> {
   try {
-    console.log(`[REISTOM INFO] 🔍 Buscando reason ${reasonId} na API ML...`);
+    console.log(`[REISTOM DEBUG] 🔍 Iniciando busca do reason ${reasonId}...`);
+    console.log(`[REISTOM DEBUG] 📍 URL: https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`);
+    console.log(`[REISTOM DEBUG] 🔑 Token presente: ${accessToken ? 'SIM' : 'NÃO'} (${accessToken?.substring(0, 20)}...)`);
     
     const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`;
     
@@ -549,20 +551,22 @@ async function fetchReasonDetails(
       integrationAccountId
     );
     
+    console.log(`[REISTOM DEBUG] 📡 Resposta da API - Status: ${response.status}, OK: ${response.ok}`);
+    
     if (response.ok) {
       const data = await response.json();
-      console.log(`[REISTOM INFO] ✅ Reason ${reasonId} encontrado:`, {
-        name: data.name,
-        detail: data.detail?.substring(0, 50) + '...'
-      });
+      console.log(`[REISTOM DEBUG] ✅ Reason ${reasonId} SUCESSO - Dados completos:`, JSON.stringify(data, null, 2));
+      console.log(`[REISTOM DEBUG] 📝 Nome: "${data.name}", Detalhe: "${data.detail}"`);
       return data;
     } else {
       const status = response.status;
-      console.warn(`[REISTOM INFO] ⚠ Reason ${reasonId} não encontrado (HTTP ${status})`);
+      const errorText = await response.text();
+      console.error(`[REISTOM DEBUG] ❌ Reason ${reasonId} FALHOU - HTTP ${status}: ${errorText}`);
       return null;
     }
   } catch (error) {
-    console.error(`[REISTOM ERROR] ❌ Erro ao buscar reason ${reasonId}:`, error);
+    console.error(`[REISTOM DEBUG] ❌ EXCEÇÃO ao buscar reason ${reasonId}:`, error);
+    console.error(`[REISTOM DEBUG] ❌ Stack:`, error instanceof Error ? error.stack : 'N/A');
     return null;
   }
 }
@@ -575,7 +579,10 @@ async function fetchMultipleReasons(
   accessToken: string,
   integrationAccountId: string
 ): Promise<Map<string, any>> {
-  console.log(`[REISTOM INFO] 📦 Buscando ${reasonIds.length} reasons únicos da API ML...`);
+  console.log(`[REISTOM DEBUG] 📦 ========================================`);
+  console.log(`[REISTOM DEBUG] 📦 INICIANDO BATCH DE ${reasonIds.length} REASONS`);
+  console.log(`[REISTOM DEBUG] 📦 IDs: ${JSON.stringify(reasonIds)}`);
+  console.log(`[REISTOM DEBUG] 📦 ========================================`);
   
   const reasonsMap = new Map<string, any>();
   
@@ -586,16 +593,36 @@ async function fetchMultipleReasons(
       .catch(error => ({ reasonId, error, status: 'rejected' }))
   );
   
+  console.log(`[REISTOM DEBUG] ⏳ Aguardando ${promises.length} chamadas paralelas...`);
   const results = await Promise.allSettled(promises);
+  console.log(`[REISTOM DEBUG] ✅ Todas as ${results.length} chamadas finalizadas`);
   
   // Processar resultados
-  results.forEach((result) => {
+  let successCount = 0;
+  let failCount = 0;
+  
+  results.forEach((result, index) => {
+    console.log(`[REISTOM DEBUG] 📊 Resultado ${index + 1}/${results.length}:`, {
+      status: result.status,
+      reasonId: result.status === 'fulfilled' ? result.value.reasonId : 'N/A',
+      hasData: result.status === 'fulfilled' ? !!result.value.data : false
+    });
+    
     if (result.status === 'fulfilled' && result.value.data) {
       reasonsMap.set(result.value.reasonId, result.value.data);
+      successCount++;
+      console.log(`[REISTOM DEBUG] ✅ Reason ${result.value.reasonId} adicionado ao cache`);
+    } else {
+      failCount++;
+      console.log(`[REISTOM DEBUG] ❌ Reason falhou ou sem dados`);
     }
   });
   
-  console.log(`[REISTOM INFO] ✅ ${reasonsMap.size}/${reasonIds.length} reasons encontrados com sucesso`);
+  console.log(`[REISTOM DEBUG] 📦 ========================================`);
+  console.log(`[REISTOM DEBUG] 📦 RESULTADO FINAL: ${successCount} sucessos, ${failCount} falhas`);
+  console.log(`[REISTOM DEBUG] 📦 Cache size: ${reasonsMap.size}`);
+  console.log(`[REISTOM DEBUG] 📦 IDs no cache:`, Array.from(reasonsMap.keys()));
+  console.log(`[REISTOM DEBUG] 📦 ========================================`);
   
   return reasonsMap;
 }
@@ -636,8 +663,12 @@ function mapReasonWithApiData(
   
   // Se temos dados da API, usar eles (PRIORIDADE)
   if (apiData) {
-    console.log(`[REISTOM INFO] 🎯 Usando dados da API para reason ${reasonId}`);
-    return {
+    console.log(`[REISTOM DEBUG] 🎯 ========================================`);
+    console.log(`[REISTOM DEBUG] 🎯 MAPEAMENTO USANDO API PARA: ${reasonId}`);
+    console.log(`[REISTOM DEBUG] 🎯 API Data recebido:`, JSON.stringify(apiData, null, 2));
+    console.log(`[REISTOM DEBUG] 🎯 ========================================`);
+    
+    const mapped = {
       reason_id: apiData.id || reasonId,
       reason_category: prefix === 'PNR' ? 'not_received' :
                       prefix === 'PDD' ? 'defective_or_different' :
@@ -649,10 +680,16 @@ function mapReasonWithApiData(
       reason_expected_resolutions: apiData.expected_resolutions || null,
       reason_flow: apiData.flow || null
     };
+    
+    console.log(`[REISTOM DEBUG] 🎯 Dados mapeados:`, JSON.stringify(mapped, null, 2));
+    return mapped;
   }
   
   // Fallback: mapeamento genérico por prefixo (quando API falha)
-  console.log(`[REISTOM INFO] ⚠ Usando mapeamento genérico para reason ${reasonId} (API não retornou dados)`);
+  console.log(`[REISTOM DEBUG] ⚠️ ========================================`);
+  console.log(`[REISTOM DEBUG] ⚠️ USANDO FALLBACK GENÉRICO PARA: ${reasonId}`);
+  console.log(`[REISTOM DEBUG] ⚠️ Reason ${reasonId} NÃO VEIO DA API!`);
+  console.log(`[REISTOM DEBUG] ⚠️ ========================================`);
   
   // Mapeamento genérico por prefixo
   const fallbackMap: Record<string, any> = {
@@ -892,18 +929,29 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     
     if (uniqueReasonIds.size > 0) {
       try {
+        console.log(`[REISTOM DEBUG] 🚀 ========================================`);
+        console.log(`[REISTOM DEBUG] 🚀 CHAMANDO fetchMultipleReasons...`);
+        console.log(`[REISTOM DEBUG] 🚀 ========================================`);
+        
         reasonsMap = await fetchMultipleReasons(
           Array.from(uniqueReasonIds),
           accessToken,
           integrationAccountId
         );
-        console.log(`[REISTOM INFO] ✅ Reasons carregados e prontos para uso`);
+        
+        console.log(`[REISTOM DEBUG] 🏁 ========================================`);
+        console.log(`[REISTOM DEBUG] 🏁 BATCH COMPLETO! Cache final:`, reasonsMap.size, 'reasons');
+        console.log(`[REISTOM DEBUG] 🏁 IDs no cache:`, Array.from(reasonsMap.keys()));
+        console.log(`[REISTOM DEBUG] 🏁 ========================================`);
       } catch (error) {
-        console.error(`[REISTOM ERROR] ❌ Erro ao buscar reasons em lote:`, error);
+        console.error(`[REISTOM DEBUG] ❌ ========================================`);
+        console.error(`[REISTOM DEBUG] ❌ ERRO CRÍTICO NO BATCH DE REASONS!`);
+        console.error(`[REISTOM DEBUG] ❌ Erro:`, error);
+        console.error(`[REISTOM DEBUG] ❌ ========================================`);
         // Continuar mesmo se falhar - usará mapeamento genérico
       }
     } else {
-      console.log(`[REISTOM INFO] ℹ Nenhum reason_id encontrado nos claims`);
+      console.log(`[REISTOM DEBUG] ℹ️ Nenhum reason_id encontrado nos claims`);
     }
     
     // 3. Agora processar cada claim com os reasons já carregados
