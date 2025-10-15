@@ -30,11 +30,21 @@ export function DevolucoesFiltrosAvancados({
 }: DevolucoesFiltrosAvancadosProps) {
   // Estado local para os filtros (rascunho)
   const [draftFilters, setDraftFilters] = React.useState<DevolucaoAdvancedFilters>(filtros);
+  // Ref para rastrear se acabamos de aplicar os filtros
+  const [filtrosAplicados, setFiltrosAplicados] = React.useState(false);
 
   // Sincronizar draft quando filtros externos mudarem (reset, limpar, etc)
   React.useEffect(() => {
     setDraftFilters(filtros);
   }, [filtros]);
+  
+  // ⚡ Executar busca automaticamente após atualização de estado confirmada
+  React.useEffect(() => {
+    if (filtrosAplicados) {
+      onAplicar();
+      setFiltrosAplicados(false);
+    }
+  }, [filtrosAplicados, onAplicar]);
 
   // Atualizar apenas o draft local
   const updateDraft = (updates: Partial<DevolucaoAdvancedFilters>) => {
@@ -109,12 +119,12 @@ export function DevolucoesFiltrosAvancados({
 
   // Aplicar os filtros do draft
   const handleAplicar = () => {
-    // Primeiro sincroniza o estado global
+    // ⚡ SOLUÇÃO DEFINITIVA: Sincroniza estado e marca para aplicar
     onFiltrosChange(draftFilters);
-    // Usa setTimeout para garantir que o React processou a atualização
-    setTimeout(() => {
-      onAplicar();
-    }, 10);
+    
+    // Marca que os filtros foram aplicados para disparar o useEffect
+    // que executará a busca após o React processar a atualização
+    setFiltrosAplicados(true);
   };
 
   // Limpar todos os filtros
