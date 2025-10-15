@@ -1043,7 +1043,10 @@ export type Database = {
           campos_faltantes: Json | null
           carrier_info: Json | null
           categoria_problema: string | null
+          claim_fulfilled: boolean | null
           claim_id: string | null
+          claim_quantity_type: string | null
+          claim_stage: string | null
           codigo_rastreamento: string | null
           codigo_rastreamento_devolucao: string | null
           comprador_cpf: string | null
@@ -1140,6 +1143,8 @@ export type Database = {
           responsavel_custo: string | null
           resultado_final: string | null
           resultado_mediacao: string | null
+          return_intermediate_check: Json | null
+          return_resource_type: string | null
           review_id: string | null
           review_result: string | null
           review_status: string | null
@@ -1220,7 +1225,10 @@ export type Database = {
           campos_faltantes?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
+          claim_fulfilled?: boolean | null
           claim_id?: string | null
+          claim_quantity_type?: string | null
+          claim_stage?: string | null
           codigo_rastreamento?: string | null
           codigo_rastreamento_devolucao?: string | null
           comprador_cpf?: string | null
@@ -1317,6 +1325,8 @@ export type Database = {
           responsavel_custo?: string | null
           resultado_final?: string | null
           resultado_mediacao?: string | null
+          return_intermediate_check?: Json | null
+          return_resource_type?: string | null
           review_id?: string | null
           review_result?: string | null
           review_status?: string | null
@@ -1397,7 +1407,10 @@ export type Database = {
           campos_faltantes?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
+          claim_fulfilled?: boolean | null
           claim_id?: string | null
+          claim_quantity_type?: string | null
+          claim_stage?: string | null
           codigo_rastreamento?: string | null
           codigo_rastreamento_devolucao?: string | null
           comprador_cpf?: string | null
@@ -1494,6 +1507,8 @@ export type Database = {
           responsavel_custo?: string | null
           resultado_final?: string | null
           resultado_mediacao?: string | null
+          return_intermediate_check?: Json | null
+          return_resource_type?: string | null
           review_id?: string | null
           review_result?: string | null
           review_status?: string | null

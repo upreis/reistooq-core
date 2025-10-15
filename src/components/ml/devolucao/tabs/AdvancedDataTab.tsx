@@ -11,6 +11,53 @@ interface AdvancedDataTabProps {
 export const AdvancedDataTab: React.FC<AdvancedDataTabProps> = ({ devolucao }) => {
   return (
     <div className="space-y-6">
+      {/* 🆕 DADOS PERDIDOS RECUPERADOS - DESTAQUE NO TOPO */}
+      <Card className="border-2 border-primary/50 bg-primary/5">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="h-5 w-5 text-primary" />
+            🆕 Dados Perdidos Recuperados
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-primary">Estágio do Claim</Label>
+            <Badge variant="outline" className="mt-1">
+              {devolucao.claim_stage || '-'}
+            </Badge>
+          </div>
+          <div>
+            <Label className="text-primary">Tipo de Quantidade</Label>
+            <p className="font-medium">{devolucao.claim_quantity_type || '-'}</p>
+          </div>
+          <div>
+            <Label className="text-primary">Claim Cumprido</Label>
+            <Badge variant={devolucao.claim_fulfilled ? 'default' : 'secondary'}>
+              {devolucao.claim_fulfilled ? '✅ Sim' : '❌ Não'}
+            </Badge>
+          </div>
+          <div>
+            <Label className="text-primary">Tipo de Recurso Return</Label>
+            <p className="font-medium">{devolucao.return_resource_type || '-'}</p>
+          </div>
+          <div className="col-span-2">
+            <Label className="text-primary">Verificação Intermediária</Label>
+            {devolucao.return_intermediate_check ? (
+              <details className="mt-1">
+                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                  Ver dados (clique para expandir)
+                </summary>
+                <pre className="mt-2 p-2 bg-muted rounded text-xs overflow-auto max-h-32">
+                  {JSON.stringify(devolucao.return_intermediate_check, null, 2)}
+                </pre>
+              </details>
+            ) : (
+              <p className="text-sm text-muted-foreground">Sem dados</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
       {/* RASTREAMENTO AVANÇADO */}
       <Card>
         <CardHeader>

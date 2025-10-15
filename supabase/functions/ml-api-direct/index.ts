@@ -1838,6 +1838,27 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
               
+              // ============================================
+              // 🆕 5 NOVOS CAMPOS - DADOS PERDIDOS RECUPERADOS
+              // ============================================
+              
+              // 🔄 Estágio do Claim (ex: claim_closing, claim_input, dispute)
+              claim_stage: safeClaimData?.claim_details?.stage || null,
+              
+              // 📦 Tipo de quantidade do claim (ex: unit, pack)
+              claim_quantity_type: safeClaimData?.claim_details?.quantity_type || null,
+              
+              // ✅ Se o claim foi cumprido/resolvido
+              claim_fulfilled: safeClaimData?.claim_details?.fulfilled || false,
+              
+              // 🔍 Verificação intermediária do return (dados completos em JSON)
+              return_intermediate_check: safeClaimData?.return_details_v2?.results?.[0]?.intermediate_check || 
+                                        safeClaimData?.return_details_v1?.results?.[0]?.intermediate_check || null,
+              
+              // 📋 Tipo de recurso do return (ex: return_to_seller, return_to_buyer)
+              return_resource_type: safeClaimData?.return_details_v2?.results?.[0]?.resource_type || 
+                                   safeClaimData?.return_details_v1?.results?.[0]?.resource_type || null,
+              
               // 🚚 TRANSPORTADORA
               transportadora: safeClaimData?.return_details_v2?.results?.[0]?.carrier || 
                              safeClaimData?.return_details_v1?.results?.[0]?.carrier ||

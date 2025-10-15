@@ -250,6 +250,13 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">✅ Resoluções Esperadas</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⚙️ Regras Motor</th>
             
+            {/* 🆕 5 NOVOS CAMPOS - DADOS PERDIDOS RECUPERADOS */}
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[140px]">🎯 Estágio Claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[140px]">📦 Tipo Quantidade</th>
+            <th className="text-center px-3 py-3 font-semibold text-primary min-w-[120px]">✅ Claim Cumprido</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[160px]">🔍 Tipo Recurso Return</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[180px]">📋 Verif. Intermediária</th>
+            
             {/* AÇÕES FINAIS - MOVIDA PARA O FINAL */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
           </tr>

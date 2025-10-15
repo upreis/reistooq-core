@@ -1630,6 +1630,53 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </div>
       </td>
 
+      {/* 🆕 5 NOVOS CAMPOS - DADOS PERDIDOS RECUPERADOS */}
+      
+      {/* Estágio Claim */}
+      <td className="px-3 py-3">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.claim_stage ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
+        }`}>
+          {devolucao.claim_stage || '-'}
+        </span>
+      </td>
+      
+      {/* Tipo Quantidade */}
+      <td className="px-3 py-3">
+        <span className="text-foreground text-sm">
+          {devolucao.claim_quantity_type || '-'}
+        </span>
+      </td>
+      
+      {/* Claim Cumprido */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
+          devolucao.claim_fulfilled 
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+        }`}>
+          {devolucao.claim_fulfilled ? '✅ Sim' : '❌ Não'}
+        </span>
+      </td>
+      
+      {/* Tipo Recurso Return */}
+      <td className="px-3 py-3">
+        <span className="text-foreground text-sm">
+          {devolucao.return_resource_type || '-'}
+        </span>
+      </td>
+      
+      {/* Verificação Intermediária */}
+      <td className="px-3 py-3">
+        {devolucao.return_intermediate_check ? (
+          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
+            ✅ Com dados
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        )}
+      </td>
+
       {/* Botão de Ações - MOVIDO PARA O FINAL */}
       <td className="px-3 py-3 text-center">
         <Button

@@ -226,6 +226,13 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   produto_warranty?: string | null;
   produto_categoria?: string | null;
   produto_thumbnail?: string | null;
+  
+  // 🆕 5 NOVOS CAMPOS - DADOS PERDIDOS RECUPERADOS
+  claim_stage?: string | null; // Estágio do claim (ex: claim_closing, claim_input, dispute)
+  claim_quantity_type?: string | null; // Tipo de quantidade (ex: unit, pack)
+  claim_fulfilled?: boolean | null; // Se o claim foi cumprido/resolvido
+  return_intermediate_check?: any | null; // Dados da verificação intermediária do return
+  return_resource_type?: string | null; // Tipo de recurso do return
 }
 
 // ===== TIPOS AUXILIARES =====
