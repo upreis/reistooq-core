@@ -317,11 +317,11 @@ serve(async (req) => {
               if (value) console.log(`[DEBUG] data_inicio_return encontrado: ${value}`);
               return value;
             })(),
-            data_finalizacao_timeline: (() => {
+            data_fechamento_claim: (() => {
               const value = devolucao.claim_details?.date_closed ||
                            devolucao.claim_details?.resolution?.date_created || 
                            devolucao.order_data?.date_closed || null;
-              if (value) console.log(`[DEBUG] data_finalizacao_timeline encontrado: ${value}`);
+              if (value) console.log(`[DEBUG] data_fechamento_claim encontrado: ${value}`);
               return value;
             })(),
             marcos_temporais: (() => {
@@ -329,67 +329,13 @@ serve(async (req) => {
                 data_criacao_claim: devolucao.claim_details?.date_created || null,
                 data_inicio_return: devolucao.return_details_v2?.date_created || 
                                    devolucao.return_details_v1?.date_created || null,
-                data_finalizacao_timeline: devolucao.claim_details?.date_closed || null,
+                data_fechamento_claim: devolucao.claim_details?.date_closed || null,
                 data_criacao_order: devolucao.order_data?.date_created || null,
                 data_ultimo_update: devolucao.claim_details?.last_updated || 
                                    devolucao.return_details_v2?.last_updated || null
               };
               console.log(`[DEBUG] marcos_temporais construído:`, JSON.stringify(marcos));
               return marcos;
-            })(),
-            eventos_sistema: (() => {
-              const eventos = [];
-              
-              // Evento: Criação do pedido
-              if (devolucao.order_data?.date_created) {
-                eventos.push({
-                  tipo: 'order_created',
-                  data: devolucao.order_data.date_created,
-                  descricao: 'Pedido criado'
-                });
-              }
-              
-              // Evento: Claim aberto
-              if (devolucao.claim_details?.date_created) {
-                eventos.push({
-                  tipo: 'claim_created',
-                  data: devolucao.claim_details.date_created,
-                  descricao: `Claim aberto - ${devolucao.claim_details.type}`,
-                  reason_id: devolucao.claim_details.reason_id
-                });
-              }
-              
-              // Evento: Return iniciado
-              if (devolucao.return_details_v2?.date_created || devolucao.return_details_v1?.date_created) {
-                eventos.push({
-                  tipo: 'return_created',
-                  data: devolucao.return_details_v2?.date_created || devolucao.return_details_v1?.date_created,
-                  descricao: 'Devolução iniciada',
-                  status: devolucao.return_details_v2?.status || devolucao.return_details_v1?.status
-                });
-              }
-              
-              // Evento: Mediação iniciada
-              if (devolucao.claim_details?.stage === 'dispute' || devolucao.em_mediacao) {
-                eventos.push({
-                  tipo: 'mediation_started',
-                  data: devolucao.claim_details?.last_updated,
-                  descricao: 'Mediação iniciada pelo ML'
-                });
-              }
-              
-              // Evento: Resolução/Fechamento
-              if (devolucao.claim_details?.date_closed) {
-                eventos.push({
-                  tipo: 'claim_closed',
-                  data: devolucao.claim_details.date_closed,
-                  descricao: 'Claim fechado',
-                  resolution: devolucao.claim_details.resolution?.reason
-                });
-              }
-              
-              console.log(`[DEBUG] eventos_sistema construído: ${eventos.length} eventos`);
-              return eventos;
             })(),
             
             // Timestamps
