@@ -456,12 +456,11 @@ export function useDevolucoesBusca() {
                 marcos_temporais: {
                   data_criacao_claim: item.claim_details?.date_created || null,
                   data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-                  data_finalizacao_timeline: item.claim_details?.resolution?.date_created || null
+                  data_fechamento_claim: item.claim_details?.resolution?.date_created || null
                 },
-                eventos_sistema: item.timeline_events || [],
                 data_criacao_claim: item.claim_details?.date_created || null,
                 data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-                data_finalizacao_timeline: item.claim_details?.resolution?.date_created || null,
+                data_fechamento_claim: item.claim_details?.resolution?.date_created || null,
                 historico_status: []
               };
 

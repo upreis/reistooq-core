@@ -121,9 +121,8 @@ export const AdvancedDataTab: React.FC<AdvancedDataTabProps> = ({ devolucao }) =
         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
           <div><Label>Data Criação Claim</Label><p>{devolucao.data_criacao_claim ? new Date(devolucao.data_criacao_claim).toLocaleDateString('pt-BR') : '-'}</p></div>
           <div><Label>Início Return</Label><p>{devolucao.data_inicio_return ? new Date(devolucao.data_inicio_return).toLocaleDateString('pt-BR') : '-'}</p></div>
-          <div><Label>Finalização Timeline</Label><p>{devolucao.data_finalizacao_timeline ? new Date(devolucao.data_finalizacao_timeline).toLocaleDateString('pt-BR') : '-'}</p></div>
+          <div><Label>Fechamento Claim</Label><p>{devolucao.data_fechamento_claim ? new Date(devolucao.data_fechamento_claim).toLocaleDateString('pt-BR') : '-'}</p></div>
           <div><Label>Timeline Events</Label><p>{devolucao.timeline_events && Array.isArray(devolucao.timeline_events) ? `${devolucao.timeline_events.length} eventos` : '-'}</p></div>
-          <div><Label>Eventos Sistema</Label><p>{devolucao.eventos_sistema && Array.isArray(devolucao.eventos_sistema) ? `${devolucao.eventos_sistema.length} eventos` : '-'}</p></div>
           <div><Label>Histórico Status</Label><p>{devolucao.historico_status && Array.isArray(devolucao.historico_status) ? `${devolucao.historico_status.length} mudanças` : '-'}</p></div>
         </CardContent>
       </Card>
