@@ -22,41 +22,6 @@ export function useDevolucoesBusca() {
   // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
   // A função ml-api-direct já obtém o token internamente de forma segura
 
-  // 🔍 Função auxiliar para buscar detalhes do reason
-  const buscarReasonDetails = async (reasonId: string, accountId: string) => {
-    try {
-      logger.info(`🔍 Buscando detalhes do reason: ${reasonId}`);
-      
-      const reasonResponse = await supabase.functions.invoke('ml-api-direct', {
-        body: {
-          accountId: accountId,
-          endpoint: `/post-purchase/v1/claims/reasons/${reasonId}`
-        }
-      });
-
-      if (reasonResponse.data?.success && reasonResponse.data?.data) {
-        const reasonData = reasonResponse.data.data;
-        logger.info(`✅ Reason encontrado:`, { id: reasonData.id, name: reasonData.name });
-        return {
-          reason_id: reasonData.id || reasonId,
-          reason_detail: reasonData.description || null,
-          reason_name: reasonData.name || null,
-          reason_category: reasonData.category || null,
-          reason_expected_resolutions: reasonData.expected_resolutions || null,
-          reason_rules_engine: reasonData.rules_engine || null,
-          reason_priority: reasonData.priority || null,
-          reason_type: reasonData.type || null
-        };
-      } else {
-        logger.warn(`⚠️ Erro ao buscar reason ${reasonId}:`, reasonResponse.error);
-        return null;
-      }
-    } catch (error) {
-      logger.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
-      return null;
-    }
-  };
-
   // Buscar da API ML em tempo real
   const buscarDaAPI = useCallback(async (
     filtros: DevolucaoBuscaFilters,
@@ -115,9 +80,8 @@ export function useDevolucoesBusca() {
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
-            // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 165 COLUNAS VALIDADAS
-            // FASE 1: Processar todos os dados básicos
-            const devolucoesProcesadas = await Promise.all(devolucoesDaAPI.map(async (item: any, index: number) => {
+            // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 132 COLUNAS VALIDADAS
+            const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => {
               
               // 🎯 DADOS PRINCIPAIS (17 colunas)
               const dadosPrincipais = {
@@ -393,34 +357,16 @@ export function useDevolucoesBusca() {
               };
 
               // 🔍 REASONS API - FASE 4 (8 novos campos)
-              // CORREÇÃO: reason_id está em claim_details.reason_id, não em claim_details.reason.id
-              const reasonId = item.claim_details?.reason_id || null;
-              
-              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`);
-              
-              let reasonsAPI: any = {
-                reason_id: reasonId,
-                reason_detail: null,
-                reason_name: null,
-                reason_category: null,
-                reason_expected_resolutions: null,
-                reason_rules_engine: null,
-                reason_priority: null,
-                reason_type: null
+              const reasonsAPI = {
+                reason_id: item.claim_details?.reason?.id || null,
+                reason_detail: item.claim_details?.reason?.description || null,
+                reason_name: item.claim_details?.reason?.name || null,
+                reason_category: item.claim_details?.reason?.category || null,
+                reason_expected_resolutions: item.claim_details?.reason?.expected_resolutions || null,
+                reason_rules_engine: item.claim_details?.reason?.rules_engine || null,
+                reason_priority: item.claim_details?.reason?.priority || null,
+                reason_type: item.claim_details?.reason?.type || null
               };
-
-              // 🔥 Buscar detalhes completos do reason se reason_id existir
-              if (reasonId) {
-                const reasonDetails = await buscarReasonDetails(reasonId, accountId);
-                if (reasonDetails) {
-                  reasonsAPI = reasonDetails;
-                  logger.info(`✅ Reason API completo para ${reasonId}:`, reasonsAPI);
-                } else {
-                  logger.warn(`⚠️ Falha ao buscar detalhes do reason ${reasonId}`);
-                }
-              } else {
-                logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
-              }
 
               // 📦 DADOS BRUTOS JSONB (4 colunas)
               const dadosBrutos = {
@@ -466,7 +412,7 @@ export function useDevolucoesBusca() {
               }
 
               return itemCompleto;
-            }));
+            });
 
             // 📅 ORDENAR POR DATA (MAIS RECENTE PRIMEIRO)
             devolucoesProcesadas.sort((a, b) => {
