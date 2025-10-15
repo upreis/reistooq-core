@@ -11,13 +11,12 @@ import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
 import { DevolucaoDetailsModal } from '@/components/ml/devolucao/DevolucaoDetailsModal';
 import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPagination';
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
+import { DevolucoesFiltrosAvancados } from '@/features/devolucoes/components/DevolucoesFiltrosAvancados';
 import { DevolucaoStatsLoading, DevolucaoLoadingState } from '@/components/ml/devolucao/DevolucaoLoadingState';
 import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } from '@/components/ml/devolucao/DevolucaoEmptyStates';
 import { RestoreDataDialog } from '@/components/ml/devolucao/RestoreDataDialog';
 import { DevolucaoTableSkeleton, DevolucaoStatsSkeleton } from '@/components/ml/devolucao/DevolucaoSkeletonLoader';
 import { CacheIndicator, LoadingStateIndicator } from '@/components/ml/devolucao/CacheIndicator';
-import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
-import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -46,8 +45,7 @@ import {
   MessageCircle,
   Truck,
   Calculator,
-  Zap,
-  Settings
+  Zap
 } from 'lucide-react';
 
 
@@ -77,12 +75,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [selectedDevolucao, setSelectedDevolucao] = React.useState<DevolucaoAvancada | null>(null);
   const [showDetails, setShowDetails] = React.useState(false);
   const [showExportDialog, setShowExportDialog] = React.useState(false);
-  const [showColumnManager, setShowColumnManager] = React.useState(false);
-  
-  // Estados para controle de filtros (aplicação manual)
-  const [draftFilters, setDraftFilters] = React.useState<any>(null);
-  const [appliedFiltersState, setAppliedFiltersState] = React.useState<any>({});
-  const [isApplyingFilters, setIsApplyingFilters] = React.useState(false);
 
   // Hook principal consolidado com otimizações
   const {
@@ -114,58 +106,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
-  // Função para aplicar filtros e buscar
-  const handleAplicarEBuscar = useCallback(async () => {
-    setIsApplyingFilters(true);
-    try {
-      // Aplicar filtros atuais
-      const filtrosParaAplicar = draftFilters || advancedFilters;
-      setAppliedFiltersState(filtrosParaAplicar);
-      setDraftFilters(null);
-      
-      // Buscar com os filtros
-      await buscarComFiltros(filtrosParaAplicar);
-      
-      toast.success('Filtros aplicados com sucesso');
-    } catch (error) {
-      console.error('Erro ao aplicar filtros:', error);
-      toast.error('Erro ao aplicar filtros');
-    } finally {
-      setIsApplyingFilters(false);
-    }
-  }, [buscarComFiltros, advancedFilters, draftFilters]);
-
-  const handleCancelChanges = useCallback(() => {
-    setDraftFilters(null);
-  }, []);
-
-  const handleClearAllFilters = useCallback(() => {
-    clearFilters();
-    setDraftFilters(null);
-    setAppliedFiltersState({});
-  }, [clearFilters]);
-
-  const handleFilterChange = useCallback((key: string, value: any) => {
-    setDraftFilters((prev: any) => ({
-      ...(prev || advancedFilters),
-      [key]: value
-    }));
-  }, [advancedFilters]);
-
-  // Calcular filtros ativos e mudanças pendentes
-  const currentFilters = draftFilters || advancedFilters;
-  const activeFiltersCount = React.useMemo(() => {
-    let count = 0;
-    if (currentFilters.searchTerm) count++;
-    if (currentFilters.statusClaim) count++;
-    if (currentFilters.dataInicio) count++;
-    if (currentFilters.dataFim) count++;
-    if (currentFilters.contasSelecionadas?.length > 0) count++;
-    return count;
-  }, [currentFilters]);
-
-  const hasPendingChanges = draftFilters !== null;
-  const needsManualApplication = hasPendingChanges;
+  // Função para aplicar filtros e buscar (garante sincronização)
+  // Agora busca com os filtros atuais imediatamente após a atualização
+  const handleAplicarEBuscar = useCallback(() => {
+    // ⚡ CORREÇÃO: Usar os filtros atualizados do estado advancedFilters
+    // que já foram sincronizados pelo updateAdvancedFilters
+    buscarComFiltros(advancedFilters);
+  }, [buscarComFiltros, advancedFilters]);
 
 
   const exportarCSV = useCallback(() => {
@@ -343,14 +290,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       <div className="flex justify-end gap-2">
         <Button 
           variant="outline" 
-          onClick={() => setShowColumnManager(true)}
-          className="flex items-center gap-2"
-        >
-          <Settings className="h-4 w-4" />
-          Colunas (29)
-        </Button>
-        <Button 
-          variant="outline" 
           onClick={exportarCSV}
           className="flex items-center gap-2"
         >
@@ -359,25 +298,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </Button>
       </div>
 
-      {/* ✨ SISTEMA DE FILTROS UNIFICADO - IGUAL AO /PEDIDOS */}
-      <DevolucaoFiltersSection
-        activeFiltersCount={activeFiltersCount}
-        hasPendingChanges={hasPendingChanges}
-      >
-        <DevolucaoFiltersUnified
-          filters={currentFilters}
-          appliedFilters={appliedFiltersState}
-          onFilterChange={handleFilterChange}
-          onApplyFilters={handleAplicarEBuscar}
-          onCancelChanges={handleCancelChanges}
-          onClearFilters={handleClearAllFilters}
-          hasPendingChanges={hasPendingChanges}
-          needsManualApplication={needsManualApplication}
-          isApplying={isApplyingFilters}
-          activeFiltersCount={activeFiltersCount}
-          contasML={mlAccounts}
-        />
-      </DevolucaoFiltersSection>
+      {/* ✨ NOVO SISTEMA DE FILTROS AVANÇADOS - COMPLETO E FUNCIONAL */}
+      <DevolucoesFiltrosAvancados
+        filtros={advancedFilters}
+        onFiltrosChange={updateAdvancedFilters}
+        onLimpar={clearFilters}
+        onAplicar={handleAplicarEBuscar}
+        mlAccounts={mlAccounts}
+      />
 
       {/* ERRO */}
       {error && (
@@ -475,32 +403,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         onOpenChange={setShowDetails}
         devolucao={selectedDevolucao}
       />
-      
-      {/* Modal de gerenciamento de colunas */}
-      <Dialog open={showColumnManager} onOpenChange={setShowColumnManager}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Gerenciar Colunas</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Em breve: sistema completo de gerenciamento de colunas similar ao /pedidos
-            </p>
-            <div className="mt-4 space-y-2">
-              <div className="text-xs text-muted-foreground">Colunas disponíveis:</div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>✅ Order ID</div>
-                <div>✅ Claim ID</div>
-                <div>✅ SKU</div>
-                <div>✅ Produto</div>
-                <div>✅ Status</div>
-                <div>✅ Valor Retido</div>
-                <div>... e mais 23 colunas</div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

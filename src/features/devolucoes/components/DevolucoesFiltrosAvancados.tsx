@@ -1,9 +1,3 @@
-/**
- * ⚠️ DEPRECATED: Use DevolucaoFiltersUnified ao invés deste componente
- * Este arquivo será removido em breve
- * Novo componente: src/components/ml/devolucao/DevolucaoFiltersUnified.tsx
- */
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
