@@ -776,8 +776,14 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       
       const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
       
+      console.log(`[REISTOM INFO] 📡 Response status:`, response.status);
+      console.log(`[REISTOM INFO] 📡 Response ok:`, response.ok);
+      
       if (!response.ok) {
-        console.error(`❌ Erro na API: ${response.status} - ${response.statusText}`)
+        console.error(`[REISTOM ERROR] ❌ API retornou erro ${response.status} - ${response.statusText}`);
+        
+        const errorText = await response.text();
+        console.error(`[REISTOM ERROR] ❌ Detalhes do erro:`, errorText);
         
         if (response.status === 401) {
           throw new Error('Token de acesso inválido ou expirado - reconecte a integração')
@@ -789,7 +795,15 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`)
       }
       
-      const data = await response.json()
+      const data = await response.json();
+      
+      console.log(`[REISTOM INFO] 📦 Dados da página recebidos:`, {
+        type: typeof data,
+        hasData: !!data,
+        hasDataArray: !!data?.data,
+        isDataArray: Array.isArray(data?.data),
+        dataLength: data?.data?.length || 0
+      });
       
       if (!data.data || !Array.isArray(data.data)) {
         console.log('⚠️  Resposta sem dados válidos, encerrando paginação')
@@ -820,10 +834,26 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • Páginas consultadas: ${Math.ceil(offset / limit)}`)
     console.log(`🔄 ============================================================\n`)
 
+    // 🛡️ VERIFICAÇÃO CRÍTICA: Validar dados recebidos da API
+    console.log(`[REISTOM INFO] 🔴 DADOS BRUTOS DA API RECEBIDOS:`, {
+      type: typeof allClaims,
+      isArray: Array.isArray(allClaims),
+      length: allClaims?.length || 0,
+      hasData: !!allClaims
+    });
+    
+    // Verificar se dados são válidos
+    if (!allClaims || !Array.isArray(allClaims)) {
+      console.error(`[REISTOM ERROR] ❌ API retornou dados inválidos:`, allClaims);
+      throw new Error('API do Mercado Livre retornou dados inválidos');
+    }
+    
     if (allClaims.length === 0) {
-      console.log('ℹ️ Nenhum claim encontrado na API')
+      console.log(`[REISTOM INFO] ℹ️ Nenhum claim encontrado para os filtros aplicados`);
       return []
     }
+    
+    console.log(`[REISTOM INFO] ✅ ${allClaims.length} claims recebidos da API`);
     
     // 🔥 FILTRAR LOCALMENTE POR DATA - A API não suporta filtros de data
     let claimsParaProcessar = allClaims
@@ -915,14 +945,21 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     
     // 1. Coletar todos os reason_ids únicos dos claims
     const uniqueReasonIds = new Set<string>();
+    
+    console.log(`[REISTOM DEBUG] 📊 Analisando ${claimsParaProcessar.length} claims para extrair reason_ids...`);
+    
     for (const claim of claimsParaProcessar) {
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
+      
       if (reasonId && typeof reasonId === 'string') {
         uniqueReasonIds.add(reasonId);
+        console.log(`[REISTOM DEBUG]   ✅ Claim ${claim.id}: reason_id="${reasonId}"`);
+      } else {
+        console.log(`[REISTOM DEBUG]   ⚠️ Claim ${claim.id}: SEM reason_id (claim_details=${!!claim?.claim_details}, reason_id=${claim?.reason_id})`);
       }
     }
     
-    console.log(`[REISTOM INFO] 🔍 ${uniqueReasonIds.size} reason_ids únicos encontrados:`, Array.from(uniqueReasonIds));
+    console.log(`[REISTOM INFO] ❌ Encontrados ${uniqueReasonIds.size} reason_ids únicos:`, Array.from(uniqueReasonIds));
     
     // 2. Buscar todos os reasons em paralelo da API ML
     let reasonsMap = new Map<string, any>();
