@@ -860,8 +860,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
     let claimsParaProcessar = allClaims
     
-    console.log(`ℹ️  Processando todos os ${claimsParaProcessar.length} claims sem filtro de data`)
-    console.log(`⚠️  NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
+    console.log(`[REISTOM INFO] ℹ️ Processando todos os ${claimsParaProcessar.length} claims sem filtro de data local`)
+    console.log(`[REISTOM INFO] ⚠️ NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
 
     // 🛡️ PROTEÇÃO CONTRA TIMEOUT: Limitar quantidade de claims processados
     const MAX_CLAIMS_TO_PROCESS = 500
