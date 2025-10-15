@@ -1063,6 +1063,78 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })() : '-'}
       </td>
       
+      {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
+      
+      {/* CPF/CNPJ */}
+      <td className="px-3 py-3 text-foreground font-mono text-sm">
+        {devolucao.comprador_cpf || '-'}
+      </td>
+      
+      {/* Nome Completo */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.comprador_nome_completo || '-'}
+      </td>
+      
+      {/* Nickname */}
+      <td className="px-3 py-3 text-blue-600 dark:text-blue-400">
+        {devolucao.comprador_nickname || '-'}
+      </td>
+      
+      {/* Método Pagamento */}
+      <td className="px-3 py-3 text-foreground">
+        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
+          {devolucao.metodo_pagamento || '-'}
+        </span>
+      </td>
+      
+      {/* Tipo Pagamento */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.tipo_pagamento || '-'}
+      </td>
+      
+      {/* Parcelas */}
+      <td className="px-3 py-3 text-center text-foreground font-medium">
+        {devolucao.parcelas ? `${devolucao.parcelas}x` : '-'}
+      </td>
+      
+      {/* Valor Parcela */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold">
+        {devolucao.valor_parcela ? `R$ ${devolucao.valor_parcela.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* Transaction ID */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs truncate" title={devolucao.transaction_id}>
+        {devolucao.transaction_id || '-'}
+      </td>
+      
+      {/* % Reembolsado */}
+      <td className="px-3 py-3 text-center">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="bg-green-500 h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(devolucao.percentual_reembolsado || 0, 100)}%` }}
+            />
+          </div>
+          <span className="font-semibold text-sm text-foreground">
+            {devolucao.percentual_reembolsado?.toFixed(0) || 0}%
+          </span>
+        </div>
+      </td>
+      
+      {/* Tags Pedido */}
+      <td className="px-3 py-3">
+        <div className="flex flex-wrap gap-1">
+          {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
+            devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
+              <span key={idx} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs">
+                {tag}
+              </span>
+            ))
+          ) : '-'}
+        </div>
+      </td>
+      
       {/* Histórico Status */}
       <td className="px-3 py-3 text-center">
         {devolucao.historico_status && Array.isArray(devolucao.historico_status) ? (
@@ -1322,80 +1394,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Versão API Utilizada */}
       <td className="px-3 py-3 text-foreground text-sm">
         {devolucao.versao_api_utilizada || '-'}
-      </td>
-      
-      {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
-      
-      {/* CPF/CNPJ */}
-      <td className="px-3 py-3 text-foreground font-mono text-sm">
-        {devolucao.comprador_cpf || '-'}
-      </td>
-      
-      {/* Nome Completo */}
-      <td className="px-3 py-3 text-foreground">
-        {devolucao.comprador_nome_completo || '-'}
-      </td>
-      
-      {/* Nickname */}
-      <td className="px-3 py-3 text-blue-600 dark:text-blue-400">
-        {devolucao.comprador_nickname || '-'}
-      </td>
-      
-      {/* Método Pagamento */}
-      <td className="px-3 py-3 text-foreground">
-        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
-          {devolucao.metodo_pagamento || '-'}
-        </span>
-      </td>
-      
-      {/* Tipo Pagamento */}
-      <td className="px-3 py-3 text-foreground">
-        {devolucao.tipo_pagamento || '-'}
-      </td>
-      
-      {/* Parcelas */}
-      <td className="px-3 py-3 text-center text-foreground font-medium">
-        {devolucao.parcelas ? `${devolucao.parcelas}x` : '-'}
-      </td>
-      
-      {/* Valor Parcela */}
-      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold">
-        {devolucao.valor_parcela ? `R$ ${devolucao.valor_parcela.toFixed(2)}` : '-'}
-      </td>
-      
-      {/* Transaction ID */}
-      <td className="px-3 py-3 text-foreground font-mono text-xs truncate" title={devolucao.transaction_id}>
-        {devolucao.transaction_id || '-'}
-      </td>
-      
-      {/* % Reembolsado */}
-      <td className="px-3 py-3 text-center">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div
-              className="bg-green-500 h-2 rounded-full transition-all"
-              style={{ width: `${Math.min(devolucao.percentual_reembolsado || 0, 100)}%` }}
-            />
-          </div>
-          <span className="font-semibold text-sm text-foreground">
-            {devolucao.percentual_reembolsado?.toFixed(0) || 0}%
-          </span>
-        </div>
-      </td>
-      
-      {/* Tags Pedido */}
-      <td className="px-3 py-3">
-        <div className="flex flex-wrap gap-1">
-          {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
-            devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
-              <span key={`${devolucao.id}-tag-${tag}-${idx}`} className="px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 rounded text-xs">
-                {tag}
-              </span>
-            ))
-          ) : (
-            <span className="text-muted-foreground text-xs">-</span>
-          )}
-        </div>
       </td>
       
       {/* ========== FASE 3: CAMPOS AVANÇADOS (15 COLUNAS) ========== */}
