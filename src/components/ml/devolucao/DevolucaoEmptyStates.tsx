@@ -98,8 +98,9 @@ export const LocalFilterEmptyState: React.FC<EmptyStateProps> = ({ onClearFilter
   );
 };
 
-export const LoadingProgressIndicator: React.FC<{ message?: string }> = ({ 
-  message = 'Buscando dados da API do Mercado Livre...' 
+export const LoadingProgressIndicator: React.FC<{ message?: string; progress?: number }> = ({ 
+  message = 'Buscando dados da API do Mercado Livre...',
+  progress
 }) => {
   return (
     <Card>
@@ -109,9 +110,19 @@ export const LoadingProgressIndicator: React.FC<{ message?: string }> = ({
           <Package className="h-8 w-8 text-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
         </div>
         <h3 className="text-lg font-semibold mb-2">Carregando devoluções</h3>
-        <p className="text-sm text-muted-foreground text-center max-w-md">
-          {message}
-        </p>
+        <div className="space-y-3 min-w-[400px]">
+          <p className="text-sm text-muted-foreground text-center">
+            {message}
+          </p>
+          {progress !== undefined && (
+            <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-primary transition-all duration-300 ease-out"
+                style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
+              />
+            </div>
+          )}
+        </div>
         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
           <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse"></div>
           <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse delay-75"></div>

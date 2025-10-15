@@ -487,6 +487,11 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
     clearError: () => setError(null),
     
     // Performance & Auto-refresh
-    autoRefresh
+    autoRefresh,
+    
+    // 🎯 FASE 4: Novos campos para UI/UX
+    loadingProgress: busca.loadingProgress,
+    cacheStats: busca.cacheStats,
+    clearCache: busca.clearCache
   };
 }

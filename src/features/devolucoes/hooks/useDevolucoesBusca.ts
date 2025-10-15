@@ -22,6 +22,8 @@ const CACHE_TTL = 1000 * 60 * 30; // 30 minutos
 
 export function useDevolucoesBusca() {
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, message: '' });
+  const [cacheStats, setCacheStats] = useState({ hits: 0, misses: 0, lastUpdate: '' });
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
@@ -45,8 +47,11 @@ export function useDevolucoesBusca() {
     
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
       logger.info(`💾 Cache hit para reason ${reasonId}`);
+      setCacheStats(prev => ({ ...prev, hits: prev.hits + 1 }));
       return cached.data;
     }
+    
+    setCacheStats(prev => ({ ...prev, misses: prev.misses + 1 }));
 
     try {
       const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
@@ -71,6 +76,8 @@ export function useDevolucoesBusca() {
           data: apiResponse.data,
           timestamp: Date.now()
         });
+        
+        setCacheStats(prev => ({ ...prev, lastUpdate: new Date().toISOString() }));
         
         return apiResponse.data;
       }
@@ -1046,6 +1053,13 @@ export function useDevolucoesBusca() {
     loading,
     buscarDaAPI,
     buscarDoBanco,
-    sincronizarDevolucoes
+    sincronizarDevolucoes,
+    loadingProgress,
+    cacheStats,
+    clearCache: () => {
+      reasonsCache.clear();
+      setCacheStats({ hits: 0, misses: 0, lastUpdate: '' });
+      logger.info('🧹 Cache limpo');
+    }
   };
 }

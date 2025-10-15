@@ -15,6 +15,8 @@ import { DevolucoesFiltrosAvancados } from '@/features/devolucoes/components/Dev
 import { DevolucaoStatsLoading, DevolucaoLoadingState } from '@/components/ml/devolucao/DevolucaoLoadingState';
 import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } from '@/components/ml/devolucao/DevolucaoEmptyStates';
 import { RestoreDataDialog } from '@/components/ml/devolucao/RestoreDataDialog';
+import { DevolucaoTableSkeleton, DevolucaoStatsSkeleton } from '@/components/ml/devolucao/DevolucaoSkeletonLoader';
+import { CacheIndicator, LoadingStateIndicator } from '@/components/ml/devolucao/CacheIndicator';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -96,7 +98,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     setItemsPerPage,
     toggleAnalytics,
     clearError,
-    autoRefresh
+    autoRefresh,
+    loadingProgress,
+    cacheStats,
+    clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId);
 
   // Função para aplicar filtros e buscar (garante sincronização)
