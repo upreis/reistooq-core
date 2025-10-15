@@ -864,12 +864,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`[REISTOM INFO] ⚠️ NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
 
     // 🛡️ PROTEÇÃO CONTRA TIMEOUT: Limitar quantidade de claims processados
-    const MAX_CLAIMS_TO_PROCESS = 500
+    // REDUZIDO para 100 para evitar timeouts
+    const MAX_CLAIMS_TO_PROCESS = 100
     if (claimsParaProcessar.length > MAX_CLAIMS_TO_PROCESS) {
       console.log(`\n⚠️  ============= LIMITE DE PROCESSAMENTO ATINGIDO =============`)
       console.log(`   • Claims filtrados: ${claimsParaProcessar.length}`)
       console.log(`   • Limite máximo: ${MAX_CLAIMS_TO_PROCESS}`)
-      console.log(`   • Motivo: Evitar timeout da Edge Function (limite de 30s)`)
+      console.log(`   • Motivo: Evitar timeout da Edge Function (limite de 60s no gateway)`)
       console.log(`   • Ação: Processando apenas os ${MAX_CLAIMS_TO_PROCESS} mais recentes`)
       console.log(`   • Recomendação: Use filtros de data mais específicos para ver todos`)
       console.log(`🛡️  ============================================================\n`)
@@ -1520,6 +1521,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             // Proteção contra dados nulos
             const safeClaimData = claimData || {}
             const safeOrderDetail = orderDetail || {}
+            const safeShipmentData = claimData?.shipment_history || null
             
             const devolucao = {
               type: 'cancellation',
