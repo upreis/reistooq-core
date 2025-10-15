@@ -866,13 +866,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       const claimsAntesFiltro = claimsParaProcessar.length
       
       claimsParaProcessar = claimsParaProcessar.filter((claim: any) => {
-        if (!claim.date_created) {
-          console.log(`   ⚠️  Claim ${claim.id} sem date_created - REJEITADO`)
+        // 🎯 USAR date_received EM VEZ DE date_created
+        // date_received é a data em que a reclamação foi recebida (data que importa para filtros)
+        // date_created é quando o claim foi criado no sistema ML (pode ser muito antiga)
+        const dataParaFiltrar = claim.date_received || claim.date_created
+        
+        if (!dataParaFiltrar) {
+          console.log(`   ⚠️  Claim ${claim.id} sem date_received/date_created - REJEITADO`)
           return false
         }
         
         // Extrair apenas a data (YYYY-MM-DD) do claim, ignorando horário
-        const claimDateStr = claim.date_created.split('T')[0]
+        const claimDateStr = dataParaFiltrar.split('T')[0]
         
         // Comparar strings de data diretamente (YYYY-MM-DD format)
         let aceito = true
