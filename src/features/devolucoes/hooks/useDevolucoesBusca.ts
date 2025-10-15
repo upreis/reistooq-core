@@ -46,7 +46,10 @@ export function useDevolucoesBusca() {
       });
 
       if (apiError || !apiResponse?.success) {
-        logger.warn(`⚠️ Reason ${reasonId} não encontrado na API`, apiError);
+        // ⚠️ Silenciar erro se for falta de token - normal em múltiplas contas
+        if (apiResponse?.error !== 'Token ML não disponível') {
+          logger.warn(`⚠️ Reason ${reasonId} não encontrado na API`, apiError);
+        }
         return null;
       }
 
@@ -105,7 +108,6 @@ export function useDevolucoesBusca() {
     reason_type: string | null;
     reason_priority: string | null;
     reason_expected_resolutions: string[] | null;
-    reason_flow: string | null;
   } => {
     if (!reasonId) {
       return {
@@ -115,8 +117,7 @@ export function useDevolucoesBusca() {
         reason_detail: null,
         reason_type: null,
         reason_priority: null,
-        reason_expected_resolutions: null,
-        reason_flow: null
+        reason_expected_resolutions: null
       };
     }
 
@@ -135,8 +136,7 @@ export function useDevolucoesBusca() {
         reason_priority: prefix === 'PNR' || prefix === 'PDD' ? 'high' : 'medium',
         reason_expected_resolutions: prefix === 'PNR' ? ['refund', 'resend'] :
                                      prefix === 'PDD' ? ['replacement', 'refund', 'repair'] :
-                                     prefix === 'CS' ? ['refund'] : ['contact_seller'],
-        reason_flow: apiData.flow || null
+                                     prefix === 'CS' ? ['refund'] : ['contact_seller']
       };
     }
 
@@ -198,8 +198,7 @@ export function useDevolucoesBusca() {
         reason_detail: `Motivo não categorizado: ${reasonId}`,
         reason_type: 'buyer_initiated',
         reason_priority: 'medium',
-        reason_expected_resolutions: ['contact_seller'],
-        reason_flow: null
+        reason_expected_resolutions: ['contact_seller']
       };
     }
 
@@ -210,8 +209,7 @@ export function useDevolucoesBusca() {
       reason_detail: mapping.detail,
       reason_type: mapping.type,
       reason_priority: mapping.priority,
-      reason_expected_resolutions: mapping.expected_resolutions,
-      reason_flow: mapping.flow
+      reason_expected_resolutions: mapping.expected_resolutions
     };
   };
 
