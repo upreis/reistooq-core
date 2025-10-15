@@ -335,24 +335,28 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   }, [mlAccounts, selectedAccountId]);
 
 
-  // 🔍 BUSCAR COM FILTROS - SEMPRE USAR OS FILTROS ATUAIS DA UI
-  const buscarComFiltros = useCallback(async () => {
+  // 🔍 BUSCAR COM FILTROS - Aceita filtros opcionais para evitar race conditions
+  const buscarComFiltros = useCallback(async (filtrosImediatos?: DevolucaoAdvancedFilters) => {
     try {
       setLoading(true);
       setError(null);
       
+      // Usar filtros passados diretamente ou os do estado atual
+      const filtrosParaUsar = filtrosImediatos || advancedFilters;
+      
       // 📅 VALIDAR DATAS ANTES DE ENVIAR
-      if (!advancedFilters.dataInicio || !advancedFilters.dataFim) {
+      if (!filtrosParaUsar.dataInicio || !filtrosParaUsar.dataFim) {
         throw new Error('Por favor, selecione um período de datas antes de buscar');
       }
       
       console.log('[useDevolucoes] 🔍 Buscando com filtros:', {
-        dataInicio: advancedFilters.dataInicio,
-        dataFim: advancedFilters.dataFim,
-        contas: advancedFilters.contasSelecionadas
+        dataInicio: filtrosParaUsar.dataInicio,
+        dataFim: filtrosParaUsar.dataFim,
+        contas: filtrosParaUsar.contasSelecionadas,
+        origem: filtrosImediatos ? 'filtros imediatos' : 'estado atual'
       });
       
-      const dadosAPI = await busca.buscarDaAPI(advancedFilters, mlAccounts);
+      const dadosAPI = await busca.buscarDaAPI(filtrosParaUsar, mlAccounts);
       setDevolucoes(dadosAPI);
       setCurrentPage(1);
       
@@ -373,10 +377,13 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   // A busca agora é totalmente controlada pelo usuário através do botão
 
   // ✏️ ATUALIZAR FILTROS - SEM PERSISTÊNCIA DE DATAS
+  // Retorna os novos filtros completos para permitir busca imediata
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
-    setAdvancedFilters(prev => ({ ...prev, ...newFilters }));
-    
-    console.log('[useDevolucoes] ✏️ Filtros atualizados (apenas em memória):', newFilters);
+    setAdvancedFilters(prev => {
+      const filtrosAtualizados = { ...prev, ...newFilters };
+      console.log('[useDevolucoes] ✏️ Filtros atualizados (apenas em memória):', filtrosAtualizados);
+      return filtrosAtualizados;
+    });
   }, []);
 
   // Atualizar configurações de performance removido - valores fixos otimizados

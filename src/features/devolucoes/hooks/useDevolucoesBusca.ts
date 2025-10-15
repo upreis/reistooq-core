@@ -22,6 +22,199 @@ export function useDevolucoesBusca() {
   // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
   // A função ml-api-direct já obtém o token internamente de forma segura
 
+  /**
+   * 🔍 Busca detalhes de um reason específico na API do ML
+   */
+  const fetchReasonDetails = async (
+    reasonId: string,
+    integrationAccountId: string
+  ): Promise<{
+    id: string;
+    name: string;
+    detail: string;
+    flow: string;
+  } | null> => {
+    try {
+      logger.info(`🔍 Buscando reason ${reasonId} na API...`);
+
+      const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
+        body: {
+          action: 'get_reason_detail',
+          integration_account_id: integrationAccountId,
+          reason_id: reasonId
+        }
+      });
+
+      if (apiError || !apiResponse?.success) {
+        logger.warn(`⚠️ Reason ${reasonId} não encontrado na API`, apiError);
+        return null;
+      }
+
+      if (apiResponse?.data) {
+        logger.info(`✅ Reason ${reasonId} encontrado:`, apiResponse.data.detail);
+        return apiResponse.data;
+      }
+
+      return null;
+    } catch (error) {
+      logger.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
+      return null;
+    }
+  };
+
+  /**
+   * 🎯 Busca múltiplos reasons em paralelo
+   */
+  const fetchMultipleReasons = async (
+    reasonIds: string[],
+    integrationAccountId: string
+  ): Promise<Map<string, any>> => {
+    logger.info(`📦 Buscando ${reasonIds.length} reasons únicos...`);
+
+    const reasonsMap = new Map<string, any>();
+
+    // Buscar todos em paralelo
+    const promises = reasonIds.map(reasonId =>
+      fetchReasonDetails(reasonId, integrationAccountId)
+        .then(data => {
+          if (data) {
+            reasonsMap.set(reasonId, data);
+          }
+        })
+    );
+
+    await Promise.all(promises);
+
+    logger.info(`✅ ${reasonsMap.size} reasons encontrados com sucesso`);
+
+    return reasonsMap;
+  };
+
+  /**
+   * 🗺️ Mapeia reason_id para categoria e detalhes
+   * Usa dados da API se disponíveis, senão usa mapeamento local
+   */
+  const mapReasonWithApiData = (
+    reasonId: string | null,
+    apiData: any | null
+  ): {
+    reason_id: string | null;
+    reason_category: string | null;
+    reason_name: string | null;
+    reason_detail: string | null;
+    reason_type: string | null;
+    reason_priority: string | null;
+    reason_expected_resolutions: string[] | null;
+    reason_flow: string | null;
+  } => {
+    if (!reasonId) {
+      return {
+        reason_id: null,
+        reason_category: null,
+        reason_name: null,
+        reason_detail: null,
+        reason_type: null,
+        reason_priority: null,
+        reason_expected_resolutions: null,
+        reason_flow: null
+      };
+    }
+
+    // Se temos dados da API, usar eles
+    if (apiData) {
+      const prefix = reasonId.substring(0, 3);
+
+      return {
+        reason_id: apiData.id,
+        reason_category: prefix === 'PNR' ? 'not_received' :
+                        prefix === 'PDD' ? 'defective_or_different' :
+                        prefix === 'CS' ? 'cancellation' : 'other',
+        reason_name: apiData.name || null,
+        reason_detail: apiData.detail || null,
+        reason_type: 'buyer_initiated',
+        reason_priority: prefix === 'PNR' || prefix === 'PDD' ? 'high' : 'medium',
+        reason_expected_resolutions: prefix === 'PNR' ? ['refund', 'resend'] :
+                                     prefix === 'PDD' ? ['replacement', 'refund', 'repair'] :
+                                     prefix === 'CS' ? ['refund'] : ['contact_seller'],
+        reason_flow: apiData.flow || null
+      };
+    }
+
+    // Fallback: mapeamento local
+    const prefix = reasonId.substring(0, 3);
+
+    // Mapeamento local como fallback
+    const categoryMap: Record<string, any> = {
+      'PNR': {
+        category: 'not_received',
+        name: 'Produto Não Recebido',
+        detail: 'O comprador não recebeu o produto',
+        type: 'buyer_initiated',
+        priority: 'high',
+        expected_resolutions: ['refund', 'resend'],
+        flow: 'post_purchase'
+      },
+      'PDD': {
+        category: 'defective_or_different',
+        name: 'Produto Defeituoso ou Diferente',
+        detail: 'Produto veio com defeito ou diferente do anunciado',
+        type: 'buyer_initiated',
+        priority: 'high',
+        expected_resolutions: ['replacement', 'refund', 'repair'],
+        flow: 'post_purchase_delivered'
+      },
+      'CS': {
+        category: 'cancellation',
+        name: 'Cancelamento de Compra',
+        detail: 'Cancelamento da compra solicitado',
+        type: 'buyer_initiated',
+        priority: 'medium',
+        expected_resolutions: ['refund'],
+        flow: 'pre_purchase'
+      },
+      'PD0': {
+        category: 'defective_or_different',
+        name: 'Produto Defeituoso ou Diferente',
+        detail: 'Produto veio com defeito ou diferente do anunciado',
+        type: 'buyer_initiated',
+        priority: 'high',
+        expected_resolutions: ['replacement', 'refund'],
+        flow: 'post_purchase_delivered'
+      }
+    };
+
+    // Tentar match com 3 caracteres, depois 2
+    let mapping = categoryMap[prefix];
+    if (!mapping && prefix.length >= 2) {
+      mapping = categoryMap[prefix.substring(0, 2)];
+    }
+
+    if (!mapping) {
+      // Fallback genérico
+      return {
+        reason_id: reasonId,
+        reason_category: 'other',
+        reason_name: 'Outros Motivos',
+        reason_detail: `Motivo não categorizado: ${reasonId}`,
+        reason_type: 'buyer_initiated',
+        reason_priority: 'medium',
+        reason_expected_resolutions: ['contact_seller'],
+        reason_flow: null
+      };
+    }
+
+    return {
+      reason_id: reasonId,
+      reason_category: mapping.category,
+      reason_name: mapping.name,
+      reason_detail: mapping.detail,
+      reason_type: mapping.type,
+      reason_priority: mapping.priority,
+      reason_expected_resolutions: mapping.expected_resolutions,
+      reason_flow: mapping.flow
+    };
+  };
+
   // Buscar da API ML em tempo real
   const buscarDaAPI = useCallback(async (
     filtros: DevolucaoBuscaFilters,
@@ -80,8 +273,26 @@ export function useDevolucoesBusca() {
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
-            // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 132 COLUNAS VALIDADAS
-            const devolucoesProcesadas = devolucoesDaAPI.map((item: any, index: number) => {
+            // 🔍 FASE 0: BUSCAR REASONS DA API EM LOTE
+            const reasonIdsSet = new Set<string>();
+            devolucoesDaAPI.forEach((item: any) => {
+              const reasonId = item.claim_details?.reason_id;
+              if (reasonId && typeof reasonId === 'string') {
+                reasonIdsSet.add(reasonId);
+              }
+            });
+            const uniqueReasonIds = Array.from(reasonIdsSet);
+
+            logger.info(`🎯 Encontrados ${uniqueReasonIds.length} reason_ids únicos para buscar`);
+
+            // Buscar todos os reasons em paralelo
+            const reasonsApiData = await fetchMultipleReasons(uniqueReasonIds, accountId);
+
+            logger.info(`✅ Reasons API carregados: ${reasonsApiData.size}/${uniqueReasonIds.length}`);
+
+            // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 165 COLUNAS VALIDADAS
+            // FASE 1: Processar todos os dados básicos
+            const devolucoesProcesadas = await Promise.all(devolucoesDaAPI.map(async (item: any, index: number) => {
               
               // 🎯 DADOS PRINCIPAIS (17 colunas)
               const dadosPrincipais = {
@@ -322,11 +533,36 @@ export function useDevolucoesBusca() {
                 prazo_revisao_dias: null
               };
 
+              // 🔍 REASONS API - FASE 4 (8 novos campos) - BUSCAR DA API
+              const reasonId = item.claim_details?.reason_id || null;
+              const apiReasonData = reasonId ? reasonsApiData.get(reasonId) : null;
+              
+              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`, {
+                temDadosAPI: !!apiReasonData,
+                nomeAPI: apiReasonData?.name,
+                detalheAPI: apiReasonData?.detail
+              });
+              
+              // 🎯 Mapear com dados da API (prioridade) ou fallback local
+              const reasonsAPI = mapReasonWithApiData(reasonId, apiReasonData);
+              
+              if (reasonId) {
+                logger.info(`✅ Reason ${reasonId} processado:`, {
+                  fonte: apiReasonData ? 'API' : 'Local',
+                  category: reasonsAPI.reason_category,
+                  name: reasonsAPI.reason_name,
+                  detail: reasonsAPI.reason_detail,
+                  priority: reasonsAPI.reason_priority
+                });
+              } else {
+                logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
+              }
+
               // 🎯 CLASSIFICAÇÃO E RESOLUÇÃO (16 colunas)
               const dadosClassificacao = {
                 tipo_claim: item.type || item.claim_details?.type,
                 subtipo_claim: item.claim_details?.stage || null,
-                motivo_categoria: item.claim_details?.reason_id || null,
+                motivo_categoria: reasonId, // ✅ Mantém compatibilidade com código antigo
                 categoria_problema: null,
                 subcategoria_problema: null,
                 metodo_resolucao: item.claim_details?.resolution?.reason || null,
@@ -356,6 +592,8 @@ export function useDevolucoesBusca() {
                 valor_diferenca_troca: null
               };
 
+              // ⚠️ REASONS API já foi processado acima, antes de dadosClassificacao
+
               // 📦 DADOS BRUTOS JSONB (4 colunas)
               const dadosBrutos = {
                 dados_order: item.order_data || {},
@@ -364,7 +602,7 @@ export function useDevolucoesBusca() {
                 dados_return: item.return_details_v2 || item.return_details_v1 || {}
               };
 
-              // ✅ CONSOLIDAR TODOS OS DADOS (157 colunas total incluindo Fase 2 e 3)
+              // ✅ CONSOLIDAR TODOS OS DADOS (165 colunas total incluindo Fase 2, 3 e 4)
               const itemCompleto = {
                 ...dadosPrincipais,      // 17 colunas
                 ...dadosFinanceiros,     // 14 colunas
@@ -378,6 +616,7 @@ export function useDevolucoesBusca() {
                 ...dadosMensagens,       // 7 colunas
                 ...dadosTroca,           // 7 colunas
                 ...dadosClassificacao,   // 17 colunas
+                ...reasonsAPI,           // 8 colunas - FASE 4
                 ...dadosAdicionais,      // 9 colunas
                 ...dadosComprador,       // 3 colunas - FASE 2
                 ...dadosPagamento,       // 7 colunas - FASE 2
@@ -399,7 +638,7 @@ export function useDevolucoesBusca() {
               }
 
               return itemCompleto;
-            });
+            }));
 
             // 📅 ORDENAR POR DATA (MAIS RECENTE PRIMEIRO)
             devolucoesProcesadas.sort((a, b) => {
