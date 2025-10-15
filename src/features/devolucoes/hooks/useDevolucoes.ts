@@ -72,7 +72,7 @@ export interface PerformanceSettings {
   debounceDelay: number;
 }
 
-export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
+export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, selectedAccountIds?: string[]) {
   // Estados principais
   const [devolucoes, setDevolucoes] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -81,11 +81,18 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
   
   // 🎯 FILTROS VAZIOS POR PADRÃO - Usuário define tudo via interface
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
+    // 🚀 Usar selectedAccountIds se fornecido, senão selectedAccountId, senão vazio
+    const initialAccounts = selectedAccountIds && selectedAccountIds.length > 0 
+      ? selectedAccountIds 
+      : selectedAccountId 
+        ? [selectedAccountId] 
+        : [];
+    
     return {
       // Busca
       searchTerm: '',
       // Contas
-      contasSelecionadas: selectedAccountId ? [selectedAccountId] : [],
+      contasSelecionadas: initialAccounts,
       // 📅 DATAS VAZIAS - Sem valores padrão, usuário deve escolher o período
       dataInicio: '',
       dataFim: '',
@@ -375,6 +382,16 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string) {
 
   // Busca automática inicial REMOVIDA - usuário deve clicar em "Aplicar Filtros"
   // A busca agora é totalmente controlada pelo usuário através do botão
+
+  // 🔄 Atualizar contas selecionadas quando selectedAccountIds mudar
+  useEffect(() => {
+    if (selectedAccountIds && selectedAccountIds.length > 0) {
+      setAdvancedFilters(prev => ({
+        ...prev,
+        contasSelecionadas: selectedAccountIds
+      }));
+    }
+  }, [selectedAccountIds]);
 
   // ✏️ ATUALIZAR FILTROS - SEM PERSISTÊNCIA DE DATAS
   // Retorna os novos filtros completos para permitir busca imediata

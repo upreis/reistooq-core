@@ -26,10 +26,10 @@ export default function MLOrdersCompletas() {
     },
   });
 
-  // Auto-selecionar a primeira conta quando carregar
+  // Auto-selecionar TODAS as contas quando carregar
   React.useEffect(() => {
     if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
-      setSelectedAccountIds([mlAccounts[0].id]);
+      setSelectedAccountIds(mlAccounts.map(acc => acc.id));
     }
   }, [mlAccounts, selectedAccountIds.length]);
 
@@ -45,26 +45,61 @@ export default function MLOrdersCompletas() {
         </p>
       </div>
 
-      {/* Seletor de Contas ML */}
+      {/* Seletor de Contas ML com Múltipla Seleção */}
       {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
         <Card className="p-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <label className="text-sm font-medium mb-2 block">Conta Mercado Livre</label>
-              <select 
-                className="w-full px-3 py-2 border rounded-md bg-background"
-                value={selectedAccountIds[0] || ''}
-                onChange={(e) => setSelectedAccountIds([e.target.value])}
-              >
-                {mlAccounts.map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name} ({account.account_identifier})
-                  </option>
-                ))}
-              </select>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">
+                Contas Mercado Livre ({selectedAccountIds.length} de {mlAccounts.length} selecionadas)
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedAccountIds(mlAccounts.map(acc => acc.id))}
+                  className="text-xs px-2 py-1 rounded border hover:bg-accent"
+                  disabled={selectedAccountIds.length === mlAccounts.length}
+                >
+                  Selecionar Todas
+                </button>
+                <button
+                  onClick={() => setSelectedAccountIds([])}
+                  className="text-xs px-2 py-1 rounded border hover:bg-accent"
+                  disabled={selectedAccountIds.length === 0}
+                >
+                  Limpar Seleção
+                </button>
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground pt-6">
-              {mlAccounts.length} conta{mlAccounts.length !== 1 ? 's' : ''} disponível{mlAccounts.length !== 1 ? 'eis' : ''}
+            
+            <div className="grid gap-2">
+              {mlAccounts.map((account) => (
+                <label 
+                  key={account.id}
+                  className="flex items-center gap-3 p-3 border rounded-md cursor-pointer hover:bg-accent transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedAccountIds.includes(account.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedAccountIds([...selectedAccountIds, account.id]);
+                      } else {
+                        setSelectedAccountIds(selectedAccountIds.filter(id => id !== account.id));
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">{account.name}</div>
+                    <div className="text-xs text-muted-foreground">{account.account_identifier}</div>
+                  </div>
+                  <div className={`text-xs px-2 py-1 rounded ${
+                    account.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                  }`}>
+                    {account.is_active ? 'Ativa' : 'Inativa'}
+                  </div>
+                </label>
+              ))}
             </div>
           </div>
         </Card>
@@ -102,15 +137,25 @@ export default function MLOrdersCompletas() {
       )}
 
       {/* Conteúdo Principal */}
-      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
+      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length > 0 && (
         <DevolucaoAvancadasTab 
           mlAccounts={mlAccounts || []}
           selectedAccountId={selectedAccountIds[0] || ''}
+          selectedAccountIds={selectedAccountIds}
           refetch={async () => { 
             logger.info('Devoluções recarregadas com sucesso');
           }}
           existingDevolucoes={[]}
         />
+      )}
+      
+      {/* Alerta quando nenhuma conta selecionada */}
+      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && (
+        <Card className="p-6 border-yellow-200 bg-yellow-50">
+          <div className="text-center">
+            <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
+          </div>
+        </Card>
       )}
     </div>
   );

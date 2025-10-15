@@ -60,6 +60,7 @@ interface MLAccount {
 interface DevolucaoAvancadasTabProps {
   mlAccounts: MLAccount[];
   selectedAccountId?: string;
+  selectedAccountIds?: string[];
   refetch: () => Promise<void>;
   existingDevolucoes: DevolucaoAvancada[];
 }
@@ -67,6 +68,7 @@ interface DevolucaoAvancadasTabProps {
 const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   mlAccounts,
   selectedAccountId,
+  selectedAccountIds,
   refetch,
   existingDevolucoes
 }) => {
@@ -102,7 +104,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     loadingProgress,
     cacheStats,
     clearCache
-  } = useDevolucoes(mlAccounts, selectedAccountId);
+  } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
   // Função para aplicar filtros e buscar (garante sincronização)
   // Agora busca com os filtros atuais imediatamente após a atualização
