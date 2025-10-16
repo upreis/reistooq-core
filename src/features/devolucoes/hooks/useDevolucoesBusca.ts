@@ -706,12 +706,28 @@ export function useDevolucoesBusca() {
               return dataB - dataA; // Ordem decrescente
             });
 
+            // 🔄 DEDUPLIFICAR ANTES DE SALVAR (previne erro "cannot affect row a second time")
+            const deduplicatedData = devolucoesProcesadas.reduce((acc, item) => {
+              const key = `${item.order_id}_${item.integration_account_id}`;
+              // Manter apenas o primeiro registro de cada order_id
+              if (!acc.has(key)) {
+                acc.set(key, item);
+              } else {
+                console.log(`⚠️ Registro duplicado ignorado: Order ${item.order_id}`);
+              }
+              return acc;
+            }, new Map<string, any>());
+            
+            const uniqueData = Array.from(deduplicatedData.values()) as typeof devolucoesProcesadas;
+            
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
-            if (devolucoesProcesadas.length > 0) {
+            if (uniqueData.length > 0) {
+              logger.info(`💾 Salvando ${uniqueData.length} registros únicos (${devolucoesProcesadas.length} total antes da deduplicação)...`);
+              
               try {
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(devolucoesProcesadas, {
+                  .upsert(uniqueData, {
                     onConflict: 'order_id,integration_account_id',
                     ignoreDuplicates: false
                   });
@@ -719,14 +735,14 @@ export function useDevolucoesBusca() {
                 if (upsertError) {
                   logger.error('Erro ao salvar dados enriquecidos no banco', upsertError);
                 } else {
-                  logger.info(`✅ ${devolucoesProcesadas.length} devoluções SALVAS no banco com dados enriquecidos`);
+                  logger.info(`✅ ${uniqueData.length} devoluções SALVAS no banco com dados enriquecidos`);
                 }
               } catch (saveError) {
                 logger.error('Erro ao persistir dados', saveError);
               }
             }
 
-            todasDevolucoes.push(...devolucoesProcesadas);
+            todasDevolucoes.push(...uniqueData);
             toast.success(`✅ ${devolucoesProcesadas.length} devoluções enriquecidas para ${account.name}`);
           } else {
             logger.info(`Nenhuma devolução encontrada para ${account.name}`);
