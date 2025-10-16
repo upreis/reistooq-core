@@ -13,7 +13,14 @@ export interface DevolucaoBuscaFilters {
   dataInicio?: string;
   dataFim?: string;
   statusClaim?: string;
-  searchTerm?: string; // Adicionado campo de busca
+  searchTerm?: string;
+  // ============ NOVOS FILTROS AVANÇADOS (FASE 2) ============
+  stage?: string;          // 'claim' | 'dispute' | 'review'
+  fulfilled?: boolean;     // true | false
+  quantityType?: string;   // 'total' | 'partial'
+  reasonId?: string;       // 'PDD9939', 'PDD9941', etc
+  resource?: string;       // 'order' | 'shipment'
+  claimType?: string;      // 'mediations' | 'claim'
 }
 
 // 🎯 CACHE GLOBAL DE REASONS - Evita chamadas repetidas à API
@@ -294,11 +301,18 @@ export function useDevolucoesBusca() {
               action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: account.account_identifier,
-              // NÃO passamos access_token - a edge function obtém automaticamente
+              // Passando TODOS os filtros (antigos + novos)
               filters: {
-                date_from: filtros.dataInicio || '',  // YYYY-MM-DD
-                date_to: filtros.dataFim || '',        // YYYY-MM-DD
-                status: filtros.statusClaim || ''
+                date_from: filtros.dataInicio || '',
+                date_to: filtros.dataFim || '',
+                status_claim: filtros.statusClaim || '',
+                claim_type: filtros.claimType || '',
+                // ============ NOVOS FILTROS AVANÇADOS (FASE 2) ============
+                stage: filtros.stage || '',
+                fulfilled: filtros.fulfilled,
+                quantity_type: filtros.quantityType || '',
+                reason_id: filtros.reasonId || '',
+                resource: filtros.resource || ''
               }
             }
           });
@@ -934,13 +948,24 @@ export function useDevolucoesBusca() {
 
         try {
           // ✅ Buscar claims da API ML (token obtido automaticamente pela edge function)
+          // NOTA: Esta função de enriquecimento não usa filtros, busca todos os dados brutos
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
               action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: conta.account_identifier,
-              // NÃO passamos access_token - a edge function obtém automaticamente
-              filters: { date_from: '', date_to: '', status: '' }
+              // Buscar todos os dados sem filtros (enriquecimento completo)
+              filters: {
+                date_from: '',
+                date_to: '',
+                status_claim: '',
+                claim_type: '',
+                stage: '',
+                fulfilled: undefined,
+                quantity_type: '',
+                reason_id: '',
+                resource: ''
+              }
             }
           });
 

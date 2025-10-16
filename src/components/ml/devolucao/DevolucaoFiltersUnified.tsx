@@ -35,6 +35,29 @@ const STATUS_LABELS: Record<string, string> = {
   'cancelled': 'Cancelado'
 };
 
+// ============ NOVOS FILTROS AVANÇADOS (FASE 3) ============
+
+// Stage - Estágio da claim
+const STAGES = ['claim', 'dispute', 'review'];
+const STAGE_LABELS: Record<string, string> = {
+  'claim': 'Reclamação',
+  'dispute': 'Disputa',
+  'review': 'Em Análise'
+};
+
+// Fulfilled - Cumprido
+const FULFILLED_OPTIONS = [
+  { value: 'true', label: 'Sim' },
+  { value: 'false', label: 'Não' }
+];
+
+// Claim Type - Tipo de claim
+const CLAIM_TYPES = ['mediations', 'claim'];
+const CLAIM_TYPE_LABELS: Record<string, string> = {
+  'mediations': 'Mediação',
+  'claim': 'Reclamação'
+};
+
 interface DevolucaoFiltersUnifiedProps {
   filters: any;
   appliedFilters: any;
@@ -68,6 +91,10 @@ export function DevolucaoFiltersUnified({
   const [contasMLOpen, setContasMLOpen] = useState(false);
   const [dataInicioOpen, setDataInicioOpen] = useState(false);
   const [dataFimOpen, setDataFimOpen] = useState(false);
+  // Novos states para filtros avançados
+  const [stageOpen, setStageOpen] = useState(false);
+  const [fulfilledOpen, setFulfilledOpen] = useState(false);
+  const [claimTypeOpen, setClaimTypeOpen] = useState(false);
 
   const handleStatusClaimChange = (status: string, checked: boolean) => {
     const current = filters.statusClaim || '';
@@ -364,6 +391,100 @@ export function DevolucaoFiltersUnified({
             </Popover>
           </div>
         </div>
+
+        {/* ============ FILTROS AVANÇADOS (FASE 3) ============ */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
+            Estágio
+            <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
+          </label>
+          <Popover open={stageOpen} onOpenChange={setStageOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                {!filters.stage ? "Todos" : STAGE_LABELS[filters.stage] || filters.stage}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60 p-0">
+              <div className="p-4 space-y-2">
+                <div className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                  onClick={() => { onFilterChange('stage', ''); setStageOpen(false); }}>
+                  <Checkbox checked={!filters.stage} onChange={() => {}} />
+                  <label className="text-sm cursor-pointer">Todos</label>
+                </div>
+                {STAGES.map((stage) => (
+                  <div key={stage} className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                    onClick={() => { onFilterChange('stage', stage); setStageOpen(false); }}>
+                    <Checkbox checked={filters.stage === stage} onChange={() => {}} />
+                    <label className="text-sm cursor-pointer">{STAGE_LABELS[stage]}</label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
+            Cumprido
+            <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
+          </label>
+          <Popover open={fulfilledOpen} onOpenChange={setFulfilledOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                {filters.fulfilled === undefined ? "Todos" : filters.fulfilled ? "Sim" : "Não"}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60 p-0">
+              <div className="p-4 space-y-2">
+                <div className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                  onClick={() => { onFilterChange('fulfilled', undefined); setFulfilledOpen(false); }}>
+                  <Checkbox checked={filters.fulfilled === undefined} onChange={() => {}} />
+                  <label className="text-sm cursor-pointer">Todos</label>
+                </div>
+                {FULFILLED_OPTIONS.map((opt) => (
+                  <div key={opt.value} className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                    onClick={() => { onFilterChange('fulfilled', opt.value === 'true'); setFulfilledOpen(false); }}>
+                    <Checkbox checked={filters.fulfilled === (opt.value === 'true')} onChange={() => {}} />
+                    <label className="text-sm cursor-pointer">{opt.label}</label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
+            Tipo Claim
+            <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
+          </label>
+          <Popover open={claimTypeOpen} onOpenChange={setClaimTypeOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                {!filters.claimType ? "Todos" : CLAIM_TYPE_LABELS[filters.claimType] || filters.claimType}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-60 p-0">
+              <div className="p-4 space-y-2">
+                <div className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                  onClick={() => { onFilterChange('claimType', ''); setClaimTypeOpen(false); }}>
+                  <Checkbox checked={!filters.claimType} onChange={() => {}} />
+                  <label className="text-sm cursor-pointer">Todos</label>
+                </div>
+                {CLAIM_TYPES.map((type) => (
+                  <div key={type} className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                    onClick={() => { onFilterChange('claimType', type); setClaimTypeOpen(false); }}>
+                    <Checkbox checked={filters.claimType === type} onChange={() => {}} />
+                    <label className="text-sm cursor-pointer">{CLAIM_TYPE_LABELS[type]}</label>
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {/* Barra de ações */}
@@ -429,6 +550,16 @@ export function DevolucaoFiltersUnified({
                   : `${filters.contasSelecionadas.length} selecionadas`
                 }
               </Badge>
+            )}
+            {/* Novos filtros avançados */}
+            {filters.stage && (
+              <Badge variant="outline">Estágio: {STAGE_LABELS[filters.stage]}</Badge>
+            )}
+            {filters.fulfilled !== undefined && (
+              <Badge variant="outline">Cumprido: {filters.fulfilled ? 'Sim' : 'Não'}</Badge>
+            )}
+            {filters.claimType && (
+              <Badge variant="outline">Tipo: {CLAIM_TYPE_LABELS[filters.claimType]}</Badge>
             )}
           </div>
         </div>
