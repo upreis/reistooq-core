@@ -330,6 +330,137 @@ serve(async (req) => {
               console.log(`[FASE1] ✅ data_fechamento_claim: ${value}`);
               return value;
             })(),
+            
+            // ======== 🟡 FASE 2: CAMPOS VAZIOS PRIORITÁRIOS ========
+            
+            // 1. Motivo Categoria (CRÍTICO)
+            reason_category: (() => {
+              const reasonId = devolucao.claim_details?.reason_id || devolucao.claim_details?.reason?.id;
+              if (!reasonId) return null;
+              console.log(`[FASE2] 🎯 reason_id: ${reasonId}`);
+              
+              // Mapeamento baseado no prefixo do reason_id
+              if (reasonId.startsWith('PDD')) return 'Produto Defeituoso ou Diferente';
+              if (reasonId.startsWith('PNR')) return 'Produto Não Recebido';
+              if (reasonId.startsWith('CS')) return 'Cancelamento de Compra';
+              if (reasonId.includes('DEFECTIVE')) return 'Produto Defeituoso';
+              if (reasonId.includes('NOT_AS_DESCRIBED')) return 'Não Conforme Descrição';
+              if (reasonId.includes('DAMAGED')) return 'Danificado no Transporte';
+              if (reasonId.includes('WRONG')) return 'Produto Errado';
+              return 'Outro';
+            })(),
+            
+            // 2. Nível Complexidade (CRÍTICO)
+            nivel_complexidade: (() => {
+              let pontos = 0;
+              
+              // Fatores que aumentam complexidade
+              if (devolucao.mediation_details || devolucao.mediation_id) pontos += 3;
+              if (devolucao.claim_messages?.messages?.length > 10) pontos += 2;
+              if (devolucao.claim_attachments?.length > 5) pontos += 1;
+              if (devolucao.return_details_v2 || devolucao.return_id) pontos += 1;
+              if (devolucao.order_data?.total_amount > 500) pontos += 2;
+              if (devolucao.change_id) pontos += 1;
+              
+              console.log(`[FASE2] 📊 nivel_complexidade pontos: ${pontos}`);
+              
+              if (pontos >= 6) return 'Alto';
+              if (pontos >= 3) return 'Médio';
+              return 'Baixo';
+            })(),
+            
+            // 3. Categoria Problema (ALTO)
+            categoria_problema: (() => {
+              const reasonId = devolucao.claim_details?.reason_id || devolucao.claim_details?.reason?.id;
+              if (!reasonId) return null;
+              
+              // Categorização baseada no tipo de problema
+              if (['DEFECTIVE', 'BROKEN', 'DAMAGED_SHIPPING', 'PDD'].some(r => reasonId.includes(r))) {
+                return 'Qualidade do Produto';
+              }
+              if (['NOT_AS_DESCRIBED', 'WRONG_ITEM', 'DIFFERENT'].some(r => reasonId.includes(r))) {
+                return 'Descrição Incorreta';
+              }
+              if (['MISSING_PARTS', 'INCOMPLETE'].some(r => reasonId.includes(r))) {
+                return 'Produto Incompleto';
+              }
+              if (['PNR', 'NOT_RECEIVED'].some(r => reasonId.includes(r))) {
+                return 'Não Recebido';
+              }
+              if (['CS', 'CANCEL'].some(r => reasonId.includes(r))) {
+                return 'Cancelamento';
+              }
+              return 'Outros';
+            })(),
+            
+            // 4. Resultado Mediação (ALTO)
+            resultado_mediacao: (() => {
+              const mediationResult = devolucao.mediation_details?.resolution?.type || 
+                                     devolucao.mediation_details?.result;
+              if (!mediationResult) return null;
+              
+              const MEDIACAO_MAP: Record<string, string> = {
+                'buyer_favor': 'Favor do Comprador',
+                'seller_favor': 'Favor do Vendedor',
+                'partial_refund': 'Reembolso Parcial',
+                'full_refund': 'Reembolso Total',
+                'resolved': 'Resolvido',
+                'cancelled': 'Cancelado',
+                'expired': 'Expirado'
+              };
+              
+              return MEDIACAO_MAP[mediationResult] || mediationResult;
+            })(),
+            
+            // 5. Mediador ML (ALTO)
+            mediador_ml: (() => {
+              return devolucao.mediation_details?.mediator?.id || 
+                     devolucao.mediation_details?.mediator?.name || 
+                     devolucao.claim_details?.players?.find((p: any) => p.role === 'mediator')?.id || 
+                     null;
+            })(),
+            
+            // 6. Tempo Resposta Comprador (MÉDIO)
+            tempo_resposta_comprador: (() => {
+              const messages = devolucao.claim_messages?.messages || [];
+              if (messages.length < 2) return null;
+              
+              const buyerMsg = messages.find((m: any) => m.from?.role === 'buyer');
+              const sellerMsg = messages.find((m: any) => m.from?.role === 'seller');
+              
+              if (!buyerMsg || !sellerMsg) return null;
+              
+              const tempoResposta = new Date(buyerMsg.date_created).getTime() - 
+                                   new Date(sellerMsg.date_created).getTime();
+              return Math.floor(tempoResposta / (1000 * 60 * 60)); // em horas
+            })(),
+            
+            // 7. Tempo Análise ML (MÉDIO)
+            tempo_analise_ml: (() => {
+              if (!devolucao.mediation_details) return null;
+              
+              const dataInicio = devolucao.mediation_details.date_created || 
+                                devolucao.claim_details?.date_created;
+              const dataFim = devolucao.mediation_details.date_closed || new Date();
+              
+              if (!dataInicio) return null;
+              
+              const tempoAnalise = new Date(dataFim).getTime() - new Date(dataInicio).getTime();
+              return Math.floor(tempoAnalise / (1000 * 60 * 60)); // em horas
+            })(),
+            
+            // 8. Data Primeira Ação (MÉDIO)
+            data_primeira_acao: (() => {
+              const messages = devolucao.claim_messages?.messages || [];
+              if (messages.length === 0) return null;
+              
+              // Mensagens geralmente vêm ordenadas desc, então pegar a última
+              const primeiraMsg = messages[messages.length - 1];
+              return primeiraMsg?.date_created || null;
+            })(),
+            
+            // ======== FIM FASE 2 ========
+            
             marcos_temporais: (() => {
               const marcos = {
                 data_criacao_claim: devolucao.claim_details?.date_created || null,

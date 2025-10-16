@@ -1163,6 +1163,7 @@ export type Database = {
           status_envio_devolucao: string | null
           status_moderacao: string | null
           status_produto_novo: string | null
+          status_rastreamento: string | null
           status_rastreamento_devolucao: string | null
           status_rastreamento_pedido: string | null
           status_transporte_atual: string | null
@@ -1344,6 +1345,7 @@ export type Database = {
           status_envio_devolucao?: string | null
           status_moderacao?: string | null
           status_produto_novo?: string | null
+          status_rastreamento?: string | null
           status_rastreamento_devolucao?: string | null
           status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
@@ -1525,6 +1527,7 @@ export type Database = {
           status_envio_devolucao?: string | null
           status_moderacao?: string | null
           status_produto_novo?: string | null
+          status_rastreamento?: string | null
           status_rastreamento_devolucao?: string | null
           status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
