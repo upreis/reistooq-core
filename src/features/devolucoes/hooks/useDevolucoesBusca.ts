@@ -311,45 +311,9 @@ export function useDevolucoesBusca() {
           }
 
           if (apiResponse?.success && apiResponse?.data) {
-            let devolucoesDaAPI = apiResponse.data;
+            const devolucoesDaAPI = apiResponse.data;
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
-            
-            // 📅 FILTRO LOCAL POR DATA VENDA (data_criacao/date_created)
-            // A API ML não suporta filtros de data para claims, então aplicamos localmente
-            if ((filtros.dataInicio && filtros.dataInicio.trim()) || (filtros.dataFim && filtros.dataFim.trim())) {
-              const totalAntesDoFiltro = devolucoesDaAPI.length;
-              
-              devolucoesDaAPI = devolucoesDaAPI.filter((item: any) => {
-                const dataCriacao = item.date_created; // 📅 Data Venda na API ML
-                
-                if (!dataCriacao) return false; // Ignorar items sem data
-                
-                const dataItem = new Date(dataCriacao);
-                
-                // Filtrar por data início
-                if (filtros.dataInicio && filtros.dataInicio.trim()) {
-                  const dataInicio = new Date(filtros.dataInicio);
-                  dataInicio.setHours(0, 0, 0, 0);
-                  if (dataItem < dataInicio) return false;
-                }
-                
-                // Filtrar por data fim
-                if (filtros.dataFim && filtros.dataFim.trim()) {
-                  const dataFim = new Date(filtros.dataFim);
-                  dataFim.setHours(23, 59, 59, 999);
-                  if (dataItem > dataFim) return false;
-                }
-                
-                return true;
-              });
-              
-              logger.info(`📅 Filtro de Data Venda aplicado: ${totalAntesDoFiltro} → ${devolucoesDaAPI.length} devoluções`, {
-                dataInicio: filtros.dataInicio,
-                dataFim: filtros.dataFim,
-                removidas: totalAntesDoFiltro - devolucoesDaAPI.length
-              });
-            }
             
             // 🔍 FASE 0: IDENTIFICAR REASONS ÚNICOS
             const reasonIdsSet = new Set<string>();
@@ -492,7 +456,7 @@ export function useDevolucoesBusca() {
                 codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
                 transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
                 transportadora_devolucao: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                // status_rastreamento: REMOVIDO - coluna não existe no banco
+                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
                 url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
                 localizacao_atual: item.tracking_history?.[0]?.location || null,
                 status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,
