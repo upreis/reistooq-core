@@ -196,13 +196,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   const handleFilterChange = useCallback((key: string, value: any) => {
     setDraftFilters((prev: any) => ({
-      ...(prev || advancedFilters),
+      ...(prev || appliedFiltersState || advancedFilters),
       [key]: value
     }));
-  }, [advancedFilters]);
+  }, [appliedFiltersState, advancedFilters]);
 
   // Calcular filtros ativos e mudanças pendentes
-  const currentFilters = draftFilters || advancedFilters;
+  // IMPORTANTE: currentFilters deve usar appliedFiltersState como base, não advancedFilters
+  const currentFilters = draftFilters || appliedFiltersState || advancedFilters;
   const activeFiltersCount = React.useMemo(() => {
     let count = 0;
     if (currentFilters.searchTerm) count++;
