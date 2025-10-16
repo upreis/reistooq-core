@@ -21,7 +21,7 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   // 📊 CONTAS
   contasSelecionadas: string[];
   
-  // 📅 DATAS (sempre filtra por data de criação da venda)
+  // 📅 DATAS
   dataInicio: string;
   dataFim: string;
   
@@ -196,26 +196,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       resultados = resultados.filter(dev => dev.tipo_claim === advancedFilters.tipoClaim);
     }
 
-    // 📅 FILTRO DE DATA DE CRIAÇÃO (Frontend)
-    // Sempre filtra pela data de criação da venda, independente da API ML
-    if (advancedFilters.dataInicio || advancedFilters.dataFim) {
-      resultados = resultados.filter(dev => {
-        if (!dev.data_criacao) return false;
-        
-        try {
-          const dataCriacao = new Date(dev.data_criacao);
-          const dataInicio = advancedFilters.dataInicio ? new Date(advancedFilters.dataInicio + 'T00:00:00') : null;
-          const dataFim = advancedFilters.dataFim ? new Date(advancedFilters.dataFim + 'T23:59:59') : null;
-          
-          if (dataInicio && dataCriacao < dataInicio) return false;
-          if (dataFim && dataCriacao > dataFim) return false;
-          
-          return true;
-        } catch (error) {
-          return false;
-        }
-      });
-    }
+    // ⚠️ FILTROS DE DATA REMOVIDOS - A API JÁ FILTRA POR DATA
+    // Os filtros dataInicio e dataFim são enviados para a API e ela retorna apenas dados dentro do período
+    // Não devemos filtrar novamente aqui, pois isso remove dados válidos
 
     // 💰 FILTRO DE VALOR MÍNIMO
     if (advancedFilters.valorRetidoMin) {
