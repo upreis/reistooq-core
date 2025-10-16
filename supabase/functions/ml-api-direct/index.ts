@@ -779,7 +779,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     params.append('player_user_id', sellerId)
     params.append('limit', '50')
     
-    // Filtros OPCIONAIS (apenas se tiverem valor)
+    // ============ FILTROS OPCIONAIS DA API ML ============
+    // Filtros já existentes (mantidos)
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
       console.log(`✅ Aplicando filtro de status: ${filters.status_claim}`)
       params.append('status', filters.status_claim)
@@ -788,6 +789,40 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     if (filters?.claim_type && filters.claim_type.trim().length > 0) {
       console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
       params.append('type', filters.claim_type)
+    }
+
+    // ============ NOVOS FILTROS AVANÇADOS ============
+    // FASE 1: Stage - Estágio da claim (claim, dispute, review)
+    if (filters?.stage && filters.stage.trim().length > 0) {
+      console.log(`✅ Aplicando filtro de estágio: ${filters.stage}`)
+      params.append('stage', filters.stage)
+    }
+
+    // FASE 1: Fulfilled - Se foi cumprido (true/false)
+    if (filters?.fulfilled !== undefined && filters.fulfilled !== null && filters.fulfilled !== '') {
+      const fulfilledValue = String(filters.fulfilled).toLowerCase()
+      if (fulfilledValue === 'true' || fulfilledValue === 'false') {
+        console.log(`✅ Aplicando filtro de cumprimento: ${fulfilledValue}`)
+        params.append('fulfilled', fulfilledValue)
+      }
+    }
+
+    // FASE 1: Quantity Type - Tipo de quantidade (total, partial)
+    if (filters?.quantity_type && filters.quantity_type.trim().length > 0) {
+      console.log(`✅ Aplicando filtro de tipo quantidade: ${filters.quantity_type}`)
+      params.append('quantity_type', filters.quantity_type)
+    }
+
+    // FASE 1: Reason ID - ID do motivo específico (PDD9939, etc)
+    if (filters?.reason_id && filters.reason_id.trim().length > 0) {
+      console.log(`✅ Aplicando filtro de reason_id: ${filters.reason_id}`)
+      params.append('reason_id', filters.reason_id)
+    }
+
+    // FASE 1: Resource - Tipo de recurso (order, shipment)
+    if (filters?.resource && filters.resource.trim().length > 0) {
+      console.log(`✅ Aplicando filtro de resource: ${filters.resource}`)
+      params.append('resource', filters.resource)
     }
 
     // 📚 BUSCAR TODAS AS PÁGINAS DA API
@@ -802,6 +837,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
+    console.log(`   • stage: ${filters?.stage || 'N/A'}`)
+    console.log(`   • fulfilled: ${filters?.fulfilled !== undefined ? filters.fulfilled : 'N/A'}`)
+    console.log(`   • quantity_type: ${filters?.quantity_type || 'N/A'}`)
+    console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
+    console.log(`   • resource: ${filters?.resource || 'N/A'}`)
     console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca\n`)
 
     do {
