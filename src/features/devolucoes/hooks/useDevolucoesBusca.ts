@@ -283,9 +283,9 @@ export function useDevolucoesBusca() {
           // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
           // 📅 IMPORTANTE: Enviar datas no formato YYYY-MM-DD (a edge function converte internamente)
           
-          logger.info(`🔍 Buscando devoluções para ${account.name}`, {
-            dateFrom: filtros.dataInicio || '',
-            dateTo: filtros.dataFim || '',
+          logger.info(`🔍 [FILTRO DATA] Buscando devoluções para ${account.name}`, {
+            dateFrom: filtros.dataInicio || 'SEM FILTRO',
+            dateTo: filtros.dataFim || 'SEM FILTRO',
             status: filtros.statusClaim || 'todos'
           });
 
@@ -344,6 +344,15 @@ export function useDevolucoesBusca() {
             // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 165 COLUNAS VALIDADAS
             // FASE 1: Processar todos os dados básicos
             const devolucoesProcesadas = await Promise.all(devolucoesDaAPI.map(async (item: any, index: number) => {
+              
+              // Log do mapeamento de data
+              if (index === 0) {
+                console.log('[MAPEAMENTO DATA] Primeira devolução:', {
+                  date_created_API: item.date_created,
+                  data_criacao_MAPEADA: item.date_created || null,
+                  created_at_SISTEMA: new Date().toISOString()
+                });
+              }
               
               // 🎯 DADOS PRINCIPAIS (17 colunas)
               const dadosPrincipais = {
@@ -730,11 +739,13 @@ export function useDevolucoesBusca() {
         }
       }
 
-      // 📅 ORDENAR RESULTADO FINAL (MAIS RECENTE PRIMEIRO)
+      // 📅 ORDENAR RESULTADO FINAL POR DATA VENDA (MAIS RECENTE PRIMEIRO)
+      console.log('[ORDENAÇÃO] Ordenando por data_criacao (Data Venda)...');
       todasDevolucoes.sort((a, b) => {
         const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
         const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
-        return dataB - dataA;
+        console.log(`[SORT] ${a.order_id}: ${a.data_criacao} vs ${b.order_id}: ${b.data_criacao}`);
+        return dataB - dataA; // Mais recente primeiro
       });
 
       logger.info(`Total da API: ${todasDevolucoes.length} devoluções enriquecidas e salvas`);
