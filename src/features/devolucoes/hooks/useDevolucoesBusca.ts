@@ -759,7 +759,7 @@ export function useDevolucoesBusca() {
       const { data, error } = await supabase
         .from('devolucoes_avancadas')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('data_criacao', { ascending: false });
       
       if (error) {
         logger.error('Erro ao buscar do banco', error);
@@ -886,7 +886,7 @@ export function useDevolucoesBusca() {
         .from('devolucoes_avancadas')
         .select('*')
         .is('claim_id', null)
-        .order('created_at', { ascending: false })
+        .order('data_criacao', { ascending: false })
         .limit(50); // Processar em lotes de 50
 
       if (error) {
