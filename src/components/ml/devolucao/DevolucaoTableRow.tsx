@@ -1264,46 +1264,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.satisfacao_comprador || '-'}
       </td>
       
-      {/* Tempo Resposta Comprador */}
-      <td className="px-3 py-3 text-center text-foreground">
-        {devolucao.tempo_resposta_comprador ? `${devolucao.tempo_resposta_comprador} min` : '-'}
-      </td>
-      
-      {/* Tempo Análise ML */}
-      <td className="px-3 py-3 text-center text-foreground">
-        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml} min` : '-'}
-      </td>
-      
-      {/* Data Primeira Ação */}
-      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.data_primeira_acao ? (() => {
-          try {
-            return new Date(devolucao.data_primeira_acao).toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          } catch {
-            return devolucao.data_primeira_acao;
-          }
-        })() : '-'}
-      </td>
-      
-      {/* Tempo Limite Ação */}
-      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
-        {devolucao.tempo_limite_acao ? (() => {
-          try {
-            return new Date(devolucao.tempo_limite_acao).toLocaleDateString('pt-BR', {
-              day: '2-digit',
-              month: '2-digit',
-              year: 'numeric'
-            });
-          } catch {
-            return devolucao.tempo_limite_acao;
-          }
-        })() : '-'}
-      </td>
-      
       {/* ========== DADOS DO COMPRADOR E PAGAMENTO ========== */}
       
       {/* comprador_cpf */}
