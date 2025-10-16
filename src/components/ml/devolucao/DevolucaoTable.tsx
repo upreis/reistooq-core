@@ -16,266 +16,265 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-muted/50 dark:bg-muted border-b">
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Order ID</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[140px]">📅 Data Venda</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">Produto</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Claim ID</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">SKU</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Comprador</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">Qtd</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Valor Retido</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">Status</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">Conta ML</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">order_id</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[140px]">data_criacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">produto_titulo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">claim_id</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">sku</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">comprador_nickname</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">quantidade</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_retido</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">status_devolucao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">account_name</th>
             
             {/* COLUNAS ORIGINAIS */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Return</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚠️ Ação Manual</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">dados_claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">dados_return</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">em_mediacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">anexos_count</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">necessita_acao_manual</th>
             
             {/* ========== 16 NOVAS COLUNAS DAS 3 FASES ========== */}
             
             {/* FASE 1: CAMPOS CRÍTICOS OBRIGATÓRIOS */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Criação Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Fechamento Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Início Return</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Shipment ID</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_criacao_claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_fechamento_claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_inicio_return</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">shipment_id</th>
             
             {/* FASE 2: CAMPOS PRIORITÁRIOS VAZIOS */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Categoria Motivo</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Complexidade</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚠️ Categoria Problema</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Resultado Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👨‍⚖️ Mediador ML</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo Resp. Comprador</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo Análise ML</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data 1ª Ação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">reason_category</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">nivel_complexidade</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">categoria_problema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">resultado_mediacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">mediador_ml</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">tempo_resposta_comprador</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">tempo_analise_ml</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_primeira_acao</th>
             
             {/* FASE 3: CAMPOS OPCIONAIS */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔍 Subcategoria Problema</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Comprador</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Vendedor</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⏰ Tempo Limite Ação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">subcategoria_problema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">feedback_comprador_final</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">feedback_vendedor</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">tempo_limite_acao</th>
             
             {/* 87 NOVAS COLUNAS - DADOS ENRIQUECIDOS */}
             
             {/* MENSAGENS E COMUNICAÇÃO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">💬 Mensagens</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔔 Não Lidas</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">👮 Moderação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Msg</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">💬 Última Mensagem</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[300px]">timeline_mensagens</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">mensagens_nao_lidas</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[90px]">status_moderacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">ultima_mensagem_data</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[250px]">ultima_mensagem_remetente</th>
             
             {/* DATAS E PRAZOS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Dias Rest.</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Venc. Ação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Est. Troca</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Lim. Troca</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📝 Prazo Rev.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">dias_restantes_acao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_vencimento_acao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_estimada_troca</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_limite_troca</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">prazo_revisao_dias</th>
             
             {/* RASTREAMENTO E LOGÍSTICA */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚛 Rastreio</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Transport.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📍 Status Env.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">codigo_rastreamento</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">transportadora</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">status_rastreamento_pedido</th>
             
             {/* CUSTOS E FINANCEIRO */}
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💰 Custo Env.</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Compensação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💱 Moeda</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏢 Resp. Custo</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">custo_envio_devolucao</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_compensacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">moeda_custo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">responsavel_custo</th>
             
             {/* CLASSIFICAÇÃO E RESOLUÇÃO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Tipo</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏷️ Subtipo</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚖️ Em Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Método Resolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🚨 Prioridade</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tipo_claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">subtipo_claim</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">em_mediacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">metodo_resolucao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">nivel_prioridade</th>
             
             {/* MÉTRICAS E KPIS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Resp (min)</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🏁 Total (min)</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Evidências</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">😊 Satisfação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tempo_resposta_medio</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tempo_total_resolucao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">total_evidencias</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">taxa_satisfacao</th>
             
             {/* ESTADOS E FLAGS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🔄 Troca</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">🚀 ML</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">✋ Ação Req.</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">eh_troca</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">escalado_para_ml</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[60px]">acao_seller_necessaria</th>
             
             {/* MÉTRICAS TEMPORAIS AVANÇADAS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ 1ª Resp</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🏁 Tempo Total</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Dias Resolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">✅ SLA</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">tempo_primeira_resposta_vendedor</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">tempo_total_resolucao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">dias_ate_resolucao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">sla_cumprido</th>
             
             {/* SATISFAÇÃO E QUALIDADE */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⭐ Score Satisf.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💨 Eficiência</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Resultado</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🌟 Reputação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">score_satisfacao_final</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">eficiencia_resolucao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">resultado_final</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">impacto_reputacao</th>
             
             {/* AÇÕES E GESTÃO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📝 Próx Ação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🛠️ Revisor</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📊 Score Qual.</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">proxima_acao_requerida</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">revisor_responsavel</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">score_qualidade</th>
             
             {/* FINANCEIRO AVANÇADO */}
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💵 Reemb. Total</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Reemb. Produto</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚚 Reemb. Frete</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Taxa ML</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Custo Log.</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚖️ Impacto Vend.</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Proc. Reemb.</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_reembolso_total</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_reembolso_produto</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_reembolso_frete</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">taxa_ml_reembolso</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">custo_logistico_total</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">impacto_financeiro_vendedor</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_processamento_reembolso</th>
             
             {/* REVIEWS E QUALIDADE (FASE 2) */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔍 Review ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📋 Status Review</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">✅ Resultado</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⭐ Score Qual.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔧 Ação Manual</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚠️ Problemas</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">review_id</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">review_status</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">review_result</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">score_qualidade</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">necessita_acao_manual</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">problemas_encontrados</th>
             
             {/* DADOS TÉCNICOS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚠️ Incompleto</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Campos Falt.</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔄 Últ Sync</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">dados_incompletos</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">campos_faltantes</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">ultima_sincronizacao</th>
             
             {/* ========== DADOS DO COMPRADOR E PAGAMENTO ========== */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📝 CPF Comprador</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">👤 Nome Comprador</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🏷️ Nickname</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💳 Método Pgto</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💰 Tipo Pgto</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">🔢 Parcelas</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💵 Valor Parcela</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🆔 Transaction ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 % Reembolsado</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏷️ Tags Pedido</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">comprador_cpf</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">comprador_nome_completo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">metodo_pagamento</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">tipo_pagamento</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">parcelas</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_parcela</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">transaction_id</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">percentual_reembolsado</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">tags_pedido</th>
             
             {/* ========== FASE 3: CAMPOS AVANÇADOS (15 COLUNAS) ========== */}
             
             {/* Custos Detalhados */}
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Custo Frete Dev</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Custo Log Total</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💰 Valor Original</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💵 Reemb Produto</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💸 Taxa ML Reemb</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">custo_frete_devolucao</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">custo_logistico_total</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">valor_original_produto</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">valor_reembolso_produto</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">taxa_ml_reembolso</th>
             
             {/* Internal Tags e Metadados */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏷️ Tags Internas</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">💰 Tem Financ</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📋 Tem Review</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏰ Tem SLA</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">📄 NF Autor</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">internal_tags</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tem_financeiro</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tem_review</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tem_sla</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">nota_fiscal_autorizada</th>
             
             {/* Dados de Produto */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🛡️ Garantia</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📦 Categoria Prod</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🖼️ Thumbnail</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">produto_warranty</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">produto_categoria</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">produto_thumbnail</th>
             
             {/* Análise e Qualidade */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💬 Qual Comunic</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚡ Efic Resolução</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">qualidade_comunicacao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">eficiencia_resolucao</th>
             
             {/* ========== 60 COLUNAS FALTANTES DO BANCO ========== */}
             
             {/* RASTREAMENTO AVANÇADO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Cód Rastreio Dev</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📦 Transport. Dev</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📍 Localização Atual</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🚦 Status Transp.</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔗 URL Rastreio</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Últ Movim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Prev Entrega Vend</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⏱️ Dias Trânsito</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">codigo_rastreamento_devolucao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">transportadora_devolucao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">localizacao_atual</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">status_transporte_atual</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">url_rastreamento</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_ultima_movimentacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">previsao_entrega_vendedor</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">tempo_transito_dias</th>
             
             {/* TROCA E PRODUTO NOVO */}
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">💱 Valor Dif. Troca</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🆔 Produto Troca ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📦 Status Prod Novo</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">valor_diferenca_troca</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">produto_troca_id</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">status_produto_novo</th>
             
             {/* ENDEREÇO E CUSTOS DETALHADOS */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏠 Endereço Destino</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">💰 Descr. Custos</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">endereco_destino</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">descricao_custos</th>
             
             {/* MEDIAÇÃO DETALHADA */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Início Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📋 Detalhes Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Resultado Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👨‍⚖️ Mediador ML</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_inicio_mediacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">detalhes_mediacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">resultado_mediacao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">mediador_ml</th>
             
             {/* FEEDBACK E COMUNICAÇÃO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Comprador</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Vendedor</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Qual. Comunic.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">😊 Satisf. Comprador</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">feedback_comprador_final</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">feedback_vendedor</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">qualidade_comunicacao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">satisfacao_comprador</th>
             
             {/* TEMPOS ADICIONAIS */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Resp Comprador</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Análise ML</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 1ª Ação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⏰ Tempo Limite Ação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">tempo_resposta_comprador</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">tempo_analise_ml</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_primeira_acao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">tempo_limite_acao</th>
             
             {/* HISTÓRICO E EVENTOS */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📊 Histórico Status</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🎯 Timeline Events</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🔄 Timeline Consol.</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Criação Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Início Return</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Final Timeline</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⚙️ Eventos Sistema</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📍 Marcos Temporais</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">historico_status</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">timeline_events</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">timeline_consolidado</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_criacao_claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_inicio_return</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_fechamento_claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">eventos_sistema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">marcos_temporais</th>
             
             {/* TRACKING DETALHADO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📊 Tracking History</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">💰 Shipment Costs</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⏰ Shipment Delays</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🚚 Carrier Info</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📌 Tracking Events</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📍 Hist. Localizações</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">tracking_history</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">shipment_costs</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">shipment_delays</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">carrier_info</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">tracking_events</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">historico_localizacoes</th>
             
             {/* REVIEW DETALHADO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🔧 Ações Review</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Início Review</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📝 Obs Review</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">acoes_necessarias_review</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">data_inicio_review</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">observacoes_review</th>
             
             {/* REPUTAÇÃO */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⭐ Seller Reputation</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⭐ Buyer Reputation</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">seller_reputation</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">buyer_reputation</th>
             
             {/* TAGS E ORIGEM */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">🏷️ Tags Automáticas</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🌎 Marketplace</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📡 Fonte Primária</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📜 Origem Timeline</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">tags_automaticas</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">marketplace_origem</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">fonte_dados_primaria</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">origem_timeline</th>
             
             {/* DADOS TÉCNICOS E QUALIDADE */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">👤 Últ Usuário</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔐 Hash Verif.</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">📊 Confiabilidade</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔧 Versão API</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">usuario_ultima_acao</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">hash_verificacao</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">confiabilidade_dados</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">versao_api_utilizada</th>
             
             {/* ========== FASE 4: REASONS API (8 COLUNAS) ========== */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔍 Reason ID</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Reason Nome</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">📝 Reason Detalhe</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🏷️ Reason Categoria</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⚡ Reason Prioridade</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔖 Reason Tipo</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">✅ Resoluções Esperadas</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">⚙️ Regras Motor</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">reason_id</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">reason_name</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">reason_detail</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">reason_category</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">reason_priority</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">reason_type</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">reason_expected_resolutions</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">reason_rules_engine</th>
             
             {/* 🆕 5 NOVOS CAMPOS - DADOS PERDIDOS RECUPERADOS */}
-            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[140px]">🎯 Estágio Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[140px]">📦 Tipo Quantidade</th>
-            <th className="text-center px-3 py-3 font-semibold text-primary min-w-[120px]">✅ Claim Cumprido</th>
-            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[160px]">🔍 Tipo Recurso Return</th>
-            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[180px]">📋 Verif. Intermediária</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[140px]">claim_stage</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[140px]">claim_quantity_type</th>
+            <th className="text-center px-3 py-3 font-semibold text-primary min-w-[120px]">claim_fulfilled</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[160px]">return_resource_type</th>
+            <th className="text-left px-3 py-3 font-semibold text-primary min-w-[180px]">return_intermediate_check</th>
             
             {/* AÇÕES FINAIS - MOVIDA PARA O FINAL */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🔍 Ações</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">acoes</th>
           </tr>
         </thead>
         <tbody>
