@@ -1,19 +1,31 @@
 // src/services/HistoricoService.ts
 import { supabase } from '@/integrations/supabase/client';
 
-export async function listarHistoricoVendas({ page = 1, pageSize = 20 } = {}) {
+export async function listarHistoricoVendas({ 
+  page = 1, 
+  pageSize = 20,
+  search = null,
+  dataInicio = null,
+  dataFim = null
+}: {
+  page?: number;
+  pageSize?: number;
+  search?: string | null;
+  dataInicio?: string | null;
+  dataFim?: string | null;
+} = {}) {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  console.log('[historico-query-start]', { page, pageSize, from, to });
+  console.log('[historico-query-start]', { page, pageSize, from, to, search, dataInicio, dataFim });
 
   const { data, error } = await supabase
     .rpc('get_historico_vendas_browse', {
       _limit: pageSize,
       _offset: from,
-      _search: null,
-      _start: null,
-      _end: null
+      _search: search,
+      _start: dataInicio,
+      _end: dataFim
     });
 
   if (error) {

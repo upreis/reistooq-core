@@ -84,8 +84,14 @@ export class HistoricoSimpleService {
     try {
       console.log('🔍 Buscando histórico com filtros:', { filters, page, limit });
 
-      // Usar SELECT direto da tabela historico_vendas (sem RPC)
-      const result = await listarHistoricoVendas({ page, pageSize: limit });
+      // Passar os filtros de data para a RPC function
+      const result = await listarHistoricoVendas({ 
+        page, 
+        pageSize: limit,
+        search: filters.search || null,
+        dataInicio: filters.dataInicio || null,
+        dataFim: filters.dataFim || null
+      });
 
       console.log('[HistoricoSimpleService] Resultado bruto:', result);
 
