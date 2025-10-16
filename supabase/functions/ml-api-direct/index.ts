@@ -789,6 +789,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
       params.append('type', filters.claim_type)
     }
+    
+    // ⚠️ FILTROS DE DATA CRÍTICOS - Aplicar na API ML
+    // Filtrar por date_created dos claims (data de criação do claim/devolução)
+    if (filters?.date_from && filters.date_from.trim().length > 0) {
+      console.log(`✅ Aplicando filtro date_from (Data Venda): ${filters.date_from}`)
+      params.append('date_created.from', filters.date_from)
+    }
+    
+    if (filters?.date_to && filters.date_to.trim().length > 0) {
+      console.log(`✅ Aplicando filtro date_to (Data Venda): ${filters.date_to}`)
+      params.append('date_created.to', filters.date_to)
+    }
 
     // 📚 BUSCAR TODAS AS PÁGINAS DA API
     let allClaims: any[] = []
@@ -797,12 +809,14 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     const MAX_CLAIMS = 500 // Limite de segurança
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
-    console.log(`📋 Filtros aplicados na API:`)
+    console.log(`📋 Filtros aplicados na API do Mercado Livre:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
-    console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca\n`)
+    console.log(`   • date_from (Data Venda): ${filters?.date_from || 'N/A'}`)
+    console.log(`   • date_to (Data Venda): ${filters?.date_to || 'N/A'}`)
+    console.log(`✅ Filtros de DATA aplicados DIRETAMENTE na API ML\n`)
 
     do {
       params.set('offset', offset.toString())
@@ -891,13 +905,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     
     console.log(`[REISTOM INFO] ✅ ${allClaims.length} claims recebidos da API ML`);
     
-    // 🔥 NÃO FILTRAR POR DATA NA EDGE FUNCTION
-    // O filtro de data será aplicado no FRONTEND após receber os dados
-    // Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
+    // ✅ FILTROS DE DATA JÁ APLICADOS NA API ML
+    // Os filtros date_from e date_to são aplicados diretamente na chamada da API
+    // usando os parâmetros date_created.from e date_created.to
     let claimsParaProcessar = allClaims
     
-    console.log(`[REISTOM INFO] ℹ️ Processando todos os ${claimsParaProcessar.length} claims sem filtro de data local`)
-    console.log(`[REISTOM INFO] ⚠️ NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
+    console.log(`[REISTOM INFO] ✅ Processando ${claimsParaProcessar.length} claims já filtrados pela API ML`)
+    console.log(`[REISTOM INFO] ✅ Filtros de data foram aplicados diretamente na API (date_created.from/to)\n`)
 
     // 🛡️ PROTEÇÃO CONTRA TIMEOUT: Limitar quantidade de claims processados
     // REDUZIDO para 100 para evitar timeouts
