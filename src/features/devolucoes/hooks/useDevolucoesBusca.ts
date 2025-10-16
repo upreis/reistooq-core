@@ -699,59 +699,19 @@ export function useDevolucoesBusca() {
               return itemCompleto;
             }));
 
-            // 📅 APLICAR FILTRO DE DATA LOCALMENTE (data_criacao = Data Venda)
-            let devolucoesFiltradasPorData = devolucoesProcesadas;
-            if (filtros.dataInicio || filtros.dataFim) {
-              const beforeFilter = devolucoesProcesadas.length;
-              devolucoesFiltradasPorData = devolucoesProcesadas.filter(dev => {
-                if (!dev.data_criacao) return false;
-                const dataVenda = new Date(dev.data_criacao);
-                
-                if (filtros.dataInicio) {
-                  const dataInicial = new Date(filtros.dataInicio);
-                  if (dataVenda < dataInicial) return false;
-                }
-                
-                if (filtros.dataFim) {
-                  const dataFinal = new Date(filtros.dataFim);
-                  dataFinal.setHours(23, 59, 59, 999);
-                  if (dataVenda > dataFinal) return false;
-                }
-                
-                return true;
-              });
-              logger.info(`📅 Filtro de Data Venda aplicado: ${beforeFilter} → ${devolucoesFiltradasPorData.length} devoluções`);
-            }
-
             // 📅 ORDENAR POR DATA (MAIS RECENTE PRIMEIRO)
-            devolucoesFiltradasPorData.sort((a, b) => {
+            devolucoesProcesadas.sort((a, b) => {
               const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
               const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
               return dataB - dataA; // Ordem decrescente
             });
 
-            // 🔄 DEDUPLIFICAR ANTES DE SALVAR (previne erro "cannot affect row a second time")
-            const deduplicatedData = devolucoesFiltradasPorData.reduce((acc, item) => {
-              const key = `${item.order_id}_${item.integration_account_id}`;
-              // Manter apenas o primeiro registro de cada order_id
-              if (!acc.has(key)) {
-                acc.set(key, item);
-              } else {
-                console.log(`⚠️ Registro duplicado ignorado: Order ${item.order_id}`);
-              }
-              return acc;
-            }, new Map<string, any>());
-            
-            const uniqueData = Array.from(deduplicatedData.values()) as typeof devolucoesProcesadas;
-            
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
-            if (uniqueData.length > 0) {
-              logger.info(`💾 Salvando ${uniqueData.length} registros únicos (${devolucoesFiltradasPorData.length} total antes da deduplicação)...`);
-              
+            if (devolucoesProcesadas.length > 0) {
               try {
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(uniqueData, {
+                  .upsert(devolucoesProcesadas, {
                     onConflict: 'order_id,integration_account_id',
                     ignoreDuplicates: false
                   });
@@ -759,15 +719,15 @@ export function useDevolucoesBusca() {
                 if (upsertError) {
                   logger.error('Erro ao salvar dados enriquecidos no banco', upsertError);
                 } else {
-                  logger.info(`✅ ${uniqueData.length} devoluções SALVAS no banco com dados enriquecidos`);
+                  logger.info(`✅ ${devolucoesProcesadas.length} devoluções SALVAS no banco com dados enriquecidos`);
                 }
               } catch (saveError) {
                 logger.error('Erro ao persistir dados', saveError);
               }
             }
 
-            todasDevolucoes.push(...uniqueData);
-            toast.success(`✅ ${devolucoesFiltradasPorData.length} devoluções enriquecidas para ${account.name}`);
+            todasDevolucoes.push(...devolucoesProcesadas);
+            toast.success(`✅ ${devolucoesProcesadas.length} devoluções enriquecidas para ${account.name}`);
           } else {
             logger.info(`Nenhuma devolução encontrada para ${account.name}`);
             toast.info(`Nenhuma devolução encontrada para ${account.name}`);
