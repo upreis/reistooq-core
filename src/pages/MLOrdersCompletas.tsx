@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
+import { OMSNav } from "@/features/oms/components/OMSNav";
 
 export default function MLOrdersCompletas() {
   // Estado para contas selecionadas
@@ -39,14 +40,17 @@ export default function MLOrdersCompletas() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
+      {/* Breadcrumb principal */}
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>📦</span>
         <span>/</span>
-        <span className="text-primary">Pedidos</span>
+        <span className="text-primary">Vendas</span>
       </div>
 
-      {/* Navigation tabs */}
+      {/* Navigation tabs principais */}
+      <OMSNav />
+
+      {/* Sub-navegação de Pedidos */}
       <MLOrdersNav />
 
 

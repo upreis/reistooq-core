@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { OMSNav } from "@/features/oms/components/OMSNav";
+import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 import OrdersPage from "@/pages/oms/OrdersPage";
 import CustomersPage from "@/pages/oms/CustomersPage";
 import SalesRepsPage from "@/pages/oms/SalesRepsPage";
@@ -10,9 +11,12 @@ import SimplePedidosPage from "@/components/pedidos/SimplePedidosPage";
 const OMS = () => {
   const location = useLocation();
   
+  // Verificar se está na rota de pedidos marketplace
+  const isPedidosMarketplace = location.pathname === "/pedidos";
+  
   // Determina qual conteúdo mostrar baseado na rota atual
   const renderContent = () => {
-    if (location.pathname === "/pedidos") {
+    if (isPedidosMarketplace) {
       return <SimplePedidosPage />;
     }
     
@@ -30,14 +34,18 @@ const OMS = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
+      {/* Breadcrumb principal */}
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>📦</span>
         <span>/</span>
         <span className="text-primary">Vendas</span>
       </div>
 
+      {/* Navegação principal */}
       <OMSNav />
+
+      {/* Sub-navegação apenas para rotas de pedidos marketplace */}
+      {isPedidosMarketplace && <MLOrdersNav />}
       
       <div className="mt-6">
         {renderContent()}
