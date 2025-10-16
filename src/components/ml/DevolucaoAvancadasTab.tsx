@@ -132,10 +132,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
   // Aplicar filtros salvos ao carregar
+  // Aplicar filtros salvos ao carregar (apenas uma vez)
   React.useEffect(() => {
     const savedFilters = loadSavedFilters();
     if (Object.keys(savedFilters).length > 0) {
       console.log('🚀 Aplicando filtros salvos automaticamente:', savedFilters);
+      // Atualizar o estado de filtros aplicados
+      setAppliedFiltersState(savedFilters);
+      // Atualizar os filtros no hook
+      updateAdvancedFilters(savedFilters);
+      // Buscar com os filtros salvos
       buscarComFiltros(savedFilters);
     }
   }, []);
