@@ -21,10 +21,9 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   // 📊 CONTAS
   contasSelecionadas: string[];
   
-  // 📅 DATAS
+  // 📅 DATAS (sempre filtra por data de criação da venda)
   dataInicio: string;
   dataFim: string;
-  tipoFiltroData: string; // 'atualizacao' (padrão API ML) ou 'criacao' (filtro adicional frontend)
   
   // 🎯 STATUS E CLASSIFICAÇÃO
   statusClaim: string;
@@ -97,7 +96,6 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       // 📅 DATAS VAZIAS - Sem valores padrão, usuário deve escolher o período
       dataInicio: '',
       dataFim: '',
-      tipoFiltroData: 'atualizacao', // Padrão: filtrar por última atualização (API ML)
       // Status e Classificação
       statusClaim: '',
       tipoClaim: '',
@@ -198,9 +196,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       resultados = resultados.filter(dev => dev.tipo_claim === advancedFilters.tipoClaim);
     }
 
-    // 📅 FILTRO ADICIONAL DE DATA DE CRIAÇÃO (Frontend)
-    // A API do ML filtra por última atualização, mas podemos filtrar adicionalmente por data de criação
-    if (advancedFilters.tipoFiltroData === 'criacao' && (advancedFilters.dataInicio || advancedFilters.dataFim)) {
+    // 📅 FILTRO DE DATA DE CRIAÇÃO (Frontend)
+    // Sempre filtra pela data de criação da venda, independente da API ML
+    if (advancedFilters.dataInicio || advancedFilters.dataFim) {
       resultados = resultados.filter(dev => {
         if (!dev.data_criacao) return false;
         
@@ -431,7 +429,6 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
       dataInicio: '',
       dataFim: '',
-      tipoFiltroData: 'atualizacao',
       statusClaim: '',
       tipoClaim: '',
       subtipoClaim: '',
