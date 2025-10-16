@@ -461,6 +461,111 @@ serve(async (req) => {
             
             // ======== FIM FASE 2 ========
             
+            // ======== 🟢 FASE 3: CAMPOS OPCIONAIS ========
+            
+            // 1. Subcategoria Problema (OPCIONAL)
+            subcategoria_problema: (() => {
+              const subcategoria = devolucao.claim_details?.reason?.description ||
+                                  devolucao.claim_details?.reason?.name ||
+                                  devolucao.claim_details?.reason_detail;
+              
+              if (subcategoria) {
+                console.log(`[FASE3] 📝 subcategoria_problema: ${subcategoria.substring(0, 50)}...`);
+              }
+              return subcategoria || null;
+            })(),
+            
+            // 2. Feedback Comprador Final (OPCIONAL)
+            feedback_comprador_final: (() => {
+              try {
+                const mensagens = devolucao.claim_messages?.messages || [];
+                const compradorId = devolucao.buyer?.id;
+                
+                if (!compradorId || mensagens.length === 0) return null;
+                
+                // Buscar TODAS as mensagens do comprador
+                const buyerMessages = mensagens.filter((m: any) =>
+                  m.from?.user_id === compradorId || m.from === 'buyer'
+                );
+                
+                if (buyerMessages.length === 0) return null;
+                
+                // Ordenar por data e pegar a última
+                const ordenadas = [...buyerMessages].sort((a: any, b: any) => {
+                  const dateA = new Date(a.date_created).getTime();
+                  const dateB = new Date(b.date_created).getTime();
+                  return dateB - dateA; // Ordem decrescente (mais recente primeiro)
+                });
+                
+                const ultimaMensagem = ordenadas[0]?.text || ordenadas[0]?.message;
+                
+                if (ultimaMensagem) {
+                  console.log(`[FASE3] 💬 feedback_comprador_final: ${ultimaMensagem.substring(0, 50)}...`);
+                }
+                
+                return ultimaMensagem || null;
+              } catch (error) {
+                console.error('[FASE3] Erro ao extrair feedback_comprador_final:', error);
+                return null;
+              }
+            })(),
+            
+            // 3. Feedback Vendedor Final (OPCIONAL)
+            feedback_vendedor: (() => {
+              try {
+                const mensagens = devolucao.claim_messages?.messages || [];
+                const vendedorId = devolucao.order_data?.seller?.id;
+                
+                if (!vendedorId || mensagens.length === 0) return null;
+                
+                // Buscar TODAS as mensagens do vendedor
+                const sellerMessages = mensagens.filter((m: any) =>
+                  m.from?.user_id === vendedorId || m.from === 'seller'
+                );
+                
+                if (sellerMessages.length === 0) return null;
+                
+                // Ordenar por data e pegar a última
+                const ordenadas = [...sellerMessages].sort((a: any, b: any) => {
+                  const dateA = new Date(a.date_created).getTime();
+                  const dateB = new Date(b.date_created).getTime();
+                  return dateB - dateA; // Ordem decrescente
+                });
+                
+                const ultimaMensagem = ordenadas[0]?.text || ordenadas[0]?.message;
+                
+                if (ultimaMensagem) {
+                  console.log(`[FASE3] 🗨️ feedback_vendedor: ${ultimaMensagem.substring(0, 50)}...`);
+                }
+                
+                return ultimaMensagem || null;
+              } catch (error) {
+                console.error('[FASE3] Erro ao extrair feedback_vendedor:', error);
+                return null;
+              }
+            })(),
+            
+            // 4. Tempo Limite Ação (OPCIONAL)
+            tempo_limite_acao: (() => {
+              try {
+                const claimCreated = devolucao.claim_details?.date_created;
+                if (!claimCreated) return null;
+                
+                // ML geralmente dá 48h para primeira resposta do seller
+                const deadline = new Date(claimCreated);
+                deadline.setHours(deadline.getHours() + 48);
+                const deadlineISO = deadline.toISOString();
+                
+                console.log(`[FASE3] ⏰ tempo_limite_acao: ${deadlineISO}`);
+                return deadlineISO;
+              } catch (error) {
+                console.error('[FASE3] Erro ao calcular tempo_limite_acao:', error);
+                return null;
+              }
+            })(),
+            
+            // ======== FIM FASE 3 ========
+            
             marcos_temporais: (() => {
               const marcos = {
                 data_criacao_claim: devolucao.claim_details?.date_created || null,
