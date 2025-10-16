@@ -142,31 +142,9 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Campos Falt.</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔄 Últ Sync</th>
             
-            {/* ========== FASE 1: CAMPOS OBRIGATÓRIOS (4 COLUNAS) ========== */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[160px]">📅 Data Criação Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[160px]">📅 Data Fechamento Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[160px]">📅 Data Início Return</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🆔 Shipment ID</th>
-            
-            {/* ========== FASE 2: CAMPOS PRIORITÁRIOS (8 COLUNAS) ========== */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🔖 Motivo Categoria</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🎯 Nível Complexidade</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📋 Categoria Problema</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">⚖️ Resultado Mediação</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">👨‍⚖️ Mediador ML</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⏱️ Tempo Resp. Comprador (h)</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⏱️ Tempo Análise ML (h)</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[160px]">📅 Data Primeira Ação</th>
-            
-            {/* ========== FASE 3: CAMPOS OPCIONAIS (4 COLUNAS) ========== */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📌 Subcategoria Problema</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">💬 Feedback Comprador Final</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">💬 Feedback Vendedor</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[160px]">⏰ Prazo Limite Ação</th>
-
-            {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📝 CPF/CNPJ</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">👤 Nome Completo</th>
+            {/* ========== DADOS DO COMPRADOR E PAGAMENTO ========== */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">📝 CPF Comprador</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[200px]">👤 Nome Comprador</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">🏷️ Nickname</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💳 Método Pgto</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">💰 Tipo Pgto</th>
