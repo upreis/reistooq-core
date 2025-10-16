@@ -699,54 +699,15 @@ export function useDevolucoesBusca() {
               return itemCompleto;
             }));
 
-            // 🎯 APLICAR FILTRO DE DATA LOCALMENTE (API ML não suporta filtro por date_created)
-            // Filtrar pela coluna "📅 Data Venda" (data_criacao) e não por "🔄 Últ Sync" (created_at)
-            let devolucoesFiltradas = devolucoesProcesadas;
-            
-            if (filtros.dataInicio || filtros.dataFim) {
-              logger.info('🔍 Aplicando filtro de data LOCAL na coluna "📅 Data Venda" (data_criacao)', {
-                dataInicio: filtros.dataInicio,
-                dataFim: filtros.dataFim,
-                totalAntesFiltro: devolucoesProcesadas.length
-              });
-              
-              devolucoesFiltradas = devolucoesProcesadas.filter(item => {
-                // Se não tem data de criação, não incluir
-                if (!item.data_criacao) return false;
-                
-                const dataCriacao = new Date(item.data_criacao);
-                
-                // Filtro de data início (00:00:00)
-                if (filtros.dataInicio) {
-                  const dataInicio = new Date(filtros.dataInicio + 'T00:00:00');
-                  if (dataCriacao < dataInicio) return false;
-                }
-                
-                // Filtro de data fim (23:59:59)
-                if (filtros.dataFim) {
-                  const dataFim = new Date(filtros.dataFim + 'T23:59:59');
-                  if (dataCriacao > dataFim) return false;
-                }
-                
-                return true;
-              });
-              
-              logger.info(`✅ Filtro de data aplicado: ${devolucoesFiltradas.length} de ${devolucoesProcesadas.length} devoluções`, {
-                filtradas: devolucoesFiltradas.length,
-                total: devolucoesProcesadas.length,
-                removidas: devolucoesProcesadas.length - devolucoesFiltradas.length
-              });
-            }
-
             // 📅 ORDENAR POR DATA (MAIS RECENTE PRIMEIRO)
-            devolucoesFiltradas.sort((a, b) => {
+            devolucoesProcesadas.sort((a, b) => {
               const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
               const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
               return dataB - dataA; // Ordem decrescente
             });
 
             // 🔄 DEDUPLIFICAR ANTES DE SALVAR (previne erro "cannot affect row a second time")
-            const deduplicatedData = devolucoesFiltradas.reduce((acc, item) => {
+            const deduplicatedData = devolucoesProcesadas.reduce((acc, item) => {
               const key = `${item.order_id}_${item.integration_account_id}`;
               // Manter apenas o primeiro registro de cada order_id
               if (!acc.has(key)) {
@@ -757,11 +718,11 @@ export function useDevolucoesBusca() {
               return acc;
             }, new Map<string, any>());
             
-            const uniqueData = Array.from(deduplicatedData.values()) as typeof devolucoesFiltradas;
+            const uniqueData = Array.from(deduplicatedData.values()) as typeof devolucoesProcesadas;
             
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
             if (uniqueData.length > 0) {
-              logger.info(`💾 Salvando ${uniqueData.length} registros únicos (${devolucoesFiltradas.length} total antes da deduplicação)...`);
+              logger.info(`💾 Salvando ${uniqueData.length} registros únicos (${devolucoesProcesadas.length} total antes da deduplicação)...`);
               
               try {
                 const { error: upsertError } = await supabase
@@ -782,7 +743,7 @@ export function useDevolucoesBusca() {
             }
 
             todasDevolucoes.push(...uniqueData);
-            toast.success(`✅ ${devolucoesFiltradas.length} devoluções enriquecidas para ${account.name}`);
+            toast.success(`✅ ${devolucoesProcesadas.length} devoluções enriquecidas para ${account.name}`);
           } else {
             logger.info(`Nenhuma devolução encontrada para ${account.name}`);
             toast.info(`Nenhuma devolução encontrada para ${account.name}`);

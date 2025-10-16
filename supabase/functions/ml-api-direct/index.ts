@@ -789,10 +789,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
       params.append('type', filters.claim_type)
     }
-    
-    // ⚠️ NOTA: A API do Mercado Livre NÃO suporta filtros de data por date_created
-    // O filtro de data será aplicado LOCALMENTE no frontend após receber os dados
-    // Logs informativos removidos para evitar confusão
 
     // 📚 BUSCAR TODAS AS PÁGINAS DA API
     let allClaims: any[] = []
@@ -801,14 +797,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     const MAX_CLAIMS = 500 // Limite de segurança
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
-    console.log(`📋 Filtros aplicados na API do Mercado Livre:`)
+    console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
-    console.log(`   • date_from (Data Venda): ${filters?.date_from || 'N/A'}`)
-    console.log(`   • date_to (Data Venda): ${filters?.date_to || 'N/A'}`)
-    console.log(`✅ Filtros de DATA aplicados DIRETAMENTE na API ML\n`)
+    console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca\n`)
 
     do {
       params.set('offset', offset.toString())
@@ -897,13 +891,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     
     console.log(`[REISTOM INFO] ✅ ${allClaims.length} claims recebidos da API ML`);
     
-    // ✅ FILTROS DE DATA JÁ APLICADOS NA API ML
-    // Os filtros date_from e date_to são aplicados diretamente na chamada da API
-    // usando os parâmetros date_created.from e date_created.to
+    // 🔥 NÃO FILTRAR POR DATA NA EDGE FUNCTION
+    // O filtro de data será aplicado no FRONTEND após receber os dados
+    // Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
     let claimsParaProcessar = allClaims
     
-    console.log(`[REISTOM INFO] ✅ Processando ${claimsParaProcessar.length} claims já filtrados pela API ML`)
-    console.log(`[REISTOM INFO] ✅ Filtros de data foram aplicados diretamente na API (date_created.from/to)\n`)
+    console.log(`[REISTOM INFO] ℹ️ Processando todos os ${claimsParaProcessar.length} claims sem filtro de data local`)
+    console.log(`[REISTOM INFO] ⚠️ NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
 
     // 🛡️ PROTEÇÃO CONTRA TIMEOUT: Limitar quantidade de claims processados
     // REDUZIDO para 100 para evitar timeouts
