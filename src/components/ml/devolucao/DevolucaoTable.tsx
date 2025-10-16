@@ -34,6 +34,30 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📎 Anexos</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[80px]">⚠️ Ação Manual</th>
             
+            {/* ========== 16 NOVAS COLUNAS DAS 3 FASES ========== */}
+            
+            {/* FASE 1: CAMPOS CRÍTICOS OBRIGATÓRIOS */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Criação Claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Fechamento Claim</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data Início Return</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🚚 Shipment ID</th>
+            
+            {/* FASE 2: CAMPOS PRIORITÁRIOS VAZIOS */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📋 Categoria Motivo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">🎯 Complexidade</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚠️ Categoria Problema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⚖️ Resultado Mediação</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">👨‍⚖️ Mediador ML</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo Resp. Comprador</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground min-w-[100px]">⏱️ Tempo Análise ML</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">📅 Data 1ª Ação</th>
+            
+            {/* FASE 3: CAMPOS OPCIONAIS */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">🔍 Subcategoria Problema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Comprador</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[150px]">💬 Feedback Vendedor</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground min-w-[120px]">⏰ Tempo Limite Ação</th>
+            
             {/* 87 NOVAS COLUNAS - DADOS ENRIQUECIDOS */}
             
             {/* MENSAGENS E COMUNICAÇÃO */}

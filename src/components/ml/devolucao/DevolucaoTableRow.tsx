@@ -219,6 +219,97 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
+      {/* ========== 16 NOVAS COLUNAS DAS 3 FASES ========== */}
+      
+      {/* FASE 1: Data Criação Claim */}
+      <td className="px-3 py-3 text-foreground whitespace-nowrap">
+        {devolucao.data_criacao_claim ? new Date(devolucao.data_criacao_claim).toLocaleDateString('pt-BR') : '-'}
+      </td>
+      
+      {/* FASE 1: Data Fechamento Claim */}
+      <td className="px-3 py-3 text-foreground whitespace-nowrap">
+        {devolucao.data_fechamento_claim ? new Date(devolucao.data_fechamento_claim).toLocaleDateString('pt-BR') : '-'}
+      </td>
+      
+      {/* FASE 1: Data Início Return */}
+      <td className="px-3 py-3 text-foreground whitespace-nowrap">
+        {devolucao.data_inicio_return ? new Date(devolucao.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
+      </td>
+      
+      {/* FASE 1: Shipment ID */}
+      <td className="px-3 py-3 text-foreground font-mono whitespace-nowrap">
+        {devolucao.shipment_id || '-'}
+      </td>
+      
+      {/* FASE 2: Categoria Motivo */}
+      <td className="px-3 py-3 text-foreground">
+        <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded text-xs">
+          {devolucao.reason_category || '-'}
+        </span>
+      </td>
+      
+      {/* FASE 2: Complexidade */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded text-xs font-medium ${
+          devolucao.nivel_complexidade === 'high' ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' :
+          devolucao.nivel_complexidade === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+          devolucao.nivel_complexidade === 'low' ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+          'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+        }`}>
+          {devolucao.nivel_complexidade || '-'}
+        </span>
+      </td>
+      
+      {/* FASE 2: Categoria Problema */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.categoria_problema || '-'}
+      </td>
+      
+      {/* FASE 2: Resultado Mediação */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.resultado_mediacao || '-'}
+      </td>
+      
+      {/* FASE 2: Mediador ML */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.mediador_ml || '-'}
+      </td>
+      
+      {/* FASE 2: Tempo Resposta Comprador */}
+      <td className="px-3 py-3 text-center text-foreground">
+        {devolucao.tempo_resposta_comprador ? `${devolucao.tempo_resposta_comprador}h` : '-'}
+      </td>
+      
+      {/* FASE 2: Tempo Análise ML */}
+      <td className="px-3 py-3 text-center text-foreground">
+        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml}h` : '-'}
+      </td>
+      
+      {/* FASE 2: Data Primeira Ação */}
+      <td className="px-3 py-3 text-foreground whitespace-nowrap">
+        {devolucao.data_primeira_acao ? new Date(devolucao.data_primeira_acao).toLocaleDateString('pt-BR') : '-'}
+      </td>
+      
+      {/* FASE 3: Subcategoria Problema */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.subcategoria_problema || '-'}
+      </td>
+      
+      {/* FASE 3: Feedback Comprador */}
+      <td className="px-3 py-3 text-foreground max-w-[150px] truncate" title={devolucao.feedback_comprador_final || '-'}>
+        {devolucao.feedback_comprador_final || '-'}
+      </td>
+      
+      {/* FASE 3: Feedback Vendedor */}
+      <td className="px-3 py-3 text-foreground max-w-[150px] truncate" title={devolucao.feedback_vendedor || '-'}>
+        {devolucao.feedback_vendedor || '-'}
+      </td>
+      
+      {/* FASE 3: Tempo Limite Ação */}
+      <td className="px-3 py-3 text-foreground whitespace-nowrap">
+        {devolucao.tempo_limite_acao ? new Date(devolucao.tempo_limite_acao).toLocaleDateString('pt-BR') : '-'}
+      </td>
+      
       {/* ============ 87 NOVAS COLUNAS ENRIQUECIDAS ============ */}
       
       {/* MENSAGENS E COMUNICAÇÃO */}
