@@ -5,6 +5,7 @@ import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
+import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 
 export default function MLOrdersCompletas() {
   // Estado para contas selecionadas
@@ -38,12 +39,15 @@ export default function MLOrdersCompletas() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Sistema ML - Mercado Livre</h1>
-        <p className="text-muted-foreground">
-          Sistema de gestão Mercado Livre - Devoluções Avançadas
-        </p>
+      {/* Breadcrumb */}
+      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+        <span>📦</span>
+        <span>/</span>
+        <span className="text-primary">Pedidos</span>
       </div>
+
+      {/* Navigation tabs */}
+      <MLOrdersNav />
 
 
       {/* Loading States */}
