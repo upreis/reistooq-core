@@ -790,17 +790,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('type', filters.claim_type)
     }
     
-    // ⚠️ FILTROS DE DATA CRÍTICOS - Aplicar na API ML
-    // Filtrar por date_created dos claims (data de criação do claim/devolução)
-    if (filters?.date_from && filters.date_from.trim().length > 0) {
-      console.log(`✅ Aplicando filtro date_from (Data Venda): ${filters.date_from}`)
-      params.append('date_created.from', filters.date_from)
-    }
-    
-    if (filters?.date_to && filters.date_to.trim().length > 0) {
-      console.log(`✅ Aplicando filtro date_to (Data Venda): ${filters.date_to}`)
-      params.append('date_created.to', filters.date_to)
-    }
+    // ⚠️ NOTA: A API do Mercado Livre NÃO suporta filtros de data por date_created
+    // O filtro de data será aplicado LOCALMENTE no frontend após receber os dados
+    // Logs informativos removidos para evitar confusão
 
     // 📚 BUSCAR TODAS AS PÁGINAS DA API
     let allClaims: any[] = []
