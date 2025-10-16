@@ -311,9 +311,45 @@ export function useDevolucoesBusca() {
           }
 
           if (apiResponse?.success && apiResponse?.data) {
-            const devolucoesDaAPI = apiResponse.data;
+            let devolucoesDaAPI = apiResponse.data;
             
-            logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
+            // 📅 FILTRO LOCAL POR DATA VENDA (data_criacao/date_created)
+            // A API ML não suporta filtros de data para claims, então aplicamos localmente
+            const totalAntesDoFiltro = devolucoesDaAPI.length;
+            
+            if (filtros.dataInicio || filtros.dataFim) {
+              devolucoesDaAPI = devolucoesDaAPI.filter((item: any) => {
+                const dataCriacao = item.date_created; // 📅 Data Venda na API ML
+                
+                if (!dataCriacao) return false; // Ignorar items sem data
+                
+                const dataItem = new Date(dataCriacao);
+                
+                // Filtrar por data início
+                if (filtros.dataInicio) {
+                  const dataInicio = new Date(filtros.dataInicio);
+                  dataInicio.setHours(0, 0, 0, 0);
+                  if (dataItem < dataInicio) return false;
+                }
+                
+                // Filtrar por data fim
+                if (filtros.dataFim) {
+                  const dataFim = new Date(filtros.dataFim);
+                  dataFim.setHours(23, 59, 59, 999);
+                  if (dataItem > dataFim) return false;
+                }
+                
+                return true;
+              });
+              
+              logger.info(`📅 Filtro de Data Venda aplicado: ${totalAntesDoFiltro} → ${devolucoesDaAPI.length} devoluções`, {
+                dataInicio: filtros.dataInicio,
+                dataFim: filtros.dataFim,
+                removidas: totalAntesDoFiltro - devolucoesDaAPI.length
+              });
+            }
+            
+            logger.info(`📦 DADOS FILTRADOS DA API:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
             // 🔍 FASE 0: IDENTIFICAR REASONS ÚNICOS
             const reasonIdsSet = new Set<string>();
