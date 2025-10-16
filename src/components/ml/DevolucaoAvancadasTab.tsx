@@ -67,6 +67,8 @@ interface DevolucaoAvancadasTabProps {
   existingDevolucoes: DevolucaoAvancada[];
 }
 
+const STORAGE_KEY_FILTERS = 'ml_devolucoes_last_filters';
+
 const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   mlAccounts,
   selectedAccountId,
@@ -79,9 +81,24 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [showExportDialog, setShowExportDialog] = React.useState(false);
   const [showColumnManager, setShowColumnManager] = React.useState(false);
   
+  // Carregar filtros salvos do localStorage
+  const loadSavedFilters = useCallback(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_FILTERS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('📂 Filtros carregados do localStorage:', parsed);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar filtros salvos:', error);
+    }
+    return {};
+  }, []);
+
   // Estados para controle de filtros (aplicação manual)
   const [draftFilters, setDraftFilters] = React.useState<any>(null);
-  const [appliedFiltersState, setAppliedFiltersState] = React.useState<any>({});
+  const [appliedFiltersState, setAppliedFiltersState] = React.useState<any>(loadSavedFilters);
   const [isApplyingFilters, setIsApplyingFilters] = React.useState(false);
 
   // Hook principal consolidado com otimizações
@@ -114,6 +131,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
+  // Aplicar filtros salvos ao carregar
+  React.useEffect(() => {
+    const savedFilters = loadSavedFilters();
+    if (Object.keys(savedFilters).length > 0) {
+      console.log('🚀 Aplicando filtros salvos automaticamente:', savedFilters);
+      buscarComFiltros(savedFilters);
+    }
+  }, []);
+
+
   // Função para aplicar filtros e buscar
   const handleAplicarEBuscar = useCallback(async () => {
     setIsApplyingFilters(true);
@@ -123,10 +150,18 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       setAppliedFiltersState(filtrosParaAplicar);
       setDraftFilters(null);
       
+      // Salvar filtros no localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filtrosParaAplicar));
+        console.log('💾 Filtros salvos no localStorage:', filtrosParaAplicar);
+      } catch (error) {
+        console.error('Erro ao salvar filtros:', error);
+      }
+      
       // Buscar com os filtros
       await buscarComFiltros(filtrosParaAplicar);
       
-      toast.success('Filtros aplicados com sucesso');
+      toast.success('Filtros aplicados e salvos com sucesso');
     } catch (error) {
       console.error('Erro ao aplicar filtros:', error);
       toast.error('Erro ao aplicar filtros');
@@ -143,6 +178,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearFilters();
     setDraftFilters(null);
     setAppliedFiltersState({});
+    
+    // Limpar filtros salvos do localStorage
+    try {
+      localStorage.removeItem(STORAGE_KEY_FILTERS);
+      console.log('🗑️ Filtros removidos do localStorage');
+    } catch (error) {
+      console.error('Erro ao limpar filtros salvos:', error);
+    }
   }, [clearFilters]);
 
   const handleFilterChange = useCallback((key: string, value: any) => {
