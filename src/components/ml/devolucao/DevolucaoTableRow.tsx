@@ -1207,6 +1207,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })() : '-'}
       </td>
       
+      {/* Eventos Sistema */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.eventos_sistema && Array.isArray(devolucao.eventos_sistema) ? (
+          <span className="px-2 py-1 rounded bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 text-xs font-medium">
+            {devolucao.eventos_sistema.length} eventos
+          </span>
+        ) : '-'}
+      </td>
+      
       {/* Marcos Temporais */}
       <td className="px-3 py-3 text-foreground text-sm">
         {devolucao.marcos_temporais && typeof devolucao.marcos_temporais === 'object' ? (

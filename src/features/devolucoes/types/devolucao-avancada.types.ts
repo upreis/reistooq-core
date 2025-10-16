@@ -177,6 +177,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   data_criacao_claim?: string | null;
   data_inicio_return?: string | null;
   data_fechamento_claim?: string | null;
+  eventos_sistema?: any[] | null;
   marcos_temporais?: any | null;
   
   // TRACKING DETALHADO
