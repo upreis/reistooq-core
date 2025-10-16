@@ -26,6 +26,12 @@ const STATUS_CLAIMS = [
   'cancelled'
 ];
 
+// Tipos de filtro de data
+const TIPOS_FILTRO_DATA = [
+  { value: 'atualizacao', label: 'Última Atualização (API ML)' },
+  { value: 'criacao', label: 'Data de Criação do Pedido' }
+];
+
 const STATUS_LABELS: Record<string, string> = {
   'opened': 'Aberto',
   'closed': 'Fechado',
@@ -68,6 +74,7 @@ export function DevolucaoFiltersUnified({
   const [contasMLOpen, setContasMLOpen] = useState(false);
   const [dataInicioOpen, setDataInicioOpen] = useState(false);
   const [dataFimOpen, setDataFimOpen] = useState(false);
+  const [tipoFiltroDataOpen, setTipoFiltroDataOpen] = useState(false);
 
   const handleStatusClaimChange = (status: string, checked: boolean) => {
     const current = filters.statusClaim || '';
@@ -98,6 +105,7 @@ export function DevolucaoFiltersUnified({
 
   const selectedStatusClaim = filters.statusClaim || '';
   const selectedContasML = filters.contasSelecionadas || [];
+  const tipoFiltroData = filters.tipoFiltroData || 'atualizacao';
 
   return (
     <div className="space-y-4 p-4 bg-card rounded-lg border border-border">
@@ -140,7 +148,7 @@ export function DevolucaoFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 xl:grid-cols-7 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -289,6 +297,51 @@ export function DevolucaoFiltersUnified({
                     {conta.is_active && (
                       <Badge variant="outline" className="text-xs">Ativa</Badge>
                     )}
+                  </div>
+                ))}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Tipo de Filtro de Data */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <label className="text-sm font-medium mb-1 block">Filtrar por</label>
+          <Popover open={tipoFiltroDataOpen} onOpenChange={setTipoFiltroDataOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                className="w-full justify-between text-xs"
+              >
+                {TIPOS_FILTRO_DATA.find(t => t.value === tipoFiltroData)?.label.split(' ')[0] || 'Atualização'}
+                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0">
+              <div className="p-4 space-y-2">
+                {TIPOS_FILTRO_DATA.map((tipo) => (
+                  <div 
+                    key={tipo.value}
+                    className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
+                    onClick={() => {
+                      onFilterChange('tipoFiltroData', tipo.value);
+                      setTipoFiltroDataOpen(false);
+                    }}
+                  >
+                    <Checkbox
+                      id={`tipo-${tipo.value}`}
+                      checked={tipoFiltroData === tipo.value}
+                      onChange={() => {}}
+                    />
+                    <label htmlFor={`tipo-${tipo.value}`} className="text-sm cursor-pointer flex-1">
+                      <div className="font-medium">{tipo.label}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {tipo.value === 'atualizacao' 
+                          ? 'Pedidos atualizados no período (padrão da API ML)'
+                          : 'Pedidos criados no período (filtro adicional)'}
+                      </div>
+                    </label>
                   </div>
                 ))}
               </div>

@@ -24,6 +24,7 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   // 📅 DATAS
   dataInicio: string;
   dataFim: string;
+  tipoFiltroData: string; // 'atualizacao' (padrão API ML) ou 'criacao' (filtro adicional frontend)
   
   // 🎯 STATUS E CLASSIFICAÇÃO
   statusClaim: string;
@@ -96,6 +97,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       // 📅 DATAS VAZIAS - Sem valores padrão, usuário deve escolher o período
       dataInicio: '',
       dataFim: '',
+      tipoFiltroData: 'atualizacao', // Padrão: filtrar por última atualização (API ML)
       // Status e Classificação
       statusClaim: '',
       tipoClaim: '',
@@ -196,9 +198,26 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       resultados = resultados.filter(dev => dev.tipo_claim === advancedFilters.tipoClaim);
     }
 
-    // ⚠️ FILTROS DE DATA REMOVIDOS - A API JÁ FILTRA POR DATA
-    // Os filtros dataInicio e dataFim são enviados para a API e ela retorna apenas dados dentro do período
-    // Não devemos filtrar novamente aqui, pois isso remove dados válidos
+    // 📅 FILTRO ADICIONAL DE DATA DE CRIAÇÃO (Frontend)
+    // A API do ML filtra por última atualização, mas podemos filtrar adicionalmente por data de criação
+    if (advancedFilters.tipoFiltroData === 'criacao' && (advancedFilters.dataInicio || advancedFilters.dataFim)) {
+      resultados = resultados.filter(dev => {
+        if (!dev.data_criacao) return false;
+        
+        try {
+          const dataCriacao = new Date(dev.data_criacao);
+          const dataInicio = advancedFilters.dataInicio ? new Date(advancedFilters.dataInicio + 'T00:00:00') : null;
+          const dataFim = advancedFilters.dataFim ? new Date(advancedFilters.dataFim + 'T23:59:59') : null;
+          
+          if (dataInicio && dataCriacao < dataInicio) return false;
+          if (dataFim && dataCriacao > dataFim) return false;
+          
+          return true;
+        } catch (error) {
+          return false;
+        }
+      });
+    }
 
     // 💰 FILTRO DE VALOR MÍNIMO
     if (advancedFilters.valorRetidoMin) {
@@ -412,6 +431,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
       dataInicio: '',
       dataFim: '',
+      tipoFiltroData: 'atualizacao',
       statusClaim: '',
       tipoClaim: '',
       subtipoClaim: '',
