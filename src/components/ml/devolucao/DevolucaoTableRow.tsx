@@ -1304,51 +1304,46 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })() : '-'}
       </td>
       
-      {/* ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ========== */}
+      {/* ========== DADOS DO COMPRADOR E PAGAMENTO ========== */}
       
-      {/* CPF/CNPJ */}
+      {/* comprador_cpf */}
       <td className="px-3 py-3 text-foreground font-mono text-sm">
         {devolucao.comprador_cpf || '-'}
       </td>
       
-      {/* Nome Completo */}
+      {/* comprador_nome_completo */}
       <td className="px-3 py-3 text-foreground">
         {devolucao.comprador_nome_completo || '-'}
       </td>
       
-      {/* Nickname */}
-      <td className="px-3 py-3 text-blue-600 dark:text-blue-400">
-        {devolucao.comprador_nickname || '-'}
-      </td>
-      
-      {/* Método Pagamento */}
+      {/* metodo_pagamento */}
       <td className="px-3 py-3 text-foreground">
         <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
           {devolucao.metodo_pagamento || '-'}
         </span>
       </td>
       
-      {/* Tipo Pagamento */}
+      {/* tipo_pagamento */}
       <td className="px-3 py-3 text-foreground">
         {devolucao.tipo_pagamento || '-'}
       </td>
       
-      {/* Parcelas */}
+      {/* parcelas */}
       <td className="px-3 py-3 text-center text-foreground font-medium">
         {devolucao.parcelas ? `${devolucao.parcelas}x` : '-'}
       </td>
       
-      {/* Valor Parcela */}
+      {/* valor_parcela */}
       <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold">
         {devolucao.valor_parcela ? `R$ ${devolucao.valor_parcela.toFixed(2)}` : '-'}
       </td>
       
-      {/* Transaction ID */}
+      {/* transaction_id */}
       <td className="px-3 py-3 text-foreground font-mono text-xs truncate" title={devolucao.transaction_id}>
         {devolucao.transaction_id || '-'}
       </td>
       
-      {/* % Reembolsado */}
+      {/* percentual_reembolsado */}
       <td className="px-3 py-3 text-center">
         <div className="flex items-center gap-2">
           <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
