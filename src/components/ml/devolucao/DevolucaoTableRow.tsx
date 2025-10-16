@@ -805,6 +805,176 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       </td>
       
       
+      {/* ========== FASE 1: CAMPOS OBRIGATÓRIOS (4 COLUNAS) ========== */}
+      
+      {/* Data Criação Claim */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_criacao_claim ? (() => {
+          try {
+            return new Date(devolucao.data_criacao_claim).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return devolucao.data_criacao_claim;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Data Fechamento Claim */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_fechamento_claim ? (() => {
+          try {
+            return new Date(devolucao.data_fechamento_claim).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return devolucao.data_fechamento_claim;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Data Início Return */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_inicio_return ? (() => {
+          try {
+            return new Date(devolucao.data_inicio_return).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return devolucao.data_inicio_return;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* Shipment ID */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs">
+        {devolucao.shipment_id || '-'}
+      </td>
+      
+      {/* ========== FASE 2: CAMPOS PRIORITÁRIOS (8 COLUNAS) ========== */}
+      
+      {/* Motivo Categoria (reason_category) */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          devolucao.reason_category === 'not_received' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+          devolucao.reason_category === 'defective_or_different' ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300' :
+          devolucao.reason_category === 'cancellation' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+          'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+        }`}>
+          {devolucao.reason_category || '-'}
+        </span>
+      </td>
+      
+      {/* Nível Complexidade */}
+      <td className="px-3 py-3 text-center">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          devolucao.nivel_complexidade === 'high' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+          devolucao.nivel_complexidade === 'medium' ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300' :
+          devolucao.nivel_complexidade === 'low' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+          'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+        }`}>
+          {devolucao.nivel_complexidade || '-'}
+        </span>
+      </td>
+      
+      {/* Categoria Problema */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.categoria_problema || '-'}
+      </td>
+      
+      {/* Resultado Mediação */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+          devolucao.resultado_mediacao === 'approved' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+          devolucao.resultado_mediacao === 'rejected' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+          'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
+        }`}>
+          {devolucao.resultado_mediacao || '-'}
+        </span>
+      </td>
+      
+      {/* Mediador ML */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.mediador_ml || '-'}
+      </td>
+      
+      {/* Tempo Resposta Comprador */}
+      <td className="px-3 py-3 text-center text-foreground font-medium">
+        {devolucao.tempo_resposta_comprador ? `${devolucao.tempo_resposta_comprador}h` : '-'}
+      </td>
+      
+      {/* Tempo Análise ML */}
+      <td className="px-3 py-3 text-center text-foreground font-medium">
+        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml}h` : '-'}
+      </td>
+      
+      {/* Data Primeira Ação */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.data_primeira_acao ? (() => {
+          try {
+            return new Date(devolucao.data_primeira_acao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return devolucao.data_primeira_acao;
+          }
+        })() : '-'}
+      </td>
+      
+      {/* ========== FASE 3: CAMPOS OPCIONAIS (4 COLUNAS) ========== */}
+      
+      {/* Subcategoria Problema */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        {devolucao.subcategoria_problema || '-'}
+      </td>
+      
+      {/* Feedback Comprador Final */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[200px] truncate" title={devolucao.feedback_comprador_final || '-'}>
+          {devolucao.feedback_comprador_final || '-'}
+        </div>
+      </td>
+      
+      {/* Feedback Vendedor */}
+      <td className="px-3 py-3 text-foreground text-sm">
+        <div className="max-w-[200px] truncate" title={devolucao.feedback_vendedor || '-'}>
+          {devolucao.feedback_vendedor || '-'}
+        </div>
+      </td>
+      
+      {/* Tempo Limite Ação */}
+      <td className="px-3 py-3 text-foreground text-sm whitespace-nowrap">
+        {devolucao.tempo_limite_acao ? (() => {
+          try {
+            return new Date(devolucao.tempo_limite_acao).toLocaleDateString('pt-BR', {
+              day: '2-digit',
+              month: '2-digit',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          } catch {
+            return devolucao.tempo_limite_acao;
+          }
+        })() : '-'}
+      </td>
+      
       {/* ========== 60 COLUNAS FALTANTES ========== */}
       <td className="px-3 py-3">{devolucao.codigo_rastreamento_devolucao || '-'}</td>
       <td className="px-3 py-3">{devolucao.transportadora_devolucao || '-'}</td>
@@ -827,11 +997,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
             {devolucao.status_transporte_atual}
           </span>
         ) : '-'}
-      </td>
-      
-      {/* Shipment ID */}
-      <td className="px-3 py-3 text-foreground font-mono text-xs">
-        {devolucao.shipment_id || '-'}
       </td>
       
       {/* URL Rastreamento */}
@@ -881,21 +1046,6 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Tempo Trânsito Dias */}
       <td className="px-3 py-3 text-center text-foreground font-medium">
         {devolucao.tempo_transito_dias ? `${devolucao.tempo_transito_dias} dias` : '-'}
-      </td>
-      
-      {/* Motivo Categoria */}
-      <td className="px-3 py-3 text-foreground text-sm">
-        {devolucao.motivo_categoria || '-'}
-      </td>
-      
-      {/* Categoria Problema */}
-      <td className="px-3 py-3 text-foreground text-sm">
-        {devolucao.categoria_problema || '-'}
-      </td>
-      
-      {/* Subcategoria Problema */}
-      <td className="px-3 py-3 text-foreground text-sm">
-        {devolucao.subcategoria_problema || '-'}
       </td>
       
       {/* Nível Complexidade */}

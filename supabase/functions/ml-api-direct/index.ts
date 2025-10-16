@@ -1181,27 +1181,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`[REISTOM INFO] ℹ️ Processando todos os ${claimsParaProcessar.length} claims sem filtro de data local`)
     console.log(`[REISTOM INFO] ⚠️ NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
 
-    // 🛡️ PROTEÇÃO CONTRA TIMEOUT: Limitar quantidade de claims processados
-    // REDUZIDO para 100 para evitar timeouts
-    const MAX_CLAIMS_TO_PROCESS = 100
-    if (claimsParaProcessar.length > MAX_CLAIMS_TO_PROCESS) {
-      console.log(`\n⚠️  ============= LIMITE DE PROCESSAMENTO ATINGIDO =============`)
-      console.log(`   • Claims filtrados: ${claimsParaProcessar.length}`)
-      console.log(`   • Limite máximo: ${MAX_CLAIMS_TO_PROCESS}`)
-      console.log(`   • Motivo: Evitar timeout da Edge Function (limite de 60s no gateway)`)
-      console.log(`   • Ação: Processando apenas os ${MAX_CLAIMS_TO_PROCESS} mais recentes`)
-      console.log(`   • Recomendação: Use filtros de data mais específicos para ver todos`)
-      console.log(`🛡️  ============================================================\n`)
-      
-      // Ordenar por data decrescente e pegar os mais recentes
-      claimsParaProcessar = claimsParaProcessar
-        .sort((a: any, b: any) => {
-          const dateA = new Date(a.date_created || 0).getTime()
-          const dateB = new Date(b.date_created || 0).getTime()
-          return dateB - dateA // Mais recente primeiro
-        })
-        .slice(0, MAX_CLAIMS_TO_PROCESS)
-    }
+    // ✅ REMOVIDO LIMITE DE 100 - Agora processa todos os claims disponíveis
+    console.log(`\n✅ PROCESSANDO TODOS OS ${claimsParaProcessar.length} CLAIMS SEM LIMITE`)
+    console.log(`   • Claims a processar: ${claimsParaProcessar.length}`)
+    console.log(`   • Otimização: Processamento em lote otimizado`)
+    console.log(`✅ ============================================================\n`)
 
     // ========================================
     // 🔍 BUSCAR REASONS EM LOTE DA API ML
