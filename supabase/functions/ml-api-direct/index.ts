@@ -302,26 +302,32 @@ serve(async (req) => {
             dados_completos: devolucao.dados_completos,
             marketplace_origem: devolucao.marketplace_origem,
             
-            // ======== TEMPORAL E MARCOS (3 CAMPOS CRÍTICOS FALTANTES) ========
+            // ======== 🔴 FASE 1: TEMPORAL E MARCOS (3 CAMPOS CRÍTICOS CORRIGIDOS) ========
             data_criacao_claim: (() => {
               const value = devolucao.claim_details?.date_created || 
-                           devolucao.dados_claim?.date_created || null;
-              if (value) console.log(`[DEBUG] data_criacao_claim encontrado: ${value}`);
+                           devolucao.mediation_details?.date_created ||
+                           devolucao.dados_claim?.date_created || 
+                           null;
+              console.log(`[FASE1] ✅ data_criacao_claim: ${value}`);
               return value;
             })(),
             data_inicio_return: (() => {
-              const value = devolucao.return_details_v2?.date_created ||
-                           devolucao.return_details_v1?.date_created ||
+              const value = devolucao.return_details_v2?.results?.[0]?.date_created ||
+                           devolucao.return_details_v1?.results?.[0]?.date_created ||
                            devolucao.return_details?.date_created || 
-                           devolucao.dados_return?.date_created || null;
-              if (value) console.log(`[DEBUG] data_inicio_return encontrado: ${value}`);
+                           devolucao.dados_return?.date_created || 
+                           null;
+              console.log(`[FASE1] ✅ data_inicio_return: ${value}`);
               return value;
             })(),
             data_fechamento_claim: (() => {
               const value = devolucao.claim_details?.date_closed ||
-                           devolucao.claim_details?.resolution?.date_created || 
-                           devolucao.order_data?.date_closed || null;
-              if (value) console.log(`[DEBUG] data_fechamento_claim encontrado: ${value}`);
+                           devolucao.claim_details?.resolution?.date ||
+                           devolucao.claim_details?.resolution?.date_created ||
+                           devolucao.mediation_details?.date_closed ||
+                           devolucao.order_data?.date_closed || 
+                           null;
+              console.log(`[FASE1] ✅ data_fechamento_claim: ${value}`);
               return value;
             })(),
             marcos_temporais: (() => {
