@@ -1394,7 +1394,74 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.versao_api_utilizada || '-'}
       </td>
       
-      {/* ========== FASE 3: CAMPOS AVANÇADOS (15 COLUNAS) ========== */}
+      {/* ========== DADOS DO COMPRADOR E PAGAMENTO ========== */}
+      
+      {/* comprador_cpf */}
+      <td className="px-3 py-3 text-foreground font-mono text-sm">
+        {devolucao.comprador_cpf || '-'}
+      </td>
+      
+      {/* comprador_nome_completo */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.comprador_nome_completo || '-'}
+      </td>
+      
+      {/* metodo_pagamento */}
+      <td className="px-3 py-3 text-foreground">
+        <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
+          {devolucao.metodo_pagamento || '-'}
+        </span>
+      </td>
+      
+      {/* tipo_pagamento */}
+      <td className="px-3 py-3 text-foreground">
+        {devolucao.tipo_pagamento || '-'}
+      </td>
+      
+      {/* parcelas */}
+      <td className="px-3 py-3 text-center text-foreground font-medium">
+        {devolucao.parcelas ? `${devolucao.parcelas}x` : '-'}
+      </td>
+      
+      {/* valor_parcela */}
+      <td className="px-3 py-3 text-right text-green-600 dark:text-green-400 font-semibold">
+        {devolucao.valor_parcela ? `R$ ${devolucao.valor_parcela.toFixed(2)}` : '-'}
+      </td>
+      
+      {/* transaction_id */}
+      <td className="px-3 py-3 text-foreground font-mono text-xs truncate" title={devolucao.transaction_id}>
+        {devolucao.transaction_id || '-'}
+      </td>
+      
+      {/* percentual_reembolsado */}
+      <td className="px-3 py-3 text-center">
+        <div className="flex items-center gap-2">
+          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div
+              className="bg-green-500 h-2 rounded-full transition-all"
+              style={{ width: `${Math.min(devolucao.percentual_reembolsado || 0, 100)}%` }}
+            />
+          </div>
+          <span className="font-semibold text-sm text-foreground">
+            {devolucao.percentual_reembolsado?.toFixed(0) || 0}%
+          </span>
+        </div>
+      </td>
+      
+      {/* tags_pedido */}
+      <td className="px-3 py-3">
+        <div className="flex flex-wrap gap-1">
+          {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
+            devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
+              <span key={idx} className="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded text-xs">
+                {tag}
+              </span>
+            ))
+          ) : '-'}
+        </div>
+      </td>
+      
+      {/* ========== FASE 3: CAMPOS AVANÇADOS ========== */}
       
       {/* Custo Frete Devolução */}
       <td className="px-3 py-3 text-right text-red-600 dark:text-red-400 font-semibold">
@@ -1406,7 +1473,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.custo_logistico_total ? `R$ ${devolucao.custo_logistico_total.toFixed(2)}` : '-'}
       </td>
       
-      {/* Valor Original */}
+      {/* Valor Original Produto */}
       <td className="px-3 py-3 text-right text-foreground font-semibold">
         {devolucao.valor_original_produto ? `R$ ${devolucao.valor_original_produto.toFixed(2)}` : '-'}
       </td>
@@ -1421,22 +1488,20 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.taxa_ml_reembolso ? `R$ ${devolucao.taxa_ml_reembolso.toFixed(2)}` : '-'}
       </td>
       
-      {/* Tags Internas */}
+      {/* internal_tags */}
       <td className="px-3 py-3">
         <div className="flex flex-wrap gap-1">
           {devolucao.internal_tags && Array.isArray(devolucao.internal_tags) && devolucao.internal_tags.length > 0 ? (
             devolucao.internal_tags.slice(0, 3).map((tag: string, idx: number) => (
-              <span key={`${devolucao.id}-internal-${tag}-${idx}`} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded text-xs">
+              <span key={idx} className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded text-xs">
                 {tag}
               </span>
             ))
-          ) : (
-            <span className="text-muted-foreground text-xs">-</span>
-          )}
+          ) : '-'}
         </div>
       </td>
       
-      {/* Tem Financeiro */}
+      {/* tem_financeiro */}
       <td className="px-3 py-3 text-center">
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           devolucao.tem_financeiro 
@@ -1447,7 +1512,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </span>
       </td>
       
-      {/* Tem Review */}
+      {/* tem_review */}
       <td className="px-3 py-3 text-center">
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           devolucao.tem_review 
@@ -1458,7 +1523,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </span>
       </td>
       
-      {/* Tem SLA */}
+      {/* tem_sla */}
       <td className="px-3 py-3 text-center">
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           devolucao.tem_sla 
@@ -1469,7 +1534,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </span>
       </td>
       
-      {/* NF Autorizada */}
+      {/* nota_fiscal_autorizada */}
       <td className="px-3 py-3 text-center">
         <span className={`px-2 py-1 rounded text-xs font-medium ${
           devolucao.nota_fiscal_autorizada 
@@ -1480,209 +1545,53 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </span>
       </td>
       
-      {/* Garantia Produto */}
+      {/* produto_warranty */}
       <td className="px-3 py-3 text-foreground text-sm">
         {devolucao.produto_warranty || '-'}
       </td>
       
-      {/* Categoria Produto */}
+      {/* produto_categoria */}
       <td className="px-3 py-3 text-foreground text-sm">
         {devolucao.produto_categoria || '-'}
       </td>
       
-      {/* Thumbnail */}
+      {/* produto_thumbnail */}
       <td className="px-3 py-3">
         {devolucao.produto_thumbnail ? (
           <img 
             src={devolucao.produto_thumbnail} 
             alt="Produto" 
             className="h-12 w-12 object-cover rounded border"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
           />
-        ) : (
-          <span className="text-muted-foreground text-xs">-</span>
-        )}
+        ) : '-'}
       </td>
       
-      {/* Qualidade Comunicação */}
+      {/* qualidade_comunicacao */}
       <td className="px-3 py-3 text-center">
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          devolucao.qualidade_comunicacao === 'excellent' || devolucao.qualidade_comunicacao === 'good'
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-            : devolucao.qualidade_comunicacao === 'fair'
-            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-        }`}>
-          {devolucao.qualidade_comunicacao || '-'}
-        </span>
-      </td>
-      
-      {/* Eficiência Resolução */}
-      <td className="px-3 py-3 text-center">
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          devolucao.eficiencia_resolucao === 'fast'
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-            : devolucao.eficiencia_resolucao === 'normal'
-            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-        }`}>
-          {devolucao.eficiencia_resolucao || '-'}
-        </span>
-      </td>
-
-      {/* ========== FASE 4: REASONS API (8 COLUNAS) ========== */}
-      
-      {/* Reason ID */}
-      <td className="px-3 py-3 text-foreground text-sm font-mono">
-        {devolucao.reason_id || '-'}
-      </td>
-      
-      {/* Reason Nome */}
-      <td className="px-3 py-3 text-foreground text-sm">
-        {devolucao.reason_name || '-'}
-      </td>
-      
-      {/* Reason Detalhe */}
-      <td className="px-3 py-3 text-foreground text-sm">
-        <div className="max-w-xs truncate" title={devolucao.reason_detail || '-'}>
-          {devolucao.reason_detail || '-'}
-        </div>
-      </td>
-      
-      {/* Reason Categoria */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.reason_category ? (
-          <span className={`px-2 py-1 rounded text-xs font-medium capitalize ${
-            devolucao.reason_category === 'arrependimento'
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-              : devolucao.reason_category === 'defeito'
-              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-              : devolucao.reason_category === 'diferente'
-              ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-400'
+        {devolucao.qualidade_comunicacao ? (
+          <span className={`px-2 py-1 rounded text-xs font-medium ${
+            devolucao.qualidade_comunicacao === 'excellent' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' :
+            devolucao.qualidade_comunicacao === 'good' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' :
+            devolucao.qualidade_comunicacao === 'poor' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
+            'bg-gray-100 dark:bg-gray-900/30 text-gray-800 dark:text-gray-300'
           }`}>
-            {devolucao.reason_category}
+            {devolucao.qualidade_comunicacao}
           </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
+        ) : '-'}
       </td>
       
-      {/* Reason Prioridade */}
+      {/* eficiencia_resolucao */}
       <td className="px-3 py-3 text-center">
-        {devolucao.reason_priority ? (
-          <span className={`px-2 py-1 rounded text-xs font-medium capitalize ${
-            devolucao.reason_priority === 'high'
-              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-              : devolucao.reason_priority === 'medium'
-              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
-              : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-          }`}>
-            {devolucao.reason_priority === 'high' ? 'Alta' : devolucao.reason_priority === 'medium' ? 'Média' : 'Baixa'}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
+        {devolucao.eficiencia_resolucao || '-'}
       </td>
       
-      {/* Reason Tipo */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.reason_type ? (
-          <span className="px-2 py-1 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
-            {devolucao.reason_type === 'buyer_initiated' ? 'Comprador' : 
-             devolucao.reason_type === 'seller_initiated' ? 'Vendedor' : 
-             devolucao.reason_type === 'ml_initiated' ? 'ML' : devolucao.reason_type}
-          </span>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* Resoluções Esperadas */}
-      <td className="px-3 py-3">
-        <div className="flex flex-wrap gap-1">
-          {devolucao.reason_expected_resolutions && Array.isArray(devolucao.reason_expected_resolutions) && devolucao.reason_expected_resolutions.length > 0 ? (
-            devolucao.reason_expected_resolutions.slice(0, 2).map((res: string, idx: number) => (
-              <span key={`${devolucao.id}-resolution-${idx}`} className="px-2 py-1 bg-teal-100 dark:bg-teal-900/30 text-teal-800 dark:text-teal-300 rounded text-xs">
-                {res}
-              </span>
-            ))
-          ) : (
-            <span className="text-muted-foreground text-xs">-</span>
-          )}
-        </div>
-      </td>
-      
-      {/* Regras Motor */}
-      <td className="px-3 py-3">
-        <div className="flex flex-wrap gap-1">
-          {devolucao.reason_rules_engine && Array.isArray(devolucao.reason_rules_engine) && devolucao.reason_rules_engine.length > 0 ? (
-            <span className="px-2 py-1 bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 rounded text-xs">
-              {devolucao.reason_rules_engine.length} regra{devolucao.reason_rules_engine.length !== 1 ? 's' : ''}
-            </span>
-          ) : (
-            <span className="text-muted-foreground text-xs">-</span>
-          )}
-        </div>
-      </td>
-
-      {/* 🆕 5 NOVOS CAMPOS - DADOS PERDIDOS RECUPERADOS */}
-      
-      {/* Estágio Claim */}
-      <td className="px-3 py-3">
-        <span className={`px-2 py-1 rounded text-xs font-medium ${
-          devolucao.claim_stage ? 'bg-primary/10 text-primary' : 'text-muted-foreground'
-        }`}>
-          {devolucao.claim_stage || '-'}
-        </span>
-      </td>
-      
-      {/* Tipo Quantidade */}
-      <td className="px-3 py-3">
-        <span className="text-foreground text-sm">
-          {devolucao.claim_quantity_type || '-'}
-        </span>
-      </td>
-      
-      {/* Claim Cumprido */}
-      <td className="px-3 py-3 text-center">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
-          devolucao.claim_fulfilled 
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
-        }`}>
-          {devolucao.claim_fulfilled ? '✅ Sim' : '❌ Não'}
-        </span>
-      </td>
-      
-      {/* Tipo Recurso Return */}
-      <td className="px-3 py-3">
-        <span className="text-foreground text-sm">
-          {devolucao.return_resource_type || '-'}
-        </span>
-      </td>
-      
-      {/* Verificação Intermediária */}
-      <td className="px-3 py-3">
-        {devolucao.return_intermediate_check ? (
-          <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded text-xs">
-            ✅ Com dados
-          </span>
-        ) : (
-          <span className="text-muted-foreground text-xs">-</span>
-        )}
-      </td>
-
-      {/* Botão de Ações - MOVIDO PARA O FINAL */}
+      {/* Ações */}
       <td className="px-3 py-3 text-center">
         <Button
-          variant="ghost"
-          size="sm"
           onClick={() => onViewDetails(devolucao)}
+          size="sm"
+          variant="ghost"
           className="h-8 w-8 p-0"
-          title="Ver detalhes completos (todas as fases)"
         >
           <Eye className="h-4 w-4" />
         </Button>
