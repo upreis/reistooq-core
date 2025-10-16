@@ -456,7 +456,7 @@ export function useDevolucoesBusca() {
                 codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
                 transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
                 transportadora_devolucao: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
+                // status_rastreamento: REMOVIDO - coluna não existe no banco
                 url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
                 localizacao_atual: item.tracking_history?.[0]?.location || null,
                 status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,
