@@ -315,19 +315,20 @@ export function DevolucaoFiltersUnified({
                   )}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataInicio ? format(new Date(filters.dataInicio), 'dd/MM/yyyy') : "Data início"}
+                  {filters.dataInicio ? format(new Date(filters.dataInicio + 'T12:00:00'), 'dd/MM/yyyy') : "Data início"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={filters.dataInicio ? new Date(filters.dataInicio) : undefined}
+                  selected={filters.dataInicio ? new Date(filters.dataInicio + 'T12:00:00') : undefined}
                   onSelect={(date) => {
                     onFilterChange('dataInicio', date ? format(date, 'yyyy-MM-dd') : '');
                     setDataInicioOpen(false);
                   }}
                   locale={ptBR}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -344,19 +345,20 @@ export function DevolucaoFiltersUnified({
                   )}
                 >
                   <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataFim ? format(new Date(filters.dataFim), 'dd/MM/yyyy') : "Data fim"}
+                  {filters.dataFim ? format(new Date(filters.dataFim + 'T12:00:00'), 'dd/MM/yyyy') : "Data fim"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={filters.dataFim ? new Date(filters.dataFim) : undefined}
+                  selected={filters.dataFim ? new Date(filters.dataFim + 'T12:00:00') : undefined}
                   onSelect={(date) => {
                     onFilterChange('dataFim', date ? format(date, 'yyyy-MM-dd') : '');
                     setDataFimOpen(false);
                   }}
                   locale={ptBR}
                   initialFocus
+                  className="p-3 pointer-events-auto"
                 />
               </PopoverContent>
             </Popover>
@@ -413,10 +415,10 @@ export function DevolucaoFiltersUnified({
               <Badge variant="outline">Status: {STATUS_LABELS[filters.statusClaim] || filters.statusClaim}</Badge>
             )}
             {filters.dataInicio && (
-              <Badge variant="outline">De: {format(new Date(filters.dataInicio), 'dd/MM/yyyy')}</Badge>
+              <Badge variant="outline">De: {format(new Date(filters.dataInicio + 'T12:00:00'), 'dd/MM/yyyy')}</Badge>
             )}
             {filters.dataFim && (
-              <Badge variant="outline">Até: {format(new Date(filters.dataFim), 'dd/MM/yyyy')}</Badge>
+              <Badge variant="outline">Até: {format(new Date(filters.dataFim + 'T12:00:00'), 'dd/MM/yyyy')}</Badge>
             )}
             {filters.contasSelecionadas?.length > 0 && (
               <Badge variant="outline">
