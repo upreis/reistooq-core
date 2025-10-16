@@ -263,26 +263,8 @@ export function useDevolucoesBusca() {
     filtros: DevolucaoBuscaFilters,
     mlAccounts: any[]
   ) => {
-    // 🔒 VALIDAÇÃO DE CONTAS ATIVAS
-    const contasAtivas = mlAccounts?.filter(acc => acc.is_active) || [];
-    
-    if (!contasAtivas.length) {
-      toast.error('❌ Nenhuma conta ML ativa disponível');
-      console.error('[CONTAS] Nenhuma conta ativa encontrada:', mlAccounts);
-      return [];
-    }
-
-    // 🔍 VALIDAR SE AS CONTAS SELECIONADAS EXISTEM E ESTÃO ATIVAS
-    const contasValidas = filtros.contasSelecionadas.filter(id => 
-      contasAtivas.some(acc => acc.id === id)
-    );
-    
-    if (!contasValidas.length) {
-      toast.error('❌ As contas selecionadas não estão disponíveis. Selecione contas ativas.');
-      console.error('[CONTAS] Contas selecionadas inválidas:', {
-        selecionadas: filtros.contasSelecionadas,
-        ativas: contasAtivas.map(a => a.id)
-      });
+    if (!filtros.contasSelecionadas.length) {
+      toast.error('Selecione pelo menos uma conta ML');
       return [];
     }
 
@@ -296,15 +278,11 @@ export function useDevolucoesBusca() {
     const todasDevolucoes: any[] = [];
     
     try {
-      console.log(`✅ [CONTAS] ${contasValidas.length} contas válidas para buscar:`, contasValidas);
       logger.info('🚀 Iniciando busca otimizada da API ML');
       
-      for (const accountId of contasValidas) {
+      for (const accountId of filtros.contasSelecionadas) {
         const account = mlAccounts?.find(acc => acc.id === accountId);
-        if (!account || !account.is_active) {
-          console.warn(`⚠️ [CONTA ${accountId}] Conta não encontrada ou inativa, pulando...`);
-          continue;
-        }
+        if (!account) continue;
 
         logger.info(`Processando conta: ${account.name}`);
         
