@@ -1829,13 +1829,16 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // ============================================
               
               // 🔄 Estágio do Claim (ex: claim_closing, claim_input, dispute)
-              claim_stage: safeClaimData?.claim_details?.stage || null,
+              claim_stage: safeClaimData?.claim_details?.stage || 
+                          safeClaimData?.mediation_details?.stage || null,
               
               // 📦 Tipo de quantidade do claim (ex: unit, pack)
-              claim_quantity_type: safeClaimData?.claim_details?.quantity_type || null,
+              claim_quantity_type: safeClaimData?.claim_details?.quantity_type || 
+                                  safeClaimData?.mediation_details?.quantity_type || null,
               
               // ✅ Se o claim foi cumprido/resolvido
-              claim_fulfilled: safeClaimData?.claim_details?.fulfilled || false,
+              claim_fulfilled: safeClaimData?.claim_details?.fulfilled || 
+                              safeClaimData?.mediation_details?.fulfilled || false,
               
               // 🔍 Verificação intermediária do return (dados completos em JSON)
               return_intermediate_check: safeClaimData?.return_details_v2?.results?.[0]?.intermediate_check || 
