@@ -68,21 +68,34 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Categoria</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Garantia</th>
             
-            {/* GRUPO 6: VALORES FINANCEIROS (14 colunas) */}
+            {/* GRUPO 6: VALORES FINANCEIROS (20 colunas - expandido com detalhes do modal) */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Original</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Reembolso Total</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Reembolso Produto</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Retido</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Taxa ML</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Compensação</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Custo Frete</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Custo Logístico</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Impacto Vendedor</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>% Reembolsado</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Método Pagto</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Impacto Vendedor</th>
+            
+            {/* Frete e Logística Detalhado */}
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Frete Original</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Frete Reembolsado</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Custo Devolução</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Total Logística</th>
+            
+            {/* Taxas ML Detalhado */}
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Taxa ML Original</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Taxa ML Reembolsada</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Taxa ML Retida</th>
+            
+            {/* Outros valores */}
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Retido</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Compensação</th>
+            
+            {/* Informações de Pagamento */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Método Reembolso</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>Moeda</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Processamento</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>Parcelas</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '110px'}}>Valor Parcela</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Tipo Pagamento</th>
             
             {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Reason ID</th>
