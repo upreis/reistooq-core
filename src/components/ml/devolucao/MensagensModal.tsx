@@ -67,30 +67,34 @@ export const MensagensModal: React.FC<MensagensModalProps> = ({
             ) : (
               mensagens.map((msg: any, idx: number) => {
                 const texto = msg.message || msg.text || msg.content || msg.mensagem || msg.body || msg.conteudo;
-                const remetente = msg.sender || msg.from || msg.role || msg.remetente;
-                const data = msg.date || msg.created_at || msg.timestamp;
+                const data = msg.date || msg.created_at || msg.timestamp || msg.message_date?.created;
                 
-                // Traduzir remetente (case-insensitive e com trim)
+                // Identificar remetente pela estrutura real da API do ML
+                const fromUserId = msg.from?.user_id || msg.from;
+                const toUserId = msg.to?.user_id || msg.to;
+                const sellerId = 1531369271; // ID do seller (obtido dos message_resources)
+                
+                // Determinar se é comprador ou vendedor
                 let remetentePt = 'Desconhecido';
                 let badgeVariant: 'default' | 'secondary' | 'outline' = 'outline';
                 let emoji = '⚪';
                 
-                const remetenteLower = typeof remetente === 'string' ? remetente.toLowerCase().trim() : '';
-                
-                if (remetenteLower === 'buyer' || remetenteLower === 'complainant') {
+                if (fromUserId === sellerId) {
+                  remetentePt = 'Vendedor (Você)';
+                  badgeVariant = 'secondary';
+                  emoji = '🟢';
+                } else if (toUserId === sellerId) {
                   remetentePt = 'Comprador';
                   badgeVariant = 'default';
                   emoji = '🔵';
-                } else if (remetenteLower === 'seller' || remetenteLower === 'respondent') {
-                  remetentePt = 'Vendedor';
-                  badgeVariant = 'secondary';
-                  emoji = '🟢';
-                } else if (remetenteLower === 'mediator' || remetenteLower === 'ml' || remetenteLower === 'system') {
-                  remetentePt = 'Mediador ML';
+                } else if (msg.message_moderation?.source === 'system') {
+                  remetentePt = 'Sistema ML';
                   badgeVariant = 'outline';
                   emoji = '🟡';
-                } else if (typeof remetente === 'string' && remetente) {
-                  remetentePt = remetente;
+                } else {
+                  remetentePt = 'Comprador';
+                  badgeVariant = 'default';
+                  emoji = '🔵';
                 }
                 
                 return (
