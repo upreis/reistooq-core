@@ -662,6 +662,45 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })()}
       </td>
       
+      {/* Mensagens - Últimas 3 mensagens */}
+      <td className="px-3 py-3 text-left max-w-[500px]">
+        {(() => {
+          if (!Array.isArray(devolucao.timeline_mensagens) || devolucao.timeline_mensagens.length === 0) {
+            return <span className="text-muted-foreground">Sem mensagens</span>;
+          }
+          
+          return (
+            <div className="space-y-1">
+              {devolucao.timeline_mensagens.slice(-3).map((msg: any, idx: number) => {
+                const texto = msg.message || msg.text || msg.content || msg.mensagem || msg.body || msg.conteudo;
+                const remetente = msg.sender || msg.from || msg.role || msg.remetente;
+                const data = msg.date || msg.created_at || msg.timestamp;
+                
+                if (!texto || typeof texto !== 'string') return null;
+                
+                const remetentePt = remetente === 'buyer' ? '🔵 Comprador' 
+                                  : remetente === 'seller' ? '🟢 Vendedor'
+                                  : remetente === 'mediator' ? '🟡 Mediador'
+                                  : '⚪ ' + remetente;
+                
+                return (
+                  <div key={idx} className="text-xs border-l-2 border-border pl-2 py-1">
+                    <div className="font-semibold text-muted-foreground">{remetentePt}</div>
+                    <div className="truncate max-w-[450px]" title={texto}>{texto}</div>
+                    {data && <div className="text-muted-foreground text-[10px]">{formatDateTime(data)}</div>}
+                  </div>
+                );
+              })}
+              {devolucao.timeline_mensagens.length > 3 && (
+                <div className="text-xs text-muted-foreground">
+                  +{devolucao.timeline_mensagens.length - 3} mensagens anteriores
+                </div>
+              )}
+            </div>
+          );
+        })()}
+      </td>
+      
       {/* GRUPO 10: TEMPOS E MÉTRICAS (6 colunas) */}
       
       {/* Tempo Resposta */}

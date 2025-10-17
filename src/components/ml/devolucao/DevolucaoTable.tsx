@@ -106,6 +106,7 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Timeline</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Última Msg Data</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Última Msg Remetente</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '500px'}}>Mensagens</th>
             
             {/* GRUPO 10: TEMPOS E MÉTRICAS (8 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Tempo Resposta</th>
