@@ -589,34 +589,102 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Última Msg Data */}
       <td className="px-3 py-3 text-center text-xs">
-        {formatDateTime(devolucao.ultima_mensagem_data || 
-          (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 
-            ? (devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any)?.date 
-            : null))}
+        {(() => {
+          if (!Array.isArray(devolucao.timeline_mensagens) || devolucao.timeline_mensagens.length === 0) {
+            return <span className="text-muted-foreground">Sem mensagens</span>;
+          }
+          
+          const ultimaMensagem = devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any;
+          const dataMsg = ultimaMensagem?.date || ultimaMensagem?.created_at || ultimaMensagem?.timestamp || ultimaMensagem?.data;
+          
+          if (dataMsg) {
+            return formatDateTime(dataMsg);
+          }
+          
+          return <span className="text-muted-foreground">-</span>;
+        })()}
       </td>
       
       {/* Última Msg Remetente */}
       <td className="px-3 py-3 text-left text-sm">
-        {devolucao.ultima_mensagem_remetente || 
-          (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 
-            ? (devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any)?.sender 
-            : '-')}
+        {(() => {
+          if (!Array.isArray(devolucao.timeline_mensagens) || devolucao.timeline_mensagens.length === 0) {
+            return <span className="text-muted-foreground">Sem mensagens</span>;
+          }
+          
+          const ultimaMensagem = devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any;
+          const remetente = ultimaMensagem?.sender || ultimaMensagem?.from || ultimaMensagem?.remetente || ultimaMensagem?.role;
+          
+          if (remetente) {
+            const remetentePt = remetente === 'buyer' ? 'Comprador' 
+                              : remetente === 'seller' ? 'Vendedor'
+                              : remetente === 'mediator' ? 'Mediador'
+                              : remetente;
+            
+            return <span className="font-medium">{remetentePt}</span>;
+          }
+          
+          return <span className="text-muted-foreground">-</span>;
+        })()}
       </td>
       
       {/* GRUPO 10: TEMPOS E MÉTRICAS (6 colunas) */}
       
       {/* Tempo Resposta */}
       <td className="px-3 py-3 text-center">
-        {devolucao.tempo_resposta_comprador 
-          ? `${Math.round(devolucao.tempo_resposta_comprador / 60)}h` 
-          : '-'}
+        {(() => {
+          if (devolucao.tempo_resposta_comprador) {
+            const horas = Math.round(devolucao.tempo_resposta_comprador / 60);
+            return `${horas}h`;
+          }
+          
+          if (devolucao.data_primeira_acao && devolucao.data_criacao_claim) {
+            const diff = new Date(devolucao.data_primeira_acao).getTime() - new Date(devolucao.data_criacao_claim).getTime();
+            const horas = Math.round(diff / (1000 * 60 * 60));
+            return `${horas}h`;
+          }
+          
+          if (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 && devolucao.data_criacao_claim) {
+            const primeiraMensagem = devolucao.timeline_mensagens[0] as any;
+            const dataPrimeira = primeiraMensagem?.date || primeiraMensagem?.created_at || primeiraMensagem?.timestamp;
+            
+            if (dataPrimeira) {
+              const diff = new Date(dataPrimeira).getTime() - new Date(devolucao.data_criacao_claim).getTime();
+              const horas = Math.round(diff / (1000 * 60 * 60));
+              return `${horas}h`;
+            }
+          }
+          
+          return <span className="text-muted-foreground">-</span>;
+        })()}
       </td>
       
       {/* 1ª Resposta Vendedor */}
       <td className="px-3 py-3 text-center">
-        {devolucao.tempo_primeira_resposta_vendedor 
-          ? `${Math.round(devolucao.tempo_primeira_resposta_vendedor / 60)}h` 
-          : '-'}
+        {(() => {
+          if (devolucao.tempo_primeira_resposta_vendedor) {
+            const horas = Math.round(devolucao.tempo_primeira_resposta_vendedor / 60);
+            return `${horas}h`;
+          }
+          
+          if (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 && devolucao.data_criacao_claim) {
+            const primeiraMsgVendedor = devolucao.timeline_mensagens.find(
+              (msg: any) => msg.sender === 'seller' || msg.from === 'seller' || msg.role === 'seller'
+            );
+            
+            if (primeiraMsgVendedor) {
+              const dataMsg = (primeiraMsgVendedor as any).date || (primeiraMsgVendedor as any).created_at || (primeiraMsgVendedor as any).timestamp;
+              
+              if (dataMsg) {
+                const diff = new Date(dataMsg).getTime() - new Date(devolucao.data_criacao_claim).getTime();
+                const horas = Math.round(diff / (1000 * 60 * 60));
+                return `${horas}h`;
+              }
+            }
+          }
+          
+          return <span className="text-muted-foreground">-</span>;
+        })()}
       </td>
       
       {/* Tempo Total */}
@@ -636,7 +704,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Tempo Resp. Médio */}
       <td className="px-3 py-3 text-center text-sm">
         {devolucao.tempo_resposta_medio 
-          ? `${devolucao.tempo_resposta_medio} min` 
+          ? `${Math.round(devolucao.tempo_resposta_medio / 60)}h` 
           : '-'}
       </td>
       
