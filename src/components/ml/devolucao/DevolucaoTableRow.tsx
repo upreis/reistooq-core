@@ -34,6 +34,18 @@ const formatDateTime = (date: string | null | undefined): string => {
   }
 };
 
+// Função auxiliar para formatar percentual
+const formatPercentage = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '-';
+  return `${value}%`;
+};
+
+// Função auxiliar para Badge de Boolean
+const getBooleanBadge = (value: boolean | null | undefined) => {
+  if (value === null || value === undefined) return <span className="text-muted-foreground">-</span>;
+  return <Badge variant={value ? 'default' : 'destructive'}>{value ? 'Sim' : 'Não'}</Badge>;
+};
+
 // Função auxiliar para formatar data
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-';
@@ -82,22 +94,18 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
   devolucao,
   onViewDetails
 }) => {
-  // Extração de dados
-  const orderData = devolucao.dados_order || {};
-  const claimData = devolucao.dados_claim || {};
-  
   return (
     <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
-      {/* GRUPO 1: IDENTIFICAÇÃO */}
-      
-      {/* Claim ID */}
-      <td className="px-3 py-3 text-center font-mono text-purple-600 dark:text-purple-400">
-        {devolucao.claim_id || '-'}
-      </td>
+      {/* GRUPO 1: IDENTIFICAÇÃO (5 colunas) */}
       
       {/* Pedido ID */}
       <td className="px-3 py-3 text-center font-mono text-blue-600 dark:text-blue-400">
         {devolucao.order_id || '-'}
+      </td>
+      
+      {/* Claim ID */}
+      <td className="px-3 py-3 text-center font-mono text-purple-600 dark:text-purple-400">
+        {devolucao.claim_id || '-'}
       </td>
       
       {/* Item ID */}
@@ -110,11 +118,21 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.sku || '-'}
       </td>
       
-      {/* GRUPO 2: DATAS E TIMELINE */}
+      {/* Transação ID */}
+      <td className="px-3 py-3 text-center font-mono text-foreground">
+        {devolucao.transaction_id || '-'}
+      </td>
+      
+      {/* GRUPO 2: DATAS E TIMELINE (11 colunas) */}
       
       {/* Data Criação */}
       <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_criacao_claim || devolucao.data_criacao)}
+        {formatDateTime(devolucao.data_criacao)}
+      </td>
+      
+      {/* Data Criação Claim */}
+      <td className="px-3 py-3 text-center whitespace-nowrap">
+        {formatDateTime(devolucao.data_criacao_claim)}
       </td>
       
       {/* Data Fechamento */}
@@ -137,7 +155,32 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {formatDateTime(devolucao.tempo_limite_acao)}
       </td>
       
-      {/* GRUPO 3: STATUS E ESTADO */}
+      {/* Data Estimada Troca */}
+      <td className="px-3 py-3 text-center whitespace-nowrap">
+        {formatDateTime(devolucao.data_estimada_troca)}
+      </td>
+      
+      {/* Data Limite Troca */}
+      <td className="px-3 py-3 text-center whitespace-nowrap">
+        {formatDateTime(devolucao.data_limite_troca)}
+      </td>
+      
+      {/* Vencimento ACAS */}
+      <td className="px-3 py-3 text-center whitespace-nowrap">
+        {formatDateTime(devolucao.data_vencimento_acao)}
+      </td>
+      
+      {/* Processamento Reembolso */}
+      <td className="px-3 py-3 text-center whitespace-nowrap">
+        {formatDateTime(devolucao.data_processamento_reembolso)}
+      </td>
+      
+      {/* Última Sync */}
+      <td className="px-3 py-3 text-center whitespace-nowrap text-xs text-muted-foreground">
+        {formatDateTime(devolucao.ultima_sincronizacao)}
+      </td>
+      
+      {/* GRUPO 3: STATUS E ESTADO (7 colunas) */}
       
       {/* Status */}
       <td className="px-3 py-3 text-center">
@@ -154,16 +197,43 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.resultado_final ? <Badge variant="secondary">{devolucao.resultado_final}</Badge> : <span className="text-muted-foreground">-</span>}
       </td>
       
-      {/* Status Reembolso */}
+      {/* Status Rastreio */}
       <td className="px-3 py-3 text-center">
-        {devolucao.metodo_reembolso ? <Badge variant="default">{devolucao.metodo_reembolso}</Badge> : <span className="text-muted-foreground">-</span>}
+        {devolucao.status_rastreamento_pedido ? (
+          <Badge variant="outline">{devolucao.status_rastreamento_pedido}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
       </td>
       
-      {/* GRUPO 4: COMPRADOR */}
+      {/* Status Review */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.review_status ? (
+          <Badge variant="outline">{devolucao.review_status}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Status Moderação */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.status_moderacao ? (
+          <Badge variant="outline">{devolucao.status_moderacao}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* SLA Cumprido */}
+      <td className="px-3 py-3 text-center">
+        {getBooleanBadge(devolucao.sla_cumprido)}
+      </td>
+      
+      {/* GRUPO 4: COMPRADOR (4 colunas) */}
       
       {/* Comprador */}
       <td className="px-3 py-3 text-left">
-        {devolucao.comprador_nome_completo || devolucao.comprador_nickname || '-'}
+        {devolucao.comprador_nome_completo || '-'}
       </td>
       
       {/* Nickname */}
@@ -176,11 +246,16 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {(devolucao.dados_order as any)?.buyer?.email || '-'}
       </td>
       
-      {/* GRUPO 5: PRODUTO */}
+      {/* Cooperador */}
+      <td className="px-3 py-3 text-left">
+        {devolucao.comprador_nome_completo || '-'}
+      </td>
+      
+      {/* GRUPO 5: PRODUTO (4 colunas) */}
       
       {/* Produto */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[250px] truncate" title={devolucao.produto_titulo || ''}>
+        <div className="max-w-[300px] truncate" title={devolucao.produto_titulo || ''}>
           {devolucao.produto_titulo || '-'}
         </div>
       </td>
@@ -195,24 +270,59 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.produto_categoria || '-'}
       </td>
       
-      {/* GRUPO 6: VALORES FINANCEIROS */}
+      {/* Garantia */}
+      <td className="px-3 py-3 text-center">
+        <span className="text-muted-foreground">-</span>
+      </td>
       
-      {/* Valor Total */}
+      {/* GRUPO 6: VALORES FINANCEIROS (10 colunas) */}
+      
+      {/* Valor Original */}
       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-        {formatCurrency((devolucao.dados_order as any)?.total_amount || devolucao.valor_retido)}
+        {formatCurrency(devolucao.valor_original_produto)}
       </td>
       
-      {/* Valor Retido */}
-      <td className="px-3 py-3 text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
-        {formatCurrency(devolucao.valor_retido)}
-      </td>
-      
-      {/* Reembolso */}
+      {/* Reembolso Total */}
       <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
         {formatCurrency(devolucao.valor_reembolso_total)}
       </td>
       
-      {/* Pagamento */}
+      {/* Reembolso Produto */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.valor_reembolso_produto)}
+      </td>
+      
+      {/* Taxa ML */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.taxa_ml_reembolso)}
+      </td>
+      
+      {/* Compensação */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.valor_compensacao)}
+      </td>
+      
+      {/* Custo Frete */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.custo_frete_devolucao)}
+      </td>
+      
+      {/* Custo Logístico */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.custo_logistico_total)}
+      </td>
+      
+      {/* Impacto Vendedor */}
+      <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+        {formatCurrency(devolucao.impacto_financeiro_vendedor)}
+      </td>
+      
+      {/* % Reembolsado */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatPercentage(devolucao.percentual_reembolsado)}
+      </td>
+      
+      {/* Método Pagto */}
       <td className="px-3 py-3 text-center">
         {devolucao.metodo_pagamento ? (
           <Badge variant="outline">{devolucao.metodo_pagamento}</Badge>
@@ -221,11 +331,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* GRUPO 7: MOTIVO E CATEGORIA */}
+      {/* GRUPO 7: MOTIVO E CATEGORIA (5 colunas) */}
       
       {/* Reason ID */}
       <td className="px-3 py-3 text-center font-mono text-xs">
-        {devolucao.reason_id || claimData?.reason_id || '-'}
+        {devolucao.reason_id || '-'}
       </td>
       
       {/* Categoria Motivo */}
@@ -249,12 +359,16 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.subcategoria_problema || '-'}
       </td>
       
-      {/* Complexidade */}
+      {/* Tipo Claim */}
       <td className="px-3 py-3 text-center">
-        {getComplexityBadge(devolucao.nivel_complexidade)}
+        {devolucao.tipo_claim ? (
+          <Badge variant="outline">{devolucao.tipo_claim}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
       </td>
       
-      {/* GRUPO 8: MEDIAÇÃO */}
+      {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (6 colunas) */}
       
       {/* Resultado Mediação */}
       <td className="px-3 py-3 text-left">
@@ -262,72 +376,134 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       </td>
       
       {/* Mediador */}
-      <td className="px-3 py-3 text-left">
+      <td className="px-3 py-3 text-center">
         {devolucao.mediador_ml || '-'}
       </td>
       
+      {/* Método Resolução */}
+      <td className="px-3 py-3 text-left">
+        {devolucao.metodo_resolucao || '-'}
+      </td>
+      
+      {/* Resultado Final */}
+      <td className="px-3 py-3 text-left">
+        {devolucao.resultado_final || '-'}
+      </td>
+      
+      {/* Review Result */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.review_result ? (
+          <Badge variant="outline">{devolucao.review_result}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Resolvida ACAS */}
+      <td className="px-3 py-3 text-center">
+        <span className="text-muted-foreground">-</span>
+      </td>
+      
+      {/* GRUPO 9: FEEDBACK E COMUNICAÇÃO (5 colunas) */}
+      
       {/* Feedback Comprador */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[180px] truncate" title={devolucao.feedback_comprador_final || ''}>
+        <div className="max-w-[220px] truncate" title={devolucao.feedback_comprador_final || ''}>
           {devolucao.feedback_comprador_final || '-'}
         </div>
       </td>
       
       {/* Feedback Vendedor */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[180px] truncate" title={devolucao.feedback_vendedor || ''}>
+        <div className="max-w-[220px] truncate" title={devolucao.feedback_vendedor || ''}>
           {devolucao.feedback_vendedor || '-'}
         </div>
       </td>
       
-      {/* GRUPO 9: TEMPOS E MÉTRICAS */}
+      {/* Msgs Não Lidas */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.mensagens_nao_lidas || 0}
+      </td>
+      
+      {/* Qtd Comunicações */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.numero_interacoes || 0}
+      </td>
+      
+      {/* Timeline */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[200px] truncate">
+          {devolucao.timeline_mensagens ? `${(devolucao.timeline_mensagens as any[])?.length || 0} eventos` : '-'}
+        </div>
+      </td>
+      
+      {/* GRUPO 10: TEMPOS E MÉTRICAS (6 colunas) */}
       
       {/* Tempo Resposta */}
       <td className="px-3 py-3 text-center">
         {devolucao.tempo_resposta_comprador ? `${devolucao.tempo_resposta_comprador}h` : '-'}
       </td>
       
-      {/* Tempo Análise */}
+      {/* 1ª Resposta Vendedor */}
       <td className="px-3 py-3 text-center">
-        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml}h` : '-'}
+        {devolucao.tempo_primeira_resposta_vendedor ? `${devolucao.tempo_primeira_resposta_vendedor}h` : '-'}
       </td>
       
-      {/* GRUPO 10: RASTREAMENTO */}
-      
-      {/* Shipment ID */}
-      <td className="px-3 py-3 text-center font-mono text-xs">
-        {devolucao.shipment_id || '-'}
+      {/* Tempo Total */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.tempo_total_resolucao ? `${devolucao.tempo_total_resolucao}h` : '-'}
       </td>
       
-      {/* Rastreio */}
-      <td className="px-3 py-3 text-center font-mono text-xs">
-        {devolucao.codigo_rastreamento || '-'}
+      {/* Dias p/ Resolver */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.dias_ate_resolucao || '-'}
       </td>
+      
+      {/* Prazo Revisar */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.prazo_revisao_dias || '-'}
+      </td>
+      
+      {/* Eficiência */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.eficiencia_resolucao ? (
+          <Badge variant="outline">{devolucao.eficiencia_resolucao}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (4 colunas) */}
       
       {/* Transportadora */}
       <td className="px-3 py-3 text-left">
         {devolucao.transportadora || '-'}
       </td>
       
-      {/* Status Envio */}
+      {/* Centro Envio */}
+      <td className="px-3 py-3 text-left">
+        <span className="text-muted-foreground">-</span>
+      </td>
+      
+      {/* Plataforma */}
       <td className="px-3 py-3 text-center">
-        {devolucao.status_rastreamento_pedido ? (
-          <Badge variant="outline">{devolucao.status_rastreamento_pedido}</Badge>
+        {devolucao.marketplace_origem ? (
+          <Badge variant="outline">{devolucao.marketplace_origem}</Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
         )}
       </td>
       
-      {/* GRUPO 11: SISTEMA */}
-      
-      {/* Última Sync */}
-      <td className="px-3 py-3 text-center whitespace-nowrap text-xs text-muted-foreground">
-        {formatDateTime(devolucao.ultima_sincronizacao)}
+      {/* NF Autorizada */}
+      <td className="px-3 py-3 text-center">
+        {getBooleanBadge(devolucao.nota_fiscal_autorizada)}
       </td>
       
-      {/* Criado em */}
-      <td className="px-3 py-3 text-center whitespace-nowrap text-xs text-muted-foreground">
-        {formatDateTime(devolucao.created_at)}
+      {/* GRUPO 12: QUALIDADE E SCORES (1 coluna) */}
+      
+      {/* Score Qualidade */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.score_qualidade || '-'}
       </td>
       
       {/* AÇÕES */}
