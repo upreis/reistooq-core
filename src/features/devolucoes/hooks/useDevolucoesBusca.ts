@@ -296,9 +296,6 @@ export function useDevolucoesBusca() {
             status: filtros.statusClaim || 'todos'
           });
 
-          // ⏱️ Log detalhado da requisição
-          logger.info(`📡 Chamando ml-api-direct para ${account.name}...`);
-          
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
               action: 'get_claims_and_returns',
@@ -319,25 +316,10 @@ export function useDevolucoesBusca() {
               }
             }
           });
-          
-          logger.info(`📡 Resposta recebida:`, { 
-            hasData: !!apiResponse, 
-            hasError: !!apiError,
-            errorDetails: apiError 
-          });
 
           if (apiError) {
-            logger.error(`[REISTOQ ERROR] Erro API para ${account.name}`, apiError);
-            
-            // Verificar se é erro de timeout/network
-            if (apiError.message?.includes('Failed to fetch') || apiError.message?.includes('fetch')) {
-              toast.error(
-                `⏱️ Timeout ao buscar devoluções de ${account.name}. Tente usar filtros de data mais específicos para reduzir o volume de dados.`,
-                { duration: 6000 }
-              );
-            } else {
-              toast.warning(`Falha na API ML para ${account.name}: ${apiError.message}`);
-            }
+            logger.error(`Erro API para ${account.name}`, apiError);
+            toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
             // Continue com próxima conta em vez de falhar
             continue;
           }
