@@ -60,24 +60,30 @@ export const MensagensModal: React.FC<MensagensModalProps> = ({
                 const remetente = msg.sender || msg.from || msg.role || msg.remetente;
                 const data = msg.date || msg.created_at || msg.timestamp;
                 
-                // Traduzir remetente
+                // Debug: mostrar estrutura da mensagem
+                console.log('Mensagem completa:', msg);
+                console.log('Remetente encontrado:', remetente);
+                
+                // Traduzir remetente (case-insensitive e com trim)
                 let remetentePt = 'Desconhecido';
                 let badgeVariant: 'default' | 'secondary' | 'outline' = 'outline';
                 let emoji = '⚪';
                 
-                if (remetente === 'buyer' || remetente === 'complainant') {
+                const remetenteLower = typeof remetente === 'string' ? remetente.toLowerCase().trim() : '';
+                
+                if (remetenteLower === 'buyer' || remetenteLower === 'complainant') {
                   remetentePt = 'Comprador';
                   badgeVariant = 'default';
                   emoji = '🔵';
-                } else if (remetente === 'seller' || remetente === 'respondent') {
+                } else if (remetenteLower === 'seller' || remetenteLower === 'respondent') {
                   remetentePt = 'Vendedor';
                   badgeVariant = 'secondary';
                   emoji = '🟢';
-                } else if (remetente === 'mediator' || remetente === 'ml' || remetente === 'system') {
+                } else if (remetenteLower === 'mediator' || remetenteLower === 'ml' || remetenteLower === 'system') {
                   remetentePt = 'Mediador ML';
                   badgeVariant = 'outline';
                   emoji = '🟡';
-                } else if (typeof remetente === 'string') {
+                } else if (typeof remetente === 'string' && remetente) {
                   remetentePt = remetente;
                 }
                 
