@@ -169,7 +169,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Player Role */}
       <td className="px-3 py-3 text-center">
-        {getPlayerRoleBadge((devolucao.dados_claim as any)?.player_role)}
+        {getPlayerRoleBadge((devolucao.dados_claim as any)?.player_role || null)}
       </td>
       
       {/* Item ID */}
@@ -468,7 +468,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Cód. Classificação */}
       <td className="px-3 py-3 text-center font-mono text-xs">
-        {(devolucao as any).codigo_classificacao || '-'}
+        <span className="text-muted-foreground">
+          {(devolucao as any).codigo_classificacao || '-'}
+        </span>
       </td>
       
       {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (6 colunas) */}
@@ -561,56 +563,79 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Msgs Não Lidas */}
       <td className="px-3 py-3 text-center">
-        {devolucao.mensagens_nao_lidas || 0}
+        {devolucao.mensagens_nao_lidas > 0 ? (
+          <Badge variant="destructive" className="font-semibold">
+            {devolucao.mensagens_nao_lidas}
+          </Badge>
+        ) : (
+          <span className="text-muted-foreground">0</span>
+        )}
       </td>
       
       {/* Qtd Comunicações */}
       <td className="px-3 py-3 text-center">
-        {devolucao.numero_interacoes || 0}
+        {devolucao.numero_interacoes || 
+         (Array.isArray(devolucao.timeline_mensagens) ? devolucao.timeline_mensagens.length : 0)}
       </td>
       
       {/* Timeline */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[200px] truncate">
-          {devolucao.timeline_mensagens ? `${(devolucao.timeline_mensagens as any[])?.length || 0} eventos` : '-'}
-        </div>
+        {Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 
+          ? `${devolucao.timeline_mensagens.length} eventos` 
+          : <span className="text-muted-foreground">Sem mensagens</span>}
       </td>
       
       {/* Última Msg Data */}
       <td className="px-3 py-3 text-center text-xs">
-        {formatDateTime(devolucao.ultima_mensagem_data)}
+        {formatDateTime(devolucao.ultima_mensagem_data || 
+          (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 
+            ? (devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any)?.date 
+            : null))}
       </td>
       
       {/* Última Msg Remetente */}
       <td className="px-3 py-3 text-left text-sm">
-        {devolucao.ultima_mensagem_remetente || '-'}
+        {devolucao.ultima_mensagem_remetente || 
+          (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 
+            ? (devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any)?.sender 
+            : '-')}
       </td>
       
       {/* GRUPO 10: TEMPOS E MÉTRICAS (6 colunas) */}
       
       {/* Tempo Resposta */}
       <td className="px-3 py-3 text-center">
-        {devolucao.tempo_resposta_comprador ? `${devolucao.tempo_resposta_comprador}h` : '-'}
+        {devolucao.tempo_resposta_comprador 
+          ? `${Math.round(devolucao.tempo_resposta_comprador / 60)}h` 
+          : '-'}
       </td>
       
       {/* 1ª Resposta Vendedor */}
       <td className="px-3 py-3 text-center">
-        {devolucao.tempo_primeira_resposta_vendedor ? `${devolucao.tempo_primeira_resposta_vendedor}h` : '-'}
+        {devolucao.tempo_primeira_resposta_vendedor 
+          ? `${Math.round(devolucao.tempo_primeira_resposta_vendedor / 60)}h` 
+          : '-'}
       </td>
       
       {/* Tempo Total */}
       <td className="px-3 py-3 text-center">
-        {devolucao.tempo_total_resolucao ? `${devolucao.tempo_total_resolucao}h` : '-'}
+        {devolucao.tempo_total_resolucao 
+          ? `${Math.round(devolucao.tempo_total_resolucao / 60)}h` 
+          : '-'}
       </td>
       
       {/* Tempo Análise ML */}
       <td className="px-3 py-3 text-center text-sm">
-        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml}h` : '-'}
+        {devolucao.tempo_analise_ml 
+          ? `${Math.round(devolucao.tempo_analise_ml / 60)}h` 
+          : '-'}
       </td>
       
-      {/* Tempo Resp. Inicial */}
+      {/* Tempo Resp. Comprador (renomeado de "Inicial") */}
       <td className="px-3 py-3 text-center text-sm">
-        {(devolucao as any).tempo_resposta_inicial ? `${(devolucao as any).tempo_resposta_inicial}h` : '-'}
+        {devolucao.tempo_resposta_comprador 
+          ? `${Math.round(devolucao.tempo_resposta_comprador / 60)}h` 
+          : '-'}
       </td>
       
       {/* Dias p/ Resolver */}
@@ -651,12 +676,14 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Status Envio */}
       <td className="px-3 py-3 text-center">
-        {getShippingStatusBadge((devolucao as any).status_envio_devolucao || devolucao.status_rastreamento_pedido)}
+        {getShippingStatusBadge((devolucao as any).status_envio_devolucao || devolucao.status_rastreamento_pedido || null)}
       </td>
       
       {/* Centro Envio */}
       <td className="px-3 py-3 text-left">
-        <span className="text-muted-foreground">-</span>
+        <span className="text-muted-foreground">
+          {(devolucao as any).centro_envio || '-'}
+        </span>
       </td>
       
       {/* Plataforma */}
@@ -734,7 +761,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Envio Mediação */}
       <td className="px-3 py-3 text-left text-sm">
-        {(devolucao as any).envio_mediacao || '-'}
+        <span className="text-muted-foreground">
+          {(devolucao as any).envio_mediacao || '-'}
+        </span>
       </td>
       
       {/* AÇÕES */}
