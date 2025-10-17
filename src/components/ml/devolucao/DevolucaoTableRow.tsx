@@ -82,11 +82,70 @@ const getComplexityBadge = (level: string | null | undefined) => {
   
   const levelMap: Record<string, { variant: "default" | "destructive" | "outline" | "secondary", label: string }> = {
     'high': { variant: 'destructive', label: 'Alta' },
+    'Alto': { variant: 'destructive', label: 'Alto' },
     'medium': { variant: 'outline', label: 'Média' },
-    'low': { variant: 'secondary', label: 'Baixa' }
+    'Médio': { variant: 'default', label: 'Médio' },
+    'low': { variant: 'secondary', label: 'Baixa' },
+    'Baixo': { variant: 'secondary', label: 'Baixo' }
   };
   
   const config = levelMap[level] || { variant: 'outline' as const, label: level };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+
+// Função auxiliar para Badge de Player Role
+const getPlayerRoleBadge = (role: string | null | undefined) => {
+  if (!role) return <span className="text-muted-foreground">-</span>;
+  const roleMap: Record<string, { variant: "default" | "secondary" | "outline", label: string }> = {
+    'respondent': { variant: 'default', label: 'Respondente' },
+    'claimant': { variant: 'secondary', label: 'Reclamante' }
+  };
+  const config = roleMap[role] || { variant: 'outline' as const, label: role };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+
+// Função auxiliar para Badge de Shipping Status
+const getShippingStatusBadge = (status: string | null | undefined) => {
+  if (!status) return <span className="text-muted-foreground">-</span>;
+  const statusMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    'delivered': { variant: 'default', label: 'Entregue' },
+    'in_transit': { variant: 'secondary', label: 'Em Trânsito' },
+    'pending': { variant: 'outline', label: 'Pendente' },
+    'failed': { variant: 'destructive', label: 'Falhou' },
+    'cancelled': { variant: 'destructive', label: 'Cancelado' }
+  };
+  const config = statusMap[status] || { variant: 'outline' as const, label: status };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+
+// Função auxiliar para Badge de Prioridade
+const getPrioridadeBadge = (nivel: string | null | undefined) => {
+  if (!nivel) return <span className="text-muted-foreground">-</span>;
+  const nivelMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    'Alta': { variant: 'destructive', label: 'Alta' },
+    'high': { variant: 'destructive', label: 'Alta' },
+    'Média': { variant: 'default', label: 'Média' },
+    'medium': { variant: 'default', label: 'Média' },
+    'Baixa': { variant: 'secondary', label: 'Baixa' },
+    'low': { variant: 'secondary', label: 'Baixa' }
+  };
+  const config = nivelMap[nivel] || { variant: 'outline' as const, label: nivel };
+  return <Badge variant={config.variant}>{config.label}</Badge>;
+};
+
+// Função auxiliar para Badge de Impacto
+const getImpactoBadge = (impacto: string | null | undefined) => {
+  if (!impacto) return <span className="text-muted-foreground">-</span>;
+  const impactoMap: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", label: string }> = {
+    'Alto': { variant: 'destructive', label: 'Alto' },
+    'high': { variant: 'destructive', label: 'Alto' },
+    'Médio': { variant: 'default', label: 'Médio' },
+    'medium': { variant: 'default', label: 'Médio' },
+    'Baixo': { variant: 'secondary', label: 'Baixo' },
+    'low': { variant: 'secondary', label: 'Baixo' },
+    'Nenhum': { variant: 'outline', label: 'Nenhum' }
+  };
+  const config = impactoMap[impacto] || { variant: 'outline' as const, label: impacto };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 };
 
@@ -106,6 +165,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Claim ID */}
       <td className="px-3 py-3 text-center font-mono text-purple-600 dark:text-purple-400">
         {devolucao.claim_id || '-'}
+      </td>
+      
+      {/* Player Role */}
+      <td className="px-3 py-3 text-center">
+        {getPlayerRoleBadge((devolucao.dados_claim as any)?.player_role)}
       </td>
       
       {/* Item ID */}
@@ -292,6 +356,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {formatCurrency(devolucao.valor_reembolso_produto)}
       </td>
       
+      {/* Valor Retido */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.valor_retido)}
+      </td>
+      
       {/* Taxa ML */}
       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
         {formatCurrency(devolucao.taxa_ml_reembolso)}
@@ -326,6 +395,25 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3 text-center">
         {devolucao.metodo_pagamento ? (
           <Badge variant="outline">{devolucao.metodo_pagamento}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Parcelas */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.parcelas || '-'}
+      </td>
+      
+      {/* Valor Parcela */}
+      <td className="px-3 py-3 text-right text-sm whitespace-nowrap">
+        {formatCurrency(devolucao.valor_parcela)}
+      </td>
+      
+      {/* Tipo Pagamento */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.tipo_pagamento ? (
+          <Badge variant="outline">{devolucao.tipo_pagamento}</Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
         )}
@@ -368,6 +456,21 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
+      {/* Complexidade */}
+      <td className="px-3 py-3 text-center">
+        {getComplexityBadge(devolucao.nivel_complexidade)}
+      </td>
+      
+      {/* Nível Prioridade */}
+      <td className="px-3 py-3 text-center">
+        {getPrioridadeBadge(devolucao.nivel_prioridade)}
+      </td>
+      
+      {/* Cód. Classificação */}
+      <td className="px-3 py-3 text-center font-mono text-xs">
+        {(devolucao as any).codigo_classificacao || '-'}
+      </td>
+      
       {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (6 colunas) */}
       
       {/* Resultado Mediação */}
@@ -404,6 +507,42 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         <span className="text-muted-foreground">-</span>
       </td>
       
+      {/* É Troca? */}
+      <td className="px-3 py-3 text-center">
+        {getBooleanBadge(devolucao.eh_troca)}
+      </td>
+      
+      {/* Escalado VIP */}
+      <td className="px-3 py-3 text-center">
+        {getBooleanBadge(devolucao.escalado_para_ml)}
+      </td>
+      
+      {/* Ação Seller */}
+      <td className="px-3 py-3 text-center">
+        {getBooleanBadge(devolucao.acao_seller_necessaria)}
+      </td>
+      
+      {/* Total Evidências */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.total_evidencias || 0}
+      </td>
+      
+      {/* Recursos Manuais */}
+      <td className="px-3 py-3 text-left text-sm">
+        {(devolucao as any).recursos_acao_manual || '-'}
+      </td>
+      
+      {/* Problemas */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[180px] truncate text-xs" title={JSON.stringify(devolucao.problemas_encontrados) || ''}>
+          {devolucao.problemas_encontrados ? 
+            (Array.isArray(devolucao.problemas_encontrados) ? 
+              `${devolucao.problemas_encontrados.length} problemas` : 
+              JSON.stringify(devolucao.problemas_encontrados).substring(0, 30)
+            ) : '-'}
+        </div>
+      </td>
+      
       {/* GRUPO 9: FEEDBACK E COMUNICAÇÃO (5 colunas) */}
       
       {/* Feedback Comprador */}
@@ -437,6 +576,16 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </div>
       </td>
       
+      {/* Última Msg Data */}
+      <td className="px-3 py-3 text-center text-xs">
+        {formatDateTime(devolucao.ultima_mensagem_data)}
+      </td>
+      
+      {/* Última Msg Remetente */}
+      <td className="px-3 py-3 text-left text-sm">
+        {devolucao.ultima_mensagem_remetente || '-'}
+      </td>
+      
       {/* GRUPO 10: TEMPOS E MÉTRICAS (6 colunas) */}
       
       {/* Tempo Resposta */}
@@ -452,6 +601,16 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Tempo Total */}
       <td className="px-3 py-3 text-center">
         {devolucao.tempo_total_resolucao ? `${devolucao.tempo_total_resolucao}h` : '-'}
+      </td>
+      
+      {/* Tempo Análise ML */}
+      <td className="px-3 py-3 text-center text-sm">
+        {devolucao.tempo_analise_ml ? `${devolucao.tempo_analise_ml}h` : '-'}
+      </td>
+      
+      {/* Tempo Resp. Inicial */}
+      <td className="px-3 py-3 text-center text-sm">
+        {(devolucao as any).tempo_resposta_inicial ? `${(devolucao as any).tempo_resposta_inicial}h` : '-'}
       </td>
       
       {/* Dias p/ Resolver */}
@@ -480,6 +639,21 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.transportadora || '-'}
       </td>
       
+      {/* Shipment ID */}
+      <td className="px-3 py-3 text-center font-mono text-xs">
+        {devolucao.shipment_id || '-'}
+      </td>
+      
+      {/* Rastreio */}
+      <td className="px-3 py-3 text-center font-mono text-xs">
+        {devolucao.codigo_rastreamento || '-'}
+      </td>
+      
+      {/* Status Envio */}
+      <td className="px-3 py-3 text-center">
+        {getShippingStatusBadge((devolucao as any).status_envio_devolucao || devolucao.status_rastreamento_pedido)}
+      </td>
+      
       {/* Centro Envio */}
       <td className="px-3 py-3 text-left">
         <span className="text-muted-foreground">-</span>
@@ -504,6 +678,63 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Score Qualidade */}
       <td className="px-3 py-3 text-center">
         {devolucao.score_qualidade || '-'}
+      </td>
+      
+      {/* Taxa Satisfação */}
+      <td className="px-3 py-3 text-center text-sm">
+        {formatPercentage(devolucao.taxa_satisfacao)}
+      </td>
+      
+      {/* Score Final */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.score_satisfacao_final ? (
+          <Badge variant="default">{devolucao.score_satisfacao_final}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Impacto Reputação */}
+      <td className="px-3 py-3 text-center">
+        {getImpactoBadge(devolucao.impacto_reputacao)}
+      </td>
+      
+      {/* Calificação CARL */}
+      <td className="px-3 py-3 text-center">
+        {(devolucao as any).calificacao_carl ? (
+          <Badge variant="secondary">{(devolucao as any).calificacao_carl}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Review ID */}
+      <td className="px-3 py-3 text-center font-mono text-xs">
+        {devolucao.review_id || '-'}
+      </td>
+      
+      {/* Revisor */}
+      <td className="px-3 py-3 text-left text-sm">
+        {devolucao.revisor_responsavel || '-'}
+      </td>
+      
+      {/* Dados Claim */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[200px] truncate text-xs" title={JSON.stringify(devolucao.dados_claim) || ''}>
+          {devolucao.dados_claim ? `Claim ${devolucao.claim_id}` : '-'}
+        </div>
+      </td>
+      
+      {/* Dados Return */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[200px] truncate text-xs" title={JSON.stringify(devolucao.dados_return) || ''}>
+          {devolucao.dados_return ? 'Return Data' : '-'}
+        </div>
+      </td>
+      
+      {/* Envio Mediação */}
+      <td className="px-3 py-3 text-left text-sm">
+        {(devolucao as any).envio_mediacao || '-'}
       </td>
       
       {/* AÇÕES */}
