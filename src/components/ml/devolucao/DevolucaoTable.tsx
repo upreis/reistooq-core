@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DevolucaoTableRow } from './DevolucaoTableRow';
+import { MensagensModal } from './MensagensModal';
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
 
 interface DevolucaoTableProps {
@@ -11,7 +12,16 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
   devolucoes,
   onViewDetails
 }) => {
+  const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
+  const [selectedDevolucao, setSelectedDevolucao] = useState<DevolucaoAvancada | null>(null);
+  
+  const handleOpenMensagens = (devolucao: DevolucaoAvancada) => {
+    setSelectedDevolucao(devolucao);
+    setMensagensModalOpen(true);
+  };
+  
   return (
+    <>
     <div className="overflow-x-auto border rounded-lg">
       <table className="w-full border-collapse text-sm">
         <thead>
@@ -151,10 +161,22 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
               key={devolucao.id}
               devolucao={devolucao}
               onViewDetails={onViewDetails}
+              onOpenMensagens={handleOpenMensagens}
             />
           ))}
         </tbody>
       </table>
     </div>
+    
+    {/* Modal de Mensagens */}
+    {selectedDevolucao && (
+      <MensagensModal
+        open={mensagensModalOpen}
+        onOpenChange={setMensagensModalOpen}
+        mensagens={selectedDevolucao.timeline_mensagens || []}
+        orderId={String(selectedDevolucao.order_id)}
+      />
+    )}
+  </>
   );
 });

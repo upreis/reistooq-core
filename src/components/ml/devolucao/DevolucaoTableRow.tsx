@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
-import { MensagensModal } from './MensagensModal';
 
 interface DevolucaoTableRowProps {
   devolucao: DevolucaoAvancada;
   onViewDetails: (devolucao: DevolucaoAvancada) => void;
+  onOpenMensagens?: (devolucao: DevolucaoAvancada) => void;
 }
 
 // Função auxiliar para formatar moeda
@@ -168,13 +168,11 @@ const getImpactoBadge = (impacto: string | null | undefined) => {
 
 export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
   devolucao,
-  onViewDetails
+  onViewDetails,
+  onOpenMensagens
 }) => {
-  const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
-  
   return (
-    <>
-      <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
+    <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
       {/* GRUPO 1: IDENTIFICAÇÃO (5 colunas) */}
       
       {/* Pedido ID */}
@@ -676,7 +674,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           return (
             <div 
               className="space-y-1 cursor-pointer hover:bg-accent/10 p-2 rounded-md transition-colors"
-              onClick={() => setMensagensModalOpen(true)}
+              onClick={() => onOpenMensagens?.(devolucao)}
               title="Clique para ver todas as mensagens"
             >
               {devolucao.timeline_mensagens.slice(-3).map((msg: any, idx: number) => {
@@ -939,14 +937,5 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </Button>
       </td>
     </tr>
-    
-    {/* Modal de Mensagens */}
-    <MensagensModal
-      open={mensagensModalOpen}
-      onOpenChange={setMensagensModalOpen}
-      mensagens={devolucao.timeline_mensagens || []}
-      orderId={String(devolucao.order_id)}
-    />
-  </>
   );
 });
