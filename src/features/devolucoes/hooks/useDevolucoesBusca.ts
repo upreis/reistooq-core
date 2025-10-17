@@ -345,15 +345,7 @@ export function useDevolucoesBusca() {
           if (apiResponse?.success && apiResponse?.data) {
             const devolucoesDaAPI = apiResponse.data;
             
-            logger.info(`✅ Recebidas ${devolucoesDaAPI.length} devoluções de ${account.name}`);
-            
-            // 📢 AVISO: Modo rápido ativado
-            if (devolucoesDaAPI.length > 0) {
-              toast.success(
-                `✅ ${devolucoesDaAPI.length} devoluções carregadas de ${account.name}. Dados básicos disponíveis.`,
-                { duration: 4000 }
-              );
-            }
+            logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             
             // 🔍 FASE 0: IDENTIFICAR REASONS ÚNICOS
             const reasonIdsSet = new Set<string>();
