@@ -616,10 +616,13 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           const remetente = ultimaMensagem?.sender || ultimaMensagem?.from || ultimaMensagem?.remetente || ultimaMensagem?.role;
           
           if (remetente) {
-            const remetentePt = remetente === 'buyer' ? 'Comprador' 
-                              : remetente === 'seller' ? 'Vendedor'
-                              : remetente === 'mediator' ? 'Mediador'
-                              : remetente;
+            // Traduzir role/sender
+            const remetentePt = typeof remetente === 'string' 
+              ? (remetente === 'buyer' ? 'Comprador' 
+                : remetente === 'seller' ? 'Vendedor'
+                : remetente === 'mediator' ? 'Mediador'
+                : remetente)
+              : String(remetente);
             
             return <span className="font-medium">{remetentePt}</span>;
           }
