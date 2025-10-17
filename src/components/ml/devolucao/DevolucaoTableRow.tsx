@@ -664,49 +664,24 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })()}
       </td>
       
-      {/* Mensagens - Clicável para abrir modal */}
-      <td className="px-3 py-3 text-left max-w-[500px]">
+      {/* Mensagens - Botão clicável para abrir modal */}
+      <td className="px-3 py-3 text-center">
         {(() => {
           if (!Array.isArray(devolucao.timeline_mensagens) || devolucao.timeline_mensagens.length === 0) {
-            return <span className="text-muted-foreground">Sem mensagens</span>;
+            return <span className="text-muted-foreground text-sm">Sem mensagens</span>;
           }
           
           return (
-            <div 
-              className="space-y-1 cursor-pointer hover:bg-accent/10 p-2 rounded-md transition-colors"
+            <button
               onClick={() => onOpenMensagens?.(devolucao)}
+              className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 hover:underline transition-colors mx-auto"
               title="Clique para ver todas as mensagens"
             >
-              {devolucao.timeline_mensagens.slice(-3).map((msg: any, idx: number) => {
-                const texto = msg.message || msg.text || msg.content || msg.mensagem || msg.body || msg.conteudo;
-                const remetente = msg.sender || msg.from || msg.role || msg.remetente;
-                const data = msg.date || msg.created_at || msg.timestamp;
-                
-                if (!texto || typeof texto !== 'string') return null;
-                
-                const remetentePt = remetente === 'buyer' ? '🔵 Comprador' 
-                                  : remetente === 'seller' ? '🟢 Vendedor'
-                                  : remetente === 'mediator' ? '🟡 Mediador'
-                                  : '⚪ ' + remetente;
-                
-                return (
-                  <div key={idx} className="text-xs border-l-2 border-border pl-2 py-1">
-                    <div className="font-semibold text-muted-foreground">{remetentePt}</div>
-                    <div className="truncate max-w-[450px]" title={texto}>{texto}</div>
-                    {data && <div className="text-muted-foreground text-[10px]">{formatDateTime(data)}</div>}
-                  </div>
-                );
-              })}
-              <div className="flex items-center gap-2 text-xs text-primary hover:underline">
-                <MessageSquare className="w-3 h-3" />
-                <span>
-                  {devolucao.timeline_mensagens.length > 3 
-                    ? `Ver todas (${devolucao.timeline_mensagens.length} mensagens)` 
-                    : `Ver ${devolucao.timeline_mensagens.length} ${devolucao.timeline_mensagens.length === 1 ? 'mensagem' : 'mensagens'}`
-                  }
-                </span>
-              </div>
-            </div>
+              <MessageSquare className="w-4 h-4" />
+              <span>
+                Ver todas ({devolucao.timeline_mensagens.length} {devolucao.timeline_mensagens.length === 1 ? 'mensagem' : 'mensagens'})
+              </span>
+            </button>
           );
         })()}
       </td>
