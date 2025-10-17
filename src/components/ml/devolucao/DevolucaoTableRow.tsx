@@ -46,6 +46,22 @@ const getBooleanBadge = (value: boolean | null | undefined) => {
   return <Badge variant={value ? 'default' : 'destructive'}>{value ? 'Sim' : 'Não'}</Badge>;
 };
 
+// Função auxiliar para formatar tempo em horas, minutos e segundos
+const formatTempo = (totalMinutos: number | null | undefined): string => {
+  if (!totalMinutos || totalMinutos === 0) return '0h';
+  
+  const horas = Math.floor(totalMinutos / 60);
+  const minutos = Math.floor(totalMinutos % 60);
+  const segundos = Math.floor((totalMinutos % 1) * 60);
+  
+  const partes = [];
+  if (horas > 0) partes.push(`${horas}h`);
+  if (minutos > 0) partes.push(`${minutos}min`);
+  if (segundos > 0 && horas === 0) partes.push(`${segundos}s`); // Só mostrar segundos se < 1h
+  
+  return partes.length > 0 ? partes.join(' ') : '0h';
+};
+
 // Função auxiliar para formatar data
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-';
@@ -613,16 +629,31 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           }
           
           const ultimaMensagem = devolucao.timeline_mensagens[devolucao.timeline_mensagens.length - 1] as any;
-          const remetente = ultimaMensagem?.sender || ultimaMensagem?.from || ultimaMensagem?.remetente || ultimaMensagem?.role;
+          
+          // Extrair o remetente (pode estar em diferentes campos)
+          let remetente = null;
+          
+          if (typeof ultimaMensagem.sender === 'string') {
+            remetente = ultimaMensagem.sender;
+          } else if (typeof ultimaMensagem.from === 'string') {
+            remetente = ultimaMensagem.from;
+          } else if (typeof ultimaMensagem.role === 'string') {
+            remetente = ultimaMensagem.role;
+          } else if (typeof ultimaMensagem.remetente === 'string') {
+            remetente = ultimaMensagem.remetente;
+          } else if (ultimaMensagem.sender && typeof ultimaMensagem.sender === 'object') {
+            // Se sender for objeto, tentar extrair nome
+            remetente = ultimaMensagem.sender.name || ultimaMensagem.sender.nickname || ultimaMensagem.sender.id;
+          }
           
           if (remetente) {
-            // Traduzir role/sender
-            const remetentePt = typeof remetente === 'string' 
-              ? (remetente === 'buyer' ? 'Comprador' 
-                : remetente === 'seller' ? 'Vendedor'
-                : remetente === 'mediator' ? 'Mediador'
-                : remetente)
-              : String(remetente);
+            // Traduzir para português
+            const remetentePt = remetente === 'buyer' ? 'Comprador' 
+                              : remetente === 'seller' ? 'Vendedor'
+                              : remetente === 'mediator' ? 'Mediador'
+                              : remetente === 'claimant' ? 'Reclamante'
+                              : remetente === 'respondent' ? 'Respondente'
+                              : String(remetente); // Garantir que é string
             
             return <span className="font-medium">{remetentePt}</span>;
           }
@@ -636,25 +667,27 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Tempo Resposta */}
       <td className="px-3 py-3 text-center">
         {(() => {
-          if (devolucao.tempo_resposta_comprador) {
-            const horas = Math.round(devolucao.tempo_resposta_comprador / 60);
-            return `${horas}h`;
+          // Tentar usar campo direto primeiro
+          if (devolucao.tempo_resposta_medio) {
+            return formatTempo(devolucao.tempo_resposta_medio);
           }
           
+          // Calcular baseado em datas (retorna em minutos)
           if (devolucao.data_primeira_acao && devolucao.data_criacao_claim) {
             const diff = new Date(devolucao.data_primeira_acao).getTime() - new Date(devolucao.data_criacao_claim).getTime();
-            const horas = Math.round(diff / (1000 * 60 * 60));
-            return `${horas}h`;
+            const minutos = Math.round(diff / (1000 * 60));
+            return formatTempo(minutos);
           }
           
+          // Buscar na timeline
           if (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 && devolucao.data_criacao_claim) {
             const primeiraMensagem = devolucao.timeline_mensagens[0] as any;
             const dataPrimeira = primeiraMensagem?.date || primeiraMensagem?.created_at || primeiraMensagem?.timestamp;
             
             if (dataPrimeira) {
               const diff = new Date(dataPrimeira).getTime() - new Date(devolucao.data_criacao_claim).getTime();
-              const horas = Math.round(diff / (1000 * 60 * 60));
-              return `${horas}h`;
+              const minutos = Math.round(diff / (1000 * 60));
+              return formatTempo(minutos);
             }
           }
           
@@ -665,23 +698,27 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* 1ª Resposta Vendedor */}
       <td className="px-3 py-3 text-center">
         {(() => {
+          // Tentar usar campo direto primeiro
           if (devolucao.tempo_primeira_resposta_vendedor) {
-            const horas = Math.round(devolucao.tempo_primeira_resposta_vendedor / 60);
-            return `${horas}h`;
+            return formatTempo(devolucao.tempo_primeira_resposta_vendedor);
           }
           
+          // Buscar primeira mensagem do vendedor na timeline
           if (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 && devolucao.data_criacao_claim) {
             const primeiraMsgVendedor = devolucao.timeline_mensagens.find(
-              (msg: any) => msg.sender === 'seller' || msg.from === 'seller' || msg.role === 'seller'
+              (msg: any) => {
+                const sender = msg.sender || msg.from || msg.role;
+                return sender === 'seller' || sender === 'respondent';
+              }
             );
             
             if (primeiraMsgVendedor) {
-              const dataMsg = (primeiraMsgVendedor as any).date || (primeiraMsgVendedor as any).created_at || (primeiraMsgVendedor as any).timestamp;
+              const dataMsg = (primeiraMsgVendedor as any).date || (primeiraMsgVendedor as any).created_at || primeiraMsgVendedor.timestamp;
               
               if (dataMsg) {
                 const diff = new Date(dataMsg).getTime() - new Date(devolucao.data_criacao_claim).getTime();
-                const horas = Math.round(diff / (1000 * 60 * 60));
-                return `${horas}h`;
+                const minutos = Math.round(diff / (1000 * 60));
+                return formatTempo(minutos);
               }
             }
           }
@@ -707,7 +744,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Tempo Resp. Médio */}
       <td className="px-3 py-3 text-center text-sm">
         {devolucao.tempo_resposta_medio 
-          ? `${Math.round(devolucao.tempo_resposta_medio / 60)}h` 
+          ? formatTempo(devolucao.tempo_resposta_medio)
           : '-'}
       </td>
       
