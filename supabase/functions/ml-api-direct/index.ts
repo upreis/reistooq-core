@@ -1067,17 +1067,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('resource', filters.resource)
     }
 
-    // 🎯 FILTROS DE DATA - APLICAR DIRETAMENTE NA API DO ML
-    if (filters?.date_from && filters.date_from.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de data inicial na API: ${filters.date_from}`)
-      params.append('date_from', filters.date_from)
-    }
-    
-    if (filters?.date_to && filters.date_to.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de data final na API: ${filters.date_to}`)
-      params.append('date_to', filters.date_to)
-    }
-
     // 📚 BUSCAR TODAS AS PÁGINAS DA API
     let allClaims: any[] = []
     let offset = 0
@@ -1087,11 +1076,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     const startTime = Date.now()
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
-    console.log(`📋 Filtros aplicados DIRETAMENTE na API:`)
+    console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
-    console.log(`   • date_from: ${filters?.date_from || 'N/A'} ⭐`)
-    console.log(`   • date_to: ${filters?.date_to || 'N/A'} ⭐`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
     console.log(`   • stage: ${filters?.stage || 'N/A'}`)
@@ -1099,6 +1086,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • quantity_type: ${filters?.quantity_type || 'N/A'}`)
     console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
     console.log(`   • resource: ${filters?.resource || 'N/A'}`)
+    console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca (API ML não suporta)`)
     console.log(`⏱️  Timeout: ${MAX_PROCESSING_TIME_MS/1000}s | Max Claims: ${MAX_CLAIMS}\n`)
 
     do {
