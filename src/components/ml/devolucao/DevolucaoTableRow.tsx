@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
+import { MensagensModal } from './MensagensModal';
 
 interface DevolucaoTableRowProps {
   devolucao: DevolucaoAvancada;
@@ -169,8 +170,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
   devolucao,
   onViewDetails
 }) => {
+  const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
+  
   return (
-    <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
+    <>
+      <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
       {/* GRUPO 1: IDENTIFICAÇÃO (5 colunas) */}
       
       {/* Pedido ID */}
@@ -662,7 +666,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })()}
       </td>
       
-      {/* Mensagens - Últimas 3 mensagens */}
+      {/* Mensagens - Clicável para abrir modal */}
       <td className="px-3 py-3 text-left max-w-[500px]">
         {(() => {
           if (!Array.isArray(devolucao.timeline_mensagens) || devolucao.timeline_mensagens.length === 0) {
@@ -670,7 +674,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           }
           
           return (
-            <div className="space-y-1">
+            <div 
+              className="space-y-1 cursor-pointer hover:bg-accent/10 p-2 rounded-md transition-colors"
+              onClick={() => setMensagensModalOpen(true)}
+              title="Clique para ver todas as mensagens"
+            >
               {devolucao.timeline_mensagens.slice(-3).map((msg: any, idx: number) => {
                 const texto = msg.message || msg.text || msg.content || msg.mensagem || msg.body || msg.conteudo;
                 const remetente = msg.sender || msg.from || msg.role || msg.remetente;
@@ -691,11 +699,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
                   </div>
                 );
               })}
-              {devolucao.timeline_mensagens.length > 3 && (
-                <div className="text-xs text-muted-foreground">
-                  +{devolucao.timeline_mensagens.length - 3} mensagens anteriores
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-xs text-primary hover:underline">
+                <MessageSquare className="w-3 h-3" />
+                <span>
+                  {devolucao.timeline_mensagens.length > 3 
+                    ? `Ver todas (${devolucao.timeline_mensagens.length} mensagens)` 
+                    : `Ver ${devolucao.timeline_mensagens.length} ${devolucao.timeline_mensagens.length === 1 ? 'mensagem' : 'mensagens'}`
+                  }
+                </span>
+              </div>
             </div>
           );
         })()}
@@ -927,5 +939,14 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </Button>
       </td>
     </tr>
+    
+    {/* Modal de Mensagens */}
+    <MensagensModal
+      open={mensagensModalOpen}
+      onOpenChange={setMensagensModalOpen}
+      mensagens={devolucao.timeline_mensagens || []}
+      orderId={String(devolucao.order_id)}
+    />
+  </>
   );
 });
