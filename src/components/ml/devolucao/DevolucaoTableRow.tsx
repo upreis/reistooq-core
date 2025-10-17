@@ -312,7 +312,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Cooperador */}
       <td className="px-3 py-3 text-left">
-        {devolucao.comprador_nome_completo || '-'}
+        <span className="text-muted-foreground">
+          {(devolucao.dados_claim as any)?.cooperador || '-'}
+        </span>
       </td>
       
       {/* GRUPO 5: PRODUTO (4 colunas) */}
@@ -631,10 +633,10 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           : '-'}
       </td>
       
-      {/* Tempo Resp. Comprador (renomeado de "Inicial") */}
+      {/* Tempo Resp. Médio */}
       <td className="px-3 py-3 text-center text-sm">
-        {devolucao.tempo_resposta_comprador 
-          ? `${Math.round(devolucao.tempo_resposta_comprador / 60)}h` 
+        {devolucao.tempo_resposta_medio 
+          ? `${devolucao.tempo_resposta_medio} min` 
           : '-'}
       </td>
       
