@@ -38,6 +38,16 @@ export const MensagensModal: React.FC<MensagensModalProps> = ({
   mensagens,
   orderId
 }) => {
+  // Debug único quando modal abre
+  React.useEffect(() => {
+    if (open && mensagens.length > 0) {
+      console.log('🔍 ====== DEBUG MENSAGENS MODAL ======');
+      console.log('🔍 Total de mensagens:', mensagens.length);
+      console.log('🔍 Estrutura da primeira mensagem:', JSON.stringify(mensagens[0], null, 2));
+      console.log('🔍 Todas as keys da primeira mensagem:', Object.keys(mensagens[0]));
+    }
+  }, [open, mensagens]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh]">
@@ -59,10 +69,6 @@ export const MensagensModal: React.FC<MensagensModalProps> = ({
                 const texto = msg.message || msg.text || msg.content || msg.mensagem || msg.body || msg.conteudo;
                 const remetente = msg.sender || msg.from || msg.role || msg.remetente;
                 const data = msg.date || msg.created_at || msg.timestamp;
-                
-                // Debug: mostrar estrutura da mensagem
-                console.log('Mensagem completa:', msg);
-                console.log('Remetente encontrado:', remetente);
                 
                 // Traduzir remetente (case-insensitive e com trim)
                 let remetentePt = 'Desconhecido';
