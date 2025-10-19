@@ -25,27 +25,19 @@ export function useSyncControl(integrationAccountId?: string) {
         return null;
       }
 
-      try {
-        const response = await supabase
-          .from('sync_control')
-          .select('*')
-          .eq('integration_account_id', integrationAccountId)
-          .eq('provider', 'mercadolivre')
-          .maybeSingle();
+      const { data, error } = await supabase.rpc('get_sync_control_status', {
+        p_integration_account_id: integrationAccountId,
+        p_provider: 'mercadolivre'
+      });
 
-        if (response.error) {
-          console.error('Erro ao buscar sync_control:', response.error);
-          return null;
-        }
-
-        const data: any = response.data;
-        if (!data) return null;
-
-        return data as SyncControlStatus;
-      } catch (error) {
-        console.error('Erro ao buscar status de sincronização:', error);
+      if (error) {
+        console.error('Erro ao buscar sync_control:', error);
         return null;
       }
+
+      if (!data) return null;
+
+      return data as unknown as SyncControlStatus;
     },
     refetchInterval: 3000,
     enabled: !!integrationAccountId,
