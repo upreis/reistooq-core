@@ -1,22 +1,110 @@
-import React from "react";
+import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { logger } from "@/utils/logger";
 import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 import { OMSNav } from "@/features/oms/components/OMSNav";
-import { useDevolucoesSincronizadas } from "@/features/devolucoes/hooks/useDevolucoesSincronizadas";
 import { 
   RefreshCw, 
   Package, 
   Clock, 
-  CheckCircle,
+  CheckCircle, 
+  XCircle,
   AlertTriangle,
   Database,
   Zap
 } from 'lucide-react';
+
+// 🎯 NOVO HOOK PARA BUSCAR DO SUPABASE
+function useDevolucoesSincronizadas() {
+  const [filtros, setFiltros] = useState({
+    status: 'opened',
+    periodo: '60',
+    search: '',
+    page: 1,
+    limit: 25
+  });
+
+  // Buscar devoluções do Supabase (não da API ML)
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['devolucoes-supabase', filtros],
+    queryFn: async () => {
+      let query = supabase
+        .from('devolucoes_avancadas')
+        .select('*', { count: 'exact' });
+
+      // Filtro por status
+      if (filtros.status !== 'todas') {
+        query = query.eq('status_devolucao', filtros.status);
+      }
+
+      // Filtro por período
+      if (filtros.periodo !== 'todas') {
+        const diasAtras = parseInt(filtros.periodo);
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() - diasAtras);
+        query = query.gte('data_criacao', dataLimite.toISOString());
+      }
+
+      // Filtro de busca
+      if (filtros.search) {
+        query = query.or(`produto_titulo.ilike.%${filtros.search}%,order_id.ilike.%${filtros.search}%,claim_id.ilike.%${filtros.search}%`);
+      }
+
+      // Paginação
+      const offset = (filtros.page - 1) * filtros.limit;
+      query = query
+        .order('data_criacao', { ascending: false })
+        .range(offset, offset + filtros.limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      return {
+        devolucoes: data || [],
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / filtros.limit)
+      };
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    refetchInterval: 5 * 60 * 1000 // 5 minutos
+  });
+
+  // Sincronização manual
+  const sincronizarAgora = async () => {
+    try {
+      toast.info('🔄 Iniciando sincronização...');
+      
+      const { data: syncResult, error } = await supabase.functions.invoke('sync-devolucoes-ml');
+      
+      if (error) throw error;
+      
+      toast.success(`✅ Sincronização concluída! ${syncResult.stats.total_claims_processados} devoluções processadas`);
+      await refetch();
+      
+    } catch (error: any) {
+      console.error('❌ Erro na sincronização:', error);
+      toast.error('Erro na sincronização: ' + (error.message || 'Erro desconhecido'));
+    }
+  };
+
+  return {
+    devolucoes: data?.devolucoes || [],
+    total: data?.total || 0,
+    totalPages: data?.totalPages || 0,
+    loading: isLoading,
+    error,
+    filtros,
+    setFiltros,
+    sincronizarAgora,
+    refetch
+  };
+}
 
 export default function MLOrdersCompletas() {
   const {
@@ -59,7 +147,7 @@ export default function MLOrdersCompletas() {
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>📦</span>
         <span>/</span>
-        <span className="text-primary">Devoluções ML (Supabase)</span>
+        <span className="text-primary">Devoluções ML (Sincronizadas)</span>
       </div>
 
       {/* Navigation */}
@@ -70,49 +158,49 @@ export default function MLOrdersCompletas() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <Database className="h-4 w-4 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Sincronizadas</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
-              <p className="text-xs text-gray-500">No Supabase</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Sincronizadas</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">No Supabase</p>
             </div>
           </div>
         </Card>
 
         <Card className="p-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <Clock className="h-4 w-4 text-yellow-600" />
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Abertas</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.abertas}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Abertas</p>
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.abertas}</p>
             </div>
           </div>
         </Card>
 
         <Card className="p-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Fechadas</p>
-              <p className="text-2xl font-bold text-green-600">{stats.fechadas}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Fechadas</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.fechadas}</p>
             </div>
           </div>
         </Card>
 
         <Card className="p-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-600">Em Disputa</p>
-              <p className="text-2xl font-bold text-red-600">{stats.disputas}</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Em Disputa</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.disputas}</p>
             </div>
           </div>
         </Card>
@@ -136,15 +224,15 @@ export default function MLOrdersCompletas() {
         </Badge>
       </div>
 
-      {/* Filtros */}
+      {/* Filtros Simples */}
       <Card className="p-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label className="text-sm font-medium">Status</label>
             <select 
-              className="w-full mt-1 p-2 border rounded"
+              className="w-full mt-1 p-2 border rounded bg-background"
               value={filtros.status}
-              onChange={(e) => setFiltros({...filtros, status: e.target.value as any, page: 1})}
+              onChange={(e) => setFiltros({...filtros, status: e.target.value, page: 1})}
             >
               <option value="todas">Todas</option>
               <option value="opened">Abertas</option>
@@ -155,7 +243,7 @@ export default function MLOrdersCompletas() {
           <div>
             <label className="text-sm font-medium">Período</label>
             <select 
-              className="w-full mt-1 p-2 border rounded"
+              className="w-full mt-1 p-2 border rounded bg-background"
               value={filtros.periodo}
               onChange={(e) => setFiltros({...filtros, periodo: e.target.value, page: 1})}
             >
@@ -171,7 +259,7 @@ export default function MLOrdersCompletas() {
             <label className="text-sm font-medium">Buscar</label>
             <input 
               type="text"
-              className="w-full mt-1 p-2 border rounded"
+              className="w-full mt-1 p-2 border rounded bg-background"
               placeholder="Produto, Order ID, Claim ID..."
               value={filtros.search}
               onChange={(e) => setFiltros({...filtros, search: e.target.value, page: 1})}
@@ -200,8 +288,8 @@ export default function MLOrdersCompletas() {
 
       {/* Erro */}
       {error && (
-        <Card className="p-4 border-red-200 bg-red-50">
-          <p className="text-red-700">❌ Erro: {error.message}</p>
+        <Card className="p-4 border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+          <p className="text-red-700 dark:text-red-300">❌ Erro: {error.message}</p>
         </Card>
       )}
 
@@ -217,7 +305,7 @@ export default function MLOrdersCompletas() {
           
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-muted">
                 <tr>
                   <th className="text-left p-3">Order ID</th>
                   <th className="text-left p-3">Claim ID</th>
@@ -229,8 +317,8 @@ export default function MLOrdersCompletas() {
                 </tr>
               </thead>
               <tbody>
-                {devolucoes.map((dev, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
+                {devolucoes.map((dev: any, idx: number) => (
+                  <tr key={idx} className="border-b hover:bg-muted/50">
                     <td className="p-3 font-mono text-sm">{dev.order_id}</td>
                     <td className="p-3 font-mono text-sm">{dev.claim_id}</td>
                     <td className="p-3 max-w-xs truncate">{dev.produto_titulo || 'N/A'}</td>
