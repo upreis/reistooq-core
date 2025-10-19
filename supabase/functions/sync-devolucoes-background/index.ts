@@ -125,10 +125,11 @@ async function executarSincronizacao(
   
   const BATCH_SIZE = 50;
   let offset = 0;
-  let hasMore = true;
   let totalProcessed = 0;
 
   try {
+    let hasMore = true;
+    
     while (hasMore) {
       console.log(`📦 [SYNC] Processando lote ${offset / BATCH_SIZE + 1} (offset: ${offset})`);
 
@@ -152,8 +153,11 @@ async function executarSincronizacao(
       }
 
       const claims = claimsData?.devolucoes || [];
-      console.log(`📥 [SYNC] Recebidos ${claims.length} claims`);
+      const totalAvailable = claimsData?.paging?.total || 0;
+      
+      console.log(`📥 [SYNC] Recebidos ${claims.length} claims de ${totalAvailable} totais`);
 
+      // Se não há claims neste lote, terminar
       if (claims.length === 0) {
         hasMore = false;
         break;
@@ -179,18 +183,20 @@ async function executarSincronizacao(
       totalProcessed += claims.length;
       offset += BATCH_SIZE;
 
-      // Atualizar progresso
+      // Atualizar progresso com total real da API
+      const totalFromApi = claimsData?.paging?.total || totalProcessed;
       await supabase
         .from('sync_control')
         .update({
           progress_current: totalProcessed,
-          progress_total: Math.max(totalProcessed, offset)
+          progress_total: totalFromApi
         })
         .eq('id', syncControlId);
 
-      // Se recebeu menos que o batch size, chegou ao fim
-      if (claims.length < BATCH_SIZE) {
+      // Continuar se ainda há mais dados para buscar
+      if (totalProcessed >= totalFromApi || claims.length < BATCH_SIZE) {
         hasMore = false;
+        console.log(`✅ [SYNC] Todos os dados foram processados (${totalProcessed}/${totalFromApi})`);
       }
 
       // Pequeno delay para não sobrecarregar a API do ML
