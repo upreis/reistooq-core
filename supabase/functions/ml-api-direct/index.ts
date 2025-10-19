@@ -151,7 +151,16 @@ serve(async (req) => {
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       console.log(`🚀 Chamando buscarPedidosCancelados com seller_id: ${seller_id}`)
-      const cancelledOrders = await buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id)
+      
+      // ⏱️ Adicionar timeout de 50 segundos para evitar Edge Function timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: A busca demorou mais de 50 segundos')), 50000)
+      );
+      
+      const cancelledOrders = await Promise.race([
+        buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id),
+        timeoutPromise
+      ]) as any[];
       
       console.log(`📊 Total de pedidos cancelados encontrados: ${cancelledOrders.length}`)
       
@@ -714,15 +723,22 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ Erro na ml-api-direct:', error)
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const isTimeout = errorMessage.includes('Timeout');
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : String(error),
-        details: error instanceof Error ? error.stack : undefined
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined,
+        suggestion: isTimeout 
+          ? 'A busca sem filtro de data está demorando muito. Tente usar um filtro de data para reduzir a quantidade de resultados.'
+          : undefined
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: isTimeout ? 504 : 500 
       }
     )
   }
