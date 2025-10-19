@@ -19,6 +19,7 @@ import { CacheIndicator, LoadingStateIndicator } from '@/components/ml/devolucao
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 import { SyncControls } from './devolucao/SyncControls';
+import { SyncMetrics } from './devolucao/SyncMetrics';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -392,6 +393,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
       {/* Controles de Sincronização */}
       <SyncControls />
+
+      {/* Métricas de Sincronização */}
+      <SyncMetrics />
 
       {/* Controles de ação - Simplificado */}
       <div className="flex justify-end gap-2">
