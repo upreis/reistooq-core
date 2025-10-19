@@ -15,12 +15,15 @@ export function useSyncDevolucoes() {
     error: null
   });
 
-  const syncNow = async () => {
+  const syncNow = async (integrationAccountId?: string) => {
     setSyncStatus(prev => ({ ...prev, isRunning: true, error: null }));
     
     try {
-      const { data, error } = await supabase.functions.invoke('sync-devolucoes-ml', {
-        body: { manual_sync: true }
+      // ✅ Nova Edge Function de sincronização em background
+      const { data, error } = await supabase.functions.invoke('sync-devolucoes-background', {
+        body: { 
+          integration_account_id: integrationAccountId 
+        }
       });
 
       if (error) throw error;
@@ -31,8 +34,8 @@ export function useSyncDevolucoes() {
         error: null
       });
 
-      toast.success('Sincronização concluída com sucesso', {
-        description: `${data?.stats?.total || 0} devoluções sincronizadas`
+      toast.success('Sincronização iniciada', {
+        description: 'A sincronização está rodando em background. Os dados serão atualizados automaticamente.'
       });
 
       return data;
