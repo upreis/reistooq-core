@@ -92,3 +92,6 @@ verify_jwt = false
 [functions.sync-devolucoes-ml]
 verify_jwt = false
 
+[functions.ml-api-direct]
+verify_jwt = false
+
