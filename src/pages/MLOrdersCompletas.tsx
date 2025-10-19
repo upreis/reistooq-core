@@ -1,109 +1,354 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import DevolucaoAvancadasTab from "@/components/ml/DevolucaoAvancadasTab";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 import { OMSNav } from "@/features/oms/components/OMSNav";
+import { 
+  RefreshCw, 
+  Package, 
+  Clock, 
+  CheckCircle, 
+  XCircle,
+  AlertTriangle,
+  Database,
+  Zap
+} from 'lucide-react';
+
+// 🎯 NOVO HOOK PARA BUSCAR DO SUPABASE
+function useDevolucoesSincronizadas() {
+  const [filtros, setFiltros] = useState({
+    status: 'opened',
+    periodo: '60',
+    search: '',
+    page: 1,
+    limit: 25
+  });
+
+  // Buscar devoluções do Supabase (não da API ML)
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ['devolucoes-supabase', filtros],
+    queryFn: async () => {
+      let query = supabase
+        .from('devolucoes_avancadas')
+        .select('*', { count: 'exact' });
+
+      // Filtro por status
+      if (filtros.status !== 'todas') {
+        query = query.eq('status_devolucao', filtros.status);
+      }
+
+      // Filtro por período
+      if (filtros.periodo !== 'todas') {
+        const diasAtras = parseInt(filtros.periodo);
+        const dataLimite = new Date();
+        dataLimite.setDate(dataLimite.getDate() - diasAtras);
+        query = query.gte('data_criacao', dataLimite.toISOString());
+      }
+
+      // Filtro de busca
+      if (filtros.search) {
+        query = query.or(`produto_titulo.ilike.%${filtros.search}%,order_id.ilike.%${filtros.search}%,claim_id.ilike.%${filtros.search}%`);
+      }
+
+      // Paginação
+      const offset = (filtros.page - 1) * filtros.limit;
+      query = query
+        .order('data_criacao', { ascending: false })
+        .range(offset, offset + filtros.limit - 1);
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      return {
+        devolucoes: data || [],
+        total: count || 0,
+        totalPages: Math.ceil((count || 0) / filtros.limit)
+      };
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    refetchInterval: 5 * 60 * 1000 // 5 minutos
+  });
+
+  // Sincronização manual
+  const sincronizarAgora = async () => {
+    try {
+      toast.info('🔄 Iniciando sincronização...');
+      
+      const { data: syncResult, error } = await supabase.functions.invoke('sync-devolucoes-ml');
+      
+      if (error) throw error;
+      
+      toast.success(`✅ Sincronização concluída! ${syncResult.stats.total_claims_processados} devoluções processadas`);
+      await refetch();
+      
+    } catch (error: any) {
+      console.error('❌ Erro na sincronização:', error);
+      toast.error('Erro na sincronização: ' + (error.message || 'Erro desconhecido'));
+    }
+  };
+
+  return {
+    devolucoes: data?.devolucoes || [],
+    total: data?.total || 0,
+    totalPages: data?.totalPages || 0,
+    loading: isLoading,
+    error,
+    filtros,
+    setFiltros,
+    sincronizarAgora,
+    refetch
+  };
+}
 
 export default function MLOrdersCompletas() {
-  // Estado para contas selecionadas
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const {
+    devolucoes,
+    total,
+    loading,
+    error,
+    filtros,
+    setFiltros,
+    sincronizarAgora,
+    refetch
+  } = useDevolucoesSincronizadas();
 
-  // Buscar contas ML disponíveis
-  const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
+  // Buscar contas ML para mostrar info
+  const { data: mlAccounts } = useQuery({
     queryKey: ["ml-accounts"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("integration_accounts")
-        .select("id, name, account_identifier, organization_id, is_active, provider")
+        .select("id, name, account_identifier")
         .eq("provider", "mercadolivre")
-        .eq("is_active", true)
-        .order("updated_at", { ascending: false });
+        .eq("is_active", true);
       
       if (error) throw error;
       return data;
     },
   });
 
-  // Auto-selecionar TODAS as contas quando carregar
-  React.useEffect(() => {
-    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
-      setSelectedAccountIds(mlAccounts.map(acc => acc.id));
-    }
-  }, [mlAccounts, selectedAccountIds.length]);
-
-  // Não buscar devoluções do banco - sempre usar API
-  const loadingDevolucoes = false;
+  // Estatísticas rápidas
+  const stats = {
+    total: total,
+    abertas: devolucoes.filter(d => d.status_devolucao === 'opened').length,
+    fechadas: devolucoes.filter(d => d.status_devolucao === 'closed').length,
+    disputas: devolucoes.filter(d => d.tipo_claim === 'mediations').length
+  };
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb principal */}
+      {/* Breadcrumb */}
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>📦</span>
         <span>/</span>
-        <span className="text-primary">Vendas</span>
+        <span className="text-primary">Devoluções ML (Sincronizadas)</span>
       </div>
 
-      {/* Navigation tabs principais */}
+      {/* Navigation */}
       <OMSNav />
-
-      {/* Sub-navegação de Pedidos */}
       <MLOrdersNav />
 
-
-      {/* Loading States */}
-      {(loadingAccounts || loadingDevolucoes) && (
-        <div className="flex items-center justify-center py-8">
-          <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            <p className="text-sm text-muted-foreground">
-              {loadingAccounts ? 'Carregando contas...' : 'Carregando devoluções...'}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Erro: Sem contas */}
-      {!loadingAccounts && (!mlAccounts || mlAccounts.length === 0) && (
-        <Card className="p-6">
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="rounded-full bg-yellow-100 p-3">
-              <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+      {/* Cards de Estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-lg">Nenhuma conta ML encontrada</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Configure uma conta do Mercado Livre para começar a gerenciar devoluções
-              </p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Sincronizadas</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">No Supabase</p>
             </div>
           </div>
         </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Abertas</p>
+              <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.abertas}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Fechadas</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.fechadas}</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center space-x-2">
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Em Disputa</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.disputas}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Controles */}
+      <div className="flex justify-between items-center">
+        <div className="flex gap-2">
+          <Button onClick={sincronizarAgora} variant="outline">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Sincronizar Agora
+          </Button>
+          <Button onClick={() => refetch()} variant="ghost">
+            <Zap className="h-4 w-4 mr-2" />
+            Atualizar Lista
+          </Button>
+        </div>
+        
+        <Badge variant="secondary">
+          {mlAccounts?.length || 0} conta(s) ML conectada(s)
+        </Badge>
+      </div>
+
+      {/* Filtros Simples */}
+      <Card className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="text-sm font-medium">Status</label>
+            <select 
+              className="w-full mt-1 p-2 border rounded bg-background"
+              value={filtros.status}
+              onChange={(e) => setFiltros({...filtros, status: e.target.value, page: 1})}
+            >
+              <option value="todas">Todas</option>
+              <option value="opened">Abertas</option>
+              <option value="closed">Fechadas</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium">Período</label>
+            <select 
+              className="w-full mt-1 p-2 border rounded bg-background"
+              value={filtros.periodo}
+              onChange={(e) => setFiltros({...filtros, periodo: e.target.value, page: 1})}
+            >
+              <option value="7">Últimos 7 dias</option>
+              <option value="30">Últimos 30 dias</option>
+              <option value="60">Últimos 60 dias</option>
+              <option value="90">Últimos 90 dias</option>
+              <option value="todas">Todas</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium">Buscar</label>
+            <input 
+              type="text"
+              className="w-full mt-1 p-2 border rounded bg-background"
+              placeholder="Produto, Order ID, Claim ID..."
+              value={filtros.search}
+              onChange={(e) => setFiltros({...filtros, search: e.target.value, page: 1})}
+            />
+          </div>
+          
+          <div className="flex items-end">
+            <Button 
+              onClick={() => setFiltros({status: 'opened', periodo: '60', search: '', page: 1, limit: 25})}
+              variant="outline"
+              className="w-full"
+            >
+              Limpar Filtros
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Loading */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground mt-2">Carregando devoluções...</p>
+        </div>
       )}
 
-      {/* Conteúdo Principal */}
-      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length > 0 && (
-        <DevolucaoAvancadasTab 
-          mlAccounts={mlAccounts || []}
-          selectedAccountId={selectedAccountIds[0] || ''}
-          selectedAccountIds={selectedAccountIds}
-          refetch={async () => { 
-            logger.info('Devoluções recarregadas com sucesso');
-          }}
-          existingDevolucoes={[]}
-        />
+      {/* Erro */}
+      {error && (
+        <Card className="p-4 border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950">
+          <p className="text-red-700 dark:text-red-300">❌ Erro: {error.message}</p>
+        </Card>
       )}
-      
-      {/* Alerta quando nenhuma conta selecionada */}
-      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && (
-        <Card className="p-6 border-yellow-200 bg-yellow-50">
-          <div className="text-center">
-            <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
+
+      {/* Lista de Devoluções */}
+      {!loading && !error && (
+        <Card>
+          <div className="p-4 border-b">
+            <h3 className="font-semibold">Devoluções Encontradas</h3>
+            <p className="text-sm text-muted-foreground">
+              Mostrando {devolucoes.length} de {total} devoluções
+            </p>
           </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="text-left p-3">Order ID</th>
+                  <th className="text-left p-3">Claim ID</th>
+                  <th className="text-left p-3">Produto</th>
+                  <th className="text-left p-3">Status</th>
+                  <th className="text-left p-3">Tipo</th>
+                  <th className="text-left p-3">Data</th>
+                  <th className="text-left p-3">Valor</th>
+                </tr>
+              </thead>
+              <tbody>
+                {devolucoes.map((dev: any, idx: number) => (
+                  <tr key={idx} className="border-b hover:bg-muted/50">
+                    <td className="p-3 font-mono text-sm">{dev.order_id}</td>
+                    <td className="p-3 font-mono text-sm">{dev.claim_id}</td>
+                    <td className="p-3 max-w-xs truncate">{dev.produto_titulo || 'N/A'}</td>
+                    <td className="p-3">
+                      <Badge variant={dev.status_devolucao === 'opened' ? 'default' : 'secondary'}>
+                        {dev.status_devolucao}
+                      </Badge>
+                    </td>
+                    <td className="p-3">{dev.tipo_claim || 'N/A'}</td>
+                    <td className="p-3 text-sm">
+                      {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td className="p-3 text-sm">
+                      R$ {dev.valor_retido || '0,00'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {devolucoes.length === 0 && (
+            <div className="text-center py-8">
+              <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-500">Nenhuma devolução encontrada</p>
+              <Button onClick={sincronizarAgora} className="mt-4">
+                🔄 Sincronizar Devoluções
+              </Button>
+            </div>
+          )}
         </Card>
       )}
     </div>
