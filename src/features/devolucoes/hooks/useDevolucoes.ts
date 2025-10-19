@@ -81,8 +81,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   
   // 🎯 FILTROS VAZIOS POR PADRÃO - Usuário define tudo via interface
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
-    // 🚀 Usar selectedAccountIds se fornecido, senão selectedAccountId, senão vazio
-    const initialAccounts = selectedAccountIds && selectedAccountIds.length > 0 
+    // 🚀 GARANTIR SEMPRE ARRAY VÁLIDO
+    const initialAccounts = Array.isArray(selectedAccountIds) && selectedAccountIds.length > 0 
       ? selectedAccountIds 
       : selectedAccountId 
         ? [selectedAccountId] 
@@ -91,7 +91,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     return {
       // Busca
       searchTerm: '',
-      // Contas
+      // Contas - SEMPRE UM ARRAY
       contasSelecionadas: initialAccounts,
       // 📅 DATAS VAZIAS - Sem valores padrão, usuário deve escolher o período
       dataInicio: '',
