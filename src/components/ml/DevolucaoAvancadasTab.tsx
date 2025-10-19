@@ -20,6 +20,7 @@ import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 import { SyncControls } from './devolucao/SyncControls';
 import { SyncMetrics } from './devolucao/SyncMetrics';
+import { FiltrosRapidos } from './devolucao/FiltrosRapidos';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -396,6 +397,19 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
       {/* Métricas de Sincronização */}
       <SyncMetrics />
+
+      {/* Filtros Rápidos */}
+      <FiltrosRapidos 
+        onAplicarFiltro={(filtros) => {
+          handleFilterChange('dataInicio', filtros.dataInicio);
+          handleFilterChange('dataFim', filtros.dataFim);
+          if (filtros.statusClaim) {
+            handleFilterChange('statusClaim', filtros.statusClaim);
+          }
+          // Aplicar automaticamente
+          setTimeout(() => handleAplicarEBuscar(), 100);
+        }}
+      />
 
       {/* Controles de ação - Simplificado */}
       <div className="flex justify-end gap-2">
