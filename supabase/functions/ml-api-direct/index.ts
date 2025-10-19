@@ -1071,7 +1071,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    const MAX_CLAIMS = 100 // ✅ LIMITE DE 100 CLAIMS CONFORME PDF
+    const MAX_CLAIMS = 10000 // ✅ LIMITE DE 10000 CLAIMS
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
