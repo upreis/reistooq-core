@@ -1071,7 +1071,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    const MAX_CLAIMS = 10000 // ✅ LIMITE DE 10000 CLAIMS
+    // ✅ LIMITE REDUZIDO quando NÃO há filtro de data (para evitar timeout)
+    const hasDateFilter = filters?.date_from || filters?.date_to;
+    const MAX_CLAIMS = hasDateFilter ? 10000 : 500;
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
@@ -1084,6 +1086,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • quantity_type: ${filters?.quantity_type || 'N/A'}`)
     console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
     console.log(`   • resource: ${filters?.resource || 'N/A'}`)
+    console.log(`   • date_from: ${filters?.date_from || 'SEM FILTRO'}`)
+    console.log(`   • date_to: ${filters?.date_to || 'SEM FILTRO'}`)
+    console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS} (${hasDateFilter ? 'com filtro de data' : 'SEM filtro de data - limitado para performance'})`)
     console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca\n`)
 
     do {
