@@ -824,12 +824,12 @@ export function useDevolucoesBusca() {
         logger.info(`Sincronizando conta: ${account.name}`);
         
         try {
-          // Buscar orders com claims
+          // Buscar orders com claims - SEM LIMITE para trazer todas
           const { data: ordersWithClaims, error: ordersError } = await supabase
             .from('ml_orders_completas')
             .select('*')
             .eq('has_claims', true)
-            .limit(100); // Aumentado para 100
+            .limit(1000); // Aumentado para 1000 (limite máximo do Supabase)
 
           if (ordersError) {
             logger.error('Erro ao buscar orders', ordersError);
