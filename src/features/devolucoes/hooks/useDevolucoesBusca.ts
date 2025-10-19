@@ -263,9 +263,13 @@ export function useDevolucoesBusca() {
     filtros: DevolucaoBuscaFilters,
     mlAccounts: any[]
   ) => {
-    // Validação robusta: verificar se contasSelecionadas existe e tem itens
-    if (!filtros.contasSelecionadas || !Array.isArray(filtros.contasSelecionadas) || filtros.contasSelecionadas.length === 0) {
-      toast.error('Selecione pelo menos uma conta ML');
+    // 🛡️ VALIDAÇÃO + FALLBACK AUTOMÁTICO
+    const contasParaBuscar = filtros.contasSelecionadas?.length 
+      ? filtros.contasSelecionadas 
+      : mlAccounts.map(acc => acc.id);
+    
+    if (!contasParaBuscar || contasParaBuscar.length === 0) {
+      toast.error('Nenhuma conta ML disponível');
       return [];
     }
 
@@ -281,7 +285,7 @@ export function useDevolucoesBusca() {
     try {
       logger.info('🚀 Iniciando busca otimizada da API ML');
       
-      for (const accountId of filtros.contasSelecionadas) {
+      for (const accountId of contasParaBuscar) {
         const account = mlAccounts?.find(acc => acc.id === accountId);
         if (!account) continue;
 
