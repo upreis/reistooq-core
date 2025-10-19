@@ -80,14 +80,41 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error('[ML Webhook] Failed to trigger order sync:', error);
       }
-    } else if (topic === 'messages') {
-      console.log('[ML Webhook] Processing message notification for resource:', resource);
-      // Processar notificações de mensagens
-    } else if (topic === 'claims') {
-      console.log('[ML Webhook] Processing claim notification for resource:', resource);
-      // Processar notificações de reclamações
-    } else {
-      console.log('[ML Webhook] Unknown topic:', topic);
+    }
+    
+    // Processar claims e returns em background
+    if (topic === 'claims' || topic === 'returns') {
+      console.log(`[ML Webhook] Claims/Returns notification received, triggering background sync`);
+      
+      // Buscar integration_account_id baseado no user_id
+      const { data: accounts } = await supabase
+        .from('integration_accounts')
+        .select('id, organization_id')
+        .eq('provider', 'mercadolivre')
+        .eq('user_id', user_id)
+        .eq('is_active', true)
+        .limit(1);
+      
+      if (accounts && accounts.length > 0) {
+        const accountId = accounts[0].id;
+        
+        // Chamar sync em background (não aguardar resposta)
+        supabase.functions.invoke('sync-devolucoes-background', {
+          body: { 
+            integration_account_id: accountId,
+            trigger: 'webhook'
+          }
+        }).catch(err => {
+          console.error('[ML Webhook] Error triggering background sync:', err);
+        });
+        
+        console.log(`[ML Webhook] Background sync triggered for account ${accountId}`);
+      }
+    }
+    
+    // Log para tópicos desconhecidos
+    if (!['orders_v2', 'claims', 'returns', 'questions', 'messages', 'shipments'].includes(topic)) {
+      console.log(`[ML Webhook] Unknown topic: ${topic}`);
     }
 
     // Mercado Livre espera uma resposta 200 OK
