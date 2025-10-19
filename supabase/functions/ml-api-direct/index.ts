@@ -1067,11 +1067,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('resource', filters.resource)
     }
 
-    // 📚 BUSCAR TODAS AS PÁGINAS DA API
+    // 📚 BUSCAR TODAS AS PÁGINAS DA API (SEM LIMITE)
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    const MAX_CLAIMS = 100 // ✅ LIMITE DE 100 CLAIMS CONFORME PDF
+    const MAX_CLAIMS = 10000 // ✅ AUMENTADO PARA BUSCAR TODAS AS DEVOLUÇÕES
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
