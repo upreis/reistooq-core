@@ -152,9 +152,9 @@ serve(async (req) => {
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       console.log(`🚀 Chamando buscarPedidosCancelados com seller_id: ${seller_id}`)
       
-      // ⏱️ Adicionar timeout de 50 segundos para evitar Edge Function timeout
+      // ⏱️ Timeout de 45 segundos (deixar margem para processamento)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: A busca demorou mais de 50 segundos')), 50000)
+        setTimeout(() => reject(new Error('Timeout: A busca excedeu 45 segundos. Use filtros de data para reduzir os resultados.')), 45000)
       );
       
       const cancelledOrders = await Promise.race([
@@ -1087,9 +1087,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    // ✅ LIMITE REDUZIDO quando NÃO há filtro de data (para evitar timeout)
+    // ⏱️ LIMITE DRASTICAMENTE REDUZIDO quando NÃO há filtro de data
+    // Cada claim demora ~1 segundo (múltiplas chamadas API sequenciais)
     const hasDateFilter = filters?.date_from || filters?.date_to;
-    const MAX_CLAIMS = hasDateFilter ? 10000 : 500;
+    const MAX_CLAIMS = hasDateFilter ? 1000 : 50;  // 🔥 50 claims = ~50 segundos máximo
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
@@ -1102,10 +1103,17 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • quantity_type: ${filters?.quantity_type || 'N/A'}`)
     console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
     console.log(`   • resource: ${filters?.resource || 'N/A'}`)
-    console.log(`   • date_from: ${filters?.date_from || 'SEM FILTRO'}`)
-    console.log(`   • date_to: ${filters?.date_to || 'SEM FILTRO'}`)
-    console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS} (${hasDateFilter ? 'com filtro de data' : 'SEM filtro de data - limitado para performance'})`)
-    console.log(`⚠️  Nota: Filtros de DATA serão aplicados LOCALMENTE após busca\n`)
+    console.log(`   • date_from: ${filters?.date_from || 'SEM FILTRO ⚠️'}`)
+    console.log(`   • date_to: ${filters?.date_to || 'SEM FILTRO ⚠️'}`)
+    console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
+    
+    if (!hasDateFilter) {
+      console.log(`⚠️  ========== ATENÇÃO ==========`)
+      console.log(`⚠️  SEM FILTRO DE DATA: Limitado a ${MAX_CLAIMS} claims mais recentes`)
+      console.log(`⚠️  Tempo estimado: ~${MAX_CLAIMS} segundos`)
+      console.log(`💡 DICA: Use filtro de data para buscar mais resultados`)
+      console.log(`⚠️  ==============================\n`)
+    }
 
     do {
       params.set('offset', offset.toString())
