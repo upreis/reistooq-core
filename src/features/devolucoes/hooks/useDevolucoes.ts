@@ -351,7 +351,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       // Usar filtros passados diretamente ou os do estado atual
       const filtrosParaUsar = filtrosImediatos || advancedFilters;
       
-      // ✅ PERMITE BUSCA SEM FILTRO DE DATA
+      // ✅ BUSCA SEM OBRIGATORIEDADE DE FILTRO DE DATA
       console.log('[useDevolucoes] 🔍 Buscando com filtros:', {
         dataInicio: filtrosParaUsar.dataInicio || 'SEM FILTRO',
         dataFim: filtrosParaUsar.dataFim || 'SEM FILTRO',
