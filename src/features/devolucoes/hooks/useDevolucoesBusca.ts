@@ -263,7 +263,8 @@ export function useDevolucoesBusca() {
     filtros: DevolucaoBuscaFilters,
     mlAccounts: any[]
   ) => {
-    if (!filtros.contasSelecionadas.length) {
+    // Validação robusta: verificar se contasSelecionadas existe e tem itens
+    if (!filtros.contasSelecionadas || !Array.isArray(filtros.contasSelecionadas) || filtros.contasSelecionadas.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
       return [];
     }
