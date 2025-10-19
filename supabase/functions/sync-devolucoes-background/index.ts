@@ -45,7 +45,8 @@ serve(async (req) => {
         .insert({
           integration_account_id,
           provider: 'mercadolivre',
-          status: 'idle'
+          status: 'idle',
+          process_name: 'sync-devolucoes-ml'
         })
         .select()
         .single();
