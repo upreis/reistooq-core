@@ -351,14 +351,10 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       // Usar filtros passados diretamente ou os do estado atual
       const filtrosParaUsar = filtrosImediatos || advancedFilters;
       
-      // 📅 VALIDAR DATAS ANTES DE ENVIAR
-      if (!filtrosParaUsar.dataInicio || !filtrosParaUsar.dataFim) {
-        throw new Error('Por favor, selecione um período de datas antes de buscar');
-      }
-      
+      // ✅ PERMITE BUSCA SEM FILTRO DE DATA
       console.log('[useDevolucoes] 🔍 Buscando com filtros:', {
-        dataInicio: filtrosParaUsar.dataInicio,
-        dataFim: filtrosParaUsar.dataFim,
+        dataInicio: filtrosParaUsar.dataInicio || 'SEM FILTRO',
+        dataFim: filtrosParaUsar.dataFim || 'SEM FILTRO',
         contas: filtrosParaUsar.contasSelecionadas,
         origem: filtrosImediatos ? 'filtros imediatos' : 'estado atual'
       });
