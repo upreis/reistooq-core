@@ -18,6 +18,7 @@ import { DevolucaoTableSkeleton, DevolucaoStatsSkeleton } from '@/components/ml/
 import { CacheIndicator, LoadingStateIndicator } from '@/components/ml/devolucao/CacheIndicator';
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
+import { SyncControls } from './devolucao/SyncControls';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -388,6 +389,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           </Card>
         </div>
       )}
+
+      {/* Controles de Sincronização */}
+      <SyncControls />
 
       {/* Controles de ação - Simplificado */}
       <div className="flex justify-end gap-2">
