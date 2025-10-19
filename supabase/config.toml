@@ -89,3 +89,6 @@ verify_jwt = false
 [functions.ml-enrichment-real]
 verify_jwt = false
 
+[functions.sync-devolucoes-ml]
+verify_jwt = false
+
