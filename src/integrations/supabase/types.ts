@@ -5716,6 +5716,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_sync_control_status: {
+        Args: { p_integration_account_id: string; p_provider: string }
+        Returns: Json
+      }
       get_user_organization_id: {
         Args: { target_user_id: string }
         Returns: string
