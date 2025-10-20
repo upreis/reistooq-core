@@ -79,8 +79,22 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
-  // 🎯 FILTROS VAZIOS POR PADRÃO - Usuário define tudo via interface
+  // 🎯 FILTROS UNIFICADOS COM LOCALSTORAGE
+  const STORAGE_KEY_FILTERS = 'ml_devolucoes_last_filters';
+  
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
+    // Tentar carregar filtros salvos
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_FILTERS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        console.log('📂 Filtros carregados do localStorage:', parsed);
+        return parsed;
+      }
+    } catch (error) {
+      console.error('Erro ao carregar filtros salvos:', error);
+    }
+
     // 🚀 GARANTIR SEMPRE ARRAY VÁLIDO
     const initialAccounts = Array.isArray(selectedAccountIds) && selectedAccountIds.length > 0 
       ? selectedAccountIds 
@@ -130,6 +144,10 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       autoRefreshInterval: 3600
     };
   });
+
+  // Estados para controle de mudanças pendentes
+  const [draftFilters, setDraftFilters] = useState<DevolucaoAdvancedFilters | null>(null);
+  const [isApplyingFilters, setIsApplyingFilters] = useState(false);
 
   // Configurações de performance otimizadas (fixas)
   const performanceSettings: PerformanceSettings = {
@@ -389,8 +407,50 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     }
   }, [selectedAccountIds]);
 
-  // ✏️ ATUALIZAR FILTROS - SEM PERSISTÊNCIA DE DATAS
-  // Retorna os novos filtros completos para permitir busca imediata
+  // ✏️ ATUALIZAR DRAFT DE FILTROS (mudanças pendentes)
+  const updateDraftFilters = useCallback((key: string, value: any) => {
+    setDraftFilters(prev => ({
+      ...(prev || advancedFilters),
+      [key]: value
+    }));
+  }, [advancedFilters]);
+
+  // ✏️ APLICAR FILTROS E SALVAR
+  const applyFilters = useCallback(async () => {
+    setIsApplyingFilters(true);
+    try {
+      const filtrosParaAplicar = draftFilters || advancedFilters;
+      
+      // Atualizar estado de filtros aplicados
+      setAdvancedFilters(filtrosParaAplicar);
+      setDraftFilters(null);
+      
+      // Salvar no localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filtrosParaAplicar));
+        console.log('💾 Filtros salvos no localStorage:', filtrosParaAplicar);
+      } catch (error) {
+        console.error('Erro ao salvar filtros:', error);
+      }
+      
+      // Buscar com os filtros
+      await buscarComFiltros(filtrosParaAplicar);
+      
+      return true;
+    } catch (error) {
+      console.error('Erro ao aplicar filtros:', error);
+      throw error;
+    } finally {
+      setIsApplyingFilters(false);
+    }
+  }, [advancedFilters, draftFilters, buscarComFiltros]);
+
+  // ✏️ CANCELAR MUDANÇAS PENDENTES
+  const cancelDraftFilters = useCallback(() => {
+    setDraftFilters(null);
+  }, []);
+
+  // ✏️ COMPATIBILIDADE: Manter updateAdvancedFilters para código legado
   const updateAdvancedFilters = useCallback((newFilters: Partial<DevolucaoAdvancedFilters>) => {
     setAdvancedFilters(prev => {
       const filtrosAtualizados = { ...prev, ...newFilters };
@@ -403,7 +463,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
 
   // 🗑️ LIMPAR FILTROS - Resetar tudo
   const clearFilters = useCallback(() => {
-    setAdvancedFilters({
+    const filtrosLimpos = {
       searchTerm: '',
       contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
       dataInicio: '',
@@ -432,9 +492,21 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       buscarEmTempoReal: true,
       autoRefreshEnabled: false,
       autoRefreshInterval: 3600
-    });
+    };
+    
+    setAdvancedFilters(filtrosLimpos);
+    setDraftFilters(null);
     setDevolucoes([]);
     setCurrentPage(1);
+    
+    // Limpar do localStorage
+    try {
+      localStorage.removeItem(STORAGE_KEY_FILTERS);
+      console.log('🗑️ Filtros removidos do localStorage');
+    } catch (error) {
+      console.error('Erro ao limpar filtros salvos:', error);
+    }
+    
     console.log('[useDevolucoes] 🗑️ Filtros e dados limpos');
   }, [mlAccounts]);
 
@@ -487,9 +559,17 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     // Filtros unificados
     filters: advancedFilters, // Compatibilidade
     advancedFilters,
+    draftFilters,
+    isApplyingFilters,
+    hasPendingChanges: draftFilters !== null,
     performanceSettings,
+    
+    // Ações de filtros
     updateFilters: updateAdvancedFilters, // Compatibilidade  
     updateAdvancedFilters,
+    updateDraftFilters,
+    applyFilters,
+    cancelDraftFilters,
     clearFilters,
     
     // Ações (somente API)

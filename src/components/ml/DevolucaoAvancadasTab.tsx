@@ -70,8 +70,6 @@ interface DevolucaoAvancadasTabProps {
   existingDevolucoes: DevolucaoAvancada[];
 }
 
-const STORAGE_KEY_FILTERS = 'ml_devolucoes_last_filters';
-
 const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   mlAccounts,
   selectedAccountId,
@@ -83,28 +81,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [showDetails, setShowDetails] = React.useState(false);
   const [showExportDialog, setShowExportDialog] = React.useState(false);
   const [showColumnManager, setShowColumnManager] = React.useState(false);
-  
-  // Carregar filtros salvos do localStorage
-  const loadSavedFilters = useCallback(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_FILTERS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('📂 Filtros carregados do localStorage:', parsed);
-        return parsed;
-      }
-    } catch (error) {
-      console.error('Erro ao carregar filtros salvos:', error);
-    }
-    return {};
-  }, []);
 
-  // Estados para controle de filtros (aplicação manual)
-  const [draftFilters, setDraftFilters] = React.useState<any>(null);
-  const [appliedFiltersState, setAppliedFiltersState] = React.useState<any>(loadSavedFilters);
-  const [isApplyingFilters, setIsApplyingFilters] = React.useState(false);
-
-  // Hook principal consolidado com otimizações
+  // Hook principal consolidado - ESTADO UNIFICADO
   const {
     devolucoes,
     devolucoesFiltradas,
@@ -117,11 +95,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     totalPages,
     itemsPerPage,
     showAnalytics,
-    filters,
     advancedFilters,
+    draftFilters,
+    isApplyingFilters,
+    hasPendingChanges,
     performanceSettings,
-    updateFilters,
-    updateAdvancedFilters,
+    updateDraftFilters,
+    applyFilters,
+    cancelDraftFilters,
     clearFilters,
     buscarComFiltros,
     setCurrentPage,
@@ -134,79 +115,41 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
-  // Aplicar filtros salvos ao carregar
   // Aplicar filtros salvos ao carregar (apenas uma vez)
   React.useEffect(() => {
-    const savedFilters = loadSavedFilters();
-    if (Object.keys(savedFilters).length > 0) {
-      console.log('🚀 Aplicando filtros salvos automaticamente:', savedFilters);
-      // Atualizar o estado de filtros aplicados
-      setAppliedFiltersState(savedFilters);
-      // Atualizar os filtros no hook
-      updateAdvancedFilters(savedFilters);
-      // Buscar com os filtros salvos
-      buscarComFiltros(savedFilters);
+    // Os filtros salvos já são carregados automaticamente no hook
+    // Se houver filtros salvos, buscar automaticamente
+    if (advancedFilters.dataInicio || advancedFilters.dataFim || advancedFilters.statusClaim) {
+      console.log('🚀 Buscando com filtros salvos automaticamente');
+      buscarComFiltros();
     }
   }, []);
 
-
-  // Função para aplicar filtros e buscar
+  // Funções simplificadas - delegam para o hook
   const handleAplicarEBuscar = useCallback(async () => {
-    setIsApplyingFilters(true);
     try {
-      // Aplicar filtros atuais
-      const filtrosParaAplicar = draftFilters || advancedFilters;
-      setAppliedFiltersState(filtrosParaAplicar);
-      setDraftFilters(null);
-      
-      // Salvar filtros no localStorage
-      try {
-        localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filtrosParaAplicar));
-        console.log('💾 Filtros salvos no localStorage:', filtrosParaAplicar);
-      } catch (error) {
-        console.error('Erro ao salvar filtros:', error);
-      }
-      
-      // Buscar com os filtros
-      await buscarComFiltros(filtrosParaAplicar);
-      
+      await applyFilters();
       toast.success('Filtros aplicados e salvos com sucesso');
     } catch (error) {
       console.error('Erro ao aplicar filtros:', error);
       toast.error('Erro ao aplicar filtros');
-    } finally {
-      setIsApplyingFilters(false);
     }
-  }, [buscarComFiltros, advancedFilters, draftFilters]);
+  }, [applyFilters]);
 
   const handleCancelChanges = useCallback(() => {
-    setDraftFilters(null);
-  }, []);
+    cancelDraftFilters();
+  }, [cancelDraftFilters]);
 
   const handleClearAllFilters = useCallback(() => {
     clearFilters();
-    setDraftFilters(null);
-    setAppliedFiltersState({});
-    
-    // Limpar filtros salvos do localStorage
-    try {
-      localStorage.removeItem(STORAGE_KEY_FILTERS);
-      console.log('🗑️ Filtros removidos do localStorage');
-    } catch (error) {
-      console.error('Erro ao limpar filtros salvos:', error);
-    }
   }, [clearFilters]);
 
   const handleFilterChange = useCallback((key: string, value: any) => {
-    setDraftFilters((prev: any) => ({
-      ...(prev || appliedFiltersState || advancedFilters),
-      [key]: value
-    }));
-  }, [appliedFiltersState, advancedFilters]);
+    updateDraftFilters(key, value);
+  }, [updateDraftFilters]);
 
-  // Calcular filtros ativos e mudanças pendentes
-  // IMPORTANTE: currentFilters deve usar appliedFiltersState como base, não advancedFilters
-  const currentFilters = draftFilters || appliedFiltersState || advancedFilters;
+  // Filtros atuais (considerando draft ou aplicados)
+  const currentFilters = draftFilters || advancedFilters;
   const activeFiltersCount = React.useMemo(() => {
     let count = 0;
     if (currentFilters.searchTerm) count++;
@@ -216,9 +159,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     if (currentFilters.contasSelecionadas?.length > 0) count++;
     return count;
   }, [currentFilters]);
-
-  const hasPendingChanges = draftFilters !== null;
-  const needsManualApplication = hasPendingChanges;
 
 
   const exportarCSV = useCallback(() => {
@@ -438,13 +378,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       >
         <DevolucaoFiltersUnified
           filters={currentFilters}
-          appliedFilters={appliedFiltersState}
+          appliedFilters={advancedFilters}
           onFilterChange={handleFilterChange}
           onApplyFilters={handleAplicarEBuscar}
           onCancelChanges={handleCancelChanges}
           onClearFilters={handleClearAllFilters}
           hasPendingChanges={hasPendingChanges}
-          needsManualApplication={needsManualApplication}
+          needsManualApplication={hasPendingChanges}
           isApplying={isApplyingFilters}
           activeFiltersCount={activeFiltersCount}
           contasML={mlAccounts}
