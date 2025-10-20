@@ -120,11 +120,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   // 🛡️ Validação: Verificar se há contas (sem early return para não quebrar hooks)
   const hasAccounts = selectedAccountIds && selectedAccountIds.length > 0;
 
-  // Filtros salvos são carregados automaticamente no hook, mas NÃO executam busca
-  // O usuário deve clicar em "Buscar" ou "Aplicar" para executar a busca
-
   // Funções simplificadas - delegam para o hook
-  const handleAplicarEBuscar = async () => {
+  const handleAplicarEBuscar = React.useCallback(async () => {
     try {
       await applyFilters();
       toast.success('Filtros aplicados e salvos com sucesso');
@@ -132,19 +129,36 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       console.error('Erro ao aplicar filtros:', error);
       toast.error('Erro ao aplicar filtros');
     }
-  };
+  }, [applyFilters]);
 
-  const handleCancelChanges = () => {
+  const handleCancelChanges = React.useCallback(() => {
     cancelDraftFilters();
-  };
+  }, [cancelDraftFilters]);
 
-  const handleClearAllFilters = () => {
+  const handleClearAllFilters = React.useCallback(() => {
     clearFilters();
-  };
+  }, [clearFilters]);
 
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = React.useCallback((key: string, value: any) => {
     updateDraftFilters(key, value);
-  };
+  }, [updateDraftFilters]);
+
+  // Handler para FiltrosRapidos - MEMOIZADO NO TOPO
+  const handleFiltrosRapidos = React.useCallback((filtros: any) => {
+    handleFilterChange('dataInicio', filtros.dataInicio);
+    handleFilterChange('dataFim', filtros.dataFim);
+    if (filtros.statusClaim) {
+      handleFilterChange('statusClaim', filtros.statusClaim);
+    }
+    // Aplicar automaticamente
+    setTimeout(() => handleAplicarEBuscar(), 100);
+  }, [handleFilterChange, handleAplicarEBuscar]);
+
+  // Handler para visualizar detalhes - MEMOIZADO NO TOPO
+  const handleViewDetails = React.useCallback((dev: DevolucaoAvancada) => {
+    setSelectedDevolucao(dev);
+    setShowDetails(true);
+  }, []);
 
   // Filtros atuais (considerando draft ou aplicados) - MEMOIZADO
   const currentFilters = React.useMemo(() => 
@@ -383,15 +397,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
       {/* Filtros Rápidos */}
       <FiltrosRapidos 
-        onAplicarFiltro={React.useCallback((filtros) => {
-          handleFilterChange('dataInicio', filtros.dataInicio);
-          handleFilterChange('dataFim', filtros.dataFim);
-          if (filtros.statusClaim) {
-            handleFilterChange('statusClaim', filtros.statusClaim);
-          }
-          // Aplicar automaticamente
-          setTimeout(() => handleAplicarEBuscar(), 100);
-        }, [handleFilterChange, handleAplicarEBuscar])}
+        onAplicarFiltro={handleFiltrosRapidos}
       />
 
       {/* Controles de ação - Simplificado */}
@@ -512,10 +518,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             <CardContent>
             <DevolucaoTable
               devolucoes={devolucoesPaginadas}
-              onViewDetails={React.useCallback((dev) => {
-                setSelectedDevolucao(dev);
-                setShowDetails(true);
-              }, [])}
+              onViewDetails={handleViewDetails}
             />
               
               {devolucoesPaginadas.length === 0 && devolucoesFiltradas.length > 0 && (
