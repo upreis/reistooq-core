@@ -117,6 +117,17 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
+  // 🛡️ Validação: Se não há contas selecionadas, mostrar aviso
+  if (!selectedAccountIds || selectedAccountIds.length === 0) {
+    return (
+      <Card className="p-6 border-yellow-200 bg-yellow-50">
+        <div className="text-center">
+          <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
+        </div>
+      </Card>
+    );
+  }
+
   // Filtros salvos são carregados automaticamente no hook, mas NÃO executam busca
   // O usuário deve clicar em "Buscar" ou "Aplicar" para executar a busca
 
