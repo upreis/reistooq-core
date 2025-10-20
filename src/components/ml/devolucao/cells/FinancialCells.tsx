@@ -1,0 +1,147 @@
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
+
+interface FinancialCellsProps {
+  devolucao: DevolucaoAvancada;
+}
+
+const formatCurrency = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return 'R$ 0,00';
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  }).format(value);
+};
+
+const formatPercentage = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return '-';
+  return `${value}%`;
+};
+
+const formatDateTime = (date: string | null | undefined): string => {
+  if (!date) return '-';
+  try {
+    return new Date(date).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return String(date);
+  }
+};
+
+export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => {
+  const breakdown = devolucao.descricao_custos as any;
+  const produto = breakdown?.produto || {};
+  const frete = breakdown?.frete || {};
+  const taxas = breakdown?.taxas || {};
+  
+  return (
+    <>
+      {/* Valor Original */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(produto.valor_original || devolucao.valor_original_produto)}
+      </td>
+      
+      {/* Reembolso Total */}
+      <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
+        {formatCurrency(devolucao.valor_reembolso_total)}
+      </td>
+      
+      {/* Reembolso Produto */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(produto.valor_reembolsado || devolucao.valor_reembolso_produto)}
+      </td>
+      
+      {/* % Reembolsado */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatPercentage(produto.percentual_reembolsado || devolucao.percentual_reembolsado)}
+      </td>
+      
+      {/* Impacto Vendedor */}
+      <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+        {formatCurrency(devolucao.impacto_financeiro_vendedor)}
+      </td>
+      
+      {/* Frete Original */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(frete.valor_original)}
+      </td>
+      
+      {/* Frete Reembolsado */}
+      <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+        {formatCurrency(frete.valor_reembolsado)}
+      </td>
+      
+      {/* Custo Devolução */}
+      <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
+        {formatCurrency(frete.custo_devolucao)}
+      </td>
+      
+      {/* Total Logística */}
+      <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
+        {formatCurrency(frete.custo_total_logistica || devolucao.custo_logistico_total)}
+      </td>
+      
+      {/* Taxa ML Original */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(taxas.taxa_ml_original)}
+      </td>
+      
+      {/* Taxa ML Reembolsada */}
+      <td className="px-3 py-3 text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
+        {formatCurrency(taxas.taxa_ml_reembolsada)}
+      </td>
+      
+      {/* Taxa ML Retida */}
+      <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
+        {formatCurrency(taxas.taxa_ml_retida)}
+      </td>
+      
+      {/* Valor Retido */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.valor_retido)}
+      </td>
+      
+      {/* Compensação */}
+      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
+        {formatCurrency(devolucao.valor_compensacao)}
+      </td>
+      
+      {/* Método Reembolso */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.metodo_pagamento ? (
+          <Badge variant="outline">{devolucao.metodo_pagamento}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Moeda */}
+      <td className="px-3 py-3 text-center">
+        <Badge variant="secondary">
+          {devolucao.moeda_reembolso || 'BRL'}
+        </Badge>
+      </td>
+      
+      {/* Data Processamento */}
+      <td className="px-3 py-3 text-center text-sm whitespace-nowrap">
+        {formatDateTime(devolucao.data_processamento_reembolso)}
+      </td>
+      
+      {/* Parcelas */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.parcelas || '-'}
+      </td>
+      
+      {/* Valor Parcela */}
+      <td className="px-3 py-3 text-right text-sm whitespace-nowrap">
+        {formatCurrency(devolucao.valor_parcela)}
+      </td>
+    </>
+  );
+};

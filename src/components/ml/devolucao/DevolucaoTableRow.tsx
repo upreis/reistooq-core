@@ -1,8 +1,12 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Eye, MessageSquare } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
+import { IdentificationCells } from './cells/IdentificationCells';
+import { DatesCells } from './cells/DatesCells';
+import { StatusCells } from './cells/StatusCells';
+import { FinancialCells } from './cells/FinancialCells';
+import { ActionCell } from './cells/ActionCell';
 
 interface DevolucaoTableRowProps {
   devolucao: DevolucaoAvancada;
@@ -173,143 +177,14 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
 }) => {
   return (
     <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
-      {/* GRUPO 1: IDENTIFICAÇÃO (5 colunas) */}
+      {/* GRUPO 1: IDENTIFICAÇÃO */}
+      <IdentificationCells devolucao={devolucao} />
       
-      {/* Pedido ID */}
-      <td className="px-3 py-3 text-center font-mono text-blue-600 dark:text-blue-400">
-        {devolucao.order_id || '-'}
-      </td>
+      {/* GRUPO 2: DATAS E TIMELINE */}
+      <DatesCells devolucao={devolucao} />
       
-      {/* Claim ID */}
-      <td className="px-3 py-3 text-center font-mono text-purple-600 dark:text-purple-400">
-        {devolucao.claim_id || '-'}
-      </td>
-      
-      {/* Player Role */}
-      <td className="px-3 py-3 text-center">
-        {getPlayerRoleBadge((devolucao.dados_claim as any)?.player_role || null)}
-      </td>
-      
-      {/* Item ID */}
-      <td className="px-3 py-3 text-center font-mono text-foreground">
-        {(devolucao.dados_order as any)?.order_items?.[0]?.item?.id || '-'}
-      </td>
-      
-      {/* SKU */}
-      <td className="px-3 py-3 text-center font-mono text-foreground">
-        {devolucao.sku || '-'}
-      </td>
-      
-      {/* Transação ID */}
-      <td className="px-3 py-3 text-center font-mono text-foreground">
-        {devolucao.transaction_id || '-'}
-      </td>
-      
-      {/* GRUPO 2: DATAS E TIMELINE (11 colunas) */}
-      
-      {/* Data Criação */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_criacao)}
-      </td>
-      
-      {/* Data Criação Claim */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_criacao_claim)}
-      </td>
-      
-      {/* Data Fechamento */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_fechamento_claim)}
-      </td>
-      
-      {/* Início Devolução */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_inicio_return)}
-      </td>
-      
-      {/* Primeira Ação */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_primeira_acao)}
-      </td>
-      
-      {/* Prazo Limite */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.tempo_limite_acao)}
-      </td>
-      
-      {/* Data Estimada Troca */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_estimada_troca)}
-      </td>
-      
-      {/* Data Limite Troca */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_limite_troca)}
-      </td>
-      
-      {/* Vencimento ACAS */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_vencimento_acao)}
-      </td>
-      
-      {/* Processamento Reembolso */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_processamento_reembolso)}
-      </td>
-      
-      {/* Última Sync */}
-      <td className="px-3 py-3 text-center whitespace-nowrap text-xs text-muted-foreground">
-        {formatDateTime(devolucao.ultima_sincronizacao)}
-      </td>
-      
-      {/* GRUPO 3: STATUS E ESTADO (7 colunas) */}
-      
-      {/* Status */}
-      <td className="px-3 py-3 text-center">
-        {getStatusBadge(devolucao.status_devolucao)}
-      </td>
-      
-      {/* Etapa */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.claim_stage ? <Badge variant="outline">{devolucao.claim_stage}</Badge> : <span className="text-muted-foreground">-</span>}
-      </td>
-      
-      {/* Resolução */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.resultado_final ? <Badge variant="secondary">{devolucao.resultado_final}</Badge> : <span className="text-muted-foreground">-</span>}
-      </td>
-      
-      {/* Status Rastreio */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.status_rastreamento_pedido ? (
-          <Badge variant="outline">{devolucao.status_rastreamento_pedido}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* Status Review */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.review_status ? (
-          <Badge variant="outline">{devolucao.review_status}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* Status Moderação */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.status_moderacao ? (
-          <Badge variant="outline">{devolucao.status_moderacao}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* SLA Cumprido */}
-      <td className="px-3 py-3 text-center">
-        {getBooleanBadge(devolucao.sla_cumprido)}
-      </td>
+      {/* GRUPO 3: STATUS E ESTADO */}
+      <StatusCells devolucao={devolucao} />
       
       {/* GRUPO 4: COMPRADOR (4 colunas) */}
       
@@ -359,128 +234,8 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         <span className="text-muted-foreground">-</span>
       </td>
       
-      {/* GRUPO 6: VALORES FINANCEIROS (20 colunas - expandido com detalhes do modal) */}
-      
-      {/* Extrair dados do breakdown detalhado para exibir na tabela */}
-      {React.useMemo(() => {
-        const breakdown = devolucao.descricao_custos as any;
-        const produto = breakdown?.produto || {};
-        const frete = breakdown?.frete || {};
-        const taxas = breakdown?.taxas || {};
-        
-        return (
-          <>
-            {/* Valor Original */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatCurrency(produto.valor_original || devolucao.valor_original_produto)}
-            </td>
-            
-            {/* Reembolso Total */}
-            <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
-              {formatCurrency(devolucao.valor_reembolso_total)}
-            </td>
-            
-            {/* Reembolso Produto */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatCurrency(produto.valor_reembolsado || devolucao.valor_reembolso_produto)}
-            </td>
-            
-            {/* % Reembolsado */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatPercentage(produto.percentual_reembolsado || devolucao.percentual_reembolsado)}
-            </td>
-            
-            {/* Impacto Vendedor */}
-            <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
-              {formatCurrency(devolucao.impacto_financeiro_vendedor)}
-            </td>
-            
-            {/* === FRETE E LOGÍSTICA DETALHADO === */}
-            
-            {/* Frete Original */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatCurrency(frete.valor_original)}
-            </td>
-            
-            {/* Frete Reembolsado */}
-            <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
-              {formatCurrency(frete.valor_reembolsado)}
-            </td>
-            
-            {/* Custo Devolução */}
-            <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
-              {formatCurrency(frete.custo_devolucao)}
-            </td>
-            
-            {/* Total Logística */}
-            <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
-              {formatCurrency(frete.custo_total_logistica || devolucao.custo_logistico_total)}
-            </td>
-            
-            {/* === TAXAS ML DETALHADO === */}
-            
-            {/* Taxa ML Original */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatCurrency(taxas.taxa_ml_original)}
-            </td>
-            
-            {/* Taxa ML Reembolsada */}
-            <td className="px-3 py-3 text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
-              {formatCurrency(taxas.taxa_ml_reembolsada)}
-            </td>
-            
-            {/* Taxa ML Retida */}
-            <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
-              {formatCurrency(taxas.taxa_ml_retida)}
-            </td>
-            
-            {/* === OUTROS VALORES === */}
-            
-            {/* Valor Retido */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatCurrency(devolucao.valor_retido)}
-            </td>
-            
-            {/* Compensação */}
-            <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-              {formatCurrency(devolucao.valor_compensacao)}
-            </td>
-            
-            {/* === INFORMAÇÕES DE PAGAMENTO === */}
-            
-            {/* Método Reembolso */}
-            <td className="px-3 py-3 text-center">
-              {devolucao.metodo_pagamento ? (
-                <Badge variant="outline">{devolucao.metodo_pagamento}</Badge>
-              ) : (
-                <span className="text-muted-foreground">-</span>
-              )}
-            </td>
-            
-            {/* Moeda */}
-            <td className="px-3 py-3 text-center">
-              <Badge variant="secondary">
-                {devolucao.moeda_reembolso || 'BRL'}
-              </Badge>
-            </td>
-            
-            {/* Data Processamento */}
-            <td className="px-3 py-3 text-center text-sm whitespace-nowrap">
-              {formatDateTime(devolucao.data_processamento_reembolso)}
-            </td>
-            
-            {/* Parcelas */}
-            <td className="px-3 py-3 text-center">
-              {devolucao.parcelas || '-'}
-            </td>
-            
-            {/* Valor Parcela */}
-            <td className="px-3 py-3 text-right text-sm whitespace-nowrap">
-              {formatCurrency(devolucao.valor_parcela)}
-            </td>
-          </>
-        );
-      }, [devolucao])}
+      {/* GRUPO 6: VALORES FINANCEIROS */}
+      <FinancialCells devolucao={devolucao} />
       
       {/* GRUPO 7: MOTIVO E CATEGORIA (5 colunas) */}
       
@@ -944,16 +699,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       </td>
       
       {/* AÇÕES */}
-      <td className="px-3 py-3 text-center">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onViewDetails(devolucao)}
-          className="h-8 w-8 p-0"
-        >
-          <Eye className="h-4 w-4" />
-        </Button>
-      </td>
+      <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
     </tr>
   );
 });
