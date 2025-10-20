@@ -73,7 +73,7 @@ interface DevolucaoFiltersUnifiedProps {
   columnManager?: any;
 }
 
-export function DevolucaoFiltersUnified({
+export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnified({
   filters,
   appliedFilters,
   onFilterChange,
@@ -566,4 +566,4 @@ export function DevolucaoFiltersUnified({
       )}
     </div>
   );
-}
+});

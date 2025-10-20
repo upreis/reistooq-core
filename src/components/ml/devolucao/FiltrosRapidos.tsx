@@ -33,7 +33,7 @@ interface FiltrosRapidosProps {
   filtroAtivo?: string;
 }
 
-export function FiltrosRapidos({ onAplicarFiltro, filtroAtivo }: FiltrosRapidosProps) {
+export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFiltro, filtroAtivo }: FiltrosRapidosProps) {
   
   const calcularDataInicio = (dias: number): string => {
     const data = new Date();
@@ -166,4 +166,4 @@ export function FiltrosRapidos({ onAplicarFiltro, filtroAtivo }: FiltrosRapidosP
       </CardContent>
     </Card>
   );
-}
+});
