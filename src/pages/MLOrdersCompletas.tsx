@@ -7,18 +7,13 @@ import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 import { OMSNav } from "@/features/oms/components/OMSNav";
-import { useAutoSync } from "@/features/devolucoes/hooks/useAutoSync";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function MLOrdersCompletas() {
   // Estado para contas selecionadas
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   
-  // Auto-sync para a primeira conta selecionada
-  useAutoSync({
-    integrationAccountId: selectedAccountIds[0],
-    enabled: selectedAccountIds.length > 0,
-    intervalMinutes: 30 // Sync automático a cada 30 minutos
-  });
+  // ✅ REMOVIDO: useAutoSync duplicado (já existe no SyncControls)
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
@@ -47,8 +42,9 @@ export default function MLOrdersCompletas() {
   const loadingDevolucoes = false;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb principal */}
+    <ErrorBoundary>
+      <div className="space-y-6">
+        {/* Breadcrumb principal */}
       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
         <span>📦</span>
         <span>/</span>
@@ -114,6 +110,7 @@ export default function MLOrdersCompletas() {
           </div>
         </Card>
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }

@@ -169,9 +169,9 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
           </tr>
         </thead>
         <tbody>
-          {devolucoes.map((devolucao) => (
+          {devolucoes.map((devolucao, index) => (
             <DevolucaoTableRow
-              key={devolucao.id}
+              key={`${devolucao.id}-${devolucao.claim_id || index}`}
               devolucao={devolucao}
               onViewDetails={onViewDetails}
               onOpenMensagens={handleOpenMensagens}
