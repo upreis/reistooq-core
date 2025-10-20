@@ -1172,9 +1172,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = offsetInicial
     
-    // ⏱️ Para sincronização, buscar tudo se houver date_from
+    // ⏱️ Para sincronização, buscar tudo se houver date_from (com limite seguro de 500)
     const hasDateFilter = filters?.date_from || filters?.date_to;
-    const MAX_CLAIMS = hasDateFilter ? 10000 : limit;  // Com filtro de data, buscar tudo
+    const MAX_CLAIMS = hasDateFilter ? 500 : limit;  // Limite seguro para evitar timeout
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
