@@ -15,55 +15,8 @@ function makeServiceClient() {
   });
 }
 
-// 🔄 Buscar dados de Returns (devolução)
-async function buscarReturns(claimId: string, accessToken: string, integrationAccountId: string) {
-  const url = `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`
-  
-  try {
-    const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log(`  ℹ️  Claim ${claimId} não tem returns (404)`)
-        return null
-      }
-      throw new Error(`HTTP ${response.status}`)
-    }
-    
-    const data = await response.json()
-    console.log(`  ✅ Returns encontrado para claim ${claimId}`)
-    return data
-    
-  } catch (error) {
-    console.warn(`  ⚠️  Erro ao buscar returns do claim ${claimId}:`, error.message)
-    return null
-  }
-}
-
-// 📦 Buscar histórico de rastreamento do shipment
-async function buscarShipmentHistory(shipmentId: number, accessToken: string, integrationAccountId: string) {
-  const url = `https://api.mercadolibre.com/shipments/${shipmentId}/history`
-  
-  try {
-    const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.log(`  ℹ️  Shipment ${shipmentId} não tem histórico (404)`)
-        return null
-      }
-      throw new Error(`HTTP ${response.status}`)
-    }
-    
-    const data = await response.json()
-    console.log(`  ✅ Histórico encontrado para shipment ${shipmentId}`)
-    return data
-    
-  } catch (error) {
-    console.warn(`  ⚠️  Erro ao buscar histórico do shipment ${shipmentId}:`, error.message)
-    return null
-  }
-}
+// Funções auxiliares removidas: buscarReturns e buscarShipmentHistory
+// Motivo: Nunca foram chamadas no código (Fase 1 de otimização)
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
