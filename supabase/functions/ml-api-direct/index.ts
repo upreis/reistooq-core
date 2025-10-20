@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -924,110 +925,8 @@ async function fetchMultipleReasons(
   return reasonsMap;
 }
 
-/**
- * 🗺 Mapeia reason_id para categoria e detalhes
- * Usa dados da API se disponíveis, senão usa mapeamento local como fallback
- */
-function mapReasonWithApiData(
-  reasonId: string | null,
-  apiData: any | null
-): {
-  reason_id: string | null;
-  reason_category: string | null;
-  reason_name: string | null;
-  reason_detail: string | null;
-  reason_type: string | null;
-  reason_priority: string | null;
-  reason_expected_resolutions: string[] | null;
-  reason_flow: string | null;
-} {
-  // Se não tem reason_id, retornar tudo null
-  if (!reasonId) {
-    return {
-      reason_id: null,
-      reason_category: null,
-      reason_name: null,
-      reason_detail: null,
-      reason_type: null,
-      reason_priority: null,
-      reason_expected_resolutions: null,
-      reason_flow: null
-    };
-  }
-  
-  // Extrair prefixo para categorização
-  const prefix = reasonId.substring(0, 3);
-  
-  // Se temos dados da API, usar eles (PRIORIDADE)
-  if (apiData) {
-    console.log(`[REISTOM DEBUG] 🎯 ========================================`);
-    console.log(`[REISTOM DEBUG] 🎯 MAPEAMENTO USANDO API PARA: ${reasonId}`);
-    console.log(`[REISTOM DEBUG] 🎯 API Data recebido:`, JSON.stringify(apiData, null, 2));
-    console.log(`[REISTOM DEBUG] 🎯 ========================================`);
-    
-    const mapped = {
-      reason_id: apiData.id || reasonId,
-      reason_category: prefix === 'PNR' ? 'not_received' :
-                      prefix === 'PDD' ? 'defective_or_different' :
-                      prefix === 'CS' ? 'cancellation' : 'other',
-      reason_name: apiData.name || null,
-      reason_detail: apiData.detail || null,
-      reason_type: 'buyer_initiated',
-      reason_priority: prefix === 'PNR' || prefix === 'PDD' ? 'high' : 'medium',
-      reason_expected_resolutions: apiData.expected_resolutions || null,
-      reason_flow: apiData.flow || null
-    };
-    
-    console.log(`[REISTOM DEBUG] 🎯 Dados mapeados:`, JSON.stringify(mapped, null, 2));
-    return mapped;
-  }
-  
-  // Fallback: mapeamento genérico por prefixo (quando API falha)
-  console.log(`[REISTOM DEBUG] ⚠️ ========================================`);
-  console.log(`[REISTOM DEBUG] ⚠️ USANDO FALLBACK GENÉRICO PARA: ${reasonId}`);
-  console.log(`[REISTOM DEBUG] ⚠️ Reason ${reasonId} NÃO VEIO DA API!`);
-  console.log(`[REISTOM DEBUG] ⚠️ ========================================`);
-  
-  // Mapeamento genérico por prefixo
-  const fallbackMap: Record<string, any> = {
-    'PNR': {
-      category: 'not_received',
-      name: 'Produto Não Recebido',
-      detail: 'O comprador não recebeu o produto',
-      priority: 'high'
-    },
-    'PDD': {
-      category: 'defective_or_different',
-      name: 'Produto Defeituoso ou Diferente',
-      detail: 'Produto veio com defeito ou diferente do anunciado',
-      priority: 'high'
-    },
-    'CS': {
-      category: 'cancellation',
-      name: 'Cancelamento de Compra',
-      detail: 'Cancelamento da compra solicitado',
-      priority: 'medium'
-    }
-  };
-  
-  const fallback = fallbackMap[prefix] || {
-    category: 'other',
-    name: 'Outro Motivo',
-    detail: 'Outro motivo de reclamação',
-    priority: 'medium'
-  };
-  
-  return {
-    reason_id: reasonId,
-    reason_category: fallback.category,
-    reason_name: fallback.name,
-    reason_detail: fallback.detail,
-    reason_type: 'buyer_initiated',
-    reason_priority: fallback.priority,
-    reason_expected_resolutions: null,
-    reason_flow: null
-  };
-}
+// ✅ FUNÇÃO REMOVIDA: mapReasonWithApiData agora está importado de ./mappers/reason-mapper.ts
+// Isso elimina ~100 linhas de código duplicado
 
 // ============ FUNÇÃO PARA BUSCAR CLAIMS/DEVOLUÇÕES DIRETAMENTE DA API ML ============
 async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
