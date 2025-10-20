@@ -1488,12 +1488,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   review_quality_score: enrichedReviewData.reviewQualityScore,
                   review_needs_manual_action: enrichedReviewData.reviewNeedsManualAction,
                   
-                  // ============================================
-                  // ⏱️ FASE 3: MÉTRICAS TEMPORAIS E SLA
-                  // ============================================
-                  // ✅ SUBSTITUÍDO: Agora usa calculateSLAMetrics() do utils/sla-calculator.ts
-                  // Isso elimina ~100 linhas de código duplicado
-                  sla_metrics: calculateSLAMetrics(claimData, orderDetail, consolidatedMessages, mediationDetails),
+                // ============================================
+                // ⏱️ FASE 3: MÉTRICAS TEMPORAIS E SLA
+                // ============================================
+                // ✅ NOTA: sla_metrics será calculado após claimData estar completo
+                // Ver linha ~1527 onde calculateSLAMetrics() é chamado corretamente
+                sla_metrics: null, // Será substituído abaixo
                   
                   // ============================================
                   // 💰 FASE 4: ENRIQUECIMENTO FINANCEIRO AVANÇADO
@@ -1523,6 +1523,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   dados_completos: true
                 }
                 
+              // ✅ Agora calcular SLA com claimData completo
+              claimData.sla_metrics = calculateSLAMetrics(claimData, orderDetail, consolidatedMessages, mediationDetails)
+              
               console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
             } catch (claimError) {
               console.error(`❌ Erro crítico ao buscar dados do claim ${mediationId}:`, claimError)
@@ -1562,6 +1565,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               return_reviews: safeClaimData?.return_reviews || null,
               shipment_history: safeClaimData?.shipment_history || null,
               change_details: safeClaimData?.change_details || null,
+              
+              // ✅ MÉTRICAS DE SLA CALCULADAS
+              sla_metrics: safeClaimData?.sla_metrics || null,
               
               // CAMPOS ENRIQUECIDOS EXTRAÍDOS
               claim_status: safeClaimData?.claim_status || null,
