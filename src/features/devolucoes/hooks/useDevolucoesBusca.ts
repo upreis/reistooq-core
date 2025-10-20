@@ -7,6 +7,31 @@ import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import { reasonsCacheService } from '../utils/DevolucaoCacheService';
+import { fetchClaimsAndReturns, fetchReasonDetail, fetchAllClaims } from '../utils/MLApiClient';
+import { mapReasonWithApiData } from '../utils/DevolucaoReasonsMapper';
+import { sortByDataCriacao } from '../utils/DevolucaoSortUtils';
+import {
+  mapDadosPrincipais,
+  mapDadosFinanceiros,
+  mapDadosReview,
+  mapDadosSLA,
+  mapDadosRastreamento,
+  mapDadosMediacao,
+  mapDadosReputacao,
+  mapDadosAnexos,
+  mapDadosTimeline,
+  mapDadosMensagens,
+  mapDadosComprador,
+  mapDadosPagamento,
+  mapDadosProduto,
+  mapDadosFlags,
+  mapDadosQualidade,
+  mapDadosTroca,
+  mapDadosClassificacao,
+  mapDadosAdicionais,
+  mapDadosBrutos
+} from '../utils/DevolucaoDataMapper';
 
 export interface DevolucaoBuscaFilters {
   contasSelecionadas: string[];
@@ -22,10 +47,6 @@ export interface DevolucaoBuscaFilters {
   resource?: string;       // 'order' | 'shipment'
   claimType?: string;      // 'mediations' | 'claim'
 }
-
-// 🎯 CACHE GLOBAL DE REASONS - Evita chamadas repetidas à API
-const reasonsCache = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 1000 * 60 * 30; // 30 minutos
 
 export function useDevolucoesBusca() {
   const [loading, setLoading] = useState(false);
@@ -48,48 +69,27 @@ export function useDevolucoesBusca() {
     detail: string;
     flow: string;
   } | null> => {
-    // 🎯 VERIFICAR CACHE PRIMEIRO
     const cacheKey = `${integrationAccountId}:${reasonId}`;
-    const cached = reasonsCache.get(cacheKey);
+    const cached = reasonsCacheService.get(cacheKey);
     
-    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
-      logger.info(`💾 Cache hit para reason ${reasonId}`);
-      setCacheStats(prev => ({ ...prev, hits: prev.hits + 1 }));
-      return cached.data;
+    if (cached) {
+      reasonsCacheService.updateStats(prev => ({ ...prev, hits: prev.hits + 1 }));
+      setCacheStats(reasonsCacheService.getStats());
+      return cached;
     }
     
-    setCacheStats(prev => ({ ...prev, misses: prev.misses + 1 }));
+    reasonsCacheService.updateStats(prev => ({ ...prev, misses: prev.misses + 1 }));
+    setCacheStats(reasonsCacheService.getStats());
 
     try {
-      const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
-        body: {
-          action: 'get_reason_detail',
-          integration_account_id: integrationAccountId,
-          reason_id: reasonId
-        }
-      });
-
-      if (apiError || !apiResponse?.success) {
-        // ⚠️ Silenciar erro se for falta de token - normal em múltiplas contas
-        if (apiResponse?.error !== 'Token ML não disponível') {
-          logger.warn(`⚠️ Reason ${reasonId} não encontrado na API`, apiError);
-        }
-        return null;
+      const data = await fetchReasonDetail(integrationAccountId, reasonId);
+      
+      if (data) {
+        reasonsCacheService.set(cacheKey, data);
+        setCacheStats(reasonsCacheService.getStats());
       }
 
-      if (apiResponse?.data) {
-        // 💾 SALVAR NO CACHE
-        reasonsCache.set(cacheKey, {
-          data: apiResponse.data,
-          timestamp: Date.now()
-        });
-        
-        setCacheStats(prev => ({ ...prev, lastUpdate: new Date().toISOString() }));
-        
-        return apiResponse.data;
-      }
-
-      return null;
+      return data;
     } catch (error) {
       logger.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
       return null;
@@ -138,125 +138,7 @@ export function useDevolucoesBusca() {
     return reasonsMap;
   };
 
-  /**
-   * 🗺️ Mapeia reason_id para categoria e detalhes
-   * Usa dados da API se disponíveis, senão usa mapeamento local
-   */
-  const mapReasonWithApiData = (
-    reasonId: string | null,
-    apiData: any | null
-  ): {
-    reason_id: string | null;
-    reason_category: string | null;
-    reason_name: string | null;
-    reason_detail: string | null;
-    reason_type: string | null;
-    reason_priority: string | null;
-    reason_expected_resolutions: string[] | null;
-  } => {
-    if (!reasonId) {
-      return {
-        reason_id: null,
-        reason_category: null,
-        reason_name: null,
-        reason_detail: null,
-        reason_type: null,
-        reason_priority: null,
-        reason_expected_resolutions: null
-      };
-    }
-
-    // Se temos dados da API, usar eles
-    if (apiData) {
-      const prefix = reasonId.substring(0, 3);
-
-      return {
-        reason_id: apiData.id,
-        reason_category: prefix === 'PNR' ? 'not_received' :
-                        prefix === 'PDD' ? 'defective_or_different' :
-                        prefix === 'CS' ? 'cancellation' : 'other',
-        reason_name: apiData.name || null,
-        reason_detail: apiData.detail || null,
-        reason_type: 'buyer_initiated',
-        reason_priority: prefix === 'PNR' || prefix === 'PDD' ? 'high' : 'medium',
-        reason_expected_resolutions: prefix === 'PNR' ? ['refund', 'resend'] :
-                                     prefix === 'PDD' ? ['replacement', 'refund', 'repair'] :
-                                     prefix === 'CS' ? ['refund'] : ['contact_seller']
-      };
-    }
-
-    // Fallback: mapeamento local
-    const prefix = reasonId.substring(0, 3);
-
-    // Mapeamento local como fallback
-    const categoryMap: Record<string, any> = {
-      'PNR': {
-        category: 'not_received',
-        name: 'Produto Não Recebido',
-        detail: 'O comprador não recebeu o produto',
-        type: 'buyer_initiated',
-        priority: 'high',
-        expected_resolutions: ['refund', 'resend'],
-        flow: 'post_purchase'
-      },
-      'PDD': {
-        category: 'defective_or_different',
-        name: 'Produto Defeituoso ou Diferente',
-        detail: 'Produto veio com defeito ou diferente do anunciado',
-        type: 'buyer_initiated',
-        priority: 'high',
-        expected_resolutions: ['replacement', 'refund', 'repair'],
-        flow: 'post_purchase_delivered'
-      },
-      'CS': {
-        category: 'cancellation',
-        name: 'Cancelamento de Compra',
-        detail: 'Cancelamento da compra solicitado',
-        type: 'buyer_initiated',
-        priority: 'medium',
-        expected_resolutions: ['refund'],
-        flow: 'pre_purchase'
-      },
-      'PD0': {
-        category: 'defective_or_different',
-        name: 'Produto Defeituoso ou Diferente',
-        detail: 'Produto veio com defeito ou diferente do anunciado',
-        type: 'buyer_initiated',
-        priority: 'high',
-        expected_resolutions: ['replacement', 'refund'],
-        flow: 'post_purchase_delivered'
-      }
-    };
-
-    // Tentar match com 3 caracteres, depois 2
-    let mapping = categoryMap[prefix];
-    if (!mapping && prefix.length >= 2) {
-      mapping = categoryMap[prefix.substring(0, 2)];
-    }
-
-    if (!mapping) {
-      // Fallback genérico
-      return {
-        reason_id: reasonId,
-        reason_category: 'other',
-        reason_name: 'Outros Motivos',
-        reason_detail: `Motivo não categorizado: ${reasonId}`,
-        reason_type: 'buyer_initiated',
-        reason_priority: 'medium',
-        reason_expected_resolutions: ['contact_seller']
-      };
-    }
-
-    return {
-      reason_id: reasonId,
-      reason_category: mapping.category,
-      reason_name: mapping.name,
-      reason_detail: mapping.detail,
-      reason_type: mapping.type,
-      reason_priority: mapping.priority,
-      reason_expected_resolutions: mapping.expected_resolutions
-    };
-  };
+  // mapReasonWithApiData agora vem de DevolucaoReasonsMapper.ts
 
   // Buscar da API ML em tempo real
   const buscarDaAPI = useCallback(async (
@@ -347,8 +229,7 @@ export function useDevolucoesBusca() {
             // 🎯 OTIMIZAÇÃO: Só buscar reasons que não estão em cache
             const uncachedReasons = uniqueReasonIds.filter(reasonId => {
               const cacheKey = `${accountId}:${reasonId}`;
-              const cached = reasonsCache.get(cacheKey);
-              return !cached || (Date.now() - cached.timestamp) >= CACHE_TTL;
+              return !reasonsCacheService.has(cacheKey);
             });
 
             logger.info(`🎯 ${uniqueReasonIds.length} reasons únicos | ${uncachedReasons.length} para buscar | ${uniqueReasonIds.length - uncachedReasons.length} em cache`);
@@ -373,243 +254,23 @@ export function useDevolucoesBusca() {
                 });
               }
               
-              // 🎯 DADOS PRINCIPAIS (17 colunas)
-              const dadosPrincipais = {
-                order_id: item.order_id?.toString() || '',
-                claim_id: item.claim_details?.id?.toString() || null,
-                integration_account_id: accountId,
-                data_criacao: item.date_created || null,
-                status_devolucao: item.status || 'cancelled',
-                produto_titulo: item.resource_data?.title || item.reason || 'Produto não identificado',
-                sku: item.resource_data?.sku || item.order_data?.order_items?.[0]?.item?.seller_sku || '',
-                quantidade: parseInt(item.resource_data?.quantity || item.order_data?.order_items?.[0]?.quantity || 1),
-                valor_retido: parseFloat(item.amount || 0),
-                account_name: account.name,
-                marketplace_origem: 'ML_BRASIL',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-                ultima_sincronizacao: new Date().toISOString(),
-                dados_incompletos: false,
-                campos_faltantes: [],
-                fonte_dados_primaria: 'ml_api'
-              };
-
-              // 💰 DADOS FINANCEIROS (14 colunas)
-              const dadosFinanceiros = {
-                valor_reembolso_total: item.claim_details?.resolution?.refund_amount || 
-                                      item.return_details_v2?.refund_amount ||
-                                      parseFloat(item.amount || 0),
-                valor_reembolso_produto: item.order_data?.order_items?.[0]?.unit_price || 0,
-                valor_reembolso_frete: item.order_data?.payments?.[0]?.shipping_cost || 0,
-                taxa_ml_reembolso: item.order_data?.payments?.[0]?.marketplace_fee || 0,
-                custo_logistico_total: item.return_details_v2?.shipping_cost || 
-                                      item.return_details_v2?.logistics_cost || 0,
-                impacto_financeiro_vendedor: -(parseFloat(item.amount || 0)),
-                data_processamento_reembolso: item.order_data?.payments?.[0]?.date_approved || null,
-                metodo_reembolso: item.order_data?.payments?.[0]?.payment_method_id || null,
-                moeda_reembolso: item.order_data?.currency_id || 'BRL',
-                moeda_custo: 'BRL',
-                responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
-                custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
-                valor_compensacao: item.return_details_v2?.refund_amount || null,
-                descricao_custos: {
-                  produto: {
-                    valor_original: item.order_data?.order_items?.[0]?.unit_price || 0,
-                    valor_reembolsado: item.order_data?.order_items?.[0]?.unit_price || 0,
-                    percentual_reembolsado: 100
-                  },
-                  frete: {
-                    valor_original: item.order_data?.payments?.[0]?.shipping_cost || 0,
-                    valor_reembolsado: item.order_data?.payments?.[0]?.shipping_cost || 0,
-                    custo_devolucao: item.return_details_v2?.shipping_cost || 0,
-                    custo_total_logistica: item.return_details_v2?.shipping_cost || 0
-                  },
-                  taxas: {
-                    taxa_ml_original: item.order_data?.payments?.[0]?.marketplace_fee || 0,
-                    taxa_ml_reembolsada: item.order_data?.payments?.[0]?.marketplace_fee || 0,
-                    taxa_ml_retida: 0
-                  },
-                  resumo: {
-                    total_custos: parseFloat(item.amount || 0),
-                    total_receita_perdida: parseFloat(item.amount || 0)
-                  }
-                }
-              };
-
-              // 📋 DADOS DE REVIEW (10 colunas)
-              const dadosReview = {
-                review_id: item.review_id || item.claim_details?.review?.id?.toString() || null,
-                review_status: item.review_status || item.claim_details?.review?.status || null,
-                review_result: item.review_result || item.claim_details?.review?.result || null,
-                score_qualidade: item.review_score || item.claim_details?.review?.score || null,
-                necessita_acao_manual: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-                problemas_encontrados: item.problemas_encontrados || [],
-                acoes_necessarias_review: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions || [],
-                data_inicio_review: item.claim_details?.date_created || null,
-                observacoes_review: item.claim_details?.resolution?.reason || null,
-                revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
-              };
-
-              // ⏱️ DADOS DE SLA (10 colunas)
-              const dadosSLA = {
-                tempo_primeira_resposta_vendedor: null,
-                tempo_resposta_comprador: null,
-                tempo_analise_ml: null,
-                dias_ate_resolucao: item.claim_details?.resolution ? 
-                  Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
-                             new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60 * 24)) : null,
-                sla_cumprido: true,
-                tempo_limite_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
-                eficiencia_resolucao: item.claim_details?.resolution ? 'boa' : 'pendente',
-                data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.date_created,
-                tempo_total_resolucao: item.claim_details?.resolution ? 
-                  Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
-                             new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60)) : null,
-                tempo_resposta_medio: null
-              };
-
-              // 🚚 DADOS DE RASTREAMENTO (18 colunas)
-              const dadosRastreamento = {
-                shipment_id: item.order_data?.shipping?.id?.toString() || null,
-                codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
-                codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
-                transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                transportadora_devolucao: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
-                url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
-                localizacao_atual: item.tracking_history?.[0]?.location || null,
-                status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,
-                tracking_history: item.tracking_history || [],
-                tracking_events: item.tracking_events || [],
-                data_ultima_movimentacao: item.tracking_events?.[0]?.date || item.tracking_history?.[0]?.date || null,
-                historico_localizacoes: item.tracking_history || [],
-                carrier_info: {
-                  name: item.return_details_v2?.shipments?.[0]?.carrier || null,
-                  type: null
-                },
-                tempo_transito_dias: null,
-                shipment_delays: item.shipment_delays || [],
-                shipment_costs: {
-                  shipping_cost: null,
-                  handling_cost: null,
-                  total_cost: item.return_details_v2?.shipping_cost || null
-                },
-                previsao_entrega_vendedor: item.return_details_v2?.estimated_delivery_date || null
-              };
-
-              // ⚖️ DADOS DE MEDIAÇÃO (6 colunas)
-              const dadosMediacao = {
-                em_mediacao: item.claim_details?.type === 'mediations',
-                data_inicio_mediacao: item.claim_details?.type === 'mediations' ? item.claim_details?.date_created : null,
-                mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
-                resultado_mediacao: item.claim_details?.resolution?.reason || null,
-                detalhes_mediacao: item.mediation_details || (item.claim_details?.type === 'mediations' ? item.claim_details : {}),
-                escalado_para_ml: item.claim_details?.type === 'mediations'
-              };
-
-              // ⭐ DADOS DE REPUTAÇÃO (2 colunas)
-              const dadosReputacao = {
-                seller_reputation: item.order_data?.seller?.reputation || {},
-                buyer_reputation: item.buyer?.reputation || {}
-              };
-
-              // 📎 DADOS DE ANEXOS (5 colunas)
-              const dadosAnexos = {
-                anexos_count: 0,
-                anexos_comprador: [],
-                anexos_vendedor: [],
-                anexos_ml: [],
-                total_evidencias: (item.claim_messages?.messages?.length || 0)
-              };
-
-              // 📊 DADOS DE TIMELINE (8 colunas)
-              const dadosTimeline = {
-                timeline_events: item.timeline_events || [],
-                timeline_consolidado: {
-                  data_inicio: item.date_created || item.claim_details?.date_created,
-                  data_fim: item.claim_details?.resolution?.date_created || null,
-                  duracao_total_dias: item.claim_details?.resolution ? 
-                    Math.floor((new Date(item.claim_details.resolution.date_created).getTime() - 
-                               new Date(item.claim_details.date_created).getTime()) / (1000 * 60 * 60 * 24)) : null
-                },
-                marcos_temporais: {
-                  data_criacao_claim: item.claim_details?.date_created || null,
-                  data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-                  data_fechamento_claim: item.claim_details?.resolution?.date_created || null
-                },
-                data_criacao_claim: item.claim_details?.date_created || null,
-                data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-                data_fechamento_claim: item.claim_details?.resolution?.date_created || null,
-                historico_status: []
-              };
-
-              // 📝 DADOS DE MENSAGENS E COMUNICAÇÃO (7 colunas)
-              const dadosMensagens = {
-                timeline_mensagens: item.claim_messages?.messages || [],
-                ultima_mensagem_data: item.claim_messages?.messages?.length > 0 ? 
-                  item.claim_messages.messages[item.claim_messages.messages.length - 1]?.date_created : null,
-                ultima_mensagem_remetente: item.claim_messages?.messages?.length > 0 ? 
-                  item.claim_messages.messages[item.claim_messages.messages.length - 1]?.from?.role : null,
-                numero_interacoes: item.claim_messages?.messages?.length || 0,
-                mensagens_nao_lidas: item.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0,
-                qualidade_comunicacao: null,
-                status_moderacao: null
-              };
-
-              // 👤 DADOS DO COMPRADOR - FASE 2 (3 colunas)
-              const buyer = item.order_data?.buyer;
-              const dadosComprador = {
-                comprador_cpf: buyer?.billing_info?.doc_number || null,
-                comprador_nome_completo: buyer ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() : null,
-                comprador_nickname: buyer?.nickname || null
-              };
-
-              // 💳 DADOS DE PAGAMENTO - FASE 2 (7 colunas) 
-              const payment = item.order_data?.payments?.[0];
-              const dadosPagamento = {
-                metodo_pagamento: payment?.payment_method_id || null,
-                tipo_pagamento: payment?.payment_type || null,
-                parcelas: payment?.installments || null,
-                valor_parcela: payment?.installment_amount || null,
-                transaction_id: payment?.id?.toString() || null,
-                percentual_reembolsado: item.descricao_custos?.produto?.percentual_reembolsado || null,
-                tags_pedido: item.order_data?.tags || []
-              };
-
-              // 🏷️ DADOS DO PRODUTO - FASE 3 (5 colunas)
-              const orderItem = item.order_data?.order_items?.[0];
-              const dadosProduto = {
-                custo_frete_devolucao: item.descricao_custos?.frete?.custo_devolucao || null,
-                custo_logistico_total: item.descricao_custos?.frete?.custo_total_logistica || null,
-                valor_original_produto: orderItem?.unit_price || null,
-                valor_reembolso_produto: item.descricao_custos?.produto?.valor_reembolsado || null,
-                taxa_ml_reembolso: item.descricao_custos?.taxas?.taxa_ml_reembolsada || null
-              };
-
-              // 🔖 TAGS E FLAGS - FASE 3 (5 colunas)
-              const dadosFlags = {
-                internal_tags: item.order_data?.internal_tags || [],
-                tem_financeiro: !!(item.valor_reembolso_total || item.amount),
-                tem_review: !!item.review_id,
-                tem_sla: item.sla_cumprido !== null,
-                nota_fiscal_autorizada: (item.order_data?.internal_tags || []).includes('invoice_authorized')
-              };
-
-              // 📊 QUALIDADE - FASE 3 (1 coluna)
-              const dadosQualidade = {
-                eficiencia_resolucao: item.claim_details?.resolution ? 'boa' : 'pendente'
-              };
-
-              // 🔄 DADOS DE RETURN E TROCA (7 colunas)
-              const dadosTroca = {
-                eh_troca: (item.return_details_v2?.subtype || '').includes('change'),
-                produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id?.toString() || null,
-                data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
-                data_limite_troca: item.return_details_v2?.date_closed || null,
-                data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
-                dias_restantes_acao: null,
-                prazo_revisao_dias: null
-              };
+              // ✅ USAR FUNÇÕES UTILITÁRIAS DE MAPEAMENTO (reduz duplicação)
+              const dadosPrincipais = mapDadosPrincipais(item, accountId, account.name);
+              const dadosFinanceiros = mapDadosFinanceiros(item);
+              const dadosReview = mapDadosReview(item);
+              const dadosSLA = mapDadosSLA(item);
+              const dadosRastreamento = mapDadosRastreamento(item);
+              const dadosMediacao = mapDadosMediacao(item);
+              const dadosReputacao = mapDadosReputacao(item);
+              const dadosAnexos = mapDadosAnexos(item);
+              const dadosTimeline = mapDadosTimeline(item);
+              const dadosMensagens = mapDadosMensagens(item);
+              const dadosComprador = mapDadosComprador(item);
+              const dadosPagamento = mapDadosPagamento(item);
+              const dadosProduto = mapDadosProduto(item);
+              const dadosFlags = mapDadosFlags(item);
+              const dadosQualidade = mapDadosQualidade(item);
+              const dadosTroca = mapDadosTroca(item);
 
               // 🔍 REASONS API - FASE 4 (8 novos campos) - BUSCAR DA API
               const reasonId = item.claim_details?.reason_id || null;
@@ -636,49 +297,10 @@ export function useDevolucoesBusca() {
                 logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
               }
 
-              // 🎯 CLASSIFICAÇÃO E RESOLUÇÃO (16 colunas)
-              const dadosClassificacao = {
-                tipo_claim: item.type || item.claim_details?.type,
-                subtipo_claim: item.claim_details?.stage || null,
-                motivo_categoria: reasonId, // ✅ Mantém compatibilidade com código antigo
-                categoria_problema: null,
-                subcategoria_problema: null,
-                metodo_resolucao: item.claim_details?.resolution?.reason || null,
-                resultado_final: item.claim_details?.status || null,
-                nivel_prioridade: item.claim_details?.type === 'mediations' ? 'high' : 'medium',
-                nivel_complexidade: null,
-                acao_seller_necessaria: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-                proxima_acao_requerida: null,
-                impacto_reputacao: 'low',
-                satisfacao_comprador: null,
-                feedback_comprador_final: null,
-                feedback_vendedor: null,
-                taxa_satisfacao: null,
-                score_satisfacao_final: null
-              };
-
-              // 🏷️ DADOS ADICIONAIS (7 colunas)
-              const dadosAdicionais = {
-                tags_automaticas: [],
-                usuario_ultima_acao: null,
-                hash_verificacao: null,
-                confiabilidade_dados: null,
-                versao_api_utilizada: null,
-                origem_timeline: null,
-                status_produto_novo: null,
-                endereco_destino: {},
-                valor_diferenca_troca: null
-              };
-
-              // ⚠️ REASONS API já foi processado acima, antes de dadosClassificacao
-
-              // 📦 DADOS BRUTOS JSONB (4 colunas)
-              const dadosBrutos = {
-                dados_order: item.order_data || {},
-                dados_claim: item.claim_details || {},
-                dados_mensagens: item.claim_messages || {},
-                dados_return: item.return_details_v2 || item.return_details_v1 || {}
-              };
+              // 🎯 CLASSIFICAÇÃO E RESOLUÇÃO - USAR UTILITÁRIO
+              const dadosClassificacao = mapDadosClassificacao(item, reasonId);
+              const dadosAdicionais = mapDadosAdicionais(item);
+              const dadosBrutos = mapDadosBrutos(item);
 
               // ✅ CONSOLIDAR TODOS OS DADOS (165 colunas total incluindo Fase 2, 3 e 4)
               const itemCompleto = {
@@ -718,12 +340,8 @@ export function useDevolucoesBusca() {
               return itemCompleto;
             }));
 
-            // 📅 ORDENAR POR DATA (MAIS RECENTE PRIMEIRO)
-            devolucoesProcesadas.sort((a, b) => {
-              const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
-              const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
-              return dataB - dataA; // Ordem decrescente
-            });
+            // 📅 ORDENAR POR DATA - USAR UTILITÁRIO
+            sortByDataCriacao(devolucoesProcesadas);
 
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
             if (devolucoesProcesadas.length > 0) {
@@ -758,14 +376,8 @@ export function useDevolucoesBusca() {
         }
       }
 
-      // 📅 ORDENAR RESULTADO FINAL POR DATA VENDA (MAIS RECENTE PRIMEIRO)
-      console.log('[ORDENAÇÃO] Ordenando por data_criacao (Data Venda)...');
-      todasDevolucoes.sort((a, b) => {
-        const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
-        const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
-        console.log(`[SORT] ${a.order_id}: ${a.data_criacao} vs ${b.order_id}: ${b.data_criacao}`);
-        return dataB - dataA; // Mais recente primeiro
-      });
+      // 📅 ORDENAR RESULTADO FINAL - USAR UTILITÁRIO
+      sortByDataCriacao(todasDevolucoes);
 
       logger.info(`Total da API: ${todasDevolucoes.length} devoluções enriquecidas e salvas`);
       return todasDevolucoes;
@@ -1098,9 +710,8 @@ export function useDevolucoesBusca() {
     loadingProgress,
     cacheStats,
     clearCache: () => {
-      reasonsCache.clear();
-      setCacheStats({ hits: 0, misses: 0, lastUpdate: '' });
-      logger.info('🧹 Cache limpo');
+      reasonsCacheService.clear();
+      setCacheStats(reasonsCacheService.getStats());
     }
   };
 }
