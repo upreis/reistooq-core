@@ -965,28 +965,35 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     // Recalcular campos automáticos
     const product = updatedProducts[rowIndex];
     
-    // Recalcular campos que dependem dos valores editados
+    // 🔧 CORREÇÃO CRÍTICA: Recalcular peso_cx_master quando peso_unitario ou pcs_ctn mudarem
     if (['peso_unitario_g', 'pcs_ctn'].includes(field)) {
       product.peso_cx_master_kg = (product.peso_unitario_g * product.pcs_ctn) / 1000;
       product.peso_sem_cx_master_kg = product.peso_cx_master_kg - 1;
-      product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.caixas;
-      product.peso_total_sem_cx_master_kg = (product.peso_cx_master_kg - 1) * product.caixas;
+      product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.qtd_caixas_pedido;
+      product.peso_total_sem_cx_master_kg = (product.peso_cx_master_kg - 1) * product.qtd_caixas_pedido;
     }
     
-    if (['preco', 'pcs_ctn', 'caixas'].includes(field)) {
-      product.quantidade_total = product.pcs_ctn * product.caixas;
+    // 🔧 CORREÇÃO CRÍTICA: Usar qtd_caixas_pedido ao invés de caixas
+    if (['preco', 'pcs_ctn', 'qtd_caixas_pedido'].includes(field)) {
+      product.quantidade_total = product.pcs_ctn * product.qtd_caixas_pedido;
       product.valor_total = product.preco * product.quantidade_total;
     }
     
-    // Recalcular CBM Total quando CBM Unitario ou CAIXAS mudarem
-    if (['cbm_unitario', 'caixas'].includes(field)) {
-      product.cbm_total = product.cbm_unitario * product.caixas;
+    // 🎯 CORREÇÃO: Recalcular CBM Unitário quando dimensões mudarem
+    if (['comprimento_cm', 'largura_cm', 'altura_cm'].includes(field)) {
+      product.cbm_unitario = ((product.comprimento_cm || 0) * (product.largura_cm || 0) * (product.altura_cm || 0)) / 1000000;
+      product.cbm_total = product.cbm_unitario * product.qtd_caixas_pedido;
     }
     
-    // Recalcular Peso Total cx Master quando Peso cx Master ou CAIXAS mudarem
-    if (['peso_cx_master_kg', 'caixas'].includes(field)) {
-      product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.caixas;
-      product.peso_total_sem_cx_master_kg = (product.peso_cx_master_kg - 1) * product.caixas;
+    // 🎯 CORREÇÃO CRÍTICA: Recalcular CBM Total quando CBM Unitario ou qtd_caixas_pedido mudarem
+    if (['cbm_unitario', 'qtd_caixas_pedido'].includes(field)) {
+      product.cbm_total = product.cbm_unitario * product.qtd_caixas_pedido;
+    }
+    
+    // 🔧 CORREÇÃO CRÍTICA: Recalcular Peso Total cx Master quando Peso cx Master ou qtd_caixas_pedido mudarem
+    if (['peso_cx_master_kg', 'qtd_caixas_pedido'].includes(field)) {
+      product.peso_total_cx_master_kg = product.peso_cx_master_kg * product.qtd_caixas_pedido;
+      product.peso_total_sem_cx_master_kg = (product.peso_cx_master_kg - 1) * product.qtd_caixas_pedido;
     }
     
     // Recalcular campos calculados automaticamente
@@ -2330,25 +2337,20 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
                               </Tooltip>
                             </TooltipProvider>
                           </TableCell>
-                         <TableCell className="text-center py-3">
-                           <TooltipProvider>
-                             <Tooltip>
-                               <TooltipTrigger asChild>
-                                 <div>
-                                   <EditableCell
-                                     value={product.cbm_total || 0}
-                                     type="number"
-                                     onSave={(value) => updateProductData(index, 'cbm_total', value)}
-                                     onCancel={stopEditing}
-                                     isEditing={editingCell?.row === index && editingCell?.field === 'cbm_total'}
-                                     onDoubleClick={() => startEditing(index, 'cbm_total')}
-                                   />
-                                 </div>
-                               </TooltipTrigger>
-                               <TooltipContent>Clique 2x para editar</TooltipContent>
-                             </Tooltip>
-                           </TooltipProvider>
-                         </TableCell>
+                          <TableCell className="text-center py-3 bg-muted/30">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="font-mono text-sm text-muted-foreground">
+                                    {(product.cbm_total || 0).toFixed(2)}
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Calculado automaticamente: CBM Cubagem × Caixas</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
                          <TableCell className="text-center py-3 font-medium">
                            <TooltipProvider>
                              <Tooltip>
