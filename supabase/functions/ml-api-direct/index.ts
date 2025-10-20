@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
+import { calculateSLAMetrics } from './utils/sla-calculator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -417,44 +418,12 @@ serve(async (req) => {
                      null;
             })(),
             
-            // 6. Tempo Resposta Comprador (MÉDIO)
-            tempo_resposta_comprador: (() => {
-              const messages = devolucao.claim_messages?.messages || [];
-              if (messages.length < 2) return null;
-              
-              const buyerMsg = messages.find((m: any) => m.from?.role === 'buyer');
-              const sellerMsg = messages.find((m: any) => m.from?.role === 'seller');
-              
-              if (!buyerMsg || !sellerMsg) return null;
-              
-              const tempoResposta = new Date(buyerMsg.date_created).getTime() - 
-                                   new Date(sellerMsg.date_created).getTime();
-              return Math.floor(tempoResposta / (1000 * 60 * 60)); // em horas
-            })(),
-            
-            // 7. Tempo Análise ML (MÉDIO)
-            tempo_analise_ml: (() => {
-              if (!devolucao.mediation_details) return null;
-              
-              const dataInicio = devolucao.mediation_details.date_created || 
-                                devolucao.claim_details?.date_created;
-              const dataFim = devolucao.mediation_details.date_closed || new Date();
-              
-              if (!dataInicio) return null;
-              
-              const tempoAnalise = new Date(dataFim).getTime() - new Date(dataInicio).getTime();
-              return Math.floor(tempoAnalise / (1000 * 60 * 60)); // em horas
-            })(),
-            
-            // 8. Data Primeira Ação (MÉDIO)
-            data_primeira_acao: (() => {
-              const messages = devolucao.claim_messages?.messages || [];
-              if (messages.length === 0) return null;
-              
-              // Mensagens geralmente vêm ordenadas desc, então pegar a última
-              const primeiraMsg = messages[messages.length - 1];
-              return primeiraMsg?.date_created || null;
-            })(),
+            // ✅ REMOVIDO: Campos SLA agora vêm de devolucao.sla_metrics
+            // Os dados já foram calculados com calculateSLAMetrics() durante o processamento
+            // Reduz ~35 linhas de código duplicado
+            tempo_resposta_comprador: devolucao.sla_metrics?.tempo_resposta_comprador || null,
+            tempo_analise_ml: devolucao.sla_metrics?.tempo_analise_ml || null,
+            data_primeira_acao: devolucao.sla_metrics?.data_primeira_acao || null,
             
             // ======== FIM FASE 2 ========
             
@@ -542,24 +511,9 @@ serve(async (req) => {
               }
             })(),
             
-            // 4. Tempo Limite Ação (OPCIONAL)
-            tempo_limite_acao: (() => {
-              try {
-                const claimCreated = devolucao.claim_details?.date_created;
-                if (!claimCreated) return null;
-                
-                // ML geralmente dá 48h para primeira resposta do seller
-                const deadline = new Date(claimCreated);
-                deadline.setHours(deadline.getHours() + 48);
-                const deadlineISO = deadline.toISOString();
-                
-                console.log(`[FASE3] ⏰ tempo_limite_acao: ${deadlineISO}`);
-                return deadlineISO;
-              } catch (error) {
-                console.error('[FASE3] Erro ao calcular tempo_limite_acao:', error);
-                return null;
-              }
-            })(),
+            // ✅ REMOVIDO: tempo_limite_acao agora vem de devolucao.sla_metrics
+            // Reduz ~15 linhas de código duplicado
+            tempo_limite_acao: devolucao.sla_metrics?.tempo_limite_acao || null,
             
             // ======== FIM FASE 3 ========
             
@@ -1536,103 +1490,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   // ============================================
                   // ⏱️ FASE 3: MÉTRICAS TEMPORAIS E SLA
                   // ============================================
-                  sla_metrics: (() => {
-                    const dataCriacao = orderDetail?.date_created ? new Date(orderDetail.date_created) : new Date()
-                    const dataAtual = new Date()
-                    
-                    // Calcular tempo de primeira resposta do vendedor
-                    let tempoPrimeiraRespostaVendedor = null
-                    let tempoRespostaComprador = null
-                    let dataPrimeiraAcao = null
-                    
-                    if (consolidatedMessages?.messages?.length > 0) {
-                      const messages = consolidatedMessages.messages
-                      const primeiraMsg = messages[messages.length - 1] // Mensagens estão ordenadas desc
-                      dataPrimeiraAcao = primeiraMsg.date_created
-                      
-                      // Buscar primeira resposta do vendedor
-                      const vendorMsg = messages.find((m: any) => m.from?.role === 'seller')
-                      if (vendorMsg) {
-                        const tempoResposta = new Date(vendorMsg.date_created).getTime() - new Date(primeiraMsg.date_created).getTime()
-                        tempoPrimeiraRespostaVendedor = Math.floor(tempoResposta / (1000 * 60 * 60)) // em horas
-                      }
-                      
-                      // Buscar resposta do comprador
-                      const compradorMsg = messages.find((m: any) => m.from?.role === 'buyer')
-                      if (compradorMsg && vendorMsg) {
-                        const tempoResposta = new Date(compradorMsg.date_created).getTime() - new Date(vendorMsg.date_created).getTime()
-                        tempoRespostaComprador = Math.floor(tempoResposta / (1000 * 60 * 60)) // em horas
-                      }
-                    }
-                    
-                    // Calcular tempo de análise ML
-                    let tempoAnaliseML = null
-                    if (mediationDetails) {
-                      const dataInicio = mediationDetails.date_created || orderDetail?.date_created
-                      const dataFim = mediationDetails.date_closed || dataAtual
-                      if (dataInicio && dataFim) {
-                        tempoAnaliseML = Math.floor((new Date(dataFim).getTime() - new Date(dataInicio).getTime()) / (1000 * 60 * 60))
-                      }
-                    }
-                    
-                    // Calcular dias até resolução
-                    let diasAteResolucao = null
-                    let tempoTotalResolucao = 0
-                    if (orderDetail?.date_closed) {
-                      const tempoTotal = new Date(orderDetail.date_closed).getTime() - dataCriacao.getTime()
-                      diasAteResolucao = Math.floor(tempoTotal / (1000 * 60 * 60 * 24))
-                      tempoTotalResolucao = Math.floor(tempoTotal / (1000 * 60 * 60)) // em horas
-                    }
-                    
-                    // Calcular SLA compliance (SLA padrão do ML: 48h primeira resposta, 7 dias resolução)
-                    const SLA_PRIMEIRA_RESPOSTA_HORAS = 48
-                    const SLA_RESOLUCAO_DIAS = 7
-                    
-                    let slaCumprido = true
-                    if (tempoPrimeiraRespostaVendedor && tempoPrimeiraRespostaVendedor > SLA_PRIMEIRA_RESPOSTA_HORAS) {
-                      slaCumprido = false
-                    }
-                    if (diasAteResolucao && diasAteResolucao > SLA_RESOLUCAO_DIAS) {
-                      slaCumprido = false
-                    }
-                    
-                    // Calcular tempo limite para ação
-                    let tempoLimiteAcao = null
-                    if (orderDetail?.status !== 'cancelled' && orderDetail?.status !== 'paid') {
-                      const limiteAcao = new Date(dataCriacao)
-                      limiteAcao.setHours(limiteAcao.getHours() + SLA_PRIMEIRA_RESPOSTA_HORAS)
-                      tempoLimiteAcao = limiteAcao.toISOString()
-                    }
-                    
-                    // Determinar eficiência da resolução
-                    let eficienciaResolucao = 'excelente'
-                    if (diasAteResolucao) {
-                      if (diasAteResolucao <= 2) eficienciaResolucao = 'excelente'
-                      else if (diasAteResolucao <= 5) eficienciaResolucao = 'boa'
-                      else if (diasAteResolucao <= 7) eficienciaResolucao = 'regular'
-                      else eficienciaResolucao = 'ruim'
-                    }
-                    
-                    // Timeline consolidado
-                    const timelineConsolidado = {
-                      data_inicio: orderDetail?.date_created,
-                      data_fim: orderDetail?.date_closed || null,
-                      duracao_total_dias: Math.floor((dataAtual.getTime() - dataCriacao.getTime()) / (1000 * 60 * 60 * 24))
-                    }
-                    
-                    return {
-                      tempo_primeira_resposta_vendedor: tempoPrimeiraRespostaVendedor,
-                      tempo_resposta_comprador: tempoRespostaComprador,
-                      tempo_analise_ml: tempoAnaliseML,
-                      dias_ate_resolucao: diasAteResolucao,
-                      tempo_total_resolucao: tempoTotalResolucao,
-                      sla_cumprido: slaCumprido,
-                      tempo_limite_acao: tempoLimiteAcao,
-                      eficiencia_resolucao: eficienciaResolucao,
-                      data_primeira_acao: dataPrimeiraAcao,
-                      timeline_consolidado: timelineConsolidado
-                    }
-                  })(),
+                  // ✅ SUBSTITUÍDO: Agora usa calculateSLAMetrics() do utils/sla-calculator.ts
+                  // Isso elimina ~100 linhas de código duplicado
+                  sla_metrics: calculateSLAMetrics(claimData, orderDetail, consolidatedMessages, mediationDetails),
                   
                   // ============================================
                   // 💰 FASE 4: ENRIQUECIMENTO FINANCEIRO AVANÇADO
