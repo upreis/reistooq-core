@@ -155,9 +155,9 @@ serve(async (req) => {
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       console.log(`🚀 Chamando buscarPedidosCancelados com seller_id: ${seller_id}`)
       
-      // ⏱️ Timeout de 45 segundos (deixar margem para processamento)
+      // ⏱️ Timeout de 50 segundos (aumentado para dar mais margem)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: A busca excedeu 45 segundos. Use filtros de data para reduzir os resultados.')), 45000)
+        setTimeout(() => reject(new Error('Timeout: A busca excedeu 50 segundos. Use filtros de data para reduzir os resultados.')), 50000)
       );
       
       const cancelledOrders = await Promise.race([
@@ -931,10 +931,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    // ⏱️ LIMITE AJUSTADO: Cada claim = ~1s (múltiplas APIs sequenciais)
-    // Timeout edge function = 45s, deixando margem de segurança
+    // ⏱️ LIMITE AJUSTADO: Cada claim = ~2-3s (múltiplas APIs sequenciais)
+    // Timeout edge function = 50s, deixando margem de segurança
     const hasDateFilter = filters?.date_from || filters?.date_to;
-    const MAX_CLAIMS = hasDateFilter ? 30 : 15;  // 🔥 30s com filtro, 15s sem filtro (seguro para 45s timeout)
+    const MAX_CLAIMS = hasDateFilter ? 20 : 10;  // 🔥 20 claims com filtro (~40s), 10 sem filtro (~30s) - seguro para 50s timeout
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
