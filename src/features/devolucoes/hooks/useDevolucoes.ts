@@ -123,9 +123,11 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     resumeRefresh: () => {}
   };
 
-  // Filtrar dados localmente com debounce (usando função centralizada)
+  // ✅ Filtrar dados localmente usando FilterUtils (fonte única de verdade)
   const devolucoesFiltradas = useMemo(() => {
-    return applyAllFilters(devolucoes, advancedFilters, debouncedSearchTerm);
+    return applyAllFilters(devolucoes, advancedFilters, debouncedSearchTerm, {
+      logPerformance: import.meta.env.DEV
+    });
   }, [devolucoes, debouncedSearchTerm, advancedFilters]);
 
   // Paginação manual (sem lazy loading)

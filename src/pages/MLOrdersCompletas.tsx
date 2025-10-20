@@ -8,6 +8,7 @@ import { logger } from "@/utils/logger";
 import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 import { OMSNav } from "@/features/oms/components/OMSNav";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { validateMLAccounts } from "@/features/devolucoes/utils/AccountValidator";
 
 export default function MLOrdersCompletas() {
   // Estado para contas selecionadas
@@ -31,10 +32,18 @@ export default function MLOrdersCompletas() {
     },
   });
 
-  // Auto-selecionar TODAS as contas quando carregar
+  // ✅ 2.4 - Auto-selecionar contas usando validação centralizada
   React.useEffect(() => {
     if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
-      setSelectedAccountIds(mlAccounts.map(acc => acc.id));
+      const { accountIds } = validateMLAccounts(mlAccounts, selectedAccountIds);
+      if (accountIds.length > 0) {
+        setSelectedAccountIds(accountIds);
+        logger.debug('Contas auto-selecionadas', { 
+          context: 'MLOrdersCompletas',
+          count: accountIds.length,
+          accountIds 
+        });
+      }
     }
   }, [mlAccounts, selectedAccountIds.length]);
 

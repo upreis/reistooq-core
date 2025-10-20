@@ -10,27 +10,8 @@ import { logger } from '@/utils/logger';
 import { reasonsCacheService } from '../utils/DevolucaoCacheService';
 import { fetchClaimsAndReturns, fetchReasonDetail, fetchAllClaims } from '../utils/MLApiClient';
 import { sortByDataCriacao } from '../utils/DevolucaoSortUtils';
-import {
-  mapDadosPrincipais,
-  mapDadosFinanceiros,
-  mapDadosReview,
-  mapDadosSLA,
-  mapDadosRastreamento,
-  mapDadosMediacao,
-  mapDadosReputacao,
-  mapDadosAnexos,
-  mapDadosTimeline,
-  mapDadosMensagens,
-  mapDadosComprador,
-  mapDadosPagamento,
-  mapDadosProduto,
-  mapDadosFlags,
-  mapDadosQualidade,
-  mapDadosTroca,
-  mapDadosClassificacao,
-  mapDadosAdicionais,
-  mapDadosBrutos
-} from '../utils/DevolucaoDataMapper';
+import { mapDevolucaoCompleta } from '../utils/mappers';
+import { validateMLAccounts } from '../utils/AccountValidator';
 
 export interface DevolucaoBuscaFilters {
   contasSelecionadas: string[];
@@ -154,21 +135,20 @@ export function useDevolucoesBusca() {
     filtros: DevolucaoBuscaFilters,
     mlAccounts: any[]
   ) => {
-    // 🛡️ VALIDAÇÃO + FALLBACK AUTOMÁTICO
-    const contasParaBuscar = filtros.contasSelecionadas?.length 
-      ? filtros.contasSelecionadas 
-      : mlAccounts.map(acc => acc.id);
+    // ✅ 2.4 - USAR VALIDAÇÃO CENTRALIZADA
+    const validation = validateMLAccounts(mlAccounts, filtros.contasSelecionadas);
     
-    // ✅ 1.5 - CORREÇÃO: Adicionar logs estruturados
-    if (!contasParaBuscar || contasParaBuscar.length === 0) {
-      logger.error('Nenhuma conta ML disponível', {
+    if (!validation.valid) {
+      logger.error(validation.error, {
         context: 'useDevolucoesBusca.buscarDaAPI',
         mlAccounts: mlAccounts?.length || 0,
         filtros
       });
-      toast.error('Nenhuma conta ML disponível');
+      toast.error(validation.error || 'Erro ao validar contas');
       return [];
     }
+    
+    const contasParaBuscar = validation.accountIds;
 
     // 🛑 CANCELAR QUALQUER BUSCA ANTERIOR
     if (abortControllerRef.current) {
@@ -262,8 +242,7 @@ export function useDevolucoesBusca() {
 
             logger.info(`✅ Busca concluída: ${reasonsApiData.size} novos + ${uniqueReasonIds.length - uncachedReasons.length} do cache`);
 
-            // ✅ PROCESSAR DADOS COM ENRIQUECIMENTO COMPLETO - 165 COLUNAS VALIDADAS
-            // FASE 1: Processar todos os dados básicos
+            // ✅ 2.2 - USAR MAPEADOR CONSOLIDADO (18 → 7 mapeadores)
             const devolucoesProcesadas = await Promise.all(devolucoesDaAPI.map(async (item: any, index: number) => {
               
               // Log do mapeamento de data
@@ -275,24 +254,6 @@ export function useDevolucoesBusca() {
                 });
               }
               
-              // ✅ USAR FUNÇÕES UTILITÁRIAS DE MAPEAMENTO (reduz duplicação)
-              const dadosPrincipais = mapDadosPrincipais(item, accountId, account.name);
-              const dadosFinanceiros = mapDadosFinanceiros(item);
-              const dadosReview = mapDadosReview(item);
-              const dadosSLA = mapDadosSLA(item);
-              const dadosRastreamento = mapDadosRastreamento(item);
-              const dadosMediacao = mapDadosMediacao(item);
-              const dadosReputacao = mapDadosReputacao(item);
-              const dadosAnexos = mapDadosAnexos(item);
-              const dadosTimeline = mapDadosTimeline(item);
-              const dadosMensagens = mapDadosMensagens(item);
-              const dadosComprador = mapDadosComprador(item);
-              const dadosPagamento = mapDadosPagamento(item);
-              const dadosProduto = mapDadosProduto(item);
-              const dadosFlags = mapDadosFlags(item);
-              const dadosQualidade = mapDadosQualidade(item);
-              const dadosTroca = mapDadosTroca(item);
-
               // 🔍 REASONS API - FASE 4 (8 novos campos) - BUSCAR DA API
               const reasonId = item.claim_details?.reason_id || null;
               const apiReasonData = reasonId ? reasonsApiData.get(reasonId) : null;
@@ -303,8 +264,11 @@ export function useDevolucoesBusca() {
                 detalheAPI: apiReasonData?.detail
               });
               
-              // 🎯 Mapear reason localmente (sem cálculos, dados brutos da API)
-              const reasonsAPI = {
+              // ✅ USAR MAPEADOR CONSOLIDADO (reduz de 18 para 7 mapeadores)
+              const itemCompleto = {
+                ...mapDevolucaoCompleta(item, accountId, account.name, reasonId),
+                
+                // Adicionar dados de reasons da API (FASE 4)
                 reason_id: reasonId,
                 reason_category: reasonId?.startsWith('PNR') ? 'not_received' :
                                 reasonId?.startsWith('PDD') ? 'defective_or_different' :
@@ -315,47 +279,6 @@ export function useDevolucoesBusca() {
                 reason_priority: (reasonId?.startsWith('PNR') || reasonId?.startsWith('PDD')) ? 'high' : 'medium',
                 reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
                 reason_flow: apiReasonData?.flow || null
-              };
-              
-              if (reasonId) {
-                logger.info(`✅ Reason ${reasonId} processado:`, {
-                  fonte: apiReasonData ? 'API' : 'Local',
-                  category: reasonsAPI.reason_category,
-                  name: reasonsAPI.reason_name,
-                  detail: reasonsAPI.reason_detail,
-                  priority: reasonsAPI.reason_priority
-                });
-              } else {
-                logger.warn(`⚠️ Claim ${item.claim_details?.id} não tem reason_id`);
-              }
-
-              // 🎯 CLASSIFICAÇÃO E RESOLUÇÃO - USAR UTILITÁRIO
-              const dadosClassificacao = mapDadosClassificacao(item, reasonId);
-              const dadosAdicionais = mapDadosAdicionais(item);
-              const dadosBrutos = mapDadosBrutos(item);
-
-              // ✅ CONSOLIDAR TODOS OS DADOS (165 colunas total incluindo Fase 2, 3 e 4)
-              const itemCompleto = {
-                ...dadosPrincipais,      // 17 colunas
-                ...dadosFinanceiros,     // 14 colunas
-                ...dadosReview,          // 10 colunas
-                ...dadosSLA,             // 10 colunas
-                ...dadosRastreamento,    // 18 colunas
-                ...dadosMediacao,        // 6 colunas
-                ...dadosReputacao,       // 2 colunas
-                ...dadosAnexos,          // 5 colunas
-                ...dadosTimeline,        // 8 colunas
-                ...dadosMensagens,       // 7 colunas
-                ...dadosTroca,           // 7 colunas
-                ...dadosClassificacao,   // 17 colunas
-                ...reasonsAPI,           // 8 colunas - FASE 4
-                ...dadosAdicionais,      // 9 colunas
-                ...dadosComprador,       // 3 colunas - FASE 2
-                ...dadosPagamento,       // 7 colunas - FASE 2
-                ...dadosProduto,         // 5 colunas - FASE 3
-                ...dadosFlags,           // 5 colunas - FASE 3
-                ...dadosQualidade,       // 1 coluna  - FASE 3
-                ...dadosBrutos           // 4 colunas
               };
               
               // Log do primeiro item processado

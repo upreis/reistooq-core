@@ -23,10 +23,17 @@ export class DevolucaoCacheService {
   get(key: string): any | null {
     const cached = this.cache.get(key);
     
+    // Verificar se expirou
     if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
       this.stats.hits++;
       logger.info(`💾 Cache hit para ${key}`);
       return cached.data;
+    }
+    
+    // Remover se expirado
+    if (cached) {
+      this.cache.delete(key);
+      logger.info(`💾 Cache expirado removido: ${key}`);
     }
     
     this.stats.misses++;
@@ -37,13 +44,38 @@ export class DevolucaoCacheService {
    * Salva um item no cache
    */
   set(key: string, data: any): void {
+    // Limpar expirados antes de adicionar novo
+    this.cleanup();
+    
     this.cache.set(key, {
       data,
       timestamp: Date.now()
     });
     
     this.stats.lastUpdate = new Date().toISOString();
-    logger.info(`💾 Cache atualizado: ${key}`);
+    logger.info(`💾 Cache atualizado: ${key}`, {
+      cacheSize: this.cache.size,
+      timestamp: new Date().toISOString()
+    });
+  }
+  
+  /**
+   * Limpa itens expirados do cache
+   */
+  private cleanup(): void {
+    const now = Date.now();
+    let cleaned = 0;
+    
+    for (const [key, entry] of this.cache.entries()) {
+      if (now - entry.timestamp > CACHE_TTL) {
+        this.cache.delete(key);
+        cleaned++;
+      }
+    }
+    
+    if (cleaned > 0) {
+      logger.info(`💾 Cleanup: ${cleaned} itens expirados removidos`);
+    }
   }
 
   /**

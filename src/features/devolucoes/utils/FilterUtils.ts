@@ -217,13 +217,20 @@ export const sortByDataCriacao = (devolucoes: any[]): any[] => {
 };
 
 /**
- * Aplica todos os filtros em sequência
+ * 🎯 FONTE ÚNICA DE VERDADE PARA FILTROS
+ * Aplica todos os filtros em sequência com opções de performance
  */
 export const applyAllFilters = (
   devolucoes: any[],
   filters: DevolucaoAdvancedFilters,
-  debouncedSearchTerm: string
+  debouncedSearchTerm: string,
+  options?: {
+    logPerformance?: boolean;
+    validateResults?: boolean;
+  }
 ): any[] => {
+  const startTime = options?.logPerformance ? performance.now() : 0;
+  
   let resultados = [...devolucoes];
 
   // Aplicar todos os filtros em sequência
@@ -248,6 +255,21 @@ export const applyAllFilters = (
 
   // Ordenar por data
   resultados = sortByDataCriacao(resultados);
+  
+  // Log de performance se solicitado
+  if (options?.logPerformance) {
+    const duration = performance.now() - startTime;
+    console.log(`[FilterUtils] Filtros aplicados em ${duration.toFixed(2)}ms`, {
+      total: devolucoes.length,
+      filtered: resultados.length,
+      removed: devolucoes.length - resultados.length,
+      filters: {
+        searchTerm: debouncedSearchTerm,
+        statusClaim: filters.statusClaim,
+        activeFilters: Object.entries(filters).filter(([_, v]) => v && v !== '').length
+      }
+    });
+  }
 
   return resultados;
 };
