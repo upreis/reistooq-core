@@ -6,6 +6,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useDevolucoesBusca, DevolucaoBuscaFilters } from './useDevolucoesBusca';
+import { applyAllFilters } from '../utils/FilterUtils';
+import { 
+  loadFiltersFromStorage, 
+  saveFiltersToStorage, 
+  removeFiltersFromStorage, 
+  createCleanFilters,
+  createInitialFilters 
+} from '../utils/LocalStorageUtils';
 
 export interface DevolucaoFilters {
   searchTerm: string;
@@ -80,69 +88,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   const [showAnalytics, setShowAnalytics] = useState(false);
   
   // 🎯 FILTROS UNIFICADOS COM LOCALSTORAGE
-  const STORAGE_KEY_FILTERS = 'ml_devolucoes_last_filters';
-  
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
-    // Tentar carregar filtros salvos
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_FILTERS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('📂 Filtros carregados do localStorage:', parsed);
-        return parsed;
-      }
-    } catch (error) {
-      console.error('Erro ao carregar filtros salvos:', error);
-    }
-
-    // 🚀 GARANTIR SEMPRE ARRAY VÁLIDO
-    const initialAccounts = Array.isArray(selectedAccountIds) && selectedAccountIds.length > 0 
-      ? selectedAccountIds 
-      : selectedAccountId 
-        ? [selectedAccountId] 
-        : [];
-    
-    return {
-      // Busca
-      searchTerm: '',
-      // Contas - SEMPRE UM ARRAY
-      contasSelecionadas: initialAccounts,
-      // 📅 DATAS VAZIAS - Sem valores padrão, usuário deve escolher o período
-      dataInicio: '',
-      dataFim: '',
-      // Status e Classificação
-      statusClaim: '',
-      tipoClaim: '',
-      subtipoClaim: '',
-      motivoCategoria: '',
-      // Financeiro
-      valorRetidoMin: '',
-      valorRetidoMax: '',
-      tipoReembolso: '',
-      responsavelCusto: '',
-      // Rastreamento
-      temRastreamento: '',
-      statusRastreamento: '',
-      transportadora: '',
-      // Anexos e Comunicação
-      temAnexos: '',
-      mensagensNaoLidasMin: '',
-      // Prioridade e Ação
-      nivelPrioridade: '',
-      acaoSellerNecessaria: '',
-      escaladoParaML: '',
-      emMediacao: '',
-      // Prazos
-      prazoVencido: '',
-      slaNaoCumprido: '',
-      // Métricas
-      eficienciaResolucao: '',
-      scoreQualidadeMin: '',
-      // Controle
-      buscarEmTempoReal: true,
-      autoRefreshEnabled: false,
-      autoRefreshInterval: 3600
-    };
+    return createInitialFilters(selectedAccountId, selectedAccountIds, mlAccounts);
   });
 
   // Estados para controle de mudanças pendentes
@@ -176,155 +123,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     resumeRefresh: () => {}
   };
 
-  // Filtrar dados localmente com debounce E TODOS OS NOVOS FILTROS
+  // Filtrar dados localmente com debounce (usando função centralizada)
   const devolucoesFiltradas = useMemo(() => {
-    let resultados = [...devolucoes];
-
-    // 🔍 BUSCA TEXTUAL EXPANDIDA
-    if (debouncedSearchTerm) {
-      const searchTerm = debouncedSearchTerm.toLowerCase();
-      resultados = resultados.filter(dev => 
-        dev.produto_titulo?.toLowerCase().includes(searchTerm) ||
-        dev.order_id?.toString().includes(searchTerm) ||
-        dev.claim_id?.toString().includes(searchTerm) ||
-        dev.sku?.toLowerCase().includes(searchTerm) ||
-        dev.comprador_nickname?.toLowerCase().includes(searchTerm) ||
-        dev.codigo_rastreamento?.toLowerCase().includes(searchTerm) ||
-        dev.transportadora?.toLowerCase().includes(searchTerm)
-      );
-    }
-
-    // 🎯 FILTRO DE STATUS CORRIGIDO
-    if (advancedFilters.statusClaim) {
-      if (advancedFilters.statusClaim === 'with_claims') {
-        resultados = resultados.filter(dev => 
-          dev.claim_id !== null && 
-          dev.claim_id !== undefined && 
-          dev.claim_id !== ''
-        );
-      } else {
-        resultados = resultados.filter(dev => dev.status_devolucao === advancedFilters.statusClaim);
-      }
-    }
-
-    // 🎯 FILTRO DE TIPO DE CLAIM
-    if (advancedFilters.tipoClaim) {
-      resultados = resultados.filter(dev => dev.tipo_claim === advancedFilters.tipoClaim);
-    }
-
-    // ⚠️ FILTROS DE DATA REMOVIDOS - A API JÁ FILTRA POR DATA
-    // Os filtros dataInicio e dataFim são enviados para a API e ela retorna apenas dados dentro do período
-    // Não devemos filtrar novamente aqui, pois isso remove dados válidos
-
-    // 💰 FILTRO DE VALOR MÍNIMO
-    if (advancedFilters.valorRetidoMin) {
-      const minValue = parseFloat(advancedFilters.valorRetidoMin);
-      if (!isNaN(minValue)) {
-        resultados = resultados.filter(dev => (dev.valor_retido || 0) >= minValue);
-      }
-    }
-
-    // 💰 FILTRO DE VALOR MÁXIMO
-    if (advancedFilters.valorRetidoMax) {
-      const maxValue = parseFloat(advancedFilters.valorRetidoMax);
-      if (!isNaN(maxValue)) {
-        resultados = resultados.filter(dev => (dev.valor_retido || 0) <= maxValue);
-      }
-    }
-
-    // 💰 FILTRO DE RESPONSÁVEL PELO CUSTO
-    if (advancedFilters.responsavelCusto) {
-      resultados = resultados.filter(dev => dev.responsavel_custo === advancedFilters.responsavelCusto);
-    }
-
-    // 🚚 FILTRO DE RASTREAMENTO
-    if (advancedFilters.temRastreamento) {
-      const temRastreio = advancedFilters.temRastreamento === 'sim';
-      resultados = resultados.filter(dev => 
-        temRastreio ? (dev.codigo_rastreamento !== null && dev.codigo_rastreamento !== '') : !dev.codigo_rastreamento
-      );
-    }
-
-    // 🚚 FILTRO DE STATUS DE RASTREAMENTO
-    if (advancedFilters.statusRastreamento) {
-      resultados = resultados.filter(dev => dev.status_rastreamento === advancedFilters.statusRastreamento);
-    }
-
-    // 📎 FILTRO DE ANEXOS
-    if (advancedFilters.temAnexos) {
-      const temAnexos = advancedFilters.temAnexos === 'sim';
-      resultados = resultados.filter(dev => 
-        temAnexos ? (dev.anexos_count || 0) > 0 : (dev.anexos_count || 0) === 0
-      );
-    }
-
-    // 📎 FILTRO DE MENSAGENS NÃO LIDAS
-    if (advancedFilters.mensagensNaoLidasMin) {
-      const minMensagens = parseInt(advancedFilters.mensagensNaoLidasMin);
-      if (!isNaN(minMensagens)) {
-        resultados = resultados.filter(dev => (dev.mensagens_nao_lidas || 0) >= minMensagens);
-      }
-    }
-
-    // ⚠️ FILTRO DE NÍVEL DE PRIORIDADE
-    if (advancedFilters.nivelPrioridade) {
-      resultados = resultados.filter(dev => dev.nivel_prioridade === advancedFilters.nivelPrioridade);
-    }
-
-    // ⚠️ FILTRO DE AÇÃO SELLER NECESSÁRIA
-    if (advancedFilters.acaoSellerNecessaria) {
-      const acaoNecessaria = advancedFilters.acaoSellerNecessaria === 'sim';
-      resultados = resultados.filter(dev => dev.acao_seller_necessaria === acaoNecessaria);
-    }
-
-    // ⚠️ FILTRO DE EM MEDIAÇÃO
-    if (advancedFilters.emMediacao) {
-      const emMediacao = advancedFilters.emMediacao === 'sim';
-      resultados = resultados.filter(dev => dev.em_mediacao === emMediacao);
-    }
-
-    // ⚠️ FILTRO DE ESCALADO PARA ML
-    if (advancedFilters.escaladoParaML) {
-      const escalado = advancedFilters.escaladoParaML === 'sim';
-      resultados = resultados.filter(dev => dev.escalado_para_ml === escalado);
-    }
-
-    // ⏰ FILTRO DE PRAZO VENCIDO
-    if (advancedFilters.prazoVencido) {
-      const vencido = advancedFilters.prazoVencido === 'sim';
-      resultados = resultados.filter(dev => {
-        if (!dev.data_vencimento_acao) return !vencido;
-        return vencido ? new Date(dev.data_vencimento_acao) < new Date() : new Date(dev.data_vencimento_acao) >= new Date();
-      });
-    }
-
-    // ⏰ FILTRO DE SLA NÃO CUMPRIDO
-    if (advancedFilters.slaNaoCumprido) {
-      const naoCumprido = advancedFilters.slaNaoCumprido === 'sim';
-      resultados = resultados.filter(dev => dev.sla_cumprido === !naoCumprido);
-    }
-
-    // 📈 FILTRO DE EFICIÊNCIA DE RESOLUÇÃO
-    if (advancedFilters.eficienciaResolucao) {
-      resultados = resultados.filter(dev => dev.eficiencia_resolucao === advancedFilters.eficienciaResolucao);
-    }
-
-    // 📈 FILTRO DE SCORE MÍNIMO
-    if (advancedFilters.scoreQualidadeMin) {
-      const minScore = parseInt(advancedFilters.scoreQualidadeMin);
-      if (!isNaN(minScore)) {
-        resultados = resultados.filter(dev => (dev.score_qualidade || 0) >= minScore);
-      }
-    }
-
-    // 📅 ORDENAR POR DATA DE CRIAÇÃO (MAIS RECENTE PRIMEIRO)
-    resultados.sort((a, b) => {
-      const dataA = a.data_criacao ? new Date(a.data_criacao).getTime() : 0;
-      const dataB = b.data_criacao ? new Date(b.data_criacao).getTime() : 0;
-      return dataB - dataA; // Ordem decrescente (mais recente primeiro)
-    });
-
-    return resultados;
+    return applyAllFilters(devolucoes, advancedFilters, debouncedSearchTerm);
   }, [devolucoes, debouncedSearchTerm, advancedFilters]);
 
   // Paginação manual (sem lazy loading)
@@ -424,12 +225,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       setDraftFilters(null);
       
       // Salvar no localStorage
-      try {
-        localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filtrosParaAplicar));
-        console.log('💾 Filtros salvos no localStorage:', filtrosParaAplicar);
-      } catch (error) {
-        console.error('Erro ao salvar filtros:', error);
-      }
+      saveFiltersToStorage(filtrosParaAplicar);
       
       // Buscar com os filtros
       await buscarComFiltros(filtrosParaAplicar);
@@ -461,36 +257,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
 
   // 🗑️ LIMPAR FILTROS - Resetar tudo
   const clearFilters = useCallback(() => {
-    const filtrosLimpos = {
-      searchTerm: '',
-      contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
-      dataInicio: '',
-      dataFim: '',
-      statusClaim: '',
-      tipoClaim: '',
-      subtipoClaim: '',
-      motivoCategoria: '',
-      valorRetidoMin: '',
-      valorRetidoMax: '',
-      tipoReembolso: '',
-      responsavelCusto: '',
-      temRastreamento: '',
-      statusRastreamento: '',
-      transportadora: '',
-      temAnexos: '',
-      mensagensNaoLidasMin: '',
-      nivelPrioridade: '',
-      acaoSellerNecessaria: '',
-      escaladoParaML: '',
-      emMediacao: '',
-      prazoVencido: '',
-      slaNaoCumprido: '',
-      eficienciaResolucao: '',
-      scoreQualidadeMin: '',
-      buscarEmTempoReal: true,
-      autoRefreshEnabled: false,
-      autoRefreshInterval: 3600
-    };
+    const filtrosLimpos = createCleanFilters(mlAccounts);
     
     setAdvancedFilters(filtrosLimpos);
     setDraftFilters(null);
@@ -498,12 +265,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     setCurrentPage(1);
     
     // Limpar do localStorage
-    try {
-      localStorage.removeItem(STORAGE_KEY_FILTERS);
-      console.log('🗑️ Filtros removidos do localStorage');
-    } catch (error) {
-      console.error('Erro ao limpar filtros salvos:', error);
-    }
+    removeFiltersFromStorage();
     
     console.log('[useDevolucoes] 🗑️ Filtros e dados limpos');
   }, [mlAccounts]);
