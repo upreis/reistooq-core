@@ -7,6 +7,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
+import { structuredLogger } from '@/utils/structuredLogger';
 import { reasonsCacheService } from '../utils/DevolucaoCacheService';
 import { fetchClaimsAndReturns, fetchReasonDetail, fetchAllClaims } from '../utils/MLApiClient';
 import { sortByDataCriacao } from '../utils/DevolucaoSortUtils';
@@ -135,6 +136,8 @@ export function useDevolucoesBusca() {
     filtros: DevolucaoBuscaFilters,
     mlAccounts: any[]
   ) => {
+    const startTime = performance.now();
+    
     // ✅ 2.4 - USAR VALIDAÇÃO CENTRALIZADA
     const validation = validateMLAccounts(mlAccounts, filtros.contasSelecionadas);
     
@@ -144,11 +147,24 @@ export function useDevolucoesBusca() {
         mlAccounts: mlAccounts?.length || 0,
         filtros
       });
+      structuredLogger.error('Validação de contas falhou', {
+        mlAccountsCount: mlAccounts?.length || 0,
+        filtros,
+        error: validation.error
+      });
       toast.error(validation.error || 'Erro ao validar contas');
       return [];
     }
     
     const contasParaBuscar = validation.accountIds;
+    
+    // ✅ 3.3 - Log estruturado do início da busca
+    structuredLogger.info('Iniciando busca de devoluções', {
+      accountIds: contasParaBuscar,
+      accountsCount: contasParaBuscar.length,
+      filters: filtros,
+      mode: 'full'
+    });
 
     // 🛑 CANCELAR QUALQUER BUSCA ANTERIOR
     if (abortControllerRef.current) {
@@ -319,6 +335,16 @@ export function useDevolucoesBusca() {
             }
 
             todasDevolucoes.push(...devolucoesProcesadas);
+            
+            // ✅ 3.3 - Log estruturado de sucesso por conta
+            structuredLogger.info('Devoluções processadas para conta', {
+              accountId,
+              accountName: account.name,
+              count: devolucoesProcesadas.length,
+              reasonsCached: uniqueReasonIds.length - uncachedReasons.length,
+              reasonsFetched: reasonsApiData.size
+            });
+            
             toast.success(`✅ ${devolucoesProcesadas.length} devoluções enriquecidas para ${account.name}`);
           } else {
             logger.info(`Nenhuma devolução encontrada para ${account.name}`);
@@ -334,6 +360,12 @@ export function useDevolucoesBusca() {
             error: accountError instanceof Error ? accountError.message : accountError,
             stack: accountError instanceof Error ? accountError.stack : undefined
           });
+          structuredLogger.error('Erro ao processar conta', {
+            accountId: account.id,
+            accountName: account.name,
+            error: accountError instanceof Error ? accountError.message : 'Erro desconhecido',
+            stack: accountError instanceof Error ? accountError.stack : undefined
+          });
           toast.error(`Erro na conta ${account.name}`);
         }
       }
@@ -341,16 +373,35 @@ export function useDevolucoesBusca() {
       // 📅 ORDENAR RESULTADO FINAL - USAR UTILITÁRIO
       sortByDataCriacao(todasDevolucoes);
 
+      const duration = performance.now() - startTime;
+      
+      // ✅ 3.3 - Log estruturado de sucesso final
+      structuredLogger.info('Busca da API concluída com sucesso', {
+        total: todasDevolucoes.length,
+        accountsQueried: contasParaBuscar.length,
+        duration: `${duration.toFixed(2)}ms`,
+        avgPerAccount: `${(duration / contasParaBuscar.length).toFixed(2)}ms`
+      });
+
       logger.info(`Total da API: ${todasDevolucoes.length} devoluções enriquecidas e salvas`);
       return todasDevolucoes;
 
     } catch (error) {
       // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros gerais
+      const duration = performance.now() - startTime;
+      
       logger.error('Erro geral na busca da API', {
         context: 'useDevolucoesBusca.buscarDaAPI',
         error: error instanceof Error ? error.message : error,
         stack: error instanceof Error ? error.stack : undefined,
         filtros
+      });
+      
+      structuredLogger.error('Erro geral na busca da API', {
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        stack: error instanceof Error ? error.stack : undefined,
+        filtros,
+        duration: `${duration.toFixed(2)}ms`
       });
       toast.error(`Erro na busca da API: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       return [];
