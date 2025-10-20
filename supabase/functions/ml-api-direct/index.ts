@@ -1395,9 +1395,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 return allMessages.length > 0 ? allMessages[0]?.from?.role : null
               })(),
               
-              mensagens_nao_lidas: (safeClaimData?.claim_messages?.messages?.filter((m: any) => !m.read)?.length || 0) +
-                                  (safeClaimData?.mediation_details?.messages?.filter((m: any) => !m.read)?.length || 0),
-              
               // ============================================
               // 📋 17 NOVAS COLUNAS DE STATUS DE DEVOLUÇÃO
               // ============================================
@@ -1536,17 +1533,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               produto_troca_id: safeClaimData?.exchange_product_id || null,
               produto_troca_titulo: safeClaimData?.exchange_product_title || null,
               
-              // DATAS CRÍTICAS - EXTRAIR DE MÚLTIPLAS FONTES INCLUINDO CHANGE
-              data_estimada_troca: safeClaimData?.exchange_expected_date ||
-                                  safeClaimData?.return_details_v2?.results?.[0]?.estimated_exchange_date || 
-                                  safeClaimData?.return_details_v1?.results?.[0]?.estimated_exchange_date ||
-                                  safeClaimData?.claim_details?.estimated_delivery_date ||
-                                  safeClaimData?.mediation_details?.estimated_resolution_date || null,
-              
-              data_limite_troca: safeClaimData?.return_details_v2?.results?.[0]?.expiration_date ||
-                                safeClaimData?.return_details_v1?.results?.[0]?.expiration_date ||
-                                safeClaimData?.claim_details?.expiration_date ||
-                                safeClaimData?.mediation_details?.expiration_date || null,
+              // ✅ Dados de troca já incluídos acima (produto_troca_id, produto_troca_titulo)
               
               // ==================== RASTREAMENTO ENRIQUECIDO - FASE 1 ====================
               
@@ -1648,77 +1635,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 return safeClaimData?.last_tracking_update || null
               })(),
               
-              // 📍 HISTÓRICO DE LOCALIZAÇÕES
-              historico_localizacoes: (() => {
-                if (!safeClaimData?.shipment_history?.combined_events?.length) return []
-                
-                return safeClaimData.shipment_history.combined_events
-                  .filter((event: any) => event.tracking?.location)
-                  .map((event: any) => ({
-                    data: event.date_created,
-                    localizacao: event.tracking.location,
-                    status: event.status,
-                    checkpoint: event.tracking.checkpoint
-                  }))
-              })(),
-              
-              // 📦 INFORMAÇÕES DA TRANSPORTADORA
-              carrier_info: (() => {
-                if (safeClaimData?.shipment_history?.combined_events?.length > 0) {
-                  const firstEvent = safeClaimData.shipment_history.combined_events[0]
-                  return {
-                    name: firstEvent.carrier_info?.name || safeClaimData?.return_details_v2?.results?.[0]?.carrier,
-                    tracking_method: firstEvent.tracking_method,
-                    service_id: firstEvent.service_id
-                  }
-                }
-                return {}
-              })(),
-              
-              // ⏱️ TEMPO DE TRÂNSITO (FASE 1)
-              tempo_transito_dias: (() => {
-                if (!safeClaimData?.shipment_history?.combined_events?.length) return null
-                
-                const events = safeClaimData.shipment_history.combined_events
-                const firstEvent = events[events.length - 1]
-                const lastEvent = events[0]
-                
-                if (!firstEvent?.date_created || !lastEvent?.date_created) return null
-                
-                const diffTime = new Date(lastEvent.date_created).getTime() - new Date(firstEvent.date_created).getTime()
-                return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-              })(),
-              
-              // 🚧 ATRASOS NO SHIPMENT
-              shipment_delays: (() => {
-                if (!safeClaimData?.shipment_history?.combined_events?.length) return []
-                
-                // Detectar atrasos comparando datas estimadas vs reais
-                const delays = []
-                const events = safeClaimData.shipment_history.combined_events
-                
-                for (let i = 0; i < events.length - 1; i++) {
-                  const currentEvent = events[i]
-                  const previousEvent = events[i + 1]
-                  
-                  const timeDiff = new Date(currentEvent.date_created).getTime() - 
-                                  new Date(previousEvent.date_created).getTime()
-                  const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24))
-                  
-                  // Considerar atraso se passar mais de 3 dias entre eventos
-                  if (daysDiff > 3) {
-                    delays.push({
-                      from_status: previousEvent.status,
-                      to_status: currentEvent.status,
-                      days_delayed: daysDiff,
-                      from_date: previousEvent.date_created,
-                      to_date: currentEvent.date_created
-                    })
-                  }
-                }
-                
-                return delays
-              })(),
+              // ✅ Dados de tracking já incluídos acima (tracking_history, tracking_events, data_ultima_movimentacao)
               
               // 💰 CUSTOS DE SHIPMENT
               shipment_costs: {
@@ -1727,26 +1644,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 total_cost: safeClaimData?.return_details_v2?.results?.[0]?.total_cost || null
               },
               
-              // ✅ DADOS DE ANEXOS - Extraídos de /messages (conforme documentação ML)
-              anexos_count: safeClaimData?.claim_attachments?.length || 0,
-              anexos_comprador: safeClaimData?.claim_attachments?.filter((a: any) => 
-                a.sender_role === 'complainant' || a.source === 'buyer') || [],
-              anexos_vendedor: safeClaimData?.claim_attachments?.filter((a: any) => 
-                a.sender_role === 'respondent' || a.source === 'seller') || [],
-              anexos_ml: safeClaimData?.claim_attachments?.filter((a: any) => 
-                a.sender_role === 'mediator' || a.source === 'meli') || [],
-              
-              // DADOS FINANCEIROS - MÚLTIPLAS FONTES
-              custo_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || 
-                                    safeClaimData?.return_details_v1?.results?.[0]?.shipping_cost ||
-                                    safeClaimData?.return_details_v2?.shipping_cost || 
-                                    safeClaimData?.return_details_v1?.shipping_cost || null,
-              
-              valor_compensacao: safeClaimData?.return_details_v2?.results?.[0]?.refund_amount || 
-                                safeClaimData?.return_details_v1?.results?.[0]?.refund_amount ||
-                                safeClaimData?.return_details_v2?.refund_amount || 
-                                safeClaimData?.return_details_v1?.refund_amount ||
-                                safeClaimData?.claim_details?.resolution?.compensation?.amount || null,
+              // ✅ Dados de anexos removidos - endpoint retorna 405
+              // ✅ Dados financeiros brutos já incluídos nos campos de pagamento/reembolso
               
               responsavel_custo: safeClaimData?.claim_details?.resolution?.benefited?.[0] || 
                                 safeClaimData?.mediation_details?.resolution?.benefited?.[0] ||
@@ -1774,28 +1673,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               em_mediacao: safeClaimData?.claim_details?.type === 'mediations' || safeClaimData?.mediation_details !== null,
               nivel_prioridade: safeClaimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
               
-              // CONTROLE DE AÇÃO - MÚLTIPLAS FONTES
-              acao_seller_necessaria: (safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0 ||
-                                     (safeClaimData?.mediation_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-              
-              escalado_para_ml: safeClaimData?.claim_details?.type === 'mediations' || 
-                               safeClaimData?.mediation_details !== null,
-              
-              // DATA DE VENCIMENTO - MÚLTIPLAS FONTES
-              data_vencimento_acao: safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
-                                   safeClaimData?.mediation_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
-                                   safeClaimData?.claim_details?.due_date ||
-                                   safeClaimData?.mediation_details?.due_date || null,
-              
-              dias_restantes_acao: (() => {
-                const dueDate = safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
-                               safeClaimData?.mediation_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ||
-                               safeClaimData?.claim_details?.due_date ||
-                               safeClaimData?.mediation_details?.due_date
-                if (!dueDate) return null
-                const diffTime = new Date(dueDate).getTime() - new Date().getTime()
-                return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-              })(),
+              // ✅ Dados de ação removidos - calculados anteriormente
               
               // ============================================
               // 🟡 FASE 2: CAMPOS ESSENCIAIS ADICIONAIS
@@ -1813,24 +1691,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               valor_parcela: safeOrderDetail?.payments?.[0]?.installment_amount || null,
               transaction_id: safeOrderDetail?.payments?.[0]?.transaction_id || null,
               
-              // CUSTOS DETALHADOS - Extrair de descricao_custos ou calcular
-              percentual_reembolsado: (() => {
-                // Tentar extrair de múltiplas fontes
-                const fromRefund = safeClaimData?.return_details_v2?.results?.[0]?.refund?.percentage ||
-                                  safeClaimData?.return_details_v1?.results?.[0]?.refund?.percentage
-                if (fromRefund) return fromRefund
-                
-                // Calcular baseado em valores
-                const totalAmount = safeOrderDetail?.total_amount || 0
-                const refundAmount = safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
-                                    safeClaimData?.return_details_v1?.results?.[0]?.refund_amount || 0
-                
-                if (totalAmount > 0 && refundAmount > 0) {
-                  return Math.round((refundAmount / totalAmount) * 100)
-                }
-                
-                return null
-              })(),
+              // ✅ Percentual reembolsado removido - era cálculo
               
               // TAGS DO PEDIDO - Para filtros avançados
               tags_pedido: safeOrderDetail?.tags || [],
@@ -1839,39 +1700,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // 🟢 FASE 3: CAMPOS AVANÇADOS
               // ============================================
               
-              // 1. CUSTOS DETALHADOS BRUTOS DA API
-              // Dados brutos sem cálculos
-              custo_frete_retorno: safeShipmentData?.cost || null,
-              custo_logistica_total: safeShipmentData?.cost || null,
-              valor_produto_original: safeOrderDetail?.total_amount || null,
-              valor_produto_reembolsado: safeOrderDetail?.payments?.[0]?.transaction_amount_refunded || null,
-              taxa_ml_reembolsada: safeOrderDetail?.payments?.[0]?.marketplace_fee || null,
-              
-              // 2. INTERNAL TAGS E METADADOS
-              internal_tags: (() => {
-                const tags = []
-                if (safeClaimData?.resolution) tags.push('resolved')
-                if (safeClaimData?.mediation) tags.push('mediated')
-                if (safeOrderDetail?.tags?.includes('paid')) tags.push('paid')
-                if (safeShipmentData) tags.push('has_shipping')
-                return tags.length > 0 ? tags : null
-              })(),
-              
-              tem_financeiro: (() => {
-                return !!(safeOrderDetail?.payments?.[0] && 
-                         (safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
-                          safeClaimData?.return_details_v1?.results?.[0]?.refund_amount))
-              })(),
-              
-              tem_review: (() => {
-                return !!(safeClaimData?.mediation || safeClaimData?.resolution)
-              })(),
-              
-              tem_sla: (() => {
-                const dueDate = safeClaimData?.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date
-                if (!dueDate) return false
-                return new Date(dueDate) > new Date()
-              })(),
+              // ✅ Custos, tags e flags removidos - eram cálculos ou duplicados
               
               nota_fiscal_autorizada: (() => {
                 return safeOrderDetail?.tags?.includes('authorized_invoice') || false

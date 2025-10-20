@@ -1032,15 +1032,7 @@ export type Database = {
       }
       devolucoes_avancadas: {
         Row: {
-          acao_seller_necessaria: boolean | null
           account_name: string | null
-          acoes_necessarias_review: Json | null
-          anexos_comprador: Json | null
-          anexos_count: number | null
-          anexos_ml: Json | null
-          anexos_vendedor: Json | null
-          buyer_reputation: Json | null
-          campos_faltantes: Json | null
           carrier_info: Json | null
           categoria_problema: string | null
           claim_fulfilled: boolean | null
@@ -1052,13 +1044,8 @@ export type Database = {
           comprador_cpf: string | null
           comprador_nickname: string | null
           comprador_nome_completo: string | null
-          confiabilidade_dados: string | null
           created_at: string | null
-          custo_envio_devolucao: number | null
-          custo_frete_devolucao: number | null
-          custo_logistico_total: number | null
           dados_claim: Json | null
-          dados_incompletos: boolean | null
           dados_mensagens: Json | null
           dados_order: Json | null
           dados_return: Json | null
@@ -1066,54 +1053,33 @@ export type Database = {
           data_criacao: string | null
           data_criacao_claim: string | null
           data_criacao_devolucao: string | null
-          data_estimada_troca: string | null
           data_fechamento_claim: string | null
           data_fechamento_devolucao: string | null
-          data_inicio_mediacao: string | null
           data_inicio_return: string | null
-          data_inicio_review: string | null
-          data_limite_troca: string | null
-          data_primeira_acao: string | null
-          data_processamento_reembolso: string | null
           data_ultima_movimentacao: string | null
           data_ultimo_status: string | null
-          data_vencimento_acao: string | null
-          descricao_custos: Json | null
           descricao_ultimo_status: string | null
           destino_devolucao: string | null
-          detalhes_mediacao: Json | null
-          dias_ate_resolucao: number | null
-          dias_restantes_acao: number | null
-          eficiencia_resolucao: string | null
           eh_troca: boolean | null
           em_mediacao: boolean | null
           endereco_destino: Json | null
           endereco_destino_devolucao: string | null
-          escalado_para_ml: boolean | null
-          feedback_comprador_final: string | null
-          feedback_vendedor: string | null
           fonte_dados_primaria: string | null
           hash_verificacao: string | null
-          historico_localizacoes: Json | null
           historico_status: Json | null
           id: string
-          impacto_financeiro_vendedor: number | null
           impacto_reputacao: string | null
           integration_account_id: string | null
           internal_tags: string[] | null
           localizacao_atual: string | null
           marcos_temporais: Json | null
           marketplace_origem: string | null
-          mediador_ml: string | null
-          mensagens_nao_lidas: number | null
           metodo_pagamento: string | null
           metodo_reembolso: string | null
           metodo_resolucao: string | null
           moeda_custo: string | null
           moeda_reembolso: string | null
           motivo_categoria: string | null
-          necessita_acao_manual: boolean | null
-          nivel_complexidade: string | null
           nivel_prioridade: string | null
           nota_fiscal_autorizada: boolean | null
           numero_interacoes: number | null
@@ -1121,14 +1087,9 @@ export type Database = {
           order_id: string
           origem_timeline: string | null
           parcelas: number | null
-          percentual_reembolsado: number | null
-          prazo_revisao_dias: number | null
-          previsao_entrega_vendedor: string | null
-          problemas_encontrados: Json | null
           produto_titulo: string | null
           produto_troca_id: string | null
           proxima_acao_requerida: string | null
-          qualidade_comunicacao: string | null
           quantidade: number | null
           reason_category: string | null
           reason_detail: string | null
@@ -1149,15 +1110,10 @@ export type Database = {
           review_status: string | null
           revisor_responsavel: string | null
           satisfacao_comprador: string | null
-          score_qualidade: number | null
-          score_satisfacao_final: number | null
-          seller_reputation: Json | null
           shipment_costs: Json | null
-          shipment_delays: Json | null
           shipment_id: string | null
           shipment_id_devolucao: number | null
           sku: string | null
-          sla_cumprido: boolean | null
           status_devolucao: string | null
           status_dinheiro: string | null
           status_envio_devolucao: string | null
@@ -1167,23 +1123,13 @@ export type Database = {
           status_rastreamento_devolucao: string | null
           status_rastreamento_pedido: string | null
           status_transporte_atual: string | null
-          subcategoria_problema: string | null
           subtipo_claim: string | null
           subtipo_devolucao: string | null
           tags_automaticas: string[] | null
           tags_pedido: string[] | null
-          taxa_ml_reembolso: number | null
-          taxa_satisfacao: number | null
           tem_financeiro: boolean | null
           tem_review: boolean | null
           tem_sla: boolean | null
-          tempo_analise_ml: number | null
-          tempo_limite_acao: string | null
-          tempo_primeira_resposta_vendedor: number | null
-          tempo_resposta_comprador: number | null
-          tempo_resposta_medio: number | null
-          tempo_total_resolucao: number | null
-          tempo_transito_dias: number | null
           timeline_consolidado: Json | null
           timeline_events: Json | null
           timeline_mensagens: Json | null
@@ -1191,7 +1137,6 @@ export type Database = {
           tipo_claim: string | null
           tipo_envio_devolucao: string | null
           tipo_pagamento: string | null
-          total_evidencias: number | null
           tracking_events: Json | null
           tracking_history: Json | null
           transaction_id: string | null
@@ -1203,26 +1148,13 @@ export type Database = {
           updated_at: string | null
           url_rastreamento: string | null
           usuario_ultima_acao: string | null
-          valor_compensacao: number | null
-          valor_diferenca_troca: number | null
           valor_original_produto: number | null
           valor_parcela: number | null
-          valor_reembolso_frete: number | null
-          valor_reembolso_produto: number | null
-          valor_reembolso_total: number | null
           valor_retido: number | null
           versao_api_utilizada: string | null
         }
         Insert: {
-          acao_seller_necessaria?: boolean | null
           account_name?: string | null
-          acoes_necessarias_review?: Json | null
-          anexos_comprador?: Json | null
-          anexos_count?: number | null
-          anexos_ml?: Json | null
-          anexos_vendedor?: Json | null
-          buyer_reputation?: Json | null
-          campos_faltantes?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
           claim_fulfilled?: boolean | null
@@ -1234,13 +1166,8 @@ export type Database = {
           comprador_cpf?: string | null
           comprador_nickname?: string | null
           comprador_nome_completo?: string | null
-          confiabilidade_dados?: string | null
           created_at?: string | null
-          custo_envio_devolucao?: number | null
-          custo_frete_devolucao?: number | null
-          custo_logistico_total?: number | null
           dados_claim?: Json | null
-          dados_incompletos?: boolean | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
@@ -1248,54 +1175,33 @@ export type Database = {
           data_criacao?: string | null
           data_criacao_claim?: string | null
           data_criacao_devolucao?: string | null
-          data_estimada_troca?: string | null
           data_fechamento_claim?: string | null
           data_fechamento_devolucao?: string | null
-          data_inicio_mediacao?: string | null
           data_inicio_return?: string | null
-          data_inicio_review?: string | null
-          data_limite_troca?: string | null
-          data_primeira_acao?: string | null
-          data_processamento_reembolso?: string | null
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
-          data_vencimento_acao?: string | null
-          descricao_custos?: Json | null
           descricao_ultimo_status?: string | null
           destino_devolucao?: string | null
-          detalhes_mediacao?: Json | null
-          dias_ate_resolucao?: number | null
-          dias_restantes_acao?: number | null
-          eficiencia_resolucao?: string | null
           eh_troca?: boolean | null
           em_mediacao?: boolean | null
           endereco_destino?: Json | null
           endereco_destino_devolucao?: string | null
-          escalado_para_ml?: boolean | null
-          feedback_comprador_final?: string | null
-          feedback_vendedor?: string | null
           fonte_dados_primaria?: string | null
           hash_verificacao?: string | null
-          historico_localizacoes?: Json | null
           historico_status?: Json | null
           id?: string
-          impacto_financeiro_vendedor?: number | null
           impacto_reputacao?: string | null
           integration_account_id?: string | null
           internal_tags?: string[] | null
           localizacao_atual?: string | null
           marcos_temporais?: Json | null
           marketplace_origem?: string | null
-          mediador_ml?: string | null
-          mensagens_nao_lidas?: number | null
           metodo_pagamento?: string | null
           metodo_reembolso?: string | null
           metodo_resolucao?: string | null
           moeda_custo?: string | null
           moeda_reembolso?: string | null
           motivo_categoria?: string | null
-          necessita_acao_manual?: boolean | null
-          nivel_complexidade?: string | null
           nivel_prioridade?: string | null
           nota_fiscal_autorizada?: boolean | null
           numero_interacoes?: number | null
@@ -1303,14 +1209,9 @@ export type Database = {
           order_id: string
           origem_timeline?: string | null
           parcelas?: number | null
-          percentual_reembolsado?: number | null
-          prazo_revisao_dias?: number | null
-          previsao_entrega_vendedor?: string | null
-          problemas_encontrados?: Json | null
           produto_titulo?: string | null
           produto_troca_id?: string | null
           proxima_acao_requerida?: string | null
-          qualidade_comunicacao?: string | null
           quantidade?: number | null
           reason_category?: string | null
           reason_detail?: string | null
@@ -1331,15 +1232,10 @@ export type Database = {
           review_status?: string | null
           revisor_responsavel?: string | null
           satisfacao_comprador?: string | null
-          score_qualidade?: number | null
-          score_satisfacao_final?: number | null
-          seller_reputation?: Json | null
           shipment_costs?: Json | null
-          shipment_delays?: Json | null
           shipment_id?: string | null
           shipment_id_devolucao?: number | null
           sku?: string | null
-          sla_cumprido?: boolean | null
           status_devolucao?: string | null
           status_dinheiro?: string | null
           status_envio_devolucao?: string | null
@@ -1349,23 +1245,13 @@ export type Database = {
           status_rastreamento_devolucao?: string | null
           status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
-          subcategoria_problema?: string | null
           subtipo_claim?: string | null
           subtipo_devolucao?: string | null
           tags_automaticas?: string[] | null
           tags_pedido?: string[] | null
-          taxa_ml_reembolso?: number | null
-          taxa_satisfacao?: number | null
           tem_financeiro?: boolean | null
           tem_review?: boolean | null
           tem_sla?: boolean | null
-          tempo_analise_ml?: number | null
-          tempo_limite_acao?: string | null
-          tempo_primeira_resposta_vendedor?: number | null
-          tempo_resposta_comprador?: number | null
-          tempo_resposta_medio?: number | null
-          tempo_total_resolucao?: number | null
-          tempo_transito_dias?: number | null
           timeline_consolidado?: Json | null
           timeline_events?: Json | null
           timeline_mensagens?: Json | null
@@ -1373,7 +1259,6 @@ export type Database = {
           tipo_claim?: string | null
           tipo_envio_devolucao?: string | null
           tipo_pagamento?: string | null
-          total_evidencias?: number | null
           tracking_events?: Json | null
           tracking_history?: Json | null
           transaction_id?: string | null
@@ -1385,26 +1270,13 @@ export type Database = {
           updated_at?: string | null
           url_rastreamento?: string | null
           usuario_ultima_acao?: string | null
-          valor_compensacao?: number | null
-          valor_diferenca_troca?: number | null
           valor_original_produto?: number | null
           valor_parcela?: number | null
-          valor_reembolso_frete?: number | null
-          valor_reembolso_produto?: number | null
-          valor_reembolso_total?: number | null
           valor_retido?: number | null
           versao_api_utilizada?: string | null
         }
         Update: {
-          acao_seller_necessaria?: boolean | null
           account_name?: string | null
-          acoes_necessarias_review?: Json | null
-          anexos_comprador?: Json | null
-          anexos_count?: number | null
-          anexos_ml?: Json | null
-          anexos_vendedor?: Json | null
-          buyer_reputation?: Json | null
-          campos_faltantes?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
           claim_fulfilled?: boolean | null
@@ -1416,13 +1288,8 @@ export type Database = {
           comprador_cpf?: string | null
           comprador_nickname?: string | null
           comprador_nome_completo?: string | null
-          confiabilidade_dados?: string | null
           created_at?: string | null
-          custo_envio_devolucao?: number | null
-          custo_frete_devolucao?: number | null
-          custo_logistico_total?: number | null
           dados_claim?: Json | null
-          dados_incompletos?: boolean | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
           dados_return?: Json | null
@@ -1430,54 +1297,33 @@ export type Database = {
           data_criacao?: string | null
           data_criacao_claim?: string | null
           data_criacao_devolucao?: string | null
-          data_estimada_troca?: string | null
           data_fechamento_claim?: string | null
           data_fechamento_devolucao?: string | null
-          data_inicio_mediacao?: string | null
           data_inicio_return?: string | null
-          data_inicio_review?: string | null
-          data_limite_troca?: string | null
-          data_primeira_acao?: string | null
-          data_processamento_reembolso?: string | null
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
-          data_vencimento_acao?: string | null
-          descricao_custos?: Json | null
           descricao_ultimo_status?: string | null
           destino_devolucao?: string | null
-          detalhes_mediacao?: Json | null
-          dias_ate_resolucao?: number | null
-          dias_restantes_acao?: number | null
-          eficiencia_resolucao?: string | null
           eh_troca?: boolean | null
           em_mediacao?: boolean | null
           endereco_destino?: Json | null
           endereco_destino_devolucao?: string | null
-          escalado_para_ml?: boolean | null
-          feedback_comprador_final?: string | null
-          feedback_vendedor?: string | null
           fonte_dados_primaria?: string | null
           hash_verificacao?: string | null
-          historico_localizacoes?: Json | null
           historico_status?: Json | null
           id?: string
-          impacto_financeiro_vendedor?: number | null
           impacto_reputacao?: string | null
           integration_account_id?: string | null
           internal_tags?: string[] | null
           localizacao_atual?: string | null
           marcos_temporais?: Json | null
           marketplace_origem?: string | null
-          mediador_ml?: string | null
-          mensagens_nao_lidas?: number | null
           metodo_pagamento?: string | null
           metodo_reembolso?: string | null
           metodo_resolucao?: string | null
           moeda_custo?: string | null
           moeda_reembolso?: string | null
           motivo_categoria?: string | null
-          necessita_acao_manual?: boolean | null
-          nivel_complexidade?: string | null
           nivel_prioridade?: string | null
           nota_fiscal_autorizada?: boolean | null
           numero_interacoes?: number | null
@@ -1485,14 +1331,9 @@ export type Database = {
           order_id?: string
           origem_timeline?: string | null
           parcelas?: number | null
-          percentual_reembolsado?: number | null
-          prazo_revisao_dias?: number | null
-          previsao_entrega_vendedor?: string | null
-          problemas_encontrados?: Json | null
           produto_titulo?: string | null
           produto_troca_id?: string | null
           proxima_acao_requerida?: string | null
-          qualidade_comunicacao?: string | null
           quantidade?: number | null
           reason_category?: string | null
           reason_detail?: string | null
@@ -1513,15 +1354,10 @@ export type Database = {
           review_status?: string | null
           revisor_responsavel?: string | null
           satisfacao_comprador?: string | null
-          score_qualidade?: number | null
-          score_satisfacao_final?: number | null
-          seller_reputation?: Json | null
           shipment_costs?: Json | null
-          shipment_delays?: Json | null
           shipment_id?: string | null
           shipment_id_devolucao?: number | null
           sku?: string | null
-          sla_cumprido?: boolean | null
           status_devolucao?: string | null
           status_dinheiro?: string | null
           status_envio_devolucao?: string | null
@@ -1531,23 +1367,13 @@ export type Database = {
           status_rastreamento_devolucao?: string | null
           status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
-          subcategoria_problema?: string | null
           subtipo_claim?: string | null
           subtipo_devolucao?: string | null
           tags_automaticas?: string[] | null
           tags_pedido?: string[] | null
-          taxa_ml_reembolso?: number | null
-          taxa_satisfacao?: number | null
           tem_financeiro?: boolean | null
           tem_review?: boolean | null
           tem_sla?: boolean | null
-          tempo_analise_ml?: number | null
-          tempo_limite_acao?: string | null
-          tempo_primeira_resposta_vendedor?: number | null
-          tempo_resposta_comprador?: number | null
-          tempo_resposta_medio?: number | null
-          tempo_total_resolucao?: number | null
-          tempo_transito_dias?: number | null
           timeline_consolidado?: Json | null
           timeline_events?: Json | null
           timeline_mensagens?: Json | null
@@ -1555,7 +1381,6 @@ export type Database = {
           tipo_claim?: string | null
           tipo_envio_devolucao?: string | null
           tipo_pagamento?: string | null
-          total_evidencias?: number | null
           tracking_events?: Json | null
           tracking_history?: Json | null
           transaction_id?: string | null
@@ -1567,13 +1392,8 @@ export type Database = {
           updated_at?: string | null
           url_rastreamento?: string | null
           usuario_ultima_acao?: string | null
-          valor_compensacao?: number | null
-          valor_diferenca_troca?: number | null
           valor_original_produto?: number | null
           valor_parcela?: number | null
-          valor_reembolso_frete?: number | null
-          valor_reembolso_produto?: number | null
-          valor_reembolso_total?: number | null
           valor_retido?: number | null
           versao_api_utilizada?: string | null
         }
