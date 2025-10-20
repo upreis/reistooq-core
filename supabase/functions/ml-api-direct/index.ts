@@ -1090,10 +1090,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    // ⏱️ LIMITE DRASTICAMENTE REDUZIDO quando NÃO há filtro de data
-    // Cada claim demora ~1 segundo (múltiplas chamadas API sequenciais)
+    // ⏱️ LIMITE AJUSTADO: Cada claim = ~1s (múltiplas APIs sequenciais)
+    // Timeout edge function = 45s, deixando margem de segurança
     const hasDateFilter = filters?.date_from || filters?.date_to;
-    const MAX_CLAIMS = hasDateFilter ? 1000 : 20;  // 🔥 20 claims = ~20 segundos (seguro para timeout de 45s)
+    const MAX_CLAIMS = hasDateFilter ? 30 : 15;  // 🔥 30s com filtro, 15s sem filtro (seguro para 45s timeout)
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
