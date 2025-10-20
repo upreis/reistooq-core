@@ -117,9 +117,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
-  // 🛡️ Validação: Verificar se há contas (sem early return para não quebrar hooks)
-  const hasAccounts = selectedAccountIds && selectedAccountIds.length > 0;
-
   // Filtros salvos são carregados automaticamente no hook, mas NÃO executam busca
   // O usuário deve clicar em "Buscar" ou "Aplicar" para executar a busca
 
@@ -146,12 +143,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     updateDraftFilters(key, value);
   }, [updateDraftFilters]);
 
-  // Filtros atuais (considerando draft ou aplicados) - MEMOIZADO
-  const currentFilters = React.useMemo(() => 
-    draftFilters || advancedFilters,
-    [draftFilters, advancedFilters]
-  );
-
+  // Filtros atuais (considerando draft ou aplicados)
+  const currentFilters = draftFilters || advancedFilters;
   const activeFiltersCount = React.useMemo(() => {
     let count = 0;
     if (currentFilters.searchTerm) count++;
@@ -236,42 +229,22 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     toast.success('Arquivo CSV exportado com sucesso!');
   }, [devolucoesFiltradas]);
 
-  // Determinar qual estado mostrar - MEMOIZADO
-  const hasFiltersApplied = React.useMemo(() => Boolean(
+  // Determinar qual estado mostrar
+  const hasFiltersApplied = Boolean(
     advancedFilters.dataInicio || 
     advancedFilters.dataFim || 
     advancedFilters.searchTerm ||
     advancedFilters.statusClaim ||
     advancedFilters.tipoClaim
-  ), [advancedFilters]);
-
-  const shouldShowNoFiltersState = React.useMemo(() => 
-    !loading && devolucoes.length === 0 && !hasFiltersApplied,
-    [loading, devolucoes.length, hasFiltersApplied]
   );
 
-  const shouldShowNoResultsState = React.useMemo(() => 
-    !loading && devolucoes.length === 0 && hasFiltersApplied,
-    [loading, devolucoes.length, hasFiltersApplied]
-  );
-
-  const shouldShowData = React.useMemo(() => 
-    !loading && devolucoes.length > 0,
-    [loading, devolucoes.length]
-  );
+  const shouldShowNoFiltersState = !loading && devolucoes.length === 0 && !hasFiltersApplied;
+  const shouldShowNoResultsState = !loading && devolucoes.length === 0 && hasFiltersApplied;
+  const shouldShowData = !loading && devolucoes.length > 0;
 
   // Dados para o diálogo de restauração removidos (não usado mais)
 
   return (
-    <>
-      {/* ⚠️ Se não há contas, mostrar apenas aviso */}
-      {!hasAccounts ? (
-        <Card className="p-6 border-yellow-200 bg-yellow-50">
-          <div className="text-center">
-            <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
-          </div>
-        </Card>
-      ) : (
     <div className="space-y-6">
       {/* Header com estatísticas melhoradas */}
       <ErrorBoundary
@@ -383,7 +356,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
       {/* Filtros Rápidos */}
       <FiltrosRapidos 
-        onAplicarFiltro={React.useCallback((filtros) => {
+        onAplicarFiltro={(filtros) => {
           handleFilterChange('dataInicio', filtros.dataInicio);
           handleFilterChange('dataFim', filtros.dataFim);
           if (filtros.statusClaim) {
@@ -391,7 +364,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           }
           // Aplicar automaticamente
           setTimeout(() => handleAplicarEBuscar(), 100);
-        }, [handleFilterChange, handleAplicarEBuscar])}
+        }}
       />
 
       {/* Controles de ação - Simplificado */}
@@ -510,13 +483,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
               </div>
             </CardHeader>
             <CardContent>
-            <DevolucaoTable
-              devolucoes={devolucoesPaginadas}
-              onViewDetails={React.useCallback((dev) => {
-                setSelectedDevolucao(dev);
-                setShowDetails(true);
-              }, [])}
-            />
+              <DevolucaoTable
+                devolucoes={devolucoesPaginadas}
+                onViewDetails={(dev) => {
+                  setSelectedDevolucao(dev);
+                  setShowDetails(true);
+                }}
+              />
               
               {devolucoesPaginadas.length === 0 && devolucoesFiltradas.length > 0 && (
                 <div className="text-center p-6 text-muted-foreground">
@@ -575,8 +548,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </DialogContent>
       </Dialog>
     </div>
-      )}
-    </>
   );
 };
 

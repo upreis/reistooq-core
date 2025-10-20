@@ -73,7 +73,7 @@ interface DevolucaoFiltersUnifiedProps {
   columnManager?: any;
 }
 
-export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnified({
+export function DevolucaoFiltersUnified({
   filters,
   appliedFilters,
   onFilterChange,
@@ -133,7 +133,7 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
         <Alert className="border-warning bg-warning/10">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription className="flex items-center justify-between">
-            <span>Você tem filtros pendentes. Clique em "Aplicar Filtros e Buscar" para ativá-los.</span>
+            <span>Você tem filtros pendentes. Clique em "Aplicar Filtros" para ativá-los.</span>
             <div className="flex gap-2">
               <Button 
                 size="sm" 
@@ -142,6 +142,24 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
                 disabled={isApplying}
               >
                 Cancelar
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={onApplyFilters}
+                disabled={isApplying}
+                className="min-w-[100px]"
+              >
+                {isApplying ? (
+                  <>
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                    Aplicando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Aplicar Filtros
+                  </>
+                )}
               </Button>
             </div>
           </AlertDescription>
@@ -503,25 +521,6 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
               Colunas ({columnManager.visibleCount})
             </Button>
           )}
-          
-          {/* Botão Buscar sempre visível */}
-          <Button
-            onClick={onApplyFilters}
-            disabled={isApplying}
-            className="gap-2"
-          >
-            {isApplying ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4" />
-                Aplicar Filtros e Buscar
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
@@ -567,4 +566,4 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
       )}
     </div>
   );
-});
+}

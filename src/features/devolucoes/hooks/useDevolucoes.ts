@@ -156,13 +156,15 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     debounceDelay: 300 // Delay otimizado para responsividade
   };
 
-  // ⚠️ HOOKS DEVEM SER CHAMADOS SEMPRE NA MESMA ORDEM - MOVER PARA O TOPO
-  const busca = useDevolucoesBusca();
-  const debouncedSearchTerm = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
-  
-  // Estados de carregamento (após outros hooks)
+  // Estados de carregamento
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Hooks
+  const busca = useDevolucoesBusca();
+
+  // Debounce para busca unificada
+  const debouncedSearchTerm = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
 
   // Auto-refresh DESABILITADO - usuário controla manualmente
   const autoRefresh = {

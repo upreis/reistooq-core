@@ -641,14 +641,11 @@ serve(async (req) => {
       const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       
-      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
       const secretResponse = await fetch(secretUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-          'x-internal-call': 'true',
           'x-internal-token': INTERNAL_TOKEN
         },
         body: JSON.stringify({

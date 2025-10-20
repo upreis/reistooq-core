@@ -10,7 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { supabase } from '@/integrations/supabase/client';
 
-export const SyncControls = React.memo(function SyncControls() {
+export function SyncControls() {
   const { syncStatus, syncNow } = useSyncDevolucoes();
   const [integrationAccountId, setIntegrationAccountId] = useState<string | null>(null);
   const { data: syncControl } = useSyncControl(integrationAccountId || undefined);
@@ -142,4 +142,4 @@ export const SyncControls = React.memo(function SyncControls() {
       </CardContent>
     </Card>
   );
-});
+}
