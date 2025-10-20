@@ -3,7 +3,7 @@
  * Une toda lógica de busca em um só lugar com otimização para tempo real
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
@@ -52,6 +52,16 @@ export function useDevolucoesBusca() {
   const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, message: '' });
   const [cacheStats, setCacheStats] = useState({ hits: 0, misses: 0, lastUpdate: '' });
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // ✅ 1.3 - CORREÇÃO: Cleanup do AbortController no unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, []);
 
   // 🔒 NÃO PRECISA OBTER TOKEN - A EDGE FUNCTION FAZ ISSO
   // A função ml-api-direct já obtém o token internamente de forma segura
@@ -149,7 +159,13 @@ export function useDevolucoesBusca() {
       ? filtros.contasSelecionadas 
       : mlAccounts.map(acc => acc.id);
     
+    // ✅ 1.5 - CORREÇÃO: Adicionar logs estruturados
     if (!contasParaBuscar || contasParaBuscar.length === 0) {
+      logger.error('Nenhuma conta ML disponível', {
+        context: 'useDevolucoesBusca.buscarDaAPI',
+        mlAccounts: mlAccounts?.length || 0,
+        filtros
+      });
       toast.error('Nenhuma conta ML disponível');
       return [];
     }
@@ -203,8 +219,14 @@ export function useDevolucoesBusca() {
             }
           });
 
+          // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros da API
           if (apiError) {
-            logger.error(`Erro API para ${account.name}`, apiError);
+            logger.error(`Erro API para ${account.name}`, {
+              context: 'useDevolucoesBusca.buscarDaAPI',
+              accountId,
+              accountName: account.name,
+              error: apiError.message || apiError
+            });
             toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
             // Continue com próxima conta em vez de falhar
             continue;
@@ -381,7 +403,14 @@ export function useDevolucoesBusca() {
           }
 
         } catch (accountError) {
-          logger.error(`Erro ao processar ${account.name}`, accountError);
+          // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros de conta
+          logger.error(`Erro ao processar ${account.name}`, {
+            context: 'useDevolucoesBusca.buscarDaAPI',
+            accountId: account.id,
+            accountName: account.name,
+            error: accountError instanceof Error ? accountError.message : accountError,
+            stack: accountError instanceof Error ? accountError.stack : undefined
+          });
           toast.error(`Erro na conta ${account.name}`);
         }
       }
@@ -393,8 +422,14 @@ export function useDevolucoesBusca() {
       return todasDevolucoes;
 
     } catch (error) {
-      logger.error('Erro geral na busca da API', error);
-      toast.error(`Erro na busca da API: ${error.message}`);
+      // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros gerais
+      logger.error('Erro geral na busca da API', {
+        context: 'useDevolucoesBusca.buscarDaAPI',
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        filtros
+      });
+      toast.error(`Erro na busca da API: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       return [];
     } finally {
       setLoading(false);
@@ -413,8 +448,12 @@ export function useDevolucoesBusca() {
         .select('*')
         .order('data_criacao', { ascending: false });
       
+      // ✅ 1.5 - CORREÇÃO: Logs estruturados
       if (error) {
-        logger.error('Erro ao buscar do banco', error);
+        logger.error('Erro ao buscar do banco', {
+          context: 'useDevolucoesBusca.buscarDoBanco',
+          error: error.message || error
+        });
         toast.error('Erro ao buscar devoluções do banco');
         return [];
       }
@@ -423,7 +462,12 @@ export function useDevolucoesBusca() {
       return data;
       
     } catch (error) {
-      logger.error('Erro ao buscar do banco', error);
+      // ✅ 1.5 - CORREÇÃO: Logs estruturados
+      logger.error('Erro ao buscar do banco', {
+        context: 'useDevolucoesBusca.buscarDoBanco',
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       toast.error('Erro ao carregar devoluções');
       return [];
     } finally {

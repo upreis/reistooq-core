@@ -107,8 +107,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   const busca = useDevolucoesBusca();
   const debouncedSearchTerm = useDebounce(advancedFilters.searchTerm, performanceSettings.debounceDelay);
   
-  // Estados de carregamento (após outros hooks)
-  const [loading, setLoading] = useState(false);
+  // ✅ 1.4 - CORREÇÃO: Estados de carregamento - REMOVER loading duplicado
+  // const [loading, setLoading] = useState(false); // ❌ DELETADO - usar apenas busca.loading
   const [error, setError] = useState<string | null>(null);
 
   // Auto-refresh DESABILITADO - usuário controla manualmente
@@ -162,7 +162,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   // 🔍 BUSCAR COM FILTROS - Aceita filtros opcionais para evitar race conditions
   const buscarComFiltros = useCallback(async (filtrosImediatos?: DevolucaoAdvancedFilters) => {
     try {
-      setLoading(true);
+      // ✅ 1.4 - CORREÇÃO: Não usar setLoading local (já gerenciado por busca)
       setError(null);
       
       // Usar filtros passados diretamente ou os do estado atual
@@ -185,9 +185,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar devoluções';
       setError(errorMessage);
       console.error('[useDevolucoes] ❌ Erro:', err);
-    } finally {
-      setLoading(false);
-    }
+    } // ✅ 1.4 - CORREÇÃO: Remover finally setLoading (já gerenciado por busca)
   }, [busca, advancedFilters, mlAccounts]);
 
   // Remover sincronização automática com banco
@@ -308,7 +306,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     stats,
     
     // Estados
-    loading: busca.loading || loading,
+    loading: busca.loading, // ✅ 1.4 - CORREÇÃO: Fonte única de verdade
     isRefreshing: false,
     error: error,
     currentPage,

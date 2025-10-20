@@ -930,8 +930,26 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
           
           const orderDetailResponse = await fetchMLWithRetry(orderDetailUrl, accessToken, integrationAccountId)
           
-          if (orderDetailResponse.ok) {
-            const orderDetail = await orderDetailResponse.json()
+          // ✅ 1.1 - CORREÇÃO: Tratamento específico para 404 em pedidos
+          if (!orderDetailResponse.ok) {
+            if (orderDetailResponse.status === 404) {
+              logger.warn(`Pedido ${orderId} não encontrado (404)`)
+              // Marcar claim como "pedido não encontrado" e continuar
+              ordersCancelados.push({
+                claim_id: claim.id,
+                order_id: orderId,
+                status_devolucao: 'order_not_found',
+                order_not_found: true,
+                claim_details: claim,
+                date_created: claim.date_created || new Date().toISOString(),
+                marketplace_origem: 'mercadolivre'
+              })
+              continue // Pular para próximo claim
+            }
+            throw new Error(`Erro HTTP ${orderDetailResponse.status} ao buscar pedido ${orderId}`)
+          }
+          
+          const orderDetail = await orderDetailResponse.json()
             
             // Buscar dados completos do claim (já temos o ID do claim do search)
             let claimData = null
@@ -975,21 +993,34 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 claimPromises.push(Promise.resolve(null))
               }
               
-              // 4. Buscar detalhes da mediação
-              claimPromises.push(
-                fetchMLWithRetry(
-                  `https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`,
-                  accessToken,
-                  integrationAccountId
-                ).then(async r => {
-                  if (r.ok) return r.json();
-                  console.log(`⚠️  Mediation failed (${r.status}): ${mediationId}`);
-                  return null;
-                }).catch(e => {
-                  console.error(`❌ Mediation error: ${e.message}`);
-                  return null;
-                })
-              )
+              // ✅ 1.2 - CORREÇÃO: Só buscar mediação se claim tiver mediation_id ou stage
+              const hasMediationId = claim.mediation_id || claim.stage === 'mediation'
+              if (hasMediationId) {
+                claimPromises.push(
+                  fetchMLWithRetry(
+                    `https://api.mercadolibre.com/post-purchase/v1/mediations/${mediationId}`,
+                    accessToken,
+                    integrationAccountId
+                  ).then(async r => {
+                    if (r.ok) {
+                      console.log(`✅ Mediação encontrada para claim ${mediationId}`)
+                      return r.json();
+                    }
+                    if (r.status === 404) {
+                      logger.debug(`Mediação não disponível para claim ${mediationId}`)
+                    } else {
+                      console.log(`⚠️  Mediation failed (${r.status}): ${mediationId}`)
+                    }
+                    return null;
+                  }).catch(e => {
+                    logger.debug(`Erro ao buscar mediação ${mediationId}: ${e.message}`)
+                    return null;
+                  })
+                )
+              } else {
+                // Não tem mediação, adicionar null ao array de promises
+                claimPromises.push(Promise.resolve({ has_mediation: false }))
+              }
 
               // 5. Buscar returns v2 usando claim ID
               claimPromises.push(
