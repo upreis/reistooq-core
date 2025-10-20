@@ -3,6 +3,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { calculateSLAMetrics } from './utils/sla-calculator.ts'
 import { calculateFinancialData, calculateProductCosts } from './utils/financial-calculator.ts'
+import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -197,17 +198,11 @@ serve(async (req) => {
             buyer_id: devolucao.buyer_id,
             buyer_nickname: devolucao.buyer_nickname,
             
-            // 🟡 FASE 2: Dados Adicionais do Comprador
-            comprador_cpf_cnpj: devolucao.order_data?.buyer?.billing_info?.doc_number,
-            comprador_nome_completo: `${devolucao.order_data?.buyer?.first_name || ''} ${devolucao.order_data?.buyer?.last_name || ''}`.trim(),
-            comprador_nickname: devolucao.order_data?.buyer?.nickname,
+            // ✅ FASE 5: Dados Adicionais do Comprador (via extractor)
+            ...extractBuyerData(devolucao.order_data),
             
-            // 🟡 FASE 2: Dados de Pagamento
-            metodo_pagamento: devolucao.order_data?.payments?.[0]?.payment_method_id,
-            tipo_pagamento: devolucao.order_data?.payments?.[0]?.payment_type,
-            numero_parcelas: devolucao.order_data?.payments?.[0]?.installments,
-            valor_parcela: devolucao.order_data?.payments?.[0]?.installment_amount,
-            transaction_id: devolucao.order_data?.payments?.[0]?.transaction_id,
+            // ✅ FASE 5: Dados de Pagamento (via extractor)
+            ...extractPaymentData(devolucao.order_data),
             
             // 🟡 FASE 2: Dados Financeiros Adicionais
             percentual_reembolsado: devolucao.descricao_custos?.produto?.percentual_reembolsado,
