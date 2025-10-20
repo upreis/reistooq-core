@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { calculateSLAMetrics } from './utils/sla-calculator.ts'
+import { calculateFinancialData, calculateProductCosts } from './utils/financial-calculator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1497,77 +1498,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   // ============================================
                   // 💰 FASE 4: ENRIQUECIMENTO FINANCEIRO AVANÇADO
                   // ============================================
-                  financial_data: (() => {
-                    // Extrair dados de pagamento
-                    const payments = orderDetail?.payments || []
-                    const firstPayment = payments[0] || {}
-                    
-                    // Calcular valores de reembolso
-                    const valorReembolsoTotal = firstPayment.transaction_amount_refunded || 0
-                    const valorProduto = orderDetail?.total_amount || 0
-                    const valorFrete = firstPayment.shipping_cost || 0
-                    const valorReembolsoProduto = valorProduto > 0 ? Math.min(valorReembolsoTotal, valorProduto) : 0
-                    const valorReembolsoFrete = valorReembolsoTotal > valorReembolsoProduto ? valorReembolsoTotal - valorReembolsoProduto : 0
-                    
-                    // Calcular taxas ML
-                    const taxaML = orderDetail?.order_items?.[0]?.sale_fee || 0
-                    const taxaMLReembolso = valorReembolsoProduto > 0 ? (taxaML / valorProduto) * valorReembolsoProduto : 0
-                    
-                    // Calcular custos logísticos
-                    const custoEnvioDevolucao = returnsV2?.results?.[0]?.shipping_cost || 
-                                               returnsV1?.results?.[0]?.shipping_cost || 0
-                    const custoEnvioOriginal = valorFrete
-                    const custoLogisticoTotal = custoEnvioDevolucao + custoEnvioOriginal
-                    
-                    // Calcular impacto financeiro para o vendedor
-                    const receitaPerdida = valorProduto
-                    const taxasRecuperadas = taxaMLReembolso
-                    const custosLogisticos = custoLogisticoTotal
-                    const impactoFinanceiroVendedor = -(receitaPerdida - taxasRecuperadas + custosLogisticos)
-                    
-                    // Determinar método e moeda de reembolso
-                    const metodoReembolso = firstPayment.payment_method_id || 'desconhecido'
-                    const moedaReembolso = firstPayment.currency_id || 'BRL'
-                    const dataProcessamentoReembolso = firstPayment.date_last_modified || orderDetail?.date_closed
-                    
-                    // Breakdown detalhado de custos
-                    const descricaoCustos = {
-                      produto: {
-                        valor_original: valorProduto,
-                        valor_reembolsado: valorReembolsoProduto,
-                        percentual_reembolsado: valorProduto > 0 ? (valorReembolsoProduto / valorProduto * 100).toFixed(2) : 0
-                      },
-                      frete: {
-                        valor_original: valorFrete,
-                        valor_reembolsado: valorReembolsoFrete,
-                        custo_devolucao: custoEnvioDevolucao,
-                        custo_total_logistica: custoLogisticoTotal
-                      },
-                      taxas: {
-                        taxa_ml_original: taxaML,
-                        taxa_ml_reembolsada: taxaMLReembolso,
-                        taxa_ml_retida: taxaML - taxaMLReembolso
-                      },
-                      resumo: {
-                        valor_total_reembolsado: valorReembolsoTotal,
-                        impacto_vendedor: impactoFinanceiroVendedor,
-                        moeda: moedaReembolso
-                      }
-                    }
-                    
-                    return {
-                      valor_reembolso_total: valorReembolsoTotal,
-                      valor_reembolso_produto: valorReembolsoProduto,
-                      valor_reembolso_frete: valorReembolsoFrete,
-                      taxa_ml_reembolso: taxaMLReembolso,
-                      custo_logistico_total: custoLogisticoTotal,
-                      impacto_financeiro_vendedor: impactoFinanceiroVendedor,
-                      moeda_reembolso: moedaReembolso,
-                      metodo_reembolso: metodoReembolso,
-                      data_processamento_reembolso: dataProcessamentoReembolso,
-                      descricao_custos: descricaoCustos
-                    }
-                  })(),
+                  // ✅ SUBSTITUÍDO: Agora usa calculateFinancialData() do utils/financial-calculator.ts
+                  // Isso elimina ~70 linhas de código duplicado
+                  financial_data: calculateFinancialData(claimData, orderDetail),
                   
                   // Campos enriquecidos conforme estratégia do PDF
                   claim_status: claimDetails?.status || null,
@@ -2117,34 +2050,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // ============================================
               
               // 1. CUSTOS DETALHADOS
-              custo_frete_devolucao: (() => {
-                const shipping = safeShipmentData?.shipping_items?.[0]
-                return shipping?.cost || safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || null
-              })(),
-              
-              custo_logistica_total: (() => {
-                const freteDevolucao = safeShipmentData?.shipping_items?.[0]?.cost || 0
-                const freteOriginal = safeOrderDetail?.shipping?.cost || 0
-                return freteDevolucao + freteOriginal || null
-              })(),
-              
-              valor_original_produto: (() => {
-                const item = safeOrderDetail?.order_items?.[0]
-                return item?.full_unit_price || item?.unit_price || null
-              })(),
-              
-              valor_reembolsado_produto: (() => {
-                return safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
-                       safeClaimData?.return_details_v1?.results?.[0]?.refund_amount || null
-              })(),
-              
-              taxa_ml_reembolso: (() => {
-                const refundAmount = safeClaimData?.return_details_v2?.results?.[0]?.refund_amount ||
-                                   safeClaimData?.return_details_v1?.results?.[0]?.refund_amount || 0
-                const originalAmount = safeOrderDetail?.total_amount || 0
-                const taxaPercentual = safeOrderDetail?.payments?.[0]?.marketplace_fee || 0
-                return (refundAmount * taxaPercentual / 100) || null
-              })(),
+              // ✅ SUBSTITUÍDO: Agora usa calculateProductCosts() do utils/financial-calculator.ts
+              // Isso elimina ~30 linhas de código duplicado
+              ...calculateProductCosts(safeClaimData, safeOrderDetail, safeShipmentData),
               
               // 2. INTERNAL TAGS E METADADOS
               internal_tags: (() => {
