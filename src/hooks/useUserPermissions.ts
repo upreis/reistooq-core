@@ -6,17 +6,32 @@ export function useUserPermissions() {
   const [permissions, setPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
+    console.log('🔍 useUserPermissions - useEffect triggered:', { 
+      user: !!user, 
+      userEmail: user?.email,
+      authLoading 
+    });
+
+    // Se ainda está carregando auth, aguardar
+    if (authLoading) {
+      console.log('🔍 useUserPermissions - Auth ainda carregando, aguardando...');
+      return;
+    }
+
     async function loadPermissions() {
+      // Usuário não autenticado
       if (!user) {
+        console.log('🔍 useUserPermissions - Usuário não autenticado');
         setPermissions([]);
         setLoading(false);
         return;
       }
 
       try {
+        console.log('🔍 useUserPermissions - Carregando permissões para:', user.email);
         setLoading(true);
         setError(null);
 
@@ -30,24 +45,26 @@ export function useUserPermissions() {
         });
 
         if (permError) {
-          console.error('Erro ao carregar permissões:', permError);
+          console.error('❌ Erro ao carregar permissões:', permError);
           setError(permError.message);
           setPermissions([]);
+          setLoading(false);
           return;
         }
 
+        console.log('✅ Permissões carregadas:', data);
         setPermissions(data || []);
+        setLoading(false);
       } catch (err) {
-        console.error('Erro inesperado ao carregar permissões:', err);
+        console.error('❌ Erro inesperado ao carregar permissões:', err);
         setError('Erro inesperado ao carregar permissões');
         setPermissions([]);
-      } finally {
         setLoading(false);
       }
     }
 
     loadPermissions();
-  }, [user]);
+  }, [user, authLoading]);
 
   // Helper functions
   const hasPermission = (permission: string): boolean => {
