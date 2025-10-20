@@ -89,8 +89,8 @@ export default function MLOrdersCompletas() {
         </Card>
       )}
 
-      {/* Conteúdo Principal */}
-      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length > 0 && (
+      {/* Conteúdo Principal - SEMPRE renderizar componente para evitar erro de hooks */}
+      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && (
         <DevolucaoAvancadasTab 
           mlAccounts={mlAccounts || []}
           selectedAccountId={selectedAccountIds[0] || ''}
@@ -100,15 +100,6 @@ export default function MLOrdersCompletas() {
           }}
           existingDevolucoes={[]}
         />
-      )}
-      
-      {/* Alerta quando nenhuma conta selecionada */}
-      {!loadingAccounts && mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && (
-        <Card className="p-6 border-yellow-200 bg-yellow-50">
-          <div className="text-center">
-            <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
-          </div>
-        </Card>
       )}
       </div>
     </ErrorBoundary>

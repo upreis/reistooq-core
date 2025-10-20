@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +22,7 @@ import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 import { SyncControls } from './devolucao/SyncControls';
 import { SyncMetrics } from './devolucao/SyncMetrics';
 import { FiltrosRapidos } from './devolucao/FiltrosRapidos';
+import { ErrorFallback, MinimalErrorFallback } from '@/components/error/ErrorFallback';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -70,8 +72,6 @@ interface DevolucaoAvancadasTabProps {
   existingDevolucoes: DevolucaoAvancada[];
 }
 
-const STORAGE_KEY_FILTERS = 'ml_devolucoes_last_filters';
-
 const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   mlAccounts,
   selectedAccountId,
@@ -83,28 +83,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [showDetails, setShowDetails] = React.useState(false);
   const [showExportDialog, setShowExportDialog] = React.useState(false);
   const [showColumnManager, setShowColumnManager] = React.useState(false);
-  
-  // Carregar filtros salvos do localStorage
-  const loadSavedFilters = useCallback(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY_FILTERS);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        console.log('📂 Filtros carregados do localStorage:', parsed);
-        return parsed;
-      }
-    } catch (error) {
-      console.error('Erro ao carregar filtros salvos:', error);
-    }
-    return {};
-  }, []);
 
-  // Estados para controle de filtros (aplicação manual)
-  const [draftFilters, setDraftFilters] = React.useState<any>(null);
-  const [appliedFiltersState, setAppliedFiltersState] = React.useState<any>(loadSavedFilters);
-  const [isApplyingFilters, setIsApplyingFilters] = React.useState(false);
-
-  // Hook principal consolidado com otimizações
+  // Hook principal consolidado - ESTADO UNIFICADO
   const {
     devolucoes,
     devolucoesFiltradas,
@@ -117,11 +97,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     totalPages,
     itemsPerPage,
     showAnalytics,
-    filters,
     advancedFilters,
+    draftFilters,
+    isApplyingFilters,
+    hasPendingChanges,
     performanceSettings,
-    updateFilters,
-    updateAdvancedFilters,
+    updateDraftFilters,
+    applyFilters,
+    cancelDraftFilters,
     clearFilters,
     buscarComFiltros,
     setCurrentPage,
@@ -134,79 +117,41 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
-  // Aplicar filtros salvos ao carregar
-  // Aplicar filtros salvos ao carregar (apenas uma vez)
-  React.useEffect(() => {
-    const savedFilters = loadSavedFilters();
-    if (Object.keys(savedFilters).length > 0) {
-      console.log('🚀 Aplicando filtros salvos automaticamente:', savedFilters);
-      // Atualizar o estado de filtros aplicados
-      setAppliedFiltersState(savedFilters);
-      // Atualizar os filtros no hook
-      updateAdvancedFilters(savedFilters);
-      // Buscar com os filtros salvos
-      buscarComFiltros(savedFilters);
-    }
-  }, []);
+  // 🛡️ Validação: Verificar se há contas (sem early return para não quebrar hooks)
+  const hasAccounts = selectedAccountIds && selectedAccountIds.length > 0;
 
+  // Filtros salvos são carregados automaticamente no hook, mas NÃO executam busca
+  // O usuário deve clicar em "Buscar" ou "Aplicar" para executar a busca
 
-  // Função para aplicar filtros e buscar
+  // Funções simplificadas - delegam para o hook
   const handleAplicarEBuscar = useCallback(async () => {
-    setIsApplyingFilters(true);
     try {
-      // Aplicar filtros atuais
-      const filtrosParaAplicar = draftFilters || advancedFilters;
-      setAppliedFiltersState(filtrosParaAplicar);
-      setDraftFilters(null);
-      
-      // Salvar filtros no localStorage
-      try {
-        localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filtrosParaAplicar));
-        console.log('💾 Filtros salvos no localStorage:', filtrosParaAplicar);
-      } catch (error) {
-        console.error('Erro ao salvar filtros:', error);
-      }
-      
-      // Buscar com os filtros
-      await buscarComFiltros(filtrosParaAplicar);
-      
+      await applyFilters();
       toast.success('Filtros aplicados e salvos com sucesso');
     } catch (error) {
       console.error('Erro ao aplicar filtros:', error);
       toast.error('Erro ao aplicar filtros');
-    } finally {
-      setIsApplyingFilters(false);
     }
-  }, [buscarComFiltros, advancedFilters, draftFilters]);
+  }, [applyFilters]);
 
   const handleCancelChanges = useCallback(() => {
-    setDraftFilters(null);
-  }, []);
+    cancelDraftFilters();
+  }, [cancelDraftFilters]);
 
   const handleClearAllFilters = useCallback(() => {
     clearFilters();
-    setDraftFilters(null);
-    setAppliedFiltersState({});
-    
-    // Limpar filtros salvos do localStorage
-    try {
-      localStorage.removeItem(STORAGE_KEY_FILTERS);
-      console.log('🗑️ Filtros removidos do localStorage');
-    } catch (error) {
-      console.error('Erro ao limpar filtros salvos:', error);
-    }
   }, [clearFilters]);
 
   const handleFilterChange = useCallback((key: string, value: any) => {
-    setDraftFilters((prev: any) => ({
-      ...(prev || appliedFiltersState || advancedFilters),
-      [key]: value
-    }));
-  }, [appliedFiltersState, advancedFilters]);
+    updateDraftFilters(key, value);
+  }, [updateDraftFilters]);
 
-  // Calcular filtros ativos e mudanças pendentes
-  // IMPORTANTE: currentFilters deve usar appliedFiltersState como base, não advancedFilters
-  const currentFilters = draftFilters || appliedFiltersState || advancedFilters;
+  // Filtros atuais (considerando draft ou aplicados) - MEMOIZADO
+  const currentFilters = React.useMemo(() => 
+    draftFilters || advancedFilters,
+    [draftFilters, advancedFilters]
+  );
+
   const activeFiltersCount = React.useMemo(() => {
     let count = 0;
     if (currentFilters.searchTerm) count++;
@@ -216,9 +161,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     if (currentFilters.contasSelecionadas?.length > 0) count++;
     return count;
   }, [currentFilters]);
-
-  const hasPendingChanges = draftFilters !== null;
-  const needsManualApplication = hasPendingChanges;
 
 
   const exportarCSV = useCallback(() => {
@@ -294,113 +236,154 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     toast.success('Arquivo CSV exportado com sucesso!');
   }, [devolucoesFiltradas]);
 
-  // Determinar qual estado mostrar
-  const hasFiltersApplied = Boolean(
+  // Determinar qual estado mostrar - MEMOIZADO
+  const hasFiltersApplied = React.useMemo(() => Boolean(
     advancedFilters.dataInicio || 
     advancedFilters.dataFim || 
     advancedFilters.searchTerm ||
     advancedFilters.statusClaim ||
     advancedFilters.tipoClaim
+  ), [advancedFilters]);
+
+  const shouldShowNoFiltersState = React.useMemo(() => 
+    !loading && devolucoes.length === 0 && !hasFiltersApplied,
+    [loading, devolucoes.length, hasFiltersApplied]
   );
 
-  const shouldShowNoFiltersState = !loading && devolucoes.length === 0 && !hasFiltersApplied;
-  const shouldShowNoResultsState = !loading && devolucoes.length === 0 && hasFiltersApplied;
-  const shouldShowData = !loading && devolucoes.length > 0;
+  const shouldShowNoResultsState = React.useMemo(() => 
+    !loading && devolucoes.length === 0 && hasFiltersApplied,
+    [loading, devolucoes.length, hasFiltersApplied]
+  );
+
+  const shouldShowData = React.useMemo(() => 
+    !loading && devolucoes.length > 0,
+    [loading, devolucoes.length]
+  );
 
   // Dados para o diálogo de restauração removidos (não usado mais)
 
   return (
+    <>
+      {/* ⚠️ Se não há contas, mostrar apenas aviso */}
+      {!hasAccounts ? (
+        <Card className="p-6 border-yellow-200 bg-yellow-50">
+          <div className="text-center">
+            <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
+          </div>
+        </Card>
+      ) : (
     <div className="space-y-6">
       {/* Header com estatísticas melhoradas */}
-      {loading && <DevolucaoStatsLoading />}
-      
-      {!loading && (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+      <ErrorBoundary
+        FallbackComponent={(props) => (
+          <MinimalErrorFallback {...props} />
+        )}
+        onReset={() => window.location.reload()}
+      >
+        {loading && <DevolucaoStatsLoading />}
+        
+        {!loading && (
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <Package className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total</p>
+                    <p className="text-2xl font-bold dark:text-white">{stats.total}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {performanceSettings.enableLazyLoading && `${stats.visible} visíveis`}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total</p>
-                  <p className="text-2xl font-bold dark:text-white">{stats.total}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {performanceSettings.enableLazyLoading && `${stats.visible} visíveis`}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
-                  <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                    <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Pendentes</p>
+                    <p className="text-2xl font-bold dark:text-white">{stats.pendentes}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Pendentes</p>
-                  <p className="text-2xl font-bold dark:text-white">{stats.pendentes}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Concluídas</p>
+                    <p className="text-2xl font-bold dark:text-white">{stats.concluidas}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Concluídas</p>
-                  <p className="text-2xl font-bold dark:text-white">{stats.concluidas}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                  <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                    <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Canceladas</p>
+                    <p className="text-2xl font-bold dark:text-white">{stats.canceladas}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Canceladas</p>
-                  <p className="text-2xl font-bold dark:text-white">{stats.canceladas}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                  <Wrench className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <Wrench className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">API ML</p>
+                    <p className="text-2xl font-bold dark:text-white">{stats.totalLoaded}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Dados em tempo real</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-300">API ML</p>
-                  <p className="text-2xl font-bold dark:text-white">{stats.totalLoaded}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Dados em tempo real</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </ErrorBoundary>
 
       {/* Controles de Sincronização */}
-      <SyncControls />
+      <ErrorBoundary
+        FallbackComponent={(props) => (
+          <MinimalErrorFallback {...props} />
+        )}
+        onReset={() => window.location.reload()}
+      >
+        <SyncControls />
+      </ErrorBoundary>
 
       {/* Métricas de Sincronização */}
-      <SyncMetrics />
+      <ErrorBoundary
+        FallbackComponent={(props) => (
+          <MinimalErrorFallback {...props} />
+        )}
+        onReset={() => window.location.reload()}
+      >
+        <SyncMetrics />
+      </ErrorBoundary>
 
       {/* Filtros Rápidos */}
       <FiltrosRapidos 
-        onAplicarFiltro={(filtros) => {
+        onAplicarFiltro={React.useCallback((filtros) => {
           handleFilterChange('dataInicio', filtros.dataInicio);
           handleFilterChange('dataFim', filtros.dataFim);
           if (filtros.statusClaim) {
@@ -408,7 +391,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           }
           // Aplicar automaticamente
           setTimeout(() => handleAplicarEBuscar(), 100);
-        }}
+        }, [handleFilterChange, handleAplicarEBuscar])}
       />
 
       {/* Controles de ação - Simplificado */}
@@ -432,24 +415,33 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       </div>
 
       {/* ✨ SISTEMA DE FILTROS UNIFICADO - IGUAL AO /PEDIDOS */}
-      <DevolucaoFiltersSection
-        activeFiltersCount={activeFiltersCount}
-        hasPendingChanges={hasPendingChanges}
+      <ErrorBoundary
+        FallbackComponent={(props) => (
+          <ErrorFallback {...props} componentName="Filtros" />
+        )}
+        onReset={() => {
+          handleClearAllFilters();
+        }}
       >
-        <DevolucaoFiltersUnified
-          filters={currentFilters}
-          appliedFilters={appliedFiltersState}
-          onFilterChange={handleFilterChange}
-          onApplyFilters={handleAplicarEBuscar}
-          onCancelChanges={handleCancelChanges}
-          onClearFilters={handleClearAllFilters}
-          hasPendingChanges={hasPendingChanges}
-          needsManualApplication={needsManualApplication}
-          isApplying={isApplyingFilters}
+        <DevolucaoFiltersSection
           activeFiltersCount={activeFiltersCount}
-          contasML={mlAccounts}
-        />
-      </DevolucaoFiltersSection>
+          hasPendingChanges={hasPendingChanges}
+        >
+          <DevolucaoFiltersUnified
+            filters={currentFilters}
+            appliedFilters={advancedFilters}
+            onFilterChange={handleFilterChange}
+            onApplyFilters={handleAplicarEBuscar}
+            onCancelChanges={handleCancelChanges}
+            onClearFilters={handleClearAllFilters}
+            hasPendingChanges={hasPendingChanges}
+            needsManualApplication={hasPendingChanges}
+            isApplying={isApplyingFilters}
+            activeFiltersCount={activeFiltersCount}
+            contasML={mlAccounts}
+          />
+        </DevolucaoFiltersSection>
+      </ErrorBoundary>
 
       {/* ERRO */}
       {error && (
@@ -486,47 +478,56 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
       {/* Lista de devoluções - Cards ou Tabela */}
       {shouldShowData && (
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Devoluções Encontradas</CardTitle>
-                <CardDescription className="flex items-center gap-2 mt-1">
-                  <Package className="h-4 w-4" />
-                  {devolucoesFiltradas.length} resultado{devolucoesFiltradas.length !== 1 ? 's' : ''} encontrado{devolucoesFiltradas.length !== 1 ? 's' : ''}
-                </CardDescription>
+        <ErrorBoundary
+          FallbackComponent={(props) => (
+            <ErrorFallback {...props} componentName="Tabela de Devoluções" />
+          )}
+          onReset={() => {
+            setCurrentPage(1);
+          }}
+        >
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Devoluções Encontradas</CardTitle>
+                  <CardDescription className="flex items-center gap-2 mt-1">
+                    <Package className="h-4 w-4" />
+                    {devolucoesFiltradas.length} resultado{devolucoesFiltradas.length !== 1 ? 's' : ''} encontrado{devolucoesFiltradas.length !== 1 ? 's' : ''}
+                  </CardDescription>
+                </div>
+                {hasFiltersApplied && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={clearFilters}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Filter className="h-4 w-4 mr-2" />
+                    Limpar Filtros
+                  </Button>
+                )}
               </div>
-              {hasFiltersApplied && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={clearFilters}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Limpar Filtros
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
+            </CardHeader>
+            <CardContent>
             <DevolucaoTable
               devolucoes={devolucoesPaginadas}
-              onViewDetails={(dev) => {
+              onViewDetails={React.useCallback((dev) => {
                 setSelectedDevolucao(dev);
                 setShowDetails(true);
-              }}
+              }, [])}
             />
-            
-            {devolucoesPaginadas.length === 0 && devolucoesFiltradas.length > 0 && (
-              <div className="text-center p-6 text-muted-foreground">
-                <p className="text-sm">
-                  Nenhum resultado na página atual. Navegue para outras páginas ou ajuste os filtros.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              
+              {devolucoesPaginadas.length === 0 && devolucoesFiltradas.length > 0 && (
+                <div className="text-center p-6 text-muted-foreground">
+                  <p className="text-sm">
+                    Nenhum resultado na página atual. Navegue para outras páginas ou ajuste os filtros.
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </ErrorBoundary>
       )}
 
       {/* Paginação */}
@@ -574,6 +575,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </DialogContent>
       </Dialog>
     </div>
+      )}
+    </>
   );
 };
 

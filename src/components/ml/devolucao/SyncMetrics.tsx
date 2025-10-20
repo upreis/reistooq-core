@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 
-export function SyncMetrics() {
+export const SyncMetrics = React.memo(function SyncMetrics() {
   const { data: metrics, isLoading } = useSyncMetrics();
 
   if (isLoading) {
@@ -125,4 +125,4 @@ export function SyncMetrics() {
       </CardContent>
     </Card>
   );
-}
+});
