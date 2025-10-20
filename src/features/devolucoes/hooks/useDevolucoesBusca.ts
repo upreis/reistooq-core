@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { reasonsCacheService } from '../utils/DevolucaoCacheService';
 import { fetchClaimsAndReturns, fetchReasonDetail, fetchAllClaims } from '../utils/MLApiClient';
-import { mapReasonWithApiData } from '../utils/DevolucaoReasonsMapper';
 import { sortByDataCriacao } from '../utils/DevolucaoSortUtils';
 import {
   mapDadosPrincipais,
@@ -282,8 +281,19 @@ export function useDevolucoesBusca() {
                 detalheAPI: apiReasonData?.detail
               });
               
-              // 🎯 Mapear com dados da API (prioridade) ou fallback local
-              const reasonsAPI = mapReasonWithApiData(reasonId, apiReasonData);
+              // 🎯 Mapear reason localmente (sem cálculos, dados brutos da API)
+              const reasonsAPI = {
+                reason_id: reasonId,
+                reason_category: reasonId?.startsWith('PNR') ? 'not_received' :
+                                reasonId?.startsWith('PDD') ? 'defective_or_different' :
+                                reasonId?.startsWith('CS') ? 'cancellation' : 'other',
+                reason_name: apiReasonData?.name || null,
+                reason_detail: apiReasonData?.detail || null,
+                reason_type: 'buyer_initiated',
+                reason_priority: (reasonId?.startsWith('PNR') || reasonId?.startsWith('PDD')) ? 'high' : 'medium',
+                reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
+                reason_flow: apiReasonData?.flow || null
+              };
               
               if (reasonId) {
                 logger.info(`✅ Reason ${reasonId} processado:`, {

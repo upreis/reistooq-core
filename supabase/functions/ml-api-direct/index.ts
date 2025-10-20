@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
-import { calculateSLAMetrics } from './utils/sla-calculator.ts'
-import { calculateFinancialData, calculateProductCosts } from './utils/financial-calculator.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
 import { logger } from './utils/logger.ts'
 import { extractMediationData } from './utils/mediation-extractor.ts'
@@ -1277,18 +1275,29 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   review_needs_manual_action: enrichedReviewData.reviewNeedsManualAction,
                   
                 // ============================================
-                // ⏱️ FASE 3: MÉTRICAS TEMPORAIS E SLA
+                // ⏱️ FASE 3: DADOS BRUTOS DA API (SEM CÁLCULOS)
                 // ============================================
-                // ✅ NOTA: sla_metrics será calculado após claimData estar completo
-                // Ver linha ~1527 onde calculateSLAMetrics() é chamado corretamente
-                sla_metrics: null, // Será substituído abaixo
+                // Dados de SLA virão diretamente da API sem processamento
+                sla_data_raw: {
+                  date_created: orderDetail?.date_created || null,
+                  date_closed: claimDetails?.date_closed || null,
+                  messages: consolidatedMessages?.messages || [],
+                  mediation_date: mediationDetails?.date_created || null
+                },
                   
                   // ============================================
-                  // 💰 FASE 4: ENRIQUECIMENTO FINANCEIRO AVANÇADO
+                  // 💰 FASE 4: DADOS FINANCEIROS BRUTOS DA API
                   // ============================================
-                  // ✅ SUBSTITUÍDO: Agora usa calculateFinancialData() do utils/financial-calculator.ts
-                  // Isso elimina ~70 linhas de código duplicado
-                  financial_data: calculateFinancialData(claimData, orderDetail),
+                  // Dados financeiros sem cálculos - direto da API
+                  financial_data_raw: {
+                    total_amount: orderDetail?.total_amount || null,
+                    transaction_amount_refunded: orderDetail?.payments?.[0]?.transaction_amount_refunded || null,
+                    shipping_cost: orderDetail?.payments?.[0]?.shipping_cost || null,
+                    marketplace_fee: orderDetail?.payments?.[0]?.marketplace_fee || null,
+                    currency_id: orderDetail?.payments?.[0]?.currency_id || null,
+                    payment_method: orderDetail?.payments?.[0]?.payment_method_id || null,
+                    installments: orderDetail?.payments?.[0]?.installments || null
+                  },
                   
                   // Campos enriquecidos conforme estratégia do PDF
                   claim_status: claimDetails?.status || null,
@@ -1311,8 +1320,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                   dados_completos: true
                 }
                 
-              // ✅ Agora calcular SLA com claimData completo
-              claimData.sla_metrics = calculateSLAMetrics(claimData, orderDetail, consolidatedMessages, mediationDetails)
+              // ✅ SLA agora vem como dados brutos da API (sem cálculos)
             } catch (claimError) {
               console.error(`❌ Erro crítico ao buscar dados do claim ${mediationId}:`, claimError)
               // Definir claimData como null em caso de erro crítico
@@ -1831,10 +1839,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // 🟢 FASE 3: CAMPOS AVANÇADOS
               // ============================================
               
-              // 1. CUSTOS DETALHADOS
-              // ✅ SUBSTITUÍDO: Agora usa calculateProductCosts() do utils/financial-calculator.ts
-              // Isso elimina ~30 linhas de código duplicado
-              ...calculateProductCosts(safeClaimData, safeOrderDetail, safeShipmentData),
+              // 1. CUSTOS DETALHADOS BRUTOS DA API
+              // Dados brutos sem cálculos
+              custo_frete_retorno: safeShipmentData?.cost || null,
+              custo_logistica_total: safeShipmentData?.cost || null,
+              valor_produto_original: safeOrderDetail?.total_amount || null,
+              valor_produto_reembolsado: safeOrderDetail?.payments?.[0]?.transaction_amount_refunded || null,
+              taxa_ml_reembolsada: safeOrderDetail?.payments?.[0]?.marketplace_fee || null,
               
               // 2. INTERNAL TAGS E METADADOS
               internal_tags: (() => {
