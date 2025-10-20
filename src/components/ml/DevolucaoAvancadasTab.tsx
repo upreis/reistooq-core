@@ -262,18 +262,16 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   // Dados para o diálogo de restauração removidos (não usado mais)
 
-  // ⚠️ Se não há contas, renderizar apenas aviso (sem early return para não quebrar hooks)
-  if (!hasAccounts) {
-    return (
-      <Card className="p-6 border-yellow-200 bg-yellow-50">
-        <div className="text-center">
-          <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
-        </div>
-      </Card>
-    );
-  }
-
   return (
+    <>
+      {/* ⚠️ Se não há contas, mostrar apenas aviso */}
+      {!hasAccounts ? (
+        <Card className="p-6 border-yellow-200 bg-yellow-50">
+          <div className="text-center">
+            <p className="font-medium text-yellow-800">Selecione pelo menos uma conta para visualizar as devoluções</p>
+          </div>
+        </Card>
+      ) : (
     <div className="space-y-6">
       {/* Header com estatísticas melhoradas */}
       <ErrorBoundary
@@ -577,6 +575,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </DialogContent>
       </Dialog>
     </div>
+      )}
+    </>
   );
 };
 
