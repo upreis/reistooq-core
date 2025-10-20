@@ -888,8 +888,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     'sku', 'material', 'cor', 'nome_produto', 'package', 'preco', 'unit', 
     'pcs_ctn', 'caixas', 'peso_unitario_g', 'peso_emb_master_kg', 'peso_sem_emb_master_kg',
     'peso_total_emb_kg', 'peso_total_sem_emb_kg', 'comprimento', 'largura', 
-    'altura', 'cbm_cubagem', 'cbm_total', 'quantidade_total', 'valor_total', 'obs',
-    'comprimento_cm', 'largura_cm', 'altura_cm', 'cbm_unitario', 'qtd_caixas_pedido'
+    'altura', 'cbm_unitario', 'cbm_total', 'quantidade_total', 'valor_total', 'obs',
+    'comprimento_cm', 'largura_cm', 'altura_cm', 'qtd_caixas_pedido'
   ];
 
   const isFieldEditable = useCallback((field: string) => {
@@ -900,8 +900,8 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
     const numberFields = [
       'preco', 'pcs_ctn', 'caixas', 'peso_unitario_g', 'peso_emb_master_kg', 
       'peso_sem_emb_master_kg', 'peso_total_emb_kg', 'peso_total_sem_emb_kg',
-      'comprimento', 'largura', 'altura', 'cbm_cubagem', 'cbm_total',
-      'comprimento_cm', 'largura_cm', 'altura_cm', 'cbm_unitario', 
+      'comprimento', 'largura', 'altura', 'cbm_unitario', 'cbm_total',
+      'comprimento_cm', 'largura_cm', 'altura_cm', 
       'quantidade_total', 'valor_total', 'qtd_caixas_pedido'
     ];
     return numberFields.includes(field) ? 'number' : 'text';
@@ -978,9 +978,9 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
       product.valor_total = product.preco * product.quantidade_total;
     }
     
-    // Recalcular CBM Total quando CBM Cubagem ou CAIXAS mudarem
-    if (['cbm_cubagem', 'caixas'].includes(field)) {
-      product.cbm_total = product.cbm_cubagem * product.caixas;
+    // Recalcular CBM Total quando CBM Unitario ou CAIXAS mudarem
+    if (['cbm_unitario', 'caixas'].includes(field)) {
+      product.cbm_total = product.cbm_unitario * product.caixas;
     }
     
     // Recalcular Peso Total cx Master quando Peso cx Master ou CAIXAS mudarem
@@ -1280,7 +1280,7 @@ export const CotacoesInternacionaisTab: React.FC<CotacoesInternacionaisTabProps>
           product.comprimento_cm || product.comprimento || 0,
           product.largura_cm || product.largura || 0,
           product.altura_cm || product.altura || 0,
-          getNumericValue(product.cbm_unitario || product.cbm_cubagem),
+          getNumericValue(product.cbm_unitario),
           getNumericValue(product.cbm_total),
           product.quantidade_total || 0,
           getNumericValue(product.valor_total),
