@@ -5,6 +5,8 @@ import { calculateSLAMetrics } from './utils/sla-calculator.ts'
 import { calculateFinancialData, calculateProductCosts } from './utils/financial-calculator.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
 import { logger } from './utils/logger.ts'
+import { extractMediationData } from './utils/mediation-extractor.ts'
+import { analyzeInternalTags } from './utils/tags-analyzer.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -409,71 +411,12 @@ serve(async (req) => {
               return subcategoria || null;
             })(),
             
-            // 2. Feedback Comprador Final (OPCIONAL)
-            feedback_comprador_final: (() => {
-              try {
-                const mensagens = devolucao.claim_messages?.messages || [];
-                const compradorId = devolucao.buyer?.id;
-                
-                if (!compradorId || mensagens.length === 0) return null;
-                
-                // Buscar TODAS as mensagens do comprador
-                const buyerMessages = mensagens.filter((m: any) =>
-                  m.from?.user_id === compradorId || m.from === 'buyer'
-                );
-                
-                if (buyerMessages.length === 0) return null;
-                
-                // Ordenar por data e pegar a última
-                const ordenadas = [...buyerMessages].sort((a: any, b: any) => {
-                  const dateA = new Date(a.date_created).getTime();
-                  const dateB = new Date(b.date_created).getTime();
-                  return dateB - dateA; // Ordem decrescente (mais recente primeiro)
-                });
-                
-                const ultimaMensagem = ordenadas[0]?.text || ordenadas[0]?.message;
-                
-                return ultimaMensagem || null;
-              } catch (error) {
-                console.error('❌ Erro ao extrair feedback_comprador_final:', error);
-                return null;
-              }
-            })(),
-            
-            // 3. Feedback Vendedor Final (OPCIONAL)
-            feedback_vendedor: (() => {
-              try {
-                const mensagens = devolucao.claim_messages?.messages || [];
-                const vendedorId = devolucao.order_data?.seller?.id;
-                
-                if (!vendedorId || mensagens.length === 0) return null;
-                
-                // Buscar TODAS as mensagens do vendedor
-                const sellerMessages = mensagens.filter((m: any) =>
-                  m.from?.user_id === vendedorId || m.from === 'seller'
-                );
-                
-                if (sellerMessages.length === 0) return null;
-                
-                // Ordenar por data e pegar a última
-                const ordenadas = [...sellerMessages].sort((a: any, b: any) => {
-                  const dateA = new Date(a.date_created).getTime();
-                  const dateB = new Date(b.date_created).getTime();
-                  return dateB - dateA; // Ordem decrescente
-                });
-                
-                const ultimaMensagem = ordenadas[0]?.text || ordenadas[0]?.message;
-                
-                if (ultimaMensagem) {
-                  console.log(`[FASE3] 🗨️ feedback_vendedor: ${ultimaMensagem.substring(0, 50)}...`);
-                }
-                
-                return ultimaMensagem || null;
-              } catch (error) {
-                console.error('[FASE3] Erro ao extrair feedback_vendedor:', error);
-                return null;
-              }
-            })(),
+            // 2 & 3. Feedbacks Comprador/Vendedor (OPCIONAL)
+            ...extractMediationData(
+              devolucao.claim_messages,
+              devolucao.buyer,
+              devolucao.order_data?.seller
+            ),
             
             // ✅ REMOVIDO: tempo_limite_acao agora vem de devolucao.sla_metrics
             // Reduz ~15 linhas de código duplicado
@@ -1939,25 +1882,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 return item?.thumbnail || item?.picture_url || null
               })(),
               
-              // 4. ANÁLISE E QUALIDADE
-              qualidade_comunicacao: (() => {
-                const messages = safeClaimData?.messages || []
-                if (messages.length === 0) return 'none'
-                if (messages.length > 5) return 'excellent'
-                if (messages.length > 2) return 'good'
-                return 'fair'
-              })(),
-              
-              eficiencia_resolucao: (() => {
-                if (!safeClaimData?.date_created || !safeClaimData?.resolution?.date) return null
-                const created = new Date(safeClaimData.date_created).getTime()
-                const resolved = new Date(safeClaimData.resolution.date).getTime()
-                const diffDays = Math.floor((resolved - created) / (1000 * 60 * 60 * 24))
-                
-                if (diffDays <= 2) return 'fast'
-                if (diffDays <= 7) return 'normal'
-                return 'slow'
-              })(),
+              // 4. ANÁLISE E QUALIDADE - Agora via utilitário
+              ...analyzeInternalTags(safeClaimData, safeOrderDetail, safeShipmentData),
               
               // ============================================
               // FIM FASE 3
