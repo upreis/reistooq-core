@@ -124,7 +124,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   // O usuário deve clicar em "Buscar" ou "Aplicar" para executar a busca
 
   // Funções simplificadas - delegam para o hook
-  const handleAplicarEBuscar = useCallback(async () => {
+  const handleAplicarEBuscar = async () => {
     try {
       await applyFilters();
       toast.success('Filtros aplicados e salvos com sucesso');
@@ -132,19 +132,19 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
       console.error('Erro ao aplicar filtros:', error);
       toast.error('Erro ao aplicar filtros');
     }
-  }, [applyFilters]);
+  };
 
-  const handleCancelChanges = useCallback(() => {
+  const handleCancelChanges = () => {
     cancelDraftFilters();
-  }, [cancelDraftFilters]);
+  };
 
-  const handleClearAllFilters = useCallback(() => {
+  const handleClearAllFilters = () => {
     clearFilters();
-  }, [clearFilters]);
+  };
 
-  const handleFilterChange = useCallback((key: string, value: any) => {
+  const handleFilterChange = (key: string, value: any) => {
     updateDraftFilters(key, value);
-  }, [updateDraftFilters]);
+  };
 
   // Filtros atuais (considerando draft ou aplicados) - MEMOIZADO
   const currentFilters = React.useMemo(() => 
@@ -163,7 +163,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   }, [currentFilters]);
 
 
-  const exportarCSV = useCallback(() => {
+  const exportarCSV = () => {
     if (!devolucoesFiltradas.length) {
       toast.error('Nenhum dado para exportar');
       return;
@@ -234,7 +234,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     document.body.removeChild(link);
     
     toast.success('Arquivo CSV exportado com sucesso!');
-  }, [devolucoesFiltradas]);
+  };
 
   // Determinar qual estado mostrar - MEMOIZADO
   const hasFiltersApplied = React.useMemo(() => Boolean(
