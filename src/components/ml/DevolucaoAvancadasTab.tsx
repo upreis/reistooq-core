@@ -115,15 +115,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     clearCache
   } = useDevolucoes(mlAccounts, selectedAccountId, selectedAccountIds);
 
-  // Aplicar filtros salvos ao carregar (apenas uma vez)
-  React.useEffect(() => {
-    // Os filtros salvos já são carregados automaticamente no hook
-    // Se houver filtros salvos, buscar automaticamente
-    if (advancedFilters.dataInicio || advancedFilters.dataFim || advancedFilters.statusClaim) {
-      console.log('🚀 Buscando com filtros salvos automaticamente');
-      buscarComFiltros();
-    }
-  }, []);
+  // Filtros salvos são carregados automaticamente no hook, mas NÃO executam busca
+  // O usuário deve clicar em "Buscar" ou "Aplicar" para executar a busca
 
   // Funções simplificadas - delegam para o hook
   const handleAplicarEBuscar = useCallback(async () => {
