@@ -343,22 +343,9 @@ serve(async (req) => {
             
             // ======== 🟡 FASE 2: CAMPOS VAZIOS PRIORITÁRIOS ========
             
-            // 1. Motivo Categoria (CRÍTICO)
-            reason_category: (() => {
-              const reasonId = devolucao.claim_details?.reason_id || devolucao.claim_details?.reason?.id;
-              if (!reasonId) return null;
-              console.log(`[FASE2] 🎯 reason_id: ${reasonId}`);
-              
-              // Mapeamento baseado no prefixo do reason_id
-              if (reasonId.startsWith('PDD')) return 'Produto Defeituoso ou Diferente';
-              if (reasonId.startsWith('PNR')) return 'Produto Não Recebido';
-              if (reasonId.startsWith('CS')) return 'Cancelamento de Compra';
-              if (reasonId.includes('DEFECTIVE')) return 'Produto Defeituoso';
-              if (reasonId.includes('NOT_AS_DESCRIBED')) return 'Não Conforme Descrição';
-              if (reasonId.includes('DAMAGED')) return 'Danificado no Transporte';
-              if (reasonId.includes('WRONG')) return 'Produto Errado';
-              return 'Outro';
-            })(),
+            // ✅ REMOVIDO: reason_category agora vem enriquecido do processamento
+            // Os dados de reasons já foram mapeados com mapReasonWithApiData()
+            // nas linhas ~2182-2239 durante o processamento dos claims
             
             // 2. Nível Complexidade (CRÍTICO)
             nivel_complexidade: (() => {
@@ -2180,28 +2167,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // 🔍 REASONS - ENRIQUECIDOS COM DADOS DA API ML
               // ========================================
               ...(() => {
-                // Extrair reason_id do claim
                 const reasonId = safeClaimData?.claim_details?.reason_id || null;
-                
-                if (!reasonId) {
-                  console.log(`[REISTOM INFO] ⚠ Claim ${mediationId} não tem reason_id`);
-                  return {
-                    reason_id: null,
-                    reason_category: null,
-                    reason_name: null,
-                    reason_detail: null,
-                    reason_type: null,
-                    reason_priority: null,
-                    reason_expected_resolutions: null,
-                    reason_flow: null,
-                    motivo_categoria: null
-                  };
-                }
-                
-                // Buscar dados da API no cache de reasons
-                const apiData = reasonsMap.get(reasonId) || null;
-                
-                // Mapear com dados da API ou fallback para genérico
+                const apiData = reasonsMap.get(reasonId || '') || null;
                 const mappedReason = mapReasonWithApiData(reasonId, apiData);
                 
                 // Log para debug
@@ -2210,29 +2177,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                     name: mappedReason.reason_name,
                     detail: mappedReason.reason_detail?.substring(0, 50) + '...'
                   });
-                } else {
+                } else if (reasonId) {
                   console.log(`[REISTOM INFO] ⚠ Claim ${mediationId}: Reason ${reasonId} usando mapeamento genérico (API não retornou)`);
                 }
                 
                 return {
-                  // ID do motivo
-                  reason_id: mappedReason.reason_id,
-                  
-                  // Categoria
-                  reason_category: mappedReason.reason_category,
-                  
-                  // Nome e descrição (ESPECÍFICOS DA API!)
-                  reason_name: mappedReason.reason_name,
-                  reason_detail: mappedReason.reason_detail,
-                  
-                  // Tipo e prioridade
-                  reason_type: mappedReason.reason_type,
-                  reason_priority: mappedReason.reason_priority,
-                  
-                  // Arrays
-                  reason_expected_resolutions: mappedReason.reason_expected_resolutions,
-                  reason_flow: mappedReason.reason_flow,
-                  
+                  ...mappedReason,
                   // Compatibilidade com código antigo
                   motivo_categoria: reasonId
                 };
