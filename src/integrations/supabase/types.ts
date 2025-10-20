@@ -4377,67 +4377,33 @@ export type Database = {
       }
       sync_control: {
         Row: {
-          completed_at: string | null
           created_at: string
-          error_message: string | null
           id: string
-          integration_account_id: string | null
-          last_sync_date: string | null
           organization_id: string | null
           process_name: string
           progress: Json | null
-          progress_current: number | null
-          progress_total: number | null
-          provider: string | null
-          started_at: string | null
           status: string
-          total_claims: number | null
           updated_at: string
         }
         Insert: {
-          completed_at?: string | null
           created_at?: string
-          error_message?: string | null
           id?: string
-          integration_account_id?: string | null
-          last_sync_date?: string | null
           organization_id?: string | null
           process_name: string
           progress?: Json | null
-          progress_current?: number | null
-          progress_total?: number | null
-          provider?: string | null
-          started_at?: string | null
           status?: string
-          total_claims?: number | null
           updated_at?: string
         }
         Update: {
-          completed_at?: string | null
           created_at?: string
-          error_message?: string | null
           id?: string
-          integration_account_id?: string | null
-          last_sync_date?: string | null
           organization_id?: string | null
           process_name?: string
           progress?: Json | null
-          progress_current?: number | null
-          progress_total?: number | null
-          provider?: string | null
-          started_at?: string | null
           status?: string
-          total_claims?: number | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "sync_control_integration_account_id_fkey"
-            columns: ["integration_account_id"]
-            isOneToOne: false
-            referencedRelation: "integration_accounts"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "sync_control_org_fk"
             columns: ["organization_id"]

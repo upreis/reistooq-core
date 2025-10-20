@@ -26,7 +26,7 @@ export function useAutoSync({
       try {
         console.log('[AutoSync] Triggering automatic sync...');
         
-        const { data, error } = await supabase.functions.invoke('sync-devolucoes-background', {
+        const { error } = await supabase.functions.invoke('sync-devolucoes-background', {
           body: {
             integration_account_id: integrationAccountId,
             trigger: 'auto'
@@ -34,18 +34,7 @@ export function useAutoSync({
         });
 
         if (error) {
-          // Se já está rodando (409), aguardar silenciosamente
-          if (error.message?.includes('non-2xx')) {
-            console.log('[AutoSync] Sincronização já em andamento, aguardando...');
-            return;
-          }
           console.error('[AutoSync] Error:', error);
-          return;
-        }
-
-        // Verificar se retornou 409 (já rodando)
-        if (data && !data.success && data.error?.includes('andamento')) {
-          console.log('[AutoSync] Sincronização já em andamento, aguardando...');
           return;
         }
 

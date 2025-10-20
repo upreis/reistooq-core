@@ -45,8 +45,7 @@ serve(async (req) => {
         .insert({
           integration_account_id,
           provider: 'mercadolivre',
-          status: 'idle',
-          process_name: 'sync-devolucoes-ml'
+          status: 'idle'
         })
         .select()
         .single();
@@ -126,11 +125,10 @@ async function executarSincronizacao(
   
   const BATCH_SIZE = 50;
   let offset = 0;
+  let hasMore = true;
   let totalProcessed = 0;
 
   try {
-    let hasMore = true;
-    
     while (hasMore) {
       console.log(`📦 [SYNC] Processando lote ${offset / BATCH_SIZE + 1} (offset: ${offset})`);
 
@@ -154,11 +152,8 @@ async function executarSincronizacao(
       }
 
       const claims = claimsData?.devolucoes || [];
-      const totalAvailable = claimsData?.paging?.total || 0;
-      
-      console.log(`📥 [SYNC] Recebidos ${claims.length} claims de ${totalAvailable} totais`);
+      console.log(`📥 [SYNC] Recebidos ${claims.length} claims`);
 
-      // Se não há claims neste lote, terminar
       if (claims.length === 0) {
         hasMore = false;
         break;
@@ -184,20 +179,18 @@ async function executarSincronizacao(
       totalProcessed += claims.length;
       offset += BATCH_SIZE;
 
-      // Atualizar progresso com total real da API
-      const totalFromApi = claimsData?.paging?.total || totalProcessed;
+      // Atualizar progresso
       await supabase
         .from('sync_control')
         .update({
           progress_current: totalProcessed,
-          progress_total: totalFromApi
+          progress_total: Math.max(totalProcessed, offset)
         })
         .eq('id', syncControlId);
 
-      // Continuar se ainda há mais dados para buscar
-      if (totalProcessed >= totalFromApi || claims.length < BATCH_SIZE) {
+      // Se recebeu menos que o batch size, chegou ao fim
+      if (claims.length < BATCH_SIZE) {
         hasMore = false;
-        console.log(`✅ [SYNC] Todos os dados foram processados (${totalProcessed}/${totalFromApi})`);
       }
 
       // Pequeno delay para não sobrecarregar a API do ML

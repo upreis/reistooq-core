@@ -619,92 +619,10 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          devolucoes: cancelledOrders,
-          paging: {
-            total: cancelledOrders.length,
-            offset: filters?.offset || 0,
-            limit: filters?.limit || 50
-          }
-        }),
-        { 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200 
-        }
-      )
-    }
-
-    // ============ NOVA ACTION: BUSCAR-DEVOLUCOES (PARA SYNC) ============
-    if (action === 'buscar-devolucoes') {
-      // 🔒 Obter token de forma segura
-      console.log(`🔑 Obtendo token ML para conta ${integration_account_id}...`)
-      
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
-      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-      
-      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
-      const secretResponse = await fetch(secretUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-          'x-internal-call': 'true',
-          'x-internal-token': INTERNAL_TOKEN
-        },
-        body: JSON.stringify({
-          integration_account_id,
-          provider: 'mercadolivre'
-        })
-      });
-      
-      if (!secretResponse.ok) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Token ML não disponível'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-        );
-      }
-      
-      const tokenData = await secretResponse.json();
-      const access_token = tokenData?.secret?.access_token;
-      const account_identifier = tokenData?.secret?.account_identifier;
-      
-      if (!access_token || !account_identifier) {
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Credenciais ML não disponíveis'
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-        );
-      }
-
-      // Buscar claims com paginação
-      const limit = filters?.limit || 50;
-      const offset = filters?.offset || 0;
-      const date_from = filters?.date_from;
-
-      console.log(`📦 Buscando claims com paginação: limit=${limit}, offset=${offset}, date_from=${date_from || 'sem filtro'}`);
-
-      const cancelledOrders = await buscarPedidosCancelados(
-        account_identifier, 
-        access_token, 
-        { limit, offset, date_from },
-        integration_account_id
-      );
-
-      console.log(`✅ Claims encontrados: ${cancelledOrders.length}`);
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          devolucoes: cancelledOrders,
-          paging: {
-            total: cancelledOrders.length,
-            offset: offset,
-            limit: limit
+          data: cancelledOrders,
+          totals: {
+            cancelled_orders: cancelledOrders.length,
+            total: cancelledOrders.length
           }
         }),
         { 
@@ -1114,13 +1032,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`🎯 Buscando claims diretamente da API Claims Search para seller ${sellerId}...`)
     
     // 🚀 BUSCAR CLAIMS COM PAGINAÇÃO COMPLETA
-    const limit = filters?.limit || 50;
-    const offsetInicial = filters?.offset || 0;
-    
     const params = new URLSearchParams()
     params.append('player_role', 'respondent')
     params.append('player_user_id', sellerId)
-    params.append('limit', String(limit))
+    params.append('limit', '50')
     
     // ============ FILTROS OPCIONAIS DA API ML ============
     // Filtros já existentes (mantidos)
@@ -1136,7 +1051,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
 
     // ============ NOVOS FILTROS AVANÇADOS ============
     // FASE 1: Stage - Estágio da claim (claim, dispute, review)
-    if (filters?.stage && filters?.stage.trim().length > 0) {
+    if (filters?.stage && filters.stage.trim().length > 0) {
       console.log(`✅ Aplicando filtro de estágio: ${filters.stage}`)
       params.append('stage', filters.stage)
     }
@@ -1168,20 +1083,19 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('resource', filters.resource)
     }
 
-    // 📚 BUSCAR APENAS A PÁGINA SOLICITADA (para sincronização eficiente)
+    // 📚 BUSCAR TODAS AS PÁGINAS DA API
     let allClaims: any[] = []
-    let offset = offsetInicial
-    
-    // ⏱️ Para sincronização, buscar tudo se houver date_from (com limite seguro de 500)
+    let offset = 0
+    const limit = 50
+    // ⏱️ LIMITE DRASTICAMENTE REDUZIDO quando NÃO há filtro de data
+    // Cada claim demora ~1 segundo (múltiplas chamadas API sequenciais)
     const hasDateFilter = filters?.date_from || filters?.date_to;
-    const MAX_CLAIMS = hasDateFilter ? 500 : limit;  // Limite seguro para evitar timeout
+    const MAX_CLAIMS = hasDateFilter ? 1000 : 50;  // 🔥 50 claims = ~50 segundos máximo
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
-    console.log(`   • limit: ${limit}`)
-    console.log(`   • offset: ${offset}`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
     console.log(`   • stage: ${filters?.stage || 'N/A'}`)
@@ -1193,6 +1107,13 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • date_to: ${filters?.date_to || 'SEM FILTRO ⚠️'}`)
     console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
     
+    if (!hasDateFilter) {
+      console.log(`⚠️  ========== ATENÇÃO ==========`)
+      console.log(`⚠️  SEM FILTRO DE DATA: Limitado a ${MAX_CLAIMS} claims mais recentes`)
+      console.log(`⚠️  Tempo estimado: ~${MAX_CLAIMS} segundos`)
+      console.log(`💡 DICA: Use filtro de data para buscar mais resultados`)
+      console.log(`⚠️  ==============================\n`)
+    }
 
     do {
       params.set('offset', offset.toString())
@@ -1228,8 +1149,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         hasData: !!data,
         hasDataArray: !!data?.data,
         isDataArray: Array.isArray(data?.data),
-        dataLength: data?.data?.length || 0,
-        pagingTotal: data?.paging?.total || 0
+        dataLength: data?.data?.length || 0
       });
       
       if (!data.data || !Array.isArray(data.data)) {
@@ -1240,26 +1160,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       console.log(`   ✅ Retornou: ${data.data.length} claims (total acumulado: ${allClaims.length + data.data.length})`)
       
       allClaims.push(...data.data)
+      offset += limit
       
-      // Parar se não há mais dados ou se atingiu o limite solicitado
-      if (data.data.length === 0) {
-        console.log(`   🏁 Sem mais claims disponíveis`)
-        break
-      }
-      
-      // Se for sincronização com offset, retornar apenas uma página
-      if (offsetInicial > 0) {
-        console.log(`   🔍 Sincronização paginada - retornando apenas esta página`)
-        break
-      }
-      
-      // Se chegou no total disponível pela API
-      if (data.paging?.total && allClaims.length >= data.paging.total) {
-        console.log(`   🏁 Chegou ao total disponível na API (${data.paging.total})`)
-        break
-      }
-      
-      // Parar se recebeu menos que o limit (última página)
+      // Parar se não há mais dados
       if (data.data.length < limit) {
         console.log(`   🏁 Última página (retornou menos que ${limit} claims)`)
         break
@@ -1268,11 +1171,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       // Limite de segurança
       if (allClaims.length >= MAX_CLAIMS) {
         console.log(`   ⚠️  Limite de segurança de ${MAX_CLAIMS} claims alcançado`)
-        allClaims = allClaims.slice(0, MAX_CLAIMS)
         break
       }
-      
-      offset += limit
       
     } while (true)
 
