@@ -4,6 +4,7 @@ import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { calculateSLAMetrics } from './utils/sla-calculator.ts'
 import { calculateFinancialData, calculateProductCosts } from './utils/financial-calculator.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
+import { logger } from './utils/logger.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,23 +79,13 @@ serve(async (req) => {
     const requestBody = await req.json()
     const { action, integration_account_id, seller_id, filters } = requestBody
 
-    console.log(`🔍 ML API Direct Request:`, {
-      action,
-      integration_account_id,
-      seller_id,
-      filters,
-      raw_body: requestBody
-    })
+    logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
     if (action === 'get_claims_and_returns') {
       // 🔒 Obter token de forma segura usando integrations-get-secret
-      console.log(`🔑 Obtendo token ML para conta ${integration_account_id}...`)
-      
       const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-      
-      console.log(`🔐 INTERNAL_TOKEN configurado: ${INTERNAL_TOKEN ? 'Sim' : 'Não'}`)
       
       // Fazer chamada HTTP direta para a função usando fetch
       const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
@@ -139,7 +130,7 @@ serve(async (req) => {
       }
       
       const access_token = tokenData.secret.access_token
-      console.log(`✅ Token ML obtido com sucesso para seller: ${seller_id}`)
+      logger.success(`Token ML obtido para seller: ${seller_id}`)
       
       // Validação crítica: seller_id deve existir
       if (!seller_id) {
@@ -154,7 +145,6 @@ serve(async (req) => {
       }
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
-      console.log(`🚀 Chamando buscarPedidosCancelados com seller_id: ${seller_id}`)
       
       // ⏱️ Timeout de 50 segundos (aumentado para dar mais margem)
       const timeoutPromise = new Promise((_, reject) => 
@@ -166,11 +156,10 @@ serve(async (req) => {
         timeoutPromise
       ]) as any[];
       
-      console.log(`📊 Total de pedidos cancelados encontrados: ${cancelledOrders.length}`)
+      logger.info(`Total de pedidos cancelados: ${cancelledOrders.length}`)
       
       // ============ 🔴 FASE 1: SALVAMENTO NO SUPABASE ============
       if (cancelledOrders.length > 0) {
-        console.log(`💾 Iniciando salvamento de ${cancelledOrders.length} pedidos cancelados no Supabase...`)
         
         try {
           const supabaseAdmin = makeServiceClient()
@@ -310,33 +299,21 @@ serve(async (req) => {
             marketplace_origem: devolucao.marketplace_origem,
             
             // ======== 🔴 FASE 1: TEMPORAL E MARCOS (3 CAMPOS CRÍTICOS CORRIGIDOS) ========
-            data_criacao_claim: (() => {
-              const value = devolucao.claim_details?.date_created || 
+            data_criacao_claim: devolucao.claim_details?.date_created || 
                            devolucao.mediation_details?.date_created ||
                            devolucao.dados_claim?.date_created || 
-                           null;
-              console.log(`[FASE1] ✅ data_criacao_claim: ${value}`);
-              return value;
-            })(),
-            data_inicio_return: (() => {
-              const value = devolucao.return_details_v2?.results?.[0]?.date_created ||
+                           null,
+            data_inicio_return: devolucao.return_details_v2?.results?.[0]?.date_created ||
                            devolucao.return_details_v1?.results?.[0]?.date_created ||
                            devolucao.return_details?.date_created || 
                            devolucao.dados_return?.date_created || 
-                           null;
-              console.log(`[FASE1] ✅ data_inicio_return: ${value}`);
-              return value;
-            })(),
-            data_fechamento_claim: (() => {
-              const value = devolucao.claim_details?.date_closed ||
+                           null,
+            data_fechamento_claim: devolucao.claim_details?.date_closed ||
                            devolucao.claim_details?.resolution?.date ||
                            devolucao.claim_details?.resolution?.date_created ||
                            devolucao.mediation_details?.date_closed ||
                            devolucao.order_data?.date_closed || 
-                           null;
-              console.log(`[FASE1] ✅ data_fechamento_claim: ${value}`);
-              return value;
-            })(),
+                           null,
             
             // ======== 🟡 FASE 2: CAMPOS VAZIOS PRIORITÁRIOS ========
             
@@ -355,8 +332,6 @@ serve(async (req) => {
               if (devolucao.return_details_v2 || devolucao.return_id) pontos += 1;
               if (devolucao.order_data?.total_amount > 500) pontos += 2;
               if (devolucao.change_id) pontos += 1;
-              
-              console.log(`[FASE2] 📊 nivel_complexidade pontos: ${pontos}`);
               
               if (pontos >= 6) return 'Alto';
               if (pontos >= 3) return 'Médio';
@@ -431,9 +406,6 @@ serve(async (req) => {
                                   devolucao.claim_details?.reason?.name ||
                                   devolucao.claim_details?.reason_detail;
               
-              if (subcategoria) {
-                console.log(`[FASE3] 📝 subcategoria_problema: ${subcategoria.substring(0, 50)}...`);
-              }
               return subcategoria || null;
             })(),
             
@@ -461,13 +433,9 @@ serve(async (req) => {
                 
                 const ultimaMensagem = ordenadas[0]?.text || ordenadas[0]?.message;
                 
-                if (ultimaMensagem) {
-                  console.log(`[FASE3] 💬 feedback_comprador_final: ${ultimaMensagem.substring(0, 50)}...`);
-                }
-                
                 return ultimaMensagem || null;
               } catch (error) {
-                console.error('[FASE3] Erro ao extrair feedback_comprador_final:', error);
+                console.error('❌ Erro ao extrair feedback_comprador_final:', error);
                 return null;
               }
             })(),
@@ -513,19 +481,15 @@ serve(async (req) => {
             
             // ======== FIM FASE 3 ========
             
-            marcos_temporais: (() => {
-              const marcos = {
-                data_criacao_claim: devolucao.claim_details?.date_created || null,
-                data_inicio_return: devolucao.return_details_v2?.date_created || 
-                                   devolucao.return_details_v1?.date_created || null,
-                data_fechamento_claim: devolucao.claim_details?.date_closed || null,
-                data_criacao_order: devolucao.order_data?.date_created || null,
-                data_ultimo_update: devolucao.claim_details?.last_updated || 
-                                   devolucao.return_details_v2?.last_updated || null
-              };
-              console.log(`[DEBUG] marcos_temporais construído:`, JSON.stringify(marcos));
-              return marcos;
-            })(),
+            marcos_temporais: {
+              data_criacao_claim: devolucao.claim_details?.date_created || null,
+              data_inicio_return: devolucao.return_details_v2?.date_created || 
+                                 devolucao.return_details_v1?.date_created || null,
+              data_fechamento_claim: devolucao.claim_details?.date_closed || null,
+              data_criacao_order: devolucao.order_data?.date_created || null,
+              data_ultimo_update: devolucao.claim_details?.last_updated || 
+                                 devolucao.return_details_v2?.last_updated || null
+            },
             
             // Timestamps
             created_at: new Date().toISOString(),
@@ -545,7 +509,7 @@ serve(async (req) => {
             throw error
           }
           
-          console.log(`✅ ${recordsToInsert.length} pedidos cancelados salvos com sucesso no Supabase!`)
+          logger.success(`${recordsToInsert.length} pedidos cancelados salvos no Supabase`)
           
         } catch (saveError) {
           console.error('❌ Erro ao salvar dados no Supabase:', saveError)
@@ -572,8 +536,6 @@ serve(async (req) => {
 
     if (action === 'get_reason_detail') {
       const { reason_id } = requestBody;
-      
-      console.log(`🔍 Buscando reason ${reason_id} na API ML`);
       
       // 🔒 Obter token de forma segura
       const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
@@ -626,7 +588,6 @@ serve(async (req) => {
         
         if (reasonResponse.ok) {
           const reasonData = await reasonResponse.json();
-          console.log(`✅ Reason ${reason_id} encontrado:`, reasonData.detail);
           
           return new Response(
             JSON.stringify({ 
@@ -688,7 +649,6 @@ serve(async (req) => {
 // ============ FUNÇÃO AUXILIAR: REFRESH TOKEN ============
 async function refreshMLToken(integrationAccountId: string): Promise<string | null> {
   try {
-    console.log(`🔄 Tentando refresh do token ML para conta ${integrationAccountId}...`)
     
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -708,7 +668,6 @@ async function refreshMLToken(integrationAccountId: string): Promise<string | nu
     }
     
     const refreshData = await refreshResponse.json()
-    console.log(`✅ Token ML refreshed com sucesso`)
     return refreshData.access_token || null
   } catch (error) {
     console.error(`❌ Erro ao fazer refresh do token:`, error)
@@ -736,12 +695,10 @@ async function fetchMLWithRetry(url: string, accessToken: string, integrationAcc
     
     // Se 401 (token expirado) e ainda tem tentativas, fazer refresh
     if (response.status === 401 && attempt < maxRetries) {
-      console.warn(`⚠️ Token expirado (401) na URL: ${url}. Tentando refresh...`)
       const newToken = await refreshMLToken(integrationAccountId)
       
       if (newToken) {
         currentToken = newToken
-        console.log(`🔄 Retry ${attempt + 1}/${maxRetries} com novo token`)
         continue
       } else {
         console.error(`❌ Não foi possível fazer refresh do token`)
@@ -774,10 +731,6 @@ async function fetchReasonDetails(
   expected_resolutions?: string[];
 } | null> {
   try {
-    console.log(`[REISTOM DEBUG] 🔍 Iniciando busca do reason ${reasonId}...`);
-    console.log(`[REISTOM DEBUG] 📍 URL: https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`);
-    console.log(`[REISTOM DEBUG] 🔑 Token presente: ${accessToken ? 'SIM' : 'NÃO'} (${accessToken?.substring(0, 20)}...)`);
-    
     const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`;
     
     const response = await fetchMLWithRetry(
@@ -786,22 +739,17 @@ async function fetchReasonDetails(
       integrationAccountId
     );
     
-    console.log(`[REISTOM DEBUG] 📡 Resposta da API - Status: ${response.status}, OK: ${response.ok}`);
-    
     if (response.ok) {
       const data = await response.json();
-      console.log(`[REISTOM DEBUG] ✅ Reason ${reasonId} SUCESSO - Dados completos:`, JSON.stringify(data, null, 2));
-      console.log(`[REISTOM DEBUG] 📝 Nome: "${data.name}", Detalhe: "${data.detail}"`);
       return data;
     } else {
       const status = response.status;
       const errorText = await response.text();
-      console.error(`[REISTOM DEBUG] ❌ Reason ${reasonId} FALHOU - HTTP ${status}: ${errorText}`);
+      console.error(`❌ Reason ${reasonId} falhou - HTTP ${status}: ${errorText}`);
       return null;
     }
   } catch (error) {
-    console.error(`[REISTOM DEBUG] ❌ EXCEÇÃO ao buscar reason ${reasonId}:`, error);
-    console.error(`[REISTOM DEBUG] ❌ Stack:`, error instanceof Error ? error.stack : 'N/A');
+    console.error(`❌ Exceção ao buscar reason ${reasonId}:`, error);
     return null;
   }
 }
@@ -814,11 +762,6 @@ async function fetchMultipleReasons(
   accessToken: string,
   integrationAccountId: string
 ): Promise<Map<string, any>> {
-  console.log(`[REISTOM DEBUG] 📦 ========================================`);
-  console.log(`[REISTOM DEBUG] 📦 INICIANDO BATCH DE ${reasonIds.length} REASONS`);
-  console.log(`[REISTOM DEBUG] 📦 IDs: ${JSON.stringify(reasonIds)}`);
-  console.log(`[REISTOM DEBUG] 📦 ========================================`);
-  
   const reasonsMap = new Map<string, any>();
   
   // Buscar todos em paralelo com Promise.allSettled para não falhar se um reason der erro
@@ -828,36 +771,16 @@ async function fetchMultipleReasons(
       .catch(error => ({ reasonId, error, status: 'rejected' }))
   );
   
-  console.log(`[REISTOM DEBUG] ⏳ Aguardando ${promises.length} chamadas paralelas...`);
   const results = await Promise.allSettled(promises);
-  console.log(`[REISTOM DEBUG] ✅ Todas as ${results.length} chamadas finalizadas`);
   
   // Processar resultados
-  let successCount = 0;
-  let failCount = 0;
-  
-  results.forEach((result, index) => {
-    console.log(`[REISTOM DEBUG] 📊 Resultado ${index + 1}/${results.length}:`, {
-      status: result.status,
-      reasonId: result.status === 'fulfilled' ? result.value.reasonId : 'N/A',
-      hasData: result.status === 'fulfilled' ? !!result.value.data : false
-    });
-    
+  results.forEach((result) => {
     if (result.status === 'fulfilled' && result.value.data) {
       reasonsMap.set(result.value.reasonId, result.value.data);
-      successCount++;
-      console.log(`[REISTOM DEBUG] ✅ Reason ${result.value.reasonId} adicionado ao cache`);
-    } else {
-      failCount++;
-      console.log(`[REISTOM DEBUG] ❌ Reason falhou ou sem dados`);
     }
   });
   
-  console.log(`[REISTOM DEBUG] 📦 ========================================`);
-  console.log(`[REISTOM DEBUG] 📦 RESULTADO FINAL: ${successCount} sucessos, ${failCount} falhas`);
-  console.log(`[REISTOM DEBUG] 📦 Cache size: ${reasonsMap.size}`);
-  console.log(`[REISTOM DEBUG] 📦 IDs no cache:`, Array.from(reasonsMap.keys()));
-  console.log(`[REISTOM DEBUG] 📦 ========================================`);
+  logger.debug('Reasons fetched', { total: reasonIds.length, cached: reasonsMap.size });
   
   return reasonsMap;
 }
@@ -868,7 +791,6 @@ async function fetchMultipleReasons(
 // ============ FUNÇÃO PARA BUSCAR CLAIMS/DEVOLUÇÕES DIRETAMENTE DA API ML ============
 async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
   try {
-    console.log(`🎯 Buscando claims diretamente da API Claims Search para seller ${sellerId}...`)
     
     // 🚀 BUSCAR CLAIMS COM PAGINAÇÃO COMPLETA
     const params = new URLSearchParams()
@@ -877,48 +799,34 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     params.append('limit', '50')
     
     // ============ FILTROS OPCIONAIS DA API ML ============
-    // Filtros já existentes (mantidos)
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de status: ${filters.status_claim}`)
       params.append('status', filters.status_claim)
     }
     
     if (filters?.claim_type && filters.claim_type.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de tipo: ${filters.claim_type}`)
       params.append('type', filters.claim_type)
     }
 
-    // ============ NOVOS FILTROS AVANÇADOS ============
-    // FASE 1: Stage - Estágio da claim (claim, dispute, review)
     if (filters?.stage && filters.stage.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de estágio: ${filters.stage}`)
       params.append('stage', filters.stage)
     }
 
-    // FASE 1: Fulfilled - Se foi cumprido (true/false)
     if (filters?.fulfilled !== undefined && filters.fulfilled !== null && filters.fulfilled !== '') {
       const fulfilledValue = String(filters.fulfilled).toLowerCase()
       if (fulfilledValue === 'true' || fulfilledValue === 'false') {
-        console.log(`✅ Aplicando filtro de cumprimento: ${fulfilledValue}`)
         params.append('fulfilled', fulfilledValue)
       }
     }
 
-    // FASE 1: Quantity Type - Tipo de quantidade (total, partial)
     if (filters?.quantity_type && filters.quantity_type.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de tipo quantidade: ${filters.quantity_type}`)
       params.append('quantity_type', filters.quantity_type)
     }
 
-    // FASE 1: Reason ID - ID do motivo específico (PDD9939, etc)
     if (filters?.reason_id && filters.reason_id.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de reason_id: ${filters.reason_id}`)
       params.append('reason_id', filters.reason_id)
     }
 
-    // FASE 1: Resource - Tipo de recurso (order, shipment)
     if (filters?.resource && filters.resource.trim().length > 0) {
-      console.log(`✅ Aplicando filtro de resource: ${filters.resource}`)
       params.append('resource', filters.resource)
     }
 
@@ -962,14 +870,11 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       
       const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
       
-      console.log(`[REISTOM INFO] 📡 Response status:`, response.status);
-      console.log(`[REISTOM INFO] 📡 Response ok:`, response.ok);
-      
       if (!response.ok) {
-        console.error(`[REISTOM ERROR] ❌ API retornou erro ${response.status} - ${response.statusText}`);
+        console.error(`❌ API retornou erro ${response.status} - ${response.statusText}`);
         
         const errorText = await response.text();
-        console.error(`[REISTOM ERROR] ❌ Detalhes do erro:`, errorText);
+        console.error(`❌ Detalhes do erro:`, errorText);
         
         if (response.status === 401) {
           throw new Error('Token de acesso inválido ou expirado - reconecte a integração')
@@ -982,14 +887,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       }
       
       const data = await response.json();
-      
-      console.log(`[REISTOM INFO] 📦 Dados da página recebidos:`, {
-        type: typeof data,
-        hasData: !!data,
-        hasDataArray: !!data?.data,
-        isDataArray: Array.isArray(data?.data),
-        dataLength: data?.data?.length || 0
-      });
       
       if (!data.data || !Array.isArray(data.data)) {
         console.log('⚠️  Resposta sem dados válidos, encerrando paginação')
@@ -1015,102 +912,55 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       
     } while (true)
 
-    console.log(`\n📊 RESULTADO DA BUSCA PAGINADA:`)
-    console.log(`   • Total de claims buscados: ${allClaims.length}`)
-    console.log(`   • Páginas consultadas: ${Math.ceil(offset / limit)}`)
-    console.log(`🔄 ============================================================\n`)
-
     // 🛡️ VERIFICAÇÃO CRÍTICA: Validar dados recebidos da API
-    console.log(`[REISTOM INFO] 🔴 DADOS BRUTOS DA API RECEBIDOS:`, {
-      type: typeof allClaims,
-      isArray: Array.isArray(allClaims),
-      length: allClaims?.length || 0,
-      hasData: !!allClaims
-    });
-    
-    // Verificar se dados são válidos
     if (!allClaims || !Array.isArray(allClaims)) {
-      console.error(`[REISTOM ERROR] ❌ API retornou dados inválidos:`, allClaims);
+      console.error(`❌ API retornou dados inválidos:`, allClaims);
       throw new Error('API do Mercado Livre retornou dados inválidos');
     }
     
     if (allClaims.length === 0) {
-      console.log(`[REISTOM INFO] ℹ️ Nenhum claim encontrado para os filtros aplicados`);
       return []
     }
     
-    console.log(`[REISTOM INFO] ✅ ${allClaims.length} claims recebidos da API ML`);
+    logger.info(`${allClaims.length} claims recebidos da API ML`);
     
     // 🔥 NÃO FILTRAR POR DATA NA EDGE FUNCTION
     // O filtro de data será aplicado no FRONTEND após receber os dados
     // Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
     let claimsParaProcessar = allClaims
-    
-    console.log(`[REISTOM INFO] ℹ️ Processando todos os ${claimsParaProcessar.length} claims sem filtro de data local`)
-    console.log(`[REISTOM INFO] ⚠️ NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados\n`)
-
-    // ✅ REMOVIDO LIMITE DE 100 - Agora processa todos os claims disponíveis
-    console.log(`\n✅ PROCESSANDO TODOS OS ${claimsParaProcessar.length} CLAIMS SEM LIMITE`)
-    console.log(`   • Claims a processar: ${claimsParaProcessar.length}`)
-    console.log(`   • Otimização: Processamento em lote otimizado`)
-    console.log(`✅ ============================================================\n`)
 
     // ========================================
     // 🔍 BUSCAR REASONS EM LOTE DA API ML
     // ========================================
     
-    console.log(`[REISTOM INFO] 📊 Processando ${claimsParaProcessar.length} claims...`);
-    
     // 1. Coletar todos os reason_ids únicos dos claims
     const uniqueReasonIds = new Set<string>();
-    
-    console.log(`[REISTOM DEBUG] 📊 Analisando ${claimsParaProcessar.length} claims para extrair reason_ids...`);
     
     for (const claim of claimsParaProcessar) {
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       
       if (reasonId && typeof reasonId === 'string') {
         uniqueReasonIds.add(reasonId);
-        console.log(`[REISTOM DEBUG]   ✅ Claim ${claim.id}: reason_id="${reasonId}"`);
-      } else {
-        console.log(`[REISTOM DEBUG]   ⚠️ Claim ${claim.id}: SEM reason_id (claim_details=${!!claim?.claim_details}, reason_id=${claim?.reason_id})`);
       }
     }
-    
-    console.log(`[REISTOM INFO] ❌ Encontrados ${uniqueReasonIds.size} reason_ids únicos:`, Array.from(uniqueReasonIds));
     
     // 2. Buscar todos os reasons em paralelo da API ML
     let reasonsMap = new Map<string, any>();
     
     if (uniqueReasonIds.size > 0) {
       try {
-        console.log(`[REISTOM DEBUG] 🚀 ========================================`);
-        console.log(`[REISTOM DEBUG] 🚀 CHAMANDO fetchMultipleReasons...`);
-        console.log(`[REISTOM DEBUG] 🚀 ========================================`);
-        
         reasonsMap = await fetchMultipleReasons(
           Array.from(uniqueReasonIds),
           accessToken,
           integrationAccountId
         );
-        
-        console.log(`[REISTOM DEBUG] 🏁 ========================================`);
-        console.log(`[REISTOM DEBUG] 🏁 BATCH COMPLETO! Cache final:`, reasonsMap.size, 'reasons');
-        console.log(`[REISTOM DEBUG] 🏁 IDs no cache:`, Array.from(reasonsMap.keys()));
-        console.log(`[REISTOM DEBUG] 🏁 ========================================`);
       } catch (error) {
-        console.error(`[REISTOM DEBUG] ❌ ========================================`);
-        console.error(`[REISTOM DEBUG] ❌ ERRO CRÍTICO NO BATCH DE REASONS!`);
-        console.error(`[REISTOM DEBUG] ❌ Erro:`, error);
-        console.error(`[REISTOM DEBUG] ❌ ========================================`);
+        console.error(`❌ Erro ao buscar reasons:`, error);
         // Continuar mesmo se falhar - usará mapeamento genérico
       }
-    } else {
-      console.log(`[REISTOM DEBUG] ℹ️ Nenhum reason_id encontrado nos claims`);
     }
     
     // 3. Agora processar cada claim com os reasons já carregados
-    console.log(`[REISTOM INFO] 🔄 Iniciando processamento de ${claimsParaProcessar.length} claims com reasons enriquecidos...`);
     
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
@@ -1148,7 +998,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             const packId = orderDetail.pack_id
             const sellerId = orderDetail.seller?.id || claim.seller_id
             
-            console.log(`🔍 Buscando dados completos do claim ${mediationId}...`)
+            
               
               // Buscar todos os dados do claim em paralelo incluindo returns
               const claimPromises = []
@@ -1520,8 +1370,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 
               // ✅ Agora calcular SLA com claimData completo
               claimData.sla_metrics = calculateSLAMetrics(claimData, orderDetail, consolidatedMessages, mediationDetails)
-              
-              console.log(`✅ Dados completos do claim obtidos para mediação ${mediationId}`)
             } catch (claimError) {
               console.error(`❌ Erro crítico ao buscar dados do claim ${mediationId}:`, claimError)
               // Definir claimData como null em caso de erro crítico
@@ -1965,16 +1813,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 const apiData = reasonsMap.get(reasonId || '') || null;
                 const mappedReason = mapReasonWithApiData(reasonId, apiData);
                 
-                // Log para debug
-                if (apiData) {
-                  console.log(`[REISTOM INFO] 🎯 Claim ${mediationId}: Reason ${reasonId} mapeado com dados da API:`, {
-                    name: mappedReason.reason_name,
-                    detail: mappedReason.reason_detail?.substring(0, 50) + '...'
-                  });
-                } else if (reasonId) {
-                  console.log(`[REISTOM INFO] ⚠ Claim ${mediationId}: Reason ${reasonId} usando mapeamento genérico (API não retornou)`);
-                }
-                
                 return {
                   ...mappedReason,
                   // Compatibilidade com código antigo
@@ -2131,7 +1969,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             }
             
             ordersCancelados.push(devolucao)
-            console.log(`✅ Processado pedido cancelado: ${orderId}`)
+            
           } else {
             console.warn(`⚠️ Erro ao buscar detalhes do pedido ${orderId}: ${orderDetailResponse.status}`)
           }
