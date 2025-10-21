@@ -226,10 +226,8 @@ export function useDevolucoesBusca() {
             
             allClaims = [...allClaims, ...batchData];
             totalClaims = pagination?.total || allClaims.length;
-            hasMore = pagination?.hasMore || false;
-            offset += limit;
-
-            logger.info(`✅ Lote recebido: ${batchData.length} claims | Total acumulado: ${allClaims.length}/${totalClaims}`);
+            
+            logger.info(`✅ Lote recebido: ${batchData.length} claims | Total acumulado: ${allClaims.length}/${totalClaims} | hasMore: ${pagination?.hasMore}`);
 
             // Atualizar progresso
             setLoadingProgress({
@@ -238,10 +236,14 @@ export function useDevolucoesBusca() {
               message: `Carregando ${allClaims.length}/${totalClaims} claims de ${account.name}...`
             });
 
-            // Se não há mais dados, parar
-            if (!hasMore || batchData.length === 0) {
+            // ✅ PARAR se: não há mais dados OU lote vazio OU já pegamos tudo
+            if (batchData.length === 0 || !pagination?.hasMore || allClaims.length >= totalClaims) {
+              logger.info(`🏁 Paginação concluída: ${allClaims.length} claims carregados`);
               break;
             }
+
+            offset += limit;
+            hasMore = pagination?.hasMore || false;
           }
 
           logger.info(`🎉 Total de claims carregados para ${account.name}: ${allClaims.length}`);
