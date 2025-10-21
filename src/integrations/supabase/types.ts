@@ -1047,9 +1047,12 @@ export type Database = {
           comprador_nome_completo: string | null
           created_at: string | null
           dados_claim: Json | null
+          dados_costs: Json | null
           dados_mensagens: Json | null
           dados_order: Json | null
+          dados_reasons: Json | null
           dados_return: Json | null
+          dados_reviews: Json | null
           data_atualizacao_devolucao: string | null
           data_criacao: string | null
           data_criacao_claim: string | null
@@ -1170,9 +1173,12 @@ export type Database = {
           comprador_nome_completo?: string | null
           created_at?: string | null
           dados_claim?: Json | null
+          dados_costs?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
+          dados_reasons?: Json | null
           dados_return?: Json | null
+          dados_reviews?: Json | null
           data_atualizacao_devolucao?: string | null
           data_criacao?: string | null
           data_criacao_claim?: string | null
@@ -1293,9 +1299,12 @@ export type Database = {
           comprador_nome_completo?: string | null
           created_at?: string | null
           dados_claim?: Json | null
+          dados_costs?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
+          dados_reasons?: Json | null
           dados_return?: Json | null
+          dados_reviews?: Json | null
           data_atualizacao_devolucao?: string | null
           data_criacao?: string | null
           data_criacao_claim?: string | null
