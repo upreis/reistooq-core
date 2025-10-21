@@ -35,7 +35,9 @@ export const mapContextData = (item: any) => {
     
     // Comprador
     comprador_cpf: item.order_data?.buyer?.billing_info?.doc_number || null,
-    comprador_nome_completo: item.order_data?.buyer || null,
+    comprador_nome_completo: item.order_data?.buyer?.first_name && item.order_data?.buyer?.last_name 
+      ? `${item.order_data.buyer.first_name} ${item.order_data.buyer.last_name}`.trim()
+      : item.order_data?.buyer?.nickname || null,
     comprador_nickname: item.order_data?.buyer?.nickname || null
   };
 };
