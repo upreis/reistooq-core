@@ -750,14 +750,16 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     params.append('player_user_id', sellerId)
     params.append('limit', '50')
     
-    // ⭐ FILTRAR POR DATA DO PEDIDO (resource.date_created) EM VEZ DE CLAIM
-    // A API ML permite filtrar pela data do recurso (pedido) associado ao claim
+    // ⭐ FILTRAR POR DATA DO CLAIM (não do pedido)
+    // Isso garante que apareçam claims criados no período, independente da data do pedido
     if (tipoData === 'date_created') {
-      params.append('resource.date_created.from', dateFrom);
-      params.append('resource.date_created.to', dateTo);
+      // CLAIM criado no período (não pedido)
+      params.append('date_created.from', dateFrom);
+      params.append('date_created.to', dateTo);
     } else if (tipoData === 'last_updated') {
-      params.append('resource.last_updated.from', dateFrom);
-      params.append('resource.last_updated.to', dateTo);
+      // CLAIM atualizado no período
+      params.append('last_updated.from', dateFrom);
+      params.append('last_updated.to', dateTo);
     }
     
     // ⚠️ ORDENAR POR DATA DO CLAIM (não do resource, pois a API não suporta)
@@ -808,10 +810,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • periodo_dias: ${periodoDias} dias`)
-    console.log(`   • tipo_data: resource.${tipoData} (DATA DO PEDIDO)`)
-    console.log(`   • date_from (resource.${tipoData}): ${dateFrom}`)
-    console.log(`   • date_to (resource.${tipoData}): ${dateTo}`)
-    console.log(`   • sort: resource.${tipoData}:desc`)
+    console.log(`   • tipo_data: ${tipoData} (DATA DO CLAIM, NÃO DO PEDIDO)`)
+    console.log(`   • date_from (${tipoData}): ${dateFrom}`)
+    console.log(`   • date_to (${tipoData}): ${dateTo}`)
+    console.log(`   • sort: date_created:desc`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
     console.log(`   • stage: ${filters?.stage || 'N/A'}`)
@@ -820,7 +822,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
     console.log(`   • resource: ${filters?.resource || 'N/A'}`)
     console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
-    console.log(`✨ BUSCAR PEDIDOS DOS ÚLTIMOS ${periodoDias} DIAS (POR DATA DO PEDIDO, NÃO DO CLAIM)\n`)
+    console.log(`✨ BUSCAR CLAIMS DOS ÚLTIMOS ${periodoDias} DIAS (POR DATA DO CLAIM)\n`)
 
     do {
       params.set('offset', offset.toString())
