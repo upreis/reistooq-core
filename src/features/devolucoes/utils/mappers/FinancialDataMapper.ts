@@ -11,21 +11,21 @@ export const mapFinancialData = (item: any) => {
     // Reembolso
     valor_reembolso_total: item.claim_details?.resolution?.refund_amount || 
                           item.return_details_v2?.refund_amount ||
-                          parseFloat(item.amount || 0),
-    valor_reembolso_produto: orderItem?.unit_price || 0,
-    valor_reembolso_frete: payment?.shipping_cost || 0,
-    taxa_ml_reembolso: payment?.marketplace_fee || 0,
+                          item.amount || null,
+    valor_reembolso_produto: orderItem?.unit_price || null,
+    valor_reembolso_frete: payment?.shipping_cost || null,
+    taxa_ml_reembolso: payment?.marketplace_fee || null,
     data_processamento_reembolso: payment?.date_approved || null,
     metodo_reembolso: payment?.payment_method_id || null,
-    moeda_reembolso: item.order_data?.currency_id || 'BRL',
-    moeda_custo: 'BRL',
+    moeda_reembolso: item.order_data?.currency_id || null,
+    moeda_custo: null,
     
     // Custos
     custo_logistico_total: item.return_details_v2?.shipping_cost || 
-                          item.return_details_v2?.logistics_cost || 0,
+                          item.return_details_v2?.logistics_cost || null,
     custo_frete_devolucao: item.return_details_v2?.shipping_cost || null,
     custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
-    impacto_financeiro_vendedor: -(parseFloat(item.amount || 0)),
+    impacto_financeiro_vendedor: item.amount || null,
     responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
     valor_compensacao: item.return_details_v2?.refund_amount || null,
     
@@ -35,30 +35,30 @@ export const mapFinancialData = (item: any) => {
     parcelas: payment?.installments || null,
     valor_parcela: payment?.installment_amount || null,
     transaction_id: payment?.id?.toString() || null,
-    percentual_reembolsado: 100,
+    percentual_reembolsado: null,
     tags_pedido: item.order_data?.tags || [],
     
     // Descrição detalhada
     descricao_custos: {
       produto: {
-        valor_original: orderItem?.unit_price || 0,
-        valor_reembolsado: orderItem?.unit_price || 0,
-        percentual_reembolsado: 100
+        valor_original: orderItem?.unit_price || null,
+        valor_reembolsado: orderItem?.unit_price || null,
+        percentual_reembolsado: null
       },
       frete: {
-        valor_original: payment?.shipping_cost || 0,
-        valor_reembolsado: payment?.shipping_cost || 0,
-        custo_devolucao: item.return_details_v2?.shipping_cost || 0,
-        custo_total_logistica: item.return_details_v2?.shipping_cost || 0
+        valor_original: payment?.shipping_cost || null,
+        valor_reembolsado: payment?.shipping_cost || null,
+        custo_devolucao: item.return_details_v2?.shipping_cost || null,
+        custo_total_logistica: item.return_details_v2?.shipping_cost || null
       },
       taxas: {
-        taxa_ml_original: payment?.marketplace_fee || 0,
-        taxa_ml_reembolsada: payment?.marketplace_fee || 0,
-        taxa_ml_retida: 0
+        taxa_ml_original: payment?.marketplace_fee || null,
+        taxa_ml_reembolsada: payment?.marketplace_fee || null,
+        taxa_ml_retida: null
       },
       resumo: {
-        total_custos: parseFloat(item.amount || 0),
-        total_receita_perdida: parseFloat(item.amount || 0)
+        total_custos: item.amount || null,
+        total_receita_perdida: item.amount || null
       }
     }
   };
