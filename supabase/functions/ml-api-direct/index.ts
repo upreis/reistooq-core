@@ -760,8 +760,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('resource.last_updated.to', dateTo);
     }
     
-    // Ordenar por data do recurso (pedido) mais recente primeiro
-    params.append('sort', `resource.${tipoData}:desc`);
+    // ⚠️ ORDENAR POR DATA DO CLAIM (não do resource, pois a API não suporta)
+    // Mesmo filtrando por resource.date_created, a ordenação deve ser por date_created
+    params.append('sort', 'date_created:desc');
     
     // ============ FILTROS OPCIONAIS DA API ML ============
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
