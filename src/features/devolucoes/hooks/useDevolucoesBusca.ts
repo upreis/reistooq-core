@@ -197,43 +197,89 @@ export function useDevolucoesBusca() {
             status: filtros.statusClaim || 'todos'
           });
 
-          const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
-            body: {
-              action: 'get_claims_and_returns',
-              integration_account_id: accountId,
-              seller_id: account.account_identifier,
-              // 📅 NOVO: Passar período e tipo de data
-              filters: {
-                status_claim: filtros.statusClaim || '',
-                claim_type: filtros.claimType || '',
-                // ============ FILTROS AVANÇADOS ============
-                stage: filtros.stage || '',
-                fulfilled: filtros.fulfilled,
-                quantity_type: filtros.quantityType || '',
-                reason_id: filtros.reasonId || '',
-                resource: filtros.resource || '',
-                // ============ NOVOS: PERÍODO E TIPO DE DATA ============
-                periodo_dias: filtros.periodoDias || 60,  // Default 60 dias
-                tipo_data: filtros.tipoData || 'date_created'  // Default date_created
-              }
-            }
-          });
+          // 📊 PAGINAÇÃO PROGRESSIVA - Buscar em lotes
+          let allClaims: any[] = [];
+          let offset = 0;
+          const limit = 50; // Tamanho do lote
+          let hasMore = true;
+          let totalClaims = 0;
 
-          // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros da API
-          if (apiError) {
-            logger.error(`Erro API para ${account.name}`, {
-              context: 'useDevolucoesBusca.buscarDaAPI',
-              accountId,
-              accountName: account.name,
-              error: apiError.message || apiError
+          while (hasMore) {
+            logger.info(`📄 Buscando lote: offset=${offset}, limit=${limit}`);
+
+            const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
+              body: {
+                action: 'get_claims_and_returns',
+                integration_account_id: accountId,
+                seller_id: account.account_identifier,
+                limit,
+                offset,
+                // 📅 NOVO: Passar período e tipo de data
+                filters: {
+                  status_claim: filtros.statusClaim || '',
+                  claim_type: filtros.claimType || '',
+                  // ============ FILTROS AVANÇADOS ============
+                  stage: filtros.stage || '',
+                  fulfilled: filtros.fulfilled,
+                  quantity_type: filtros.quantityType || '',
+                  reason_id: filtros.reasonId || '',
+                  resource: filtros.resource || '',
+                  // ============ NOVOS: PERÍODO E TIPO DE DATA ============
+                  periodo_dias: filtros.periodoDias || 60,  // Default 60 dias
+                  tipo_data: filtros.tipoData || 'date_created'  // Default date_created
+                }
+              }
             });
-            toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
-            // Continue com próxima conta em vez de falhar
+
+            if (apiError) {
+              logger.error(`Erro API para ${account.name}`, {
+                context: 'useDevolucoesBusca.buscarDaAPI',
+                accountId,
+                accountName: account.name,
+                error: apiError.message || apiError
+              });
+              toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
+              break;
+            }
+
+            if (!apiResponse?.success || !apiResponse?.data) {
+              logger.info(`Nenhuma devolução encontrada para ${account.name}`);
+              break;
+            }
+
+            const batchData = apiResponse.data;
+            const pagination = apiResponse.pagination;
+            
+            allClaims = [...allClaims, ...batchData];
+            totalClaims = pagination?.total || allClaims.length;
+            hasMore = pagination?.hasMore || false;
+            offset += limit;
+
+            logger.info(`✅ Lote recebido: ${batchData.length} claims | Total acumulado: ${allClaims.length}/${totalClaims}`);
+
+            // Atualizar progresso
+            setLoadingProgress({
+              current: allClaims.length,
+              total: totalClaims,
+              message: `Carregando ${allClaims.length}/${totalClaims} claims de ${account.name}...`
+            });
+
+            // Se não há mais dados, parar
+            if (!hasMore || batchData.length === 0) {
+              break;
+            }
+          }
+
+          logger.info(`🎉 Total de claims carregados para ${account.name}: ${allClaims.length}`);
+
+          if (allClaims.length === 0) {
+            toast.info(`Nenhuma devolução encontrada para ${account.name}`);
             continue;
           }
 
-          if (apiResponse?.success && apiResponse?.data) {
-            const devolucoesDaAPI = apiResponse.data;
+          // Processar os claims coletados
+          if (allClaims.length > 0) {
+            const devolucoesDaAPI = allClaims;
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
             

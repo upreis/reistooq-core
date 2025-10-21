@@ -8,18 +8,22 @@ import { logger } from '@/utils/logger';
 import type { DevolucaoBuscaFilters } from '../hooks/useDevolucoesBusca';
 
 /**
- * Busca claims e returns da API ML
+ * Busca claims e returns da API ML com suporte a paginação
  */
 export const fetchClaimsAndReturns = async (
   accountId: string,
   sellerId: string,
-  filters: DevolucaoBuscaFilters
+  filters: DevolucaoBuscaFilters,
+  limit: number = 50,
+  offset: number = 0
 ) => {
   const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
     body: {
       action: 'get_claims_and_returns',
       integration_account_id: accountId,
       seller_id: sellerId,
+      limit,
+      offset,
       filters: {
         date_from: filters.dataInicio || '',
         date_to: filters.dataFim || '',
