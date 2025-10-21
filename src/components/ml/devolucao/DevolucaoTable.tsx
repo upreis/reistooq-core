@@ -27,7 +27,7 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
         <thead>
           <tr className="bg-muted/50 dark:bg-muted border-b">
             {/* PRIMEIRA COLUNA - Nome da Conta */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '160px'}}>Conta Seller</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '160px'}}>Empresa</th>
             
             {/* GRUPO 1: IDENTIFICAÇÃO (6 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Pedido ID</th>
