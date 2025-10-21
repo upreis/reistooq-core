@@ -16,6 +16,9 @@ import { AdvancedDataTab } from './tabs/AdvancedDataTab';
 import { BuyerPaymentTab } from './tabs/BuyerPaymentTab';
 import { ProductQualityTab } from './tabs/ProductQualityTab';
 import { ReasonTab } from './tabs/ReasonTab';
+import { ReviewsEnhancedTab } from './tabs/ReviewsEnhancedTab';
+import { CostsEnhancedTab } from './tabs/CostsEnhancedTab';
+import { ReasonsEnhancedTab } from './tabs/ReasonsEnhancedTab';
 import { 
   Package, FileText, CheckCircle, DollarSign, 
   Truck, Star, Scale, 
@@ -52,7 +55,7 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-12 w-full">
+          <TabsList className="grid grid-cols-12 w-full gap-1">
             <TabsTrigger value="overview"><Package className="h-4 w-4 mr-1" />Geral</TabsTrigger>
             <TabsTrigger value="reason"><AlertCircle className="h-4 w-4 mr-1" />Motivo</TabsTrigger>
             <TabsTrigger value="financial"><DollarSign className="h-4 w-4 mr-1" />Financeiro</TabsTrigger>
@@ -69,6 +72,18 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
             </TabsTrigger>
             <TabsTrigger value="timeline"><TrendingUp className="h-4 w-4 mr-1" />Timeline</TabsTrigger>
             <TabsTrigger value="advanced"><Database className="h-4 w-4 mr-1" />Avançados</TabsTrigger>
+            <TabsTrigger value="reviews-enhanced" className="bg-blue-50 dark:bg-blue-950">
+              <Star className="h-4 w-4 mr-1" />🆕 Reviews+
+              {devolucao.dados_reviews && <Badge variant="default" className="ml-1 bg-blue-600">✓</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="costs-enhanced" className="bg-green-50 dark:bg-green-950">
+              <DollarSign className="h-4 w-4 mr-1" />🆕 Custos+
+              {devolucao.dados_costs && <Badge variant="default" className="ml-1 bg-green-600">✓</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="reasons-enhanced" className="bg-purple-50 dark:bg-purple-950">
+              <AlertCircle className="h-4 w-4 mr-1" />🆕 Reasons+
+              {devolucao.dados_reasons && <Badge variant="default" className="ml-1 bg-purple-600">✓</Badge>}
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto mt-4">
@@ -124,6 +139,11 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
               />
             </TabsContent>
             <TabsContent value="advanced" className="mt-0"><AdvancedDataTab devolucao={devolucao} /></TabsContent>
+            
+            {/* 🆕 NOVAS ABAS ENRIQUECIDAS */}
+            <TabsContent value="reviews-enhanced" className="mt-0"><ReviewsEnhancedTab devolucao={devolucao} /></TabsContent>
+            <TabsContent value="costs-enhanced" className="mt-0"><CostsEnhancedTab devolucao={devolucao} /></TabsContent>
+            <TabsContent value="reasons-enhanced" className="mt-0"><ReasonsEnhancedTab devolucao={devolucao} /></TabsContent>
           </div>
         </Tabs>
       </DialogContent>

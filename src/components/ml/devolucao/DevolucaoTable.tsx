@@ -167,6 +167,11 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Dados Return</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Envio Mediação</th>
             
+            {/* 🆕 GRUPO 14: NOVOS DADOS ESTRUTURADOS (3 colunas) */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Reviews Disponíveis</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Custos Detalhados</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reasons Detalhados</th>
+            
             {/* AÇÕES */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Ações</th>
           </tr>

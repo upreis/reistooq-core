@@ -232,6 +232,11 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   claim_fulfilled?: boolean | null; // Se o claim foi cumprido/resolvido
   return_intermediate_check?: any | null; // Dados da verificação intermediária do return
   return_resource_type?: string | null; // Tipo de recurso do return
+  
+  // 🆕 FASE 5: DADOS ESTRUTURADOS JSONB (3 CAMPOS)
+  dados_reviews?: any | null; // Dados completos de reviews da API ML
+  dados_costs?: any | null; // Custos detalhados de envio
+  dados_reasons?: any | null; // Detalhes completos de reasons/motivos
 }
 
 // ===== TIPOS AUXILIARES =====

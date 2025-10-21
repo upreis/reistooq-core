@@ -705,6 +705,39 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </span>
       </td>
       
+      {/* 🆕 REVIEWS DISPONÍVEIS */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.dados_reviews ? (
+          <Badge variant="default" className="bg-blue-600">
+            ✓ Disponível
+          </Badge>
+        ) : (
+          <Badge variant="outline">Não há</Badge>
+        )}
+      </td>
+      
+      {/* 🆕 CUSTOS DETALHADOS */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.dados_costs ? (
+          <Badge variant="default" className="bg-green-600">
+            ✓ Detalhado
+          </Badge>
+        ) : (
+          <Badge variant="outline">Básico</Badge>
+        )}
+      </td>
+      
+      {/* 🆕 REASONS DETALHADOS */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.dados_reasons ? (
+          <Badge variant="default" className="bg-purple-600">
+            ✓ Completo
+          </Badge>
+        ) : (
+          <Badge variant="outline">Simples</Badge>
+        )}
+      </td>
+      
       {/* AÇÕES */}
       <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
     </tr>
