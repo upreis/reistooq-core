@@ -708,38 +708,40 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* 🆕 REVIEWS DISPONÍVEIS */}
       <td className="px-3 py-3 text-center">
         {devolucao.dados_reviews ? (
-          <Badge variant="default" className="bg-blue-600">
-            ✓ Disponível
+          <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
+            ✓ Sim
           </Badge>
         ) : (
-          <Badge variant="outline">Não há</Badge>
+          <Badge variant="outline" className="text-muted-foreground">—</Badge>
         )}
       </td>
       
       {/* 🆕 CUSTOS DETALHADOS */}
       <td className="px-3 py-3 text-center">
         {devolucao.dados_costs ? (
-          <Badge variant="default" className="bg-green-600">
-            ✓ Detalhado
+          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+            ✓ Sim
           </Badge>
         ) : (
-          <Badge variant="outline">Básico</Badge>
+          <Badge variant="outline" className="text-muted-foreground">—</Badge>
         )}
       </td>
       
       {/* 🆕 REASONS DETALHADOS */}
       <td className="px-3 py-3 text-center">
         {devolucao.dados_reasons ? (
-          <Badge variant="default" className="bg-purple-600">
-            ✓ Completo
+          <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">
+            ✓ Sim
           </Badge>
         ) : (
-          <Badge variant="outline">Simples</Badge>
+          <Badge variant="outline" className="text-muted-foreground">—</Badge>
         )}
       </td>
       
-      {/* AÇÕES */}
-      <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
+      {/* AÇÕES - sticky right */}
+      <td className="px-3 py-3 sticky right-0 bg-background z-10 border-l">
+        <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
+      </td>
     </tr>
   );
 });

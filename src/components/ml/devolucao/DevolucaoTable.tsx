@@ -162,18 +162,18 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Review ID</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Revisor</th>
             
-            {/* GRUPO 13: DADOS DETALHADOS (3 colunas) */}
+      {/* GRUPO 13: DADOS DETALHADOS (3 colunas) */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Dados Claim</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Dados Return</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Envio Mediação</th>
             
-            {/* 🆕 GRUPO 14: NOVOS DADOS ESTRUTURADOS (3 colunas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Reviews Disponíveis</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Custos Detalhados</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reasons Detalhados</th>
+            {/* 🆕 GRUPO 14: NOVOS DADOS ESTRUTURADOS (3 colunas) - ANTES DE AÇÕES */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Reviews</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Custos</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Reasons</th>
             
             {/* AÇÕES */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Ações</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground sticky right-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '100px'}}>Ações</th>
           </tr>
         </thead>
         <tbody>
