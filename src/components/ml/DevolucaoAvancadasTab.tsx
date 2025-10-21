@@ -14,8 +14,6 @@ import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } 
 import { DevolucaoStatsCards } from '@/components/ml/devolucao/DevolucaoStatsCards';
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
-import { SyncControls } from './devolucao/SyncControls';
-import { SyncMetrics } from './devolucao/SyncMetrics';
 import { FiltrosRapidos } from './devolucao/FiltrosRapidos';
 import { ErrorFallback, MinimalErrorFallback } from '@/components/error/ErrorFallback';
 import { exportarDevolucoes } from '@/features/devolucoes/utils/DevolucaoExportService';
@@ -213,25 +211,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         )}
       </ErrorBoundary>
 
-      {/* Controles de Sincronização */}
-      <ErrorBoundary
-        FallbackComponent={(props) => (
-          <MinimalErrorFallback {...props} />
-        )}
-        onReset={() => window.location.reload()}
-      >
-        <SyncControls />
-      </ErrorBoundary>
-
-      {/* Métricas de Sincronização */}
-      <ErrorBoundary
-        FallbackComponent={(props) => (
-          <MinimalErrorFallback {...props} />
-        )}
-        onReset={() => window.location.reload()}
-      >
-        <SyncMetrics />
-      </ErrorBoundary>
 
       {/* Filtros Rápidos */}
       <FiltrosRapidos 
