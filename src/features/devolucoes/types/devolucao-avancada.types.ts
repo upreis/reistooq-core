@@ -125,7 +125,6 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   review_status?: string | null;
   review_result?: string | null;
   problemas_encontrados?: any[] | null;
-  acoes_necessarias_review?: any[] | null;
   data_inicio_review?: string | null;
   score_qualidade?: number | null;
   necessita_acao_manual?: boolean | null;

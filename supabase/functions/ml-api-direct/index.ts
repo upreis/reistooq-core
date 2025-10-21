@@ -750,17 +750,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     params.append('player_user_id', sellerId)
     params.append('limit', '50')
     
-    // ⭐ NOVOS PARÂMETROS DE DATA
+    // ⭐ FILTRAR POR DATA DO PEDIDO (resource.date_created) EM VEZ DE CLAIM
+    // A API ML permite filtrar pela data do recurso (pedido) associado ao claim
     if (tipoData === 'date_created') {
-      params.append('date_created.from', dateFrom);
-      params.append('date_created.to', dateTo);
+      params.append('resource.date_created.from', dateFrom);
+      params.append('resource.date_created.to', dateTo);
     } else if (tipoData === 'last_updated') {
-      params.append('last_updated.from', dateFrom);
-      params.append('last_updated.to', dateTo);
+      params.append('resource.last_updated.from', dateFrom);
+      params.append('resource.last_updated.to', dateTo);
     }
     
-    // Ordenar por data mais recente primeiro
-    params.append('sort', `${tipoData}:desc`);
+    // Ordenar por data do recurso (pedido) mais recente primeiro
+    params.append('sort', `resource.${tipoData}:desc`);
     
     // ============ FILTROS OPCIONAIS DA API ML ============
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
@@ -798,18 +799,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    // ⚠️ LIMITE AUMENTADO: De 10 para 1000 claims
-    const MAX_CLAIMS = 1000;  // ⭐ NOVO LIMITE
+    // ⚠️ LIMITE AUMENTADO: De 10 para 2000 claims (para buscar todas as 500+)
+    const MAX_CLAIMS = 2000;  // ⭐ NOVO LIMITE
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • periodo_dias: ${periodoDias} dias`)
-    console.log(`   • tipo_data: ${tipoData}`)
-    console.log(`   • date_from (${tipoData}): ${dateFrom}`)
-    console.log(`   • date_to (${tipoData}): ${dateTo}`)
-    console.log(`   • sort: ${tipoData}:desc`)
+    console.log(`   • tipo_data: resource.${tipoData} (DATA DO PEDIDO)`)
+    console.log(`   • date_from (resource.${tipoData}): ${dateFrom}`)
+    console.log(`   • date_to (resource.${tipoData}): ${dateTo}`)
+    console.log(`   • sort: resource.${tipoData}:desc`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
     console.log(`   • stage: ${filters?.stage || 'N/A'}`)
@@ -818,7 +819,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
     console.log(`   • resource: ${filters?.resource || 'N/A'}`)
     console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
-    console.log(`✨ BUSCAR CLAIMS DOS ÚLTIMOS ${periodoDias} DIAS POR ${tipoData.toUpperCase()}\n`)
+    console.log(`✨ BUSCAR PEDIDOS DOS ÚLTIMOS ${periodoDias} DIAS (POR DATA DO PEDIDO, NÃO DO CLAIM)\n`)
 
     do {
       params.set('offset', offset.toString())
@@ -974,8 +975,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             const packId = orderDetail.pack_id
             const sellerId = orderDetail.seller?.id || claim.seller_id
             
-            
-              
+            try {
               // Buscar todos os dados do claim em paralelo incluindo returns
               const claimPromises = []
               
@@ -1163,7 +1163,6 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 }).catch(() => null)
               )
               
-            try {
               const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
                 
                 // Consolidar mensagens de ambas as fontes
@@ -1784,13 +1783,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
             
             ordersCancelados.push(devolucao)
             
-          } else {
-            console.warn(`⚠️ Erro ao buscar detalhes do pedido ${orderId}: ${orderDetailResponse.status}`)
+          } catch (orderError) {
+            const orderId = claim.resource_id || claim.order_id || 'unknown'
+            console.error(`❌ Erro ao processar pedido ${orderId}:`, orderError)
           }
-        } catch (orderError) {
-          const orderId = claim.resource_id || claim.order_id || 'unknown'
-          console.error(`❌ Erro ao processar pedido ${orderId}:`, orderError)
-        }
       }
     
     console.log(`🎉 Total de claims processados: ${ordersCancelados.length}`)
