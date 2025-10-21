@@ -16,7 +16,7 @@ export class ClaimsService {
     accessToken: string,
     integrationAccountId: string
   ): Promise<any[]> {
-    const MAX_CLAIMS = 500;
+    const MAX_CLAIMS = 2000; // ✨ Aumentado para 2000 claims
     const limit = 50;
     let offset = 0;
     const allClaims: any[] = [];
