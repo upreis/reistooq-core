@@ -207,40 +207,14 @@ export function useDevolucoesBusca() {
           while (hasMore) {
             logger.info(`📄 Buscando lote: offset=${offset}, limit=${limit}`);
 
-            const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
-              body: {
-                action: 'get_claims_and_returns',
-                integration_account_id: accountId,
-                seller_id: account.account_identifier,
-                limit,
-                offset,
-                // 📅 NOVO: Passar período e tipo de data
-                filters: {
-                  status_claim: filtros.statusClaim || '',
-                  claim_type: filtros.claimType || '',
-                  // ============ FILTROS AVANÇADOS ============
-                  stage: filtros.stage || '',
-                  fulfilled: filtros.fulfilled,
-                  quantity_type: filtros.quantityType || '',
-                  reason_id: filtros.reasonId || '',
-                  resource: filtros.resource || '',
-                  // ============ NOVOS: PERÍODO E TIPO DE DATA ============
-                  periodo_dias: filtros.periodoDias || 60,  // Default 60 dias
-                  tipo_data: filtros.tipoData || 'date_created'  // Default date_created
-                }
-              }
-            });
-
-            if (apiError) {
-              logger.error(`Erro API para ${account.name}`, {
-                context: 'useDevolucoesBusca.buscarDaAPI',
-                accountId,
-                accountName: account.name,
-                error: apiError.message || apiError
-              });
-              toast.warning(`Falha na API ML para ${account.name}. Continuando...`);
-              break;
-            }
+            // ✅ USAR MLApiClient que já tem paginação
+            const apiResponse = await fetchClaimsAndReturns(
+              accountId,
+              account.account_identifier,
+              filtros,
+              limit,
+              offset
+            );
 
             if (!apiResponse?.success || !apiResponse?.data) {
               logger.info(`Nenhuma devolução encontrada para ${account.name}`);
