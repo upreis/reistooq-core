@@ -1032,6 +1032,7 @@ export type Database = {
       }
       devolucoes_avancadas: {
         Row: {
+          acao_seller_necessaria: string | null
           account_name: string | null
           carrier_info: Json | null
           categoria_problema: string | null
@@ -1154,6 +1155,7 @@ export type Database = {
           versao_api_utilizada: string | null
         }
         Insert: {
+          acao_seller_necessaria?: string | null
           account_name?: string | null
           carrier_info?: Json | null
           categoria_problema?: string | null
@@ -1276,6 +1278,7 @@ export type Database = {
           versao_api_utilizada?: string | null
         }
         Update: {
+          acao_seller_necessaria?: string | null
           account_name?: string | null
           carrier_info?: Json | null
           categoria_problema?: string | null

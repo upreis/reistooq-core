@@ -177,6 +177,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
 }) => {
   return (
     <tr className="border-b hover:bg-muted/30 dark:hover:bg-muted/20">
+      {/* PRIMEIRA COLUNA - Nome da Conta (sticky) */}
+      <td className="px-3 py-3 text-left font-medium sticky left-0 bg-background z-10 border-r">
+        {devolucao.account_name || '-'}
+      </td>
+      
       {/* GRUPO 1: IDENTIFICAÇÃO */}
       <IdentificationCells devolucao={devolucao} />
       
@@ -337,9 +342,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {getBooleanBadge(devolucao.escalado_para_ml)}
       </td>
       
-      {/* Ação Seller */}
-      <td className="px-3 py-3 text-center">
-        {getBooleanBadge(devolucao.acao_seller_necessaria)}
+      {/* Ação Seller Necessária */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[160px] truncate" title={String(devolucao.acao_seller_necessaria || '')}>
+          {devolucao.acao_seller_necessaria ? String(devolucao.acao_seller_necessaria) : '-'}
+        </div>
       </td>
       
       {/* Total Evidências */}

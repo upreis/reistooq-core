@@ -26,6 +26,9 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr className="bg-muted/50 dark:bg-muted border-b">
+            {/* PRIMEIRA COLUNA - Nome da Conta */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '160px'}}>Conta Seller</th>
+            
             {/* GRUPO 1: IDENTIFICAÇÃO (6 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Pedido ID</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Claim ID</th>
@@ -116,7 +119,7 @@ export const DevolucaoTable = React.memo<DevolucaoTableProps>(({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Resolvida ACAS</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>É Troca?</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Escalado VIP</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Ação Seller</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Ação Seller Necessária</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Total Evidências</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Recursos Manuais</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Problemas</th>
