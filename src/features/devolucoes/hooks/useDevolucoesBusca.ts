@@ -188,24 +188,19 @@ export function useDevolucoesBusca() {
           // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
           // 📅 IMPORTANTE: Enviar datas no formato YYYY-MM-DD (a edge function converte internamente)
           
-          logger.info(`🔍 [FILTRO DATA] Buscando devoluções para ${account.name}`, {
-            dateFrom: filtros.dataInicio || 'SEM FILTRO',
-            dateTo: filtros.dataFim || 'SEM FILTRO',
-            status: filtros.statusClaim || 'todos'
-          });
+          logger.info(`🔍 Buscando TODAS as devoluções para ${account.name} (sem filtro de data na API)`);
 
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
               action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: account.account_identifier,
-              // Passando TODOS os filtros (antigos + novos)
+              // 📅 NÃO ENVIAR FILTROS DE DATA - Buscar tudo e filtrar localmente
+              // Motivo: API ML filtra por data de criação do claim, não da venda original
               filters: {
-                date_from: filtros.dataInicio || '',
-                date_to: filtros.dataFim || '',
                 status_claim: filtros.statusClaim || '',
                 claim_type: filtros.claimType || '',
-                // ============ NOVOS FILTROS AVANÇADOS (FASE 2) ============
+                // ============ FILTROS AVANÇADOS ============
                 stage: filtros.stage || '',
                 fulfilled: filtros.fulfilled,
                 quantity_type: filtros.quantityType || '',
