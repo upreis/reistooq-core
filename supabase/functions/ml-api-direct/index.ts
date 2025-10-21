@@ -146,9 +146,9 @@ serve(async (req) => {
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       
-      // ⏱️ Timeout de 120 segundos para permitir busca completa
+      // ⏱️ Timeout de 50 segundos (aumentado para dar mais margem)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: A busca excedeu 120 segundos. Tente com um período menor.')), 120000)
+        setTimeout(() => reject(new Error('Timeout: A busca excedeu 50 segundos. Use filtros de data para reduzir os resultados.')), 50000)
       );
       
       const cancelledOrders = await Promise.race([
@@ -873,9 +873,9 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         break
       }
       
-      // ⚡ OTIMIZADO: Delay reduzido (100ms)
+      // Delay para evitar rate limit
       if (receivedCount > 0) {
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise(resolve => setTimeout(resolve, 150))
       }
       
     } while (consecutiveEmptyPages < MAX_EMPTY_PAGES)
@@ -988,7 +988,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
               // Buscar todos os dados do claim em paralelo incluindo returns
               const claimPromises = []
               
-               // 1. Buscar claim principal
+              // 1. Buscar claim principal
               claimPromises.push(
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}`,
@@ -997,7 +997,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
               
-              // 2. ⚡ OTIMIZADO: Buscar apenas mensagens diretas (principal)
+              // 2. Buscar mensagens DIRETO do claim (FONTE PRINCIPAL)
               claimPromises.push(
                 fetchMLWithRetry(
                   `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/messages`,
@@ -1006,8 +1006,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
               
-              // 3. ⚡ REMOVIDO: Mensagens pack_id (backup redundante)
-              claimPromises.push(Promise.resolve(null))
+              // 3. Buscar mensagens via pack_id (FONTE BACKUP)
+              if (packId) {
+                claimPromises.push(
+                  fetchMLWithRetry(
+                    `https://api.mercadolibre.com/messages/packs/${packId}/sellers/${sellerId}?tag=post_sale`,
+                    accessToken,
+                    integrationAccountId
+                  ).then(r => r.ok ? r.json() : null).catch(() => null)
+                )
+              } else {
+                claimPromises.push(Promise.resolve(null))
+              }
               
               // ✅ 1.2 - CORREÇÃO: Só buscar mediação se claim tiver mediation_id ou stage
               const hasMediationId = claim.mediation_id || claim.stage === 'mediation'
@@ -1056,12 +1066,111 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
                 ).then(r => r.ok ? r.json() : null).catch(() => null)
               )
 
-              // 7. ⚡ OTIMIZADO: Remover busca de histórico de shipment (causa lentidão)
-              // Os dados principais já vêm dos returns - histórico é opcional
-              claimPromises.push(Promise.resolve(null))
+              // 7. Buscar shipment history do pedido original E devolução (ENRIQUECIDO FASE 1)
+              claimPromises.push(
+                (async () => {
+                  const historyResults = {
+                    original: null,
+                    return: null,
+                    combined_events: []
+                  }
+                  
+                  // Tentar buscar histórico do envio original primeiro
+                  const originalShipmentId = orderDetail?.shipping?.id
+                  if (originalShipmentId) {
+                    try {
+                      const response = await fetchMLWithRetry(
+                        `https://api.mercadolibre.com/shipments/${originalShipmentId}/history`,
+                        accessToken,
+                        integrationAccountId
+                      )
+                      if (response.ok) {
+                        const historyData = await response.json()
+                        historyResults.original = historyData
+                        console.log(`🚚 Histórico do envio original encontrado: ${originalShipmentId}`)
+                        
+                        // Extrair eventos do histórico original
+                        if (Array.isArray(historyData)) {
+                          historyResults.combined_events.push(...historyData.map(event => ({
+                            ...event,
+                            shipment_type: 'original',
+                            shipment_id: originalShipmentId
+                          })))
+                        }
+                      }
+                    } catch (e) {
+                      console.warn(`⚠️ Erro ao buscar histórico do envio original:`, e)
+                    }
+                  }
+                  
+                  // Buscar histórico do shipment de devolução
+                  try {
+                    const returnsResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
+                      accessToken,
+                      integrationAccountId
+                    )
+                    if (returnsResponse.ok) {
+                      const returnsData = await returnsResponse.json()
+                      const shipmentId = returnsData?.results?.[0]?.shipments?.[0]?.id || 
+                                        returnsData?.results?.[0]?.shipments?.[0]?.shipment_id
+                      if (shipmentId) {
+                        console.log(`🚚 Buscando histórico do return shipment ${shipmentId}...`)
+                        const historyResponse = await fetchMLWithRetry(
+                          `https://api.mercadolibre.com/shipments/${shipmentId}/history`,
+                          accessToken,
+                          integrationAccountId
+                        )
+                        if (historyResponse.ok) {
+                          const returnHistory = await historyResponse.json()
+                          historyResults.return = returnHistory
+                          
+                          // Extrair eventos do histórico de devolução
+                          if (Array.isArray(returnHistory)) {
+                            historyResults.combined_events.push(...returnHistory.map(event => ({
+                              ...event,
+                              shipment_type: 'return',
+                              shipment_id: shipmentId
+                            })))
+                          }
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn(`⚠️ Erro ao buscar histórico de devolução:`, e)
+                  }
+                  
+                  // Ordenar eventos combinados por data (mais recente primeiro)
+                  historyResults.combined_events.sort((a, b) => 
+                    new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+                  )
+                  
+                  return historyResults.combined_events.length > 0 ? historyResults : null
+                })()
+              )
 
-              // 8. ⚡ OTIMIZADO: Remover busca de changes (raramente usado)
-              claimPromises.push(Promise.resolve(null))
+              // 8. Buscar change details se for troca
+              claimPromises.push(
+                fetchMLWithRetry(
+                  `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}/changes`,
+                  accessToken,
+                  integrationAccountId
+                ).then(async (r) => {
+                  if (!r.ok) return null
+                  const data = await r.json()
+                  if (data?.results?.length > 0) {
+                    const changeId = data.results[0].id
+                    console.log(`🔄 Buscando detalhes da troca ${changeId}...`)
+                    const changeResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v1/changes/${changeId}`,
+                      accessToken,
+                      integrationAccountId
+                    )
+                    return changeResponse.ok ? await changeResponse.json() : null
+                  }
+                  return null
+                }).catch(() => null)
+              )
               
               const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
                 
