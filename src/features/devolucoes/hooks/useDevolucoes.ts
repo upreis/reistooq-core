@@ -163,33 +163,54 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   }, [mlAccounts, selectedAccountId]);
 
 
-  // 🔍 BUSCAR COM FILTROS - Aceita filtros opcionais para evitar race conditions
+  // 🔍 BUSCAR COM FILTROS - FASE 2: Priorizar banco, API apenas se tempo real
   const buscarComFiltros = useCallback(async (filtrosImediatos?: DevolucaoAdvancedFilters) => {
     try {
-      // ✅ 1.4 - CORREÇÃO: Não usar setLoading local (já gerenciado por busca)
       setError(null);
       
       // Usar filtros passados diretamente ou os do estado atual
       const filtrosParaUsar = filtrosImediatos || advancedFilters;
       
-      // ✅ BUSCA SEM OBRIGATORIEDADE DE FILTRO DE DATA
-      console.log('[useDevolucoes] 🔍 Buscando com filtros:', {
+      logger.info('[useDevolucoes] 🔍 Aplicando filtros...', {
         dataInicio: filtrosParaUsar.dataInicio || 'SEM FILTRO',
         dataFim: filtrosParaUsar.dataFim || 'SEM FILTRO',
         contas: filtrosParaUsar.contasSelecionadas,
-        origem: filtrosImediatos ? 'filtros imediatos' : 'estado atual'
+        buscarEmTempoReal: filtrosParaUsar.buscarEmTempoReal
       });
       
+      // OPÇÃO A: Buscar do banco primeiro (RÁPIDO) - Padrão
+      if (!filtrosParaUsar.buscarEmTempoReal) {
+        const contasSelecionadas = filtrosParaUsar.contasSelecionadas.length > 0 
+          ? filtrosParaUsar.contasSelecionadas 
+          : mlAccounts?.map(acc => acc.id) || [];
+        
+        logger.info('[useDevolucoes] 📦 Buscando do banco (modo rápido)...');
+        const dadosBanco = await busca.buscarDoBanco(contasSelecionadas);
+        
+        setDevolucoes(dadosBanco);
+        setCurrentPage(1);
+        
+        logger.info(`[useDevolucoes] ✅ ${dadosBanco.length} devoluções do banco`);
+        toast.success(`${dadosBanco.length} devoluções encontradas`);
+        return;
+      }
+      
+      // OPÇÃO B: Buscar da API apenas se usuário quer dados em tempo real
+      logger.info('[useDevolucoes] 🌐 Buscando da API ML (tempo real)...');
       const dadosAPI = await busca.buscarDaAPI(filtrosParaUsar, mlAccounts);
+      
       setDevolucoes(dadosAPI);
       setCurrentPage(1);
       
-      console.log(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções buscadas`);
+      logger.info(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções da API`);
+      toast.success(`${dadosAPI.length} devoluções atualizadas da API`);
+      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar devoluções';
       setError(errorMessage);
-      console.error('[useDevolucoes] ❌ Erro:', err);
-    } // ✅ 1.4 - CORREÇÃO: Remover finally setLoading (já gerenciado por busca)
+      logger.error('[useDevolucoes] ❌ Erro ao buscar com filtros:', err);
+      toast.error('Erro ao aplicar filtros');
+    }
   }, [busca, advancedFilters, mlAccounts]);
 
   // Remover sincronização automática com banco
