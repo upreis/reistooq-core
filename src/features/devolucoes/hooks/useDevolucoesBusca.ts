@@ -411,20 +411,27 @@ export function useDevolucoesBusca() {
   }, []); // Sem dependências pois não usa obterTokenML mais
 
   // Buscar do banco de dados
-  const buscarDoBanco = useCallback(async () => {
+  const buscarDoBanco = useCallback(async (contasSelecionadas?: string[]) => {
     setLoading(true);
     
     try {
-      logger.info('Buscando devoluções do banco');
+      logger.info('[useDevolucoesBusca] 📦 Buscando do banco...', {
+        contasFiltro: contasSelecionadas?.length || 0
+      });
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('devolucoes_avancadas')
-        .select('*')
-        .order('data_criacao', { ascending: false });
+        .select('*');
       
-      // ✅ 1.5 - CORREÇÃO: Logs estruturados
+      // Filtrar por contas selecionadas se fornecido
+      if (contasSelecionadas && contasSelecionadas.length > 0) {
+        query = query.in('integration_account_id', contasSelecionadas);
+      }
+      
+      const { data, error } = await query.order('data_criacao', { ascending: false });
+      
       if (error) {
-        logger.error('Erro ao buscar do banco', {
+        logger.error('[useDevolucoesBusca] ❌ Erro ao buscar do banco', {
           context: 'useDevolucoesBusca.buscarDoBanco',
           error: error.message || error
         });
@@ -432,12 +439,11 @@ export function useDevolucoesBusca() {
         return [];
       }
       
-      logger.info(`${data.length} devoluções carregadas do banco`);
+      logger.info(`[useDevolucoesBusca] ✅ ${data.length} devoluções carregadas do banco`);
       return data;
       
     } catch (error) {
-      // ✅ 1.5 - CORREÇÃO: Logs estruturados
-      logger.error('Erro ao buscar do banco', {
+      logger.error('[useDevolucoesBusca] ❌ Erro inesperado ao buscar do banco', {
         context: 'useDevolucoesBusca.buscarDoBanco',
         error: error instanceof Error ? error.message : error,
         stack: error instanceof Error ? error.stack : undefined

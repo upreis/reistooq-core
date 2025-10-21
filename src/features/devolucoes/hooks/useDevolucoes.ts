@@ -14,6 +14,8 @@ import {
   createCleanFilters,
   createInitialFilters 
 } from '../utils/LocalStorageUtils';
+import { logger } from '@/utils/logger';
+import { toast } from 'sonner';
 
 export interface DevolucaoFilters {
   searchTerm: string;
@@ -193,8 +195,48 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
 
-  // Busca automática inicial REMOVIDA - usuário deve clicar em "Aplicar Filtros"
-  // A busca agora é totalmente controlada pelo usuário através do botão
+  // ✅ FASE 1: Busca automática inicial do banco
+  useEffect(() => {
+    // Só buscar se tiver contas carregadas
+    if (!mlAccounts || mlAccounts.length === 0) {
+      logger.info('[useDevolucoes] ⏳ Aguardando contas ML...');
+      return;
+    }
+    
+    // Evitar buscar múltiplas vezes
+    if (devolucoes.length > 0) {
+      logger.info('[useDevolucoes] ✅ Devoluções já carregadas, pulando busca');
+      return;
+    }
+    
+    const carregarDoBancoInicial = async () => {
+      try {
+        logger.info('[useDevolucoes] 🚀 Iniciando busca automática do banco...');
+        
+        // Buscar do banco com as contas selecionadas
+        const contasSelecionadas = advancedFilters.contasSelecionadas.length > 0
+          ? advancedFilters.contasSelecionadas
+          : mlAccounts.map(acc => acc.id);
+        
+        const dadosBanco = await busca.buscarDoBanco(contasSelecionadas);
+        
+        if (dadosBanco && dadosBanco.length > 0) {
+          setDevolucoes(dadosBanco);
+          logger.info(`[useDevolucoes] ✅ ${dadosBanco.length} devoluções carregadas do banco`);
+          toast.success(`${dadosBanco.length} devoluções carregadas`);
+        } else {
+          logger.warn('[usDevolucoes] ⚠️ Nenhuma devolução encontrada no banco');
+        }
+        
+      } catch (error) {
+        logger.error('[useDevolucoes] ❌ Erro ao carregar do banco:', error);
+        toast.error('Erro ao carregar devoluções');
+      }
+    };
+    
+    carregarDoBancoInicial();
+    
+  }, [mlAccounts]); // Executar apenas quando mlAccounts carregar
 
   // 🔄 Atualizar contas selecionadas quando selectedAccountIds mudar
   useEffect(() => {
