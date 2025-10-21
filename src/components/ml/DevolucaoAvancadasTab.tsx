@@ -107,28 +107,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   }, [applyFilters]);
 
-  // ✨ FASE 3: Handler para busca em tempo real da API ML
-  const [isSyncingML, setIsSyncingML] = React.useState(false);
-  
-  const handleEnriquecerML = React.useCallback(async () => {
-    try {
-      setIsSyncingML(true);
-      toast.info('Buscando dados atualizados da API ML...');
-      
-      // Forçar busca em tempo real da API
-      await buscarComFiltros({ 
-        ...advancedFilters, 
-        buscarEmTempoReal: true 
-      });
-      
-      toast.success('Dados atualizados com sucesso da API ML!');
-    } catch (error) {
-      console.error('Erro ao enriquecer com ML:', error);
-      toast.error('Erro ao buscar dados da API ML');
-    } finally {
-      setIsSyncingML(false);
-    }
-  }, [buscarComFiltros, advancedFilters]);
 
   const handleCancelChanges = React.useCallback(() => {
     cancelDraftFilters();
@@ -260,17 +238,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         onAplicarFiltro={handleFiltrosRapidos}
       />
 
-      {/* Controles de ação - Simplificado + Enriquecer ML */}
+      {/* Controles de ação */}
       <div className="flex justify-end gap-2">
-        <Button 
-          variant="default"
-          onClick={handleEnriquecerML}
-          disabled={loading || isSyncingML}
-          className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          <Package className={`h-4 w-4 ${isSyncingML ? 'animate-pulse' : ''}`} />
-          {isSyncingML ? 'Sincronizando...' : 'Enriquecer ML'}
-        </Button>
         <Button 
           variant="outline" 
           onClick={() => setShowColumnManager(true)}

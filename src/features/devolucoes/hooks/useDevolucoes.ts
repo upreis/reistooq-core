@@ -163,7 +163,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   }, [mlAccounts, selectedAccountId]);
 
 
-  // 🔍 BUSCAR COM FILTROS - FASE 2: Priorizar banco, API apenas se tempo real
+  // 🔍 BUSCAR COM FILTROS - Sempre da API em tempo real
   const buscarComFiltros = useCallback(async (filtrosImediatos?: DevolucaoAdvancedFilters) => {
     try {
       setError(null);
@@ -171,39 +171,21 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       // Usar filtros passados diretamente ou os do estado atual
       const filtrosParaUsar = filtrosImediatos || advancedFilters;
       
-      logger.info('[useDevolucoes] 🔍 Aplicando filtros...', {
+      logger.info('[useDevolucoes] 🌐 Buscando da API ML em tempo real...', {
         dataInicio: filtrosParaUsar.dataInicio || 'SEM FILTRO',
         dataFim: filtrosParaUsar.dataFim || 'SEM FILTRO',
-        contas: filtrosParaUsar.contasSelecionadas,
-        buscarEmTempoReal: filtrosParaUsar.buscarEmTempoReal
+        contas: filtrosParaUsar.contasSelecionadas
       });
       
-      // OPÇÃO A: Buscar do banco primeiro (RÁPIDO) - Padrão
-      if (!filtrosParaUsar.buscarEmTempoReal) {
-        const contasSelecionadas = filtrosParaUsar.contasSelecionadas.length > 0 
-          ? filtrosParaUsar.contasSelecionadas 
-          : mlAccounts?.map(acc => acc.id) || [];
-        
-        logger.info('[useDevolucoes] 📦 Buscando do banco (modo rápido)...');
-        const dadosBanco = await busca.buscarDoBanco(contasSelecionadas);
-        
-        setDevolucoes(dadosBanco);
-        setCurrentPage(1);
-        
-        logger.info(`[useDevolucoes] ✅ ${dadosBanco.length} devoluções do banco`);
-        toast.success(`${dadosBanco.length} devoluções encontradas`);
-        return;
-      }
-      
-      // OPÇÃO B: Buscar da API apenas se usuário quer dados em tempo real
-      logger.info('[useDevolucoes] 🌐 Buscando da API ML (tempo real)...');
+      // SEMPRE buscar da API ML em tempo real
+      toast.info('Buscando dados atualizados da API ML...');
       const dadosAPI = await busca.buscarDaAPI(filtrosParaUsar, mlAccounts);
       
       setDevolucoes(dadosAPI);
       setCurrentPage(1);
       
       logger.info(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções da API`);
-      toast.success(`${dadosAPI.length} devoluções atualizadas da API`);
+      toast.success(`${dadosAPI.length} devoluções encontradas`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar devoluções';
