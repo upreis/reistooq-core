@@ -33,8 +33,8 @@ export function ThemeProvider({
   // ✅ FIX CRÍTICO: Verificação de React hooks antes de usar
   if (!useState || typeof useState !== 'function') {
     console.error('🚨 React useState not available in ThemeProvider');
-    // Fallback: renderizar children sem tema
-    return <>{children}</>;
+    // CRÍTICO: Early return para evitar erro
+    return <div style={{ minHeight: '100vh' }}>{children}</div>;
   }
 
   const [theme, setTheme] = useState<ThemeName>(() => {
