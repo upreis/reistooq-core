@@ -91,6 +91,9 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [showAnalytics, setShowAnalytics] = useState(false);
   
+  // 📊 Estados de progresso
+  const [loadingProgress, setLoadingProgress] = useState({ current: 0, total: 0, percentage: 0 });
+  
   // 🎯 FILTROS UNIFICADOS COM LOCALSTORAGE
   const [advancedFilters, setAdvancedFilters] = useState<DevolucaoAdvancedFilters>(() => {
     return createInitialFilters(selectedAccountId, selectedAccountIds, mlAccounts);
@@ -179,7 +182,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
         contas: filtrosParaUsar.contasSelecionadas
       });
       
-      // 1️⃣ Mostrar dados do banco IMEDIATAMENTE (se existirem)
+      // 1️⃣ Mostrar dados do banco PROGRESSIVAMENTE
       const contasSelecionadas = filtrosParaUsar.contasSelecionadas.length > 0 
         ? filtrosParaUsar.contasSelecionadas 
         : mlAccounts?.map(acc => acc.id) || [];
@@ -191,7 +194,21 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
         contasSelecionadas: contasSelecionadas
       };
       
-      const dadosBanco = await busca.buscarDoBanco(contasSelecionadas, filtrosBanco as DevolucaoBuscaFilters);
+      // Callback de progresso para atualizar UI conforme carrega
+      const onProgress = (dadosParciais: any[], current: number, total: number) => {
+        setDevolucoes(dadosParciais);
+        setLoadingProgress({ 
+          current, 
+          total, 
+          percentage: Math.round((current / total) * 100) 
+        });
+        toast.info(`Carregando: ${current}/${total} devoluções (${Math.round((current / total) * 100)}%)`, {
+          id: 'loading-progress',
+          duration: 1000
+        });
+      };
+      
+      const dadosBanco = await busca.buscarDoBanco(contasSelecionadas, filtrosBanco as DevolucaoBuscaFilters, onProgress);
       
       if (dadosBanco.length > 0) {
         setDevolucoes(dadosBanco);
@@ -377,6 +394,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     
     // Estados
     loading: busca.loading, // ✅ 1.4 - CORREÇÃO: Fonte única de verdade
+    loadingProgress, // 📊 Progresso de carregamento
     isRefreshing: false,
     error: error,
     currentPage,
@@ -410,8 +428,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     // Performance & Auto-refresh
     autoRefresh,
     
-    // 🎯 FASE 4: Novos campos para UI/UX
-    loadingProgress: busca.loadingProgress,
+    // 🎯 Cache stats apenas (loadingProgress já foi exportado acima)
     cacheStats: busca.cacheStats,
     clearCache: busca.clearCache
   };

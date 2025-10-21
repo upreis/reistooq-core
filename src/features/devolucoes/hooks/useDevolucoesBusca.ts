@@ -414,56 +414,109 @@ export function useDevolucoesBusca() {
     }
   }, []); // Sem dependências pois não usa obterTokenML mais
 
-  // Buscar do banco de dados
-  const buscarDoBanco = useCallback(async (contasSelecionadas?: string[], filtros?: DevolucaoBuscaFilters) => {
+  // Buscar do banco de dados COM BUSCA PROGRESSIVA
+  const buscarDoBanco = useCallback(async (
+    contasSelecionadas?: string[], 
+    filtros?: DevolucaoBuscaFilters,
+    onProgress?: (dados: any[], current: number, total: number) => void
+  ) => {
     setLoading(true);
     
     try {
-      logger.info('[useDevolucoesBusca] 📦 Buscando do banco...', {
+      logger.info('[useDevolucoesBusca] 📦 Buscando do banco com paginação...', {
         contasFiltro: contasSelecionadas?.length || 0,
         periodoDias: filtros?.periodoDias,
         tipoData: filtros?.tipoData
       });
       
-      let query = supabase
+      // Primeiro, contar total de registros
+      let countQuery = supabase
         .from('devolucoes_avancadas')
-        .select('*');
+        .select('*', { count: 'exact', head: true });
       
-      // Filtrar por contas selecionadas se fornecido
       if (contasSelecionadas && contasSelecionadas.length > 0) {
-        query = query.in('integration_account_id', contasSelecionadas);
+        countQuery = countQuery.in('integration_account_id', contasSelecionadas);
       }
       
-      // 📅 APLICAR FILTRO DE DATA DO BANCO
       if (filtros?.periodoDias) {
         const hoje = new Date();
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        
         const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
-        query = query.gte(campoData, dateFrom);
-        
-        logger.debug('[useDevolucoesBusca] 📅 Filtro de data aplicado', {
-          campoData,
-          dataInicio: dateFrom,
-          periodoDias: filtros.periodoDias
-        });
+        countQuery = countQuery.gte(campoData, dateFrom);
       }
       
-      const { data, error } = await query.order('data_criacao', { ascending: false });
+      const { count, error: countError } = await countQuery;
       
-      if (error) {
-        logger.error('[useDevolucoesBusca] ❌ Erro ao buscar do banco', {
-          context: 'useDevolucoesBusca.buscarDoBanco',
-          error: error.message || error
-        });
-        toast.error('Erro ao buscar devoluções do banco');
+      if (countError) {
+        logger.error('[useDevolucoesBusca] ❌ Erro ao contar registros', countError);
+        toast.error('Erro ao contar devoluções');
         return [];
       }
       
-      logger.info(`[useDevolucoesBusca] ✅ ${data.length} devoluções carregadas do banco`);
-      return data;
+      const totalRegistros = Math.min(count || 0, 1000); // Limite de 1000
+      logger.info(`[useDevolucoesBusca] 📊 Total de registros: ${totalRegistros}`);
+      
+      if (totalRegistros === 0) {
+        toast.info('Nenhuma devolução encontrada no período selecionado');
+        return [];
+      }
+      
+      // Buscar em chunks de 100
+      const CHUNK_SIZE = 100;
+      const allData: any[] = [];
+      let offset = 0;
+      
+      while (offset < totalRegistros) {
+        let query = supabase
+          .from('devolucoes_avancadas')
+          .select('*');
+        
+        if (contasSelecionadas && contasSelecionadas.length > 0) {
+          query = query.in('integration_account_id', contasSelecionadas);
+        }
+        
+        // 📅 APLICAR FILTRO DE DATA DO BANCO
+        if (filtros?.periodoDias) {
+          const hoje = new Date();
+          const dataInicio = new Date();
+          dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
+          const dateFrom = dataInicio.toISOString();
+          const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
+          query = query.gte(campoData, dateFrom);
+        }
+        
+        const { data, error } = await query
+          .order('data_criacao', { ascending: false })
+          .range(offset, offset + CHUNK_SIZE - 1);
+        
+        if (error) {
+          logger.error('[useDevolucoesBusca] ❌ Erro ao buscar chunk', {
+            offset,
+            error: error.message
+          });
+          break;
+        }
+        
+        if (!data || data.length === 0) break;
+        
+        allData.push(...data);
+        offset += data.length;
+        
+        // Notificar progresso
+        if (onProgress) {
+          onProgress(allData, offset, totalRegistros);
+        }
+        
+        logger.debug(`[useDevolucoesBusca] 📥 Chunk carregado: ${offset}/${totalRegistros}`);
+        
+        // Pequeno delay para não sobrecarregar
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      logger.info(`[useDevolucoesBusca] ✅ ${allData.length} devoluções carregadas do banco`);
+      return allData;
       
     } catch (error) {
       logger.error('[useDevolucoesBusca] ❌ Erro inesperado ao buscar do banco', {
