@@ -86,6 +86,10 @@ serve(async (req) => {
     logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
     if (action === 'get_claims_and_returns') {
+      // 📄 PAGINAÇÃO - Extrair parâmetros (defaults seguros)
+      const limit = Math.min(requestBody.limit || 50, 100); // Max 100 por request
+      const offset = requestBody.offset || 0;
+      
       // 🔒 Obter token de forma segura usando integrations-get-secret
       const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -134,7 +138,7 @@ serve(async (req) => {
       }
       
       const access_token = tokenData.secret.access_token
-      logger.success(`Token ML obtido para seller: ${seller_id}`)
+      logger.success(`Token ML obtido para seller: ${seller_id} (limit: ${limit}, offset: ${offset})`)
       
       // Validação crítica: seller_id deve existir
       if (!seller_id) {
@@ -155,12 +159,14 @@ serve(async (req) => {
         setTimeout(() => reject(new Error('Timeout: A busca excedeu 50 segundos. Use filtros de data para reduzir os resultados.')), 50000)
       );
       
-      const cancelledOrders = await Promise.race([
-        buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id),
+      // ✅ PAGINAÇÃO: buscar com limit/offset
+      const result = await Promise.race([
+        buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id, limit, offset),
         timeoutPromise
-      ]) as any[];
+      ]) as { data: any[]; total: number; hasMore: boolean };
       
-      logger.info(`Total de pedidos cancelados: ${cancelledOrders.length}`)
+      const cancelledOrders = result.data;
+      logger.info(`Página retornou: ${cancelledOrders.length} de ${result.total} total (hasMore: ${result.hasMore})`)
       
       // ============ 🔴 FASE 1: SALVAMENTO NO SUPABASE ============
       if (cancelledOrders.length > 0) {
@@ -463,13 +469,21 @@ serve(async (req) => {
       }
       // ============ FIM FASE 1: SALVAMENTO ============
       
+      // ✅ PAGINAÇÃO: Retornar resposta com metadados
       return new Response(
         JSON.stringify({
           success: true,
-          data: cancelledOrders,
+          data: result.data,
+          pagination: {
+            limit: limit,
+            offset: offset,
+            total: result.total,
+            returned: result.data.length,
+            hasMore: result.hasMore
+          },
           totals: {
-            cancelled_orders: cancelledOrders.length,
-            total: cancelledOrders.length
+            cancelled_orders: result.data.length,
+            total: result.total
           }
         }),
         { 
@@ -1079,7 +1093,15 @@ async function fetchMultipleReasons(
 // Isso elimina ~100 linhas de código duplicado
 
 // ============ FUNÇÃO PARA BUSCAR CLAIMS/DEVOLUÇÕES DIRETAMENTE DA API ML ============
-async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
+// ✅ PAGINAÇÃO IMPLEMENTADA - retorna { data, total, hasMore }
+async function buscarPedidosCancelados(
+  sellerId: string, 
+  accessToken: string, 
+  filters: any, 
+  integrationAccountId: string,
+  pageLimit: number = 50,      // Quantos claims processar nesta página
+  pageOffset: number = 0        // Offset para paginação
+): Promise<{ data: any[]; total: number; hasMore: boolean }> {
   try {
     
     // 📅 CALCULAR DATAS BASEADO NO PERÍODO
@@ -1140,33 +1162,36 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       params.append('resource', filters.resource)
     }
 
-    // 📚 BUSCAR TODAS AS PÁGINAS DA API
+    // ✅ PAGINAÇÃO REAL: Buscar apenas os claims necessários
     let allClaims: any[] = []
-    let offset = 0
-    const limit = 100  // ⭐ AUMENTADO de 50 para 100 para menos requisições
-    const MAX_CLAIMS = 5000  // ⭐ AUMENTADO para capturar mais claims
+    let apiOffset = 0  // Offset na API do ML
+    const apiLimit = 100  // Limite por request da API ML
+    const MAX_CLAIMS = 5000  // Limite de segurança total
+    let totalAvailable = 0  // Total disponível na API
     let consecutiveEmptyPages = 0
-    const MAX_EMPTY_PAGES = 3  // Parar após 3 páginas vazias
+    const MAX_EMPTY_PAGES = 3
 
-    console.log('\n🔄 ============ INICIANDO BUSCA COMPLETA ============')
+    console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • periodo_dias: ${periodoDias} dias`)
-    console.log(`   • FILTRO: last_updated (ÚLTIMA SYNC - Coluna "Última Sync")`)
+    console.log(`   • FILTRO: last_updated (ÚLTIMA SYNC)`)
     console.log(`   • date_from (last_updated): ${dateFrom}`)
     console.log(`   • date_to (last_updated): ${dateTo}`)
     console.log(`   • sort: date_created:desc`)
-    console.log(`   • limit por página: ${limit}`)
-    console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
-    console.log(`✨ BUSCAR TODAS AS CLAIMS DOS ÚLTIMOS ${periodoDias} DIAS (POR ÚLTIMA SYNC)\n`)
+    console.log(`   • 📄 PAGINAÇÃO: limit=${pageLimit}, offset=${pageOffset}`)
+    console.log(`   • 🔄 API limit=${apiLimit}, offset=${apiOffset}\n`)
 
+    // ✅ PAGINAÇÃO: Buscar da API até ter dados suficientes para esta página
+    const targetEndIndex = pageOffset + pageLimit;  // Onde queremos parar
+    
     do {
-      params.set('offset', offset.toString())
-      params.set('limit', limit.toString())
+      params.set('offset', apiOffset.toString())
+      params.set('limit', apiLimit.toString())
       const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
       
-      console.log(`📄 Página ${Math.floor(offset / limit) + 1}: offset=${offset}, limit=${limit}`)
+      console.log(`📄 API Página ${Math.floor(apiOffset / apiLimit) + 1}: offset=${apiOffset}, limit=${apiLimit} (total coletado: ${allClaims.length})`)
       
       const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
       
@@ -1207,16 +1232,22 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         consecutiveEmptyPages = 0
         allClaims.push(...data.data)
         
-        // Parar se retornou menos que o limite
-        if (receivedCount < limit) {
-          console.log(`   🏁 Possível última página (${receivedCount} < ${limit})`)
-          // Continua buscando para verificar se há mais
+        // ✅ PARAR se já temos dados suficientes para esta página
+        if (allClaims.length >= targetEndIndex) {
+          console.log(`   🎯 Dados suficientes coletados! (${allClaims.length} >= ${targetEndIndex})`)
+          break
+        }
+        
+        // Parar se retornou menos que o limite (fim da API)
+        if (receivedCount < apiLimit) {
+          console.log(`   🏁 Fim dos dados da API (${receivedCount} < ${apiLimit})`)
+          break
         }
       }
       
-      offset += limit
+      apiOffset += apiLimit
       
-      // Limite de segurança
+      // Limite de segurança global
       if (allClaims.length >= MAX_CLAIMS) {
         console.log(`   ⚠️  Limite de segurança de ${MAX_CLAIMS} claims alcançado`)
         break
@@ -1227,7 +1258,7 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         await new Promise(resolve => setTimeout(resolve, 150))
       }
       
-    } while (consecutiveEmptyPages < MAX_EMPTY_PAGES)
+    } while (consecutiveEmptyPages < MAX_EMPTY_PAGES && allClaims.length < targetEndIndex)
 
     // 🛡️ VERIFICAÇÃO CRÍTICA: Validar dados recebidos da API
     if (!allClaims || !Array.isArray(allClaims)) {
@@ -1235,16 +1266,28 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       throw new Error('API do Mercado Livre retornou dados inválidos');
     }
     
-    if (allClaims.length === 0) {
-      return []
+    totalAvailable = allClaims.length;  // Guardar total coletado
+    
+    // ✅ PAGINAÇÃO: Extrair apenas a página solicitada
+    const claimsParaProcessar = allClaims.slice(pageOffset, pageOffset + pageLimit);
+    const hasMore = allClaims.length > (pageOffset + pageLimit);
+    
+    console.log(`\n📊 PAGINAÇÃO APLICADA:`)
+    console.log(`   • Total coletado da API: ${allClaims.length}`)
+    console.log(`   • Offset solicitado: ${pageOffset}`)
+    console.log(`   • Limit solicitado: ${pageLimit}`)
+    console.log(`   • Claims para processar: ${claimsParaProcessar.length}`)
+    console.log(`   • Tem mais dados: ${hasMore}\n`)
+    
+    if (claimsParaProcessar.length === 0) {
+      return {
+        data: [],
+        total: totalAvailable,
+        hasMore: false
+      }
     }
     
-    logger.info(`${allClaims.length} claims recebidos da API ML`);
-    
-    // 🔥 NÃO FILTRAR POR DATA NA EDGE FUNCTION
-    // O filtro de data será aplicado no FRONTEND após receber os dados
-    // Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
-    let claimsParaProcessar = allClaims
+    logger.info(`Processando ${claimsParaProcessar.length} de ${allClaims.length} claims da API ML`)
 
     // ========================================
     // 🔍 BUSCAR REASONS EM LOTE DA API ML
@@ -2167,7 +2210,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
       console.log(`📅 ================================================\n`)
     }
     
-    return ordersCancelados
+    // ✅ PAGINAÇÃO: Retornar objeto com metadados
+    return {
+      data: ordersCancelados,
+      total: totalAvailable,
+      hasMore: hasMore
+    }
     
   } catch (error) {
     console.error('❌ Erro ao buscar claims:', error)
