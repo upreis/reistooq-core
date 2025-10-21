@@ -13,11 +13,11 @@ export const mapMetadata = (item: any) => {
     nota_fiscal_autorizada: item.order_data?.internal_tags || [],
     
     // Qualidade
-    eficiencia_resolucao: item.claim_details?.resolution || null,
+    eficiencia_resolucao: item.claim_details?.resolution?.reason || null,
     
     // Reputação
-    seller_reputation: item.order_data?.seller?.reputation || {},
-    buyer_reputation: item.buyer?.reputation || {},
+    seller_reputation: null,
+    buyer_reputation: null,
     
     // SLA
     tempo_primeira_resposta_vendedor: null,

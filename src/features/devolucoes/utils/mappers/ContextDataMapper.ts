@@ -10,7 +10,7 @@ export const mapContextData = (item: any) => {
     data_inicio_mediacao: item.claim_details?.date_created || null,
     mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     resultado_mediacao: item.claim_details?.resolution?.reason || null,
-    detalhes_mediacao: item.mediation_details || item.claim_details || {},
+    detalhes_mediacao: null,
     escalado_para_ml: item.claim_details?.type || null,
     
     // Troca
@@ -31,7 +31,7 @@ export const mapContextData = (item: any) => {
     versao_api_utilizada: null,
     origem_timeline: null,
     status_produto_novo: null,
-    endereco_destino: {},
+    endereco_destino: null,
     
     // Comprador
     comprador_cpf: item.order_data?.buyer?.billing_info?.doc_number || null,
