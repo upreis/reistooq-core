@@ -8,7 +8,7 @@ import { logger } from '../utils/logger.ts';
 
 export class ClaimsService {
   /**
-   * Buscar claims com paginação
+   * Buscar claims com paginação e divisão de intervalos de datas
    */
   async fetchClaims(
     sellerId: string,
@@ -16,7 +16,80 @@ export class ClaimsService {
     accessToken: string,
     integrationAccountId: string
   ): Promise<any[]> {
-    const MAX_CLAIMS = 10000; // ✨ Limite muito alto para pegar todos (ou quase)
+    const MAX_CLAIMS = 10000;
+    const limit = 50;
+    const DAYS_PER_CHUNK = 7; // Dividir em intervalos de 7 dias
+    
+    // Se não há filtro de data ou o período é curto, usar método normal
+    if (!filters?.date_from || !filters?.date_to) {
+      return this.fetchClaimsNormal(sellerId, filters, accessToken, integrationAccountId);
+    }
+    
+    // Calcular intervalos de datas
+    const dateFrom = new Date(filters.date_from);
+    const dateTo = new Date(filters.date_to);
+    const diffDays = Math.ceil((dateTo.getTime() - dateFrom.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Se período é menor que DAYS_PER_CHUNK dias, usar método normal
+    if (diffDays <= DAYS_PER_CHUNK) {
+      return this.fetchClaimsNormal(sellerId, filters, accessToken, integrationAccountId);
+    }
+    
+    logger.info(`Período de ${diffDays} dias detectado - dividindo em chunks de ${DAYS_PER_CHUNK} dias`);
+    
+    // Dividir em intervalos menores
+    const allClaims: any[] = [];
+    const claimIds = new Set<string>(); // Para evitar duplicatas
+    let currentDate = new Date(dateFrom);
+    let chunkNumber = 0;
+    
+    while (currentDate < dateTo && allClaims.length < MAX_CLAIMS) {
+      chunkNumber++;
+      const chunkEnd = new Date(currentDate);
+      chunkEnd.setDate(chunkEnd.getDate() + DAYS_PER_CHUNK);
+      
+      const actualEnd = chunkEnd > dateTo ? dateTo : chunkEnd;
+      
+      const chunkFilters = {
+        ...filters,
+        date_from: currentDate.toISOString().split('T')[0],
+        date_to: actualEnd.toISOString().split('T')[0]
+      };
+      
+      logger.info(`Chunk ${chunkNumber}: ${chunkFilters.date_from} a ${chunkFilters.date_to}`);
+      
+      const chunkClaims = await this.fetchClaimsNormal(sellerId, chunkFilters, accessToken, integrationAccountId);
+      
+      // Adicionar apenas claims únicos
+      let newClaims = 0;
+      for (const claim of chunkClaims) {
+        if (!claimIds.has(claim.id)) {
+          claimIds.add(claim.id);
+          allClaims.push(claim);
+          newClaims++;
+        }
+      }
+      
+      logger.info(`Chunk ${chunkNumber}: ${newClaims} claims novos (${chunkClaims.length} total, ${allClaims.length} acumulado)`);
+      
+      currentDate = new Date(actualEnd);
+      currentDate.setDate(currentDate.getDate() + 1); // Próximo dia após o fim do chunk
+    }
+    
+    logger.info(`✅ Total de ${allClaims.length} claims únicos recebidos em ${chunkNumber} chunks`);
+    return allClaims;
+  }
+  
+  /**
+   * Buscar claims com paginação simples (método original)
+   */
+  private async fetchClaimsNormal(
+    sellerId: string,
+    filters: any,
+    accessToken: string,
+    integrationAccountId: string
+  ): Promise<any[]> {
+    const MAX_CLAIMS = 10000;
     const limit = 50;
     let offset = 0;
     const allClaims: any[] = [];
