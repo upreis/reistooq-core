@@ -738,10 +738,8 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* AÇÕES - sticky right */}
-      <td className="px-3 py-3 sticky right-0 bg-background z-10 border-l">
-        <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
-      </td>
+      {/* AÇÕES */}
+      <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
     </tr>
   );
 });

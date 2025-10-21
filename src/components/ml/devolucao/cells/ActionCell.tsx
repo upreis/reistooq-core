@@ -10,7 +10,7 @@ interface ActionCellProps {
 
 export const ActionCell: React.FC<ActionCellProps> = ({ devolucao, onViewDetails }) => {
   return (
-    <td className="px-3 py-3 text-center">
+    <td className="px-3 py-3 text-center sticky right-0 bg-background z-10 border-l">
       <Button
         variant="ghost"
         size="sm"
