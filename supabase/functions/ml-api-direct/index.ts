@@ -750,17 +750,10 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     params.append('player_user_id', sellerId)
     params.append('limit', '50')
     
-    // ⭐ FILTRAR POR DATA DO CLAIM (não do pedido)
-    // Isso garante que apareçam claims criados no período, independente da data do pedido
-    if (tipoData === 'date_created') {
-      // CLAIM criado no período (não pedido)
-      params.append('date_created.from', dateFrom);
-      params.append('date_created.to', dateTo);
-    } else if (tipoData === 'last_updated') {
-      // CLAIM atualizado no período
-      params.append('last_updated.from', dateFrom);
-      params.append('last_updated.to', dateTo);
-    }
+    // ⭐ FILTRAR POR ÚLTIMA SYNC (last_updated) - PADRÃO
+    // Busca claims dos últimos 60 dias pela coluna "Última Sync"
+    params.append('last_updated.from', dateFrom);
+    params.append('last_updated.to', dateTo);
     
     // ⚠️ ORDENAR POR DATA DO CLAIM (não do resource, pois a API não suporta)
     // Mesmo filtrando por resource.date_created, a ordenação deve ser por date_created
@@ -801,34 +794,30 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     // 📚 BUSCAR TODAS AS PÁGINAS DA API
     let allClaims: any[] = []
     let offset = 0
-    const limit = 50
-    // ⚠️ LIMITE AUMENTADO: De 10 para 2000 claims (para buscar todas as 500+)
-    const MAX_CLAIMS = 2000;  // ⭐ NOVO LIMITE
+    const limit = 100  // ⭐ AUMENTADO de 50 para 100 para menos requisições
+    const MAX_CLAIMS = 5000  // ⭐ AUMENTADO para capturar mais claims
+    let consecutiveEmptyPages = 0
+    const MAX_EMPTY_PAGES = 3  // Parar após 3 páginas vazias
 
-    console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
+    console.log('\n🔄 ============ INICIANDO BUSCA COMPLETA ============')
     console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
     console.log(`   • periodo_dias: ${periodoDias} dias`)
-    console.log(`   • tipo_data: ${tipoData} (DATA DO CLAIM, NÃO DO PEDIDO)`)
-    console.log(`   • date_from (${tipoData}): ${dateFrom}`)
-    console.log(`   • date_to (${tipoData}): ${dateTo}`)
+    console.log(`   • FILTRO: last_updated (ÚLTIMA SYNC - Coluna "Última Sync")`)
+    console.log(`   • date_from (last_updated): ${dateFrom}`)
+    console.log(`   • date_to (last_updated): ${dateTo}`)
     console.log(`   • sort: date_created:desc`)
-    console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
-    console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
-    console.log(`   • stage: ${filters?.stage || 'N/A'}`)
-    console.log(`   • fulfilled: ${filters?.fulfilled !== undefined ? filters.fulfilled : 'N/A'}`)
-    console.log(`   • quantity_type: ${filters?.quantity_type || 'N/A'}`)
-    console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
-    console.log(`   • resource: ${filters?.resource || 'N/A'}`)
+    console.log(`   • limit por página: ${limit}`)
     console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
-    console.log(`✨ BUSCAR CLAIMS DOS ÚLTIMOS ${periodoDias} DIAS (POR DATA DO CLAIM)\n`)
+    console.log(`✨ BUSCAR TODAS AS CLAIMS DOS ÚLTIMOS ${periodoDias} DIAS (POR ÚLTIMA SYNC)\n`)
 
     do {
       params.set('offset', offset.toString())
+      params.set('limit', limit.toString())
       const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
       
-      console.log(`📄 Buscando página: offset=${offset}, limit=${limit}`)
+      console.log(`📄 Página ${Math.floor(offset / limit) + 1}: offset=${offset}, limit=${limit}`)
       
       const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
       
@@ -855,16 +844,28 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         break
       }
       
-      console.log(`   ✅ Retornou: ${data.data.length} claims (total acumulado: ${allClaims.length + data.data.length})`)
+      const receivedCount = data.data.length
+      console.log(`   ✅ Retornou: ${receivedCount} claims (total: ${allClaims.length + receivedCount})`)
       
-      allClaims.push(...data.data)
-      offset += limit
-      
-      // Parar se não há mais dados
-      if (data.data.length < limit) {
-        console.log(`   🏁 Última página (retornou menos que ${limit} claims)`)
-        break
+      if (receivedCount === 0) {
+        consecutiveEmptyPages++
+        console.log(`   ⚠️  Página vazia (${consecutiveEmptyPages}/${MAX_EMPTY_PAGES})`)
+        if (consecutiveEmptyPages >= MAX_EMPTY_PAGES) {
+          console.log(`   🏁 Finalizando após ${MAX_EMPTY_PAGES} páginas vazias consecutivas`)
+          break
+        }
+      } else {
+        consecutiveEmptyPages = 0
+        allClaims.push(...data.data)
+        
+        // Parar se retornou menos que o limite
+        if (receivedCount < limit) {
+          console.log(`   🏁 Possível última página (${receivedCount} < ${limit})`)
+          // Continua buscando para verificar se há mais
+        }
       }
+      
+      offset += limit
       
       // Limite de segurança
       if (allClaims.length >= MAX_CLAIMS) {
@@ -872,7 +873,12 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
         break
       }
       
-    } while (true)
+      // Delay para evitar rate limit
+      if (receivedCount > 0) {
+        await new Promise(resolve => setTimeout(resolve, 150))
+      }
+      
+    } while (consecutiveEmptyPages < MAX_EMPTY_PAGES)
 
     // 🛡️ VERIFICAÇÃO CRÍTICA: Validar dados recebidos da API
     if (!allClaims || !Array.isArray(allClaims)) {
