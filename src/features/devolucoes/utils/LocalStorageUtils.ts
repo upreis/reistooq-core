@@ -62,6 +62,8 @@ export const createCleanFilters = (mlAccounts?: any[]): DevolucaoAdvancedFilters
     contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
     dataInicio: '',
     dataFim: '',
+    periodoDias: 60,  // ⭐ NOVO: Default 60 dias
+    tipoData: 'date_created',  // ⭐ NOVO: Default por data de criação
     statusClaim: '',
     tipoClaim: '',
     subtipoClaim: '',

@@ -31,9 +31,11 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   // 📊 CONTAS
   contasSelecionadas: string[];
   
-  // 📅 DATAS
+  // 📅 DATAS - NOVO SISTEMA
   dataInicio: string;
   dataFim: string;
+  periodoDias: number;  // 7, 15, 30, 60, 90
+  tipoData: 'date_created' | 'last_updated';  // Tipo de data para filtrar
   
   // 🎯 STATUS E CLASSIFICAÇÃO
   statusClaim: string;

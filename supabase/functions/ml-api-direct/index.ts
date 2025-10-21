@@ -733,11 +733,34 @@ async function fetchMultipleReasons(
 async function buscarPedidosCancelados(sellerId: string, accessToken: string, filters: any, integrationAccountId: string) {
   try {
     
+    // 📅 CALCULAR DATAS BASEADO NO PERÍODO
+    const periodoDias = filters?.periodo_dias || 60;  // Default 60 dias
+    const tipoData = filters?.tipo_data || 'date_created';  // 'date_created' ou 'last_updated'
+    
+    const hoje = new Date();
+    const dataInicio = new Date();
+    dataInicio.setDate(hoje.getDate() - periodoDias);
+    
+    const dateFrom = dataInicio.toISOString().split('T')[0];  // YYYY-MM-DD
+    const dateTo = hoje.toISOString().split('T')[0];          // YYYY-MM-DD
+    
     // 🚀 BUSCAR CLAIMS COM PAGINAÇÃO COMPLETA
     const params = new URLSearchParams()
     params.append('player_role', 'respondent')
     params.append('player_user_id', sellerId)
     params.append('limit', '50')
+    
+    // ⭐ NOVOS PARÂMETROS DE DATA
+    if (tipoData === 'date_created') {
+      params.append('date_created.from', dateFrom);
+      params.append('date_created.to', dateTo);
+    } else if (tipoData === 'last_updated') {
+      params.append('last_updated.from', dateFrom);
+      params.append('last_updated.to', dateTo);
+    }
+    
+    // Ordenar por data mais recente primeiro
+    params.append('sort', `${tipoData}:desc`);
     
     // ============ FILTROS OPCIONAIS DA API ML ============
     if (filters?.status_claim && filters.status_claim.trim().length > 0) {
@@ -775,15 +798,18 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     let allClaims: any[] = []
     let offset = 0
     const limit = 50
-    // ⏱️ LIMITE AJUSTADO: Cada claim = ~2-3s (múltiplas APIs sequenciais)
-    // Timeout edge function = 50s, deixando margem de segurança
-    const hasDateFilter = filters?.date_from || filters?.date_to;
-    const MAX_CLAIMS = hasDateFilter ? 20 : 10;  // 🔥 20 claims com filtro (~40s), 10 sem filtro (~30s) - seguro para 50s timeout
+    // ⚠️ LIMITE AUMENTADO: De 10 para 1000 claims
+    const MAX_CLAIMS = 1000;  // ⭐ NOVO LIMITE
 
     console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
     console.log(`📋 Filtros aplicados na API:`)
     console.log(`   • player_role: respondent`)
     console.log(`   • player_user_id: ${sellerId}`)
+    console.log(`   • periodo_dias: ${periodoDias} dias`)
+    console.log(`   • tipo_data: ${tipoData}`)
+    console.log(`   • date_from (${tipoData}): ${dateFrom}`)
+    console.log(`   • date_to (${tipoData}): ${dateTo}`)
+    console.log(`   • sort: ${tipoData}:desc`)
     console.log(`   • status_claim: ${filters?.status_claim || 'N/A'}`)
     console.log(`   • claim_type: ${filters?.claim_type || 'N/A'}`)
     console.log(`   • stage: ${filters?.stage || 'N/A'}`)
@@ -791,17 +817,8 @@ async function buscarPedidosCancelados(sellerId: string, accessToken: string, fi
     console.log(`   • quantity_type: ${filters?.quantity_type || 'N/A'}`)
     console.log(`   • reason_id: ${filters?.reason_id || 'N/A'}`)
     console.log(`   • resource: ${filters?.resource || 'N/A'}`)
-    console.log(`   • date_from: ${filters?.date_from || 'SEM FILTRO ⚠️'}`)
-    console.log(`   • date_to: ${filters?.date_to || 'SEM FILTRO ⚠️'}`)
     console.log(`   • MAX_CLAIMS: ${MAX_CLAIMS}`)
-    
-    if (!hasDateFilter) {
-      console.log(`⚠️  ========== ATENÇÃO ==========`)
-      console.log(`⚠️  SEM FILTRO DE DATA: Limitado a ${MAX_CLAIMS} claims mais recentes`)
-      console.log(`⚠️  Tempo estimado: ~${MAX_CLAIMS} segundos`)
-      console.log(`💡 DICA: Use filtro de data para buscar mais resultados`)
-      console.log(`⚠️  ==============================\n`)
-    }
+    console.log(`✨ BUSCAR CLAIMS DOS ÚLTIMOS ${periodoDias} DIAS POR ${tipoData.toUpperCase()}\n`)
 
     do {
       params.set('offset', offset.toString())

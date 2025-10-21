@@ -27,6 +27,9 @@ export interface DevolucaoBuscaFilters {
   reasonId?: string;       // 'PDD9939', 'PDD9941', etc
   resource?: string;       // 'order' | 'shipment'
   claimType?: string;      // 'mediations' | 'claim'
+  // ============ NOVOS: FILTRO POR PERÍODO E TIPO DE DATA ============
+  periodoDias?: number;    // 7, 15, 30, 60, 90 dias
+  tipoData?: 'date_created' | 'last_updated';  // Tipo de data para filtrar
 }
 
 export function useDevolucoesBusca() {
@@ -186,17 +189,20 @@ export function useDevolucoesBusca() {
         
         try {
           // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
-          // 📅 IMPORTANTE: Enviar datas no formato YYYY-MM-DD (a edge function converte internamente)
+          // 📅 NOVO: Passar período e tipo de data para edge function calcular automaticamente
           
-          logger.info(`🔍 Buscando TODAS as devoluções para ${account.name} (sem filtro de data na API)`);
+          logger.info(`🔍 Buscando devoluções para ${account.name}`, {
+            tipoData: filtros.tipoData || 'date_created',
+            periodoDias: filtros.periodoDias || 60,
+            status: filtros.statusClaim || 'todos'
+          });
 
           const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
               action: 'get_claims_and_returns',
               integration_account_id: accountId,
               seller_id: account.account_identifier,
-              // 📅 NÃO ENVIAR FILTROS DE DATA - Buscar tudo e filtrar localmente
-              // Motivo: API ML filtra por data de criação do claim, não da venda original
+              // 📅 NOVO: Passar período e tipo de data
               filters: {
                 status_claim: filtros.statusClaim || '',
                 claim_type: filtros.claimType || '',
@@ -205,7 +211,10 @@ export function useDevolucoesBusca() {
                 fulfilled: filtros.fulfilled,
                 quantity_type: filtros.quantityType || '',
                 reason_id: filtros.reasonId || '',
-                resource: filtros.resource || ''
+                resource: filtros.resource || '',
+                // ============ NOVOS: PERÍODO E TIPO DE DATA ============
+                periodo_dias: filtros.periodoDias || 60,  // Default 60 dias
+                tipo_data: filtros.tipoData || 'date_created'  // Default date_created
               }
             }
           });

@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { PeriodoDataFilter } from './PeriodoDataFilter';
 
 // Status de Claims disponíveis
 const STATUS_CLAIMS = [
@@ -149,7 +150,7 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 xl:grid-cols-8 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -305,74 +306,16 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
           </Popover>
         </div>
 
-        {/* Período - Manual */}
-        <div className="lg:col-span-2 xl:col-span-2">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Período
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
-          </label>
-          <div className="flex gap-2">
-            {/* Data Início */}
-            <Popover open={dataInicioOpen} onOpenChange={setDataInicioOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !filters.dataInicio && "text-muted-foreground",
-                    hasPendingChanges && filters.dataInicio !== appliedFilters.dataInicio && "border-warning"
-                  )}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataInicio ? format(new Date(filters.dataInicio + 'T12:00:00'), 'dd/MM/yyyy') : "Data início"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dataInicio ? new Date(filters.dataInicio + 'T12:00:00') : undefined}
-                  onSelect={(date) => {
-                    onFilterChange('dataInicio', date ? format(date, 'yyyy-MM-dd') : '');
-                    setDataInicioOpen(false);
-                  }}
-                  locale={ptBR}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-
-            {/* Data Fim */}
-            <Popover open={dataFimOpen} onOpenChange={setDataFimOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-start text-left font-normal",
-                    !filters.dataFim && "text-muted-foreground",
-                    hasPendingChanges && filters.dataFim !== appliedFilters.dataFim && "border-warning"
-                  )}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  {filters.dataFim ? format(new Date(filters.dataFim + 'T12:00:00'), 'dd/MM/yyyy') : "Data fim"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={filters.dataFim ? new Date(filters.dataFim + 'T12:00:00') : undefined}
-                  onSelect={(date) => {
-                    onFilterChange('dataFim', date ? format(date, 'yyyy-MM-dd') : '');
-                    setDataFimOpen(false);
-                  }}
-                  locale={ptBR}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-        </div>
+        {/* ⭐ NOVO: Filtro de Período e Tipo de Data */}
+        <PeriodoDataFilter
+          periodoDias={filters.periodoDias || 60}
+          tipoData={filters.tipoData || 'date_created'}
+          onPeriodoChange={(dias) => onFilterChange('periodoDias', dias)}
+          onTipoDataChange={(tipo) => onFilterChange('tipoData', tipo)}
+          hasPendingChanges={hasPendingChanges}
+          appliedPeriodo={appliedFilters.periodoDias}
+          appliedTipoData={appliedFilters.tipoData}
+        />
 
         {/* ============ FILTROS AVANÇADOS (FASE 3) ============ */}
         <div className="lg:col-span-1 xl:col-span-1">
