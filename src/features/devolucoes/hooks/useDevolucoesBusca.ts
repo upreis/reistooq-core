@@ -415,12 +415,14 @@ export function useDevolucoesBusca() {
   }, []); // Sem dependências pois não usa obterTokenML mais
 
   // Buscar do banco de dados
-  const buscarDoBanco = useCallback(async (contasSelecionadas?: string[]) => {
+  const buscarDoBanco = useCallback(async (contasSelecionadas?: string[], filtros?: DevolucaoBuscaFilters) => {
     setLoading(true);
     
     try {
       logger.info('[useDevolucoesBusca] 📦 Buscando do banco...', {
-        contasFiltro: contasSelecionadas?.length || 0
+        contasFiltro: contasSelecionadas?.length || 0,
+        periodoDias: filtros?.periodoDias,
+        tipoData: filtros?.tipoData
       });
       
       let query = supabase
@@ -430,6 +432,23 @@ export function useDevolucoesBusca() {
       // Filtrar por contas selecionadas se fornecido
       if (contasSelecionadas && contasSelecionadas.length > 0) {
         query = query.in('integration_account_id', contasSelecionadas);
+      }
+      
+      // 📅 APLICAR FILTRO DE DATA DO BANCO
+      if (filtros?.periodoDias) {
+        const hoje = new Date();
+        const dataInicio = new Date();
+        dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
+        const dateFrom = dataInicio.toISOString();
+        
+        const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
+        query = query.gte(campoData, dateFrom);
+        
+        logger.debug('[useDevolucoesBusca] 📅 Filtro de data aplicado', {
+          campoData,
+          dataInicio: dateFrom,
+          periodoDias: filtros.periodoDias
+        });
       }
       
       const { data, error } = await query.order('data_criacao', { ascending: false });

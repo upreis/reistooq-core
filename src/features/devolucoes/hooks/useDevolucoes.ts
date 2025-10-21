@@ -184,7 +184,14 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
         ? filtrosParaUsar.contasSelecionadas 
         : mlAccounts?.map(acc => acc.id) || [];
       
-      const dadosBanco = await busca.buscarDoBanco(contasSelecionadas);
+      // Passar filtros de data para o banco também
+      const filtrosBanco: Partial<DevolucaoBuscaFilters> = {
+        periodoDias: filtrosParaUsar.periodoDias,
+        tipoData: filtrosParaUsar.tipoData,
+        contasSelecionadas: contasSelecionadas
+      };
+      
+      const dadosBanco = await busca.buscarDoBanco(contasSelecionadas, filtrosBanco as DevolucaoBuscaFilters);
       
       if (dadosBanco.length > 0) {
         setDevolucoes(dadosBanco);
