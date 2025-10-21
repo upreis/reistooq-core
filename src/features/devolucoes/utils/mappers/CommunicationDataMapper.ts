@@ -9,8 +9,8 @@ export const mapCommunicationData = (item: any) => {
     timeline_mensagens: item.claim_messages?.messages || [],
     ultima_mensagem_data: item.claim_messages?.messages?.[item.claim_messages?.messages?.length - 1]?.date_created || null,
     ultima_mensagem_remetente: item.claim_messages?.messages?.[item.claim_messages?.messages?.length - 1]?.from?.role || null,
-    numero_interacoes: item.claim_messages?.messages || [],
-    mensagens_nao_lidas: item.claim_messages?.messages || [],
+    numero_interacoes: null,
+    mensagens_nao_lidas: null,
     qualidade_comunicacao: null,
     status_moderacao: null,
     
@@ -36,6 +36,6 @@ export const mapCommunicationData = (item: any) => {
     anexos_comprador: [],
     anexos_vendedor: [],
     anexos_ml: [],
-    total_evidencias: item.claim_messages?.messages || []
+    total_evidencias: null
   };
 };
