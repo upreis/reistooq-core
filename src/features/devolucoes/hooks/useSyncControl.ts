@@ -39,7 +39,7 @@ export function useSyncControl(integrationAccountId?: string) {
 
       return data as unknown as SyncControlStatus;
     },
-    refetchInterval: 3000,
+    refetchInterval: false, // ❌ DESABILITADO - não precisa polling constante
     enabled: !!integrationAccountId,
   });
 }
