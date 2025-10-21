@@ -559,6 +559,333 @@ serve(async (req) => {
       }
     }
 
+    // ============================================
+    // 🆕 ENDPOINT 1: REVIEWS (PRIORIDADE ALTA)
+    // ============================================
+    if (action === 'get_return_reviews') {
+      const { return_id, integration_account_id } = requestBody;
+      
+      if (!return_id || !integration_account_id) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'return_id e integration_account_id são obrigatórios' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
+      // Obter token de forma segura
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      
+      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+      const secretResponse = await fetch(secretUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({
+          integration_account_id,
+          provider: 'mercadolivre'
+        })
+      });
+      
+      if (!secretResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível. Reconecte a integração.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      const tokenData = await secretResponse.json();
+      const access_token = tokenData?.secret?.access_token;
+      
+      if (!access_token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      // Buscar reviews da API ML
+      const reviewsUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/${return_id}/reviews`;
+      logger.info(`Buscando reviews para return ${return_id}`);
+      
+      try {
+        const reviewsResponse = await fetchMLWithRetry(reviewsUrl, access_token, integration_account_id);
+        
+        if (reviewsResponse.ok) {
+          const reviewsData = await reviewsResponse.json();
+          logger.success(`Reviews encontrados para return ${return_id}`);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: reviewsData 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        } else if (reviewsResponse.status === 404) {
+          logger.info(`Return ${return_id} não tem reviews (404)`);
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: null,
+              message: 'Return não possui reviews'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        } else {
+          console.warn(`⚠️ Reviews ${return_id} não encontrados (${reviewsResponse.status})`);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Reviews não encontrados (${reviewsResponse.status})` 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: reviewsResponse.status }
+          );
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao buscar reviews ${return_id}:`, error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: error instanceof Error ? error.message : String(error)
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+    }
+
+    // ============================================
+    // 🆕 ENDPOINT 2: CUSTOS DE ENVIO (PRIORIDADE ALTA)
+    // ============================================
+    if (action === 'get_shipment_costs') {
+      const { shipment_id, integration_account_id } = requestBody;
+      
+      if (!shipment_id || !integration_account_id) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'shipment_id e integration_account_id são obrigatórios' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
+      // Obter token de forma segura
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      
+      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+      const secretResponse = await fetch(secretUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({
+          integration_account_id,
+          provider: 'mercadolivre'
+        })
+      });
+      
+      if (!secretResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível. Reconecte a integração.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      const tokenData = await secretResponse.json();
+      const access_token = tokenData?.secret?.access_token;
+      
+      if (!access_token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      // Buscar custos da API ML
+      const costsUrl = `https://api.mercadolibre.com/shipments/${shipment_id}/costs`;
+      logger.info(`Buscando custos para shipment ${shipment_id}`);
+      
+      try {
+        const costsResponse = await fetchMLWithRetry(costsUrl, access_token, integration_account_id);
+        
+        if (costsResponse.ok) {
+          const costsData = await costsResponse.json();
+          logger.success(`Custos encontrados para shipment ${shipment_id}`);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: costsData 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        } else if (costsResponse.status === 404) {
+          logger.info(`Shipment ${shipment_id} não tem custos (404)`);
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: null,
+              message: 'Shipment não possui custos'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        } else {
+          console.warn(`⚠️ Custos ${shipment_id} não encontrados (${costsResponse.status})`);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Custos não encontrados (${costsResponse.status})` 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: costsResponse.status }
+          );
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao buscar custos ${shipment_id}:`, error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: error instanceof Error ? error.message : String(error)
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+    }
+
+    // ============================================
+    // 🆕 ENDPOINT 3: RAZÕES PARA REVISÃO (PRIORIDADE MÉDIA)
+    // ============================================
+    if (action === 'get_return_reasons') {
+      const { claim_id, integration_account_id } = requestBody;
+      
+      if (!claim_id || !integration_account_id) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'claim_id e integration_account_id são obrigatórios' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+      
+      // Obter token de forma segura
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      
+      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+      const secretResponse = await fetch(secretUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({
+          integration_account_id,
+          provider: 'mercadolivre'
+        })
+      });
+      
+      if (!secretResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível. Reconecte a integração.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      const tokenData = await secretResponse.json();
+      const access_token = tokenData?.secret?.access_token;
+      
+      if (!access_token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      // Buscar razões da API ML
+      const reasonsUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/reasons?flow=seller_return_failed&claim_id=${claim_id}`;
+      logger.info(`Buscando razões de devolução para claim ${claim_id}`);
+      
+      try {
+        const reasonsResponse = await fetchMLWithRetry(reasonsUrl, access_token, integration_account_id);
+        
+        if (reasonsResponse.ok) {
+          const reasonsData = await reasonsResponse.json();
+          logger.success(`Razões encontradas para claim ${claim_id}`);
+          
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: reasonsData 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        } else if (reasonsResponse.status === 404) {
+          logger.info(`Claim ${claim_id} não tem razões (404)`);
+          return new Response(
+            JSON.stringify({ 
+              success: true, 
+              data: null,
+              message: 'Claim não possui razões de devolução'
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          );
+        } else {
+          console.warn(`⚠️ Razões ${claim_id} não encontradas (${reasonsResponse.status})`);
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: `Razões não encontradas (${reasonsResponse.status})` 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: reasonsResponse.status }
+          );
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao buscar razões ${claim_id}:`, error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: error instanceof Error ? error.message : String(error)
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+    }
+
     return new Response(
       JSON.stringify({ success: false, error: 'Ação não suportada' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
