@@ -5,6 +5,9 @@ import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts
 import { logger } from './utils/logger.ts'
 import { extractMediationData } from './utils/mediation-extractor.ts'
 import { analyzeInternalTags } from './utils/tags-analyzer.ts'
+import { mapReviewsData, extractReviewsFields } from './mappers/reviews-mapper.ts'
+import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper.ts'
+import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -629,10 +632,16 @@ serve(async (req) => {
           const reviewsData = await reviewsResponse.json();
           logger.success(`Reviews encontrados para return ${return_id}`);
           
+          // 🎯 MAPEAR DADOS usando mapper
+          const mappedReviews = mapReviewsData(reviewsData);
+          const extractedFields = extractReviewsFields(reviewsData);
+          
           return new Response(
             JSON.stringify({ 
               success: true, 
-              data: reviewsData 
+              data: reviewsData,
+              mapped: mappedReviews,
+              extracted_fields: extractedFields
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           );
@@ -738,10 +747,16 @@ serve(async (req) => {
           const costsData = await costsResponse.json();
           logger.success(`Custos encontrados para shipment ${shipment_id}`);
           
+          // 💰 MAPEAR DADOS usando mapper
+          const mappedCosts = mapShipmentCostsData(costsData);
+          const extractedFields = extractCostsFields(costsData);
+          
           return new Response(
             JSON.stringify({ 
               success: true, 
-              data: costsData 
+              data: costsData,
+              mapped: mappedCosts,
+              extracted_fields: extractedFields
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           );
@@ -847,10 +862,16 @@ serve(async (req) => {
           const reasonsData = await reasonsResponse.json();
           logger.success(`Razões encontradas para claim ${claim_id}`);
           
+          // 📋 MAPEAR DADOS usando mapper
+          const mappedReasons = mapDetailedReasonsData(reasonsData);
+          const extractedFields = extractDetailedReasonsFields(reasonsData);
+          
           return new Response(
             JSON.stringify({ 
               success: true, 
-              data: reasonsData 
+              data: reasonsData,
+              mapped: mappedReasons,
+              extracted_fields: extractedFields
             }),
             { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
           );
