@@ -148,7 +148,7 @@ serve(async (req) => {
         
         const accountName = accountData?.account_name || 'Unknown';
         
-        // Preparar registro usando a estrutura da API (já enriquecido)
+        // 🎯 ESTRUTURA MÍNIMA - APENAS COLUNAS QUE EXISTEM NA TABELA
         const claimRecord = {
           order_id: String(claimData.order_id || claimData.resource_id),
           claim_id: String(claimData.claim_details?.id || claimData.id),
@@ -163,7 +163,6 @@ serve(async (req) => {
           subtipo_claim: claimData.claim_details?.stage || 'none',
           
           // Reason
-          reason_id: claimData.claim_details?.reason_id || claimData.reason_id,
           motivo_categoria: claimData.claim_details?.reason_id || claimData.reason_id,
           
           // Produto
@@ -173,7 +172,6 @@ serve(async (req) => {
           
           // Valores
           valor_retido: claimData.amount || claimData.order_data?.total_amount,
-          valor_original_produto: claimData.order_data?.total_amount,
           
           // Resolução
           metodo_resolucao: claimData.claim_details?.resolution?.reason,
@@ -185,35 +183,32 @@ serve(async (req) => {
           // Timestamps
           data_criacao_claim: claimData.claim_details?.date_created || claimData.date_created,
           data_fechamento_claim: claimData.claim_details?.resolution?.date_created,
-          data_primeira_acao: claimData.claim_messages?.messages?.[0]?.date_created || claimData.claim_details?.date_created,
           
           // Mediação
-          em_mediacao: claimData.claim_details?.type === 'mediations' ? claimData.claim_details?.type : null,
-          data_inicio_mediacao: claimData.claim_details?.type === 'mediations' ? claimData.claim_details?.date_created : null,
+          em_mediacao: claimData.claim_details?.type === 'mediations',
           resultado_mediacao: claimData.claim_details?.resolution?.reason,
-          escalado_para_ml: claimData.claim_details?.type === 'mediations' ? claimData.claim_details?.type : null,
           
           // Review
-          data_inicio_review: claimData.claim_details?.date_created,
           observacoes_review: claimData.claim_details?.resolution?.reason,
           
           // Metadata
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           ultima_sincronizacao: new Date().toISOString(),
-          dados_incompletos: false,
           fonte_dados_primaria: 'ml_api_queue',
           
-          // Raw data
-          raw: {
-            dados_order: claimData.order_data || {},
-            dados_claim: claimData.claim_details || {},
-            dados_mensagens: claimData.claim_messages || {},
-            dados_return: claimData.return_details_v2 || claimData.return_details_v1 || {}
-          }
+          // Comunicação
+          timeline_mensagens: claimData.claim_messages?.messages || [],
+          ultima_mensagem_data: claimData.claim_messages?.messages?.[claimData.claim_messages?.messages?.length - 1]?.date_created,
+          
+          // Raw data (JSONB) - usar nomes corretos das colunas
+          dados_order: claimData.order_data || {},
+          dados_claim: claimData.claim_details || {},
+          dados_mensagens: claimData.claim_messages || {},
+          dados_return: claimData.return_details_v2 || claimData.return_details_v1 || {}
         };
         
-        // Salvar no banco (usar devolucoes_avancadas)
+        // Salvar no banco
         const { error: saveError } = await supabase
           .from('devolucoes_avancadas')
           .upsert(claimRecord, { 

@@ -17,6 +17,7 @@ import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 import { FiltrosRapidos } from './devolucao/FiltrosRapidos';
 import { ErrorFallback, MinimalErrorFallback } from '@/components/error/ErrorFallback';
 import { exportarDevolucoes } from '@/features/devolucoes/utils/DevolucaoExportService';
+import { QueueMonitorCard } from './QueueMonitorCard';
 
 // ✨ Tipos
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
@@ -194,6 +195,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </Card>
       ) : (
     <div className="space-y-6">
+      {/* 📊 Monitor da Fila de Processamento */}
+      <QueueMonitorCard />
+      
       {/* Header com estatísticas melhoradas */}
       <ErrorBoundary
         FallbackComponent={(props) => (
