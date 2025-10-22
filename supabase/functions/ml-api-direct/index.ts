@@ -87,7 +87,7 @@ serve(async (req) => {
 
     if (action === 'get_claims_and_returns') {
       // 📄 PAGINAÇÃO - Extrair parâmetros (defaults seguros)
-      const limit = Math.min(requestBody.limit || 50, 100); // Max 100 por request
+      const limit = Math.min(requestBody.limit || 1000, 2000); // ✅ Buscar até 2000 por vez
       const offset = requestBody.offset || 0;
       
       // 🔒 Obter token de forma segura usando integrations-get-secret

@@ -114,7 +114,7 @@ export class ClaimsService {
     integrationAccountId: string
   ): Promise<any[]> {
     const MAX_CLAIMS = 10000;
-    const limit = 100; // Máximo permitido pela API do ML
+    const limit = 50; // ✅ API ML funciona melhor com 50
     let offset = 0;
     const allClaims: any[] = [];
     
@@ -187,5 +187,51 @@ export class ClaimsService {
     const url = `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}`;
     const response = await fetchMLWithRetry(url, accessToken, integrationAccountId);
     return response.ok ? response.json() : null;
+  }
+  
+  /**
+   * Buscar TODOS os claims disponíveis (com paginação automática)
+   */
+  async fetchAllClaimsComplete(
+    sellerId: string,
+    filters: any,
+    accessToken: string,
+    integrationAccountId: string
+  ): Promise<any[]> {
+    const MAX_TOTAL_CLAIMS = 10000;
+    const BATCH_SIZE = 50;
+    const allClaims: any[] = [];
+    let offset = 0;
+    let consecutiveEmptyBatches = 0;
+    
+    logger.info(`🚀 Iniciando busca COMPLETA de claims para seller ${sellerId}`);
+    
+    while (allClaims.length < MAX_TOTAL_CLAIMS && consecutiveEmptyBatches < 3) {
+      const batchFilters = { ...filters, offset, limit: BATCH_SIZE };
+      
+      logger.info(`📄 Buscando lote ${Math.floor(offset/BATCH_SIZE) + 1}: offset=${offset}, limit=${BATCH_SIZE}`);
+      
+      const batch = await this.fetchClaimsNormal(sellerId, batchFilters, accessToken, integrationAccountId);
+      
+      if (batch.length === 0) {
+        consecutiveEmptyBatches++;
+        logger.warn(`⚠️ Lote vazio (${consecutiveEmptyBatches}/3)`);
+      } else {
+        consecutiveEmptyBatches = 0;
+        allClaims.push(...batch);
+        logger.success(`✅ +${batch.length} claims | Total: ${allClaims.length}`);
+      }
+      
+      offset += BATCH_SIZE;
+      
+      // Se retornou menos que o esperado, provavelmente acabaram
+      if (batch.length < BATCH_SIZE) {
+        logger.info(`🏁 Fim dos dados: última página retornou ${batch.length} claims`);
+        break;
+      }
+    }
+    
+    logger.success(`🎯 BUSCA COMPLETA FINALIZADA: ${allClaims.length} claims encontrados`);
+    return allClaims;
   }
 }
