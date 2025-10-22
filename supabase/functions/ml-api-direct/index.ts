@@ -1389,11 +1389,17 @@ async function buscarPedidosCancelados(
     }
     
     // ✅ ESTRATÉGIA DE DUAS ETAPAS PARA EVITAR TIMEOUT:
-    // 1. Processar claims solicitados imediatamente (resposta rápida)
-    // 2. Se houver mais de 100, processar restante em background via fila + cron
+    // 1. Processar claims imediatamente (até 300)
+    // 2. Processar restante em background via fila + cron
     
-    // ✅ CORRIGIDO: Processar todos os claims solicitados pelo frontend
-    const IMMEDIATE_LIMIT = Math.min(allClaims.length, requestLimit);
+    // ✅ LÓGICA OTIMIZADA: Processa até 300 imediatamente, resto em background
+    const IMMEDIATE_LIMIT = (() => {
+      // Se solicitou até 300 claims, processa todos imediatamente
+      if (requestLimit <= 300) return Math.min(allClaims.length, requestLimit);
+      
+      // Se solicitou mais de 300, processa 300 imediatamente
+      return Math.min(allClaims.length, 300);
+    })();
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
     const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
