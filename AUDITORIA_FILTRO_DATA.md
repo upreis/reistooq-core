@@ -1,102 +1,204 @@
-# 🔍 AUDITORIA: PROBLEMA DE FILTRO DE DATA
+# 🔍 AUDITORIA: Problema com Filtro de Data de Criação
 
-## ❌ PROBLEMA IDENTIFICADO
+## **❌ PROBLEMA RELATADO:**
 
-Usuário aplicou filtro de **60 dias por Data Criação**, mas:
-1. ✅ Apareceram 136 devoluções
-2. ❌ Todas com "Última Sync" entre 15/10/2025 e 21/10/2025
-3. ❌ Coluna "Data Criação" mostra vendas de 2024
-4. ❌ Faltam mais de 500 vendas com claim (confirmado por planilha do ML)
+O usuário aplicou o filtro **"Data de Criação - 90 dias"** mas mesmo assim apareceram claims de **2024** (ano anterior), o que não deveria acontecer.
 
-## 🔎 CAUSA RAIZ
+---
 
-### Problema 1: API Filtrando Data Errada
-**Arquivo:** `supabase/functions/ml-api-direct/index.ts` (linhas 754-763)
+## **🔎 INVESTIGAÇÃO:**
 
-**ANTES:**
+### **1. O que o código deveria fazer:**
+
+Quando o usuário seleciona:
+- **Período:** "90 dias"  
+- **Tipo de Data:** "Data de Criação"
+
+O sistema deveria:
+1. Calcular a data de 90 dias atrás
+2. Aplicar filtro `date_created.from` e `date_created.to` na API do Mercado Livre
+3. Retornar APENAS claims criados nos últimos 90 dias
+
+---
+
+### **2. O que o código ESTÁ fazendo:**
+
+#### **📍 Localização do Bug:**
+**Arquivo:** `supabase/functions/ml-api-direct/index.ts`  
+**Linhas:** 1110-1147
+
 ```typescript
+// LINHA 1110 - DEFAULT ESTÁ ERRADO
+const periodoDias = filters?.periodo_dias || 90;  // ❌ RECEBE 90 COMO FALLBACK
+const tipoData = filters?.tipo_data || 'date_created';
+
+// LINHA 1141-1147 - FILTRO ESTÁ SENDO APLICADO
 if (tipoData === 'date_created') {
-  params.append('date_created.from', dateFrom);  // ❌ Data do CLAIM
+  params.append('date_created.from', dateFrom);  // ✅ FILTRO CORRETO
   params.append('date_created.to', dateTo);
+} else {
+  params.append('last_updated.from', dateFrom);
+  params.append('last_updated.to', dateTo);
 }
-params.append('sort', `${tipoData}:desc`);  // ❌ Ordena por data do CLAIM
 ```
 
-**Comportamento:**
-- Filtrava por `date_created` do **CLAIM** (quando o claim foi aberto)
-- Não por `date_created` do **PEDIDO** (quando a venda foi feita)
-- Por isso apareciam vendas de 2024 com claims recentes
+---
 
-**CORRIGIDO PARA:**
+### **3. Onde está o BUG:**
+
+#### **❌ PROBLEMA #1: Nome do parâmetro diferente**
+
+**Frontend envia:** `periodoDias`  
+**Backend espera:** `periodo_dias`
+
 ```typescript
-if (tipoData === 'date_created') {
-  params.append('resource.date_created.from', dateFrom);  // ✅ Data do PEDIDO
-  params.append('resource.date_created.to', dateTo);
-}
-params.append('sort', `resource.${tipoData}:desc`);  // ✅ Ordena por data do PEDIDO
+// src/features/devolucoes/utils/MLApiClient.ts
+export const fetchClaimsAndReturns = async (
+  accountId: string,
+  sellerId: string,
+  filters: DevolucaoBuscaFilters,  // ❌ filters.periodoDias
+  limit: number = 100,
+  offset: number = 0
+)
+
+// supabase/functions/ml-api-direct/index.ts (LINHA 1110)
+const periodoDias = filters?.periodo_dias || 90;  // ❌ Está procurando filters.periodo_dias
 ```
 
-### Problema 2: Limite Muito Baixo
-**ANTES:** `MAX_CLAIMS = 1000`
-**DEPOIS:** `MAX_CLAIMS = 2000` (para buscar as 500+ do usuário)
+**RESULTADO:**  
+- Frontend envia `filters.periodoDias = 90`
+- Backend procura `filters.periodo_dias`
+- Não encontra, usa **DEFAULT de 90 dias**
+- **MAS** se mudou para 60 dias no frontend, backend continua com 90 (porque o parâmetro não chega)
 
-### Problema 3: Coluna Inexistente no Banco
-**Erro:** `Could not find the 'acoes_necessarias_review' column`
+---
 
-**Causa:** Campo existe em `pedidos_cancelados_ml` mas NÃO em `devolucoes_avancadas`
+#### **❌ PROBLEMA #2: Tipo de data também não chega**
 
-**Arquivos corrigidos:**
-- `src/features/devolucoes/utils/mappers/TrackingDataMapper.ts`
-- `src/features/devolucoes/types/devolucao-avancada.types.ts`
+**Frontend envia:** `tipoData`  
+**Backend espera:** `tipo_data`
 
-## ✅ CORREÇÕES APLICADAS
+```typescript
+// LINHA 1111
+const tipoData = filters?.tipo_data || 'date_created';  // ❌ Procura filters.tipo_data
 
-### 1. Edge Function (`ml-api-direct/index.ts`)
-- ✅ Filtro agora usa `resource.date_created` (data do pedido)
-- ✅ Ordenação por `resource.date_created:desc`
-- ✅ Limite aumentado para 2000 claims
-- ✅ Logs atualizados para clareza
+// Frontend envia: filters.tipoData
+// Backend não recebe, usa DEFAULT 'date_created'
+```
 
-### 2. Mapeadores TypeScript
-- ✅ Removido campo `acoes_necessarias_review` (não existe no schema)
-- ✅ Salvamento no banco agora funciona sem erros
+**RESULTADO:**
+- Mesmo que o usuário selecione "Última Atualização", o backend sempre usa "Data de Criação" (default)
 
-## 📊 RESULTADO ESPERADO
+---
 
-### Antes:
-- 136 devoluções mostradas
-- Filtradas por data do claim (última sync)
-- Vendas de 2024 aparecendo incorretamente
-- Erro ao salvar no banco
+### **4. Por que apareceram claims de 2024?**
 
-### Depois:
-- 500+ devoluções (todas do ML)
-- Filtradas por data do pedido original
-- Apenas vendas dos últimos 60 dias
-- Salvamento sem erros
+**TEORIA INICIAL ESTAVA ERRADA:**  
+Eu disse que quando apareciam claims de 2024 com filtro de 90 dias, era porque estava usando `last_updated`.
 
-## 🧪 COMO TESTAR
+**REALIDADE:**  
+O backend **SEMPRE** usa `date_created` com **90 dias** porque os parâmetros não chegam corretamente!
 
-1. Acesse `/ml-orders-completas`
-2. Selecione conta `BRCR20240514161447`
-3. Aplique filtro: **60 dias por Data Criação**
-4. Clique em "Buscar em Tempo Real"
-5. Verifique:
-   - ✅ Coluna "Data Criação" mostra apenas vendas dos últimos 60 dias
-   - ✅ Número de registros próximo a 500+
-   - ✅ Sem erros no console sobre `acoes_necessarias_review`
+Mas então **por que aparecem claims de 2024?**
 
-## 📝 NOTAS TÉCNICAS
+**RESPOSTA:**  
+Porque com 90 dias de período (calculado de hoje), o filtro é:
+- **Data de:** 2025-07-24 (90 dias atrás de 2025-10-22)
+- **Data até:** 2025-10-22 (hoje)
 
-### API do Mercado Livre
-A API `/post-purchase/v1/claims/search` suporta:
-- `resource.date_created.from` = Data inicial do PEDIDO
-- `resource.date_created.to` = Data final do PEDIDO
-- `resource.last_updated.from/to` = Última atualização do PEDIDO
-- `sort=resource.date_created:desc` = Ordenar por data do pedido
+E a API do Mercado Livre está retornando claims que foram **CRIADOS** em 2024 mas que estão **dentro desse período** segundo a API.
 
-### Schema do Banco
-Tabela `devolucoes_avancadas` **NÃO** possui:
-- `acoes_necessarias_review` (removido do mapeamento)
+**POSSIBILIDADE:** A API ML pode ter um bug ou interpreta as datas de forma diferente, ou os claims de 2024 estão sendo retornados porque houve alguma atualização recente.
 
-Tabela `pedidos_cancelados_ml` **possui** esse campo.
+---
+
+## **✅ SOLUÇÃO:**
+
+### **Fix #1: Corrigir nomes dos parâmetros**
+
+**Opção A - Mudar Backend (RECOMENDADO):**
+```typescript
+// supabase/functions/ml-api-direct/index.ts (LINHA 1110-1111)
+const periodoDias = filters?.periodoDias || 0;  // ✅ Camel case
+const tipoData = filters?.tipoData || 'date_created';  // ✅ Camel case
+```
+
+**Opção B - Mudar Frontend:**
+```typescript
+// src/features/devolucoes/utils/MLApiClient.ts
+// Enviar: periodo_dias e tipo_data (snake_case)
+```
+
+---
+
+### **Fix #2: Remover filtro de data quando periodoDias = 0**
+
+```typescript
+// LINHA 1140-1147
+if (periodoDias > 0) {  // ✅ SÓ APLICAR SE HOUVER PERÍODO
+  if (tipoData === 'date_created') {
+    params.append('date_created.from', dateFrom);
+    params.append('date_created.to', dateTo);
+  } else {
+    params.append('last_updated.from', dateFrom);
+    params.append('last_updated.to', dateTo);
+  }
+}
+```
+
+---
+
+### **Fix #3: Log de debug para confirmar**
+
+```typescript
+logger.info(`📋 Filtros recebidos:`, {
+  periodoDias_recebido: filters?.periodoDias,
+  periodo_dias_recebido: filters?.periodo_dias,
+  tipoData_recebido: filters?.tipoData,
+  tipo_data_recebido: filters?.tipo_data,
+  periodoDias_usado: periodoDias,
+  tipoData_usado: tipoData,
+  dateFrom,
+  dateTo
+});
+```
+
+---
+
+## **🎯 RESUMO:**
+
+**Problema:** Incompatibilidade de nomes de parâmetros entre frontend (camelCase) e backend (snake_case)
+
+**Causa:** Backend sempre usa DEFAULT porque não recebe os parâmetros corretos
+
+**Solução:** Padronizar nomes para **camelCase** no backend (mais simples)
+
+**Impacto:** Ao corrigir, o filtro de data funcionará corretamente e claims de 2024 não aparecerão mais quando filtrar por "90 dias - Data de Criação"
+
+---
+
+## **📊 ANTES vs DEPOIS:**
+
+### **ANTES (ATUAL):**
+- Frontend envia: `{ periodoDias: 90, tipoData: 'date_created' }`
+- Backend recebe: `undefined` (procura `periodo_dias` e `tipo_data`)
+- Backend usa: **DEFAULT 90 dias + date_created**
+- Resultado: Sempre busca 90 dias de date_created, independente do que usuário escolher
+
+### **DEPOIS (CORRIGIDO):**
+- Frontend envia: `{ periodoDias: 60, tipoData: 'last_updated' }`
+- Backend recebe: `{ periodoDias: 60, tipoData: 'last_updated' }` ✅
+- Backend usa: **60 dias de last_updated** conforme escolhido
+- Resultado: Filtro funciona exatamente como esperado
+
+---
+
+## **⚠️ TESTE RECOMENDADO:**
+
+Após aplicar o fix:
+
+1. Selecionar **"30 dias - Data de Criação"**
+2. Verificar se NÃO aparecem claims mais antigos que 30 dias
+3. Mudar para **"90 dias - Última Atualização"**
+4. Verificar se aparecem claims antigos (2024) que foram atualizados recentemente
+5. Confirmar nos logs que os parâmetros estão chegando corretamente
