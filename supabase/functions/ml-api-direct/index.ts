@@ -1182,8 +1182,8 @@ async function buscarPedidosCancelados(
         sellerId
       });
       
-      // ⭐ FILTRAR POR DATA (tipo definido pelo usuário: date_created ou last_updated)
-      // ✅ SÓ APLICAR FILTRO SE PERÍODO > 0
+      // ⭐ FILTRAR POR DATA (calculado a partir de periodoDias)
+      // ✅ FILTROS DE DATA APLICADOS DE FORMA CONSOLIDADA
       if (periodoDias > 0) {
         const hoje = new Date();
         const dataInicio = new Date();
@@ -1197,20 +1197,14 @@ async function buscarPedidosCancelados(
           periodoDias,
           tipoData,
           dateFrom,
-          dateTo,
-          hoje: hoje.toISOString(),
-          dataInicio: dataInicio.toISOString()
+          dateTo
         });
         
-        if (tipoData === 'date_created') {
-          params.append('date_created.from', dateFrom);
-          params.append('date_created.to', dateTo);
-          logger.info(`✅ Filtro aplicado: date_created de ${dateFrom} até ${dateTo}`);
-        } else {
-          params.append('last_updated.from', dateFrom);
-          params.append('last_updated.to', dateTo);
-          logger.info(`✅ Filtro aplicado: last_updated de ${dateFrom} até ${dateTo}`);
-        }
+        // ✅ Aplicar filtro baseado no tipo de data escolhido
+        const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
+        params.append(`${dataField}.from`, dateFrom);
+        params.append(`${dataField}.to`, dateTo);
+        logger.info(`✅ Filtro aplicado: ${dataField} de ${dateFrom} até ${dateTo}`);
       } else {
         logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }
