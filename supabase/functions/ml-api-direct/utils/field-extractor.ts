@@ -23,14 +23,14 @@ export function getValueWithFallback(obj: any, paths: string[]): any {
  */
 export function extractBuyerData(orderDetail: any) {
   if (!orderDetail?.buyer) return {
-    cpf_cnpj: null,
-    nome_completo: null,
+    comprador_cpf_cnpj: null,
+    comprador_nome_completo: null,
     nickname: null
   };
 
   return {
-    cpf_cnpj: orderDetail.buyer.billing_info?.doc_number || null,
-    nome_completo: `${orderDetail.buyer.first_name || ''} ${orderDetail.buyer.last_name || ''}`.trim() || null,
+    comprador_cpf_cnpj: orderDetail.buyer.billing_info?.doc_number || null,
+    comprador_nome_completo: `${orderDetail.buyer.first_name || ''} ${orderDetail.buyer.last_name || ''}`.trim() || null,
     nickname: orderDetail.buyer.nickname || null
   };
 }
