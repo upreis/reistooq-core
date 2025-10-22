@@ -193,7 +193,7 @@ export function useDevolucoesBusca() {
           
           logger.info(`🔍 Buscando devoluções para ${account.name}`, {
             tipoData: filtros.tipoData || 'date_created',
-            periodoDias: filtros.periodoDias || 60,
+            periodoDias: filtros.periodoDias || 0,
             status: filtros.statusClaim || 'todos'
           });
 
@@ -247,11 +247,18 @@ export function useDevolucoesBusca() {
                 message: `${allClaims.length}/${totalClaims} devoluções carregadas de ${account.name}...`
               });
 
-              // Verificar se tem mais
+              // ✅ LÓGICA MELHORADA: Continuar enquanto houver dados
               hasMore = pagination?.hasMore || false;
               
-              if (!hasMore || allClaims.length >= totalClaims) {
-                logger.info(`🏁 Busca completa: ${allClaims.length} claims carregados`);
+              // Só parar se realmente não há mais dados OU atingiu limite de segurança
+              if (!hasMore) {
+                logger.info(`🏁 API ML indica que não há mais dados`);
+                break;
+              }
+              
+              if (allClaims.length >= 5000) {
+                logger.warn(`⚠️ Limite de segurança atingido: ${allClaims.length} claims`);
+                toast.warning('Limite de 5000 devoluções atingido. Use filtros para refinar a busca.');
                 break;
               }
 

@@ -20,10 +20,9 @@ export class ClaimsService {
     const limit = 100; // Máximo permitido pela API do ML
     const DAYS_PER_CHUNK = 1; // ⚡ Reduzido para 1 dia para maximizar resultados
     
-    // Se não há filtro de data ou o período é curto, usar método normal
-    if (!filters?.date_from || !filters?.date_to) {
-      return this.fetchClaimsNormal(sellerId, filters, accessToken, integrationAccountId);
-    }
+    // ✅ SEMPRE USAR MÉTODO NORMAL - Sem chunking por data
+    // Buscar TODOS os claims disponíveis sem limitação de período
+    return this.fetchClaimsNormal(sellerId, filters, accessToken, integrationAccountId);
     
     // Calcular intervalos de datas
     const dateFrom = new Date(filters.date_from);
@@ -124,9 +123,10 @@ export class ClaimsService {
       limit: limit.toString()
     });
     
-    // Aplicar filtros se fornecidos
-    if (filters?.date_from) params.set('date_from', filters.date_from);
-    if (filters?.date_to) params.set('date_to', filters.date_to);
+    // ✅ FILTROS DE DATA REMOVIDOS - Buscar TODAS as devoluções disponíveis
+    // Se o usuário quiser filtrar por data, isso será feito no frontend após carregar tudo
+    // if (filters?.date_from) params.set('date_from', filters.date_from);
+    // if (filters?.date_to) params.set('date_to', filters.date_to);
     if (filters?.status_claim) params.set('status', filters.status_claim);
     if (filters?.claim_type) params.set('type', filters.claim_type);
     if (filters?.stage) params.set('stage', filters.stage);
