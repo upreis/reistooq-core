@@ -130,10 +130,9 @@ export class ClaimsService {
       limit: limit.toString()
     });
     
-    // ✅ FILTROS DE DATA REMOVIDOS - Buscar TODAS as devoluções disponíveis
-    // Se o usuário quiser filtrar por data, isso será feito no frontend após carregar tudo
-    // if (filters?.date_from) params.set('date_from', filters.date_from);
-    // if (filters?.date_to) params.set('date_to', filters.date_to);
+    // ✅ FILTROS DE DATA RESTAURADOS
+    if (filters?.date_from) params.set('date_created.from', filters.date_from);
+    if (filters?.date_to) params.set('date_created.to', filters.date_to);
     if (filters?.status_claim) params.set('status', filters.status_claim);
     if (filters?.claim_type) params.set('type', filters.claim_type);
     if (filters?.stage) params.set('stage', filters.stage);
