@@ -92,3 +92,7 @@ verify_jwt = false
 [functions.sync-devolucoes-ml]
 verify_jwt = false
 
+[functions.auto-update-devolucoes]
+verify_jwt = false
+
+

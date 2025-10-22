@@ -41,7 +41,7 @@ export type Database = {
           blocked_reason: string | null
           email: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           session_id: string | null
           success: boolean
           user_agent: string | null
@@ -52,7 +52,7 @@ export type Database = {
           blocked_reason?: string | null
           email?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string | null
           success: boolean
           user_agent?: string | null
@@ -63,7 +63,7 @@ export type Database = {
           blocked_reason?: string | null
           email?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string | null
           success?: boolean
           user_agent?: string | null
@@ -188,7 +188,7 @@ export type Database = {
           created_at: string
           duration_ms: number | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           module: string | null
           new_values: Json | null
           old_values: Json | null
@@ -206,7 +206,7 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           module?: string | null
           new_values?: Json | null
           old_values?: Json | null
@@ -224,7 +224,7 @@ export type Database = {
           created_at?: string
           duration_ms?: number | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           module?: string | null
           new_values?: Json | null
           old_values?: Json | null
@@ -958,7 +958,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           organization_id: string
           sensitive_data_accessed: boolean
           user_agent: string | null
@@ -969,7 +969,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string
           sensitive_data_accessed?: boolean
           user_agent?: string | null
@@ -980,7 +980,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string
           sensitive_data_accessed?: boolean
           user_agent?: string | null
@@ -1976,7 +1976,7 @@ export type Database = {
           created_at: string | null
           id: string
           integration_account_id: string
-          ip_address: unknown | null
+          ip_address: unknown
           provider: string
           requesting_function: string | null
           user_agent: string | null
@@ -1987,7 +1987,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           integration_account_id: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           provider: string
           requesting_function?: string | null
           user_agent?: string | null
@@ -1998,7 +1998,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           integration_account_id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           provider?: string
           requesting_function?: string | null
           user_agent?: string | null
@@ -2085,7 +2085,7 @@ export type Database = {
           error_message: string | null
           id: string
           integration_account_id: string
-          ip_address: unknown | null
+          ip_address: unknown
           provider: string
           requesting_function: string | null
           success: boolean | null
@@ -2098,7 +2098,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           integration_account_id: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           provider: string
           requesting_function?: string | null
           success?: boolean | null
@@ -2111,7 +2111,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           integration_account_id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           provider?: string
           requesting_function?: string | null
           success?: boolean | null
@@ -2126,7 +2126,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           requesting_function: string | null
           user_agent: string | null
           user_id: string | null
@@ -2136,7 +2136,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           requesting_function?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -2146,7 +2146,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           requesting_function?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -2183,7 +2183,7 @@ export type Database = {
           created_at: string | null
           id: string
           invitation_id: string | null
-          ip_address: unknown | null
+          ip_address: unknown
           user_agent: string | null
           user_id: string | null
         }
@@ -2192,7 +2192,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           invitation_id?: string | null
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2201,7 +2201,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           invitation_id?: string | null
-          ip_address?: unknown | null
+          ip_address?: unknown
           user_agent?: string | null
           user_id?: string | null
         }
@@ -2415,6 +2415,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "logistic_events_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logs_atualizacao: {
+        Row: {
+          created_at: string | null
+          duracao_ms: number | null
+          erro: string | null
+          id: string
+          integration_account_id: string | null
+          quantidade: number | null
+          status: string
+          timestamp: string | null
+          tipo: string
+        }
+        Insert: {
+          created_at?: string | null
+          duracao_ms?: number | null
+          erro?: string | null
+          id?: string
+          integration_account_id?: string | null
+          quantidade?: number | null
+          status: string
+          timestamp?: string | null
+          tipo: string
+        }
+        Update: {
+          created_at?: string | null
+          duracao_ms?: number | null
+          erro?: string | null
+          id?: string
+          integration_account_id?: string | null
+          quantidade?: number | null
+          status?: string
+          timestamp?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_atualizacao_integration_account_id_fkey"
             columns: ["integration_account_id"]
             isOneToOne: false
             referencedRelation: "integration_accounts"
@@ -3213,7 +3257,7 @@ export type Database = {
           created_at: string | null
           expires_at: string
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           token: string
           used: boolean | null
           used_at: string | null
@@ -3224,7 +3268,7 @@ export type Database = {
           created_at?: string | null
           expires_at: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           token: string
           used?: boolean | null
           used_at?: string | null
@@ -3235,7 +3279,7 @@ export type Database = {
           created_at?: string | null
           expires_at?: string
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           token?: string
           used?: boolean | null
           used_at?: string | null
@@ -4500,7 +4544,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           organization_id: string
           resource_id: string | null
           resource_type: string
@@ -4511,7 +4555,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id: string
           resource_id?: string | null
           resource_type: string
@@ -4522,7 +4566,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           organization_id?: string
           resource_id?: string | null
           resource_type?: string
@@ -5142,14 +5186,8 @@ export type Database = {
       }
     }
     Functions: {
-      accept_invitation_secure: {
-        Args: { _token: string }
-        Returns: Json
-      }
-      accept_invite: {
-        Args: { _token: string }
-        Returns: Json
-      }
+      accept_invitation_secure: { Args: { _token: string }; Returns: Json }
+      accept_invite: { Args: { _token: string }; Returns: Json }
       admin_create_customer: {
         Args: { p_customer_data: Json }
         Returns: {
@@ -5165,21 +5203,46 @@ export type Database = {
           success: boolean
         }[]
       }
-      admin_list_profiles: {
-        Args:
-          | { _limit?: number; _offset?: number; _search?: string }
-          | { _search?: string }
-        Returns: {
-          cargo: string
-          created_at: string
-          departamento: string
-          id: string
-          nome_completo: string
-          nome_exibicao: string
-          organizacao_id: string
-          telefone: string
-        }[]
-      }
+      admin_list_profiles:
+        | {
+            Args: { _limit?: number; _offset?: number; _search?: string }
+            Returns: {
+              cargo: string
+              created_at: string
+              departamento: string
+              id: string
+              nome_completo: string
+              nome_exibicao: string
+              organizacao_id: string
+              telefone: string
+            }[]
+          }
+        | {
+            Args: { _search?: string }
+            Returns: {
+              avatar_url: string | null
+              bio: string | null
+              cargo: string | null
+              configuracoes_notificacao: Json | null
+              created_at: string
+              departamento: string | null
+              id: string
+              nome_completo: string | null
+              nome_exibicao: string | null
+              onboarding_banner_dismissed: boolean
+              onboarding_completed: boolean | null
+              onboarding_completed_at: string | null
+              organizacao_id: string | null
+              telefone: string | null
+              updated_at: string
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "profiles"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       admin_update_customer: {
         Args: { p_customer_id: string; p_updates: Json }
         Returns: {
@@ -5206,43 +5269,22 @@ export type Database = {
           telefone: string | null
           updated_at: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
-      backfill_config_for_current_org: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      backfill_historico_vendas_orphans: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      baixar_estoque_direto: {
-        Args: { p_baixas: Json }
-        Returns: Json
-      }
-      can_view_sensitive_customer_data: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      check_access_schedule: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      check_clientes_secure_access: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      cleanup_expired_notifications: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_sensitive_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_oauth_states: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      backfill_config_for_current_org: { Args: never; Returns: Json }
+      backfill_historico_vendas_orphans: { Args: never; Returns: Json }
+      baixar_estoque_direto: { Args: { p_baixas: Json }; Returns: Json }
+      can_view_sensitive_customer_data: { Args: never; Returns: boolean }
+      check_access_schedule: { Args: { _user_id: string }; Returns: boolean }
+      check_clientes_secure_access: { Args: never; Returns: boolean }
+      cleanup_expired_notifications: { Args: never; Returns: undefined }
+      cleanup_expired_sensitive_data: { Args: never; Returns: undefined }
+      cleanup_oauth_states: { Args: never; Returns: undefined }
       complete_onboarding: {
         Args: {
           org_cnpj: string
@@ -5270,9 +5312,13 @@ export type Database = {
         }
         Returns: number
       }
-      count_mapeamentos_pendentes: {
-        Args:
-          | {
+      count_mapeamentos_pendentes:
+        | {
+            Args: { _account_ids?: string[]; _from?: string; _to?: string }
+            Returns: number
+          }
+        | {
+            Args: {
               _account_ids?: string[]
               _cidade?: string
               _from?: string
@@ -5283,9 +5329,8 @@ export type Database = {
               _valor_max?: number
               _valor_min?: number
             }
-          | { _account_ids?: string[]; _from?: string; _to?: string }
-        Returns: number
-      }
+            Returns: number
+          }
       create_integration_secret_secure: {
         Args: {
           access_token?: string
@@ -5314,6 +5359,12 @@ export type Database = {
           status: string
           token: string
         }
+        SetofOptions: {
+          from: "*"
+          to: "invitations"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       create_invitation_safe: {
         Args: { p_email: string; p_expires_in_days?: number; p_role_id: string }
@@ -5323,50 +5374,23 @@ export type Database = {
         Args: { p_pedido_data: Json }
         Returns: string[]
       }
-      debug_historico_visibilidade: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      decrypt_simple: {
-        Args: { encrypted_data: string }
-        Returns: string
-      }
+      debug_historico_visibilidade: { Args: never; Returns: Json }
+      decrypt_simple: { Args: { encrypted_data: string }; Returns: string }
       delete_invitation_safe: {
         Args: { p_invitation_id: string }
         Returns: Json
       }
-      encrypt_simple: {
-        Args: { data: string }
-        Returns: string
-      }
-      ensure_current_org: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      encrypt_simple: { Args: { data: string }; Returns: string }
+      ensure_current_org: { Args: never; Returns: Json }
       ensure_integrations_manager_for_current_user: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Json
       }
-      fix_historico_integration_accounts: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      generate_category_hierarchy_from_products: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      generate_password_reset_token: {
-        Args: { _email: string }
-        Returns: Json
-      }
-      gerar_numero_cotacao: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      gerar_numero_pedido_compra: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      fix_historico_integration_accounts: { Args: never; Returns: Json }
+      generate_category_hierarchy_from_products: { Args: never; Returns: Json }
+      generate_password_reset_token: { Args: { _email: string }; Returns: Json }
+      gerar_numero_cotacao: { Args: never; Returns: string }
+      gerar_numero_pedido_compra: { Args: never; Returns: string }
       gerar_sku_automatico: {
         Args: { org_id: string; prefixo?: string }
         Returns: string
@@ -5390,7 +5414,7 @@ export type Database = {
         }[]
       }
       get_clientes_secure: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cpf_cnpj: string
           created_at: string
@@ -5418,14 +5442,8 @@ export type Database = {
           valor_total_gasto: number
         }[]
       }
-      get_current_org_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      get_current_sales_rep_id: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_current_org_id: { Args: never; Returns: string }
+      get_current_sales_rep_id: { Args: never; Returns: string }
       get_customer_secure: {
         Args: { p_customer_id: string }
         Returns: {
@@ -5661,6 +5679,12 @@ export type Database = {
           valor_total: number
           valor_unitario: number
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "historico_vendas"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_historico_vendas_masked: {
         Args: {
@@ -5703,7 +5727,7 @@ export type Database = {
         }[]
       }
       get_low_stock_products: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           altura_cm: number | null
           ativo: boolean
@@ -5755,11 +5779,14 @@ export type Database = {
           url_imagem: string | null
           versao: number | null
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "produtos"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      get_low_stock_products_count: {
-        Args: Record<PropertyKey, never>
-        Returns: number
-      }
+      get_low_stock_products_count: { Args: never; Returns: number }
       get_mapeamentos_by_skus: {
         Args: { skus: string[] }
         Returns: {
@@ -5770,7 +5797,7 @@ export type Database = {
         }[]
       }
       get_masked_clients: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           cpf_cnpj: string
           created_at: string
@@ -5805,7 +5832,7 @@ export type Database = {
         }[]
       }
       get_my_profile: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string | null
           bio: string | null
@@ -5823,6 +5850,12 @@ export type Database = {
           telefone: string | null
           updated_at: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_org_id_from_oauth_state: {
         Args: { p_state_value: string }
@@ -5890,7 +5923,7 @@ export type Database = {
         }[]
       }
       get_profiles_safe: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           avatar_url: string
           cargo: string
@@ -5907,7 +5940,7 @@ export type Database = {
         }[]
       }
       get_queue_status: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           oldest_pending: string
           total_completed: number
@@ -5924,26 +5957,11 @@ export type Database = {
         Args: { target_user_id: string }
         Returns: string
       }
-      get_user_permissions: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
-      has_permission: {
-        Args: { permission_key: string }
-        Returns: boolean
-      }
-      hv_delete: {
-        Args: { _id: string }
-        Returns: undefined
-      }
-      hv_delete_many: {
-        Args: { _ids: string[] }
-        Returns: undefined
-      }
-      hv_exists: {
-        Args: { p_id_unico: string }
-        Returns: boolean
-      }
+      get_user_permissions: { Args: never; Returns: string[] }
+      has_permission: { Args: { permission_key: string }; Returns: boolean }
+      hv_delete: { Args: { _id: string }; Returns: undefined }
+      hv_delete_many: { Args: { _ids: string[] }; Returns: undefined }
+      hv_exists: { Args: { p_id_unico: string }; Returns: boolean }
       hv_exists_many: {
         Args: { p_ids_unicos: string[] }
         Returns: {
@@ -5951,18 +5969,9 @@ export type Database = {
           pedido_exists: boolean
         }[]
       }
-      hv_fix_orphans: {
-        Args: { default_account_id?: string }
-        Returns: number
-      }
-      hv_insert: {
-        Args: { p: Json }
-        Returns: string
-      }
-      hv_orphaned_stats: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      hv_fix_orphans: { Args: { default_account_id?: string }; Returns: number }
+      hv_insert: { Args: { p: Json }; Returns: string }
+      hv_orphaned_stats: { Args: never; Returns: Json }
       log_audit_enhanced: {
         Args: {
           p_action: string
@@ -5987,16 +5996,19 @@ export type Database = {
         }
         Returns: undefined
       }
-      log_customer_access: {
-        Args:
-          | { access_type?: string; customer_id: string; details?: Json }
-          | {
+      log_customer_access:
+        | {
+            Args: {
               p_action: string
               p_customer_id: string
               p_sensitive_accessed?: boolean
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
+        | {
+            Args: { access_type?: string; customer_id: string; details?: Json }
+            Returns: undefined
+          }
       log_customer_data_access: {
         Args: { p_action?: string; p_customer_id: string }
         Returns: undefined
@@ -6025,18 +6037,9 @@ export type Database = {
         Args: { p_state_value: string }
         Returns: boolean
       }
-      mask_cpf_cnpj: {
-        Args: { document: string }
-        Returns: string
-      }
-      mask_customer_address: {
-        Args: { address: string }
-        Returns: string
-      }
-      mask_customer_cep: {
-        Args: { cep: string }
-        Returns: string
-      }
+      mask_cpf_cnpj: { Args: { document: string }; Returns: string }
+      mask_customer_address: { Args: { address: string }; Returns: string }
+      mask_customer_cep: { Args: { cep: string }; Returns: string }
       mask_customer_data: {
         Args: {
           p_cpf_cnpj: string
@@ -6052,34 +6055,13 @@ export type Database = {
         }
         Returns: Json
       }
-      mask_customer_phone: {
-        Args: { phone: string }
-        Returns: string
-      }
-      mask_document: {
-        Args: { doc: string }
-        Returns: string
-      }
-      mask_email: {
-        Args: { email_addr: string }
-        Returns: string
-      }
-      mask_name: {
-        Args: { full_name: string }
-        Returns: string
-      }
-      mask_phone: {
-        Args: { phone: string }
-        Returns: string
-      }
-      mask_phone_secure: {
-        Args: { phone_input: string }
-        Returns: string
-      }
-      migrate_existing_orders_to_unified: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      mask_customer_phone: { Args: { phone: string }; Returns: string }
+      mask_document: { Args: { doc: string }; Returns: string }
+      mask_email: { Args: { email_addr: string }; Returns: string }
+      mask_name: { Args: { full_name: string }; Returns: string }
+      mask_phone: { Args: { phone: string }; Returns: string }
+      mask_phone_secure: { Args: { phone_input: string }; Returns: string }
+      migrate_existing_orders_to_unified: { Args: never; Returns: Json }
       processar_recebimento_pedido_compra: {
         Args: { p_itens: Json; p_pedido_id: string }
         Returns: Json
@@ -6093,14 +6075,10 @@ export type Database = {
         }
         Returns: Json
       }
-      revoke_invitation: {
-        Args: { _id: string }
-        Returns: Json
-      }
-      search_customers_secure: {
-        Args:
-          | { limit_count?: number; search_term?: string }
-          | {
+      revoke_invitation: { Args: { _id: string }; Returns: Json }
+      search_customers_secure:
+        | {
+            Args: {
               p_cidade?: string
               p_limit?: number
               p_offset?: number
@@ -6108,66 +6086,78 @@ export type Database = {
               p_status?: string
               p_uf?: string
             }
-        Returns: {
-          cpf_cnpj: string
-          created_at: string
-          data_is_masked: boolean
-          data_primeiro_pedido: string
-          data_ultimo_pedido: string
-          email: string
-          empresa: string
-          endereco_bairro: string
-          endereco_cep: string
-          endereco_cidade: string
-          endereco_numero: string
-          endereco_rua: string
-          endereco_uf: string
-          id: string
-          integration_account_id: string
-          nome_completo: string
-          observacoes: string
-          organization_id: string
-          status_cliente: string
-          telefone: string
-          ticket_medio: number
-          total_count: number
-          total_pedidos: number
-          updated_at: string
-          valor_total_gasto: number
-        }[]
-      }
-      security_summary: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+            Returns: {
+              cpf_cnpj: string
+              created_at: string
+              data_is_masked: boolean
+              data_primeiro_pedido: string
+              data_ultimo_pedido: string
+              email: string
+              empresa: string
+              endereco_bairro: string
+              endereco_cep: string
+              endereco_cidade: string
+              endereco_numero: string
+              endereco_rua: string
+              endereco_uf: string
+              id: string
+              integration_account_id: string
+              nome_completo: string
+              observacoes: string
+              organization_id: string
+              status_cliente: string
+              telefone: string
+              ticket_medio: number
+              total_count: number
+              total_pedidos: number
+              updated_at: string
+              valor_total_gasto: number
+            }[]
+          }
+        | {
+            Args: { limit_count?: number; search_term?: string }
+            Returns: {
+              cpf_cnpj: string
+              created_at: string
+              data_primeiro_pedido: string
+              data_ultimo_pedido: string
+              email: string
+              empresa: string
+              endereco_bairro: string
+              endereco_cep: string
+              endereco_cidade: string
+              endereco_numero: string
+              endereco_rua: string
+              endereco_uf: string
+              id: string
+              integration_account_id: string
+              nome_completo: string
+              observacoes: string
+              organization_id: string
+              status_cliente: string
+              telefone: string
+              ticket_medio: number
+              total_pedidos: number
+              updated_at: string
+              valor_total_gasto: number
+            }[]
+          }
+      security_summary: { Args: never; Returns: Json }
       seed_admin_role_for_org: {
         Args: { _org_id: string; _user_id: string }
         Returns: undefined
       }
-      seed_default_categories: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      seed_oms_sample_data: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      seed_default_categories: { Args: never; Returns: Json }
+      seed_oms_sample_data: { Args: never; Returns: undefined }
       set_integration_secret: {
         Args: { _key: string; _provider: string; _value: string }
         Returns: undefined
       }
-      sincronizar_componentes_em_uso: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      split_existing_categories: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      sync_cliente_from_pedido: {
-        Args:
-          | Record<PropertyKey, never>
-          | {
+      sincronizar_componentes_em_uso: { Args: never; Returns: undefined }
+      split_existing_categories: { Args: never; Returns: undefined }
+      sync_cliente_from_pedido:
+        | {
+            Args: {
               p_cidade?: string
               p_cpf_cnpj?: string
               p_data_pedido?: string
@@ -6177,16 +6167,26 @@ export type Database = {
               p_uf?: string
               p_valor_pedido?: number
             }
-        Returns: string
-      }
-      tiny3_get_credentials: {
-        Args: { _client_id: string } | { _org_id: string }
-        Returns: {
-          client_id: string
-          client_secret: string
-          redirect_uri: string
-        }[]
-      }
+            Returns: string
+          }
+        | { Args: never; Returns: Json }
+      tiny3_get_credentials:
+        | {
+            Args: { _org_id: string }
+            Returns: {
+              client_id: string
+              client_secret: string
+              redirect_uri: string
+            }[]
+          }
+        | {
+            Args: { _client_id: string }
+            Returns: {
+              client_id: string
+              client_secret: string
+              redirect_uri: string
+            }[]
+          }
       tiny3_get_tokens: {
         Args: { _client_id: string }
         Returns: {
@@ -6196,21 +6196,24 @@ export type Database = {
           refresh_token: string
         }[]
       }
-      tiny3_set_credentials: {
-        Args:
-          | {
+      tiny3_set_credentials:
+        | {
+            Args: {
               _client_id: string
               _client_secret: string
               _org_id: string
               _redirect_uri?: string
             }
-          | {
+            Returns: undefined
+          }
+        | {
+            Args: {
               _client_id: string
               _client_secret: string
               _redirect_uri?: string
             }
-        Returns: undefined
-      }
+            Returns: undefined
+          }
       tiny3_set_tokens: {
         Args: {
           _access_token: string
@@ -6255,12 +6258,9 @@ export type Database = {
           role_name: string
         }[]
       }
-      validate_security_settings: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      validate_security_settings: { Args: never; Returns: Json }
       verify_view_security: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           is_security_definer: boolean
           view_name: string
