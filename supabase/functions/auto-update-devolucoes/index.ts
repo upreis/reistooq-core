@@ -141,10 +141,10 @@ serve(async (req) => {
         });
       }
       
-      // ⚠️ Delay entre contas para evitar rate limit (30 segundos)
+      // ⏱️ Aguardar 1 minuto entre contas para evitar rate limit
       if (totalAtualizadas + totalErros < contas.length) {
-        console.log('⏳ Aguardando 30s antes da próxima conta...');
-        await new Promise(resolve => setTimeout(resolve, 30000));
+        console.log('⏳ Aguardando 60s antes da próxima conta...');
+        await new Promise(resolve => setTimeout(resolve, 60000));
       }
     }
     

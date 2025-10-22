@@ -86,8 +86,9 @@ export const fetchAllClaims = async (
       integration_account_id: accountId,
       seller_id: sellerId,
       filters: {
-        date_from: '',
-        date_to: '',
+        // ✅ Usar novo sistema de filtros
+        periodoDias: 0,  // 0 = buscar tudo
+        tipoData: 'date_created',
         status_claim: '',
         claim_type: '',
         stage: '',

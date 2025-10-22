@@ -9,6 +9,7 @@ import { analyzeInternalTags } from './utils/tags-analyzer.ts'
 import { mapReviewsData, extractReviewsFields } from './mappers/reviews-mapper.ts'
 import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper.ts'
 import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
+import { fetchMLWithRetry } from './utils/retryHandler.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -156,9 +157,9 @@ serve(async (req) => {
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       
-      // ⏱️ Timeout de 50 segundos (aumentado para dar mais margem)
+      // ⏱️ Timeout de 2 minutos (aumentado para contas com muitas devoluções)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: A busca excedeu 50 segundos. Use filtros de data para reduzir os resultados.')), 50000)
+        setTimeout(() => reject(new Error('Timeout: A busca excedeu 2 minutos. Use filtros de data para reduzir os resultados.')), 120000)
       );
       
       // ✅ PAGINAÇÃO: buscar com limit/offset
@@ -1129,7 +1130,7 @@ async function buscarPedidosCancelados(
     let consecutiveEmptyBatches = 0;
     
     logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (limite request: ${requestLimit})`);
-    logger.info(`📋 Filtros: período=${periodoDias} dias, tipo=${tipoData}, de ${dateFrom} até ${dateTo}`);
+    logger.info(`📋 Filtros recebidos: período=${periodoDias} dias, tipo=${tipoData}`);
     
     // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar TODOS os claims disponíveis
     while (allClaims.length < MAX_TOTAL_CLAIMS && consecutiveEmptyBatches < 3) {
