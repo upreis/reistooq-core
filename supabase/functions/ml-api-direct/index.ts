@@ -1124,10 +1124,18 @@ async function buscarPedidosCancelados(
     
     // ✅ NOVA LÓGICA: Buscar TODOS os claims com paginação automática
     const MAX_TOTAL_CLAIMS = 10000;
-    const BATCH_SIZE = 50; // API ML funciona melhor com 50
+    const BATCH_SIZE = 100; // ⚡ TESTE: Voltando para 100 conforme sugestão
     const allClaims: any[] = [];
     let offset = 0;
     let consecutiveEmptyBatches = 0;
+    
+    // 🔍 DIAGNÓSTICO: Verificar se há limitação interna não documentada
+    logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO:`, {
+      BATCH_SIZE,
+      MAX_TOTAL_CLAIMS,
+      requestLimit,
+      requestOffset
+    });
     
     logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (limite request: ${requestLimit})`);
     logger.info(`📋 Filtros recebidos: período=${periodoDias} dias, tipo=${tipoData}`);
@@ -1254,6 +1262,28 @@ async function buscarPedidosCancelados(
         
         const data = await response.json();
         
+        // 🔍 DIAGNÓSTICO DETALHADO DA RESPOSTA DA API
+        const pagingInfo = data.paging || {};
+        logger.info(`🔍 RESPONSE DETALHADO:`, {
+          solicitado: BATCH_SIZE,
+          recebido: data.data?.length || 0,
+          total_disponivel: pagingInfo.total,
+          offset_atual: pagingInfo.offset,
+          limit_usado: pagingInfo.limit,
+          tem_mais: data.data?.length === BATCH_SIZE
+        });
+        
+        // 📊 HEADERS DA RESPOSTA (Rate Limiting)
+        const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+        const rateLimitReset = response.headers.get('x-ratelimit-reset');
+        if (rateLimitRemaining || rateLimitReset) {
+          logger.info(`📊 RATE LIMIT:`, {
+            remaining: rateLimitRemaining,
+            reset: rateLimitReset,
+            contentLength: response.headers.get('content-length')
+          });
+        }
+        
         if (!data.data || !Array.isArray(data.data)) {
           logger.warn('Resposta sem dados válidos');
           consecutiveEmptyBatches++;
@@ -1266,7 +1296,7 @@ async function buscarPedidosCancelados(
         } else {
           consecutiveEmptyBatches = 0;
           allClaims.push(...data.data);
-          logger.success(`✅ +${data.data.length} claims | Total: ${allClaims.length}`);
+          logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${data.data.length} claims | Total: ${allClaims.length}/${pagingInfo.total || '?'}`);
         }
         
         offset += BATCH_SIZE;

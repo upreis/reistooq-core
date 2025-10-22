@@ -113,9 +113,16 @@ export class ClaimsService {
     integrationAccountId: string
   ): Promise<any[]> {
     const MAX_CLAIMS = 10000;
-    const limit = 50; // ✅ API ML funciona melhor com 50
+    const limit = 100; // ⚡ TESTE: Voltando para 100 para diagnóstico
     let offset = 0;
     const allClaims: any[] = [];
+    
+    // 🔍 DIAGNÓSTICO: Verificar configuração
+    logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO:`, {
+      limit,
+      MAX_CLAIMS,
+      method: 'fetchClaimsNormal'
+    });
     
     const params = new URLSearchParams({
       seller_id: sellerId,
@@ -152,20 +159,39 @@ export class ClaimsService {
       
       const data = await response.json();
       
+      // 🔍 DIAGNÓSTICO DETALHADO DA RESPOSTA DA API
+      const pagingInfo = data.paging || {};
+      logger.info(`🔍 RESPONSE DETALHADO:`, {
+        solicitado: limit,
+        recebido: data.data?.length || 0,
+        total_disponivel: pagingInfo.total,
+        offset_atual: pagingInfo.offset,
+        limit_usado: pagingInfo.limit,
+        tem_mais: data.data?.length === limit
+      });
+      
+      // 📊 HEADERS DA RESPOSTA (Rate Limiting)
+      const rateLimitRemaining = response.headers.get('x-ratelimit-remaining');
+      const rateLimitReset = response.headers.get('x-ratelimit-reset');
+      if (rateLimitRemaining || rateLimitReset) {
+        logger.info(`📊 RATE LIMIT:`, {
+          remaining: rateLimitRemaining,
+          reset: rateLimitReset,
+          contentLength: response.headers.get('content-length')
+        });
+      }
+      
       if (!data.data || !Array.isArray(data.data)) {
         logger.warn('Resposta sem dados válidos, encerrando paginação');
         break;
       }
       
-      // Log com informações do paging da API
-      const pagingInfo = data.paging || {};
-      logger.info(`📄 Página offset=${offset}: ${data.data.length} claims (total API: ${pagingInfo.total || 'N/A'}, acumulado: ${allClaims.length + data.data.length})`);
-      
       allClaims.push(...data.data);
+      logger.success(`✅ Lote: ${data.data.length} claims | Total: ${allClaims.length}/${pagingInfo.total || '?'}`);
       
       // Parar se não há mais dados ou atingiu limite
       if (data.data.length < limit || allClaims.length >= MAX_CLAIMS) {
-        logger.info(`⏹️ Paginação finalizada: ${data.data.length < limit ? 'sem mais dados' : 'limite atingido'}`);
+        logger.info(`🏁 API ML indica que não há mais dados (retornou ${data.data.length}/${limit})`);
         break;
       }
       
