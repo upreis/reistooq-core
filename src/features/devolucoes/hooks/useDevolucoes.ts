@@ -168,118 +168,51 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   }, [mlAccounts, selectedAccountId]);
 
 
-  // 🔍 BUSCAR COM FILTROS - Busca em background + salva no banco
+  // 🔍 BUSCAR COM FILTROS - LIMPAR TELA E BUSCAR APENAS DA API ML
   const buscarComFiltros = useCallback(async (filtrosImediatos?: DevolucaoAdvancedFilters) => {
     try {
       setError(null);
       
+      // 🧹 LIMPAR TELA IMEDIATAMENTE quando usuário clicar "Buscar"
+      setDevolucoes([]);
+      setLoadingProgress({ current: 0, total: 0, percentage: 0 });
+      
       // Usar filtros passados diretamente ou os do estado atual
       const filtrosParaUsar = filtrosImediatos || advancedFilters;
       
-      logger.info('[useDevolucoes] 🌐 Iniciando busca em background da API ML...', {
+      logger.info('[useDevolucoes] 🌐 Limpando tela e buscando APENAS da API ML...', {
         dataInicio: filtrosParaUsar.dataInicio || 'SEM FILTRO',
         dataFim: filtrosParaUsar.dataFim || 'SEM FILTRO',
         contas: filtrosParaUsar.contasSelecionadas
       });
       
-      // 1️⃣ Mostrar dados do banco PROGRESSIVAMENTE
-      const contasSelecionadas = filtrosParaUsar.contasSelecionadas.length > 0 
-        ? filtrosParaUsar.contasSelecionadas 
-        : mlAccounts?.map(acc => acc.id) || [];
+      toast.info('Buscando dados novos da API ML...');
       
-      // Passar filtros de data para o banco também
-      const filtrosBanco: Partial<DevolucaoBuscaFilters> = {
-        periodoDias: filtrosParaUsar.periodoDias,
-        tipoData: filtrosParaUsar.tipoData,
-        contasSelecionadas: contasSelecionadas
-      };
-      
-      // Callback de progresso para atualizar UI conforme carrega
-      const onProgress = (dadosParciais: any[], current: number, total: number) => {
-        setDevolucoes(dadosParciais);
-        setLoadingProgress({ 
-          current, 
-          total, 
-          percentage: Math.round((current / total) * 100) 
-        });
-        toast.info(`Carregando: ${current}/${total} devoluções (${Math.round((current / total) * 100)}%)`, {
-          id: 'loading-progress',
-          duration: 1000
-        });
-      };
-      
-      const dadosBanco = await busca.buscarDoBanco(contasSelecionadas, filtrosBanco as DevolucaoBuscaFilters, onProgress);
-      
-      if (dadosBanco.length > 0) {
-        setDevolucoes(dadosBanco);
-        setCurrentPage(1);
-        toast.info(`Mostrando ${dadosBanco.length} devoluções do banco. Atualizando em background...`);
-      } else {
-        toast.info('Buscando dados da API ML...');
-      }
-      
-      // 2️⃣ Buscar da API em background e atualizar
+      // ✅ Buscar APENAS da API ML (não do banco)
       const dadosAPI = await busca.buscarDaAPI(filtrosParaUsar, mlAccounts);
       
       setDevolucoes(dadosAPI);
       setCurrentPage(1);
       
       logger.info(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções atualizadas da API`);
-      toast.success(`${dadosAPI.length} devoluções atualizadas!`);
+      toast.success(`${dadosAPI.length} devoluções encontradas!`);
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar devoluções';
       setError(errorMessage);
       logger.error('[useDevolucoes] ❌ Erro ao buscar com filtros:', err);
-      toast.error('Erro ao aplicar filtros');
+      toast.error('Erro ao buscar devoluções');
     }
   }, [busca, advancedFilters, mlAccounts]);
 
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
 
-  // ✅ FASE 1: Busca automática inicial do banco
+  // ❌ REMOVIDO: Busca automática do banco
+  // Agora o usuário tem controle total - dados só aparecem quando clicar "Buscar"
   useEffect(() => {
-    // Só buscar se tiver contas carregadas
-    if (!mlAccounts || mlAccounts.length === 0) {
-      logger.info('[useDevolucoes] ⏳ Aguardando contas ML...');
-      return;
-    }
-    
-    // Evitar buscar múltiplas vezes
-    if (devolucoes.length > 0) {
-      logger.info('[useDevolucoes] ✅ Devoluções já carregadas, pulando busca');
-      return;
-    }
-    
-    const carregarDoBancoInicial = async () => {
-      try {
-        logger.info('[useDevolucoes] 🚀 Iniciando busca automática do banco...');
-        
-        // Buscar do banco com as contas selecionadas
-        const contasSelecionadas = advancedFilters.contasSelecionadas.length > 0
-          ? advancedFilters.contasSelecionadas
-          : mlAccounts.map(acc => acc.id);
-        
-        const dadosBanco = await busca.buscarDoBanco(contasSelecionadas);
-        
-        if (dadosBanco && dadosBanco.length > 0) {
-          setDevolucoes(dadosBanco);
-          logger.info(`[useDevolucoes] ✅ ${dadosBanco.length} devoluções carregadas do banco`);
-          toast.success(`${dadosBanco.length} devoluções carregadas`);
-        } else {
-          logger.warn('[usDevolucoes] ⚠️ Nenhuma devolução encontrada no banco');
-        }
-        
-      } catch (error) {
-        logger.error('[useDevolucoes] ❌ Erro ao carregar do banco:', error);
-        toast.error('Erro ao carregar devoluções');
-      }
-    };
-    
-    carregarDoBancoInicial();
-    
-  }, [mlAccounts]); // Executar apenas quando mlAccounts carregar
+    logger.info('[useDevolucoes] ✅ Tela limpa - aguardando ação do usuário');
+  }, [mlAccounts]);
 
   // 🔄 Atualizar contas selecionadas quando selectedAccountIds mudar
   useEffect(() => {
@@ -340,19 +273,20 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
 
   // Atualizar configurações de performance removido - valores fixos otimizados
 
-  // 🗑️ LIMPAR FILTROS - Resetar tudo
+  // 🗑️ LIMPAR FILTROS - Resetar tudo e limpar tela
   const clearFilters = useCallback(() => {
     const filtrosLimpos = createCleanFilters(mlAccounts);
     
     setAdvancedFilters(filtrosLimpos);
     setDraftFilters(null);
-    setDevolucoes([]);
+    setDevolucoes([]); // 🧹 Limpar dados da tela
     setCurrentPage(1);
     
     // Limpar do localStorage
     removeFiltersFromStorage();
     
-    console.log('[useDevolucoes] 🗑️ Filtros e dados limpos');
+    toast.info('Filtros limpos. Use "Buscar" para carregar novos dados.');
+    console.log('[useDevolucoes] 🗑️ Filtros e dados limpos - tela vazia');
   }, [mlAccounts]);
 
   // Paginação otimizada
