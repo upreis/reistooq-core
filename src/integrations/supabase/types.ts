@@ -5906,6 +5906,16 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_queue_status: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          oldest_pending: string
+          total_completed: number
+          total_failed: number
+          total_pending: number
+          total_processing: number
+        }[]
+      }
       get_sync_control_status: {
         Args: { p_integration_account_id: string; p_provider: string }
         Returns: Json
