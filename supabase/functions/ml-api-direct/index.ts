@@ -1244,22 +1244,51 @@ async function buscarPedidosCancelados(
     
     const totalAvailable = allClaims.length;  // Guardar total coletado
     
-    // ✅ ESTRATÉGIA OTIMIZADA: Processar página atual + iniciar background para o resto
+    // ✅ SISTEMA DE FILAS: Adicionar TODOS os claims na fila para processamento
+    const supabaseAdmin = makeServiceClient();
+    
+    console.log(`\n📦 ADICIONANDO ${allClaims.length} CLAIMS NA FILA DE PROCESSAMENTO...`)
+    
+    const claimsParaFila = allClaims.map(claim => ({
+      integration_account_id,
+      claim_id: claim.id,
+      order_id: claim.resource_id || claim.order_id,
+      claim_data: claim,
+      status: 'pending'
+    }));
+    
+    // Inserir na fila (ignora duplicatas)
+    const { error: queueError } = await supabaseAdmin
+      .from('fila_processamento_claims')
+      .upsert(claimsParaFila, { 
+        onConflict: 'claim_id,integration_account_id',
+        ignoreDuplicates: true 
+      });
+    
+    if (queueError) {
+      logger.error('Erro ao adicionar claims na fila:', queueError);
+    } else {
+      logger.success(`✅ ${allClaims.length} claims adicionados à fila de processamento`);
+    }
+    
+    // ✅ PROCESSAR APENAS A PÁGINA ATUAL PARA RESPOSTA IMEDIATA
     const startIndex = requestOffset;
     const endIndex = requestOffset + requestLimit;
     const claimsParaProcessar = allClaims.slice(startIndex, endIndex);
     const hasMore = allClaims.length > endIndex;
     
-    console.log(`\n📊 PROCESSAMENTO OTIMIZADO:`)
-    console.log(`   • Total disponível na API: ${allClaims.length}`)
-    console.log(`   • Processando AGORA (resposta imediata): claims ${startIndex} a ${endIndex} (${claimsParaProcessar.length} claims)`)
-    console.log(`   • Tem mais dados para próximas páginas: ${hasMore}\n`)
+    console.log(`\n📊 PROCESSAMENTO IMEDIATO:`)
+    console.log(`   • Total na fila: ${allClaims.length} claims`)
+    console.log(`   • Processando AGORA: claims ${startIndex} a ${endIndex} (${claimsParaProcessar.length} claims)`)
+    console.log(`   • Restante será processado em background pela fila`)
+    console.log(`   • Tem mais dados: ${hasMore}\n`)
     
     if (claimsParaProcessar.length === 0) {
       return {
         data: [],
         total: totalAvailable,
-        hasMore: false
+        hasMore: false,
+        queued: allClaims.length
       }
     }
     

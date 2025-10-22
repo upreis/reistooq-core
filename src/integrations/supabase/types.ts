@@ -1411,6 +1411,51 @@ export type Database = {
         }
         Relationships: []
       }
+      fila_processamento_claims: {
+        Row: {
+          atualizado_em: string | null
+          claim_data: Json
+          claim_id: string
+          criado_em: string | null
+          erro_mensagem: string | null
+          id: string
+          integration_account_id: string
+          max_tentativas: number | null
+          order_id: string | null
+          processado_em: string | null
+          status: string
+          tentativas: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          claim_data: Json
+          claim_id: string
+          criado_em?: string | null
+          erro_mensagem?: string | null
+          id?: string
+          integration_account_id: string
+          max_tentativas?: number | null
+          order_id?: string | null
+          processado_em?: string | null
+          status?: string
+          tentativas?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          claim_data?: Json
+          claim_id?: string
+          criado_em?: string | null
+          erro_mensagem?: string | null
+          id?: string
+          integration_account_id?: string
+          max_tentativas?: number | null
+          order_id?: string | null
+          processado_em?: string | null
+          status?: string
+          tentativas?: number | null
+        }
+        Relationships: []
+      }
       fornecedores: {
         Row: {
           ativo: boolean | null
