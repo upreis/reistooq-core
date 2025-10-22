@@ -1099,8 +1099,8 @@ async function buscarPedidosCancelados(
   accessToken: string, 
   filters: any, 
   integrationAccountId: string,
-  pageLimit: number = 50,      // Quantos claims processar nesta página
-  pageOffset: number = 0        // Offset para paginação
+  requestLimit: number = 2000,
+  requestOffset: number = 0
 ): Promise<{ data: any[]; total: number; hasMore: boolean }> {
   try {
     
@@ -1115,167 +1115,139 @@ async function buscarPedidosCancelados(
     const dateFrom = dataInicio.toISOString().split('T')[0];  // YYYY-MM-DD
     const dateTo = hoje.toISOString().split('T')[0];          // YYYY-MM-DD
     
-    // 🚀 BUSCAR CLAIMS COM PAGINAÇÃO COMPLETA
-    const params = new URLSearchParams()
-    params.append('player_role', 'respondent')
-    params.append('player_user_id', sellerId)
-    params.append('limit', '50')
+    // ✅ NOVA LÓGICA: Buscar TODOS os claims com paginação automática
+    const MAX_TOTAL_CLAIMS = 10000;
+    const BATCH_SIZE = 50; // API ML funciona melhor com 50
+    const allClaims: any[] = [];
+    let offset = 0;
+    let consecutiveEmptyBatches = 0;
     
-    // ⭐ FILTRAR POR ÚLTIMA SYNC (last_updated) - PADRÃO
-    // Busca claims dos últimos 60 dias pela coluna "Última Sync"
-    params.append('last_updated.from', dateFrom);
-    params.append('last_updated.to', dateTo);
+    logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (limite request: ${requestLimit})`);
+    logger.info(`📋 Filtros: período=${periodoDias} dias, filtro=${tipoData}, de ${dateFrom} até ${dateTo}`);
     
-    // ⚠️ ORDENAR POR DATA DO CLAIM (não do resource, pois a API não suporta)
-    // Mesmo filtrando por resource.date_created, a ordenação deve ser por date_created
-    params.append('sort', 'date_created:desc');
-    
-    // ============ FILTROS OPCIONAIS DA API ML ============
-    if (filters?.status_claim && filters.status_claim.trim().length > 0) {
-      params.append('status', filters.status_claim)
-    }
-    
-    if (filters?.claim_type && filters.claim_type.trim().length > 0) {
-      params.append('type', filters.claim_type)
-    }
-
-    if (filters?.stage && filters.stage.trim().length > 0) {
-      params.append('stage', filters.stage)
-    }
-
-    if (filters?.fulfilled !== undefined && filters.fulfilled !== null && filters.fulfilled !== '') {
-      const fulfilledValue = String(filters.fulfilled).toLowerCase()
-      if (fulfilledValue === 'true' || fulfilledValue === 'false') {
-        params.append('fulfilled', fulfilledValue)
-      }
-    }
-
-    if (filters?.quantity_type && filters.quantity_type.trim().length > 0) {
-      params.append('quantity_type', filters.quantity_type)
-    }
-
-    if (filters?.reason_id && filters.reason_id.trim().length > 0) {
-      params.append('reason_id', filters.reason_id)
-    }
-
-    if (filters?.resource && filters.resource.trim().length > 0) {
-      params.append('resource', filters.resource)
-    }
-
-    // ✅ PAGINAÇÃO REAL: Buscar apenas os claims necessários
-    let allClaims: any[] = []
-    let apiOffset = 0  // Offset na API do ML
-    const apiLimit = 100  // Limite por request da API ML
-    const MAX_CLAIMS = 5000  // Limite de segurança total
-    let totalAvailable = 0  // Total disponível na API
-    let consecutiveEmptyPages = 0
-    const MAX_EMPTY_PAGES = 3
-
-    console.log('\n🔄 ============ INICIANDO BUSCA PAGINADA ============')
-    console.log(`📋 Filtros aplicados na API:`)
-    console.log(`   • player_role: respondent`)
-    console.log(`   • player_user_id: ${sellerId}`)
-    console.log(`   • periodo_dias: ${periodoDias} dias`)
-    console.log(`   • FILTRO: last_updated (ÚLTIMA SYNC)`)
-    console.log(`   • date_from (last_updated): ${dateFrom}`)
-    console.log(`   • date_to (last_updated): ${dateTo}`)
-    console.log(`   • sort: date_created:desc`)
-    console.log(`   • 📄 PAGINAÇÃO: limit=${pageLimit}, offset=${pageOffset}`)
-    console.log(`   • 🔄 API limit=${apiLimit}, offset=${apiOffset}\n`)
-
-    // ✅ PAGINAÇÃO: Buscar da API até ter dados suficientes para esta página
-    const targetEndIndex = pageOffset + pageLimit;  // Onde queremos parar
-    
-    do {
-      params.set('offset', apiOffset.toString())
-      params.set('limit', apiLimit.toString())
-      const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`
+    // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar TODOS os claims disponíveis
+    while (allClaims.length < MAX_TOTAL_CLAIMS && consecutiveEmptyBatches < 3) {
       
-      console.log(`📄 API Página ${Math.floor(apiOffset / apiLimit) + 1}: offset=${apiOffset}, limit=${apiLimit} (total coletado: ${allClaims.length})`)
+      // Montar parâmetros da API ML
+      const params = new URLSearchParams();
+      params.append('player_role', 'respondent');
+      params.append('player_user_id', sellerId);
+      params.append('limit', BATCH_SIZE.toString());
+      params.append('offset', offset.toString());
       
-      const response = await fetchMLWithRetry(url, accessToken, integrationAccountId)
+      // ⭐ FILTRAR POR ÚLTIMA SYNC (last_updated) - PADRÃO
+      params.append('last_updated.from', dateFrom);
+      params.append('last_updated.to', dateTo);
       
-      if (!response.ok) {
-        console.error(`❌ API retornou erro ${response.status} - ${response.statusText}`);
-        
-        const errorText = await response.text();
-        console.error(`❌ Detalhes do erro:`, errorText);
-        
-        if (response.status === 401) {
-          throw new Error('Token de acesso inválido ou expirado - reconecte a integração')
-        }
-        if (response.status === 403) {
-          throw new Error('Sem permissão para acessar claims')
-        }
-        
-        throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`)
+      // ⚠️ ORDENAR POR DATA DO CLAIM
+      params.append('sort', 'date_created:desc');
+      
+      // ============ FILTROS OPCIONAIS DA API ML ============
+      if (filters?.status_claim && filters.status_claim.trim().length > 0) {
+        params.append('status', filters.status_claim)
       }
       
-      const data = await response.json();
-      
-      if (!data.data || !Array.isArray(data.data)) {
-        console.log('⚠️  Resposta sem dados válidos, encerrando paginação')
-        break
+      if (filters?.claim_type && filters.claim_type.trim().length > 0) {
+        params.append('type', filters.claim_type)
       }
-      
-      const receivedCount = data.data.length
-      console.log(`   ✅ Retornou: ${receivedCount} claims (total: ${allClaims.length + receivedCount})`)
-      
-      if (receivedCount === 0) {
-        consecutiveEmptyPages++
-        console.log(`   ⚠️  Página vazia (${consecutiveEmptyPages}/${MAX_EMPTY_PAGES})`)
-        if (consecutiveEmptyPages >= MAX_EMPTY_PAGES) {
-          console.log(`   🏁 Finalizando após ${MAX_EMPTY_PAGES} páginas vazias consecutivas`)
-          break
-        }
-      } else {
-        consecutiveEmptyPages = 0
-        allClaims.push(...data.data)
-        
-        // ✅ PARAR se já temos dados suficientes para esta página
-        if (allClaims.length >= targetEndIndex) {
-          console.log(`   🎯 Dados suficientes coletados! (${allClaims.length} >= ${targetEndIndex})`)
-          break
-        }
-        
-        // Parar se retornou menos que o limite (fim da API)
-        if (receivedCount < apiLimit) {
-          console.log(`   🏁 Fim dos dados da API (${receivedCount} < ${apiLimit})`)
-          break
+
+      if (filters?.stage && filters.stage.trim().length > 0) {
+        params.append('stage', filters.stage)
+      }
+
+      if (filters?.fulfilled !== undefined && filters.fulfilled !== null && filters.fulfilled !== '') {
+        const fulfilledValue = String(filters.fulfilled).toLowerCase()
+        if (fulfilledValue === 'true' || fulfilledValue === 'false') {
+          params.append('fulfilled', fulfilledValue)
         }
       }
-      
-      apiOffset += apiLimit
-      
-      // Limite de segurança global
-      if (allClaims.length >= MAX_CLAIMS) {
-        console.log(`   ⚠️  Limite de segurança de ${MAX_CLAIMS} claims alcançado`)
-        break
-      }
-      
-      // Delay para evitar rate limit
-      if (receivedCount > 0) {
-        await new Promise(resolve => setTimeout(resolve, 150))
-      }
-      
-    } while (consecutiveEmptyPages < MAX_EMPTY_PAGES && allClaims.length < targetEndIndex)
 
+      if (filters?.quantity_type && filters.quantity_type.trim().length > 0) {
+        params.append('quantity_type', filters.quantity_type)
+      }
+
+      if (filters?.reason_id && filters.reason_id.trim().length > 0) {
+        params.append('reason_id', filters.reason_id)
+      }
+
+      if (filters?.resource && filters.resource.trim().length > 0) {
+        params.append('resource', filters.resource)
+      }
+      
+      const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
+      
+      logger.info(`📄 Lote ${Math.floor(offset/BATCH_SIZE) + 1}: offset=${offset}, limit=${BATCH_SIZE} (total: ${allClaims.length})`);
+      
+      try {
+        const response = await fetchMLWithRetry(url, accessToken, integrationAccountId);
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Token inválido - reconecte a integração');
+          }
+          if (response.status === 403) {
+            throw new Error('Sem permissão para acessar claims');
+          }
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (!data.data || !Array.isArray(data.data)) {
+          logger.warn('Resposta sem dados válidos');
+          consecutiveEmptyBatches++;
+          break;
+        }
+        
+        if (data.data.length === 0) {
+          consecutiveEmptyBatches++;
+          logger.warn(`⚠️ Lote vazio (${consecutiveEmptyBatches}/3)`);
+        } else {
+          consecutiveEmptyBatches = 0;
+          allClaims.push(...data.data);
+          logger.success(`✅ +${data.data.length} claims | Total: ${allClaims.length}`);
+        }
+        
+        offset += BATCH_SIZE;
+        
+        // Se retornou menos que o esperado, provavelmente acabaram
+        if (data.data.length < BATCH_SIZE) {
+          logger.info(`🏁 Fim dos dados: última página retornou ${data.data.length} claims`);
+          break;
+        }
+        
+        // Delay para evitar rate limit
+        if (data.data.length > 0) {
+          await new Promise(resolve => setTimeout(resolve, 150));
+        }
+        
+      } catch (error) {
+        logger.error(`❌ Erro no lote offset=${offset}:`, error.message);
+        consecutiveEmptyBatches++;
+        
+        if (consecutiveEmptyBatches >= 3) {
+          logger.error('Muitos erros consecutivos, parando busca');
+          break;
+        }
+      }
+    }
+    
+    logger.success(`🎯 BUSCA COMPLETA: ${allClaims.length} claims encontrados na API`);
+    
     // 🛡️ VERIFICAÇÃO CRÍTICA: Validar dados recebidos da API
     if (!allClaims || !Array.isArray(allClaims)) {
       console.error(`❌ API retornou dados inválidos:`, allClaims);
       throw new Error('API do Mercado Livre retornou dados inválidos');
     }
     
-    totalAvailable = allClaims.length;  // Guardar total coletado
+    const totalAvailable = allClaims.length;  // Guardar total coletado
     
-    // ✅ PAGINAÇÃO: Extrair apenas a página solicitada
-    const claimsParaProcessar = allClaims.slice(pageOffset, pageOffset + pageLimit);
-    const hasMore = allClaims.length > (pageOffset + pageLimit);
+    // ✅ LIMITAR PROCESSAMENTO: Processar apenas os necessários para esta página
+    const claimsParaProcessar = allClaims.slice(0, Math.min(requestLimit, allClaims.length));
+    const hasMore = allClaims.length > requestLimit;
     
-    console.log(`\n📊 PAGINAÇÃO APLICADA:`)
+    console.log(`\n📊 PROCESSAMENTO:`)
     console.log(`   • Total coletado da API: ${allClaims.length}`)
-    console.log(`   • Offset solicitado: ${pageOffset}`)
-    console.log(`   • Limit solicitado: ${pageLimit}`)
     console.log(`   • Claims para processar: ${claimsParaProcessar.length}`)
     console.log(`   • Tem mais dados: ${hasMore}\n`)
     
@@ -2190,7 +2162,7 @@ async function buscarPedidosCancelados(
           }
       }
     
-    console.log(`🎉 Total de claims processados: ${ordersCancelados.length}`)
+    logger.success(`🎉 Total de claims processados: ${ordersCancelados.length}`)
     
     // 📅 DEBUG: Mostrar datas encontradas nos claims
     if (ordersCancelados.length > 0) {
@@ -2210,11 +2182,17 @@ async function buscarPedidosCancelados(
       console.log(`📅 ================================================\n`)
     }
     
-    // ✅ PAGINAÇÃO: Retornar objeto com metadados
+    // ✅ APLICAR PAGINAÇÃO NO RESULTADO FINAL (para o frontend)
+    const startIndex = requestOffset;
+    const endIndex = startIndex + requestLimit;
+    const paginatedResults = ordersCancelados.slice(startIndex, endIndex);
+    
+    logger.success(`📊 RESULTADO FINAL: ${paginatedResults.length} de ${ordersCancelados.length} processados | Total API: ${totalAvailable}`);
+    
     return {
-      data: ordersCancelados,
-      total: totalAvailable,
-      hasMore: hasMore
+      data: paginatedResults,
+      total: ordersCancelados.length,
+      hasMore: endIndex < ordersCancelados.length
     }
     
   } catch (error) {
