@@ -103,9 +103,7 @@ export function executarAuditoriaCompleta(devolucoes: any[]): AuditoriaCompleta 
       (claimData?.attachments?.length > 0) ||
       (mensagensData && Object.keys(mensagensData).length > 0) ||
       (dev.anexos_count > 0) ||
-      (dev.numero_interacoes > 0) ||
-      (dev.anexos_comprador?.length > 0) ||
-      (dev.anexos_vendedor?.length > 0)
+      (dev.numero_interacoes > 0)
     );
     if (temAnexos) anexos_detectados++;
   });

@@ -338,14 +338,10 @@ export class MLApiService {
         if (anexos && anexos.length > 0) {
           // Anexos já vêm categorizados pelo método getClaimAttachments
           dadosEnriquecidos.anexos_count = anexos.length;
-          dadosEnriquecidos.anexos_comprador = anexos.filter((a: any) => 
-            a.sender_role === 'complainant' || a.source === 'buyer');
-          dadosEnriquecidos.anexos_vendedor = anexos.filter((a: any) => 
-            a.sender_role === 'respondent' || a.source === 'seller');
           dadosEnriquecidos.anexos_ml = anexos.filter((a: any) => 
             a.sender_role === 'mediator' || a.source === 'meli');
           dadosEnriquecidos.etapas_executadas.push('anexos_ok');
-          console.log(`✅ Anexos obtidos via /messages: ${anexos.length} (Comprador: ${dadosEnriquecidos.anexos_comprador.length}, Vendedor: ${dadosEnriquecidos.anexos_vendedor.length}, ML: ${dadosEnriquecidos.anexos_ml.length})`);
+          console.log(`✅ Anexos obtidos via /messages: ${anexos.length} (ML: ${dadosEnriquecidos.anexos_ml.length})`);
         } else {
           console.log(`ℹ️ Nenhum anexo encontrado nas mensagens`);
         }

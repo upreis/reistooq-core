@@ -76,8 +76,6 @@ export function auditarIndicadores(devolucao: any): IndicadorAuditResult {
     has_timeline_mensagens: devolucao.timeline_mensagens && Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0,
     has_anexos_count: devolucao.anexos_count && devolucao.anexos_count > 0,
     has_numero_interacoes: devolucao.numero_interacoes && devolucao.numero_interacoes > 0,
-    has_anexos_comprador: devolucao.anexos_comprador && Array.isArray(devolucao.anexos_comprador) && devolucao.anexos_comprador.length > 0,
-    has_anexos_vendedor: devolucao.anexos_vendedor && Array.isArray(devolucao.anexos_vendedor) && devolucao.anexos_vendedor.length > 0,
     has_anexos_ml: devolucao.anexos_ml && Array.isArray(devolucao.anexos_ml) && devolucao.anexos_ml.length > 0
   };
 

@@ -25,8 +25,6 @@ export const mapCommunicationData = (item: any) => {
     
     // Anexos
     anexos_count: null,
-    anexos_comprador: [],
-    anexos_vendedor: [],
     anexos_ml: [],
     total_evidencias: null
   };

@@ -805,8 +805,6 @@ export function useDevolucoesBusca() {
 
               // 📎 Dados de anexos (Etapa 4) - Dados virão de outras fontes
               dadosAtualizados.anexos_count = 0;
-              dadosAtualizados.anexos_comprador = [];
-              dadosAtualizados.anexos_vendedor = [];
               dadosAtualizados.anexos_ml = [];
 
               // ⚖️ Dados de mediação (Etapa 5)

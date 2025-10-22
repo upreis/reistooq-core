@@ -93,8 +93,6 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   mediador_ml?: string | null;
   usuario_ultima_acao?: string | null;
   marketplace_origem?: string | null;
-  anexos_comprador?: any[] | null;
-  anexos_vendedor?: any[] | null;
   anexos_ml?: any[] | null;
   eh_troca?: boolean | null;
   valor_diferenca_troca?: number | null;

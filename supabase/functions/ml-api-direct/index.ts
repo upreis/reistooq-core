@@ -293,8 +293,6 @@ serve(async (req) => {
             ultima_mensagem_data: devolucao.ultima_mensagem_data,
             timeline_mensagens: devolucao.timeline_mensagens,
             anexos_count: devolucao.anexos_count,
-            anexos_comprador: devolucao.anexos_comprador,
-            anexos_vendedor: devolucao.anexos_vendedor,
             anexos_ml: devolucao.anexos_ml,
             
             // Mediação e Ações
