@@ -1122,18 +1122,17 @@ async function buscarPedidosCancelados(
       tipoData_usado: tipoData
     });
     
-    // ✅ CORRIGIDO: Respeitar parâmetros do frontend
-    const MAX_TOTAL_CLAIMS = requestLimit; // ← Usar limite solicitado pelo frontend
-    const BATCH_SIZE = Math.min(requestLimit, 100); // ← Dinâmico, máximo 100 por lote
+    // ✅ CORRIGIDO: Configuração de paginação respeitando frontend
+    const BATCH_SIZE = 100; // ← Sempre 100 (limite da API ML)
+    const MAX_CLAIMS_TO_FETCH = requestLimit; // ← Buscar apenas o solicitado
     const allClaims: any[] = [];
-    let offset = requestOffset; // ✅ CORRIGIDO: Usar offset do request, não zero
+    let offset = requestOffset; // ✅ Começar do offset solicitado
     let consecutiveEmptyBatches = 0;
     
-    // 🔍 DIAGNÓSTICO: Verificar se há limitação interna não documentada
+    // 🔍 DIAGNÓSTICO: Verificar configuração de paginação
     logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO:`, {
-      BATCH_SIZE,
-      MAX_TOTAL_CLAIMS,
-      requestLimit,
+      BATCH_SIZE, // Sempre 100
+      MAX_CLAIMS_TO_FETCH: requestLimit, // Limite solicitado
       requestOffset
     });
     
@@ -1167,11 +1166,8 @@ async function buscarPedidosCancelados(
     
     logger.info(`🎯 ${filtrosAtivos.length} filtros ativos: [${filtrosAtivos.join(', ')}]`);
     
-    // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar até o limite solicitado
-    // 🔧 CORRIGIDO: Respeitar requestLimit em vez de buscar tudo
-    const maxClaimsToFetch = Math.min(requestLimit, MAX_TOTAL_CLAIMS);
-    
-    while (allClaims.length < maxClaimsToFetch && consecutiveEmptyBatches < 3) {
+    // ✅ LOOP DE PAGINAÇÃO - Buscar apenas o solicitado pelo frontend
+    while (allClaims.length < MAX_CLAIMS_TO_FETCH && consecutiveEmptyBatches < 3) {
       
       // Montar parâmetros da API ML
       const params = new URLSearchParams();
@@ -1364,10 +1360,10 @@ async function buscarPedidosCancelados(
     }
     
     // ✅ ESTRATÉGIA DE DUAS ETAPAS PARA EVITAR TIMEOUT:
-    // 1. Processar primeiros N e retornar resposta rápida
+    // 1. Processar primeiros 50 imediatamente (resposta rápida)
     // 2. Processar restante em background via fila + cron
     
-    const IMMEDIATE_LIMIT = Math.min(allClaims.length, requestLimit); // ← Dinâmico, respeita request
+    const IMMEDIATE_LIMIT = 50; // ← SEMPRE 50 para garantir resposta rápida
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
     const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
