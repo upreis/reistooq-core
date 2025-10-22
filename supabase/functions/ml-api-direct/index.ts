@@ -1107,8 +1107,19 @@ async function buscarPedidosCancelados(
   try {
     
     // 📅 CALCULAR DATAS BASEADO NO PERÍODO
-    const periodoDias = filters?.periodo_dias || 90;  // Default 90 dias (igual ao filtro padrão da interface)
-    const tipoData = filters?.tipo_data || 'date_created';  // 'date_created' ou 'last_updated'
+    // ✅ FIX: Aceitar tanto camelCase (frontend) quanto snake_case (retrocompatibilidade)
+    const periodoDias = filters?.periodoDias ?? filters?.periodo_dias ?? 0;  // ✅ Default 0 = SEM FILTRO
+    const tipoData = filters?.tipoData ?? filters?.tipo_data ?? 'date_created';  // ✅ Aceita ambos
+    
+    // ✅ LOG DE DEBUG: Verificar se parâmetros estão chegando corretamente
+    logger.info(`📋 Filtros recebidos:`, {
+      periodoDias_recebido: filters?.periodoDias,
+      periodo_dias_recebido: filters?.periodo_dias,
+      tipoData_recebido: filters?.tipoData,
+      tipo_data_recebido: filters?.tipo_data,
+      periodoDias_usado: periodoDias,
+      tipoData_usado: tipoData
+    });
     
     const hoje = new Date();
     const dataInicio = new Date();
@@ -1138,12 +1149,26 @@ async function buscarPedidosCancelados(
       params.append('offset', offset.toString());
       
       // ⭐ FILTRAR POR DATA (tipo definido pelo usuário: date_created ou last_updated)
-      if (tipoData === 'date_created') {
-        params.append('date_created.from', dateFrom);
-        params.append('date_created.to', dateTo);
+      // ✅ SÓ APLICAR FILTRO SE PERÍODO > 0
+      if (periodoDias > 0) {
+        const hoje = new Date();
+        const dataInicio = new Date();
+        dataInicio.setDate(hoje.getDate() - periodoDias);
+        
+        const dateFrom = dataInicio.toISOString().split('T')[0];
+        const dateTo = hoje.toISOString().split('T')[0];
+        
+        if (tipoData === 'date_created') {
+          params.append('date_created.from', dateFrom);
+          params.append('date_created.to', dateTo);
+          logger.info(`✅ Filtro aplicado: date_created de ${dateFrom} até ${dateTo}`);
+        } else {
+          params.append('last_updated.from', dateFrom);
+          params.append('last_updated.to', dateTo);
+          logger.info(`✅ Filtro aplicado: last_updated de ${dateFrom} até ${dateTo}`);
+        }
       } else {
-        params.append('last_updated.from', dateFrom);
-        params.append('last_updated.to', dateTo);
+        logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }
       
       // ⚠️ ORDENAR POR DATA DO CLAIM
