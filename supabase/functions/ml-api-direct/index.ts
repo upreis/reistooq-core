@@ -1242,13 +1242,18 @@ async function buscarPedidosCancelados(
     
     const totalAvailable = allClaims.length;  // Guardar total coletado
     
-    // ✅ PROCESSAR TODOS OS CLAIMS COLETADOS (SEM LIMITE!)
-    const claimsParaProcessar = allClaims; // Processar TODOS, não apenas requestLimit
+    // ✅ PROCESSAR APENAS O NECESSÁRIO (evitar timeout)
+    // Calcular slice baseado em offset/limit para esta página
+    const startIndex = requestOffset;
+    const endIndex = requestOffset + requestLimit;
+    const claimsParaProcessar = allClaims.slice(startIndex, endIndex);
+    const hasMore = allClaims.length > endIndex;
     
     console.log(`\n📊 PROCESSAMENTO:`)
-    console.log(`   • Total coletado da API: ${allClaims.length}`)
-    console.log(`   • Claims para processar: ${claimsParaProcessar.length}`)
-    console.log(`   • Paginação será aplicada apenas no retorno final\n`)
+    console.log(`   • Total disponível na API: ${allClaims.length}`)
+    console.log(`   • Processando claims ${startIndex} a ${endIndex}`)
+    console.log(`   • Claims neste lote: ${claimsParaProcessar.length}`)
+    console.log(`   • Tem mais dados: ${hasMore}\n`)
     
     if (claimsParaProcessar.length === 0) {
       return {
@@ -1258,7 +1263,7 @@ async function buscarPedidosCancelados(
       }
     }
     
-    logger.info(`Processando TODOS os ${claimsParaProcessar.length} claims da API ML`)
+    logger.info(`Processando ${claimsParaProcessar.length} claims (${startIndex}-${endIndex} de ${allClaims.length} total)`)
 
     // ========================================
     // 🔍 BUSCAR REASONS EM LOTE DA API ML
