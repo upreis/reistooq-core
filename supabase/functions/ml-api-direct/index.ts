@@ -1121,13 +1121,6 @@ async function buscarPedidosCancelados(
       tipoData_usado: tipoData
     });
     
-    const hoje = new Date();
-    const dataInicio = new Date();
-    dataInicio.setDate(hoje.getDate() - periodoDias);
-    
-    const dateFrom = dataInicio.toISOString().split('T')[0];  // YYYY-MM-DD
-    const dateTo = hoje.toISOString().split('T')[0];          // YYYY-MM-DD
-    
     // ✅ NOVA LÓGICA: Buscar TODOS os claims com paginação automática
     const MAX_TOTAL_CLAIMS = 10000;
     const BATCH_SIZE = 50; // API ML funciona melhor com 50
@@ -1155,8 +1148,8 @@ async function buscarPedidosCancelados(
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - periodoDias);
         
-        const dateFrom = dataInicio.toISOString().split('T')[0];
-        const dateTo = hoje.toISOString().split('T')[0];
+        const dateFrom = dataInicio.toISOString().split('T')[0];  // YYYY-MM-DD
+        const dateTo = hoje.toISOString().split('T')[0];          // YYYY-MM-DD
         
         if (tipoData === 'date_created') {
           params.append('date_created.from', dateFrom);

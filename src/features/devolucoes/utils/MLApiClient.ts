@@ -25,8 +25,10 @@ export const fetchClaimsAndReturns = async (
       limit,
       offset,
       filters: {
-        date_from: filters.dataInicio || '',
-        date_to: filters.dataFim || '',
+        // ✅ NOVO: Passar período e tipo de data em vez de datas fixas
+        periodoDias: filters.periodoDias ?? 0,  // Default 0 = buscar tudo
+        tipoData: filters.tipoData || 'date_created',
+        // Mantém outros filtros
         status_claim: filters.statusClaim || '',
         claim_type: filters.claimType || '',
         stage: filters.stage || '',
