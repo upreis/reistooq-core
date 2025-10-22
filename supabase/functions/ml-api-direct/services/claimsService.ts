@@ -18,7 +18,7 @@ export class ClaimsService {
   ): Promise<any[]> {
     const MAX_CLAIMS = 10000;
     const limit = 50;
-    const DAYS_PER_CHUNK = 7; // Dividir em intervalos de 7 dias
+    const DAYS_PER_CHUNK = 3; // Dividir em intervalos de 3 dias para contornar limite de offset
     
     // Se não há filtro de data ou o período é curto, usar método normal
     if (!filters?.date_from || !filters?.date_to) {
@@ -58,6 +58,11 @@ export class ClaimsService {
       
       logger.info(`Chunk ${chunkNumber}: ${chunkFilters.date_from} a ${chunkFilters.date_to}`);
       
+      // Delay entre chunks para evitar rate limit
+      if (chunkNumber > 1) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
       const chunkClaims = await this.fetchClaimsNormal(sellerId, chunkFilters, accessToken, integrationAccountId);
       
       // Adicionar apenas claims únicos
@@ -70,7 +75,12 @@ export class ClaimsService {
         }
       }
       
-      logger.info(`Chunk ${chunkNumber}: ${newClaims} claims novos (${chunkClaims.length} total, ${allClaims.length} acumulado)`);
+      logger.info(`Chunk ${chunkNumber}: ${newClaims} claims novos (${chunkClaims.length} total do chunk, ${allClaims.length} acumulado)`);
+      
+      // Se o chunk retornou menos que o esperado, pode ser que não haja mais dados
+      if (chunkClaims.length === 0) {
+        logger.info(`Chunk ${chunkNumber} vazio - pulando para próximo intervalo`);
+      }
       
       currentDate = new Date(actualEnd);
       currentDate.setDate(currentDate.getDate() + 1); // Próximo dia após o fim do chunk
