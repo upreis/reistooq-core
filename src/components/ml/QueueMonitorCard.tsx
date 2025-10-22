@@ -5,12 +5,28 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { RefreshCw, CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { RefreshCw, CheckCircle2, XCircle, Clock, AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const QueueMonitorCard = () => {
+  const resetFailedMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('reset-failed-claims');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success(`✅ ${data.resetCount} claims resetados para processamento`);
+      refetch();
+    },
+    onError: (error: any) => {
+      toast.error(`❌ Erro ao resetar: ${error.message}`);
+    }
+  });
+
   const { data: queueStats, isLoading, refetch } = useQuery({
     queryKey: ['queue-stats'],
     queryFn: async () => {
@@ -18,7 +34,22 @@ export const QueueMonitorCard = () => {
         .from('fila_processamento_claims')
         .select('status');
       
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao buscar queue stats:', error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log('⚠️ Fila vazia ou sem dados');
+        return {
+          total: 0,
+          completed: 0,
+          pending: 0,
+          processing: 0,
+          failed: 0,
+          progress: 100
+        };
+      }
       
       const stats = {
         total: data.length,
@@ -28,12 +59,13 @@ export const QueueMonitorCard = () => {
         failed: data.filter(d => d.status === 'failed').length,
       };
       
-      const processed = stats.completed + stats.failed;
+      const processed = stats.completed;
       const progress = stats.total > 0 ? (processed / stats.total) * 100 : 0;
       
+      console.log('📊 Queue Stats:', stats);
       return { ...stats, progress };
     },
-    refetchInterval: 10000, // Atualiza a cada 10 segundos
+    refetchInterval: 5000, // Atualiza a cada 5 segundos
   });
 
   if (isLoading || !queueStats) {
@@ -58,13 +90,29 @@ export const QueueMonitorCard = () => {
           <CardTitle className="text-base font-medium">
             🔄 Processamento em Background
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refetch()}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            {queueStats && queueStats.failed > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resetFailedMutation.mutate()}
+                disabled={resetFailedMutation.isPending}
+              >
+                {resetFailedMutation.isPending ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetch()}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -148,48 +148,92 @@ serve(async (req) => {
         
         const accountName = accountData?.account_name || 'Unknown';
         
-        // 🎯 ESTRUTURA MÍNIMA - APENAS COLUNAS QUE EXISTEM NA TABELA
+        // 🎯 USAR claim_data que já vem completo da API ML
+        const claim = queueItem.claim_data;
+        
+        if (!claim) {
+          console.error(`❌ claim_data ausente para claim ${queueItem.claim_id}`);
+          throw new Error('claim_data ausente');
+        }
+        
+        // Estrutura COMPLETA copiada do ml-api-direct
         const claimRecord = {
-          order_id: String(claimData.order_id || claimData.resource_id),
-          claim_id: String(claimData.claim_details?.id || claimData.id),
+          order_id: String(claim.order_id || claim.resource_id),
+          claim_id: String(claim.claim_details?.id || claim.id),
           integration_account_id: queueItem.integration_account_id,
           account_name: accountName,
           marketplace_origem: 'ML_BRASIL',
           
-          // Dados básicos
-          data_criacao: claimData.date_created || claimData.claim_details?.date_created,
-          status_devolucao: claimData.status || claimData.claim_details?.status,
-          tipo_claim: claimData.claim_details?.type || claimData.type,
-          subtipo_claim: claimData.claim_details?.stage || 'none',
+          // Dados básicos da listagem
+          data_criacao: claim.date_created,
+          status_devolucao: claim.status,
+          tipo_claim: claim.type || claim.claim_details?.type,
+          subtipo_claim: claim.claim_details?.stage || 'none',
           
           // Reason
-          motivo_categoria: claimData.claim_details?.reason_id || claimData.reason_id,
+          reason_id: claim.reason_id || claim.claim_details?.reason_id,
+          motivo_categoria: claim.reason_id || claim.claim_details?.reason_id,
           
           // Produto
-          produto_titulo: claimData.resource_data?.title || claimData.order_data?.order_items?.[0]?.item?.title,
-          sku: claimData.resource_data?.sku || claimData.order_data?.order_items?.[0]?.item?.seller_sku,
-          quantidade: claimData.resource_data?.quantity || claimData.order_data?.order_items?.[0]?.quantity,
+          produto_titulo: claim.resource_data?.title || claim.order_data?.order_items?.[0]?.item?.title,
+          sku: claim.resource_data?.sku || claim.order_data?.order_items?.[0]?.item?.seller_sku,
+          quantidade: claim.resource_data?.quantity || claim.order_data?.order_items?.[0]?.quantity,
           
           // Valores
-          valor_retido: claimData.amount || claimData.order_data?.total_amount,
+          valor_retido: claim.amount || claim.order_data?.total_amount,
+          valor_original_produto: claim.order_data?.total_amount,
           
           // Resolução
-          metodo_resolucao: claimData.claim_details?.resolution?.reason,
-          resultado_final: claimData.claim_details?.resolution?.reason,
+          metodo_resolucao: claim.claim_details?.resolution?.reason,
+          resultado_final: claim.claim_details?.resolution?.reason,
           
           // Custos
-          responsavel_custo: claimData.claim_details?.resolution?.benefited?.[0] || 'complainant',
+          responsavel_custo: claim.claim_details?.resolution?.benefited?.[0] || 'complainant',
           
           // Timestamps
-          data_criacao_claim: claimData.claim_details?.date_created || claimData.date_created,
-          data_fechamento_claim: claimData.claim_details?.resolution?.date_created,
+          data_criacao_claim: claim.claim_details?.date_created || claim.date_created,
+          data_inicio_return: claim.return_details_v2?.date_created,
+          data_fechamento_claim: claim.claim_details?.resolution?.date_created,
           
           // Mediação
-          em_mediacao: claimData.claim_details?.type === 'mediations',
-          resultado_mediacao: claimData.claim_details?.resolution?.reason,
+          em_mediacao: claim.claim_details?.type === 'mediations',
+          resultado_mediacao: claim.claim_details?.resolution?.reason,
           
           // Review
-          observacoes_review: claimData.claim_details?.resolution?.reason,
+          review_status: claim.claim_details?.status,
+          review_result: claim.claim_details?.resolution?.reason,
+          observacoes_review: claim.claim_details?.resolution?.reason,
+          
+          // Comprador
+          comprador_nome_completo: claim.buyer?.first_name && claim.buyer?.last_name 
+            ? `${claim.buyer.first_name} ${claim.buyer.last_name}` 
+            : null,
+          comprador_nickname: claim.buyer?.nickname,
+          
+          // Pagamento
+          metodo_pagamento: claim.order_data?.payments?.[0]?.payment_method_id,
+          tipo_pagamento: claim.order_data?.payments?.[0]?.payment_type,
+          parcelas: claim.order_data?.payments?.[0]?.installments,
+          valor_parcela: claim.order_data?.payments?.[0]?.installment_amount,
+          transaction_id: claim.order_data?.payments?.[0]?.id?.toString(),
+          
+          // Tags
+          tags_pedido: claim.order_data?.tags || [],
+          internal_tags: claim.order_data?.internal_tags || [],
+          nota_fiscal_autorizada: claim.order_data?.internal_tags?.includes('invoice_authorized') || false,
+          
+          // Tracking
+          shipment_id: claim.shipment_id,
+          codigo_rastreamento: claim.codigo_rastreamento,
+          transportadora: claim.transportadora,
+          status_rastreamento: claim.status_rastreamento_pedido,
+          tracking_history: claim.tracking_history || [],
+          tracking_events: claim.tracking_events || [],
+          
+          // Comunicação
+          timeline_mensagens: claim.claim_messages?.messages || [],
+          ultima_mensagem_data: claim.claim_messages?.messages?.[claim.claim_messages?.messages?.length - 1]?.date_created,
+          numero_interacoes: claim.claim_messages?.messages?.length || 0,
           
           // Metadata
           created_at: new Date().toISOString(),
@@ -197,15 +241,11 @@ serve(async (req) => {
           ultima_sincronizacao: new Date().toISOString(),
           fonte_dados_primaria: 'ml_api_queue',
           
-          // Comunicação
-          timeline_mensagens: claimData.claim_messages?.messages || [],
-          ultima_mensagem_data: claimData.claim_messages?.messages?.[claimData.claim_messages?.messages?.length - 1]?.date_created,
-          
-          // Raw data (JSONB) - usar nomes corretos das colunas
-          dados_order: claimData.order_data || {},
-          dados_claim: claimData.claim_details || {},
-          dados_mensagens: claimData.claim_messages || {},
-          dados_return: claimData.return_details_v2 || claimData.return_details_v1 || {}
+          // Raw data (JSONB)
+          dados_order: claim.order_data || {},
+          dados_claim: claim.claim_details || {},
+          dados_mensagens: claim.claim_messages || {},
+          dados_return: claim.return_details_v2 || claim.return_details_v1 || {}
         };
         
         // Salvar no banco
