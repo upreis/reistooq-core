@@ -24,6 +24,118 @@ function makeServiceClient() {
   });
 }
 
+// 🔄 BACKGROUND PROCESSING - Processar claims restantes progressivamente
+async function processClaimsInBackground(
+  claims: any[],
+  accessToken: string,
+  integrationAccountId: string,
+  sellerId: string,
+  accountId: string
+) {
+  logger.info(`📦 BACKGROUND: Iniciando processamento de ${claims.length} claims`)
+  
+  const BATCH_SIZE = 10; // Processar 10 claims por vez
+  const supabaseAdmin = makeServiceClient()
+  
+  for (let i = 0; i < claims.length; i += BATCH_SIZE) {
+    const batch = claims.slice(i, i + BATCH_SIZE);
+    logger.info(`📦 BACKGROUND: Processando lote ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(claims.length/BATCH_SIZE)} (${batch.length} claims)`)
+    
+    try {
+      // Processar este lote de claims
+      const processedClaims = [];
+      
+      for (const claim of batch) {
+        try {
+          const orderId = claim.resource_id || claim.order_id;
+          if (!orderId || !claim.id) continue;
+          
+          // Buscar dados completos do claim (simplificado para background)
+          const orderDetailUrl = `https://api.mercadolibre.com/orders/${orderId}`;
+          const orderResponse = await fetchMLWithRetry(orderDetailUrl, accessToken, integrationAccountId);
+          
+          if (!orderResponse.ok) {
+            if (orderResponse.status === 404) {
+              processedClaims.push({
+                claim_id: claim.id,
+                order_id: orderId,
+                integration_account_id: accountId,
+                status_devolucao: 'order_not_found',
+                order_not_found: true,
+                date_created: claim.date_created || new Date().toISOString(),
+                marketplace_origem: 'mercadolivre'
+              });
+            }
+            continue;
+          }
+          
+          const orderDetail = await orderResponse.json();
+          
+          // Buscar dados essenciais do claim
+          const [claimDetails, returnsV2] = await Promise.all([
+            fetchMLWithRetry(
+              `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}`,
+              accessToken,
+              integrationAccountId
+            ).then(r => r.ok ? r.json() : null).catch(() => null),
+            
+            fetchMLWithRetry(
+              `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
+              accessToken,
+              integrationAccountId
+            ).then(r => r.ok ? r.json() : null).catch(() => null)
+          ]);
+          
+          // Criar registro simplificado
+          processedClaims.push({
+            claim_id: claim.id,
+            order_id: orderId,
+            integration_account_id: accountId,
+            status: claimDetails?.status || claim.status,
+            date_created: claimDetails?.date_created || claim.date_created,
+            date_closed: claimDetails?.date_closed,
+            total_amount: orderDetail?.total_amount,
+            item_id: orderDetail?.order_items?.[0]?.item?.id,
+            item_title: orderDetail?.order_items?.[0]?.item?.title,
+            buyer_id: orderDetail?.buyer?.id,
+            buyer_nickname: orderDetail?.buyer?.nickname,
+            status_devolucao: claimDetails?.status,
+            marketplace_origem: 'mercadolivre',
+            processed_in_background: true
+          });
+          
+        } catch (error) {
+          logger.warn(`BACKGROUND: Erro ao processar claim ${claim.id}:`, error.message);
+        }
+      }
+      
+      // Salvar lote no banco de dados
+      if (processedClaims.length > 0) {
+        const { error } = await supabaseAdmin
+          .from('mercadolivre_orders_cancelled')
+          .upsert(processedClaims, { 
+            onConflict: 'claim_id,integration_account_id',
+            ignoreDuplicates: false 
+          });
+        
+        if (error) {
+          logger.error(`BACKGROUND: Erro ao salvar lote ${Math.floor(i/BATCH_SIZE) + 1}:`, error);
+        } else {
+          logger.success(`BACKGROUND: Salvou ${processedClaims.length} claims no banco`);
+        }
+      }
+      
+      // Pequeno delay entre lotes para não sobrecarregar
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+    } catch (error) {
+      logger.error(`BACKGROUND: Erro no lote ${Math.floor(i/BATCH_SIZE) + 1}:`, error);
+    }
+  }
+  
+  logger.success(`📦 BACKGROUND: Processamento completo! ${claims.length} claims processados`)
+}
+
 // 🔄 Buscar dados de Returns (devolução)
 async function buscarReturns(claimId: string, accessToken: string, integrationAccountId: string) {
   const url = `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`
@@ -1242,17 +1354,21 @@ async function buscarPedidosCancelados(
     
     const totalAvailable = allClaims.length;  // Guardar total coletado
     
-    // ✅ PROCESSAR APENAS O NECESSÁRIO (evitar timeout)
-    // Calcular slice baseado em offset/limit para esta página
+    // ✅ PROCESSAMENTO INTELIGENTE COM BACKGROUND TASKS
+    // Processar página atual imediatamente, resto em background
     const startIndex = requestOffset;
     const endIndex = requestOffset + requestLimit;
     const claimsParaProcessar = allClaims.slice(startIndex, endIndex);
+    const claimsRestantes = [
+      ...allClaims.slice(0, startIndex),           // Claims antes da página atual
+      ...allClaims.slice(endIndex)                 // Claims depois da página atual
+    ];
     const hasMore = allClaims.length > endIndex;
     
-    console.log(`\n📊 PROCESSAMENTO:`)
+    console.log(`\n📊 PROCESSAMENTO COM BACKGROUND TASKS:`)
     console.log(`   • Total disponível na API: ${allClaims.length}`)
-    console.log(`   • Processando claims ${startIndex} a ${endIndex}`)
-    console.log(`   • Claims neste lote: ${claimsParaProcessar.length}`)
+    console.log(`   • Processando AGORA: claims ${startIndex} a ${endIndex} (${claimsParaProcessar.length} claims)`)
+    console.log(`   • Processamento em BACKGROUND: ${claimsRestantes.length} claims restantes`)
     console.log(`   • Tem mais dados: ${hasMore}\n`)
     
     if (claimsParaProcessar.length === 0) {
@@ -1264,6 +1380,23 @@ async function buscarPedidosCancelados(
     }
     
     logger.info(`Processando ${claimsParaProcessar.length} claims (${startIndex}-${endIndex} de ${allClaims.length} total)`)
+    
+    // 🔄 INICIAR BACKGROUND TASK PARA PROCESSAR CLAIMS RESTANTES
+    if (claimsRestantes.length > 0) {
+      logger.info(`🚀 Iniciando background task para processar ${claimsRestantes.length} claims restantes`)
+      
+      EdgeRuntime.waitUntil(
+        processClaimsInBackground(
+          claimsRestantes,
+          accessToken,
+          integrationAccountId,
+          seller_id,
+          integration_account_id
+        ).catch(error => {
+          logger.error('Erro no processamento em background:', error)
+        })
+      )
+    }
 
     // ========================================
     // 🔍 BUSCAR REASONS EM LOTE DA API ML
