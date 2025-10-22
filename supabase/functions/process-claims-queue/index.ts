@@ -220,7 +220,12 @@ serve(async (req) => {
           });
         
         if (saveError) {
-          console.error(`❌ Erro ao salvar claim ${claimId}:`, saveError);
+          console.error(`❌ Erro ao salvar claim ${claimId}:`, {
+            message: saveError.message,
+            details: saveError.details,
+            hint: saveError.hint,
+            code: saveError.code
+          });
           throw saveError;
         }
         
@@ -235,13 +240,17 @@ serve(async (req) => {
         
       } catch (error) {
         failedCount++;
-        console.error(`❌ Erro ao processar claim ${queueItem.claim_id}:`, error);
+        console.error(`❌ Erro ao processar claim ${queueItem.claim_id}:`, {
+          message: error?.message || 'Erro desconhecido',
+          name: error?.name,
+          stack: error?.stack?.substring(0, 200)
+        });
         
         // Marcar como falha ou voltar para pending
         if (queueItem.tentativas + 1 >= 3) {
           await supabase
             .from('fila_processamento_claims')
-            .update({ status: 'failed', erro_mensagem: error.message })
+            .update({ status: 'failed', erro_mensagem: error?.message || 'Erro desconhecido' })
             .eq('id', queueItem.id);
         } else {
           await supabase
