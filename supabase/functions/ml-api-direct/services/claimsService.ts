@@ -17,7 +17,7 @@ export class ClaimsService {
     integrationAccountId: string
   ): Promise<any[]> {
     const MAX_CLAIMS = 10000;
-    const limit = 50;
+    const limit = 100; // Máximo permitido pela API do ML
     const DAYS_PER_CHUNK = 3; // Dividir em intervalos de 3 dias para contornar limite de offset
     
     // Se não há filtro de data ou o período é curto, usar método normal
@@ -100,7 +100,7 @@ export class ClaimsService {
     integrationAccountId: string
   ): Promise<any[]> {
     const MAX_CLAIMS = 10000;
-    const limit = 50;
+    const limit = 100; // Máximo permitido pela API do ML
     let offset = 0;
     const allClaims: any[] = [];
     
@@ -143,15 +143,19 @@ export class ClaimsService {
         break;
       }
       
-      logger.debug(`Página retornou ${data.data.length} claims (total: ${allClaims.length + data.data.length})`);
+      // Log com informações do paging da API
+      const pagingInfo = data.paging || {};
+      logger.info(`📄 Página offset=${offset}: ${data.data.length} claims (total API: ${pagingInfo.total || 'N/A'}, acumulado: ${allClaims.length + data.data.length})`);
       
       allClaims.push(...data.data);
-      offset += limit;
       
       // Parar se não há mais dados ou atingiu limite
       if (data.data.length < limit || allClaims.length >= MAX_CLAIMS) {
+        logger.info(`⏹️ Paginação finalizada: ${data.data.length < limit ? 'sem mais dados' : 'limite atingido'}`);
         break;
       }
+      
+      offset += limit;
     } while (true);
     
     logger.info(`${allClaims.length} claims recebidos da API ML`);
