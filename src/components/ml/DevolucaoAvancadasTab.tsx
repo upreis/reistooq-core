@@ -195,8 +195,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         </Card>
       ) : (
     <div className="space-y-6">
-      {/* 📊 Monitor da Fila de Processamento */}
-      <QueueMonitorCard />
       
       {/* Header com estatísticas melhoradas */}
       <ErrorBoundary

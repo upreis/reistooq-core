@@ -197,53 +197,74 @@ export function useDevolucoesBusca() {
             status: filtros.statusClaim || 'todos'
           });
 
-          // 📊 PAGINAÇÃO PROGRESSIVA - Buscar em lotes
+          // 🚀 AUTO-PAGINAÇÃO COMPLETA - Buscar tudo automaticamente
           let allClaims: any[] = [];
           let offset = 0;
-          const limit = 50; // Tamanho do lote
+          const limit = 100; // Buscar 100 por vez
           let hasMore = true;
-          let totalClaims = 0;
+          let tentativas = 0;
+          const MAX_TENTATIVAS = 50; // Limite de segurança (5000 claims)
 
-          while (hasMore) {
-            logger.info(`📄 Buscando lote: offset=${offset}, limit=${limit}`);
+          toast.info(`🔄 Buscando todas as devoluções de ${account.name}...`);
 
-            // ✅ USAR MLApiClient que já tem paginação
-            const apiResponse = await fetchClaimsAndReturns(
-              accountId,
-              account.account_identifier,
-              filtros,
-              limit,
-              offset
-            );
+          while (hasMore && tentativas < MAX_TENTATIVAS) {
+            tentativas++;
+            
+            try {
+              logger.info(`📄 Buscando lote ${tentativas}: offset=${offset}, limit=${limit}`);
 
-            if (!apiResponse?.success || !apiResponse?.data) {
-              logger.info(`Nenhuma devolução encontrada para ${account.name}`);
+              const apiResponse = await fetchClaimsAndReturns(
+                accountId,
+                account.account_identifier,
+                filtros,
+                limit,
+                offset
+              );
+
+              if (!apiResponse?.success || !apiResponse?.data) {
+                logger.info(`Fim da busca para ${account.name}`);
+                break;
+              }
+
+              const batchData = apiResponse.data;
+              const pagination = apiResponse.pagination;
+              
+              // Se recebeu dados vazios, parar
+              if (batchData.length === 0) {
+                logger.info(`Lote vazio - finalizando busca`);
+                break;
+              }
+              
+              allClaims = [...allClaims, ...batchData];
+              const totalClaims = pagination?.total || allClaims.length;
+              
+              logger.info(`✅ Lote ${tentativas}: ${batchData.length} claims | Total: ${allClaims.length}/${totalClaims}`);
+
+              // Atualizar progresso
+              setLoadingProgress({
+                current: allClaims.length,
+                total: totalClaims,
+                message: `${allClaims.length}/${totalClaims} devoluções carregadas de ${account.name}...`
+              });
+
+              // Verificar se tem mais
+              hasMore = pagination?.hasMore || false;
+              
+              if (!hasMore || allClaims.length >= totalClaims) {
+                logger.info(`🏁 Busca completa: ${allClaims.length} claims carregados`);
+                break;
+              }
+
+              offset += limit;
+              
+              // Delay para não sobrecarregar
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+            } catch (error) {
+              logger.error(`Erro no lote ${tentativas}:`, error);
+              // Continuar com o que já foi buscado
               break;
             }
-
-            const batchData = apiResponse.data;
-            const pagination = apiResponse.pagination;
-            
-            allClaims = [...allClaims, ...batchData];
-            totalClaims = pagination?.total || allClaims.length;
-            
-            logger.info(`✅ Lote recebido: ${batchData.length} claims | Total acumulado: ${allClaims.length}/${totalClaims} | hasMore: ${pagination?.hasMore}`);
-
-            // Atualizar progresso
-            setLoadingProgress({
-              current: allClaims.length,
-              total: totalClaims,
-              message: `Carregando ${allClaims.length}/${totalClaims} claims de ${account.name}...`
-            });
-
-            // ✅ PARAR se: não há mais dados OU lote vazio OU já pegamos tudo
-            if (batchData.length === 0 || !pagination?.hasMore || allClaims.length >= totalClaims) {
-              logger.info(`🏁 Paginação concluída: ${allClaims.length} claims carregados`);
-              break;
-            }
-
-            offset += limit;
-            hasMore = pagination?.hasMore || false;
           }
 
           logger.info(`🎉 Total de claims carregados para ${account.name}: ${allClaims.length}`);

@@ -88,8 +88,8 @@ serve(async (req) => {
     logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
     if (action === 'get_claims_and_returns') {
-      // 📄 PAGINAÇÃO - Extrair parâmetros (defaults seguros)
-      const limit = Math.min(requestBody.limit || 1000, 2000); // ✅ Buscar até 2000 por vez
+      // 📄 PAGINAÇÃO SIMPLES - Máximo 100 por chamada
+      const limit = Math.min(requestBody.limit || 100, 100);
       const offset = requestBody.offset || 0;
       
       // 🔒 Obter token de forma segura usando integrations-get-secret
