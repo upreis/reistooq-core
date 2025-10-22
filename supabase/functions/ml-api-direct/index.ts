@@ -1126,7 +1126,7 @@ async function buscarPedidosCancelados(
     const MAX_TOTAL_CLAIMS = 10000;
     const BATCH_SIZE = 100; // ⚡ TESTE: Voltando para 100 conforme sugestão
     const allClaims: any[] = [];
-    let offset = 0;
+    let offset = requestOffset; // ✅ CORRIGIDO: Usar offset do request, não zero
     let consecutiveEmptyBatches = 0;
     
     // 🔍 DIAGNÓSTICO: Verificar se há limitação interna não documentada
@@ -1167,8 +1167,11 @@ async function buscarPedidosCancelados(
     
     logger.info(`🎯 ${filtrosAtivos.length} filtros ativos: [${filtrosAtivos.join(', ')}]`);
     
-    // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar TODOS os claims disponíveis
-    while (allClaims.length < MAX_TOTAL_CLAIMS && consecutiveEmptyBatches < 3) {
+    // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar até o limite solicitado
+    // 🔧 CORRIGIDO: Respeitar requestLimit em vez de buscar tudo
+    const maxClaimsToFetch = Math.min(requestLimit, MAX_TOTAL_CLAIMS);
+    
+    while (allClaims.length < maxClaimsToFetch && consecutiveEmptyBatches < 3) {
       
       // Montar parâmetros da API ML
       const params = new URLSearchParams();
