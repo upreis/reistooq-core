@@ -1254,7 +1254,7 @@ async function buscarPedidosCancelados(
     
     console.log(`\n📦 ADICIONANDO ${allClaims.length} CLAIMS NA FILA DE PROCESSAMENTO...`)
     
-    const claimsParaFila = allClaims.map(claim => ({
+    const claimsForQueue = allClaims.map(claim => ({
       integration_account_id: integrationAccountId,
       claim_id: claim.id,
       order_id: claim.resource_id || claim.order_id,
@@ -1265,7 +1265,7 @@ async function buscarPedidosCancelados(
     // Inserir na fila (ignora duplicatas)
     const { error: queueError } = await supabaseAdmin
       .from('fila_processamento_claims')
-      .upsert(claimsParaFila, { 
+      .upsert(claimsForQueue, { 
         onConflict: 'claim_id,integration_account_id',
         ignoreDuplicates: true 
       });
@@ -1282,12 +1282,12 @@ async function buscarPedidosCancelados(
     
     const IMMEDIATE_LIMIT = 50; // Processar 50 imediatamente
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
-    const claimsParaFila = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
+    const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
     console.log(`\n📊 PROCESSAMENTO ESTRATÉGICO:`)
     console.log(`   • Total coletado da API ML: ${allClaims.length} claims`)
     console.log(`   • Processando AGORA: ${claimsParaProcessar.length} claims (resposta rápida)`)
-    console.log(`   • Restante: ${claimsParaFila.length} claims (fila + cron job)`)
+    console.log(`   • Restante: ${remainingClaims.length} claims (fila + cron job)`)
     console.log(`   • A fila processará automaticamente a cada minuto\n`)
     
     if (claimsParaProcessar.length === 0) {
