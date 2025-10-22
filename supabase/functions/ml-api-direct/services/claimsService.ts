@@ -225,7 +225,7 @@ export class ClaimsService {
     integrationAccountId: string
   ): Promise<any[]> {
     const MAX_TOTAL_CLAIMS = 10000;
-    const BATCH_SIZE = 50;
+    const BATCH_SIZE = 100;
     const allClaims: any[] = [];
     let offset = 0;
     let consecutiveEmptyBatches = 0;

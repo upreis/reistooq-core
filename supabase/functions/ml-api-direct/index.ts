@@ -1364,7 +1364,7 @@ async function buscarPedidosCancelados(
     // 1. Processar primeiros 50 e retornar resposta rápida
     // 2. Processar restante em background via fila + cron
     
-    const IMMEDIATE_LIMIT = 50; // Processar 50 imediatamente
+    const IMMEDIATE_LIMIT = 100; // Processar 100 imediatamente
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
     const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
