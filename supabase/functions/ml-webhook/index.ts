@@ -67,18 +67,37 @@ Deno.serve(async (req) => {
     if (topic === 'orders_v2') {
       console.log('[ML Webhook] Processing order notification for resource:', resource);
       
-      // Buscar pedido atualizado via API do ML
-      // Aqui você pode chamar a função unified-orders para sincronizar
-      try {
-        await supabase.functions.invoke('unified-orders', {
-          body: { 
-            force_sync: true,
-            ml_resource: resource 
-          }
-        });
-        console.log('[ML Webhook] Order sync triggered successfully');
-      } catch (error) {
-        console.error('[ML Webhook] Failed to trigger order sync:', error);
+      // ✅ Buscar integration_account_id baseado no user_id do ML
+      const { data: accounts } = await supabase
+        .from('integration_accounts')
+        .select('id, organization_id')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true);
+      
+      // Filtrar pela conta correta usando public_auth->user_id
+      const matchingAccount = accounts?.find(acc => {
+        const authData = acc.public_auth as any;
+        return authData && authData.user_id && parseInt(authData.user_id) === user_id;
+      });
+      
+      if (matchingAccount) {
+        console.log(`[ML Webhook] Found integration account: ${matchingAccount.id}`);
+        
+        // Buscar pedido atualizado via API do ML
+        try {
+          await supabase.functions.invoke('unified-orders', {
+            body: { 
+              integration_account_id: matchingAccount.id,  // ✅ CORRIGIDO
+              force_sync: true,
+              ml_resource: resource 
+            }
+          });
+          console.log('[ML Webhook] Order sync triggered successfully');
+        } catch (error) {
+          console.error('[ML Webhook] Failed to trigger order sync:', error);
+        }
+      } else {
+        console.warn(`[ML Webhook] No integration account found for ML user_id: ${user_id}`);
       }
     }
     
@@ -86,17 +105,22 @@ Deno.serve(async (req) => {
     if (topic === 'claims' || topic === 'returns') {
       console.log(`[ML Webhook] Claims/Returns notification received, triggering background sync`);
       
-      // Buscar integration_account_id baseado no user_id
+      // ✅ Buscar integration_account_id baseado no user_id do ML
       const { data: accounts } = await supabase
         .from('integration_accounts')
-        .select('id, organization_id')
+        .select('id, organization_id, public_auth')
         .eq('provider', 'mercadolivre')
-        .eq('user_id', user_id)
-        .eq('is_active', true)
-        .limit(1);
+        .eq('is_active', true);
       
-      if (accounts && accounts.length > 0) {
-        const accountId = accounts[0].id;
+      // Filtrar pela conta correta usando public_auth->user_id
+      const matchingAccount = accounts?.find(acc => {
+        const authData = acc.public_auth as any;
+        return authData && authData.user_id && parseInt(authData.user_id) === user_id;
+      });
+      
+      if (matchingAccount) {
+        const accountId = matchingAccount.id;
+        console.log(`[ML Webhook] Found integration account: ${accountId}`);
         
         // Chamar sync em background (não aguardar resposta)
         supabase.functions.invoke('sync-devolucoes-background', {
@@ -109,6 +133,8 @@ Deno.serve(async (req) => {
         });
         
         console.log(`[ML Webhook] Background sync triggered for account ${accountId}`);
+      } else {
+        console.warn(`[ML Webhook] No integration account found for ML user_id: ${user_id}`);
       }
     }
     
