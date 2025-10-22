@@ -130,97 +130,99 @@ serve(async (req) => {
           .update({ status: 'processing', tentativas: queueItem.tentativas + 1 })
           .eq('id', queueItem.id);
         
-        console.log(`📦 Processando claim ${queueItem.claim_id}...`);
+        console.log(`📦 Processando claim ${queueItem.claim_id} da fila...`);
         
-        // Obter token ML
-        const accessToken = await getMLToken(queueItem.integration_account_id, supabase);
+        // ✅ USAR DADOS DO CLAIM_DATA DIRETAMENTE (já temos da API ML)
+        const claimData = queueItem.claim_data;
         
-        // Processar claim (versão simplificada - apenas dados essenciais)
-        const orderId = queueItem.order_id;
-        const claimId = queueItem.claim_id;
-        
-        // Buscar order details
-        const orderResponse = await fetchMLWithRetry(
-          `https://api.mercadolibre.com/orders/${orderId}`,
-          accessToken
-        );
-        
-        if (!orderResponse.ok) {
-          if (orderResponse.status === 404) {
-            // Salvar claim como order_not_found
-            await supabase.from('mercadolivre_orders_cancelled').upsert({
-              claim_id: claimId,
-              order_id: orderId,
-              integration_account_id: queueItem.integration_account_id,
-              status_devolucao: 'order_not_found',
-              order_not_found: true,
-              marketplace_origem: 'mercadolivre',
-              date_created: new Date().toISOString()
-            }, { onConflict: 'claim_id,integration_account_id' });
-            
-            // Marcar como completado
-            await supabase
-              .from('fila_processamento_claims')
-              .update({ status: 'completed', processado_em: new Date().toISOString() })
-              .eq('id', queueItem.id);
-            
-            successCount++;
-            continue;
-          }
-          throw new Error(`HTTP ${orderResponse.status} ao buscar order`);
+        if (!claimData) {
+          throw new Error('claim_data ausente na fila');
         }
         
-        const orderDetail = await orderResponse.json();
+        // Obter account_name
+        const { data: accountData } = await supabase
+          .from('integration_accounts')
+          .select('account_name')
+          .eq('id', queueItem.integration_account_id)
+          .single();
         
-        // Buscar claim details
-        const [claimDetails, returnsV2] = await Promise.all([
-          fetchMLWithRetry(
-            `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}`,
-            accessToken
-          ).then(r => r.ok ? r.json() : null).catch(() => null),
-          
-          fetchMLWithRetry(
-            `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`,
-            accessToken
-          ).then(r => r.ok ? r.json() : null).catch(() => null)
-        ]);
+        const accountName = accountData?.account_name || 'Unknown';
         
-        // Criar registro simplificado
+        // Preparar registro usando a estrutura da API (já enriquecido)
         const claimRecord = {
-          claim_id: claimId,
-          order_id: orderId,
+          order_id: String(claimData.order_id || claimData.resource_id),
+          claim_id: String(claimData.claim_details?.id || claimData.id),
           integration_account_id: queueItem.integration_account_id,
-          status: claimDetails?.status || 'pending',
-          date_created: claimDetails?.date_created || orderDetail?.date_created,
-          date_closed: claimDetails?.date_closed,
-          total_amount: orderDetail?.total_amount,
-          item_id: orderDetail?.order_items?.[0]?.item?.id,
-          item_title: orderDetail?.order_items?.[0]?.item?.title,
-          quantity: orderDetail?.order_items?.[0]?.quantity,
-          buyer_id: orderDetail?.buyer?.id,
-          buyer_nickname: orderDetail?.buyer?.nickname,
-          status_devolucao: claimDetails?.status,
-          marketplace_origem: 'mercadolivre',
-          reason_id: claimDetails?.reason_id,
-          processed_in_background: true,
-          // Dados brutos para processamento futuro se necessário
+          account_name: accountName,
+          marketplace_origem: 'ML_BRASIL',
+          
+          // Dados básicos
+          data_criacao: claimData.date_created || claimData.claim_details?.date_created,
+          status_devolucao: claimData.status || claimData.claim_details?.status,
+          tipo_claim: claimData.claim_details?.type || claimData.type,
+          subtipo_claim: claimData.claim_details?.stage || 'none',
+          
+          // Reason
+          reason_id: claimData.claim_details?.reason_id || claimData.reason_id,
+          motivo_categoria: claimData.claim_details?.reason_id || claimData.reason_id,
+          
+          // Produto
+          produto_titulo: claimData.resource_data?.title || claimData.order_data?.order_items?.[0]?.item?.title,
+          sku: claimData.resource_data?.sku || claimData.order_data?.order_items?.[0]?.item?.seller_sku,
+          quantidade: claimData.resource_data?.quantity || claimData.order_data?.order_items?.[0]?.quantity,
+          
+          // Valores
+          valor_retido: claimData.amount || claimData.order_data?.total_amount,
+          valor_original_produto: claimData.order_data?.total_amount,
+          
+          // Resolução
+          metodo_resolucao: claimData.claim_details?.resolution?.reason,
+          resultado_final: claimData.claim_details?.resolution?.reason,
+          
+          // Custos
+          responsavel_custo: claimData.claim_details?.resolution?.benefited?.[0] || 'complainant',
+          
+          // Timestamps
+          data_criacao_claim: claimData.claim_details?.date_created || claimData.date_created,
+          data_fechamento_claim: claimData.claim_details?.resolution?.date_created,
+          data_primeira_acao: claimData.claim_messages?.messages?.[0]?.date_created || claimData.claim_details?.date_created,
+          
+          // Mediação
+          em_mediacao: claimData.claim_details?.type === 'mediations' ? claimData.claim_details?.type : null,
+          data_inicio_mediacao: claimData.claim_details?.type === 'mediations' ? claimData.claim_details?.date_created : null,
+          resultado_mediacao: claimData.claim_details?.resolution?.reason,
+          escalado_para_ml: claimData.claim_details?.type === 'mediations' ? claimData.claim_details?.type : null,
+          
+          // Review
+          data_inicio_review: claimData.claim_details?.date_created,
+          observacoes_review: claimData.claim_details?.resolution?.reason,
+          
+          // Metadata
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ultima_sincronizacao: new Date().toISOString(),
+          dados_incompletos: false,
+          fonte_dados_primaria: 'ml_api_queue',
+          
+          // Raw data
           raw: {
-            order_data: orderDetail,
-            claim_details: claimDetails,
-            return_details_v2: returnsV2
+            dados_order: claimData.order_data || {},
+            dados_claim: claimData.claim_details || {},
+            dados_mensagens: claimData.claim_messages || {},
+            dados_return: claimData.return_details_v2 || claimData.return_details_v1 || {}
           }
         };
         
-        // Salvar no banco
+        // Salvar no banco (usar devolucoes_avancadas)
         const { error: saveError } = await supabase
-          .from('mercadolivre_orders_cancelled')
+          .from('devolucoes_avancadas')
           .upsert(claimRecord, { 
-            onConflict: 'claim_id,integration_account_id',
+            onConflict: 'order_id,integration_account_id',
             ignoreDuplicates: false 
           });
         
         if (saveError) {
-          console.error(`❌ Erro ao salvar claim ${claimId}:`, {
+          console.error(`❌ Erro ao salvar claim ${queueItem.claim_id}:`, {
             message: saveError.message,
             details: saveError.details,
             hint: saveError.hint,
@@ -236,7 +238,7 @@ serve(async (req) => {
           .eq('id', queueItem.id);
         
         successCount++;
-        console.log(`✅ Claim ${claimId} processado com sucesso`);
+        console.log(`✅ Claim ${queueItem.claim_id} salvo com sucesso`);
         
       } catch (error) {
         failedCount++;
@@ -261,7 +263,7 @@ serve(async (req) => {
       }
       
       // Delay entre claims
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 200));
     }
     
     console.log(`✅ Processamento concluído: ${successCount} sucesso, ${failedCount} falhas`);
