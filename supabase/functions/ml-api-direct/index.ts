@@ -2220,17 +2220,16 @@ async function buscarPedidosCancelados(
       console.log(`📅 ================================================\n`)
     }
     
-    // ✅ APLICAR PAGINAÇÃO NO RESULTADO FINAL (para o frontend)
-    const finalStartIndex = requestOffset;
-    const finalEndIndex = finalStartIndex + requestLimit;
-    const paginatedResults = ordersCancelados.slice(finalStartIndex, finalEndIndex);
+    // ✅ NÃO APLICAR PAGINAÇÃO AQUI - O FRONTEND FAZ ISSO
+    // A edge function deve retornar TODOS os claims processados
+    // O frontend faz múltiplas chamadas com offset/limit
     
-    logger.success(`📊 RESULTADO FINAL: ${paginatedResults.length} de ${ordersCancelados.length} processados | Total API: ${totalAvailable}`);
+    logger.success(`📊 RESULTADO FINAL: ${ordersCancelados.length} claims processados | Total disponível na API: ${totalAvailable}`);
     
     return {
-      data: paginatedResults,
-      total: ordersCancelados.length,
-      hasMore: finalEndIndex < ordersCancelados.length
+      data: ordersCancelados, // ✅ RETORNAR TODOS OS PROCESSADOS
+      total: totalAvailable, // ✅ TOTAL REAL DA API ML
+      hasMore: totalAvailable > (requestOffset + ordersCancelados.length) // ✅ Há mais na API?
     }
     
   } catch (error) {
