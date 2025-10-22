@@ -1122,9 +1122,9 @@ async function buscarPedidosCancelados(
       tipoData_usado: tipoData
     });
     
-    // ✅ NOVA LÓGICA: Buscar TODOS os claims com paginação automática
-    const MAX_TOTAL_CLAIMS = 10000;
-    const BATCH_SIZE = 100; // ⚡ TESTE: Voltando para 100 conforme sugestão
+    // ✅ CORRIGIDO: Respeitar parâmetros do frontend
+    const MAX_TOTAL_CLAIMS = requestLimit; // ← Usar limite solicitado pelo frontend
+    const BATCH_SIZE = Math.min(requestLimit, 100); // ← Dinâmico, máximo 100 por lote
     const allClaims: any[] = [];
     let offset = requestOffset; // ✅ CORRIGIDO: Usar offset do request, não zero
     let consecutiveEmptyBatches = 0;
@@ -1364,10 +1364,10 @@ async function buscarPedidosCancelados(
     }
     
     // ✅ ESTRATÉGIA DE DUAS ETAPAS PARA EVITAR TIMEOUT:
-    // 1. Processar primeiros 50 e retornar resposta rápida
+    // 1. Processar primeiros N e retornar resposta rápida
     // 2. Processar restante em background via fila + cron
     
-    const IMMEDIATE_LIMIT = 50; // Processar 50 imediatamente
+    const IMMEDIATE_LIMIT = Math.min(allClaims.length, requestLimit); // ← Dinâmico, respeita request
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
     const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
