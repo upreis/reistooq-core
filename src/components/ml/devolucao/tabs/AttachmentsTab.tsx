@@ -12,15 +12,13 @@ interface AttachmentsTabProps {
 export const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ devolucao }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
-  const anexosComprador = devolucao?.anexos_comprador || [];
-  const anexosVendedor = devolucao?.anexos_vendedor || [];
+  // ✅ CORREÇÃO: Removidas colunas anexos_comprador e anexos_vendedor (foram excluídas do banco)
+  // Agora usamos apenas anexos_ml (mapeado da API) e claim_attachments (estrutura original)
   const anexosML = devolucao?.anexos_ml || [];
   const claimAttachments = devolucao?.claim_attachments || [];
 
   // Consolidar todos os anexos
   const allAttachments = [
-    ...anexosComprador.map((a: any) => ({ ...a, source: 'buyer' })),
-    ...anexosVendedor.map((a: any) => ({ ...a, source: 'seller' })),
     ...anexosML.map((a: any) => ({ ...a, source: 'meli' })),
     ...claimAttachments
   ];
@@ -116,33 +114,7 @@ export const AttachmentsTab: React.FC<AttachmentsTabProps> = ({ devolucao }) => 
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Do Comprador</p>
-                <p className="text-2xl font-bold">{anexosComprador.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <Store className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Do Vendedor</p>
-                <p className="text-2xl font-bold">{anexosVendedor.length}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* ✅ REMOVIDO: Cards de anexos_comprador e anexos_vendedor (colunas excluídas do banco) */}
 
         <Card>
           <CardContent className="p-4">
