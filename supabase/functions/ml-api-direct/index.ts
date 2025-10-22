@@ -2221,16 +2221,16 @@ async function buscarPedidosCancelados(
     }
     
     // ✅ APLICAR PAGINAÇÃO NO RESULTADO FINAL (para o frontend)
-    const startIndex = requestOffset;
-    const endIndex = startIndex + requestLimit;
-    const paginatedResults = ordersCancelados.slice(startIndex, endIndex);
+    const finalStartIndex = requestOffset;
+    const finalEndIndex = finalStartIndex + requestLimit;
+    const paginatedResults = ordersCancelados.slice(finalStartIndex, finalEndIndex);
     
     logger.success(`📊 RESULTADO FINAL: ${paginatedResults.length} de ${ordersCancelados.length} processados | Total API: ${totalAvailable}`);
     
     return {
       data: paginatedResults,
       total: ordersCancelados.length,
-      hasMore: endIndex < ordersCancelados.length
+      hasMore: finalEndIndex < ordersCancelados.length
     }
     
   } catch (error) {
