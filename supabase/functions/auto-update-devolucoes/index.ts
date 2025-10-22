@@ -78,7 +78,14 @@ serve(async (req) => {
             seller_id: conta.account_identifier,
             filters: {
               periodoDias: 0,  // ✅ Sem filtro de data - buscar tudo
-              tipoData: 'date_created'
+              tipoData: 'date_created',
+              statusClaim: '',
+              claimType: '',
+              stage: '',
+              fulfilled: undefined,
+              quantityType: '',
+              reasonId: '',
+              resource: ''
             },
             limit: 100,
             offset: 0

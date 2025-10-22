@@ -1132,6 +1132,33 @@ async function buscarPedidosCancelados(
     logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (limite request: ${requestLimit})`);
     logger.info(`📋 Filtros recebidos: período=${periodoDias} dias, tipo=${tipoData}`);
     
+    // ✅ VALIDAÇÃO DOS FILTROS RECEBIDOS:
+    logger.info(`📋 Filtros completos recebidos:`, {
+      periodoDias,
+      tipoData,
+      statusClaim: filters?.statusClaim || 'não definido',
+      claimType: filters?.claimType || 'não definido',
+      stage: filters?.stage || 'não definido',
+      fulfilled: filters?.fulfilled !== undefined ? filters.fulfilled : 'não definido',
+      quantityType: filters?.quantityType || 'não definido',
+      reasonId: filters?.reasonId || 'não definido',
+      resource: filters?.resource || 'não definido'
+    });
+    
+    // Contar quantos filtros estão ativos
+    const filtrosAtivos = [
+      periodoDias > 0 ? 'data' : null,
+      filters?.statusClaim ? 'status' : null,
+      filters?.claimType ? 'tipo' : null,
+      filters?.stage ? 'stage' : null,
+      filters?.fulfilled !== undefined ? 'fulfilled' : null,
+      filters?.quantityType ? 'quantity' : null,
+      filters?.reasonId ? 'reason' : null,
+      filters?.resource ? 'resource' : null
+    ].filter(Boolean);
+    
+    logger.info(`🎯 ${filtrosAtivos.length} filtros ativos: [${filtrosAtivos.join(', ')}]`);
+    
     // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar TODOS os claims disponíveis
     while (allClaims.length < MAX_TOTAL_CLAIMS && consecutiveEmptyBatches < 3) {
       
@@ -1169,35 +1196,43 @@ async function buscarPedidosCancelados(
       params.append('sort', 'date_created:desc');
       
       // ============ FILTROS OPCIONAIS DA API ML ============
-      if (filters?.status_claim && filters.status_claim.trim().length > 0) {
-        params.append('status', filters.status_claim)
+      // ✅ CORRIGIDO: Usar camelCase (como frontend envia)
+      if (filters?.statusClaim && filters.statusClaim.trim().length > 0) {
+        params.append('status', filters.statusClaim);
+        logger.info(`✅ Filtro status aplicado: ${filters.statusClaim}`);
       }
       
-      if (filters?.claim_type && filters.claim_type.trim().length > 0) {
-        params.append('type', filters.claim_type)
+      if (filters?.claimType && filters.claimType.trim().length > 0) {
+        params.append('type', filters.claimType);
+        logger.info(`✅ Filtro tipo aplicado: ${filters.claimType}`);
       }
 
       if (filters?.stage && filters.stage.trim().length > 0) {
-        params.append('stage', filters.stage)
+        params.append('stage', filters.stage);
+        logger.info(`✅ Filtro stage aplicado: ${filters.stage}`);
       }
 
       if (filters?.fulfilled !== undefined && filters.fulfilled !== null && filters.fulfilled !== '') {
-        const fulfilledValue = String(filters.fulfilled).toLowerCase()
+        const fulfilledValue = String(filters.fulfilled).toLowerCase();
         if (fulfilledValue === 'true' || fulfilledValue === 'false') {
-          params.append('fulfilled', fulfilledValue)
+          params.append('fulfilled', fulfilledValue);
+          logger.info(`✅ Filtro fulfilled aplicado: ${filters.fulfilled}`);
         }
       }
 
-      if (filters?.quantity_type && filters.quantity_type.trim().length > 0) {
-        params.append('quantity_type', filters.quantity_type)
+      if (filters?.quantityType && filters.quantityType.trim().length > 0) {
+        params.append('quantity_type', filters.quantityType);
+        logger.info(`✅ Filtro quantity_type aplicado: ${filters.quantityType}`);
       }
 
-      if (filters?.reason_id && filters.reason_id.trim().length > 0) {
-        params.append('reason_id', filters.reason_id)
+      if (filters?.reasonId && filters.reasonId.trim().length > 0) {
+        params.append('reason_id', filters.reasonId);
+        logger.info(`✅ Filtro reason_id aplicado: ${filters.reasonId}`);
       }
 
       if (filters?.resource && filters.resource.trim().length > 0) {
-        params.append('resource', filters.resource)
+        params.append('resource', filters.resource);
+        logger.info(`✅ Filtro resource aplicado: ${filters.resource}`);
       }
       
       const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
