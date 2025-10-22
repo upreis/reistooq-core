@@ -1255,7 +1255,7 @@ async function buscarPedidosCancelados(
     console.log(`\n📦 ADICIONANDO ${allClaims.length} CLAIMS NA FILA DE PROCESSAMENTO...`)
     
     const claimsParaFila = allClaims.map(claim => ({
-      integration_account_id,
+      integration_account_id: integrationAccountId,
       claim_id: claim.id,
       order_id: claim.resource_id || claim.order_id,
       claim_data: claim,
