@@ -1176,6 +1176,14 @@ async function buscarPedidosCancelados(
       params.append('limit', BATCH_SIZE.toString());
       params.append('offset', offset.toString());
       
+      // 🔍 DIAGNÓSTICO: Log inicial da requisição
+      logger.info(`🌐 Preparando requisição API ML:`, {
+        batch: Math.floor(offset / BATCH_SIZE) + 1,
+        offset,
+        limit: BATCH_SIZE,
+        sellerId
+      });
+      
       // ⭐ FILTRAR POR DATA (tipo definido pelo usuário: date_created ou last_updated)
       // ✅ SÓ APLICAR FILTRO SE PERÍODO > 0
       if (periodoDias > 0) {
@@ -1185,6 +1193,16 @@ async function buscarPedidosCancelados(
         
         const dateFrom = dataInicio.toISOString().split('T')[0];  // YYYY-MM-DD
         const dateTo = hoje.toISOString().split('T')[0];          // YYYY-MM-DD
+        
+        // 🔍 DIAGNÓSTICO DETALHADO: Verificar filtro de data
+        logger.info(`📅 FILTRO DE DATA CONFIGURADO:`, {
+          periodoDias,
+          tipoData,
+          dateFrom,
+          dateTo,
+          hoje: hoje.toISOString(),
+          dataInicio: dataInicio.toISOString()
+        });
         
         if (tipoData === 'date_created') {
           params.append('date_created.from', dateFrom);
@@ -1244,6 +1262,12 @@ async function buscarPedidosCancelados(
       
       const url = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
       
+      // 🔍 DIAGNÓSTICO: URL completa da requisição
+      logger.info(`🔗 URL MONTADA:`, {
+        urlCompleta: url,
+        parametros: Object.fromEntries(params.entries())
+      });
+      
       logger.info(`📄 Lote ${Math.floor(offset/BATCH_SIZE) + 1}: offset=${offset}, limit=${BATCH_SIZE} (total: ${allClaims.length})`);
       
       try {
@@ -1263,13 +1287,20 @@ async function buscarPedidosCancelados(
         
         // 🔍 DIAGNÓSTICO DETALHADO DA RESPOSTA DA API
         const pagingInfo = data.paging || {};
-        logger.info(`🔍 RESPONSE DETALHADO:`, {
+        logger.info(`🔍 RESPOSTA API ML DETALHADA:`, {
+          batch: Math.floor(offset / BATCH_SIZE) + 1,
           solicitado: BATCH_SIZE,
           recebido: data.data?.length || 0,
-          total_disponivel: pagingInfo.total,
+          total_disponivel_api: pagingInfo.total,
           offset_atual: pagingInfo.offset,
           limit_usado: pagingInfo.limit,
-          tem_mais: data.data?.length === BATCH_SIZE
+          tem_mais: data.data?.length === BATCH_SIZE,
+          applied_filters: data.applied_filters || 'nenhum informado pela API',
+          filtros_enviados: {
+            date_from: params.get('date_created.from') || params.get('last_updated.from'),
+            date_to: params.get('date_created.to') || params.get('last_updated.to'),
+            tipo_data: params.get('date_created.from') ? 'date_created' : 'last_updated'
+          }
         });
         
         // 📊 HEADERS DA RESPOSTA (Rate Limiting)
@@ -1360,10 +1391,11 @@ async function buscarPedidosCancelados(
     }
     
     // ✅ ESTRATÉGIA DE DUAS ETAPAS PARA EVITAR TIMEOUT:
-    // 1. Processar primeiros 50 imediatamente (resposta rápida)
-    // 2. Processar restante em background via fila + cron
+    // 1. Processar claims solicitados imediatamente (resposta rápida)
+    // 2. Se houver mais de 100, processar restante em background via fila + cron
     
-    const IMMEDIATE_LIMIT = 50; // ← SEMPRE 50 para garantir resposta rápida
+    // ✅ CORRIGIDO: Processar todos os claims solicitados pelo frontend
+    const IMMEDIATE_LIMIT = Math.min(allClaims.length, requestLimit);
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
     const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
