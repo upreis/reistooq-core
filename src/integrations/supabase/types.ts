@@ -3375,10 +3375,8 @@ export type Database = {
         Row: {
           acao_seller_necessaria: boolean | null
           acoes_necessarias_review: Json | null
-          anexos_comprador: Json | null
           anexos_count: number | null
           anexos_ml: Json | null
-          anexos_vendedor: Json | null
           buyer_id: string | null
           buyer_nickname: string | null
           buyer_reputation: Json | null
@@ -3555,10 +3553,8 @@ export type Database = {
         Insert: {
           acao_seller_necessaria?: boolean | null
           acoes_necessarias_review?: Json | null
-          anexos_comprador?: Json | null
           anexos_count?: number | null
           anexos_ml?: Json | null
-          anexos_vendedor?: Json | null
           buyer_id?: string | null
           buyer_nickname?: string | null
           buyer_reputation?: Json | null
@@ -3735,10 +3731,8 @@ export type Database = {
         Update: {
           acao_seller_necessaria?: boolean | null
           acoes_necessarias_review?: Json | null
-          anexos_comprador?: Json | null
           anexos_count?: number | null
           anexos_ml?: Json | null
-          anexos_vendedor?: Json | null
           buyer_id?: string | null
           buyer_nickname?: string | null
           buyer_reputation?: Json | null
