@@ -1276,28 +1276,25 @@ async function buscarPedidosCancelados(
       logger.success(`✅ ${allClaims.length} claims adicionados à fila de processamento`);
     }
     
-    // ✅ PROCESSAR APENAS A PÁGINA ATUAL PARA RESPOSTA IMEDIATA
-    const startIndex = requestOffset;
-    const endIndex = requestOffset + requestLimit;
-    const claimsParaProcessar = allClaims.slice(startIndex, endIndex);
-    const hasMore = allClaims.length > endIndex;
+    // ✅ PROCESSAR **TODOS** OS CLAIMS ENCONTRADOS IMEDIATAMENTE
+    // (A fila serve para processamento contínuo em background pelo cron)
+    const claimsParaProcessar = allClaims;
     
     console.log(`\n📊 PROCESSAMENTO IMEDIATO:`)
-    console.log(`   • Total na fila: ${allClaims.length} claims`)
-    console.log(`   • Processando AGORA: claims ${startIndex} a ${endIndex} (${claimsParaProcessar.length} claims)`)
-    console.log(`   • Restante será processado em background pela fila`)
-    console.log(`   • Tem mais dados: ${hasMore}\n`)
+    console.log(`   • Total coletado da API ML: ${allClaims.length} claims`)
+    console.log(`   • Processando TODOS AGORA para resposta imediata`)
+    console.log(`   • Fila: ${allClaims.length} claims adicionados para sync contínua\n`)
     
     if (claimsParaProcessar.length === 0) {
       return {
         data: [],
-        total: totalAvailable,
+        total: 0,
         hasMore: false,
         queued: allClaims.length
       }
     }
     
-    logger.info(`Processando ${claimsParaProcessar.length} claims da página atual (${startIndex}-${endIndex} de ${allClaims.length} total)`)
+    logger.info(`Processando ${claimsParaProcessar.length} claims encontrados na API ML`)
 
     // ========================================
     // 🔍 BUSCAR REASONS EM LOTE DA API ML
