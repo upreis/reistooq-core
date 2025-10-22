@@ -1107,7 +1107,7 @@ async function buscarPedidosCancelados(
   try {
     
     // 📅 CALCULAR DATAS BASEADO NO PERÍODO
-    const periodoDias = filters?.periodo_dias || 60;  // Default 60 dias
+    const periodoDias = filters?.periodo_dias || 90;  // Default 90 dias (igual ao filtro padrão da interface)
     const tipoData = filters?.tipo_data || 'date_created';  // 'date_created' ou 'last_updated'
     
     const hoje = new Date();
@@ -1125,7 +1125,7 @@ async function buscarPedidosCancelados(
     let consecutiveEmptyBatches = 0;
     
     logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (limite request: ${requestLimit})`);
-    logger.info(`📋 Filtros: período=${periodoDias} dias, filtro=${tipoData}, de ${dateFrom} até ${dateTo}`);
+    logger.info(`📋 Filtros: período=${periodoDias} dias, tipo=${tipoData}, de ${dateFrom} até ${dateTo}`);
     
     // ✅ LOOP DE PAGINAÇÃO AUTOMÁTICA - Buscar TODOS os claims disponíveis
     while (allClaims.length < MAX_TOTAL_CLAIMS && consecutiveEmptyBatches < 3) {
@@ -1137,9 +1137,14 @@ async function buscarPedidosCancelados(
       params.append('limit', BATCH_SIZE.toString());
       params.append('offset', offset.toString());
       
-      // ⭐ FILTRAR POR ÚLTIMA SYNC (last_updated) - PADRÃO
-      params.append('last_updated.from', dateFrom);
-      params.append('last_updated.to', dateTo);
+      // ⭐ FILTRAR POR DATA (tipo definido pelo usuário: date_created ou last_updated)
+      if (tipoData === 'date_created') {
+        params.append('date_created.from', dateFrom);
+        params.append('date_created.to', dateTo);
+      } else {
+        params.append('last_updated.from', dateFrom);
+        params.append('last_updated.to', dateTo);
+      }
       
       // ⚠️ ORDENAR POR DATA DO CLAIM
       params.append('sort', 'date_created:desc');
