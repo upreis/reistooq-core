@@ -18,7 +18,7 @@ export class ClaimsService {
   ): Promise<any[]> {
     const MAX_CLAIMS = 10000;
     const limit = 100; // Máximo permitido pela API do ML
-    const DAYS_PER_CHUNK = 3; // Dividir em intervalos de 3 dias para contornar limite de offset
+    const DAYS_PER_CHUNK = 1; // ⚡ Reduzido para 1 dia para maximizar resultados
     
     // Se não há filtro de data ou o período é curto, usar método normal
     if (!filters?.date_from || !filters?.date_to) {
@@ -35,13 +35,15 @@ export class ClaimsService {
       return this.fetchClaimsNormal(sellerId, filters, accessToken, integrationAccountId);
     }
     
-    logger.info(`Período de ${diffDays} dias detectado - dividindo em chunks de ${DAYS_PER_CHUNK} dias`);
+    const startTime = Date.now();
+    logger.info(`⏱️  Iniciando busca de ${diffDays} dias - dividindo em chunks de ${DAYS_PER_CHUNK} dia(s)`);
     
     // Dividir em intervalos menores
     const allClaims: any[] = [];
     const claimIds = new Set<string>(); // Para evitar duplicatas
     let currentDate = new Date(dateFrom);
     let chunkNumber = 0;
+    const totalChunks = Math.ceil(diffDays / DAYS_PER_CHUNK);
     
     while (currentDate < dateTo && allClaims.length < MAX_CLAIMS) {
       chunkNumber++;
@@ -56,14 +58,16 @@ export class ClaimsService {
         date_to: actualEnd.toISOString().split('T')[0]
       };
       
-      logger.info(`Chunk ${chunkNumber}: ${chunkFilters.date_from} a ${chunkFilters.date_to}`);
+      const chunkStartTime = Date.now();
+      logger.info(`\n📦 Chunk ${chunkNumber}/${totalChunks}: ${chunkFilters.date_from} → ${chunkFilters.date_to}`);
       
       // Delay entre chunks para evitar rate limit
       if (chunkNumber > 1) {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
       const chunkClaims = await this.fetchClaimsNormal(sellerId, chunkFilters, accessToken, integrationAccountId);
+      const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2);
       
       // Adicionar apenas claims únicos
       let newClaims = 0;
@@ -75,18 +79,28 @@ export class ClaimsService {
         }
       }
       
-      logger.info(`Chunk ${chunkNumber}: ${newClaims} claims novos (${chunkClaims.length} total do chunk, ${allClaims.length} acumulado)`);
+      logger.info(`   ✓ ${newClaims} novos | ${chunkClaims.length} total chunk | ${allClaims.length} acumulado | ⏱️ ${chunkDuration}s`);
       
       // Se o chunk retornou menos que o esperado, pode ser que não haja mais dados
       if (chunkClaims.length === 0) {
-        logger.info(`Chunk ${chunkNumber} vazio - pulando para próximo intervalo`);
+        logger.info(`   ⚠️  Chunk vazio - continuando para próximo intervalo`);
+      }
+      
+      // Log de progresso a cada 10 chunks
+      if (chunkNumber % 10 === 0) {
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        const estimatedTotal = (elapsed / chunkNumber) * totalChunks;
+        logger.info(`\n📊 Progresso: ${chunkNumber}/${totalChunks} chunks | ${allClaims.length} claims | ⏱️ ${elapsed}s/${estimatedTotal.toFixed(1)}s estimado\n`);
       }
       
       currentDate = new Date(actualEnd);
       currentDate.setDate(currentDate.getDate() + 1); // Próximo dia após o fim do chunk
     }
     
-    logger.info(`✅ Total de ${allClaims.length} claims únicos recebidos em ${chunkNumber} chunks`);
+    const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+    logger.info(`\n${'='.repeat(70)}`);
+    logger.info(`✅ FINALIZADO: ${allClaims.length} claims únicos | ${chunkNumber} chunks | ⏱️ ${totalDuration}s`);
+    logger.info(`${'='.repeat(70)}\n`);
     return allClaims;
   }
   
