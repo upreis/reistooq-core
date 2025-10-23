@@ -10,6 +10,7 @@ import { mapReviewsData, extractReviewsFields } from './mappers/reviews-mapper.t
 import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper.ts'
 import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
 import { fetchMLWithRetry } from './utils/retryHandler.ts'
+import { ReasonsService } from './services/reasonsService.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1437,7 +1438,7 @@ async function buscarPedidosCancelados(
     }
     
     // 3. Buscar detalhes dos reasons usando a API oficial
-    const reasonsService = new (await import('./services/reasonsService.ts')).ReasonsService();
+    const reasonsService = new ReasonsService();
     const reasonsDetailsMap = await reasonsService.fetchMultipleReasons(
       Array.from(uniqueReasonIds),
       accessToken,
@@ -2244,7 +2245,8 @@ async function buscarPedidosCancelados(
                     reason_detail: apiData.reason_detail,
                     reason_flow: apiData.reason_flow,
                     reason_category: apiData.reason_category,
-                    reason_settings: apiData.reason_settings,
+                    reason_position: apiData.reason_position,
+                    reason_settings: JSON.stringify(apiData.reason_settings || {}), // ✅ Serializar para evitar erro no banco
                     dados_reasons: apiData, // Salvar objeto completo
                     motivo_categoria: reasonId // Compatibilidade
                   };
@@ -2254,6 +2256,7 @@ async function buscarPedidosCancelados(
                 const mappedReason = mapReasonWithApiData(reasonId, null);
                 return {
                   ...mappedReason,
+                  reason_settings: null, // ✅ Garantir que seja null se não houver dados
                   motivo_categoria: reasonId
                 };
               })(),
