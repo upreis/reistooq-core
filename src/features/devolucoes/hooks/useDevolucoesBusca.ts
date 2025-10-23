@@ -364,7 +364,7 @@ export function useDevolucoesBusca() {
               const itemCompleto = {
                 ...mapDevolucaoCompleta(item, accountId, account.name, reasonId),
                 
-                // Adicionar dados de reasons da API (FASE 4)
+                // ✅ ADICIONAR DADOS DE REASONS DA API (FASE 4) - com validação
                 reason_id: reasonId,
                 reason_category: reasonId?.startsWith('PNR') ? 'not_received' :
                                 reasonId?.startsWith('PDD') ? 'defective_or_different' :
@@ -374,7 +374,14 @@ export function useDevolucoesBusca() {
                 reason_type: 'buyer_initiated',
                 reason_priority: (reasonId?.startsWith('PNR') || reasonId?.startsWith('PDD')) ? 'high' : 'medium',
                 reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
-                reason_flow: apiReasonData?.flow || null
+                reason_flow: apiReasonData?.flow || null,
+                reason_settings: apiReasonData?.settings ? JSON.stringify(apiReasonData.settings) : null,
+                reason_position: apiReasonData?.position || null,
+                
+                // ✅ CAMPOS TÉCNICOS (garantir que não sejam undefined)
+                dados_incompletos: false,
+                campos_faltantes: null, // ✅ SEMPRE NULL para evitar erro de coluna
+                ultima_sincronizacao: new Date().toISOString()
               };
               
               // Log do primeiro item processado
