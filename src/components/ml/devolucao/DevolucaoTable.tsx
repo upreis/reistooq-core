@@ -38,7 +38,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transação ID</th>
             
             {/* GRUPO 2: DATAS E TIMELINE (11 colunas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Criação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Venda</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Criação Claim</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Fechamento</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Início Devolução</th>
