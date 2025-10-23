@@ -1396,15 +1396,22 @@ async function buscarPedidosCancelados(
     // 1. Processar claims imediatamente (até 300)
     // 2. Processar restante em background via fila + cron
     
-    // ✅ LÓGICA OTIMIZADA: Processa até 300 imediatamente, resto em background
-    // ✅ FIX CRÍTICO: Processar TODOS os claims coletados, sem limites artificiais
-    // O limite já foi aplicado na coleta (MAX_CLAIMS_SAFETY_LIMIT = 10000)
-    const claimsParaProcessar = allClaims;
+    // ✅ LÓGICA OTIMIZADA: Processa até 300 imediatamente para evitar timeout
+    const IMMEDIATE_LIMIT = (() => {
+      // Se solicitou até 300 claims, processa todos imediatamente
+      if (requestLimit <= 300) return Math.min(allClaims.length, requestLimit);
+      
+      // Se solicitou mais de 300, processa 300 imediatamente para evitar timeout
+      return Math.min(allClaims.length, 300);
+    })();
+    const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
+    const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
-    console.log(`\n📊 PROCESSAMENTO COMPLETO:`)
+    console.log(`\n📊 PROCESSAMENTO ESTRATÉGICO:`)
     console.log(`   • Total coletado da API ML: ${allClaims.length} claims`)
-    console.log(`   • Processando TODOS agora: ${claimsParaProcessar.length} claims`)
-    console.log(`   • Limite de segurança: ${MAX_CLAIMS_SAFETY_LIMIT} claims\n`)
+    console.log(`   • Processando AGORA: ${claimsParaProcessar.length} claims (resposta rápida)`)
+    console.log(`   • Restante: ${remainingClaims.length} claims (fila + cron job)`)
+    console.log(`   • A fila processará automaticamente a cada minuto\n`)
     
     if (claimsParaProcessar.length === 0) {
       return {
