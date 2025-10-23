@@ -20,8 +20,7 @@ import { toast } from 'sonner';
 export interface DevolucaoFilters {
   searchTerm: string;
   status: string;
-  periodoDias: number;
-  tipoData: 'date_created' | 'last_updated';
+  periodoDias: number;  // Sempre usa item.date_created
 }
 
 export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
@@ -31,9 +30,8 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   // 📊 CONTAS
   contasSelecionadas: string[];
   
-  // 📅 DATAS - SISTEMA UNIFICADO
+  // 📅 DATAS - Sempre usa item.date_created (coluna "Data Criação")
   periodoDias: number;  // 0 = todas, 7, 15, 30, 60, 90
-  tipoData: 'date_created' | 'last_updated';  // Tipo de data para filtrar
   
   // 🎯 STATUS E CLASSIFICAÇÃO
   statusClaim: string;
@@ -180,7 +178,6 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       
       logger.info('[useDevolucoes] 🌐 Limpando tela e buscando APENAS da API ML...', {
         periodoDias: filtrosParaUsar.periodoDias || 0,
-        tipoData: filtrosParaUsar.tipoData || 'date_created',
         contas: filtrosParaUsar.contasSelecionadas
       });
       

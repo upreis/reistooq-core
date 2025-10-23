@@ -19,9 +19,7 @@ interface FiltroRapido {
   filtros: {
     statusClaim?: string;
     periodoDias?: number;
-    tipoData?: 'date_created' | 'last_updated';
     tipoClaim?: string;
-    // ❌ REMOVIDO: dataInicio e dataFim (sistema antigo)
   };
   badge?: {
     text: string;
@@ -43,8 +41,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       icon: <X className="h-4 w-4" />,
       description: 'Buscar TODAS as devoluções (sem limite de data)',
       filtros: {
-        periodoDias: 0,  // ✅ 0 = buscar tudo
-        tipoData: 'date_created'
+        periodoDias: 0  // ✅ 0 = buscar tudo (usa item.date_created)
       },
       badge: {
         text: 'Todas',
@@ -57,8 +54,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       icon: <Sparkles className="h-4 w-4" />,
       description: 'Devoluções dos últimos 7 dias',
       filtros: {
-        periodoDias: 7,
-        tipoData: 'date_created'
+        periodoDias: 7
       },
       badge: {
         text: '7 dias',
@@ -71,8 +67,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       icon: <Clock className="h-4 w-4" />,
       description: 'Devoluções dos últimos 30 dias',
       filtros: {
-        periodoDias: 30,
-        tipoData: 'date_created'
+        periodoDias: 30
       },
       badge: {
         text: '30 dias',
@@ -85,8 +80,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       icon: <TrendingUp className="h-4 w-4" />,
       description: 'Devoluções dos últimos 90 dias',
       filtros: {
-        periodoDias: 90,
-        tipoData: 'date_created'
+        periodoDias: 90
       },
       badge: {
         text: '90 dias',
@@ -100,8 +94,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       description: 'Devoluções abertas dos últimos 60 dias',
       filtros: {
         statusClaim: 'opened',
-        periodoDias: 60,
-        tipoData: 'date_created'
+        periodoDias: 60
       },
       badge: {
         text: 'Abertas',
@@ -115,8 +108,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       description: 'Todas as devoluções com status aberto',
       filtros: {
         statusClaim: 'opened',
-        periodoDias: 0,  // ✅ Buscar todas as abertas sem limite de data
-        tipoData: 'date_created'
+        periodoDias: 0  // ✅ Buscar todas as abertas sem limite de data
       },
       badge: {
         text: 'Status aberto',

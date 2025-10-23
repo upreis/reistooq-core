@@ -121,12 +121,9 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   // Handler para FiltrosRapidos - MEMOIZADO NO TOPO
   const handleFiltrosRapidos = React.useCallback((filtros: any) => {
-    // ✅ NOVO SISTEMA: periodoDias e tipoData
+    // ✅ periodoDias (sempre usa item.date_created)
     if (filtros.periodoDias !== undefined) {
       handleFilterChange('periodoDias', filtros.periodoDias);
-    }
-    if (filtros.tipoData) {
-      handleFilterChange('tipoData', filtros.tipoData);
     }
     if (filtros.statusClaim) {
       handleFilterChange('statusClaim', filtros.statusClaim);
