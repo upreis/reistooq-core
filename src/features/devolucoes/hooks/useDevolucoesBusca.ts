@@ -517,8 +517,8 @@ export function useDevolucoesBusca() {
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        // "Data de Criação" = data_criacao_claim | "Última Atualização" = data_criacao
-        const campoData = filtros.tipoData === 'date_created' ? 'data_criacao_claim' : 'data_criacao';
+        // "Data de Criação" = data_criacao_claim | "Última Atualização" = data_atualizacao_devolucao
+        const campoData = filtros.tipoData === 'date_created' ? 'data_criacao_claim' : 'data_atualizacao_devolucao';
         countQuery = countQuery.gte(campoData, dateFrom);
       }
       
@@ -558,8 +558,8 @@ export function useDevolucoesBusca() {
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
           const dateFrom = dataInicio.toISOString();
-          // "Data de Criação" = data_criacao_claim | "Última Atualização" = data_criacao
-          const campoData = filtros.tipoData === 'date_created' ? 'data_criacao_claim' : 'data_criacao';
+          // "Data de Criação" = data_criacao_claim | "Última Atualização" = data_atualizacao_devolucao
+          const campoData = filtros.tipoData === 'date_created' ? 'data_criacao_claim' : 'data_atualizacao_devolucao';
           query = query.gte(campoData, dateFrom);
         }
         
