@@ -304,15 +304,12 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
           </Popover>
         </div>
 
-        {/* ⭐ NOVO: Filtro de Período e Tipo de Data */}
+        {/* ⭐ Filtro de Período (sempre usa Data de Criação) */}
         <PeriodoDataFilter
           periodoDias={filters.periodoDias || 60}
-          tipoData={filters.tipoData || 'date_created'}
           onPeriodoChange={(dias) => onFilterChange('periodoDias', dias)}
-          onTipoDataChange={(tipo) => onFilterChange('tipoData', tipo)}
           hasPendingChanges={hasPendingChanges}
           appliedPeriodo={appliedFilters.periodoDias}
-          appliedTipoData={appliedFilters.tipoData}
         />
 
         {/* ============ FILTROS AVANÇADOS (FASE 3) ============ */}

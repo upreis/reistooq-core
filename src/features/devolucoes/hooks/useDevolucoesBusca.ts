@@ -27,9 +27,8 @@ export interface DevolucaoBuscaFilters {
   reasonId?: string;       // 'PDD9939', 'PDD9941', etc
   resource?: string;       // 'order' | 'shipment'
   claimType?: string;      // 'mediations' | 'claim'
-  // ============ NOVOS: FILTRO POR PERÍODO E TIPO DE DATA ============
-  periodoDias?: number;    // 7, 15, 30, 60, 90 dias
-  tipoData?: 'date_created' | 'last_updated';  // Tipo de data para filtrar
+  // ============ FILTRO POR PERÍODO ============
+  periodoDias?: number;    // 7, 15, 30, 60, 90 dias (sempre usa item.date_created)
 }
 
 export function useDevolucoesBusca() {
@@ -189,10 +188,9 @@ export function useDevolucoesBusca() {
         
         try {
           // ✅ Chamar API ML via edge function (o token é obtido internamente de forma segura)
-          // 📅 NOVO: Passar período e tipo de data para edge function calcular automaticamente
+          // 📅 Passar período para edge function (sempre usa item.date_created)
           
           logger.info(`🔍 Buscando devoluções para ${account.name}`, {
-            tipoData: filtros.tipoData || 'date_created',
             periodoDias: filtros.periodoDias || 0,
             status: filtros.statusClaim || 'todos'
           });
@@ -499,8 +497,7 @@ export function useDevolucoesBusca() {
     try {
       logger.info('[useDevolucoesBusca] 📦 Buscando do banco com paginação...', {
         contasFiltro: contasSelecionadas?.length || 0,
-        periodoDias: filtros?.periodoDias,
-        tipoData: filtros?.tipoData
+        periodoDias: filtros?.periodoDias
       });
       
       // Primeiro, contar total de registros
@@ -517,11 +514,8 @@ export function useDevolucoesBusca() {
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        // ✅ USAR O TIPO DE DATA SELECIONADO PELO USUÁRIO
-        // "date_created" → data_criacao (item.date_created)
-        // "last_updated" → data_criacao_claim (item.claim_details.date_created)
-        const campoData = filtros.tipoData === 'last_updated' ? 'data_criacao_claim' : 'data_criacao';
-        countQuery = countQuery.gte(campoData, dateFrom);
+        // ✅ SEMPRE USA data_criacao (item.date_created) - coluna "Data Criação" na página
+        countQuery = countQuery.gte('data_criacao', dateFrom);
       }
       
       const { count, error: countError } = await countQuery;
@@ -560,11 +554,8 @@ export function useDevolucoesBusca() {
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
           const dateFrom = dataInicio.toISOString();
-          // ✅ USAR O TIPO DE DATA SELECIONADO PELO USUÁRIO
-          // "date_created" → data_criacao (item.date_created)
-          // "last_updated" → data_criacao_claim (item.claim_details.date_created)
-          const campoData = filtros.tipoData === 'last_updated' ? 'data_criacao_claim' : 'data_criacao';
-          query = query.gte(campoData, dateFrom);
+          // ✅ SEMPRE USA data_criacao (item.date_created) - coluna "Data Criação" na página
+          query = query.gte('data_criacao', dateFrom);
         }
         
         const { data, error } = await query

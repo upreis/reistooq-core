@@ -20,49 +20,27 @@ const PERIODOS_DISPONIVEIS = [
   { dias: 90, label: 'Últimos 90 dias', badge: '3 meses (máx)' }
 ];
 
-const TIPOS_DATA = [
-  { 
-    value: 'date_created', 
-    label: 'Data de Criação', 
-    description: 'Quando o claim foi criado',
-    icon: Calendar
-  },
-  { 
-    value: 'last_updated', 
-    label: 'Última Atualização', 
-    description: 'Claims atualizados recentemente',
-    icon: Clock
-  }
-];
+// ✅ REMOVIDO: Filtro "Última Atualização" - mantém apenas "Data de Criação"
+// Sempre filtra por item.date_created (coluna "Data Criação" na página)
 
 interface PeriodoDataFilterProps {
   periodoDias: number;
-  tipoData: 'date_created' | 'last_updated';
   onPeriodoChange: (dias: number) => void;
-  onTipoDataChange: (tipo: 'date_created' | 'last_updated') => void;
   hasPendingChanges?: boolean;
   appliedPeriodo?: number;
-  appliedTipoData?: 'date_created' | 'last_updated';
 }
 
 export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
   periodoDias,
-  tipoData,
   onPeriodoChange,
-  onTipoDataChange,
   hasPendingChanges = false,
-  appliedPeriodo,
-  appliedTipoData
+  appliedPeriodo
 }: PeriodoDataFilterProps) {
   const [open, setOpen] = React.useState(false);
 
   const periodoSelecionado = PERIODOS_DISPONIVEIS.find(p => p.dias === periodoDias);
-  const tipoDataSelecionado = TIPOS_DATA.find(t => t.value === tipoData);
   
-  const hasChanged = hasPendingChanges && (
-    periodoDias !== appliedPeriodo || 
-    tipoData !== appliedTipoData
-  );
+  const hasChanged = hasPendingChanges && periodoDias !== appliedPeriodo;
 
   return (
     <div className="lg:col-span-2 xl:col-span-2">
@@ -82,13 +60,13 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
             )}
           >
             <div className="flex items-center gap-2">
-              {React.createElement(tipoDataSelecionado?.icon || Calendar, { className: "h-4 w-4" })}
+              <Calendar className="h-4 w-4" />
               <span className="truncate">
                 {periodoSelecionado?.label || `${periodoDias} dias`}
               </span>
             </div>
             <Badge variant="secondary" className="ml-2 text-xs">
-              {tipoDataSelecionado?.label || tipoData}
+              Data de Criação
             </Badge>
           </Button>
         </PopoverTrigger>
@@ -131,53 +109,10 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
               </RadioGroup>
             </div>
 
-            {/* Separador */}
-            <div className="border-t" />
-
-            {/* Seleção de Tipo de Data */}
-            <div>
-              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Tipo de Data
-              </h4>
-              <RadioGroup 
-                value={tipoData} 
-                onValueChange={(value) => onTipoDataChange(value as 'date_created' | 'last_updated')}
-                className="space-y-2"
-              >
-                {TIPOS_DATA.map((tipo) => (
-                  <div 
-                    key={tipo.value}
-                    className={cn(
-                      "flex items-start space-x-2 p-3 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors",
-                      tipoData === tipo.value && "bg-muted border-primary"
-                    )}
-                    onClick={() => {
-                      onTipoDataChange(tipo.value as 'date_created' | 'last_updated');
-                    }}
-                  >
-                    <RadioGroupItem value={tipo.value} id={`tipo-${tipo.value}`} className="mt-0.5" />
-                    <div className="flex-1">
-                      <Label htmlFor={`tipo-${tipo.value}`} className="cursor-pointer">
-                        <div className="flex items-center gap-2 mb-1">
-                          {React.createElement(tipo.icon, { className: "h-4 w-4" })}
-                          <span className="font-medium">{tipo.label}</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {tipo.description}
-                        </p>
-                      </Label>
-                    </div>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-
             {/* Info Box */}
             <div className="bg-muted/50 p-3 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                <strong>💡 Dica:</strong> Use "Última Atualização" para ver claims que foram modificados recentemente, 
-                mesmo que sejam antigos. Use "Data de Criação" para ver claims novos.
+                <strong>💡 Dica:</strong> O filtro sempre utiliza a coluna "Data Criação" (item.date_created) exibida na tabela.
               </p>
             </div>
 
@@ -197,7 +132,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
       {periodoSelecionado && (
         <p className="text-xs text-muted-foreground mt-1">
           Buscando claims dos últimos <strong>{periodoSelecionado.dias} dias</strong> por{' '}
-          <strong>{tipoDataSelecionado?.label.toLowerCase()}</strong>
+          <strong>data de criação</strong>
         </p>
       )}
     </div>

@@ -25,9 +25,8 @@ export const fetchClaimsAndReturns = async (
       limit,
       offset,
       filters: {
-        // ✅ NOVO: Passar período e tipo de data em vez de datas fixas
+        // ✅ Passar período (sempre usa item.date_created)
         periodoDias: filters.periodoDias ?? 0,  // Default 0 = buscar tudo
-        tipoData: filters.tipoData || 'date_created',
         // Mantém outros filtros
         status_claim: filters.statusClaim || '',
         claim_type: filters.claimType || '',
@@ -86,9 +85,8 @@ export const fetchAllClaims = async (
       integration_account_id: accountId,
       seller_id: sellerId,
       filters: {
-        // ✅ Usar novo sistema de filtros
+        // ✅ Buscar tudo (sempre usa item.date_created)
         periodoDias: 0,  // 0 = buscar tudo
-        tipoData: 'date_created',
         status_claim: '',
         claim_type: '',
         stage: '',
