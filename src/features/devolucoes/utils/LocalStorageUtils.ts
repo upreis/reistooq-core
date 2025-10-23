@@ -60,8 +60,6 @@ export const createCleanFilters = (mlAccounts?: any[]): DevolucaoAdvancedFilters
   return {
     searchTerm: '',
     contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
-    dataInicio: '',
-    dataFim: '',
     periodoDias: 0,  // ✅ 0 = busca TODAS as devoluções sem filtro de data
     tipoData: 'date_created',  // ⭐ Default por data de criação
     statusClaim: '',

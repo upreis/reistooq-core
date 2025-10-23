@@ -477,11 +477,8 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
             {filters.statusClaim && (
               <Badge variant="outline">Status: {STATUS_LABELS[filters.statusClaim] || filters.statusClaim}</Badge>
             )}
-            {filters.dataInicio && (
-              <Badge variant="outline">De: {format(new Date(filters.dataInicio + 'T12:00:00'), 'dd/MM/yyyy')}</Badge>
-            )}
-            {filters.dataFim && (
-              <Badge variant="outline">Até: {format(new Date(filters.dataFim + 'T12:00:00'), 'dd/MM/yyyy')}</Badge>
+            {filters.periodoDias > 0 && (
+              <Badge variant="outline">Período: {filters.periodoDias} dias ({filters.tipoData === 'date_created' ? 'Criação' : 'Atualização'})</Badge>
             )}
             {filters.contasSelecionadas?.length > 0 && (
               <Badge variant="outline">
