@@ -164,8 +164,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   // Determinar qual estado mostrar - MEMOIZADO
   const hasFiltersApplied = React.useMemo(() => Boolean(
-    advancedFilters.dataInicio || 
-    advancedFilters.dataFim || 
+    (advancedFilters.periodoDias && advancedFilters.periodoDias > 0) ||
     advancedFilters.searchTerm ||
     advancedFilters.statusClaim ||
     advancedFilters.tipoClaim

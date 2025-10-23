@@ -90,9 +90,7 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
 }: DevolucaoFiltersUnifiedProps) {
   const [statusClaimOpen, setStatusClaimOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
-  const [dataInicioOpen, setDataInicioOpen] = useState(false);
-  const [dataFimOpen, setDataFimOpen] = useState(false);
-  // Novos states para filtros avançados
+  // Filtros avançados
   const [stageOpen, setStageOpen] = useState(false);
   const [fulfilledOpen, setFulfilledOpen] = useState(false);
   const [claimTypeOpen, setClaimTypeOpen] = useState(false);
