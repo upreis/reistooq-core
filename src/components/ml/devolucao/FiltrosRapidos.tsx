@@ -9,7 +9,8 @@ import {
   Package,
   Clock,
   TrendingUp,
-  X
+  X,
+  Calendar
 } from 'lucide-react';
 
 interface FiltroRapido {
@@ -22,6 +23,7 @@ interface FiltroRapido {
     periodoDias?: number;
     tipoData?: 'date_created' | 'last_updated';
     tipoClaim?: string;
+    // ❌ REMOVIDO: dataInicio e dataFim (sistema antigo)
   };
   badge?: {
     text: string;
@@ -43,7 +45,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       icon: <X className="h-4 w-4" />,
       description: 'Buscar TODAS as devoluções (sem limite de data)',
       filtros: {
-        periodoDias: 0,
+        periodoDias: 0,  // ✅ 0 = buscar tudo
         tipoData: 'date_created'
       },
       badge: {
@@ -115,7 +117,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       description: 'Todas as devoluções com status aberto',
       filtros: {
         statusClaim: 'opened',
-        periodoDias: 0,
+        periodoDias: 0,  // ✅ Buscar todas as abertas sem limite de data
         tipoData: 'date_created'
       },
       badge: {
