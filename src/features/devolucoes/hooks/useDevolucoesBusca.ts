@@ -517,8 +517,10 @@ export function useDevolucoesBusca() {
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        // ✅ CORRETO: Filtrar pela coluna "Data Criação" exibida (item.date_created)
-        const campoData = 'data_criacao';
+        // ✅ USAR O TIPO DE DATA SELECIONADO PELO USUÁRIO
+        // "date_created" → data_criacao (item.date_created)
+        // "last_updated" → data_criacao_claim (item.claim_details.date_created)
+        const campoData = filtros.tipoData === 'last_updated' ? 'data_criacao_claim' : 'data_criacao';
         countQuery = countQuery.gte(campoData, dateFrom);
       }
       
@@ -558,8 +560,10 @@ export function useDevolucoesBusca() {
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
           const dateFrom = dataInicio.toISOString();
-          // ✅ CORRETO: Filtrar pela coluna "Data Criação" exibida (item.date_created)
-          const campoData = 'data_criacao';
+          // ✅ USAR O TIPO DE DATA SELECIONADO PELO USUÁRIO
+          // "date_created" → data_criacao (item.date_created)
+          // "last_updated" → data_criacao_claim (item.claim_details.date_created)
+          const campoData = filtros.tipoData === 'last_updated' ? 'data_criacao_claim' : 'data_criacao';
           query = query.gte(campoData, dateFrom);
         }
         
