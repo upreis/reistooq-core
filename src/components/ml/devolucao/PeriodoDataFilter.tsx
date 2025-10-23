@@ -127,14 +127,6 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
           </div>
         </PopoverContent>
       </Popover>
-      
-      {/* Resumo abaixo do botão */}
-      {periodoSelecionado && (
-        <p className="text-xs text-muted-foreground mt-1">
-          Buscando claims dos últimos <strong>{periodoSelecionado.dias} dias</strong> por{' '}
-          <strong>data da venda</strong>
-        </p>
-      )}
     </div>
   );
 });
