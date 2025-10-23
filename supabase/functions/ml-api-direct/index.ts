@@ -1,5 +1,5 @@
 // 📦 ML API DIRECT - Fase 4 Implementada: Endpoints + Mappers Integrados
-import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
@@ -1396,12 +1396,12 @@ async function buscarPedidosCancelados(
     // 1. Processar claims imediatamente (até 300)
     // 2. Processar restante em background via fila + cron
     
-    // ✅ LÓGICA OTIMIZADA: Processa até 300 imediatamente para evitar timeout
+    // ✅ LÓGICA OTIMIZADA: Processa até 300 imediatamente, resto em background
     const IMMEDIATE_LIMIT = (() => {
       // Se solicitou até 300 claims, processa todos imediatamente
       if (requestLimit <= 300) return Math.min(allClaims.length, requestLimit);
       
-      // Se solicitou mais de 300, processa 300 imediatamente para evitar timeout
+      // Se solicitou mais de 300, processa 300 imediatamente
       return Math.min(allClaims.length, 300);
     })();
     const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
