@@ -86,6 +86,15 @@ serve(async (req) => {
     const requestBody = await req.json()
     const { action, integration_account_id, seller_id, filters } = requestBody
 
+    // 🚨 LOG DE DIAGNÓSTICO
+    console.error('🚨 [TESTE] EDGE FUNCTION EXECUTADA!', {
+      action,
+      integration_account_id,
+      filters_periodoDias: filters?.periodoDias,
+      filters_tipoData: filters?.tipoData,
+      filters_completo: filters
+    });
+
     logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
     if (action === 'get_claims_and_returns') {

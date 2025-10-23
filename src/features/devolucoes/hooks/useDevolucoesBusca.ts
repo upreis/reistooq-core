@@ -211,7 +211,15 @@ export function useDevolucoesBusca() {
             tentativas++;
             
             try {
-              logger.info(`📄 Buscando lote ${tentativas}: offset=${offset}, limit=${limit}`);
+          logger.info(`📄 Buscando lote ${tentativas}: offset=${offset}, limit=${limit}`);
+
+              // 🚨 LOG DE DIAGNÓSTICO
+              console.error('🚨 [TESTE] CHAMANDO EDGE FUNCTION:', {
+                accountId,
+                sellerId: account.account_identifier, 
+                filtros,
+                url: 'ml-api-direct'
+              });
 
               const apiResponse = await fetchClaimsAndReturns(
                 accountId,
