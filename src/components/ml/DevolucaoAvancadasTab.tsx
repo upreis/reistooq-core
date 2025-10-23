@@ -15,7 +15,6 @@ import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } 
 import { DevolucaoStatsCards } from '@/components/ml/devolucao/DevolucaoStatsCards';
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
-import { FiltrosRapidos } from './devolucao/FiltrosRapidos';
 import { ErrorFallback, MinimalErrorFallback } from '@/components/error/ErrorFallback';
 import { exportarDevolucoes, exportarDevolucoesExcel } from '@/features/devolucoes/utils/DevolucaoExportService';
 
@@ -127,18 +126,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     updateDraftFilters(key, value);
   }, [updateDraftFilters]);
 
-  // Handler para FiltrosRapidos - MEMOIZADO NO TOPO
-  const handleFiltrosRapidos = React.useCallback((filtros: any) => {
-    // ✅ periodoDias (sempre usa item.date_created)
-    if (filtros.periodoDias !== undefined) {
-      handleFilterChange('periodoDias', filtros.periodoDias);
-    }
-    if (filtros.statusClaim) {
-      handleFilterChange('statusClaim', filtros.statusClaim);
-    }
-    // Aplicar automaticamente
-    setTimeout(() => handleAplicarEBuscar(), 100);
-  }, [handleFilterChange, handleAplicarEBuscar]);
 
   // Handler para visualizar detalhes - MEMOIZADO NO TOPO
   const handleViewDetails = React.useCallback((dev: DevolucaoAvancada) => {
@@ -225,12 +212,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           />
         )}
       </ErrorBoundary>
-
-
-      {/* Filtros Rápidos */}
-      <FiltrosRapidos 
-        onAplicarFiltro={handleFiltrosRapidos}
-      />
 
       {/* Controles de ação */}
       <div className="flex justify-end gap-2">
