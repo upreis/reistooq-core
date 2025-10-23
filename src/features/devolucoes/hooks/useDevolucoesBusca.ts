@@ -517,7 +517,7 @@ export function useDevolucoesBusca() {
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
+        const campoData = 'data_criacao'; // Sempre usar data_criacao
         countQuery = countQuery.gte(campoData, dateFrom);
       }
       
@@ -557,7 +557,7 @@ export function useDevolucoesBusca() {
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
           const dateFrom = dataInicio.toISOString();
-          const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
+          const campoData = 'data_criacao'; // Sempre usar data_criacao
           query = query.gte(campoData, dateFrom);
         }
         
