@@ -1201,13 +1201,13 @@ async function buscarPedidosCancelados(
       });
       
       // ⭐ FILTRAR POR DATA (calculado a partir de periodoDias)
-      // ✅ FORMATO OFICIAL ML: range (field) :after: "date" before: "date"
+      // ✅ FORMATO OFICIAL ML (conforme doc linha 168): range=field:after:date,before:date
       if (periodoDias > 0) {
         const hoje = new Date();
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - periodoDias);
         
-        // ✅ Formato ISO com timezone offset (conforme documentação ML)
+        // ✅ Formato ISO com timezone offset (conforme exemplo oficial ML)
         const dateFromISO = dataInicio.toISOString();
         const dateToISO = hoje.toISOString();
         
@@ -1220,9 +1220,10 @@ async function buscarPedidosCancelados(
         });
         
         // ✅ FORMATO CORRETO conforme documentação oficial ML
-        // Tabela: range (field) :after: "yyyy-MM-dd'T'HH:mm:ss.SSZ" before: "yyyy-MM-dd'T'HH:mm:ss.SSZ"
+        // Exemplo real (linha 168 docs): range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
+        // SEM ESPAÇOS, SEM ASPAS, COM VÍRGULA
         const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
-        const rangeValue = `${dataField} :after: "${dateFromISO}" before: "${dateToISO}"`;
+        const rangeValue = `${dataField}:after:${dateFromISO},before:${dateToISO}`;
         params.append('range', rangeValue);
         logger.info(`✅ Filtro aplicado: range=${rangeValue}`);
       } else {
