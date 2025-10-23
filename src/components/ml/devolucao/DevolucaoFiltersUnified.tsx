@@ -90,21 +90,12 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
   contasML = [],
   columnManager
 }: DevolucaoFiltersUnifiedProps) {
-  const [statusClaimOpen, setStatusClaimOpen] = useState(false);
   const [contasMLOpen, setContasMLOpen] = useState(false);
   // Filtros avançados
   const [stageOpen, setStageOpen] = useState(false);
   const [fulfilledOpen, setFulfilledOpen] = useState(false);
   const [claimTypeOpen, setClaimTypeOpen] = useState(false);
 
-  const handleStatusClaimChange = (status: string, checked: boolean) => {
-    const current = filters.statusClaim || '';
-    if (checked) {
-      onFilterChange('statusClaim', status);
-    } else {
-      onFilterChange('statusClaim', '');
-    }
-  };
 
   const handleContasMLChange = (contaId: string, checked: boolean) => {
     const current = filters.contasSelecionadas || [];
@@ -124,7 +115,6 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
     onFilterChange('contasSelecionadas', []);
   };
 
-  const selectedStatusClaim = filters.statusClaim || '';
   const selectedContasML = filters.contasSelecionadas || [];
 
   return (
@@ -169,69 +159,6 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
               )}
             />
           </div>
-        </div>
-
-        {/* Status do Claim - API */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Status do Pedido
-            <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
-          </label>
-          <Popover open={statusClaimOpen} onOpenChange={setStatusClaimOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={statusClaimOpen}
-                className="w-full justify-between"
-              >
-                {!selectedStatusClaim
-                  ? "Todos os status"
-                  : STATUS_LABELS[selectedStatusClaim] || selectedStatusClaim
-                }
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0">
-              <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                <div 
-                  className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                  onClick={() => {
-                    onFilterChange('statusClaim', '');
-                    setStatusClaimOpen(false);
-                  }}
-                >
-                  <Checkbox
-                    id="status-todos"
-                    checked={!selectedStatusClaim}
-                    onChange={() => {}}
-                  />
-                  <label htmlFor="status-todos" className="text-sm cursor-pointer">
-                    Todos os status
-                  </label>
-                </div>
-                {STATUS_CLAIMS.map((status) => (
-                  <div 
-                    key={status} 
-                    className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                    onClick={() => {
-                      handleStatusClaimChange(status, selectedStatusClaim !== status);
-                      setStatusClaimOpen(false);
-                    }}
-                  >
-                    <Checkbox
-                      id={`status-claim-${status}`}
-                      checked={selectedStatusClaim === status}
-                      onChange={() => {}}
-                    />
-                    <label htmlFor={`status-claim-${status}`} className="text-sm cursor-pointer">
-                      {STATUS_LABELS[status] || status}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
 
         {/* Contas ML - Manual */}
