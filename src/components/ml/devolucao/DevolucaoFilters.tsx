@@ -8,7 +8,6 @@ import { Card } from '@/components/ui/card';
 
 export interface DevolucaoFilterValues {
   searchTerm: string;
-  statusClaim: string;
 }
 
 interface DevolucaoFiltersProps {
@@ -33,7 +32,7 @@ export const DevolucaoFilters = React.memo<DevolucaoFiltersProps>(({
         <h3 className="font-semibold">Filtros de Busca</h3>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-1">
         {/* Busca Unificada */}
         <div className="space-y-2">
           <Label htmlFor="search">Buscar</Label>
@@ -47,26 +46,6 @@ export const DevolucaoFilters = React.memo<DevolucaoFiltersProps>(({
               className="pl-8"
             />
           </div>
-        </div>
-
-        {/* Status */}
-        <div className="space-y-2">
-          <Label htmlFor="status">Status</Label>
-          <Select
-            value={filters.statusClaim}
-            onValueChange={(value) => onFilterChange({ statusClaim: value })}
-          >
-            <SelectTrigger id="status">
-              <SelectValue placeholder="Todos os status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              <SelectItem value="with_claims">Com Claims</SelectItem>
-              <SelectItem value="completed">Concluído</SelectItem>
-              <SelectItem value="cancelled">Cancelado</SelectItem>
-              <SelectItem value="pending">Pendente</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
