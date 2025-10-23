@@ -121,8 +121,13 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
   // Handler para FiltrosRapidos - MEMOIZADO NO TOPO
   const handleFiltrosRapidos = React.useCallback((filtros: any) => {
-    handleFilterChange('dataInicio', filtros.dataInicio);
-    handleFilterChange('dataFim', filtros.dataFim);
+    // ✅ NOVO SISTEMA: periodoDias e tipoData
+    if (filtros.periodoDias !== undefined) {
+      handleFilterChange('periodoDias', filtros.periodoDias);
+    }
+    if (filtros.tipoData) {
+      handleFilterChange('tipoData', filtros.tipoData);
+    }
     if (filtros.statusClaim) {
       handleFilterChange('statusClaim', filtros.statusClaim);
     }
@@ -146,8 +151,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     let count = 0;
     if (currentFilters.searchTerm) count++;
     if (currentFilters.statusClaim) count++;
-    if (currentFilters.dataInicio) count++;
-    if (currentFilters.dataFim) count++;
+    if (currentFilters.periodoDias && currentFilters.periodoDias > 0) count++;
     if (currentFilters.contasSelecionadas?.length > 0) count++;
     return count;
   }, [currentFilters]);
