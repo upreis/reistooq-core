@@ -314,6 +314,14 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     setShowAnalytics(prev => !prev);
   }, []);
 
+  // 🛑 Cancelar busca em andamento
+  const cancelarBusca = useCallback(() => {
+    busca.cancelarBusca();
+    setDevolucoes([]);
+    setIsApplyingFilters(false);
+    toast.info('Busca cancelada');
+  }, [busca]);
+
   return {
     // Dados
     devolucoes: devolucoesPaginadas,
@@ -349,6 +357,7 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     
     // Ações (somente API)
     buscarComFiltros,
+    cancelarBusca,
     setCurrentPage,
     setItemsPerPage: handleItemsPerPageChange,
     toggleAnalytics,

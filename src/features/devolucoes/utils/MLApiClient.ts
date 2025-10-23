@@ -15,7 +15,8 @@ export const fetchClaimsAndReturns = async (
   sellerId: string,
   filters: DevolucaoBuscaFilters,
   limit: number = 50,
-  offset: number = 0
+  offset: number = 0,
+  signal?: AbortSignal
 ) => {
   const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
     body: {
@@ -36,7 +37,8 @@ export const fetchClaimsAndReturns = async (
         reason_id: filters.reasonId || '',
         resource: filters.resource || ''
       }
-    }
+    },
+    ...(signal && { signal })
   });
 
   if (apiError) {

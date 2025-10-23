@@ -226,7 +226,8 @@ export function useDevolucoesBusca() {
                   account.account_identifier,
                   filtros,
                   limit,
-                  offset
+                  offset,
+                  abortControllerRef.current?.signal
                 );
 
                 console.error('🚨 [TESTE] RESPOSTA DA EDGE FUNCTION:', {
@@ -236,7 +237,12 @@ export function useDevolucoesBusca() {
                   pagination: apiResponse?.pagination,
                   apiResponse
                 });
-              } catch (err) {
+              } catch (err: any) {
+                // Verificar se foi cancelado
+                if (err.name === 'AbortError' || abortControllerRef.current === null) {
+                  logger.info('Busca cancelada pelo usuário');
+                  return [];
+                }
                 console.error('🚨 [TESTE] ERRO AO CHAMAR EDGE FUNCTION:', err);
                 toast.error(`Erro ao buscar devoluções: ${err.message}`);
                 break;
@@ -462,7 +468,14 @@ export function useDevolucoesBusca() {
       logger.info(`Total da API: ${todasDevolucoes.length} devoluções enriquecidas e salvas`);
       return todasDevolucoes;
 
-    } catch (error) {
+    } catch (error: any) {
+      // Verificar se foi cancelado
+      if (error.name === 'AbortError' || abortControllerRef.current === null) {
+        logger.info('Busca cancelada pelo usuário');
+        toast.info('Busca cancelada');
+        return [];
+      }
+      
       // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros gerais
       const duration = performance.now() - startTime;
       
@@ -880,11 +893,23 @@ export function useDevolucoesBusca() {
     }
   };
 
+  // 🛑 Cancelar busca em andamento
+  const cancelarBusca = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setLoading(false);
+      setLoadingProgress({ current: 0, total: 0, message: 'Busca cancelada' });
+      logger.info('[useDevolucoesBusca] Busca cancelada pelo usuário');
+    }
+  };
+
   return {
     loading,
     buscarDaAPI,
     buscarDoBanco,
     sincronizarDevolucoes,
+    cancelarBusca,
     loadingProgress,
     cacheStats,
     clearCache: () => {
