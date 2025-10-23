@@ -26,7 +26,8 @@ export const mapFinancialData = (item: any) => {
     custo_frete_devolucao: item.return_details_v2?.shipping_cost || null,
     custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
     impacto_financeiro_vendedor: item.amount || null,
-    responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
+    responsavel_custo: item.claim_details?.resolution?.benefited?.[0]?.role || 
+                      item.claim_details?.resolution?.responsible || null,
     valor_compensacao: item.return_details_v2?.refund_amount || null,
     
     // Pagamento

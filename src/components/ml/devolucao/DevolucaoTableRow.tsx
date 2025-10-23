@@ -242,11 +242,34 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* GRUPO 6: VALORES FINANCEIROS */}
       <FinancialCells devolucao={devolucao} />
       
-      {/* GRUPO 7: MOTIVO E CATEGORIA (5 colunas) */}
+      {/* GRUPO 7: MOTIVO E CATEGORIA (11 colunas) */}
       
       {/* Reason ID */}
       <td className="px-3 py-3 text-center font-mono text-xs">
         {devolucao.reason_id || '-'}
+      </td>
+      
+      {/* Reason Name */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[200px] truncate" title={(devolucao as any).reason_name || ''}>
+          {(devolucao as any).reason_name || '-'}
+        </div>
+      </td>
+      
+      {/* Reason Detail */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[250px] truncate" title={(devolucao as any).reason_detail || ''}>
+          {(devolucao as any).reason_detail || '-'}
+        </div>
+      </td>
+      
+      {/* Reason Flow */}
+      <td className="px-3 py-3 text-center">
+        {(devolucao as any).reason_flow ? (
+          <Badge variant="secondary">{(devolucao as any).reason_flow}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
       </td>
       
       {/* Categoria Motivo */}
@@ -279,6 +302,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
+      {/* Estágio (claim_stage) */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.claim_stage || devolucao.subtipo_claim ? (
+          <Badge variant="outline">{devolucao.claim_stage || devolucao.subtipo_claim}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
       {/* Complexidade */}
       <td className="px-3 py-3 text-center">
         {getComplexityBadge(devolucao.nivel_complexidade)}
@@ -289,14 +321,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {getPrioridadeBadge(devolucao.nivel_prioridade)}
       </td>
       
-      {/* Cód. Classificação */}
-      <td className="px-3 py-3 text-center font-mono text-xs">
-        <span className="text-muted-foreground">
-          {(devolucao as any).codigo_classificacao || '-'}
-        </span>
-      </td>
-      
-      {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (6 colunas) */}
+      {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (14 colunas) */}
       
       {/* Resultado Mediação */}
       <td className="px-3 py-3 text-left">
@@ -316,6 +341,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Resultado Final */}
       <td className="px-3 py-3 text-left">
         {devolucao.resultado_final || '-'}
+      </td>
+      
+      {/* Responsável Custo */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.responsavel_custo ? (
+          <Badge variant="secondary">{devolucao.responsavel_custo}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
       </td>
       
       {/* Review Result */}
@@ -346,6 +380,19 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3 text-left">
         <div className="max-w-[160px] truncate" title={String(devolucao.acao_seller_necessaria || '')}>
           {devolucao.acao_seller_necessaria ? String(devolucao.acao_seller_necessaria) : '-'}
+        </div>
+      </td>
+      
+      {/* Tags Pedido */}
+      <td className="px-3 py-3 text-left">
+        <div className="flex flex-wrap gap-1 max-w-[180px]">
+          {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
+            devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
+              <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
+            ))
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
         </div>
       </td>
       

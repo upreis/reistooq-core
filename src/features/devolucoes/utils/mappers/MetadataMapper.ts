@@ -7,13 +7,14 @@ export const mapMetadata = (item: any) => {
   return {
     // Flags
     internal_tags: item.order_data?.internal_tags || [],
-    tem_financeiro: item.valor_reembolso_total || item.amount || null,
-    tem_review: item.review_id || null,
-    tem_sla: null,
+    tem_financeiro: !!(item.valor_reembolso_total || item.amount),
+    tem_review: !!(item.review_id || item.claim_details?.review?.id),
+    tem_sla: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date ? true : null,
     nota_fiscal_autorizada: item.order_data?.internal_tags || [],
     
     // Qualidade
-    eficiencia_resolucao: item.claim_details?.resolution?.reason || null,
+    eficiencia_resolucao: item.claim_details?.resolution?.efficiency || 
+                         item.claim_details?.resolution?.status || null,
     
     // SLA
     tempo_primeira_resposta_vendedor: null,
