@@ -23,11 +23,11 @@ export const mapContextData = (item: any) => {
     prazo_revisao_dias: null,
     valor_diferenca_troca: null,
     
-    // Dados adicionais
+    // Dados adicionais (✅ SOMENTE CAMPOS QUE EXISTEM NO SCHEMA)
     tags_automaticas: [],
     usuario_ultima_acao: null,
     hash_verificacao: null,
-    confiabilidade_dados: null,
+    // ❌ REMOVIDO: confiabilidade_dados (não existe no schema)
     versao_api_utilizada: null,
     origem_timeline: null,
     status_produto_novo: null,

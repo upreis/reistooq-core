@@ -375,8 +375,8 @@ export function useDevolucoesBusca() {
                 reason_priority: (reasonId?.startsWith('PNR') || reasonId?.startsWith('PDD')) ? 'high' : 'medium',
                 reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
                 reason_flow: apiReasonData?.flow || null,
-                reason_settings: apiReasonData?.settings ? JSON.stringify(apiReasonData.settings) : null,
-                reason_position: apiReasonData?.position || null
+                reason_settings: apiReasonData?.settings ? JSON.stringify(apiReasonData.settings) : null
+                // ❌ REMOVIDO: reason_position (não existe no schema)
               };
               
               // Log do primeiro item processado
