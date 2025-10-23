@@ -78,6 +78,12 @@ async function buscarShipmentHistory(shipmentId: number, accessToken: string, in
 }
 
 serve(async (req) => {
+  // Logo no início do serve(), antes de qualquer if
+  console.error('🚨 [TESTE] EDGE FUNCTION INICIADA!', {
+    method: req.method,
+    hasBody: req.body !== null
+  });
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -86,18 +92,20 @@ serve(async (req) => {
     const requestBody = await req.json()
     const { action, integration_account_id, seller_id, filters } = requestBody
 
-    // 🚨 LOG DE DIAGNÓSTICO
+    // 🚨 LOG DE DIAGNÓSTICO COMPLETO
     console.error('🚨 [TESTE] EDGE FUNCTION EXECUTADA!', {
-      action,
-      integration_account_id,
-      filters_periodoDias: filters?.periodoDias,
-      filters_tipoData: filters?.tipoData,
-      filters_completo: filters
+      method: req.method,
+      action: requestBody?.action,
+      integration_account_id: requestBody?.integration_account_id,
+      filters_periodoDias: requestBody?.filters?.periodoDias,
+      filters_tipoData: requestBody?.filters?.tipoData,
+      filters_completo: requestBody?.filters
     });
 
     logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
     if (action === 'get_claims_and_returns') {
+      console.error('🚨 [TESTE] ACTION get_claims_and_returns EXECUTADA!');
       // 📄 PAGINAÇÃO SIMPLES - Máximo 100 por chamada
       const limit = Math.min(requestBody.limit || 100, 100);
       const offset = requestBody.offset || 0;
@@ -503,6 +511,7 @@ serve(async (req) => {
     }
 
     if (action === 'get_reason_detail') {
+      console.error('🚨 [TESTE] ACTION get_reason_detail EXECUTADA!');
       const { reason_id } = requestBody;
       
       // 🔒 Obter token de forma segura
