@@ -19,7 +19,7 @@ interface FiltroRapido {
   filtros: {
     statusClaim?: string;
     periodoDias?: number;
-    tipoData?: 'date_created' | 'order_date';
+    tipoData?: 'date_created' | 'last_updated';
     tipoClaim?: string;
     // ❌ REMOVIDO: dataInicio e dataFim (sistema antigo)
   };

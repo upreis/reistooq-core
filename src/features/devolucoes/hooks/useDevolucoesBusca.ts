@@ -29,7 +29,7 @@ export interface DevolucaoBuscaFilters {
   claimType?: string;      // 'mediations' | 'claim'
   // ============ NOVOS: FILTRO POR PERÍODO E TIPO DE DATA ============
   periodoDias?: number;    // 7, 15, 30, 60, 90 dias
-  tipoData?: 'date_created' | 'order_date';  // Tipo de data para filtrar
+  tipoData?: 'date_created' | 'last_updated';  // Tipo de data para filtrar
 }
 
 export function useDevolucoesBusca() {
@@ -517,7 +517,7 @@ export function useDevolucoesBusca() {
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        const campoData = filtros.tipoData === 'order_date' ? 'data_venda' : 'data_criacao';
+        const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
         countQuery = countQuery.gte(campoData, dateFrom);
       }
       
@@ -557,7 +557,7 @@ export function useDevolucoesBusca() {
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
           const dateFrom = dataInicio.toISOString();
-          const campoData = filtros.tipoData === 'order_date' ? 'data_venda' : 'data_criacao';
+          const campoData = filtros.tipoData === 'last_updated' ? 'updated_at' : 'data_criacao';
           query = query.gte(campoData, dateFrom);
         }
         

@@ -1222,14 +1222,10 @@ async function buscarPedidosCancelados(
         // ✅ FORMATO CORRETO conforme documentação oficial ML
         // Exemplo real (linha 168 docs): range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
         // SEM ESPAÇOS, SEM ASPAS, COM VÍRGULA
-        // 
-        // ⚠️ IMPORTANTE: A API ML só aceita 'date_created' no range, não aceita 'order_date'
-        // Quando tipoData = 'order_date', buscamos pela date_created mas o filtro final
-        // por data de venda será aplicado no FRONTEND pela coluna 'data_venda'
-        const dataField = 'date_created';  // API ML só aceita date_created
+        const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
         const rangeValue = `${dataField}:after:${dateFromISO},before:${dateToISO}`;
         params.append('range', rangeValue);
-        logger.info(`✅ Filtro aplicado: range=${rangeValue} (tipoData solicitado: ${tipoData}, API usa: ${dataField})`);
+        logger.info(`✅ Filtro aplicado: range=${rangeValue}`);
       } else {
         logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }

@@ -23,26 +23,26 @@ const PERIODOS_DISPONIVEIS = [
 const TIPOS_DATA = [
   { 
     value: 'date_created', 
-    label: 'Última Sincronização', 
-    description: 'Data de criação do claim',
+    label: 'Data de Criação', 
+    description: 'Quando o claim foi criado',
     icon: Calendar
   },
   { 
-    value: 'order_date', 
-    label: 'Data da Venda', 
-    description: 'Quando aconteceu a venda',
+    value: 'last_updated', 
+    label: 'Última Atualização', 
+    description: 'Claims atualizados recentemente',
     icon: Clock
   }
 ];
 
 interface PeriodoDataFilterProps {
   periodoDias: number;
-  tipoData: 'date_created' | 'order_date';
+  tipoData: 'date_created' | 'last_updated';
   onPeriodoChange: (dias: number) => void;
-  onTipoDataChange: (tipo: 'date_created' | 'order_date') => void;
+  onTipoDataChange: (tipo: 'date_created' | 'last_updated') => void;
   hasPendingChanges?: boolean;
   appliedPeriodo?: number;
-  appliedTipoData?: 'date_created' | 'order_date';
+  appliedTipoData?: 'date_created' | 'last_updated';
 }
 
 export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
@@ -142,7 +142,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
               </h4>
               <RadioGroup 
                 value={tipoData} 
-                onValueChange={(value) => onTipoDataChange(value as 'date_created' | 'order_date')}
+                onValueChange={(value) => onTipoDataChange(value as 'date_created' | 'last_updated')}
                 className="space-y-2"
               >
                 {TIPOS_DATA.map((tipo) => (
@@ -153,7 +153,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
                       tipoData === tipo.value && "bg-muted border-primary"
                     )}
                     onClick={() => {
-                      onTipoDataChange(tipo.value as 'date_created' | 'order_date');
+                      onTipoDataChange(tipo.value as 'date_created' | 'last_updated');
                     }}
                   >
                     <RadioGroupItem value={tipo.value} id={`tipo-${tipo.value}`} className="mt-0.5" />
@@ -176,8 +176,8 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
             {/* Info Box */}
             <div className="bg-muted/50 p-3 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                <strong>💡 Dica:</strong> Use "Data da Venda" para filtrar por quando a venda foi realizada. 
-                Use "Última Sincronização" para filtrar pela data de criação do claim.
+                <strong>💡 Dica:</strong> Use "Última Atualização" para ver claims que foram modificados recentemente, 
+                mesmo que sejam antigos. Use "Data de Criação" para ver claims novos.
               </p>
             </div>
 
