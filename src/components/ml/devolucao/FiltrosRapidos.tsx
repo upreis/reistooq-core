@@ -8,7 +8,8 @@ import {
   Sparkles, 
   Package,
   Clock,
-  TrendingUp
+  TrendingUp,
+  X
 } from 'lucide-react';
 
 interface FiltroRapido {
@@ -18,8 +19,8 @@ interface FiltroRapido {
   description: string;
   filtros: {
     statusClaim?: string;
-    dataInicio?: string;
-    dataFim?: string;
+    periodoDias?: number;
+    tipoData?: 'date_created' | 'last_updated';
     tipoClaim?: string;
   };
   badge?: {
@@ -34,51 +35,30 @@ interface FiltrosRapidosProps {
 }
 
 export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFiltro, filtroAtivo }: FiltrosRapidosProps) {
-  
-  const calcularDataInicio = (dias: number): string => {
-    const data = new Date();
-    data.setDate(data.getDate() - dias);
-    return data.toISOString().split('T')[0];
-  };
 
   const filtrosRapidos: FiltroRapido[] = [
     {
-      id: 'urgentes',
-      label: 'Urgentes',
-      icon: <AlertCircle className="h-4 w-4" />,
-      description: 'Devoluções com mais de 30 dias abertas',
+      id: 'sem_filtro',
+      label: 'Sem Filtro',
+      icon: <X className="h-4 w-4" />,
+      description: 'Buscar TODAS as devoluções (sem limite de data)',
       filtros: {
-        statusClaim: 'opened',
-        dataInicio: calcularDataInicio(90),
-        dataFim: calcularDataInicio(30)
+        periodoDias: 0,
+        tipoData: 'date_created'
       },
       badge: {
-        text: '30+ dias',
-        variant: 'destructive'
-      }
-    },
-    {
-      id: 'mediacao',
-      label: 'Em Mediação',
-      icon: <Scale className="h-4 w-4" />,
-      description: 'Claims em disputa/mediação',
-      filtros: {
-        statusClaim: 'opened',
-        dataInicio: calcularDataInicio(60)
-      },
-      badge: {
-        text: 'Alta prioridade',
-        variant: 'default'
+        text: 'Todas',
+        variant: 'outline'
       }
     },
     {
       id: 'recentes',
-      label: 'Recentes',
+      label: 'Últimos 7 dias',
       icon: <Sparkles className="h-4 w-4" />,
-      description: 'Últimos 7 dias',
+      description: 'Devoluções dos últimos 7 dias',
       filtros: {
-        statusClaim: 'opened',
-        dataInicio: calcularDataInicio(7)
+        periodoDias: 7,
+        tipoData: 'date_created'
       },
       badge: {
         text: '7 dias',
@@ -86,31 +66,61 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       }
     },
     {
-      id: 'ativas',
-      label: 'Todas Ativas',
-      icon: <Package className="h-4 w-4" />,
-      description: 'Todas as devoluções abertas',
+      id: 'mes_atual',
+      label: 'Últimos 30 dias',
+      icon: <Clock className="h-4 w-4" />,
+      description: 'Devoluções dos últimos 30 dias',
+      filtros: {
+        periodoDias: 30,
+        tipoData: 'date_created'
+      },
+      badge: {
+        text: '30 dias',
+        variant: 'default'
+      }
+    },
+    {
+      id: 'trimestre',
+      label: 'Últimos 90 dias',
+      icon: <TrendingUp className="h-4 w-4" />,
+      description: 'Devoluções dos últimos 90 dias',
+      filtros: {
+        periodoDias: 90,
+        tipoData: 'date_created'
+      },
+      badge: {
+        text: '90 dias',
+        variant: 'default'
+      }
+    },
+    {
+      id: 'urgentes',
+      label: 'Urgentes Abertas',
+      icon: <AlertCircle className="h-4 w-4" />,
+      description: 'Devoluções abertas dos últimos 60 dias',
       filtros: {
         statusClaim: 'opened',
-        dataInicio: calcularDataInicio(60)
+        periodoDias: 60,
+        tipoData: 'date_created'
+      },
+      badge: {
+        text: 'Abertas',
+        variant: 'destructive'
       }
     },
     {
-      id: 'mes_atual',
-      label: 'Mês Atual',
-      icon: <Clock className="h-4 w-4" />,
-      description: 'Devoluções do mês corrente',
+      id: 'ativas',
+      label: 'Todas Abertas',
+      icon: <Package className="h-4 w-4" />,
+      description: 'Todas as devoluções com status aberto',
       filtros: {
-        dataInicio: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-      }
-    },
-    {
-      id: 'tendencias',
-      label: 'Análise',
-      icon: <TrendingUp className="h-4 w-4" />,
-      description: 'Últimos 30 dias para análise',
-      filtros: {
-        dataInicio: calcularDataInicio(30)
+        statusClaim: 'opened',
+        periodoDias: 0,
+        tipoData: 'date_created'
+      },
+      badge: {
+        text: 'Status aberto',
+        variant: 'default'
       }
     }
   ];
@@ -160,7 +170,7 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
           </div>
           
           <p className="text-xs text-muted-foreground">
-            💡 Clique em um filtro para aplicar rapidamente. Você pode refinar depois nos filtros avançados.
+            💡 <strong>"Sem Filtro"</strong> busca TODAS as devoluções. Use filtros específicos para resultados mais rápidos.
           </p>
         </div>
       </CardContent>
