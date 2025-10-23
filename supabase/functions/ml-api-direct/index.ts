@@ -292,7 +292,6 @@ serve(async (req) => {
             mensagens_nao_lidas: devolucao.mensagens_nao_lidas,
             ultima_mensagem_data: devolucao.ultima_mensagem_data,
             timeline_mensagens: devolucao.timeline_mensagens,
-            anexos_count: devolucao.anexos_count,
             anexos_ml: devolucao.anexos_ml,
             
             // Mediação e Ações

@@ -337,7 +337,6 @@ export class MLApiService {
         const anexos = await this.getClaimAttachments(claimId);
         if (anexos && anexos.length > 0) {
           // Anexos já vêm categorizados pelo método getClaimAttachments
-          dadosEnriquecidos.anexos_count = anexos.length;
           dadosEnriquecidos.anexos_ml = anexos.filter((a: any) => 
             a.sender_role === 'mediator' || a.source === 'meli');
           dadosEnriquecidos.etapas_executadas.push('anexos_ok');

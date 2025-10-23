@@ -24,7 +24,6 @@ export const mapCommunicationData = (item: any) => {
     historico_status: [],
     
     // Anexos
-    anexos_count: null,
     anexos_ml: [],
     total_evidencias: null
   };
