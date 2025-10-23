@@ -206,6 +206,23 @@ export const filterByScoreQualidadeMin = (devolucoes: any[], scoreQualidadeMin: 
 };
 
 /**
+ * Filtro por período de dias (data de criação)
+ */
+export const filterByPeriodoDias = (devolucoes: any[], periodoDias: number): any[] => {
+  if (!periodoDias || periodoDias === 0) return devolucoes;
+  
+  const hoje = new Date();
+  const dataInicio = new Date();
+  dataInicio.setDate(hoje.getDate() - periodoDias);
+  
+  return devolucoes.filter(dev => {
+    if (!dev.data_criacao) return false;
+    const dataCriacao = new Date(dev.data_criacao);
+    return dataCriacao >= dataInicio && dataCriacao <= hoje;
+  });
+};
+
+/**
  * Ordena devoluções por data de criação (mais recente primeiro)
  */
 export const sortByDataCriacao = (devolucoes: any[]): any[] => {
@@ -233,6 +250,9 @@ export const applyAllFilters = (
   
   let resultados = [...devolucoes];
 
+  // ⭐ APLICAR FILTRO DE PERÍODO PRIMEIRO (crítico!)
+  resultados = filterByPeriodoDias(resultados, filters.periodoDias);
+  
   // Aplicar todos os filtros em sequência
   resultados = filterBySearch(resultados, debouncedSearchTerm);
   resultados = filterByStatusClaim(resultados, filters.statusClaim);
@@ -264,6 +284,7 @@ export const applyAllFilters = (
       filtered: resultados.length,
       removed: devolucoes.length - resultados.length,
       filters: {
+        periodoDias: filters.periodoDias,
         searchTerm: debouncedSearchTerm,
         statusClaim: filters.statusClaim,
         activeFilters: Object.entries(filters).filter(([_, v]) => v && v !== '').length

@@ -98,7 +98,6 @@ serve(async (req) => {
       action: requestBody?.action,
       integration_account_id: requestBody?.integration_account_id,
       filters_periodoDias: requestBody?.filters?.periodoDias,
-      filters_tipoData: requestBody?.filters?.tipoData,
       filters_completo: requestBody?.filters
     });
 
@@ -1123,18 +1122,14 @@ async function buscarPedidosCancelados(
   try {
     
     // 📅 CALCULAR DATAS BASEADO NO PERÍODO
-    // ✅ FIX: Aceitar tanto camelCase (frontend) quanto snake_case (retrocompatibilidade)
+    // ✅ Sempre usa date_created (item.date_created)
     const periodoDias = filters?.periodoDias ?? filters?.periodo_dias ?? 0;  // ✅ Default 0 = SEM FILTRO
-    const tipoData = filters?.tipoData ?? filters?.tipo_data ?? 'date_created';  // ✅ Aceita ambos
     
     // ✅ LOG DE DEBUG: Verificar se parâmetros estão chegando corretamente
     logger.info(`📋 Filtros recebidos:`, {
       periodoDias_recebido: filters?.periodoDias,
       periodo_dias_recebido: filters?.periodo_dias,
-      tipoData_recebido: filters?.tipoData,
-      tipo_data_recebido: filters?.tipo_data,
-      periodoDias_usado: periodoDias,
-      tipoData_usado: tipoData
+      periodoDias_usado: periodoDias
     });
     
     // ✅ FIX CRÍTICO: Remover limite artificial - buscar TODOS os claims disponíveis
@@ -1153,12 +1148,11 @@ async function buscarPedidosCancelados(
     });
     
     logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (SEM LIMITE - buscar até acabar)`);
-    logger.info(`📋 Filtros recebidos: período=${periodoDias} dias, tipo=${tipoData}`);
+    logger.info(`📋 Filtros recebidos: período=${periodoDias} dias (sempre usa date_created)`);
     
     // ✅ VALIDAÇÃO DOS FILTROS RECEBIDOS:
     logger.info(`📋 Filtros completos recebidos:`, {
       periodoDias,
-      tipoData,
       statusClaim: filters?.statusClaim || 'não definido',
       claimType: filters?.claimType || 'não definido',
       stage: filters?.stage || 'não definido',
@@ -1214,16 +1208,14 @@ async function buscarPedidosCancelados(
         // 🔍 DIAGNÓSTICO DETALHADO: Verificar filtro de data
         logger.info(`📅 FILTRO DE DATA CONFIGURADO:`, {
           periodoDias,
-          tipoData,
           dateFromISO,
-          dateToISO
+          dateToISO,
+          campo: 'date_created'
         });
         
-        // ✅ FORMATO CORRETO conforme documentação oficial ML
-        // Exemplo real (linha 168 docs): range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
-        // SEM ESPAÇOS, SEM ASPAS, COM VÍRGULA
-        const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
-        const rangeValue = `${dataField}:after:${dateFromISO},before:${dateToISO}`;
+        // ✅ SEMPRE USA date_created (item.date_created)
+        // Formato conforme doc ML: range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
+        const rangeValue = `date_created:after:${dateFromISO},before:${dateToISO}`;
         params.append('range', rangeValue);
         logger.info(`✅ Filtro aplicado: range=${rangeValue}`);
       } else {
