@@ -17,7 +17,6 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     updated_at: new Date().toISOString(),
     ultima_sincronizacao: new Date().toISOString(),
     dados_incompletos: false,
-    campos_faltantes: [],
     fonte_dados_primaria: 'ml_api',
     
     // Dados do produto
