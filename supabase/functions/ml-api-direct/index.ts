@@ -1201,15 +1201,15 @@ async function buscarPedidosCancelados(
       });
       
       // ⭐ FILTRAR POR DATA (calculado a partir de periodoDias)
-      // ✅ FILTROS DE DATA APLICADOS DE FORMA CONSOLIDADA - FORMATO CORRETO ML API
+      // ✅ FORMATO OFICIAL MERCADO LIVRE: range=date_created:after:X,before:Y
       if (periodoDias > 0) {
         const hoje = new Date();
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - periodoDias);
         
-        // ✅ FIX CRÍTICO: Usar formato ISO COMPLETO conforme documentação ML
-        const dateFromISO = dataInicio.toISOString();  // YYYY-MM-DDTHH:mm:ss.SSSZ
-        const dateToISO = hoje.toISOString();          // YYYY-MM-DDTHH:mm:ss.SSSZ
+        // ✅ Formato ISO com timezone offset (conforme exemplo oficial ML)
+        const dateFromISO = dataInicio.toISOString();
+        const dateToISO = hoje.toISOString();
         
         // 🔍 DIAGNÓSTICO DETALHADO: Verificar filtro de data
         logger.info(`📅 FILTRO DE DATA CONFIGURADO:`, {
@@ -1219,13 +1219,12 @@ async function buscarPedidosCancelados(
           dateToISO
         });
         
-        // ✅ FIX CRÍTICO: Formato correto conforme exemplo oficial ML
-        // Exemplo oficial: ?status=opened&stage=dispute&sort=last_updated:asc
-        // NÃO usa range() - apenas os parâmetros diretos
+        // ✅ FORMATO CORRETO conforme documentação oficial ML
+        // Exemplo: range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
         const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
-        params.append(`${dataField}.from`, dateFromISO);
-        params.append(`${dataField}.to`, dateToISO);
-        logger.info(`✅ Filtro aplicado: ${dataField}.from=${dateFromISO} .to=${dateToISO}`);
+        const rangeValue = `${dataField}:after:${dateFromISO},before:${dateToISO}`;
+        params.append('range', rangeValue);
+        logger.info(`✅ Filtro aplicado: range=${rangeValue}`);
       } else {
         logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }
