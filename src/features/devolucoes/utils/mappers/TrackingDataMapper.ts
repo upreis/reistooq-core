@@ -6,16 +6,12 @@
 export const mapTrackingData = (item: any) => {
   return {
     // Rastreamento
-    shipment_id: item.order_data?.shipping?.id?.toString() || 
-                 item.return_details_v2?.shipments?.[0]?.id?.toString() || null,
-    codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || 
-                        item.order_data?.shipping?.tracking_number || null,
+    shipment_id: item.order_data?.shipping?.id?.toString() || null,
+    codigo_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
     codigo_rastreamento_devolucao: item.return_details_v2?.shipments?.[0]?.tracking_number || null,
-    transportadora: item.return_details_v2?.shipments?.[0]?.carrier || 
-                   item.order_data?.shipping?.carrier || null,
+    transportadora: item.return_details_v2?.shipments?.[0]?.carrier || null,
     transportadora_devolucao: item.return_details_v2?.shipments?.[0]?.carrier || null,
-    status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || 
-                        item.return_details_v2?.shipments?.[0]?.substatus || null,
+    status_rastreamento: item.return_details_v2?.shipments?.[0]?.status || null,
     url_rastreamento: item.return_details_v2?.shipments?.[0]?.tracking_url || null,
     localizacao_atual: item.tracking_history?.[0]?.location || null,
     status_transporte_atual: item.return_details_v2?.shipments?.[0]?.substatus || null,

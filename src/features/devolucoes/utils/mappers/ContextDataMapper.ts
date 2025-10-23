@@ -6,15 +6,15 @@
 export const mapContextData = (item: any) => {
   return {
     // Mediação
-    em_mediacao: item.claim_details?.type === 'mediations',
+    em_mediacao: item.claim_details?.type || null,
     data_inicio_mediacao: item.claim_details?.date_created || null,
     mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     resultado_mediacao: item.claim_details?.resolution?.reason || null,
     detalhes_mediacao: null,
-    escalado_para_ml: item.claim_details?.type === 'mediations',
+    escalado_para_ml: item.claim_details?.type || null,
     
     // Troca
-    eh_troca: item.return_details_v2?.subtype === 'exchange',
+    eh_troca: item.return_details_v2?.subtype || null,
     produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id?.toString() || null,
     data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
     data_limite_troca: item.return_details_v2?.date_closed || null,
@@ -23,11 +23,11 @@ export const mapContextData = (item: any) => {
     prazo_revisao_dias: null,
     valor_diferenca_troca: null,
     
-    // Dados adicionais (✅ SOMENTE CAMPOS QUE EXISTEM NO SCHEMA)
+    // Dados adicionais
     tags_automaticas: [],
     usuario_ultima_acao: null,
     hash_verificacao: null,
-    // ❌ REMOVIDO: confiabilidade_dados (não existe no schema)
+    confiabilidade_dados: null,
     versao_api_utilizada: null,
     origem_timeline: null,
     status_produto_novo: null,

@@ -20,10 +20,14 @@ export const mapFinancialData = (item: any) => {
     moeda_reembolso: item.order_data?.currency_id || null,
     moeda_custo: null,
     
-    // ❌ CUSTOS - CAMPOS REMOVIDOS (não existem no schema)
-    // Apenas moeda_custo e responsavel_custo existem
-    responsavel_custo: item.claim_details?.resolution?.benefited?.[0]?.role || 
-                      item.claim_details?.resolution?.responsible || null,
+    // Custos
+    custo_logistico_total: item.return_details_v2?.shipping_cost || 
+                          item.return_details_v2?.logistics_cost || null,
+    custo_frete_devolucao: item.return_details_v2?.shipping_cost || null,
+    custo_envio_devolucao: item.return_details_v2?.shipping_cost || null,
+    impacto_financeiro_vendedor: item.amount || null,
+    responsavel_custo: item.claim_details?.resolution?.benefited?.[0] || null,
+    valor_compensacao: item.return_details_v2?.refund_amount || null,
     
     // Pagamento
     metodo_pagamento: payment?.payment_method_id || null,

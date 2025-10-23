@@ -100,31 +100,26 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>Parcelas</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '110px'}}>Valor Parcela</th>
             
-            {/* GRUPO 7: MOTIVO E CATEGORIA (11 colunas) */}
+            {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Reason ID</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Reason Name</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '250px'}}>Reason Detail</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reason Flow</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Categoria Motivo</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Tipo Problema</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Subtipo</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo Claim</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Estágio</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Complexidade</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Nível Prioridade</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Cód. Classificação</th>
             
-            {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (14 colunas) */}
+            {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (12 colunas) */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Resultado Mediação</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Mediador</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Método Resolução</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Resultado Final</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Responsável Custo</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Review Result</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Resolvida ACAS</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>É Troca?</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Escalado VIP</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Ação Seller Necessária</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Tags Pedido</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Total Evidências</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Recursos Manuais</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Problemas</th>

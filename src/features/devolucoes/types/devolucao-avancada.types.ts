@@ -96,18 +96,15 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   valor_diferenca_troca?: number | null;
   account_name?: string | null;
   
-  // 🔍 REASONS API - FASE 4 (11 novos campos expandidos)
+  // 🔍 REASONS API - FASE 4 (8 novos campos)
   reason_id?: string | null;
   reason_detail?: string | null;
   reason_name?: string | null;
-  reason_flow?: string | null; // ✅ NOVO: flow do reason (ex: post_purchase_delivered)
   reason_category?: string | null;
   reason_expected_resolutions?: string[] | null;
   reason_rules_engine?: string[] | null;
   reason_priority?: string | null;
   reason_type?: string | null;
-  reason_settings?: any | null; // ✅ NOVO: configurações completas do reason
-  reason_position?: number | null; // ✅ NOVO: posição de ordenação do reason
   
   // ⏱️ ANÁLISE TEMPORAL E PERFORMANCE (Novas colunas)
   tempo_primeira_resposta_vendedor?: number | null;
