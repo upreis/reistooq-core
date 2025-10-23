@@ -1,5 +1,5 @@
 // 📦 ML API DIRECT - Fase 4 Implementada: Endpoints + Mappers Integrados
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'

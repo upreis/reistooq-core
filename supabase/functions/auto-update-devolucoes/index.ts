@@ -4,7 +4,7 @@
  * Executa a cada 4 horas (8h, 12h, 16h, 20h)
  */
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { serve } from "https://deno.land/std@0.192.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
