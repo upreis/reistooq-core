@@ -46,7 +46,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
     <div className="lg:col-span-2 xl:col-span-2">
       <label className="text-sm font-medium mb-1 block flex items-center gap-2">
         Período de Busca
-        <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
+        <Badge variant="secondary" className="text-xs px-1 py-0">Data da Venda</Badge>
       </label>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -66,7 +66,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
               </span>
             </div>
             <Badge variant="secondary" className="ml-2 text-xs">
-              Data de Criação
+              Data da Venda
             </Badge>
           </Button>
         </PopoverTrigger>
@@ -112,7 +112,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
             {/* Info Box */}
             <div className="bg-muted/50 p-3 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                <strong>💡 Dica:</strong> O filtro sempre utiliza a coluna "Data Criação" (item.date_created) exibida na tabela.
+                <strong>💡 Dica:</strong> O filtro sempre utiliza a coluna "Data da Venda" (data de criação do pedido) exibida na tabela.
               </p>
             </div>
 
@@ -132,7 +132,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
       {periodoSelecionado && (
         <p className="text-xs text-muted-foreground mt-1">
           Buscando claims dos últimos <strong>{periodoSelecionado.dias} dias</strong> por{' '}
-          <strong>data de criação</strong>
+          <strong>data da venda</strong>
         </p>
       )}
     </div>
