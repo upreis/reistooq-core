@@ -4,13 +4,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   AlertCircle, 
-  Scale, 
   Sparkles, 
   Package,
   Clock,
   TrendingUp,
-  X,
-  Calendar
+  X
 } from 'lucide-react';
 
 interface FiltroRapido {
