@@ -122,12 +122,8 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const handleQuickFilterChange = React.useCallback((filter: 'all' | 'opened' | 'closed' | 'under_review' | 'pending' | 'resolved' | 'cancelled') => {
     setQuickFilter(filter);
     
-    // Aplicar filtro de status
-    if (filter === 'all') {
-      updateDraftFilters('statusClaim', '');
-    } else {
-      updateDraftFilters('statusClaim', filter);
-    }
+    // Filtro de status agora é aplicado pela barra de status (quickFilter)
+    // Não precisa mais do statusClaim, pois usamos o quickFilter para filtrar no frontend
     
     // Aplicar automaticamente
     setTimeout(() => handleAplicarEBuscar(), 100);
@@ -157,7 +153,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const activeFiltersCount = React.useMemo(() => {
     let count = 0;
     if (currentFilters.searchTerm) count++;
-    if (currentFilters.statusClaim) count++;
     if (currentFilters.periodoDias && currentFilters.periodoDias > 0) count++;
     if (currentFilters.contasSelecionadas?.length > 0) count++;
     return count;
@@ -178,7 +173,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const hasFiltersApplied = React.useMemo(() => Boolean(
     (advancedFilters.periodoDias && advancedFilters.periodoDias > 0) ||
     advancedFilters.searchTerm ||
-    advancedFilters.statusClaim ||
     advancedFilters.tipoClaim
   ), [advancedFilters]);
 

@@ -34,7 +34,6 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   periodoDias: number;  // 0 = todas, 7, 15, 30, 60, 90
   
   // 🎯 STATUS E CLASSIFICAÇÃO
-  statusClaim: string;
   tipoClaim: string;
   subtipoClaim: string;
   motivoCategoria: string;

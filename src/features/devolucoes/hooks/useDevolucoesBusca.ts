@@ -18,7 +18,6 @@ export interface DevolucaoBuscaFilters {
   contasSelecionadas: string[];
   dataInicio?: string;
   dataFim?: string;
-  statusClaim?: string;
   searchTerm?: string;
   // ============ NOVOS FILTROS AVANÇADOS (FASE 2) ============
   stage?: string;          // 'claim' | 'dispute' | 'review'
@@ -191,8 +190,7 @@ export function useDevolucoesBusca() {
           // 📅 Passar período para edge function (sempre usa item.date_created)
           
           logger.info(`🔍 Buscando devoluções para ${account.name}`, {
-            periodoDias: filtros.periodoDias || 0,
-            status: filtros.statusClaim || 'todos'
+            periodoDias: filtros.periodoDias || 0
           });
 
           // 🚀 AUTO-PAGINAÇÃO COMPLETA - Buscar tudo automaticamente

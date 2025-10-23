@@ -255,7 +255,6 @@ export const applyAllFilters = (
   
   // Aplicar todos os filtros em sequência
   resultados = filterBySearch(resultados, debouncedSearchTerm);
-  resultados = filterByStatusClaim(resultados, filters.statusClaim);
   resultados = filterByTipoClaim(resultados, filters.tipoClaim);
   resultados = filterByValorRetidoMin(resultados, filters.valorRetidoMin);
   resultados = filterByValorRetidoMax(resultados, filters.valorRetidoMax);
@@ -286,7 +285,6 @@ export const applyAllFilters = (
       filters: {
         periodoDias: filters.periodoDias,
         searchTerm: debouncedSearchTerm,
-        statusClaim: filters.statusClaim,
         activeFilters: Object.entries(filters).filter(([_, v]) => v && v !== '').length
       }
     });

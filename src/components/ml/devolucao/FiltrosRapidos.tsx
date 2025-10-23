@@ -17,7 +17,6 @@ interface FiltroRapido {
   icon: React.ReactNode;
   description: string;
   filtros: {
-    statusClaim?: string;
     periodoDias?: number;
     tipoClaim?: string;
   };
@@ -93,7 +92,6 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       icon: <AlertCircle className="h-4 w-4" />,
       description: 'Devoluções abertas dos últimos 60 dias',
       filtros: {
-        statusClaim: 'opened',
         periodoDias: 60
       },
       badge: {
@@ -105,9 +103,8 @@ export const FiltrosRapidos = React.memo(function FiltrosRapidos({ onAplicarFilt
       id: 'ativas',
       label: 'Todas Abertas',
       icon: <Package className="h-4 w-4" />,
-      description: 'Todas as devoluções com status aberto',
+      description: 'Todas as devoluções abertas',
       filtros: {
-        statusClaim: 'opened',
         periodoDias: 0  // ✅ Buscar todas as abertas sem limite de data
       },
       badge: {

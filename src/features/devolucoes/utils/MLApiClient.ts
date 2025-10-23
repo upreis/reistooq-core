@@ -29,7 +29,6 @@ export const fetchClaimsAndReturns = async (
         // ✅ Passar período (sempre usa item.date_created)
         periodoDias: filters.periodoDias ?? 0,  // Default 0 = buscar tudo
         // Mantém outros filtros
-        status_claim: filters.statusClaim || '',
         claim_type: filters.claimType || '',
         stage: filters.stage || '',
         fulfilled: filters.fulfilled,
@@ -89,7 +88,6 @@ export const fetchAllClaims = async (
       filters: {
         // ✅ Buscar tudo (sempre usa item.date_created)
         periodoDias: 0,  // 0 = buscar tudo
-        status_claim: '',
         claim_type: '',
         stage: '',
         fulfilled: undefined,
