@@ -221,15 +221,31 @@ export function useDevolucoesBusca() {
                 url: 'ml-api-direct'
               });
 
-              const apiResponse = await fetchClaimsAndReturns(
-                accountId,
-                account.account_identifier,
-                filtros,
-                limit,
-                offset
-              );
+              let apiResponse;
+              try {
+                apiResponse = await fetchClaimsAndReturns(
+                  accountId,
+                  account.account_identifier,
+                  filtros,
+                  limit,
+                  offset
+                );
+
+                console.error('🚨 [TESTE] RESPOSTA DA EDGE FUNCTION:', {
+                  success: apiResponse?.success,
+                  temDados: !!apiResponse?.data,
+                  quantidadeDados: apiResponse?.data?.length,
+                  pagination: apiResponse?.pagination,
+                  apiResponse
+                });
+              } catch (err) {
+                console.error('🚨 [TESTE] ERRO AO CHAMAR EDGE FUNCTION:', err);
+                toast.error(`Erro ao buscar devoluções: ${err.message}`);
+                break;
+              }
 
               if (!apiResponse?.success || !apiResponse?.data) {
+                console.error('🚨 [TESTE] RESPOSTA INVÁLIDA DA EDGE FUNCTION');
                 logger.info(`Fim da busca para ${account.name}`);
                 break;
               }
