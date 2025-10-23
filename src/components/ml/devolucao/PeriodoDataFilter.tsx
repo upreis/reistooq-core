@@ -23,8 +23,8 @@ const PERIODOS_DISPONIVEIS = [
 const TIPOS_DATA = [
   { 
     value: 'date_created', 
-    label: 'Data de Criação', 
-    description: 'Quando o claim foi criado',
+    label: 'Última Sincronização', 
+    description: 'Data da venda do pedido',
     icon: Calendar
   },
   { 
@@ -177,7 +177,7 @@ export const PeriodoDataFilter = React.memo(function PeriodoDataFilter({
             <div className="bg-muted/50 p-3 rounded-lg">
               <p className="text-xs text-muted-foreground">
                 <strong>💡 Dica:</strong> Use "Última Atualização" para ver claims que foram modificados recentemente, 
-                mesmo que sejam antigos. Use "Data de Criação" para ver claims novos.
+                mesmo que sejam antigos. Use "Última Sincronização" para ver claims por data de venda.
               </p>
             </div>
 
