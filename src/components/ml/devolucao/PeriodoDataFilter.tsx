@@ -29,8 +29,8 @@ const TIPOS_DATA = [
   },
   { 
     value: 'last_updated', 
-    label: 'Última Atualização', 
-    description: 'Claims atualizados recentemente',
+    label: 'Data da Venda', 
+    description: 'Quando aconteceu a venda',
     icon: Clock
   }
 ];
