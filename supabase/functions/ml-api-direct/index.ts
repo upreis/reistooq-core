@@ -1194,43 +1194,16 @@ async function buscarPedidosCancelados(
         sellerId
       });
       
-      // ⭐ FILTRAR POR DATA (calculado a partir de periodoDias)
-      // ✅ FORMATO OFICIAL ML (conforme doc linha 168): range=field:after:date,before:date
-      if (periodoDias > 0) {
-        const hoje = new Date();
-        const dataInicio = new Date();
-        dataInicio.setDate(hoje.getDate() - periodoDias);
-        
-        // ✅ Formato ISO com timezone offset (conforme exemplo oficial ML)
-        const dateFromISO = dataInicio.toISOString();
-        const dateToISO = hoje.toISOString();
-        
-        // 🔍 DIAGNÓSTICO DETALHADO: Verificar filtro de data
-        logger.info(`📅 FILTRO DE DATA CONFIGURADO:`, {
-          periodoDias,
-          dateFromISO,
-          dateToISO,
-          campo: 'date_created'
-        });
-        
-        // ✅ SEMPRE USA date_created (item.date_created)
-        // Formato conforme doc ML: range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
-        const rangeValue = `date_created:after:${dateFromISO},before:${dateToISO}`;
-        params.append('range', rangeValue);
-        logger.info(`✅ Filtro aplicado: range=${rangeValue}`);
-      } else {
-        logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
-      }
+      // 🔥 NUNCA FILTRAR POR DATA NA EDGE FUNCTION
+      // ✅ O filtro de data será aplicado no FRONTEND após receber os dados
+      // ✅ Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
+      logger.info(`ℹ️  SEM filtro de data - retornando TODOS os claims da API ML`);
+      logger.info(`⚠️  NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados`)
       
       // ⚠️ ORDENAR POR DATA DO CLAIM
       params.append('sort', 'date_created:desc');
       
       // ============ FILTROS OPCIONAIS DA API ML ============
-      // ✅ CORRIGIDO: Usar camelCase (como frontend envia)
-      if (filters?.statusClaim && filters.statusClaim.trim().length > 0) {
-        params.append('status', filters.statusClaim);
-        logger.info(`✅ Filtro status aplicado: ${filters.statusClaim}`);
-      }
       
       if (filters?.claimType && filters.claimType.trim().length > 0) {
         params.append('type', filters.claimType);
