@@ -1119,21 +1119,22 @@ async function buscarPedidosCancelados(
       tipoData_usado: tipoData
     });
     
-    // ✅ CORRIGIDO: Configuração de paginação respeitando frontend
+    // ✅ FIX CRÍTICO: Remover limite artificial - buscar TODOS os claims disponíveis
     const BATCH_SIZE = 100; // ← Sempre 100 (limite da API ML)
-    const MAX_CLAIMS_TO_FETCH = requestLimit; // ← Buscar apenas o solicitado
+    const MAX_CLAIMS_SAFETY_LIMIT = 10000; // ← Limite de segurança para evitar loops infinitos
     const allClaims: any[] = [];
     let offset = requestOffset; // ✅ Começar do offset solicitado
     let consecutiveEmptyBatches = 0;
     
     // 🔍 DIAGNÓSTICO: Verificar configuração de paginação
-    logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO:`, {
+    logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO (SEM LIMITE ARTIFICIAL):`, {
       BATCH_SIZE, // Sempre 100
-      MAX_CLAIMS_TO_FETCH: requestLimit, // Limite solicitado
-      requestOffset
+      MAX_CLAIMS_SAFETY_LIMIT, // Apenas para segurança
+      requestOffset,
+      requestLimit_IGNORADO: requestLimit // ← Agora ignorado, buscar TUDO
     });
     
-    logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (limite request: ${requestLimit})`);
+    logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (SEM LIMITE - buscar até acabar)`);
     logger.info(`📋 Filtros recebidos: período=${periodoDias} dias, tipo=${tipoData}`);
     
     // ✅ VALIDAÇÃO DOS FILTROS RECEBIDOS:
@@ -1163,8 +1164,8 @@ async function buscarPedidosCancelados(
     
     logger.info(`🎯 ${filtrosAtivos.length} filtros ativos: [${filtrosAtivos.join(', ')}]`);
     
-    // ✅ LOOP DE PAGINAÇÃO - Buscar apenas o solicitado pelo frontend
-    while (allClaims.length < MAX_CLAIMS_TO_FETCH && consecutiveEmptyBatches < 3) {
+    // ✅ FIX CRÍTICO: Buscar TODOS os claims disponíveis (sem limite do frontend)
+    while (allClaims.length < MAX_CLAIMS_SAFETY_LIMIT && consecutiveEmptyBatches < 3) {
       
       // Montar parâmetros da API ML
       const params = new URLSearchParams();
@@ -1182,28 +1183,30 @@ async function buscarPedidosCancelados(
       });
       
       // ⭐ FILTRAR POR DATA (calculado a partir de periodoDias)
-      // ✅ FILTROS DE DATA APLICADOS DE FORMA CONSOLIDADA
+      // ✅ FILTROS DE DATA APLICADOS DE FORMA CONSOLIDADA - FORMATO CORRETO ML API
       if (periodoDias > 0) {
         const hoje = new Date();
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - periodoDias);
         
-        const dateFrom = dataInicio.toISOString().split('T')[0];  // YYYY-MM-DD
-        const dateTo = hoje.toISOString().split('T')[0];          // YYYY-MM-DD
+        // ✅ FIX CRÍTICO: Usar formato ISO COMPLETO conforme documentação ML
+        const dateFromISO = dataInicio.toISOString();  // YYYY-MM-DDTHH:mm:ss.SSSZ
+        const dateToISO = hoje.toISOString();          // YYYY-MM-DDTHH:mm:ss.SSSZ
         
         // 🔍 DIAGNÓSTICO DETALHADO: Verificar filtro de data
         logger.info(`📅 FILTRO DE DATA CONFIGURADO:`, {
           periodoDias,
           tipoData,
-          dateFrom,
-          dateTo
+          dateFromISO,
+          dateToISO
         });
         
-        // ✅ Aplicar filtro baseado no tipo de data escolhido
+        // ✅ FIX CRÍTICO: Usar :after e :before conforme documentação oficial ML
+        // Documentação: range (field) :after: "yyyy-MM-dd'T'HH:mm:ss.SSZ" before: "yyyy-MM-dd'T'HH:mm:ss.SSZ"
         const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
-        params.append(`${dataField}.from`, dateFrom);
-        params.append(`${dataField}.to`, dateTo);
-        logger.info(`✅ Filtro aplicado: ${dataField} de ${dateFrom} até ${dateTo}`);
+        params.append(`${dataField}:after`, dateFromISO);
+        params.append(`${dataField}:before`, dateToISO);
+        logger.info(`✅ Filtro aplicado: ${dataField}:after=${dateFromISO} :before=${dateToISO}`);
       } else {
         logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }
@@ -1328,9 +1331,10 @@ async function buscarPedidosCancelados(
           break;
         }
         
-        // Delay para evitar rate limit
+        // ✅ FIX CRÍTICO: Aumentar delay para 500ms (evitar rate limiting)
         if (data.data.length > 0) {
-          await new Promise(resolve => setTimeout(resolve, 150));
+          await new Promise(resolve => setTimeout(resolve, 500));
+          logger.info(`⏱️ Aguardando 500ms antes do próximo lote...`);
         }
         
       } catch (error) {
