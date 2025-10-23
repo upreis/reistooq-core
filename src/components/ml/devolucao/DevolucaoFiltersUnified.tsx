@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
+import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Settings, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -442,24 +442,37 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
             </Button>
           )}
           
-          {/* Botão Buscar sempre visível */}
-          <Button
-            onClick={onApplyFilters}
-            disabled={isApplying}
-            className="gap-2"
-          >
-            {isApplying ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <Search className="h-4 w-4" />
-                Aplicar Filtros e Buscar
-              </>
+          {/* Botões de ação */}
+          <div className="flex gap-2">
+            <Button
+              onClick={onApplyFilters}
+              disabled={isApplying}
+              className="gap-2"
+            >
+              {isApplying ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4" />
+                  Aplicar Filtros e Buscar
+                </>
+              )}
+            </Button>
+            
+            {isApplying && (
+              <Button
+                onClick={() => window.location.reload()}
+                variant="outline"
+                className="gap-2"
+              >
+                <XCircle className="h-4 w-4" />
+                Cancelar Busca
+              </Button>
             )}
-          </Button>
+          </div>
         </div>
       </div>
 
