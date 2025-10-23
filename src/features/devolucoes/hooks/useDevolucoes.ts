@@ -20,8 +20,8 @@ import { toast } from 'sonner';
 export interface DevolucaoFilters {
   searchTerm: string;
   status: string;
-  dataInicio: string;
-  dataFim: string;
+  periodoDias: number;
+  tipoData: 'date_created' | 'last_updated';
 }
 
 export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
@@ -34,7 +34,7 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   // 📅 DATAS - NOVO SISTEMA
   dataInicio: string;
   dataFim: string;
-  periodoDias: number;  // 7, 15, 30, 60, 90
+  periodoDias: number;  // 0 = todas, 7, 15, 30, 60, 90
   tipoData: 'date_created' | 'last_updated';  // Tipo de data para filtrar
   
   // 🎯 STATUS E CLASSIFICAÇÃO
@@ -181,8 +181,8 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       const filtrosParaUsar = filtrosImediatos || advancedFilters;
       
       logger.info('[useDevolucoes] 🌐 Limpando tela e buscando APENAS da API ML...', {
-        dataInicio: filtrosParaUsar.dataInicio || 'SEM FILTRO',
-        dataFim: filtrosParaUsar.dataFim || 'SEM FILTRO',
+        periodoDias: filtrosParaUsar.periodoDias || 0,
+        tipoData: filtrosParaUsar.tipoData || 'date_created',
         contas: filtrosParaUsar.contasSelecionadas
       });
       
