@@ -1222,7 +1222,11 @@ async function buscarPedidosCancelados(
         // ✅ FORMATO CORRETO conforme documentação oficial ML
         // Exemplo real (linha 168 docs): range=date_created:after:2020-09-26T14:52:14.000-04:00,before:2020-09-27T14:52:14.000-04:00
         // SEM ESPAÇOS, SEM ASPAS, COM VÍRGULA
-        const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
+        // 
+        // ⚠️ IMPORTANTE: A API do ML não tem campo direto para "data da venda"
+        // Quando tipoData = 'order_date', filtramos pela date_created do claim
+        // que é a referência mais próxima da data de venda
+        const dataField = 'date_created';  // Sempre usar date_created na API ML
         const rangeValue = `${dataField}:after:${dateFromISO},before:${dateToISO}`;
         params.append('range', rangeValue);
         logger.info(`✅ Filtro aplicado: range=${rangeValue}`);

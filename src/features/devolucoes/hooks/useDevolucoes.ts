@@ -21,7 +21,7 @@ export interface DevolucaoFilters {
   searchTerm: string;
   status: string;
   periodoDias: number;
-  tipoData: 'date_created' | 'last_updated';
+  tipoData: 'date_created' | 'order_date';
 }
 
 export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
@@ -33,7 +33,7 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   
   // 📅 DATAS - SISTEMA UNIFICADO
   periodoDias: number;  // 0 = todas, 7, 15, 30, 60, 90
-  tipoData: 'date_created' | 'last_updated';  // Tipo de data para filtrar
+  tipoData: 'date_created' | 'order_date';  // Tipo de data para filtrar
   
   // 🎯 STATUS E CLASSIFICAÇÃO
   statusClaim: string;
