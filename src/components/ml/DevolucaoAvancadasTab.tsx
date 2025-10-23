@@ -10,9 +10,9 @@ import { useDevolucoes } from '@/features/devolucoes/hooks/useDevolucoes';
 import { DevolucaoDetailsModal } from '@/components/ml/devolucao/DevolucaoDetailsModal';
 import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPagination';
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
-import { DevolucaoStatsLoading } from '@/components/ml/devolucao/DevolucaoLoadingState';
+import { DevolucaoStatusBar } from './devolucao/DevolucaoStatusBar';
 import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } from '@/components/ml/devolucao/DevolucaoEmptyStates';
-import { DevolucaoStatsCards } from '@/components/ml/devolucao/DevolucaoStatsCards';
+
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 import { ErrorFallback, MinimalErrorFallback } from '@/components/error/ErrorFallback';
@@ -57,6 +57,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   existingDevolucoes
 }) => {
   const [selectedDevolucao, setSelectedDevolucao] = React.useState<DevolucaoAvancada | null>(null);
+  const [quickFilter, setQuickFilter] = React.useState<'all' | 'opened' | 'closed' | 'cancelled' | 'pending'>('all');
   const [showDetails, setShowDetails] = React.useState(false);
   const [showExportDialog, setShowExportDialog] = React.useState(false);
   const [showColumnManager, setShowColumnManager] = React.useState(false);
@@ -117,6 +118,20 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const handleCancelChanges = React.useCallback(() => {
     cancelDraftFilters();
   }, [cancelDraftFilters]);
+
+  const handleQuickFilterChange = React.useCallback((filter: 'all' | 'opened' | 'closed' | 'cancelled' | 'pending') => {
+    setQuickFilter(filter);
+    
+    // Aplicar filtro de status
+    if (filter === 'all') {
+      updateDraftFilters('statusClaim', '');
+    } else {
+      updateDraftFilters('statusClaim', filter);
+    }
+    
+    // Aplicar automaticamente
+    setTimeout(() => handleAplicarEBuscar(), 100);
+  }, [updateDraftFilters, handleAplicarEBuscar]);
 
   const handleClearAllFilters = React.useCallback(() => {
     clearFilters();
@@ -197,21 +212,12 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     <div className="space-y-6">
       
       {/* Header com estatísticas melhoradas */}
-      <ErrorBoundary
-        FallbackComponent={(props) => (
-          <MinimalErrorFallback {...props} />
-        )}
-        onReset={() => window.location.reload()}
-      >
-        {loading && <DevolucaoStatsLoading />}
-        
-        {!loading && (
-          <DevolucaoStatsCards 
-            stats={stats} 
-            performanceSettings={performanceSettings} 
-          />
-        )}
-      </ErrorBoundary>
+      {/* Barra de Resumo com Filtros */}
+      <DevolucaoStatusBar
+        devolucoes={devolucoesFiltradas}
+        quickFilter={quickFilter}
+        onQuickFilterChange={handleQuickFilterChange}
+      />
 
       {/* Controles de ação */}
       <div className="flex justify-end gap-2">
