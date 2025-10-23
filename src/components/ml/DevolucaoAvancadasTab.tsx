@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -16,7 +17,7 @@ import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
 import { FiltrosRapidos } from './devolucao/FiltrosRapidos';
 import { ErrorFallback, MinimalErrorFallback } from '@/components/error/ErrorFallback';
-import { exportarDevolucoes } from '@/features/devolucoes/utils/DevolucaoExportService';
+import { exportarDevolucoes, exportarDevolucoesExcel } from '@/features/devolucoes/utils/DevolucaoExportService';
 
 
 // ✨ Tipos
@@ -27,7 +28,9 @@ import {
   Filter, 
   Package, 
   XCircle,
-  Settings
+  Settings,
+  FileDown,
+  FileSpreadsheet
 } from 'lucide-react';
 
 
@@ -159,9 +162,14 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   }, [currentFilters]);
 
 
-  // Handler para exportação - delegado ao serviço
+  // Handler para exportação CSV
   const handleExportarCSV = React.useCallback(() => {
     exportarDevolucoes(devolucoesFiltradas);
+  }, [devolucoesFiltradas]);
+
+  // Handler para exportação Excel
+  const handleExportarExcel = React.useCallback(() => {
+    exportarDevolucoesExcel(devolucoesFiltradas);
   }, [devolucoesFiltradas]);
 
   // Determinar qual estado mostrar - MEMOIZADO
@@ -234,14 +242,28 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           <Settings className="h-4 w-4" />
           Colunas (29)
         </Button>
-        <Button 
-          variant="outline" 
-          onClick={handleExportarCSV}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Exportar CSV
-        </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Exportar
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={handleExportarCSV}>
+              <FileDown className="h-4 w-4 mr-2" />
+              Exportar como CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportarExcel}>
+              <FileSpreadsheet className="h-4 w-4 mr-2" />
+              Exportar como Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* ✨ SISTEMA DE FILTROS UNIFICADO - IGUAL AO /PEDIDOS */}
