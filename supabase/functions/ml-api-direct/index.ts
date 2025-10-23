@@ -1201,12 +1201,13 @@ async function buscarPedidosCancelados(
           dateToISO
         });
         
-        // ✅ FIX CRÍTICO: Usar :after e :before conforme documentação oficial ML
+        // ✅ FIX CRÍTICO: Usar range() conforme documentação oficial ML
         // Documentação: range (field) :after: "yyyy-MM-dd'T'HH:mm:ss.SSZ" before: "yyyy-MM-dd'T'HH:mm:ss.SSZ"
+        // Formato: range(date_created):after=YYYY-MM-DDTHH:mm:ss.SSSZ&range(date_created):before=YYYY-MM-DDTHH:mm:ss.SSSZ
         const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
-        params.append(`${dataField}:after`, dateFromISO);
-        params.append(`${dataField}:before`, dateToISO);
-        logger.info(`✅ Filtro aplicado: ${dataField}:after=${dateFromISO} :before=${dateToISO}`);
+        params.append(`range(${dataField}):after`, dateFromISO);
+        params.append(`range(${dataField}):before`, dateToISO);
+        logger.info(`✅ Filtro aplicado: range(${dataField}):after=${dateFromISO} :before=${dateToISO}`);
       } else {
         logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }
@@ -1291,9 +1292,9 @@ async function buscarPedidosCancelados(
           tem_mais: data.data?.length === BATCH_SIZE,
           applied_filters: data.applied_filters || 'nenhum informado pela API',
           filtros_enviados: {
-            date_from: params.get('date_created.from') || params.get('last_updated.from'),
-            date_to: params.get('date_created.to') || params.get('last_updated.to'),
-            tipo_data: params.get('date_created.from') ? 'date_created' : 'last_updated'
+            date_range_after: params.get(`range(date_created):after`) || params.get(`range(last_updated):after`),
+            date_range_before: params.get(`range(date_created):before`) || params.get(`range(last_updated):before`),
+            tipo_data: params.get(`range(date_created):after`) ? 'date_created' : 'last_updated'
           }
         });
         
@@ -1325,17 +1326,23 @@ async function buscarPedidosCancelados(
         
         offset += BATCH_SIZE;
         
-        // Se retornou menos que o esperado, provavelmente acabaram
+        // ✅ PARADA CORRETA: Se retornou menos que o esperado
         if (data.data.length < BATCH_SIZE) {
           logger.info(`🏁 Fim dos dados: última página retornou ${data.data.length} claims`);
           break;
         }
         
-        // ✅ FIX CRÍTICO: Aumentar delay para 500ms (evitar rate limiting)
-        if (data.data.length > 0) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          logger.info(`⏱️ Aguardando 500ms antes do próximo lote...`);
+        // ⚠️ VERIFICAR LIMITE DE SEGURANÇA
+        if (allClaims.length >= MAX_CLAIMS_SAFETY_LIMIT) {
+          logger.warn(`🛑 LIMITE DE SEGURANÇA ATINGIDO: ${allClaims.length} claims coletados`);
+          logger.warn(`⚠️ Se precisar de mais claims, contate o suporte para aumentar o limite`);
+          break;
         }
+        
+        
+        // ✅ FIX CRÍTICO: SEMPRE aguardar 500ms para evitar rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500));
+        logger.info(`⏱️ Aguardando 500ms antes do próximo lote...`);
         
       } catch (error) {
         logger.error(`❌ Erro no lote offset=${offset}:`, error.message);
