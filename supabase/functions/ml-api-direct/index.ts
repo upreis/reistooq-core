@@ -1201,13 +1201,13 @@ async function buscarPedidosCancelados(
           dateToISO
         });
         
-        // ✅ FIX CRÍTICO: Usar range() conforme documentação oficial ML
-        // Documentação: range (field) :after: "yyyy-MM-dd'T'HH:mm:ss.SSZ" before: "yyyy-MM-dd'T'HH:mm:ss.SSZ"
-        // Formato: range(date_created):after=YYYY-MM-DDTHH:mm:ss.SSSZ&range(date_created):before=YYYY-MM-DDTHH:mm:ss.SSSZ
+        // ✅ FIX CRÍTICO: Formato correto conforme exemplo oficial ML
+        // Exemplo oficial: ?status=opened&stage=dispute&sort=last_updated:asc
+        // NÃO usa range() - apenas os parâmetros diretos
         const dataField = tipoData === 'date_created' ? 'date_created' : 'last_updated';
-        params.append(`range(${dataField}):after`, dateFromISO);
-        params.append(`range(${dataField}):before`, dateToISO);
-        logger.info(`✅ Filtro aplicado: range(${dataField}):after=${dateFromISO} :before=${dateToISO}`);
+        params.append(`${dataField}.from`, dateFromISO);
+        params.append(`${dataField}.to`, dateToISO);
+        logger.info(`✅ Filtro aplicado: ${dataField}.from=${dateFromISO} .to=${dateToISO}`);
       } else {
         logger.info(`📋 SEM filtro de data (periodoDias: ${periodoDias} - buscar TUDO)`);
       }
@@ -1292,9 +1292,9 @@ async function buscarPedidosCancelados(
           tem_mais: data.data?.length === BATCH_SIZE,
           applied_filters: data.applied_filters || 'nenhum informado pela API',
           filtros_enviados: {
-            date_range_after: params.get(`range(date_created):after`) || params.get(`range(last_updated):after`),
-            date_range_before: params.get(`range(date_created):before`) || params.get(`range(last_updated):before`),
-            tipo_data: params.get(`range(date_created):after`) ? 'date_created' : 'last_updated'
+            date_from: params.get('date_created.from') || params.get('last_updated.from'),
+            date_to: params.get('date_created.to') || params.get('last_updated.to'),
+            tipo_data: params.get('date_created.from') ? 'date_created' : 'last_updated'
           }
         });
         
