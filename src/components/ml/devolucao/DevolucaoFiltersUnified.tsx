@@ -64,6 +64,7 @@ interface DevolucaoFiltersUnifiedProps {
   appliedFilters: any;
   onFilterChange: (key: string, value: any) => void;
   onApplyFilters: () => void;
+  onCancelSearch?: () => void;
   onCancelChanges: () => void;
   onClearFilters: () => void;
   hasPendingChanges: boolean;
@@ -79,6 +80,7 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
   appliedFilters,
   onFilterChange,
   onApplyFilters,
+  onCancelSearch,
   onCancelChanges,
   onClearFilters,
   hasPendingChanges,
@@ -462,10 +464,10 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
               )}
             </Button>
             
-            {isApplying && (
+            {isApplying && onCancelSearch && (
               <Button
-                onClick={() => window.location.reload()}
-                variant="outline"
+                onClick={onCancelSearch}
+                variant="destructive"
                 className="gap-2"
               >
                 <XCircle className="h-4 w-4" />

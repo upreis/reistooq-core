@@ -106,6 +106,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     }
   }, [applyFilters]);
 
+  const handleCancelSearch = React.useCallback(() => {
+    // Limpa a tela e reseta estados de loading
+    clearFilters();
+    toast.info('Busca cancelada');
+  }, [clearFilters]);
 
   const handleCancelChanges = React.useCallback(() => {
     cancelDraftFilters();
@@ -257,6 +262,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
             appliedFilters={advancedFilters}
             onFilterChange={handleFilterChange}
             onApplyFilters={handleAplicarEBuscar}
+            onCancelSearch={handleCancelSearch}
             onCancelChanges={handleCancelChanges}
             onClearFilters={handleClearAllFilters}
             hasPendingChanges={hasPendingChanges}
