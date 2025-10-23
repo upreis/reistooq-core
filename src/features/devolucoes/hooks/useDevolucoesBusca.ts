@@ -517,8 +517,8 @@ export function useDevolucoesBusca() {
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
-        // ✅ AMBOS filtros usam data_criacao_claim (coluna "Data Criação" da página)
-        const campoData = 'data_criacao_claim';
+        // ✅ CORRETO: Filtrar pela coluna "Data Criação" exibida (item.date_created)
+        const campoData = 'data_criacao';
         countQuery = countQuery.gte(campoData, dateFrom);
       }
       
@@ -558,8 +558,8 @@ export function useDevolucoesBusca() {
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
           const dateFrom = dataInicio.toISOString();
-          // ✅ AMBOS filtros usam data_criacao_claim (coluna "Data Criação" da página)
-          const campoData = 'data_criacao_claim';
+          // ✅ CORRETO: Filtrar pela coluna "Data Criação" exibida (item.date_created)
+          const campoData = 'data_criacao';
           query = query.gte(campoData, dateFrom);
         }
         
