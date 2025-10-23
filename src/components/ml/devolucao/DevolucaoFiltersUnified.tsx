@@ -478,43 +478,6 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
         </div>
       </div>
 
-      {/* Resumo dos filtros ativos */}
-      {activeFiltersCount > 0 && (
-        <div className="pt-4 border-t">
-          <div className="text-sm text-muted-foreground mb-2">Filtros ativos:</div>
-          <div className="flex flex-wrap gap-2">
-            {filters.searchTerm && (
-              <Badge variant="outline">Busca: {filters.searchTerm}</Badge>
-            )}
-            {filters.statusClaim && (
-              <Badge variant="outline">Status: {STATUS_LABELS[filters.statusClaim] || filters.statusClaim}</Badge>
-            )}
-            {filters.periodoDias > 0 && (
-              <Badge variant="outline">Período: {filters.periodoDias} dias (Data da Venda)</Badge>
-            )}
-            {filters.contasSelecionadas?.length > 0 && (
-              <Badge variant="outline">
-                Contas: {filters.contasSelecionadas.length === 1 
-                  ? (contasML.find((c: any) => c.id === filters.contasSelecionadas[0])?.account_identifier || 
-                     contasML.find((c: any) => c.id === filters.contasSelecionadas[0])?.name || 
-                     filters.contasSelecionadas[0])
-                  : `${filters.contasSelecionadas.length} selecionadas`
-                }
-              </Badge>
-            )}
-            {/* Novos filtros avançados */}
-            {filters.stage && (
-              <Badge variant="outline">Estágio: {STAGE_LABELS[filters.stage]}</Badge>
-            )}
-            {filters.fulfilled !== undefined && (
-              <Badge variant="outline">Cumprido: {filters.fulfilled ? 'Sim' : 'Não'}</Badge>
-            )}
-            {filters.claimType && (
-              <Badge variant="outline">Tipo: {CLAIM_TYPE_LABELS[filters.claimType]}</Badge>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 });
