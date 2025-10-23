@@ -376,12 +376,7 @@ export function useDevolucoesBusca() {
                 reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
                 reason_flow: apiReasonData?.flow || null,
                 reason_settings: apiReasonData?.settings ? JSON.stringify(apiReasonData.settings) : null,
-                reason_position: apiReasonData?.position || null,
-                
-                // ✅ CAMPOS TÉCNICOS (garantir que não sejam undefined)
-                dados_incompletos: false,
-                campos_faltantes: null, // ✅ SEMPRE NULL para evitar erro de coluna
-                ultima_sincronizacao: new Date().toISOString()
+                reason_position: apiReasonData?.position || null
               };
               
               // Log do primeiro item processado
@@ -404,6 +399,7 @@ export function useDevolucoesBusca() {
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
             if (devolucoesProcesadas.length > 0) {
               try {
+                // ✅ Dados já estão prontos para salvar (sem campos problemáticos)
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
                   .upsert(devolucoesProcesadas, {
