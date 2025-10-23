@@ -15,10 +15,6 @@ export const mapMetadata = (item: any) => {
     // Qualidade
     eficiencia_resolucao: item.claim_details?.resolution?.reason || null,
     
-    // Reputação
-    seller_reputation: null,
-    buyer_reputation: null,
-    
     // SLA
     tempo_primeira_resposta_vendedor: null,
     tempo_resposta_comprador: null,

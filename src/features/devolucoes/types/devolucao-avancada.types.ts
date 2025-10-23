@@ -83,8 +83,6 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   resultado_mediacao?: string | null;
   impacto_reputacao?: string | null;
   satisfacao_comprador?: string | null;
-  seller_reputation?: any | null;
-  buyer_reputation?: any | null;
   detalhes_mediacao?: any | null;
   historico_status?: StatusHistoryItem[] | null;
   proxima_acao_requerida?: string | null;
