@@ -57,7 +57,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   existingDevolucoes
 }) => {
   const [selectedDevolucao, setSelectedDevolucao] = React.useState<DevolucaoAvancada | null>(null);
-  const [quickFilter, setQuickFilter] = React.useState<'all' | 'opened' | 'closed' | 'cancelled' | 'pending'>('all');
+  const [quickFilter, setQuickFilter] = React.useState<'all' | 'opened' | 'closed' | 'under_review' | 'pending' | 'resolved' | 'cancelled'>('all');
   const [showDetails, setShowDetails] = React.useState(false);
   const [showExportDialog, setShowExportDialog] = React.useState(false);
   const [showColumnManager, setShowColumnManager] = React.useState(false);
@@ -119,7 +119,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
     cancelDraftFilters();
   }, [cancelDraftFilters]);
 
-  const handleQuickFilterChange = React.useCallback((filter: 'all' | 'opened' | 'closed' | 'cancelled' | 'pending') => {
+  const handleQuickFilterChange = React.useCallback((filter: 'all' | 'opened' | 'closed' | 'under_review' | 'pending' | 'resolved' | 'cancelled') => {
     setQuickFilter(filter);
     
     // Aplicar filtro de status
