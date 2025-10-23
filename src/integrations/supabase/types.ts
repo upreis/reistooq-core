@@ -1034,6 +1034,7 @@ export type Database = {
         Row: {
           acao_seller_necessaria: string | null
           account_name: string | null
+          anexos_ml: Json | null
           carrier_info: Json | null
           categoria_problema: string | null
           claim_fulfilled: boolean | null
@@ -1160,6 +1161,7 @@ export type Database = {
         Insert: {
           acao_seller_necessaria?: string | null
           account_name?: string | null
+          anexos_ml?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
           claim_fulfilled?: boolean | null
@@ -1286,6 +1288,7 @@ export type Database = {
         Update: {
           acao_seller_necessaria?: string | null
           account_name?: string | null
+          anexos_ml?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
           claim_fulfilled?: boolean | null
