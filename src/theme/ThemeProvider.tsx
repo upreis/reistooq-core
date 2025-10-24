@@ -30,15 +30,7 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  // ✅ FIX CRÍTICO: Verificação de React hooks antes de usar
-  if (!useState || typeof useState !== 'function') {
-    console.error('🚨 React useState not available in ThemeProvider');
-    // CRÍTICO: Early return para evitar erro
-    return <div style={{ minHeight: '100vh' }}>{children}</div>;
-  }
-
   const [theme, setTheme] = useState<ThemeName>(() => {
-    // ✅ FIX CRÍTICO: Verificação mais robusta para evitar erro de React
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       return defaultTheme;
     }
@@ -53,7 +45,6 @@ export function ThemeProvider({
   });
 
   useEffect(() => {
-    // ✅ FIX CRÍTICO: Verificação mais robusta do DOM
     if (typeof document === 'undefined') return;
     
     const root = document.documentElement;
@@ -84,7 +75,6 @@ export function ThemeProvider({
 
   const handleSetTheme = (newTheme: ThemeName) => {
     try {
-      // ✅ FIX CRÍTICO: Verificação mais segura do localStorage
       if (typeof window !== 'undefined' && window.localStorage) {
         window.localStorage.setItem(storageKey, newTheme);
       }
