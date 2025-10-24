@@ -1249,11 +1249,6 @@ async function buscarPedidosCancelados(
       reasonId: filters?.reasonId || 'não definido',
       resource: filters?.resource || 'não definido'
     });
-      filters?.reasonId ? 'reason' : null,
-      filters?.resource ? 'resource' : null
-    ].filter(Boolean);
-    
-    logger.info(`🎯 ${filtrosAtivos.length} filtros ativos: [${filtrosAtivos.join(', ')}]`);
     
     // ✅ FIX CRÍTICO: Buscar TODOS os claims disponíveis (sem limite do frontend)
     while (allClaims.length < MAX_CLAIMS_SAFETY_LIMIT && consecutiveEmptyBatches < 3) {
