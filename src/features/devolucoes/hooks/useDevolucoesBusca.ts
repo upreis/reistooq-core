@@ -14,6 +14,101 @@ import { sortByDataCriacao } from '../utils/DevolucaoSortUtils';
 import { mapDevolucaoCompleta } from '../utils/mappers';
 import { validateMLAccounts } from '../utils/AccountValidator';
 
+// ===================================
+// 🛡️ WHITELIST DE CAMPOS VÁLIDOS DO DB
+// ===================================
+const VALID_DB_FIELDS = new Set([
+  // IDs e Refs
+  'id', 'order_id', 'claim_id', 'integration_account_id', 'account_name',
+  'shipment_id', 'shipment_id_devolucao', 'review_id', 'transaction_id',
+  
+  // Dados Básicos
+  'marketplace_origem', 'data_criacao', 'created_at', 'updated_at',
+  'produto_titulo', 'sku', 'quantidade', 'valor_original_produto',
+  
+  // Status
+  'status_devolucao', 'status_dinheiro', 'subtipo_devolucao', 
+  'status_envio_devolucao', 'status_rastreamento', 'status_rastreamento_devolucao',
+  'status_rastreamento_pedido', 'status_transporte_atual', 'status_moderacao',
+  
+  // Claim
+  'tipo_claim', 'subtipo_claim', 'claim_stage', 'claim_quantity_type', 'claim_fulfilled',
+  'data_criacao_claim', 'data_fechamento_claim',
+  
+  // Return
+  'data_criacao_devolucao', 'data_fechamento_devolucao', 'data_atualizacao_devolucao',
+  'data_inicio_return', 'return_intermediate_check', 'return_resource_type',
+  
+  // Reasons
+  'reason_id', 'reason_name', 'reason_detail', 'reason_type', 'reason_category',
+  'reason_priority', 'reason_expected_resolutions', 'reason_rules_engine',
+  'motivo_categoria', 'categoria_problema',
+  
+  // Financeiro
+  'metodo_pagamento', 'tipo_pagamento', 'parcelas', 'valor_parcela',
+  'metodo_reembolso', 'moeda_reembolso', 'moeda_custo', 'responsavel_custo',
+  'reembolso_quando', 'valor_retido',
+  
+  // Rastreamento
+  'codigo_rastreamento', 'codigo_rastreamento_devolucao', 'transportadora',
+  'transportadora_devolucao', 'tipo_envio_devolucao', 'destino_devolucao',
+  'endereco_destino_devolucao', 'localizacao_atual', 'data_ultima_movimentacao',
+  'data_ultimo_status', 'descricao_ultimo_status', 'url_rastreamento',
+  'timeline_rastreamento',
+  
+  // Comprador
+  'comprador_cpf', 'comprador_nome_completo', 'comprador_nickname',
+  
+  // Mediação
+  'em_mediacao', 'resultado_mediacao', 'metodo_resolucao', 'resultado_final',
+  
+  // Troca
+  'eh_troca', 'produto_troca_id',
+  
+  // Review
+  'review_status', 'review_result', 'observacoes_review', 'revisor_responsavel',
+  'satisfacao_comprador',
+  
+  // Flags
+  'internal_tags', 'tags_pedido', 'tags_automaticas', 'tem_financeiro', 
+  'tem_review', 'tem_sla', 'nota_fiscal_autorizada',
+  
+  // Prioridade e Ações
+  'nivel_prioridade', 'proxima_acao_requerida', 'acao_seller_necessaria',
+  'impacto_reputacao',
+  
+  // Dados Adicionais
+  'usuario_ultima_acao', 'hash_verificacao', 'versao_api_utilizada',
+  'origem_timeline', 'status_produto_novo', 'endereco_destino',
+  'ultima_sincronizacao', 'fonte_dados_primaria',
+  
+  // Mensagens
+  'numero_interacoes', 'ultima_mensagem_data', 'ultima_mensagem_remetente',
+  
+  // JSON Data
+  'dados_order', 'dados_claim', 'dados_mensagens', 'dados_return',
+  'dados_reasons', 'dados_costs', 'dados_reviews', 'anexos_ml',
+  'timeline_mensagens', 'timeline_events', 'timeline_consolidado',
+  'tracking_history', 'tracking_events', 'historico_status',
+  'marcos_temporais', 'shipment_costs', 'carrier_info'
+]);
+
+/**
+ * 🛡️ FILTRAR APENAS CAMPOS VÁLIDOS
+ * Remove qualquer campo que não existe no schema do DB
+ */
+const filtrarCamposValidos = (obj: any): any => {
+  const filtered: any = {};
+  
+  Object.keys(obj).forEach(key => {
+    if (VALID_DB_FIELDS.has(key)) {
+      filtered[key] = obj[key];
+    }
+  });
+  
+  return filtered;
+};
+
 export interface DevolucaoBuscaFilters {
   contasSelecionadas: string[];
   dataInicio?: string;
@@ -364,7 +459,7 @@ export function useDevolucoesBusca() {
               const itemCompleto = {
                 ...mapDevolucaoCompleta(item, accountId, account.name, reasonId),
                 
-                // Adicionar dados de reasons da API (FASE 4)
+                // ✅ ADICIONAR DADOS DE REASONS DA API (FASE 4) - com validação
                 reason_id: reasonId,
                 reason_category: reasonId?.startsWith('PNR') ? 'not_received' :
                                 reasonId?.startsWith('PDD') ? 'defective_or_different' :
@@ -374,7 +469,9 @@ export function useDevolucoesBusca() {
                 reason_type: 'buyer_initiated',
                 reason_priority: (reasonId?.startsWith('PNR') || reasonId?.startsWith('PDD')) ? 'high' : 'medium',
                 reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
-                reason_flow: apiReasonData?.flow || null
+                reason_flow: apiReasonData?.flow || null,
+                reason_settings: apiReasonData?.settings ? JSON.stringify(apiReasonData.settings) : null
+                // ❌ REMOVIDO: reason_position (não existe no schema)
               };
               
               // Log do primeiro item processado
@@ -397,17 +494,30 @@ export function useDevolucoesBusca() {
             // 💾 SALVAR OS DADOS ENRIQUECIDOS NO BANCO
             if (devolucoesProcesadas.length > 0) {
               try {
+                // 🛡️ FILTRAR APENAS CAMPOS VÁLIDOS antes de fazer upsert
+                const devolucoesFiltradas = devolucoesProcesadas.map(dev => 
+                  filtrarCamposValidos(dev)
+                );
+                
+                logger.info(`🛡️ Campos filtrados: ${Object.keys(devolucoesProcesadas[0] || {}).length} → ${Object.keys(devolucoesFiltradas[0] || {}).length}`);
+                
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(devolucoesProcesadas, {
+                  .upsert(devolucoesFiltradas, {
                     onConflict: 'order_id,integration_account_id',
                     ignoreDuplicates: false
                   });
 
                 if (upsertError) {
-                  logger.error('Erro ao salvar dados enriquecidos no banco', upsertError);
+                  logger.error('❌ Erro ao salvar dados no banco:', upsertError);
+                  console.error('[REISTOQ ERROR] Upsert failed:', {
+                    error: upsertError,
+                    message: upsertError.message,
+                    details: upsertError.details,
+                    hint: upsertError.hint
+                  });
                 } else {
-                  logger.info(`✅ ${devolucoesProcesadas.length} devoluções SALVAS no banco com dados enriquecidos`);
+                  logger.info(`✅ ${devolucoesFiltradas.length} devoluções SALVAS no banco com dados validados`);
                 }
               } catch (saveError) {
                 logger.error('Erro ao persistir dados', saveError);
@@ -664,9 +774,12 @@ export function useDevolucoesBusca() {
                   updated_at: new Date().toISOString()
                 };
 
+                // 🛡️ FILTRAR APENAS CAMPOS VÁLIDOS antes de fazer upsert
+                const devolucaoFiltrada = filtrarCamposValidos(devolucaoData);
+
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(devolucaoData, { 
+                  .upsert(devolucaoFiltrada, { 
                     onConflict: 'order_id',
                     ignoreDuplicates: false 
                   });

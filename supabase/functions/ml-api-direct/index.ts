@@ -10,6 +10,7 @@ import { mapReviewsData, extractReviewsFields } from './mappers/reviews-mapper.t
 import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper.ts'
 import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
 import { fetchMLWithRetry } from './utils/retryHandler.ts'
+import { ReasonsService } from './services/reasonsService.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1436,7 +1437,17 @@ async function buscarPedidosCancelados(
       }
     }
     
-    // 3. Agora processar cada claim com os reasons já carregados
+    // 3. Buscar detalhes dos reasons usando a API oficial
+    const reasonsService = new ReasonsService();
+    const reasonsDetailsMap = await reasonsService.fetchMultipleReasons(
+      Array.from(uniqueReasonIds),
+      accessToken,
+      integrationAccountId
+    );
+    
+    logger.info(`✅ Reasons detalhados carregados: ${reasonsDetailsMap.size}/${uniqueReasonIds.size}`);
+    
+    // 4. Agora processar cada claim com os reasons já carregados
     
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
@@ -2223,13 +2234,29 @@ async function buscarPedidosCancelados(
               // 🔍 REASONS - ENRIQUECIDOS COM DADOS DA API ML
               // ========================================
               ...(() => {
-                const reasonId = safeClaimData?.claim_details?.reason_id || null;
-                const apiData = reasonsMap.get(reasonId || '') || null;
-                const mappedReason = mapReasonWithApiData(reasonId, apiData);
+                const reasonId = safeClaimData?.claim_details?.reason_id || claim?.reason_id || null;
+                const apiData = reasonsDetailsMap.get(reasonId || '') || null;
                 
+                // Se temos dados da API, usar eles
+                if (apiData) {
+                  return {
+                    reason_id: apiData.reason_id,
+                    reason_name: apiData.reason_name,
+                    reason_detail: apiData.reason_detail,
+                    reason_flow: apiData.reason_flow,
+                    reason_category: apiData.reason_category,
+                    reason_position: apiData.reason_position,
+                    reason_settings: JSON.stringify(apiData.reason_settings || {}), // ✅ Serializar para evitar erro no banco
+                    dados_reasons: apiData, // Salvar objeto completo
+                    motivo_categoria: reasonId // Compatibilidade
+                  };
+                }
+                
+                // Fallback: usar mapeamento local
+                const mappedReason = mapReasonWithApiData(reasonId, null);
                 return {
                   ...mappedReason,
-                  // Compatibilidade com código antigo
+                  reason_settings: null, // ✅ Garantir que seja null se não houver dados
                   motivo_categoria: reasonId
                 };
               })(),
