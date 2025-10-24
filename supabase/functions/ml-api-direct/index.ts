@@ -362,13 +362,13 @@ serve(async (req) => {
             // ======== FIM FASE 3 ========
             
             marcos_temporais: {
-              data_criacao_claim: devolucao.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
+              data_criacao_claim: devolucao.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
               data_inicio_return: devolucao.return_details_v2?.date_created || 
                                  devolucao.return_details_v1?.date_created || null,
               data_fechamento_claim: devolucao.claim_details?.date_closed || null,
               data_criacao_order: devolucao.order_data?.date_created || null,
-              data_ultimo_update: devolucao.claim_details?.last_updated || 
-                                 devolucao.return_details_v2?.last_updated || null
+              last_updated: devolucao.claim_details?.last_updated || 
+                           devolucao.return_details_v2?.last_updated || null
             },
             
             // Timestamps

@@ -115,10 +115,10 @@ function assessCommunicationQuality(claimData: any): string | null {
  * Avalia eficiência de resolução
  */
 function assessResolutionEfficiency(claimData: any): string | null {
-  // ✅ CORRIGIDO: created_date e resolution.date_created (conforme doc ML)
-  if (!claimData?.created_date || !claimData?.resolution?.date_created) return null;
+  // ✅ CORRIGIDO: date_created (nome oficial API ML conforme PDF)
+  if (!claimData?.date_created || !claimData?.resolution?.date_created) return null;
   
-  const created = new Date(claimData.created_date).getTime();
+  const created = new Date(claimData.date_created).getTime();
   const resolved = new Date(claimData.resolution.date_created).getTime();
   const diffDays = Math.floor((resolved - created) / (1000 * 60 * 60 * 24));
   
