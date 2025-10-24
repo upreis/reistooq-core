@@ -104,3 +104,25 @@ export const fetchAllClaims = async (
 
   return apiResponse.data;
 };
+
+/**
+ * 🆕 FASE 2: Busca returns de um claim específico
+ */
+export const fetchClaimReturns = async (
+  integrationAccountId: string,
+  claimId: string
+) => {
+  const { data: apiResponse, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
+    body: {
+      action: 'get_claim_returns',
+      integration_account_id: integrationAccountId,
+      claim_id: claimId
+    }
+  });
+
+  if (apiError) {
+    throw apiError;
+  }
+
+  return apiResponse;
+};

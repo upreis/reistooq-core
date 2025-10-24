@@ -798,6 +798,111 @@ serve(async (req) => {
     }
 
     // ============================================
+    // 🆕 FASE 2: BUSCAR RETURNS DE UM CLAIM ESPECÍFICO
+    // ============================================
+    if (action === 'get_claim_returns') {
+      console.log('🔄 [get_claim_returns] Iniciando busca de returns do claim');
+      const { claim_id } = requestBody;
+      
+      if (!claim_id) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'claim_id é obrigatório' 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        );
+      }
+
+      // Obter token de forma segura
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      
+      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+      const secretResponse = await fetch(secretUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
+          'x-internal-call': 'true',
+          'x-internal-token': INTERNAL_TOKEN
+        },
+        body: JSON.stringify({
+          integration_account_id,
+          provider: 'mercadolivre'
+        })
+      });
+      
+      if (!secretResponse.ok) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível. Reconecte a integração.'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+      
+      const tokenData = await secretResponse.json();
+      const access_token = tokenData?.secret?.access_token;
+      
+      if (!access_token) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Token ML não disponível'
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+
+      // Buscar returns do claim específico
+      const returnsUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim_id}/returns`;
+      console.log(`📦 Buscando returns para claim ${claim_id}`);
+      
+      try {
+        const response = await fetchMLWithRetry(returnsUrl, access_token, integration_account_id);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            console.log(`ℹ️  Claim ${claim_id} não tem returns (404)`);
+            return new Response(
+              JSON.stringify({ 
+                success: true, 
+                data: null,
+                message: 'Claim não possui returns associados' 
+              }),
+              { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const returnsData = await response.json();
+        console.log(`✅ Returns encontrado para claim ${claim_id}:`, returnsData);
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            data: returnsData 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+        
+      } catch (error) {
+        console.error(`❌ Erro ao buscar returns do claim ${claim_id}:`, error);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: error.message 
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+    }
+
+    // ============================================
     // 🆕 ENDPOINT 3: RAZÕES PARA REVISÃO (PRIORIDADE MÉDIA)
     // ============================================
     if (action === 'get_return_reasons') {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,8 @@ import { ReasonTab } from './tabs/ReasonTab';
 import { ReviewsEnhancedTab } from './tabs/ReviewsEnhancedTab';
 import { CostsEnhancedTab } from './tabs/CostsEnhancedTab';
 import { ReasonsEnhancedTab } from './tabs/ReasonsEnhancedTab';
+import { ClaimReturnsSection } from './ClaimReturnsSection';
+import { useClaimReturns } from '@/features/devolucoes/hooks/useClaimReturns';
 import { 
   Package, FileText, CheckCircle, DollarSign, 
   Truck, Star, Scale, 
@@ -38,6 +40,16 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
   open, onOpenChange, devolucao
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // 🆕 FASE 2: Hook para buscar returns
+  const { returns, loading, error, buscarReturns } = useClaimReturns();
+
+  // Buscar returns quando modal abre E claim tem related_return
+  useEffect(() => {
+    if (open && devolucao?.claim_id && devolucao?.integration_account_id && devolucao?.has_related_return) {
+      buscarReturns(devolucao.integration_account_id, devolucao.claim_id);
+    }
+  }, [open, devolucao?.claim_id, devolucao?.integration_account_id, devolucao?.has_related_return, buscarReturns]);
   
   if (!devolucao) return null;
 
@@ -138,7 +150,22 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
                 }} 
               />
             </TabsContent>
-            <TabsContent value="advanced" className="mt-0"><AdvancedDataTab devolucao={devolucao} /></TabsContent>
+            
+            <TabsContent value="advanced" className="mt-0">
+              <div className="space-y-6">
+                <AdvancedDataTab devolucao={devolucao} />
+                
+                {/* 🆕 FASE 2: Seção de Returns (só aparece se has_related_return) */}
+                {devolucao.has_related_return && (
+                  <ClaimReturnsSection 
+                    returns={returns}
+                    loading={loading}
+                    error={error}
+                    onRefresh={() => buscarReturns(devolucao.integration_account_id, devolucao.claim_id)}
+                  />
+                )}
+              </div>
+            </TabsContent>
             
             {/* 🆕 NOVAS ABAS ENRIQUECIDAS */}
             <TabsContent value="reviews-enhanced" className="mt-0"><ReviewsEnhancedTab devolucao={devolucao} /></TabsContent>
