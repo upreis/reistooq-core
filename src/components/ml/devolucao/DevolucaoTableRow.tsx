@@ -739,7 +739,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3 text-left text-xs">
         <div className="max-w-[200px] truncate">
           {(() => {
-            const endereco = (devolucao as any).endereco_destino_devolucao;
+            const endereco = devolucao.endereco_destino_devolucao;
             if (!endereco) return <span className="text-muted-foreground">-</span>;
             
             if (typeof endereco === 'object') {
