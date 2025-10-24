@@ -5,13 +5,13 @@
 
 export const mapContextData = (item: any) => {
   return {
-    // Mediação
-    em_mediacao: item.claim_details?.type === 'mediations',
-    data_inicio_mediacao: item.claim_details?.date_created || null,
+    // Mediação (✅ CORRIGIDO: meditations com T)
+    em_mediacao: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute',
+    data_inicio_mediacao: item.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
     mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     resultado_mediacao: item.claim_details?.resolution?.reason || null,
     detalhes_mediacao: null,
-    escalado_para_ml: item.claim_details?.type === 'mediations',
+    escalado_para_ml: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute', // ✅ CORRIGIDO: meditations
     
     // Troca
     eh_troca: item.return_details_v2?.subtype === 'exchange',

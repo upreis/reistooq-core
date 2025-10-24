@@ -20,9 +20,8 @@ export const mapFinancialData = (item: any) => {
     moeda_reembolso: item.order_data?.currency_id || null,
     moeda_custo: null,
     
-    // ❌ CUSTOS - CAMPOS REMOVIDOS (não existem no schema)
-    // Apenas moeda_custo e responsavel_custo existem
-    responsavel_custo: item.claim_details?.resolution?.benefited?.[0]?.role || 
+    // ✅ CORRIGIDO: benefited é STRING simples ('complainant' | 'respondent'), não array
+    responsavel_custo: item.claim_details?.resolution?.benefited || 
                       item.claim_details?.resolution?.responsible || null,
     
     // Pagamento

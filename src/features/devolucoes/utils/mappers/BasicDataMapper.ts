@@ -9,8 +9,8 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     order_id: item.order_id?.toString() || '',
     claim_id: item.claim_details?.id?.toString() || null,
     integration_account_id: accountId,
-    data_criacao: item.date_created || null,
-    status_devolucao: item.status || 'cancelled',
+    data_criacao: item.claim_details?.created_date || item.created_date || null, // ✅ CORRIGIDO: created_date (não date_created)
+    status_devolucao: item.status || item.claim_details?.status || 'cancelled',
     account_name: accountName,
     marketplace_origem: 'ML_BRASIL',
     created_at: new Date().toISOString(),
@@ -28,7 +28,7 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     
     // Classificação
     tipo_claim: item.type || item.claim_details?.type || null,
-    subtipo_claim: item.claim_details?.stage || null,
+    subtipo_claim: item.claim_details?.stage || null, // ✅ stage: claim | dispute | recontact | none | stale
     claim_stage: item.claim_details?.stage || null,
     motivo_categoria: reasonId,
     categoria_problema: item.dados_reasons?.category || null,
@@ -37,9 +37,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     resultado_final: item.claim_details?.resolution?.reason || item.claim_details?.resolution?.status || null,
     nivel_prioridade: item.dados_reasons?.settings?.rules_engine_triage?.[0] || null,
     nivel_complexidade: item.claim_details?.resolution?.benefited ? 'high' : 'medium',
-    acao_seller_necessaria: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.type || null,
-    proxima_acao_requerida: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.type || null,
-    impacto_reputacao: item.claim_details?.type === 'mediation' ? 'high' : 'medium',
+    acao_seller_necessaria: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.action || null, // ✅ CORRIGIDO: .action (não .type)
+    proxima_acao_requerida: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.action || null, // ✅ CORRIGIDO: .action
+    impacto_reputacao: item.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
     satisfacao_comprador: null,
     feedback_comprador_final: item.claim_details?.resolution?.buyer_satisfaction || null,
     feedback_vendedor: null,

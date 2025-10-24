@@ -36,7 +36,7 @@ export const mapTrackingData = (item: any) => {
     score_qualidade: item.review_score || item.claim_details?.review?.score || null,
     necessita_acao_manual: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
     problemas_encontrados: item.problemas_encontrados || [],
-    data_inicio_review: item.claim_details?.date_created || null,
+    data_inicio_review: item.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
     observacoes_review: item.claim_details?.resolution?.reason || null,
     revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
   };

@@ -23,7 +23,7 @@ export const mapMetadata = (item: any) => {
     dias_ate_resolucao: null,
     sla_cumprido: null,
     tempo_limite_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
-    data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.date_created,
+    data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.created_date, // ✅ CORRIGIDO: created_date
     tempo_total_resolucao: null,
     tempo_resposta_medio: null
   };
