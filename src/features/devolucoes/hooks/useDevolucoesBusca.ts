@@ -501,10 +501,11 @@ export function useDevolucoesBusca() {
                 
                 logger.info(`🛡️ Campos filtrados: ${Object.keys(devolucoesProcesadas[0] || {}).length} → ${Object.keys(devolucoesFiltradas[0] || {}).length}`);
                 
-                // 🧹 DEDUPLICAÇÃO CRÍTICA: Remover duplicatas usando a constraint REAL da tabela
-                // Constraint: (order_id, integration_account_id)
+                // 🧹 DEDUPLICAÇÃO CRÍTICA: Usar constraint MAIS RESTRITIVA
+                // ✅ Tabela tem 2 constraints: UNIQUE(order_id) E UNIQUE(order_id, integration_account_id)
+                // ✅ Usamos apenas order_id (mais restritiva) para evitar conflitos
                 const uniqueRecords = devolucoesFiltradas.reduce<Map<string, any>>((acc, record) => {
-                  const key = `${record.order_id}_${record.integration_account_id}`;
+                  const key = record.order_id; // ✅ Apenas order_id (constraint mais restritiva)
                   
                   if (!acc.has(key)) {
                     acc.set(key, record);
@@ -526,7 +527,7 @@ export function useDevolucoesBusca() {
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
                   .upsert(deduplicatedRecords, {
-                    onConflict: 'order_id,integration_account_id',
+                    onConflict: 'order_id', // ✅ CORRETO: usar constraint mais restritiva
                     ignoreDuplicates: false
                   });
 
