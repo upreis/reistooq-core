@@ -175,14 +175,6 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
     console.log('[useDevolucoes] ✅ Inicialização sem dados persistidos - tela limpa');
   }, [mlAccounts, selectedAccountId]);
 
-  // 🔍 DEBUG: Monitorar mudanças no estado devolucoes
-  useEffect(() => {
-    console.log('[useDevolucoes] 🔄 Estado devolucoes MUDOU:', {
-      length: devolucoes.length,
-      primeiroItem: devolucoes[0]?.order_id,
-      hasDataCriacao: devolucoes[0]?.data_criacao ? 'SIM' : 'NÃO'
-    });
-  }, [devolucoes]);
 
 
   // 🔍 BUSCAR COM FILTROS - LIMPAR TELA E BUSCAR APENAS DA API ML
@@ -211,17 +203,11 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
         length: dadosAPI?.length || 0,
         isArray: Array.isArray(dadosAPI),
         firstItem: dadosAPI?.[0]?.order_id,
-        primeiroObjeto: dadosAPI?.[0]
-      });
-      
-      console.log('[useDevolucoes] 📝 ANTES do setDevolucoes:', {
-        devolucoesAtuais: devolucoes.length
+        primeiroObjeto: dadosAPI?.[0],
+        temDataCriacao: dadosAPI?.[0]?.data_criacao ? 'SIM' : 'NÃO'
       });
       
       setDevolucoes(dadosAPI);
-      
-      console.log('[useDevolucoes] 📝 DEPOIS do setDevolucoes (ainda não renderizou)');
-      
       setCurrentPage(1);
       
       logger.info(`[useDevolucoes] ✅ ${dadosAPI.length} devoluções atualizadas da API`);
