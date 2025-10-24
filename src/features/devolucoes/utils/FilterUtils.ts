@@ -207,61 +207,14 @@ export const filterByScoreQualidadeMin = (devolucoes: any[], scoreQualidadeMin: 
 
 /**
  * Filtro por período de dias (data de criação)
+ * ⚠️ REMOVIDO - A API do ML já filtra por data com os parâmetros corretos
+ * Não devemos filtrar localmente usando dataInicio calculado
  */
 export const filterByPeriodoDias = (devolucoes: any[], periodoDias: number): any[] => {
-  // ✅ VALIDAÇÃO: Se periodoDias for inválido ou 0, retornar TUDO
-  if (!periodoDias || periodoDias === 0 || isNaN(periodoDias)) {
-    console.log('[FilterUtils] ✅ Sem filtro de período - retornando TODOS os itens:', devolucoes.length);
-    return devolucoes;
-  }
-  
-  console.log('[FilterUtils] 🕐 filterByPeriodoDias ativo:', {
-    periodoDias,
-    totalItens: devolucoes.length
-  });
-  
-  const hoje = new Date();
-  const dataInicio = new Date();
-  dataInicio.setDate(hoje.getDate() - periodoDias);
-  
-  console.log('[FilterUtils] 📅 Filtro de período ativo:', {
-    periodoDias,
-    dataInicio: dataInicio.toISOString(),
-    hoje: hoje.toISOString()
-  });
-  
-  const resultado = devolucoes.filter(dev => {
-    // ✅ CORREÇÃO: Se não tem data_criacao, INCLUIR mesmo assim (avisar)
-    if (!dev.data_criacao) {
-      console.warn('[FilterUtils] ⚠️ Registro sem data_criacao INCLUÍDO:', {
-        order_id: dev.order_id,
-        claim_id: dev.claim_id,
-        type: dev.type
-      });
-      return true; // ✅ Incluir registros sem data
-    }
-    
-    const dataCriacao = new Date(dev.data_criacao);
-    const dentroPerio = dataCriacao >= dataInicio && dataCriacao <= hoje;
-    
-    if (!dentroPerio) {
-      console.log('[FilterUtils] ❌ Item FORA do período:', {
-        order_id: dev.order_id,
-        dataCriacao: dev.data_criacao,
-        dataInicio: dataInicio.toISOString()
-      });
-    }
-    
-    return dentroPerio;
-  });
-  
-  console.log('[FilterUtils] ✅ Filtro de período resultado:', {
-    total: devolucoes.length,
-    filtradas: resultado.length,
-    removidas: devolucoes.length - resultado.length
-  });
-  
-  return resultado;
+  // ✅ Sempre retornar TUDO - a API do ML já filtra por data corretamente
+  // Não devemos filtrar localmente usando dataInicio calculado
+  console.log('[FilterUtils] ✅ Filtro de período desabilitado - API já filtra:', devolucoes.length);
+  return devolucoes;
 };
 
 /**
