@@ -1070,6 +1070,7 @@ export type Database = {
           endereco_destino: Json | null
           endereco_destino_devolucao: string | null
           fonte_dados_primaria: string | null
+          has_related_return: boolean | null
           hash_verificacao: string | null
           historico_status: Json | null
           id: string
@@ -1105,6 +1106,7 @@ export type Database = {
           reason_rules_engine: string[] | null
           reason_type: string | null
           reembolso_quando: string | null
+          related_entities: Json | null
           responsavel_custo: string | null
           resultado_final: string | null
           resultado_mediacao: string | null
@@ -1197,6 +1199,7 @@ export type Database = {
           endereco_destino?: Json | null
           endereco_destino_devolucao?: string | null
           fonte_dados_primaria?: string | null
+          has_related_return?: boolean | null
           hash_verificacao?: string | null
           historico_status?: Json | null
           id?: string
@@ -1232,6 +1235,7 @@ export type Database = {
           reason_rules_engine?: string[] | null
           reason_type?: string | null
           reembolso_quando?: string | null
+          related_entities?: Json | null
           responsavel_custo?: string | null
           resultado_final?: string | null
           resultado_mediacao?: string | null
@@ -1324,6 +1328,7 @@ export type Database = {
           endereco_destino?: Json | null
           endereco_destino_devolucao?: string | null
           fonte_dados_primaria?: string | null
+          has_related_return?: boolean | null
           hash_verificacao?: string | null
           historico_status?: Json | null
           id?: string
@@ -1359,6 +1364,7 @@ export type Database = {
           reason_rules_engine?: string[] | null
           reason_type?: string | null
           reembolso_quando?: string | null
+          related_entities?: Json | null
           responsavel_custo?: string | null
           resultado_final?: string | null
           resultado_mediacao?: string | null

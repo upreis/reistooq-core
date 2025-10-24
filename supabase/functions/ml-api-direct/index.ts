@@ -1809,6 +1809,10 @@ async function buscarPedidosCancelados(
                   shipment_history: shipmentHistory,
                   change_details: changeDetails,
                   
+                  // ✅ FASE 1: Related Entities (para detectar returns associados)
+                  related_entities: claimDetails?.related_entities || [],
+                  has_related_return: (claimDetails?.related_entities || []).includes('return'),
+                  
                   // ============================================
                   // 📋 FASE 2: DADOS DE REVIEW ENRIQUECIDOS
                   // ============================================
@@ -2198,6 +2202,10 @@ async function buscarPedidosCancelados(
               responsavel_custo: safeClaimData?.claim_details?.resolution?.benefited || 
                                 safeClaimData?.mediation_details?.resolution?.benefited ||
                                 safeClaimData?.claim_details?.resolution?.responsible || null,
+              
+              // ✅ FASE 1: Related Entities (salvar no banco)
+              related_entities: safeClaimData?.related_entities || [],
+              has_related_return: safeClaimData?.has_related_return || false,
               
               // CLASSIFICAÇÃO
               tipo_claim: safeClaimData?.claim_details?.type || safeOrderDetail.status,
