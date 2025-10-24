@@ -149,7 +149,8 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Prazo Revisar</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '110px'}}>Eficiência</th>
             
-            {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (7 colunas) */}
+            {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (8 colunas - ✅ +1 nova) */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>🔗 Tem Return</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transportadora</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Shipment ID</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Rastreio</th>

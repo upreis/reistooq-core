@@ -643,7 +643,20 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (4 colunas) */}
+      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (8 colunas - ✅ +1 nova) */}
+      
+      {/* 🆕 FASE 3: Tem Return? */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.has_related_return ? (
+          <Badge variant="default" className="bg-success text-white">
+            ✅ Sim
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-muted-foreground">
+            ❌ Não
+          </Badge>
+        )}
+      </td>
       
       {/* Transportadora */}
       <td className="px-3 py-3 text-left">

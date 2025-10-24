@@ -145,6 +145,10 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   campos_faltantes?: string[] | null;
   ultima_sincronizacao?: string | null;
   
+  // 🔗 FASE 2: RELATED ENTITIES (2 novas colunas)
+  related_entities?: any[] | null;
+  has_related_return?: boolean | null;
+  
   // 📊 TIMELINE CONSOLIDADO
   timeline_consolidado?: any | null;
   
