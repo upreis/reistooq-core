@@ -44,7 +44,7 @@ export const mapTrackingData = (item: any) => {
                   item.return_details_v2?.last_updated || null, // ✅ CORRETO: last_updated (nome oficial)
     data_atualizacao_devolucao: item.return_details_v2?.last_updated || 
                                item.return_details_v1?.last_updated || null, // ✅ CORRETO: last_updated (nome oficial)
-    data_ultimo_status: null, // ⚠️ REMOVIDO: status_history foi removido da API, usar endpoint /shipments/$ID/history
+    data_ultimo_status: item.shipment_history?.combined_events?.[0]?.date_created || null, // ✅ CORRIGIDO: usar shipment_history.combined_events (endpoint /history)
     data_criacao_devolucao: item.return_details_v2?.date_created || 
                            item.return_details_v1?.date_created || null, // ✅ CORRETO: date_created
     

@@ -13,10 +13,10 @@ export const mapContextData = (item: any) => {
     detalhes_mediacao: null,
     escalado_para_ml: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute', // ✅ CORRIGIDO: meditations
     
-    // Troca
+    // Troca (✅ CORRIGIDO: estimated_exchange_date está correto conforme doc oficial)
     eh_troca: item.return_details_v2?.subtype === 'exchange',
     produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id?.toString() || null,
-    data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null,
+    data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null, // ✅ CORRETO: estimated_exchange_date
     data_limite_troca: item.return_details_v2?.date_closed || null,
     data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
     dias_restantes_acao: null,
