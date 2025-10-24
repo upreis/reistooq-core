@@ -1111,6 +1111,7 @@ export type Database = {
           responsavel_custo: string | null
           resultado_final: string | null
           resultado_mediacao: string | null
+          return_id: string | null
           return_intermediate_check: Json | null
           return_resource_type: string | null
           review_id: string | null
@@ -1241,6 +1242,7 @@ export type Database = {
           responsavel_custo?: string | null
           resultado_final?: string | null
           resultado_mediacao?: string | null
+          return_id?: string | null
           return_intermediate_check?: Json | null
           return_resource_type?: string | null
           review_id?: string | null
@@ -1371,6 +1373,7 @@ export type Database = {
           responsavel_custo?: string | null
           resultado_final?: string | null
           resultado_mediacao?: string | null
+          return_id?: string | null
           return_intermediate_check?: Json | null
           return_resource_type?: string | null
           review_id?: string | null

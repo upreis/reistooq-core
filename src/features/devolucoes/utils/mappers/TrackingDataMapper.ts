@@ -5,6 +5,10 @@
 
 export const mapTrackingData = (item: any) => {
   return {
+    // ✅ FASE 1.5: ID único do return
+    return_id: item.return_details_v2?.id?.toString() || 
+               item.return_details_v1?.id?.toString() || null,
+    
     // Rastreamento
     shipment_id: item.order_data?.shipping?.id?.toString() || 
                  item.return_details_v2?.shipments?.[0]?.id?.toString() || null,
