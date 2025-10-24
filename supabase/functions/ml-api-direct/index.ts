@@ -1210,23 +1210,33 @@ async function buscarPedidosCancelados(
       periodoDias_usado: periodoDias
     });
     
-    // ✅ FIX CRÍTICO: Remover limite artificial - buscar TODOS os claims disponíveis
+    // ✅ FIX CRÍTICO: A API ML **IGNORA** o filtro date_created - precisamos filtrar APÓS buscar
     const BATCH_SIZE = 100; // ← Sempre 100 (limite da API ML)
     const MAX_CLAIMS_SAFETY_LIMIT = 10000; // ← Limite de segurança para evitar loops infinitos
     const allClaims: any[] = [];
     let offset = requestOffset; // ✅ Começar do offset solicitado
     let consecutiveEmptyBatches = 0;
+    let claimsForaDoPeriodo = 0; // ✅ Contar claims fora do período
+    
+    // 📅 Calcular data limite se periodoDias > 0
+    let dataLimite: Date | null = null;
+    if (periodoDias > 0) {
+      const now = new Date();
+      dataLimite = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      dataLimite.setDate(dataLimite.getDate() - periodoDias);
+      logger.info(`📅 Data limite calculada: ${dataLimite.toISOString().split('T')[0]} (${periodoDias} dias atrás)`);
+    }
     
     // 🔍 DIAGNÓSTICO: Verificar configuração de paginação
-    logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO (SEM LIMITE ARTIFICIAL):`, {
-      BATCH_SIZE, // Sempre 100
-      MAX_CLAIMS_SAFETY_LIMIT, // Apenas para segurança
+    logger.info(`⚙️ CONFIGURAÇÃO DE PAGINAÇÃO:`, {
+      BATCH_SIZE,
+      MAX_CLAIMS_SAFETY_LIMIT,
       requestOffset,
-      requestLimit_IGNORADO: requestLimit // ← Agora ignorado, buscar TUDO
+      periodoDias,
+      dataLimite: dataLimite?.toISOString().split('T')[0] || 'sem filtro'
     });
     
-    logger.info(`🚀 Buscando TODOS os claims para seller ${sellerId} (SEM LIMITE - buscar até acabar)`);
-    logger.info(`📋 Filtros recebidos: período=${periodoDias} dias (sempre usa date_created)`);
+    logger.info(`🚀 Buscando claims para seller ${sellerId}`);
     
     // ✅ VALIDAÇÃO DOS FILTROS RECEBIDOS:
     logger.info(`📋 Filtros completos recebidos:`, {
@@ -1239,15 +1249,6 @@ async function buscarPedidosCancelados(
       reasonId: filters?.reasonId || 'não definido',
       resource: filters?.resource || 'não definido'
     });
-    
-    // Contar quantos filtros estão ativos
-    const filtrosAtivos = [
-      periodoDias > 0 ? 'data' : null,
-      filters?.statusClaim ? 'status' : null,
-      filters?.claimType ? 'tipo' : null,
-      filters?.stage ? 'stage' : null,
-      filters?.fulfilled !== undefined ? 'fulfilled' : null,
-      filters?.quantityType ? 'quantity' : null,
       filters?.reasonId ? 'reason' : null,
       filters?.resource ? 'resource' : null
     ].filter(Boolean);
@@ -1402,8 +1403,33 @@ async function buscarPedidosCancelados(
           logger.warn(`⚠️ Lote vazio (${consecutiveEmptyBatches}/3)`);
         } else {
           consecutiveEmptyBatches = 0;
-          allClaims.push(...data.data);
-          logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${data.data.length} claims | Total: ${allClaims.length}/${pagingInfo.total || '?'}`);
+          
+          // ✅ FILTRAR CLAIMS POR DATA SE periodoDias > 0
+          if (dataLimite) {
+            const claimsFiltrados = data.data.filter((claim: any) => {
+              const claimDate = new Date(claim.date_created);
+              const dentroDataLimite = claimDate >= dataLimite;
+              
+              if (!dentroDataLimite) {
+                claimsForaDoPeriodo++;
+              }
+              
+              return dentroDataLimite;
+            });
+            
+            allClaims.push(...claimsFiltrados);
+            
+            logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${claimsFiltrados.length}/${data.data.length} claims no período | Total: ${allClaims.length} | Descartados: ${claimsForaDoPeriodo}`);
+            
+            // 🛑 PARAR SE ENCONTROU MUITOS CLAIMS FORA DO PERÍODO
+            if (data.data.length - claimsFiltrados.length >= BATCH_SIZE * 0.9) {
+              logger.info(`🏁 Parando busca: ${Math.floor((data.data.length - claimsFiltrados.length) / data.data.length * 100)}% dos claims estão fora do período`);
+              break;
+            }
+          } else {
+            allClaims.push(...data.data);
+            logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${data.data.length} claims | Total: ${allClaims.length}`);
+          }
         }
         
         offset += BATCH_SIZE;
