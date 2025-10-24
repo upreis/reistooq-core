@@ -12,6 +12,7 @@ import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPaginati
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
 import { DevolucaoStatusBar } from './devolucao/DevolucaoStatusBar';
 import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } from '@/components/ml/devolucao/DevolucaoEmptyStates';
+import { DevolucoesStats } from './devolucao/DevolucoesStats';
 
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
@@ -276,6 +277,11 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           />
         </DevolucaoFiltersSection>
       </ErrorBoundary>
+
+      {/* 📊 DASHBOARD DE ESTATÍSTICAS DE DEVOLUÇÕES */}
+      {!loading && devolucoesFiltradas.length > 0 && (
+        <DevolucoesStats devolucoes={devolucoesFiltradas} />
+      )}
 
       {/* ERRO */}
       {error && (
