@@ -30,10 +30,25 @@
  */
 
 export function mapReviewsData(reviewsData: any) {
-  if (!reviewsData?.reviews || reviewsData.reviews.length === 0) return null;
+  console.log(`🔍 [MAPPER REVIEWS] Input:`, {
+    hasReviews: !!reviewsData?.reviews,
+    reviewsCount: reviewsData?.reviews?.length || 0
+  });
+  
+  if (!reviewsData?.reviews || reviewsData.reviews.length === 0) {
+    console.log(`⚠️ [MAPPER REVIEWS] Sem reviews para mapear - reviewsData vazio`);
+    return null;
+  }
 
   const firstReview = reviewsData.reviews[0];
   const resourceReview = firstReview.resource_reviews?.[0];
+  
+  console.log(`🔍 [MAPPER REVIEWS] Estrutura:`, {
+    hasFirstReview: !!firstReview,
+    hasResourceReviews: !!resourceReview,
+    stage: resourceReview?.stage,
+    status: resourceReview?.status
+  });
 
   return {
     // ✅ Identificação (nível do review)

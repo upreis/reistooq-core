@@ -1943,20 +1943,37 @@ async function buscarPedidosCancelados(
                   try {
                     returnReviews = (await Promise.all(reviewPromises)).filter(review => review !== null)
                     
+                    console.log(`🔍 [DEBUG REVIEWS] Total reviews recebidos: ${returnReviews.length}`);
+                    
                     // 🆕 APLICAR MAPPER CORRETO aos reviews
                     if (returnReviews.length > 0) {
-                      // ✅ CRÍTICO: returnReviews[0] já é o objeto { reviews: [...] }
                       const reviewData = returnReviews[0];
+                      
+                      // ✅ DEBUG: Mostrar estrutura REAL recebida da API
+                      console.log(`🔍 [DEBUG REVIEWS] Estrutura recebida:`, {
+                        hasReviews: !!reviewData?.reviews,
+                        reviewsLength: reviewData?.reviews?.length || 0,
+                        firstReview: reviewData?.reviews?.[0] ? {
+                          resource: reviewData.reviews[0].resource,
+                          method: reviewData.reviews[0].method,
+                          hasResourceReviews: !!reviewData.reviews[0].resource_reviews
+                        } : 'sem reviews'
+                      });
+                      
+                      // Aplicar mappers
                       mappedReviews = mapReviewsData(reviewData);
                       extractedReviewsFields = extractReviewsFields(reviewData);
+                      
                       console.log(`✅ Reviews mapeados com sucesso:`, {
                         hasReviews: !!mappedReviews,
                         reviewStatus: mappedReviews?.stage,
                         scoreQualidade: extractedReviewsFields.score_qualidade
                       });
+                    } else {
+                      console.log(`ℹ️ [DEBUG REVIEWS] Nenhum review disponível para este return`);
                     }
                   } catch (error) {
-                    console.warn(`⚠️ Erro ao buscar reviews dos returns:`, error)
+                    console.error(`❌ [ERRO REVIEWS] Erro ao mapear reviews:`, error)
                   }
                 }
                 
