@@ -7,7 +7,7 @@ export const mapContextData = (item: any) => {
   return {
     // Mediação (✅ CORRIGIDO: meditations com T)
     em_mediacao: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute',
-    data_inicio_mediacao: item.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
+    data_inicio_mediacao: item.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
     mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     resultado_mediacao: item.claim_details?.resolution?.reason || null,
     detalhes_mediacao: null,

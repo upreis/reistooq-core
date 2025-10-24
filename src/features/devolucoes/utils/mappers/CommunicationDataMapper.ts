@@ -22,9 +22,9 @@ export const mapCommunicationData = (item: any) => {
     timeline_events: item.timeline_events || [],
     timeline_consolidado: null,
     marcos_temporais: null,
-    data_criacao_claim: item.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
+    data_criacao_claim: item.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
     data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-    data_fechamento_claim: item.claim_details?.resolution?.date_created || null, // ✅ CORRIGIDO: date_created (não data_created)
+    data_fechamento_claim: item.claim_details?.resolution?.date_created || null, // ✅ CORRIGIDO: date_created (API ML)
     historico_status: [],
     
     // Anexos

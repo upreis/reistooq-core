@@ -9,7 +9,7 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     order_id: item.order_id?.toString() || '',
     claim_id: item.claim_details?.id?.toString() || null,
     integration_account_id: accountId,
-    data_criacao: item.claim_details?.created_date || item.created_date || null, // ✅ CORRIGIDO: created_date (não date_created)
+    data_criacao: item.claim_details?.date_created || item.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
     status_devolucao: item.status || item.claim_details?.status || 'cancelled',
     account_name: accountName,
     marketplace_origem: 'ML_BRASIL',
