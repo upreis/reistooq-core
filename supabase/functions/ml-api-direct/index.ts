@@ -1200,31 +1200,32 @@ async function buscarPedidosCancelados(
   try {
     
     // 📅 CALCULAR DATAS BASEADO NO PERÍODO
-    // ✅ Sempre usa date_created (item.date_created)
-    const periodoDias = filters?.periodoDias ?? filters?.periodo_dias ?? 0;  // ✅ Default 0 = SEM FILTRO
+    const periodoDias = filters?.periodoDias ?? filters?.periodo_dias ?? 0;
     
-    // ✅ LOG DE DEBUG: Verificar se parâmetros estão chegando corretamente
     logger.info(`📋 Filtros recebidos:`, {
       periodoDias_recebido: filters?.periodoDias,
       periodo_dias_recebido: filters?.periodo_dias,
       periodoDias_usado: periodoDias
     });
     
-    // ✅ FIX CRÍTICO: A API ML **IGNORA** o filtro date_created - precisamos filtrar APÓS buscar
-    const BATCH_SIZE = 100; // ← Sempre 100 (limite da API ML)
-    const MAX_CLAIMS_SAFETY_LIMIT = 10000; // ← Limite de segurança para evitar loops infinitos
+    const BATCH_SIZE = 100;
+    const MAX_CLAIMS_SAFETY_LIMIT = 10000;
     const allClaims: any[] = [];
-    let offset = requestOffset; // ✅ Começar do offset solicitado
+    let offset = requestOffset;
     let consecutiveEmptyBatches = 0;
-    let claimsForaDoPeriodo = 0; // ✅ Contar claims fora do período
+    let claimsForaDoPeriodo = 0;
     
-    // 📅 Calcular data limite se periodoDias > 0
+    // 📅 Calcular data limite APENAS UMA VEZ
     let dataLimite: Date | null = null;
     if (periodoDias > 0) {
       const now = new Date();
       dataLimite = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       dataLimite.setDate(dataLimite.getDate() - periodoDias);
-      logger.info(`📅 Data limite calculada: ${dataLimite.toISOString().split('T')[0]} (${periodoDias} dias atrás)`);
+      
+      const dataLimiteStr = dataLimite.toISOString().split('T')[0];
+      logger.info(`📅 Filtro de período: ${periodoDias} dias | Data limite: ${dataLimiteStr}`);
+    } else {
+      logger.info(`ℹ️  SEM filtro de período - buscando todos os claims`);
     }
     
     // 🔍 DIAGNÓSTICO: Verificar configuração de paginação
@@ -1268,32 +1269,8 @@ async function buscarPedidosCancelados(
         sellerId
       });
       
-      // ✅ APLICAR FILTRO DE PERÍODO SE FORNECIDO
-      if (periodoDias > 0) {
-        // ✅ FIX: Usar timezone local do Brasil (GMT-3) para evitar diferença de dias
-        const now = new Date();
-        const dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const dateFrom = new Date(dateTo);
-        dateFrom.setDate(dateTo.getDate() - periodoDias);
-        
-        // Formatar datas para API ML (YYYY-MM-DD) usando timezone local
-        const formatLocalDate = (date: Date): string => {
-          const year = date.getFullYear();
-          const month = String(date.getMonth() + 1).padStart(2, '0');
-          const day = String(date.getDate()).padStart(2, '0');
-          return `${year}-${month}-${day}`;
-        };
-        
-        const dateToStr = formatLocalDate(dateTo);
-        const dateFromStr = formatLocalDate(dateFrom);
-        
-        params.append('date_created.from', dateFromStr);
-        params.append('date_created.to', dateToStr);
-        
-        logger.info(`📅 Filtro de período aplicado: ${periodoDias} dias (${dateFromStr} até ${dateToStr})`);
-      } else {
-        logger.info(`ℹ️  SEM filtro de data - retornando TODOS os claims da API ML`);
-      }
+      // ⚠️ API ML NÃO ACEITA date_created.from/to para claims
+      // Filtro de data será aplicado CLIENT-SIDE após buscar os dados
       
       // ⚠️ ORDENAR POR DATA DO CLAIM
       params.append('sort', 'date_created:desc');
@@ -1401,12 +1378,17 @@ async function buscarPedidosCancelados(
           
           // ✅ FILTRAR CLAIMS POR DATA SE periodoDias > 0
           if (dataLimite) {
+            let claimsNoPeriodo = 0;
+            let claimsDescartados = 0;
+            
             const claimsFiltrados = data.data.filter((claim: any) => {
               const claimDate = new Date(claim.date_created);
               const dentroDataLimite = claimDate >= dataLimite;
               
-              if (!dentroDataLimite) {
-                claimsForaDoPeriodo++;
+              if (dentroDataLimite) {
+                claimsNoPeriodo++;
+              } else {
+                claimsDescartados++;
               }
               
               return dentroDataLimite;
@@ -1414,13 +1396,17 @@ async function buscarPedidosCancelados(
             
             allClaims.push(...claimsFiltrados);
             
-            logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${claimsFiltrados.length}/${data.data.length} claims no período | Total: ${allClaims.length} | Descartados: ${claimsForaDoPeriodo}`);
+            logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${claimsNoPeriodo}/${data.data.length} claims no período | Total acumulado: ${allClaims.length}`);
             
-            // 🛑 PARAR SE ENCONTROU MUITOS CLAIMS FORA DO PERÍODO
-            if (data.data.length - claimsFiltrados.length >= BATCH_SIZE * 0.9) {
-              logger.info(`🏁 Parando busca: ${Math.floor((data.data.length - claimsFiltrados.length) / data.data.length * 100)}% dos claims estão fora do período`);
+            // 🛑 PARAR BUSCA se 80%+ dos claims estão fora do período (chegamos em claims muito antigos)
+            const percentualDescartado = (claimsDescartados / data.data.length) * 100;
+            if (percentualDescartado >= 80) {
+              logger.info(`🏁 Parando busca: ${percentualDescartado.toFixed(0)}% dos claims do lote estão fora do período de ${periodoDias} dias`);
+              logger.info(`📊 Total filtrado: ${allClaims.length} claims no período | ${claimsForaDoPeriodo + claimsDescartados} descartados`);
               break;
             }
+            
+            claimsForaDoPeriodo += claimsDescartados;
           } else {
             allClaims.push(...data.data);
             logger.success(`✅ Lote ${Math.floor(offset/BATCH_SIZE) + 1}: ${data.data.length} claims | Total: ${allClaims.length}`);
