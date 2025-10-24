@@ -127,9 +127,22 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
 
   // ✅ Filtrar dados localmente usando FilterUtils (fonte única de verdade)
   const devolucoesFiltradas = useMemo(() => {
-    return applyAllFilters(devolucoes, advancedFilters, debouncedSearchTerm, {
+    console.log('[useDevolucoes] 🔄 Recalculando devolucoesFiltradas:', {
+      devolucoesLength: devolucoes.length,
+      filters: advancedFilters,
+      debouncedSearchTerm
+    });
+    
+    const resultado = applyAllFilters(devolucoes, advancedFilters, debouncedSearchTerm, {
       logPerformance: import.meta.env.DEV
     });
+    
+    console.log('[useDevolucoes] ✅ devolucoesFiltradas calculadas:', {
+      total: devolucoes.length,
+      filtradas: resultado.length
+    });
+    
+    return resultado;
   }, [devolucoes, debouncedSearchTerm, advancedFilters]);
 
   // Paginação manual (sem lazy loading)
