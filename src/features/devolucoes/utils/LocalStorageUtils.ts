@@ -95,12 +95,11 @@ export const createInitialFilters = (
   selectedAccountIds?: string[],
   mlAccounts?: any[]
 ): DevolucaoAdvancedFilters => {
-  // Tentar carregar do localStorage
-  const savedFilters = loadFiltersFromStorage();
-  if (savedFilters) {
-    return savedFilters;
-  }
-
+  // ❌ NÃO carregar do localStorage - sempre começar limpo
+  // Isso evita que filtros antigos (com periodoDias) causem problemas
+  
+  console.log('🔧 [LocalStorageUtils] Criando filtros iniciais LIMPOS (sem localStorage)');
+  
   // Criar filtros limpos com contas selecionadas
   const cleanFilters = createCleanFilters(mlAccounts);
   
@@ -111,8 +110,16 @@ export const createInitialFilters = (
       ? [selectedAccountId] 
       : cleanFilters.contasSelecionadas;
   
-  return {
+  const filtrosIniciais = {
     ...cleanFilters,
-    contasSelecionadas: initialAccounts
+    contasSelecionadas: initialAccounts,
+    periodoDias: 0 // ✅ CRÍTICO: Sempre 0 para buscar TODAS as devoluções
   };
+  
+  console.log('✅ [LocalStorageUtils] Filtros iniciais:', {
+    periodoDias: filtrosIniciais.periodoDias,
+    contas: filtrosIniciais.contasSelecionadas.length
+  });
+  
+  return filtrosIniciais;
 };
