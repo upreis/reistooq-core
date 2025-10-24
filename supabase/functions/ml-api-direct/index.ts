@@ -1945,8 +1945,10 @@ async function buscarPedidosCancelados(
                     
                     // 🆕 APLICAR MAPPER CORRETO aos reviews
                     if (returnReviews.length > 0) {
-                      mappedReviews = mapReviewsData(returnReviews[0]);
-                      extractedReviewsFields = extractReviewsFields(returnReviews[0]);
+                      // ✅ CRÍTICO: returnReviews[0] já é o objeto { reviews: [...] }
+                      const reviewData = returnReviews[0];
+                      mappedReviews = mapReviewsData(reviewData);
+                      extractedReviewsFields = extractReviewsFields(reviewData);
                       console.log(`✅ Reviews mapeados com sucesso:`, {
                         hasReviews: !!mappedReviews,
                         reviewStatus: mappedReviews?.stage,
@@ -2063,8 +2065,8 @@ async function buscarPedidosCancelados(
                   // ============================================
                   // 📋 FASE 1: DADOS DE REVIEW CORRIGIDOS (USAR MAPPER)
                   // ============================================
-                  // ✅ CORRIGIDO: Usar extractedReviewsFields ao invés de enrichedReviewData
-                  review_id: extractedReviewsFields.review_id || returnReviews[0]?.id?.toString() || null,
+                  // ✅ CORRIGIDO: Usar extractedReviewsFields extraído do mapper
+                  review_id: extractedReviewsFields.review_id || null,
                   review_status: extractedReviewsFields.review_status || null,
                   review_result: extractedReviewsFields.review_result || null,
                   score_qualidade: extractedReviewsFields.score_qualidade || null,

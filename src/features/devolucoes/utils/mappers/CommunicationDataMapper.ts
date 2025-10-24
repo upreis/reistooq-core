@@ -13,12 +13,14 @@ export const mapCommunicationData = (item: any) => {
   // ✅ NOVO: Deduplicação por hash único
   // API ML retorna campo "hash" único: "5313707006_0_c793a662-fa12-3cfb-a069-9770f016baac"
   const uniqueMessages = rawMessages.reduce((acc: any[], msg: any) => {
-    // Usar hash da API ou criar fallback com id + date
-    const messageHash = msg.hash || `${msg.id}_${msg.date_created || msg.message_date?.created}`;
+    // ✅ CORRIGIDO: message_date é OBJETO { created, received, read }, não string
+    const msgDate = msg.date_created || msg.message_date?.created || msg.message_date?.received || '';
+    const messageHash = msg.hash || `${msg.sender_role}_${msg.receiver_role}_${msgDate}_${msg.message}`;
     
     // Verificar se já existe mensagem com este hash
     const isDuplicate = acc.some(existingMsg => {
-      const existingHash = existingMsg.hash || `${existingMsg.id}_${existingMsg.date_created || existingMsg.message_date?.created}`;
+      const existingDate = existingMsg.date_created || existingMsg.message_date?.created || existingMsg.message_date?.received || '';
+      const existingHash = existingMsg.hash || `${existingMsg.sender_role}_${existingMsg.receiver_role}_${existingDate}_${existingMsg.message}`;
       return existingHash === messageHash;
     });
     
