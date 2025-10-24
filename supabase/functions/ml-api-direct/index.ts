@@ -474,7 +474,7 @@ serve(async (req) => {
             const { data, error } = await supabaseAdmin
               .from('pedidos_cancelados_ml')
               .upsert(recordsToInsert, {
-                onConflict: 'order_id,integration_account_id',
+                onConflict: 'order_id,claim_id,integration_account_id',
                 ignoreDuplicates: false
               })
             
@@ -515,14 +515,10 @@ serve(async (req) => {
             })
             
             // 🔴 Não falhar a requisição - dados já foram retornados da API
-            // Mas logar detalhes para debug
             console.error('Dados problemáticos (primeiros 2 registros):', 
               JSON.stringify(recordsToInsert.slice(0, 2), null, 2)
             )
           }
-          
-        } catch (outerError) {
-          logger.error('❌ Erro fatal no bloco de salvamento:', outerError)
         }
       }
       // ============ FIM FASE 1: SALVAMENTO ============
