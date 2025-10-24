@@ -14,29 +14,14 @@ import {
   ExternalLink,
   FileText,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Undo2
 } from 'lucide-react';
-
-interface DevolucaoData {
-  id: number;
-  order_id: string;
-  claim_id?: string | null;
-  data_criacao?: string | null;
-  status_devolucao?: string | null;
-  valor_total?: number | null;
-  comprador?: string | null;
-  produto_titulo?: string | null;
-  motivo_claim?: string | null;
-  dados_order?: any;
-  dados_claim?: any;
-  dados_mensagens?: any;
-  cronograma_status?: any;
-  produto?: string;
-  comprador_nome?: string;
-}
+import { ReturnDetailsSection } from './sections/ReturnDetailsSection';
+import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
 
 interface DevolucaoModalProps {
-  devolucao: DevolucaoData | null;
+  devolucao: DevolucaoAvancada | null;
   open: boolean;
   onClose: () => void;
 }
@@ -88,8 +73,14 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="geral">Geral</TabsTrigger>
+            {devolucao.has_related_return && (
+              <TabsTrigger value="return" className="gap-1">
+                <Undo2 className="h-3 w-3" />
+                Devolução
+              </TabsTrigger>
+            )}
             <TabsTrigger value="pedido">Pedido</TabsTrigger>
             <TabsTrigger value="cronograma">Cronograma</TabsTrigger>
             <TabsTrigger value="mensagens">Mensagens</TabsTrigger>
@@ -108,7 +99,7 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                 <CardContent className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Nome</p>
-                    <p className="font-semibold">{devolucao.comprador || devolucao.comprador_nome || 'N/A'}</p>
+                    <p className="font-semibold">{devolucao.comprador_nickname || devolucao.comprador_nome_completo || 'N/A'}</p>
                   </div>
                   {devolucao.dados_order?.buyer?.email && (
                     <div>
@@ -146,16 +137,16 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                       <p>{formatDate(devolucao.data_criacao)}</p>
                     </div>
                   )}
-                  {devolucao.motivo_claim && (
+                  {devolucao.reason_detail && (
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Motivo</p>
-                      <p>{devolucao.motivo_claim}</p>
+                      <p>{devolucao.reason_detail}</p>
                     </div>
                   )}
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Valor Total</p>
                     <p className="text-lg font-bold text-green-600">
-                      {formatCurrency(devolucao.valor_total || 0)}
+                      {formatCurrency(devolucao.valor_reembolso_total || 0)}
                     </p>
                   </div>
                 </CardContent>
@@ -174,7 +165,7 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                 <div className="space-y-3">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Título</p>
-                    <p className="font-semibold">{devolucao.produto}</p>
+                    <p className="font-semibold">{devolucao.produto_titulo || 'N/A'}</p>
                   </div>
                   {devolucao.dados_order?.order_items?.[0] && (
                     <>
@@ -198,6 +189,13 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* ✅ FASE 2: Nova aba de Devolução */}
+          {devolucao.has_related_return && (
+            <TabsContent value="return" className="space-y-4">
+              <ReturnDetailsSection devolucao={devolucao} />
+            </TabsContent>
+          )}
 
           <TabsContent value="pedido" className="space-y-4">
             <Card>
@@ -272,11 +270,16 @@ export function DevolucaoModal({ devolucao, open, onClose }: DevolucaoModalProps
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {devolucao.cronograma_status ? (
+                {devolucao.timeline_events && devolucao.timeline_events.length > 0 ? (
                   <div className="space-y-4">
-                    <pre className="bg-muted p-4 rounded-md text-sm overflow-auto">
-                      {JSON.stringify(devolucao.cronograma_status, null, 2)}
-                    </pre>
+                    {devolucao.timeline_events.slice(0, 10).map((event: any, idx: number) => (
+                      <div key={idx} className="p-3 bg-muted rounded-md">
+                        <div className="text-xs text-muted-foreground mb-1">
+                          {formatDate(event.date_created || event.date)}
+                        </div>
+                        <p className="text-sm font-medium">{event.description || event.status}</p>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-muted-foreground">
