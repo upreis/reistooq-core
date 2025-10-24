@@ -649,13 +649,17 @@ export function useDevolucoesBusca() {
         countQuery = countQuery.in('integration_account_id', contasSelecionadas);
       }
       
-      if (filtros?.periodoDias) {
+      // ✅ APLICAR FILTRO DE DATA APENAS SE periodoDias > 0
+      if (filtros?.periodoDias && filtros.periodoDias > 0) {
         const hoje = new Date();
         const dataInicio = new Date();
         dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
         const dateFrom = dataInicio.toISOString();
         // ✅ SEMPRE USA data_criacao (item.date_created) - coluna "Data Criação" na página
         countQuery = countQuery.gte('data_criacao', dateFrom);
+        logger.info(`[useDevolucoesBusca] 📅 Filtro de data aplicado: últimos ${filtros.periodoDias} dias`);
+      } else {
+        logger.info(`[useDevolucoesBusca] ✅ SEM filtro de data - buscando TUDO`);
       }
       
       const { count, error: countError } = await countQuery;
@@ -688,8 +692,8 @@ export function useDevolucoesBusca() {
           query = query.in('integration_account_id', contasSelecionadas);
         }
         
-        // 📅 APLICAR FILTRO DE DATA DO BANCO
-        if (filtros?.periodoDias) {
+        // ✅ APLICAR FILTRO DE DATA APENAS SE periodoDias > 0
+        if (filtros?.periodoDias && filtros.periodoDias > 0) {
           const hoje = new Date();
           const dataInicio = new Date();
           dataInicio.setDate(hoje.getDate() - filtros.periodoDias);
