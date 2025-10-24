@@ -185,6 +185,12 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
       // ✅ Buscar APENAS da API ML (não do banco)
       const dadosAPI = await busca.buscarDaAPI(filtrosParaUsar, mlAccounts);
       
+      console.log('[useDevolucoes] 🔍 DEBUG - Dados retornados da API:', {
+        length: dadosAPI?.length || 0,
+        isArray: Array.isArray(dadosAPI),
+        firstItem: dadosAPI?.[0]?.order_id
+      });
+      
       setDevolucoes(dadosAPI);
       setCurrentPage(1);
       
