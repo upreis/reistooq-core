@@ -209,16 +209,31 @@ export const filterByScoreQualidadeMin = (devolucoes: any[], scoreQualidadeMin: 
  * Filtro por período de dias (data de criação)
  */
 export const filterByPeriodoDias = (devolucoes: any[], periodoDias: number): any[] => {
-  if (!periodoDias || periodoDias === 0) return devolucoes;
+  console.log('[FilterUtils] 🕐 filterByPeriodoDias chamado:', {
+    periodoDias,
+    totalItens: devolucoes.length,
+    primeiraDevolucao: devolucoes[0]
+  });
+  
+  if (!periodoDias || periodoDias === 0) {
+    console.log('[FilterUtils] ✅ periodoDias=0, retornando TODOS os itens:', devolucoes.length);
+    return devolucoes;
+  }
   
   const hoje = new Date();
   const dataInicio = new Date();
   dataInicio.setDate(hoje.getDate() - periodoDias);
   
-  return devolucoes.filter(dev => {
-    // ✅ CORREÇÃO TEMPORÁRIA: Se não tem data_criacao, incluir mesmo assim
+  console.log('[FilterUtils] 📅 Filtro de período ativo:', {
+    periodoDias,
+    dataInicio: dataInicio.toISOString(),
+    hoje: hoje.toISOString()
+  });
+  
+  const resultado = devolucoes.filter(dev => {
+    // ✅ CORREÇÃO: Se não tem data_criacao, INCLUIR mesmo assim (avisar)
     if (!dev.data_criacao) {
-      console.warn('[FilterUtils] ⚠️ Registro sem data_criacao:', {
+      console.warn('[FilterUtils] ⚠️ Registro sem data_criacao INCLUÍDO:', {
         order_id: dev.order_id,
         claim_id: dev.claim_id,
         type: dev.type
@@ -227,9 +242,26 @@ export const filterByPeriodoDias = (devolucoes: any[], periodoDias: number): any
     }
     
     const dataCriacao = new Date(dev.data_criacao);
-    // Incluir registros dentro do período (entre dataInicio e hoje)
-    return dataCriacao >= dataInicio && dataCriacao <= hoje;
+    const dentroPerio = dataCriacao >= dataInicio && dataCriacao <= hoje;
+    
+    if (!dentroPerio) {
+      console.log('[FilterUtils] ❌ Item FORA do período:', {
+        order_id: dev.order_id,
+        dataCriacao: dev.data_criacao,
+        dataInicio: dataInicio.toISOString()
+      });
+    }
+    
+    return dentroPerio;
   });
+  
+  console.log('[FilterUtils] ✅ Filtro de período resultado:', {
+    total: devolucoes.length,
+    filtradas: resultado.length,
+    removidas: devolucoes.length - resultado.length
+  });
+  
+  return resultado;
 };
 
 /**
