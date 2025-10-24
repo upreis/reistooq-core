@@ -732,26 +732,35 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Shipment ID Devolução */}
       <td className="px-3 py-3 text-center font-mono text-xs">
-        {(devolucao as any).shipment_id_devolucao || '-'}
+        {devolucao.shipment_id_devolucao || '-'}
       </td>
       
       {/* Endereço Destino Devolução */}
       <td className="px-3 py-3 text-left text-xs">
-        <div className="max-w-[200px] truncate" title={JSON.stringify((devolucao as any).endereco_destino_devolucao) || ''}>
-          {(devolucao as any).endereco_destino_devolucao ? (
-            typeof (devolucao as any).endereco_destino_devolucao === 'object' 
-              ? `${(devolucao as any).endereco_destino_devolucao?.city || ''} - ${(devolucao as any).endereco_destino_devolucao?.state || ''}` 
-              : String((devolucao as any).endereco_destino_devolucao)
-          ) : (
-            <span className="text-muted-foreground">-</span>
-          )}
+        <div className="max-w-[200px] truncate">
+          {(() => {
+            const endereco = (devolucao as any).endereco_destino_devolucao;
+            if (!endereco) return <span className="text-muted-foreground">-</span>;
+            
+            if (typeof endereco === 'object') {
+              const parts = [endereco.city, endereco.state, endereco.zip_code]
+                .filter(Boolean)
+                .filter(v => String(v).trim() !== '');
+              
+              if (parts.length === 0) return <span className="text-muted-foreground">-</span>;
+              return <span title={JSON.stringify(endereco)}>{parts.join(' - ')}</span>;
+            }
+            
+            const enderecoStr = String(endereco).trim();
+            return enderecoStr ? enderecoStr : <span className="text-muted-foreground">-</span>;
+          })()}
         </div>
       </td>
       
       {/* Descrição Último Status */}
       <td className="px-3 py-3 text-left text-xs">
-        <div className="max-w-[180px] truncate" title={(devolucao as any).descricao_ultimo_status || ''}>
-          {(devolucao as any).descricao_ultimo_status || <span className="text-muted-foreground">-</span>}
+        <div className="max-w-[180px] truncate" title={devolucao.descricao_ultimo_status || ''}>
+          {devolucao.descricao_ultimo_status || <span className="text-muted-foreground">-</span>}
         </div>
       </td>
       

@@ -169,6 +169,17 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   previsao_entrega_vendedor?: string | null;
   tempo_transito_dias?: number | null;
   
+  // 🆕 NOVAS DATAS DA API ML (adicionadas 24/10/2025)
+  data_ultimo_update?: string | null; // last_updated do claim ou return
+  data_atualizacao_devolucao?: string | null; // last_updated do return_details
+  data_ultimo_status?: string | null; // data do último status no histórico
+  data_criacao_devolucao?: string | null; // date_created do return_details
+  
+  // 🆕 LOGÍSTICA ADICIONAL (adicionadas 24/10/2025)
+  shipment_id_devolucao?: string | null; // ID do shipment de devolução
+  endereco_destino_devolucao?: any | null; // Endereço de destino da devolução
+  descricao_ultimo_status?: string | null; // Descrição detalhada do último status
+  
   // CATEGORIAS E COMPLEXIDADE
   categoria_problema?: string | null;
   subcategoria_problema?: string | null;
