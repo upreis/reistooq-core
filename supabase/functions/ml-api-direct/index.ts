@@ -465,15 +465,32 @@ serve(async (req) => {
           }))
           
           // ============================================
+          // 🧹 DEDUPLICAÇÃO: Remover duplicatas antes do upsert
+          // ============================================
+          const uniqueRecords = recordsToInsert.reduce((acc, record) => {
+            const key = `${record.order_id}_${record.claim_id}_${record.integration_account_id}`
+            if (!acc.has(key)) {
+              acc.set(key, record)
+            }
+            return acc
+          }, new Map())
+          
+          const deduplicatedRecords = Array.from(uniqueRecords.values())
+          
+          if (deduplicatedRecords.length < recordsToInsert.length) {
+            logger.warn(`⚠️ Removidas ${recordsToInsert.length - deduplicatedRecords.length} duplicatas antes do upsert`)
+          }
+          
+          // ============================================
           // 🛡️ FASE 3: UPSERT COM TRY-CATCH DETALHADO
           // ============================================
           
           try {
-            logger.info(`Tentando salvar ${recordsToInsert.length} registros...`)
+            logger.info(`Tentando salvar ${deduplicatedRecords.length} registros únicos...`)
             
             const { data, error } = await supabaseAdmin
               .from('pedidos_cancelados_ml')
-              .upsert(recordsToInsert, {
+              .upsert(deduplicatedRecords, {
                 onConflict: 'order_id,claim_id,integration_account_id',
                 ignoreDuplicates: false
               })
@@ -485,17 +502,14 @@ serve(async (req) => {
                 message: error.message,
                 details: error.details,
                 hint: error.hint,
-                total_records: recordsToInsert.length
+                total_records: deduplicatedRecords.length,
+                duplicates_removed: recordsToInsert.length - deduplicatedRecords.length
               })
               
               // Analisar tipo de erro
               if (error.code === '21000') {
-                logger.error('🔴 ERRO 21000: Constraint UNIQUE violada - múltiplos registros para mesmo order_id')
-                logger.error('Registros duplicados detectados:', 
-                  recordsToInsert
-                    .map(r => ({ order_id: r.order_id, claim_id: r.claim_id }))
-                    .filter((r, i, arr) => arr.findIndex(x => x.order_id === r.order_id) !== i)
-                )
+                logger.error('🔴 ERRO 21000: Constraint UNIQUE violada - ainda há duplicatas após deduplicação')
+                logger.error('Isso não deveria acontecer - verificar lógica de deduplicação')
               } else if (error.code === 'PGRST204') {
                 logger.error('🔴 ERRO PGRST204: Coluna não encontrada na tabela')
                 logger.error('Detalhes:', error.message)
@@ -504,7 +518,7 @@ serve(async (req) => {
               throw error
             }
             
-            logger.success(`✅ ${recordsToInsert.length} pedidos cancelados salvos no Supabase com sucesso`)
+            logger.success(`✅ ${deduplicatedRecords.length} pedidos cancelados salvos no Supabase com sucesso`)
             
           } catch (saveError: any) {
             logger.error('❌ Exception ao salvar dados no Supabase:', {
@@ -516,7 +530,7 @@ serve(async (req) => {
             
             // 🔴 Não falhar a requisição - dados já foram retornados da API
             console.error('Dados problemáticos (primeiros 2 registros):', 
-              JSON.stringify(recordsToInsert.slice(0, 2), null, 2)
+              JSON.stringify(deduplicatedRecords.slice(0, 2), null, 2)
             )
           }
         }
