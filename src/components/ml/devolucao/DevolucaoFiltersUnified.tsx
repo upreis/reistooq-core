@@ -361,27 +361,6 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
 
         {/* ============ ✅ FASE 3: FILTROS DE DEVOLUÇÕES ============ */}
         
-        {/* Toggle: Apenas com Devolução */}
-        <div className="lg:col-span-2 xl:col-span-2 border-t pt-4">
-          <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
-            <div className="flex items-center gap-3">
-              <Switch
-                id="apenasComDevolucao"
-                checked={filters.apenasComDevolucao || false}
-                onCheckedChange={(checked) => onFilterChange('apenasComDevolucao', checked)}
-              />
-              <Label htmlFor="apenasComDevolucao" className="cursor-pointer font-medium">
-                📦 Apenas claims com devolução
-              </Label>
-            </div>
-            {filters.apenasComDevolucao && (
-              <Badge variant="default" className="bg-blue-600">
-                Filtro Ativo
-              </Badge>
-            )}
-          </div>
-        </div>
-
         {/* Status da Devolução */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">

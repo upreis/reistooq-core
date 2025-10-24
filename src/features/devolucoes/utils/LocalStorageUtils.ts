@@ -83,7 +83,6 @@ export const createCleanFilters = (mlAccounts?: any[]): DevolucaoAdvancedFilters
     scoreQualidadeMin: '',
     
     // ✅ FASE 3: Filtros de Devoluções
-    apenasComDevolucao: false,
     statusDevolucao: '',
     statusDinheiro: '',
     

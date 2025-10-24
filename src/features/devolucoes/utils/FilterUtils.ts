@@ -206,14 +206,6 @@ export const filterByScoreQualidadeMin = (devolucoes: any[], scoreQualidadeMin: 
 };
 
 /**
- * ✅ FASE 3: Filtro "Apenas com Devolução"
- */
-export const filterByApenasComDevolucao = (devolucoes: any[], apenasComDevolucao: boolean): any[] => {
-  if (!apenasComDevolucao) return devolucoes;
-  return devolucoes.filter(dev => dev.has_related_return === true);
-};
-
-/**
  * ✅ FASE 3: Filtro por Status de Devolução
  */
 export const filterByStatusDevolucao = (devolucoes: any[], statusDevolucao: string): any[] => {
@@ -292,7 +284,6 @@ export const applyAllFilters = (
   resultados = filterByScoreQualidadeMin(resultados, filters.scoreQualidadeMin);
   
   // ✅ FASE 3: Aplicar filtros de Returns
-  resultados = filterByApenasComDevolucao(resultados, filters.apenasComDevolucao);
   resultados = filterByStatusDevolucao(resultados, filters.statusDevolucao);
   resultados = filterByStatusDinheiro(resultados, filters.statusDinheiro);
 

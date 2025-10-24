@@ -68,7 +68,6 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   scoreQualidadeMin: string;
   
   // ✅ FASE 3: FILTROS DE DEVOLUÇÕES
-  apenasComDevolucao: boolean;
   statusDevolucao: string;
   statusDinheiro: string;
   
