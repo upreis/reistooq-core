@@ -224,11 +224,21 @@ export function useDevolucoes(mlAccounts: any[], selectedAccountId?: string, sel
   // Remover sincronização automática com banco
   // const sincronizarDevolucoes = ...
 
-  // ❌ REMOVIDO: Busca automática do banco
-  // Agora o usuário tem controle total - dados só aparecem quando clicar "Buscar"
+  // ✅ BUSCA AUTOMÁTICA INICIAL quando contas são selecionadas
   useEffect(() => {
-    logger.info('[useDevolucoes] ✅ Tela limpa - aguardando ação do usuário');
-  }, [mlAccounts]);
+    const contasValidas = advancedFilters.contasSelecionadas.filter(Boolean);
+    
+    if (contasValidas.length > 0 && devolucoes.length === 0 && !busca.loading) {
+      logger.info('[useDevolucoes] 🚀 Busca automática inicial - contas selecionadas:', contasValidas);
+      buscarComFiltros();
+    } else {
+      logger.info('[useDevolucoes] ⏸️ Aguardando condições para busca:', {
+        temContas: contasValidas.length > 0,
+        semDados: devolucoes.length === 0,
+        naoCarregando: !busca.loading
+      });
+    }
+  }, [advancedFilters.contasSelecionadas, mlAccounts]);
 
   // 🔄 Atualizar contas selecionadas quando selectedAccountIds mudar
   useEffect(() => {
