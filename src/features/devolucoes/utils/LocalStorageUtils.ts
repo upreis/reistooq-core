@@ -88,46 +88,17 @@ export const createCleanFilters = (mlAccounts?: any[]): DevolucaoAdvancedFilters
 };
 
 /**
- * Cria filtros iniciais (com fallback para localStorage ou valores padrão)
- * ✅ CORRIGIDO: Carrega do localStorage MAS reseta filtros de data automáticos
+ * Cria filtros iniciais (LIMPAR localStorage e sempre começar do zero)
+ * ❌ NÃO carregar localStorage - sempre começar limpo
  */
 export const createInitialFilters = (
   selectedAccountId?: string,
   selectedAccountIds?: string[],
   mlAccounts?: any[]
 ): DevolucaoAdvancedFilters => {
-  // ✅ Carregar filtros salvos do localStorage
-  const savedFilters = loadFiltersFromStorage();
+  console.log('🔧 [LocalStorageUtils] ❌ IGNORANDO localStorage - criando filtros LIMPOS');
   
-  console.log('🔧 [LocalStorageUtils] Criando filtros iniciais:', {
-    temFiltrosSalvos: !!savedFilters,
-    periodoDiasSalvo: savedFilters?.periodoDias
-  });
-  
-  if (savedFilters) {
-    // ✅ CORREÇÃO: Resetar apenas periodoDias para evitar filtros de data confusos
-    // Mantém todos os outros filtros (searchTerm, contas, etc.)
-    const filtrosCorrigidos = {
-      ...savedFilters,
-      periodoDias: 0, // ✅ SEMPRE resetar para 0 (buscar todas as devoluções)
-      // Atualizar contas se fornecidas
-      contasSelecionadas: (Array.isArray(selectedAccountIds) && selectedAccountIds.length > 0)
-        ? selectedAccountIds
-        : selectedAccountId
-          ? [selectedAccountId]
-          : savedFilters.contasSelecionadas
-    };
-    
-    console.log('✅ [LocalStorageUtils] Filtros restaurados (periodoDias resetado):', {
-      periodoDias: filtrosCorrigidos.periodoDias,
-      searchTerm: filtrosCorrigidos.searchTerm,
-      contas: filtrosCorrigidos.contasSelecionadas.length
-    });
-    
-    return filtrosCorrigidos;
-  }
-  
-  // Criar filtros limpos se não houver salvos
+  // ✅ SEMPRE começar limpo - NÃO carregar do localStorage
   const cleanFilters = createCleanFilters(mlAccounts);
   
   const initialAccounts = Array.isArray(selectedAccountIds) && selectedAccountIds.length > 0 
@@ -139,10 +110,10 @@ export const createInitialFilters = (
   const filtrosIniciais = {
     ...cleanFilters,
     contasSelecionadas: initialAccounts,
-    periodoDias: 0
+    periodoDias: 0 // ✅ CRÍTICO: Sempre 0 para buscar TODAS as devoluções
   };
   
-  console.log('✅ [LocalStorageUtils] Filtros limpos criados:', {
+  console.log('✅ [LocalStorageUtils] Filtros limpos criados (SEM localStorage):', {
     periodoDias: filtrosIniciais.periodoDias,
     contas: filtrosIniciais.contasSelecionadas.length
   });
