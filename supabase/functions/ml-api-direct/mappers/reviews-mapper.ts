@@ -1,55 +1,78 @@
 /**
  * 🔍 REVIEWS DATA MAPPER
- * Mapeia dados de reviews do endpoint /returns/{id}/reviews
+ * Mapeia dados de reviews do endpoint /v2/returns/{id}/reviews
+ * 
+ * ✅ ESTRUTURA REAL DA API ML (conforme documentação oficial):
+ * {
+ *   "reviews": [
+ *     {
+ *       "resource": "order",
+ *       "resource_id": 2000008958860420,
+ *       "method": "triage" | "none",
+ *       "resource_reviews": [
+ *         {
+ *           "stage": "closed" | "pending" | "seller_review_pending" | "timeout",
+ *           "status": "success" | "failed" | null,
+ *           "product_condition": "saleable" | "unsaleable" | "discard" | "missing",
+ *           "product_destination": "seller" | "buyer" | "meli",
+ *           "reason_id": "accepted" | "different_product" | ...,
+ *           "benefited": "buyer" | "seller" | "both" | null,
+ *           "seller_status": "pending" | "success" | "failed" | "claimed",
+ *           "seller_reason": "SRF2" | "SRF3" | ...,
+ *           "missing_quantity": 1
+ *         }
+ *       ],
+ *       "date_created": "2024-08-27T14:58:21.978Z",
+ *       "last_updated": "2024-08-27T14:58:21.978Z"
+ *     }
+ *   ]
+ * }
  */
 
 export function mapReviewsData(reviewsData: any) {
-  if (!reviewsData) return null;
+  if (!reviewsData?.reviews || reviewsData.reviews.length === 0) return null;
+
+  const firstReview = reviewsData.reviews[0];
+  const resourceReview = firstReview.resource_reviews?.[0];
 
   return {
-    review_id: reviewsData.id || null,
-    review_status: reviewsData.status || null,
-    review_result: reviewsData.result || null,
-    review_type: reviewsData.type || null,
-    created_at: reviewsData.date_created || null,
-    closed_at: reviewsData.date_closed || null,
+    // ✅ Identificação (nível do review)
+    resource: firstReview.resource || null, // 'order'
+    resource_id: firstReview.resource_id?.toString() || null,
+    method: firstReview.method || null, // 'triage' (MELI) ou 'none' (vendedor)
     
-    // Player information
-    player_role: reviewsData.player?.role || null,
-    player_available_actions: reviewsData.player?.available_actions || [],
+    // ✅ Status do review (nível do resource_review)
+    stage: resourceReview?.stage || null, // 'closed', 'pending', 'seller_review_pending', 'timeout'
+    status: resourceReview?.status || null, // 'success', 'failed', null
     
-    // Quality assessment
-    quality_score: reviewsData.quality?.score || null,
-    quality_level: reviewsData.quality?.level || null,
+    // ✅ Condição e destino do produto
+    product_condition: resourceReview?.product_condition || null, // 'saleable', 'unsaleable', 'discard', 'missing'
+    product_destination: resourceReview?.product_destination || null, // 'seller', 'buyer', 'meli'
+    reason_id: resourceReview?.reason_id || null, // 'accepted', 'different_product', etc
     
-    // Identified problems
-    problems: reviewsData.problems?.map((p: any) => ({
-      id: p.id || null,
-      description: p.description || null,
-      severity: p.severity || null,
-      category: p.category || null
-    })) || [],
+    // ✅ Beneficiado pela revisão
+    benefited: resourceReview?.benefited || null, // 'buyer', 'seller', 'both'
     
-    // Actions required
-    required_actions: reviewsData.required_actions?.map((a: any) => ({
-      action: a.action || null,
-      deadline: a.deadline || null,
-      status: a.status || null,
-      description: a.description || null
-    })) || [],
+    // ✅ Status do vendedor
+    seller_status: resourceReview?.seller_status || null, // 'pending', 'success', 'failed', 'claimed'
+    seller_reason: resourceReview?.seller_reason || null, // 'SRF2', 'SRF3', 'SRF6', 'SRF7'
     
-    // Metadata
-    requires_manual_action: reviewsData.requires_manual_action || false,
-    reviewer: reviewsData.reviewer || null,
-    observations: reviewsData.observations || null,
+    // ✅ Quantidade faltante (quando produto não chegou)
+    missing_quantity: resourceReview?.missing_quantity || 0,
     
-    // Full raw data
-    raw_data: reviewsData
+    // ✅ Datas
+    date_created: firstReview.date_created || null,
+    last_updated: firstReview.last_updated || null,
+    
+    // ✅ Dados completos para análise futura
+    raw_data: reviewsData,
+    all_reviews: reviewsData.reviews || [] // Múltiplos reviews se existirem
   };
 }
 
 /**
  * Extrai campos específicos para salvar na tabela principal
+ * ✅ CORRIGIDO: Usa estrutura real reviews[].resource_reviews[]
  */
 export function extractReviewsFields(reviewsData: any) {
   if (!reviewsData) return {};
@@ -57,14 +80,49 @@ export function extractReviewsFields(reviewsData: any) {
   const mapped = mapReviewsData(reviewsData);
   
   return {
-    review_id: mapped?.review_id || null,
-    review_status: mapped?.review_status || null,
-    review_result: mapped?.review_result || null,
-    score_qualidade: mapped?.quality_score || null,
-    necessita_acao_manual: mapped?.requires_manual_action || false,
-    revisor_responsavel: mapped?.reviewer || null,
-    observacoes_review: mapped?.observations || null,
-    categoria_problema: mapped?.problems?.[0]?.category || null,
+    // ✅ Campos principais do review
+    review_id: mapped?.resource_id?.toString() || null,
+    review_status: mapped?.stage || null, // 'closed', 'pending', etc
+    review_result: mapped?.status || null, // 'success', 'failed'
+    
+    // ✅ Score de qualidade calculado
+    score_qualidade: (() => {
+      if (!mapped) return null;
+      
+      // Score baseado no resultado da revisão
+      if (mapped.status === 'success' && mapped.product_condition === 'saleable') {
+        return 95; // Produto OK
+      } else if (mapped.status === 'success') {
+        return 80; // Aprovado mas com ressalvas
+      } else if (mapped.status === 'failed') {
+        if (mapped.product_condition === 'missing') return 0; // Produto não chegou
+        if (mapped.product_condition === 'discard') return 10; // Produto descartado
+        if (mapped.product_condition === 'unsaleable') return 30; // Não vendável
+        return 50; // Falhou por outro motivo
+      }
+      return 70; // Padrão quando não há status
+    })(),
+    
+    // ✅ Necessita ação manual
+    necessita_acao_manual: mapped?.stage === 'seller_review_pending' || 
+                           mapped?.seller_status === 'pending' ||
+                           mapped?.stage === 'timeout',
+    
+    // ✅ Responsável pela revisão
+    revisor_responsavel: mapped?.method === 'triage' ? 'MELI' : 'SELLER',
+    
+    // ✅ Observações
+    observacoes_review: (() => {
+      if (!mapped) return null;
+      const parts = [];
+      if (mapped.product_condition) parts.push(`Condição: ${mapped.product_condition}`);
+      if (mapped.benefited) parts.push(`Beneficiado: ${mapped.benefited}`);
+      if (mapped.seller_reason) parts.push(`Motivo vendedor: ${mapped.seller_reason}`);
+      return parts.length > 0 ? parts.join(' | ') : null;
+    })(),
+    
+    // ✅ Categoria do problema (baseado em reason_id)
+    categoria_problema: mapped?.reason_id || mapped?.product_condition || null,
     
     // Salvar dados completos no JSONB
     dados_reviews: mapped

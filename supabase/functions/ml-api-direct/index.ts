@@ -1805,8 +1805,68 @@ async function buscarPedidosCancelados(
                   return null
                 }).catch(() => null)
               )
+
+              // 🆕 9. BUSCAR SHIPMENT COSTS (PRIORIDADE ALTA - FASE 1)
+              claimPromises.push(
+                (async () => {
+                  const costsResults = {
+                    original_costs: null,
+                    return_costs: null
+                  }
+                  
+                  // Tentar buscar custos do envio original
+                  const originalShipmentId = orderDetail?.shipping?.id
+                  if (originalShipmentId) {
+                    try {
+                      const response = await fetchMLWithRetry(
+                        `https://api.mercadolibre.com/shipments/${originalShipmentId}/costs`,
+                        accessToken,
+                        integrationAccountId
+                      )
+                      if (response.ok) {
+                        const costsData = await response.json()
+                        costsResults.original_costs = costsData
+                        console.log(`💰 Custos do envio original encontrados: ${originalShipmentId}`)
+                      }
+                    } catch (e) {
+                      console.warn(`⚠️ Erro ao buscar custos do envio original:`, e)
+                    }
+                  }
+                  
+                  // Buscar custos do shipment de devolução
+                  try {
+                    const returnsResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
+                      accessToken,
+                      integrationAccountId
+                    )
+                    if (returnsResponse.ok) {
+                      const returnsData = await returnsResponse.json()
+                      const shipmentId = returnsData?.results?.[0]?.shipments?.[0]?.id || 
+                                        returnsData?.results?.[0]?.shipments?.[0]?.shipment_id
+                      if (shipmentId) {
+                        console.log(`💰 Buscando custos do return shipment ${shipmentId}...`)
+                        const costsResponse = await fetchMLWithRetry(
+                          `https://api.mercadolibre.com/shipments/${shipmentId}/costs`,
+                          accessToken,
+                          integrationAccountId
+                        )
+                        if (costsResponse.ok) {
+                          const returnCosts = await costsResponse.json()
+                          costsResults.return_costs = returnCosts
+                          console.log(`💰 Custos de devolução encontrados`)
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn(`⚠️ Erro ao buscar custos de devolução:`, e)
+                  }
+                  
+                  return (costsResults.original_costs || costsResults.return_costs) ? costsResults : null
+                })()
+              )
               
-              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails] = await Promise.all(claimPromises)
+              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails, shipmentCosts] = await Promise.all(claimPromises)
                 
                 // Consolidar mensagens de ambas as fontes
                 const allMessages = [
@@ -1851,8 +1911,15 @@ async function buscarPedidosCancelados(
                   returnsV2: !!returnsV2,
                   returnsV1: !!returnsV1,
                   shipmentHistory: !!shipmentHistory,
-                  changeDetails: !!changeDetails
+                  changeDetails: !!changeDetails,
+                  shipmentCosts: !!shipmentCosts // 🆕 FASE 1
                 })
+                
+                // 🆕 FASE 1: MAPEAR COSTS usando mapper correto
+                const mappedCosts = shipmentCosts ? {
+                  original: shipmentCosts.original_costs ? mapShipmentCostsData(shipmentCosts.original_costs) : null,
+                  return: shipmentCosts.return_costs ? mapShipmentCostsData(shipmentCosts.return_costs) : null
+                } : null
                 
                 // Buscar reviews dos returns se existirem
                 let returnReviews = []
@@ -1951,6 +2018,7 @@ async function buscarPedidosCancelados(
                   return_reviews: returnReviews,
                   shipment_history: shipmentHistory,
                   change_details: changeDetails,
+                  shipment_costs: mappedCosts, // 🆕 FASE 1: Custos de envio mapeados
                   
                   // ✅ FASE 1: Related Entities (para detectar returns associados)
                   related_entities: claimDetails?.related_entities || [],
