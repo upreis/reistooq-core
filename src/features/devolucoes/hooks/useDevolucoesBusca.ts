@@ -501,9 +501,31 @@ export function useDevolucoesBusca() {
                 
                 logger.info(`🛡️ Campos filtrados: ${Object.keys(devolucoesProcesadas[0] || {}).length} → ${Object.keys(devolucoesFiltradas[0] || {}).length}`);
                 
+                // 🧹 DEDUPLICAÇÃO CRÍTICA: Remover duplicatas usando a constraint REAL da tabela
+                // Constraint: (order_id, integration_account_id)
+                const uniqueRecords = devolucoesFiltradas.reduce<Map<string, any>>((acc, record) => {
+                  const key = `${record.order_id}_${record.integration_account_id}`;
+                  
+                  if (!acc.has(key)) {
+                    acc.set(key, record);
+                  } else {
+                    logger.warn(`⚠️ Duplicata removida: order_id=${record.order_id}`);
+                  }
+                  
+                  return acc;
+                }, new Map());
+                
+                const deduplicatedRecords = Array.from(uniqueRecords.values());
+                
+                if (deduplicatedRecords.length < devolucoesFiltradas.length) {
+                  logger.warn(`⚠️ Removidas ${devolucoesFiltradas.length - deduplicatedRecords.length} duplicatas antes do upsert`);
+                }
+                
+                logger.info(`✅ Tentando salvar ${deduplicatedRecords.length} registros únicos...`);
+                
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
-                  .upsert(devolucoesFiltradas, {
+                  .upsert(deduplicatedRecords, {
                     onConflict: 'order_id,integration_account_id',
                     ignoreDuplicates: false
                   });
@@ -517,7 +539,7 @@ export function useDevolucoesBusca() {
                     hint: upsertError.hint
                   });
                 } else {
-                  logger.info(`✅ ${devolucoesFiltradas.length} devoluções SALVAS no banco com dados validados`);
+                  logger.info(`✅ ${deduplicatedRecords.length} devoluções SALVAS no banco com dados validados`);
                 }
               } catch (saveError) {
                 logger.error('Erro ao persistir dados', saveError);
