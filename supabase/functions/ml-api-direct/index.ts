@@ -1956,6 +1956,27 @@ async function buscarPedidosCancelados(
                   related_entities: claimDetails?.related_entities || [],
                   has_related_return: (claimDetails?.related_entities || []).includes('return'),
                   
+                  // 📋 LOG DE AUDITORIA: Devoluções encontradas
+                  ...((() => {
+                    const hasReturn = (claimDetails?.related_entities || []).includes('return');
+                    if (hasReturn) {
+                      const returnStatus = returnsV2?.results?.[0]?.status || returnsV1?.results?.[0]?.status;
+                      const moneyStatus = returnsV2?.results?.[0]?.status_money || returnsV1?.results?.[0]?.status_money;
+                      const returnSubtype = returnsV2?.results?.[0]?.subtype || returnsV1?.results?.[0]?.subtype;
+                      const refundAt = returnsV2?.results?.[0]?.refund_at || returnsV1?.results?.[0]?.refund_at;
+                      
+                      logger.info(`📦 DEVOLUÇÃO ENCONTRADA - Claim ${mediationId}:`, {
+                        return_status: returnStatus,
+                        money_status: moneyStatus,
+                        subtype: returnSubtype,
+                        refund_at: refundAt,
+                        has_v2: !!returnsV2?.results?.length,
+                        has_v1: !!returnsV1?.results?.length
+                      });
+                    }
+                    return {};
+                  })()),
+                  
                   // ============================================
                   // 📋 FASE 2: DADOS DE REVIEW ENRIQUECIDOS
                   // ============================================

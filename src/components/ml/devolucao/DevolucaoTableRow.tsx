@@ -643,18 +643,47 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (8 colunas - ✅ +1 nova) */}
+      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (9 colunas - ✅ +2 novas) */}
       
-      {/* 🆕 FASE 3: Tem Return? */}
+      {/* 📦 Tem Devolução - MELHORADO */}
       <td className="px-3 py-3 text-center">
         {devolucao.has_related_return ? (
-          <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">
-            ✅ Sim
+          <div className="flex flex-col gap-1 items-center">
+            <Badge variant="default" className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap">
+              📦 SIM
+            </Badge>
+            {devolucao.status_devolucao && (
+              <Badge variant="outline" className="text-xs border-blue-300 text-blue-700 dark:text-blue-300">
+                {devolucao.status_devolucao}
+              </Badge>
+            )}
+          </div>
+        ) : (
+          <span className="text-muted-foreground text-xs">Não</span>
+        )}
+      </td>
+      
+      {/* 💰 Status Reembolso - NOVA COLUNA */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.status_dinheiro ? (
+          <Badge variant={
+            devolucao.status_dinheiro === 'refunded' ? 'default' :
+            devolucao.status_dinheiro === 'pending' ? 'secondary' :
+            devolucao.status_dinheiro === 'not_refunded' ? 'destructive' :
+            'outline'
+          } className={
+            devolucao.status_dinheiro === 'refunded' ? 'bg-green-600 text-white' :
+            devolucao.status_dinheiro === 'pending' ? 'bg-yellow-600 text-white' :
+            devolucao.status_dinheiro === 'not_refunded' ? 'bg-red-600 text-white' :
+            ''
+          }>
+            {devolucao.status_dinheiro === 'refunded' ? '✅ Reembolsado' :
+             devolucao.status_dinheiro === 'pending' ? '⏳ Pendente' :
+             devolucao.status_dinheiro === 'not_refunded' ? '❌ Não Reembolsado' :
+             devolucao.status_dinheiro}
           </Badge>
         ) : (
-          <Badge variant="secondary" className="text-muted-foreground">
-            ❌ Não
-          </Badge>
+          <span className="text-muted-foreground text-xs">-</span>
         )}
       </td>
       
