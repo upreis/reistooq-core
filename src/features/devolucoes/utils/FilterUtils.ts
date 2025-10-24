@@ -209,16 +209,16 @@ export const filterByScoreQualidadeMin = (devolucoes: any[], scoreQualidadeMin: 
  * Filtro por período de dias (data de criação)
  */
 export const filterByPeriodoDias = (devolucoes: any[], periodoDias: number): any[] => {
-  console.log('[FilterUtils] 🕐 filterByPeriodoDias chamado:', {
-    periodoDias,
-    totalItens: devolucoes.length,
-    primeiraDevolucao: devolucoes[0]
-  });
-  
-  if (!periodoDias || periodoDias === 0) {
-    console.log('[FilterUtils] ✅ periodoDias=0, retornando TODOS os itens:', devolucoes.length);
+  // ✅ VALIDAÇÃO: Se periodoDias for inválido ou 0, retornar TUDO
+  if (!periodoDias || periodoDias === 0 || isNaN(periodoDias)) {
+    console.log('[FilterUtils] ✅ Sem filtro de período - retornando TODOS os itens:', devolucoes.length);
     return devolucoes;
   }
+  
+  console.log('[FilterUtils] 🕐 filterByPeriodoDias ativo:', {
+    periodoDias,
+    totalItens: devolucoes.length
+  });
   
   const hoje = new Date();
   const dataInicio = new Date();

@@ -60,7 +60,7 @@ export const createCleanFilters = (mlAccounts?: any[]): DevolucaoAdvancedFilters
   return {
     searchTerm: '',
     contasSelecionadas: mlAccounts?.filter(acc => acc.is_active).map(acc => acc.id) || [],
-    periodoDias: 0,  // ✅ 0 = busca TODAS as devoluções sem filtro de data (usa item.date_created)
+    periodoDias: 0,  // ✅ SEMPRE 0 = buscar TODAS as devoluções (sem filtro de data)
     tipoClaim: '',
     subtipoClaim: '',
     motivoCategoria: '',
@@ -96,7 +96,7 @@ export const createInitialFilters = (
   selectedAccountIds?: string[],
   mlAccounts?: any[]
 ): DevolucaoAdvancedFilters => {
-  console.log('🔧 [LocalStorageUtils] ❌ IGNORANDO localStorage - criando filtros LIMPOS');
+  console.log('🔧 [LocalStorageUtils] ✅ Criando filtros LIMPOS (periodoDias=0)');
   
   // ✅ SEMPRE começar limpo - NÃO carregar do localStorage
   const cleanFilters = createCleanFilters(mlAccounts);
@@ -110,7 +110,7 @@ export const createInitialFilters = (
   const filtrosIniciais = {
     ...cleanFilters,
     contasSelecionadas: initialAccounts,
-    periodoDias: 0 // ✅ CRÍTICO: Sempre 0 para buscar TODAS as devoluções
+    periodoDias: 0  // ⚡ SEMPRE 0 (buscar TODAS as devoluções)
   };
   
   console.log('✅ [LocalStorageUtils] Filtros limpos criados (SEM localStorage):', {
