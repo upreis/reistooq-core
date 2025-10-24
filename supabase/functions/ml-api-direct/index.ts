@@ -1274,13 +1274,22 @@ async function buscarPedidosCancelados(
       
       // ✅ APLICAR FILTRO DE PERÍODO SE FORNECIDO
       if (periodoDias > 0) {
-        const dateTo = new Date();
-        const dateFrom = new Date();
+        // ✅ FIX: Usar timezone local do Brasil (GMT-3) para evitar diferença de dias
+        const now = new Date();
+        const dateTo = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const dateFrom = new Date(dateTo);
         dateFrom.setDate(dateTo.getDate() - periodoDias);
         
-        // Formatar datas para API ML (YYYY-MM-DD)
-        const dateToStr = dateTo.toISOString().split('T')[0];
-        const dateFromStr = dateFrom.toISOString().split('T')[0];
+        // Formatar datas para API ML (YYYY-MM-DD) usando timezone local
+        const formatLocalDate = (date: Date): string => {
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          return `${year}-${month}-${day}`;
+        };
+        
+        const dateToStr = formatLocalDate(dateTo);
+        const dateFromStr = formatLocalDate(dateFrom);
         
         params.append('date_created.from', dateFromStr);
         params.append('date_created.to', dateToStr);
