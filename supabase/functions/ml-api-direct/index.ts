@@ -1272,11 +1272,23 @@ async function buscarPedidosCancelados(
         sellerId
       });
       
-      // 🔥 NUNCA FILTRAR POR DATA NA EDGE FUNCTION
-      // ✅ O filtro de data será aplicado no FRONTEND após receber os dados
-      // ✅ Motivo: Permite flexibilidade e visualização de todos os claims disponíveis
-      logger.info(`ℹ️  SEM filtro de data - retornando TODOS os claims da API ML`);
-      logger.info(`⚠️  NOTA: Filtros de DATA serão aplicados no FRONTEND após receber os dados`)
+      // ✅ APLICAR FILTRO DE PERÍODO SE FORNECIDO
+      if (periodoDias > 0) {
+        const dateTo = new Date();
+        const dateFrom = new Date();
+        dateFrom.setDate(dateTo.getDate() - periodoDias);
+        
+        // Formatar datas para API ML (YYYY-MM-DD)
+        const dateToStr = dateTo.toISOString().split('T')[0];
+        const dateFromStr = dateFrom.toISOString().split('T')[0];
+        
+        params.append('date_created.from', dateFromStr);
+        params.append('date_created.to', dateToStr);
+        
+        logger.info(`📅 Filtro de período aplicado: ${periodoDias} dias (${dateFromStr} até ${dateToStr})`);
+      } else {
+        logger.info(`ℹ️  SEM filtro de data - retornando TODOS os claims da API ML`);
+      }
       
       // ⚠️ ORDENAR POR DATA DO CLAIM
       params.append('sort', 'date_created:desc');
