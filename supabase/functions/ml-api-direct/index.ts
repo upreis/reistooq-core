@@ -190,7 +190,6 @@ serve(async (req) => {
       
       // ============ 🔴 FASE 1: SALVAMENTO NO SUPABASE ============
       if (cancelledOrders.length > 0) {
-        
         try {
           const supabaseAdmin = makeServiceClient()
           
@@ -298,84 +297,18 @@ serve(async (req) => {
             historico_localizacoes: devolucao.historico_localizacoes,
             carrier_info: devolucao.carrier_info,
             shipment_delays: devolucao.shipment_delays,
-            shipment_costs: devolucao.shipment_costs,
             
-            // Financeiro
-            custo_envio_devolucao: devolucao.custo_envio_devolucao,
-            valor_compensacao: devolucao.valor_compensacao,
-            responsavel_custo: devolucao.responsavel_custo,
+            // ======== 🟢 FASE 2 (continuação) ========
             
-            // Mensagens e Anexos
-            mensagens_nao_lidas: devolucao.mensagens_nao_lidas,
-            ultima_mensagem_data: devolucao.ultima_mensagem_data,
-            timeline_mensagens: devolucao.timeline_mensagens,
-            anexos_ml: devolucao.anexos_ml,
-            
-            // Mediação e Ações
-            em_mediacao: devolucao.em_mediacao,
-            escalado_para_ml: devolucao.escalado_para_ml,
-            acao_seller_necessaria: devolucao.acao_seller_necessaria,
-            nivel_prioridade: devolucao.nivel_prioridade,
-            
-            // Tipo e Subtipo
-            tipo_claim: devolucao.tipo_claim,
-            subtipo_claim: devolucao.subtipo_claim,
-            
-            // Controle de Qualidade
-            dados_completos: devolucao.dados_completos,
-            marketplace_origem: devolucao.marketplace_origem,
-            
-            // ======== 🔴 FASE 1: TEMPORAL E MARCOS (3 CAMPOS CRÍTICOS CORRIGIDOS) ========
-            data_criacao_claim: devolucao.claim_details?.date_created || 
-                           devolucao.mediation_details?.date_created ||
-                           devolucao.dados_claim?.date_created || 
-                           null,
-            data_inicio_return: devolucao.return_details_v2?.results?.[0]?.date_created ||
-                           devolucao.return_details_v1?.results?.[0]?.date_created ||
-                           devolucao.return_details?.date_created || 
-                           devolucao.dados_return?.date_created || 
-                           null,
-            data_fechamento_claim: devolucao.claim_details?.date_closed ||
-                           devolucao.claim_details?.resolution?.date ||
-                           devolucao.claim_details?.resolution?.date_created ||
-                           devolucao.mediation_details?.date_closed ||
-                           devolucao.order_data?.date_closed || 
-                           null,
-            
-            // ======== 🟡 FASE 2: CAMPOS VAZIOS PRIORITÁRIOS ========
-            
-            // ✅ REMOVIDO: reason_category agora vem enriquecido do processamento
-            // Os dados de reasons já foram mapeados com mapReasonWithApiData()
-            // nas linhas ~2182-2239 durante o processamento dos claims
-            
-            // 2. Nível Complexidade (CRÍTICO)
-            nivel_complexidade: (() => {
-              let pontos = 0;
+            // 1. Categoria Motivo (MÉDIO)
+            categoria_motivo: (() => {
+              const reasonId = devolucao.reason_id || '';
               
-              // Fatores que aumentam complexidade
-              if (devolucao.mediation_details || devolucao.mediation_id) pontos += 3;
-              if (devolucao.claim_messages?.messages?.length > 10) pontos += 2;
-              if (devolucao.claim_attachments?.length > 5) pontos += 1;
-              if (devolucao.return_details_v2 || devolucao.return_id) pontos += 1;
-              if (devolucao.order_data?.total_amount > 500) pontos += 2;
-              if (devolucao.change_id) pontos += 1;
-              
-              if (pontos >= 6) return 'Alto';
-              if (pontos >= 3) return 'Médio';
-              return 'Baixo';
-            })(),
-            
-            // 3. Categoria Problema (ALTO)
-            categoria_problema: (() => {
-              const reasonId = devolucao.claim_details?.reason_id || devolucao.claim_details?.reason?.id;
-              if (!reasonId) return null;
-              
-              // Categorização baseada no tipo de problema
-              if (['DEFECTIVE', 'BROKEN', 'DAMAGED_SHIPPING', 'PDD'].some(r => reasonId.includes(r))) {
-                return 'Qualidade do Produto';
+              if (['DEF', 'DEFECT'].some(r => reasonId.includes(r))) {
+                return 'Defeito/Problema';
               }
-              if (['NOT_AS_DESCRIBED', 'WRONG_ITEM', 'DIFFERENT'].some(r => reasonId.includes(r))) {
-                return 'Descrição Incorreta';
+              if (['DIFF', 'WRONG'].some(r => reasonId.includes(r))) {
+                return 'Produto Diferente';
               }
               if (['MISSING_PARTS', 'INCOMPLETE'].some(r => reasonId.includes(r))) {
                 return 'Produto Incompleto';
@@ -468,17 +401,17 @@ serve(async (req) => {
           // 🧹 DEDUPLICAÇÃO: Remover duplicatas antes do upsert
           // ============================================
           const uniqueRecords = recordsToInsert.reduce((acc, record) => {
-            const key = `${record.order_id}_${record.claim_id}_${record.integration_account_id}`
+            const key = `${record.order_id}_${record.claim_id}_${record.integration_account_id}`;
             if (!acc.has(key)) {
-              acc.set(key, record)
+              acc.set(key, record);
             }
-            return acc
-          }, new Map())
+            return acc;
+          }, new Map());
           
-          const deduplicatedRecords = Array.from(uniqueRecords.values())
+          const deduplicatedRecords = Array.from(uniqueRecords.values());
           
           if (deduplicatedRecords.length < recordsToInsert.length) {
-            logger.warn(`⚠️ Removidas ${recordsToInsert.length - deduplicatedRecords.length} duplicatas antes do upsert`)
+            logger.warn(`⚠️ Removidas ${recordsToInsert.length - deduplicatedRecords.length} duplicatas antes do upsert`);
           }
           
           // ============================================
@@ -486,14 +419,14 @@ serve(async (req) => {
           // ============================================
           
           try {
-            logger.info(`Tentando salvar ${deduplicatedRecords.length} registros únicos...`)
+            logger.info(`Tentando salvar ${deduplicatedRecords.length} registros únicos...`);
             
             const { data, error } = await supabaseAdmin
               .from('pedidos_cancelados_ml')
               .upsert(deduplicatedRecords, {
                 onConflict: 'order_id,claim_id,integration_account_id',
                 ignoreDuplicates: false
-              })
+              });
             
             if (error) {
               // 🔴 Erro detalhado do PostgreSQL
@@ -504,21 +437,21 @@ serve(async (req) => {
                 hint: error.hint,
                 total_records: deduplicatedRecords.length,
                 duplicates_removed: recordsToInsert.length - deduplicatedRecords.length
-              })
+              });
               
               // Analisar tipo de erro
               if (error.code === '21000') {
-                logger.error('🔴 ERRO 21000: Constraint UNIQUE violada - ainda há duplicatas após deduplicação')
-                logger.error('Isso não deveria acontecer - verificar lógica de deduplicação')
+                logger.error('🔴 ERRO 21000: Constraint UNIQUE violada - ainda há duplicatas após deduplicação');
+                logger.error('Isso não deveria acontecer - verificar lógica de deduplicação');
               } else if (error.code === 'PGRST204') {
-                logger.error('🔴 ERRO PGRST204: Coluna não encontrada na tabela')
-                logger.error('Detalhes:', error.message)
+                logger.error('🔴 ERRO PGRST204: Coluna não encontrada na tabela');
+                logger.error('Detalhes:', error.message);
               }
               
-              throw error
+              throw error;
             }
             
-            logger.success(`✅ ${deduplicatedRecords.length} pedidos cancelados salvos no Supabase com sucesso`)
+            logger.success(`✅ ${deduplicatedRecords.length} pedidos cancelados salvos no Supabase com sucesso`);
             
           } catch (saveError: any) {
             logger.error('❌ Exception ao salvar dados no Supabase:', {
@@ -526,13 +459,15 @@ serve(async (req) => {
               message: saveError?.message,
               code: saveError?.code,
               stack: saveError?.stack?.split('\n').slice(0, 3)
-            })
+            });
             
             // 🔴 Não falhar a requisição - dados já foram retornados da API
             console.error('Dados problemáticos (primeiros 2 registros):', 
               JSON.stringify(deduplicatedRecords.slice(0, 2), null, 2)
-            )
+            );
           }
+        } catch (error: any) {
+          logger.error('❌ Erro fatal ao processar salvamento:', error);
         }
       }
       // ============ FIM FASE 1: SALVAMENTO ============
