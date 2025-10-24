@@ -206,6 +206,30 @@ export const filterByScoreQualidadeMin = (devolucoes: any[], scoreQualidadeMin: 
 };
 
 /**
+ * ✅ FASE 3: Filtro "Apenas com Devolução"
+ */
+export const filterByApenasComDevolucao = (devolucoes: any[], apenasComDevolucao: boolean): any[] => {
+  if (!apenasComDevolucao) return devolucoes;
+  return devolucoes.filter(dev => dev.has_related_return === true);
+};
+
+/**
+ * ✅ FASE 3: Filtro por Status de Devolução
+ */
+export const filterByStatusDevolucao = (devolucoes: any[], statusDevolucao: string): any[] => {
+  if (!statusDevolucao) return devolucoes;
+  return devolucoes.filter(dev => dev.status_devolucao === statusDevolucao);
+};
+
+/**
+ * ✅ FASE 3: Filtro por Status de Reembolso
+ */
+export const filterByStatusDinheiro = (devolucoes: any[], statusDinheiro: string): any[] => {
+  if (!statusDinheiro) return devolucoes;
+  return devolucoes.filter(dev => dev.status_dinheiro === statusDinheiro);
+};
+
+/**
  * Filtro por período de dias (data de criação)
  * ⚠️ REMOVIDO - A API do ML já filtra por data com os parâmetros corretos
  * Não devemos filtrar localmente usando dataInicio calculado
@@ -266,6 +290,11 @@ export const applyAllFilters = (
   resultados = filterBySlaNaoCumprido(resultados, filters.slaNaoCumprido);
   resultados = filterByEficienciaResolucao(resultados, filters.eficienciaResolucao);
   resultados = filterByScoreQualidadeMin(resultados, filters.scoreQualidadeMin);
+  
+  // ✅ FASE 3: Aplicar filtros de Returns
+  resultados = filterByApenasComDevolucao(resultados, filters.apenasComDevolucao);
+  resultados = filterByStatusDevolucao(resultados, filters.statusDevolucao);
+  resultados = filterByStatusDinheiro(resultados, filters.statusDinheiro);
 
   // Ordenar por data
   resultados = sortByDataCriacao(resultados);

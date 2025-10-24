@@ -67,6 +67,11 @@ export interface DevolucaoAdvancedFilters extends DevolucaoBuscaFilters {
   eficienciaResolucao: string;
   scoreQualidadeMin: string;
   
+  // ✅ FASE 3: FILTROS DE DEVOLUÇÕES
+  apenasComDevolucao: boolean;
+  statusDevolucao: string;
+  statusDinheiro: string;
+  
   // CONTROLE
   buscarEmTempoReal: boolean;
   autoRefreshEnabled: boolean;

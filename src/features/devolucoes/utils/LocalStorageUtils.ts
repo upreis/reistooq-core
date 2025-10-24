@@ -81,6 +81,12 @@ export const createCleanFilters = (mlAccounts?: any[]): DevolucaoAdvancedFilters
     slaNaoCumprido: '',
     eficienciaResolucao: '',
     scoreQualidadeMin: '',
+    
+    // ✅ FASE 3: Filtros de Devoluções
+    apenasComDevolucao: false,
+    statusDevolucao: '',
+    statusDinheiro: '',
+    
     buscarEmTempoReal: true,
     autoRefreshEnabled: false,
     autoRefreshInterval: 3600
