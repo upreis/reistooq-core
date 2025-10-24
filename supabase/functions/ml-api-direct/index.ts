@@ -362,7 +362,7 @@ serve(async (req) => {
             // ======== FIM FASE 3 ========
             
             marcos_temporais: {
-              data_criacao_claim: devolucao.claim_details?.date_created || null,
+              data_criacao_claim: devolucao.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
               data_inicio_return: devolucao.return_details_v2?.date_created || 
                                  devolucao.return_details_v1?.date_created || null,
               data_fechamento_claim: devolucao.claim_details?.date_closed || null,
@@ -1510,8 +1510,8 @@ async function buscarPedidosCancelados(
                 claimPromises.push(Promise.resolve(null))
               }
               
-              // ✅ 1.2 - CORREÇÃO: Só buscar mediação se claim tiver mediation_id ou stage
-              const hasMediationId = claim.mediation_id || claim.stage === 'mediation'
+              // ✅ 1.2 - CORREÇÃO: Só buscar mediação se claim tiver mediation_id ou stage = dispute
+              const hasMediationId = claim.mediation_id || claim.stage === 'dispute' // ✅ CORRIGIDO: dispute (não mediation)
               if (hasMediationId) {
                 claimPromises.push(
                   fetchMLWithRetry(
@@ -2233,8 +2233,8 @@ async function buscarPedidosCancelados(
                 };
               })(),
               
-              em_mediacao: safeClaimData?.claim_details?.type === 'mediations' || safeClaimData?.mediation_details !== null,
-              nivel_prioridade: safeClaimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
+              em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
+              nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
               
               // ✅ Dados de ação removidos - calculados anteriormente
               

@@ -16,8 +16,8 @@ export class MediationService {
     accessToken: string,
     integrationAccountId: string
   ): Promise<any | null> {
-    // ✅ Só buscar se claim tiver mediation_id ou stage = mediation
-    const hasMediationId = claim.mediation_id || claim.stage === 'mediation';
+    // ✅ Só buscar se claim tiver mediation_id ou stage = dispute (conforme doc ML)
+    const hasMediationId = claim.mediation_id || claim.stage === 'dispute'; // ✅ CORRIGIDO: dispute (não mediation)
     
     if (!hasMediationId) {
       return { has_mediation: false };
