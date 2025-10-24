@@ -80,9 +80,9 @@ export const DatesCells: React.FC<DatesCellsProps> = ({ devolucao }) => {
       
       {/* 🆕 NOVAS DATAS DA API ML */}
       
-      {/* Última Atualização API (data_ultimo_update) */}
+      {/* Última Atualização API (last_updated) */}
       <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
-        {formatDateTime(devolucao.data_ultimo_update)}
+        {formatDateTime(devolucao.last_updated)}
       </td>
       
       {/* Atualização Return (data_atualizacao_devolucao) */}

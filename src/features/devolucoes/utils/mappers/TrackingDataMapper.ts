@@ -38,10 +38,10 @@ export const mapTrackingData = (item: any) => {
     subtipo_devolucao: item.return_details_v2?.subtype || null,
     
     // 📅 DATAS - API ML
-    // ⚠️ NOTA: data_ultimo_update e data_atualizacao_devolucao NÃO EXISTEM no banco
+    // ⚠️ NOTA: last_updated e data_atualizacao_devolucao NÃO EXISTEM no banco
     // São calculados em tempo real e não persistidos
-    data_ultimo_update: item.claim_details?.last_updated || 
-                       item.return_details_v2?.last_updated || null,
+    last_updated: item.claim_details?.last_updated || 
+                  item.return_details_v2?.last_updated || null,
     data_atualizacao_devolucao: item.return_details_v2?.last_updated || 
                                item.return_details_v1?.last_updated || null,
     data_ultimo_status: item.return_details_v2?.shipments?.[0]?.status_history?.[0]?.date || null,

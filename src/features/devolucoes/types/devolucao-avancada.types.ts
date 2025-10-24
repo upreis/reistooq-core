@@ -170,7 +170,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   tempo_transito_dias?: number | null;
   
   // 🆕 NOVAS DATAS DA API ML (adicionadas 24/10/2025)
-  data_ultimo_update?: string | null; // last_updated do claim ou return
+  last_updated?: string | null; // last_updated do claim ou return (nome oficial da API ML)
   data_atualizacao_devolucao?: string | null; // last_updated do return_details
   data_ultimo_status?: string | null; // data do último status no histórico
   data_criacao_devolucao?: string | null; // date_created do return_details
