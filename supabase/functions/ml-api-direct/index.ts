@@ -300,27 +300,7 @@ serve(async (req) => {
             
             // ======== 🟢 FASE 2 (continuação) ========
             
-            // 1. Categoria Motivo (MÉDIO)
-            categoria_motivo: (() => {
-              const reasonId = devolucao.reason_id || '';
-              
-              if (['DEF', 'DEFECT'].some(r => reasonId.includes(r))) {
-                return 'Defeito/Problema';
-              }
-              if (['DIFF', 'WRONG'].some(r => reasonId.includes(r))) {
-                return 'Produto Diferente';
-              }
-              if (['MISSING_PARTS', 'INCOMPLETE'].some(r => reasonId.includes(r))) {
-                return 'Produto Incompleto';
-              }
-              if (['PNR', 'NOT_RECEIVED'].some(r => reasonId.includes(r))) {
-                return 'Não Recebido';
-              }
-              if (['CS', 'CANCEL'].some(r => reasonId.includes(r))) {
-                return 'Cancelamento';
-              }
-              return 'Outros';
-            })(),
+            // ✅ REMOVIDO: categoria_motivo (campo não existe na tabela)
             
             // 4. Resultado Mediação (ALTO)
             resultado_mediacao: (() => {
