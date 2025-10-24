@@ -43,7 +43,8 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   data_vencimento_acao?: string | null;
   dias_restantes_acao?: number | null;
 
-  // 📦 RASTREAMENTO E LOGÍSTICA (4 colunas)
+  // 📦 RASTREAMENTO E LOGÍSTICA (5 colunas)
+  return_id?: string | null;
   codigo_rastreamento?: string | null;
   transportadora?: string | null;
   status_rastreamento_pedido?: string | null;

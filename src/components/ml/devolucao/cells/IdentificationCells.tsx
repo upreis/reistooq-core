@@ -29,6 +29,11 @@ export const IdentificationCells: React.FC<IdentificationCellsProps> = ({ devolu
         {devolucao.claim_id || '-'}
       </td>
       
+      {/* Return ID */}
+      <td className="px-3 py-3 text-center font-mono text-green-600 dark:text-green-400">
+        {devolucao.return_id || '-'}
+      </td>
+      
       {/* Player Role */}
       <td className="px-3 py-3 text-center">
         {getPlayerRoleBadge((devolucao.dados_claim as any)?.player_role || null)}
