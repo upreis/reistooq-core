@@ -216,9 +216,18 @@ export const filterByPeriodoDias = (devolucoes: any[], periodoDias: number): any
   dataInicio.setDate(hoje.getDate() - periodoDias);
   
   return devolucoes.filter(dev => {
-    if (!dev.data_criacao) return false;
+    // ✅ CORREÇÃO TEMPORÁRIA: Se não tem data_criacao, incluir mesmo assim
+    if (!dev.data_criacao) {
+      console.warn('[FilterUtils] ⚠️ Registro sem data_criacao:', {
+        order_id: dev.order_id,
+        claim_id: dev.claim_id,
+        type: dev.type
+      });
+      return true; // ✅ Incluir registros sem data
+    }
+    
     const dataCriacao = new Date(dev.data_criacao);
-    // ✅ CORRIGIDO: Incluir registros dentro do período (entre dataInicio e hoje)
+    // Incluir registros dentro do período (entre dataInicio e hoje)
     return dataCriacao >= dataInicio && dataCriacao <= hoje;
   });
 };
