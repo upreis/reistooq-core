@@ -1215,15 +1215,25 @@ async function buscarPedidosCancelados(
     let consecutiveEmptyBatches = 0;
     let claimsForaDoPeriodo = 0;
     
-    // 📅 Calcular data limite APENAS UMA VEZ
+    // 📅 Calcular data limite APENAS UMA VEZ (usando timezone do Brasil GMT-3)
     let dataLimite: Date | null = null;
     if (periodoDias > 0) {
-      const now = new Date();
-      dataLimite = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      // ✅ FIX: Usar timezone do Brasil explicitamente para evitar erros
+      const agora = new Date();
+      
+      // Obter data atual no Brasil (GMT-3) - Deno.env pode estar em UTC
+      const brasilOffset = -3 * 60; // GMT-3 em minutos
+      const utcTime = agora.getTime() + (agora.getTimezoneOffset() * 60000);
+      const brasilTime = new Date(utcTime + (brasilOffset * 60000));
+      
+      // Zerar horas para comparação apenas de data
+      dataLimite = new Date(brasilTime.getFullYear(), brasilTime.getMonth(), brasilTime.getDate(), 0, 0, 0, 0);
       dataLimite.setDate(dataLimite.getDate() - periodoDias);
       
-      const dataLimiteStr = dataLimite.toISOString().split('T')[0];
-      logger.info(`📅 Filtro de período: ${periodoDias} dias | Data limite: ${dataLimiteStr}`);
+      const dataLimiteStr = `${dataLimite.getFullYear()}-${String(dataLimite.getMonth() + 1).padStart(2, '0')}-${String(dataLimite.getDate()).padStart(2, '0')}`;
+      const dataAtualStr = `${brasilTime.getFullYear()}-${String(brasilTime.getMonth() + 1).padStart(2, '0')}-${String(brasilTime.getDate()).padStart(2, '0')}`;
+      
+      logger.info(`📅 Filtro de período: ${periodoDias} dias | De: ${dataLimiteStr} até ${dataAtualStr} (Brasil GMT-3)`);
     } else {
       logger.info(`ℹ️  SEM filtro de período - buscando todos os claims`);
     }
