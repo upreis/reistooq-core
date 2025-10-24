@@ -2194,8 +2194,9 @@ async function buscarPedidosCancelados(
               // ✅ Dados de anexos removidos - endpoint retorna 405
               // ✅ Dados financeiros brutos já incluídos nos campos de pagamento/reembolso
               
-              responsavel_custo: safeClaimData?.claim_details?.resolution?.benefited?.[0] || 
-                                safeClaimData?.mediation_details?.resolution?.benefited?.[0] ||
+              // ✅ CORRIGIDO: benefited é STRING simples ('complainant' | 'respondent'), não array
+              responsavel_custo: safeClaimData?.claim_details?.resolution?.benefited || 
+                                safeClaimData?.mediation_details?.resolution?.benefited ||
                                 safeClaimData?.claim_details?.resolution?.responsible || null,
               
               // CLASSIFICAÇÃO
