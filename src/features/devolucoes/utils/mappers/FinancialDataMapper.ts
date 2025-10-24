@@ -24,6 +24,10 @@ export const mapFinancialData = (item: any) => {
     responsavel_custo: item.claim_details?.resolution?.benefited || 
                       item.claim_details?.resolution?.responsible || null,
     
+    // ✅ FASE 1: Novos campos financeiros de devolução
+    status_dinheiro: item.return_details_v2?.money_status || null,
+    data_reembolso: item.return_details_v2?.refund_at || null,
+    
     // Pagamento
     metodo_pagamento: payment?.payment_method_id || null,
     tipo_pagamento: payment?.payment_type || null,

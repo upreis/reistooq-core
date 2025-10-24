@@ -29,6 +29,10 @@ export const mapTrackingData = (item: any) => {
     shipment_costs: null,
     previsao_entrega_vendedor: item.return_details_v2?.estimated_delivery_date || null,
     
+    // ✅ FASE 1: Novos campos de devolução
+    status_devolucao: item.return_details_v2?.status || null,
+    subtipo_devolucao: item.return_details_v2?.subtype || null,
+    
     // Review
     review_id: item.review_id || item.claim_details?.review?.id?.toString() || null,
     review_status: item.review_status || item.claim_details?.review?.status || null,
@@ -36,7 +40,7 @@ export const mapTrackingData = (item: any) => {
     score_qualidade: item.review_score || item.claim_details?.review?.score || null,
     necessita_acao_manual: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
     problemas_encontrados: item.problemas_encontrados || [],
-    data_inicio_review: item.claim_details?.created_date || null, // ✅ CORRIGIDO: created_date
+    data_inicio_review: item.claim_details?.created_date || null,
     observacoes_review: item.claim_details?.resolution?.reason || null,
     revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
   };

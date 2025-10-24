@@ -145,11 +145,13 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   campos_faltantes?: string[] | null;
   ultima_sincronizacao?: string | null;
   
-  // 🔗 FASE 2: RELATED ENTITIES E RETURNS (4 novas colunas)
+  // 🔗 FASE 1 & 2: RELATED ENTITIES E RETURNS (6 novas colunas)
   related_entities?: any[] | null;
   has_related_return?: boolean | null;
-  status_devolucao?: string | null;  // 'created', 'delivered', 'cancelled', 'expired'
-  status_dinheiro?: string | null;   // 'refunded', 'pending', 'not_refunded'
+  status_devolucao?: string | null;  // ✅ FASE 1: 'pending', 'in_transit', 'delivered', 'cancelled', 'expired'
+  status_dinheiro?: string | null;   // ✅ FASE 1: 'refunded', 'pending', 'not_refunded'
+  subtipo_devolucao?: string | null; // ✅ FASE 1: 'return_to_seller', 'return_to_buyer', etc
+  data_reembolso?: string | null;    // ✅ FASE 1: Data em que o reembolso foi processado
   
   // 📊 TIMELINE CONSOLIDADO
   timeline_consolidado?: any | null;

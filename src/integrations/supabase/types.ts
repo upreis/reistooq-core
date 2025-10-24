@@ -1061,6 +1061,7 @@ export type Database = {
           data_fechamento_claim: string | null
           data_fechamento_devolucao: string | null
           data_inicio_return: string | null
+          data_reembolso: string | null
           data_ultima_movimentacao: string | null
           data_ultimo_status: string | null
           descricao_ultimo_status: string | null
@@ -1190,6 +1191,7 @@ export type Database = {
           data_fechamento_claim?: string | null
           data_fechamento_devolucao?: string | null
           data_inicio_return?: string | null
+          data_reembolso?: string | null
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
           descricao_ultimo_status?: string | null
@@ -1319,6 +1321,7 @@ export type Database = {
           data_fechamento_claim?: string | null
           data_fechamento_devolucao?: string | null
           data_inicio_return?: string | null
+          data_reembolso?: string | null
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
           descricao_ultimo_status?: string | null
