@@ -398,12 +398,12 @@ export function useDevolucoesBusca() {
           logger.info(`🎉 Total de claims carregados para ${account.name}: ${allClaims.length}`);
 
           if (allClaims.length === 0) {
-            toast.info(`Nenhuma devolução encontrada para ${account.name}`);
+            logger.info(`Nenhuma devolução encontrada para ${account.name}`);
             continue;
           }
 
-          // Processar os claims coletados
-          if (allClaims.length > 0) {
+          // ✅ PROCESSAR OS CLAIMS COLETADOS
+          logger.info(`📦 Processando ${allClaims.length} claims de ${account.name}...`);
             const devolucoesDaAPI = allClaims;
             
             logger.info(`📦 DADOS BRUTOS DA API RECEBIDOS:`, devolucoesDaAPI[0]); // Log primeiro item completo
@@ -536,10 +536,6 @@ export function useDevolucoesBusca() {
             });
             
             toast.success(`✅ ${devolucoesProcesadas.length} devoluções enriquecidas para ${account.name}`);
-          } else {
-            logger.info(`Nenhuma devolução encontrada para ${account.name}`);
-            toast.info(`Nenhuma devolução encontrada para ${account.name}`);
-          }
 
         } catch (accountError) {
           // ✅ 1.5 - CORREÇÃO: Logs estruturados para erros de conta
