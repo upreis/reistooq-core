@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,14 +42,29 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
   const [activeTab, setActiveTab] = useState('overview');
   
   // 🆕 FASE 2: Hook para buscar returns
-  const { returns, loading, error, buscarReturns } = useClaimReturns();
+  const { returns, loading, error, buscarReturns, limparReturns } = useClaimReturns();
 
   // Buscar returns quando modal abre E claim tem related_return
   useEffect(() => {
     if (open && devolucao?.claim_id && devolucao?.integration_account_id && devolucao?.has_related_return) {
       buscarReturns(devolucao.integration_account_id, devolucao.claim_id);
     }
-  }, [open, devolucao?.claim_id, devolucao?.integration_account_id, devolucao?.has_related_return, buscarReturns]);
+    
+    // ✅ CORRIGIDO: Limpar dados ao fechar modal
+    if (!open) {
+      limparReturns();
+    }
+    
+    // ✅ CORRIGIDO: Remover buscarReturns/limparReturns das dependências para evitar loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, devolucao?.claim_id, devolucao?.integration_account_id, devolucao?.has_related_return]);
+  
+  // ✅ OTIMIZAÇÃO: Callback memoizado para refresh
+  const handleRefreshReturns = useCallback(() => {
+    if (devolucao?.integration_account_id && devolucao?.claim_id) {
+      buscarReturns(devolucao.integration_account_id, devolucao.claim_id);
+    }
+  }, [devolucao?.integration_account_id, devolucao?.claim_id, buscarReturns]);
   
   if (!devolucao) return null;
 
@@ -161,7 +176,7 @@ export const DevolucaoDetailsModal: React.FC<DevolucaoDetailsModalProps> = ({
                     returns={returns}
                     loading={loading}
                     error={error}
-                    onRefresh={() => buscarReturns(devolucao.integration_account_id, devolucao.claim_id)}
+                    onRefresh={handleRefreshReturns}
                   />
                 )}
               </div>

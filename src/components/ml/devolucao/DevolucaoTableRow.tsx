@@ -648,11 +648,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* 🆕 FASE 3: Tem Return? */}
       <td className="px-3 py-3 text-center">
         {devolucao.has_related_return ? (
-          <Badge variant="default" className="bg-success text-white">
+          <Badge variant="default" className="bg-green-600 hover:bg-green-700 text-white">
             ✅ Sim
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-muted-foreground">
+          <Badge variant="secondary" className="text-muted-foreground">
             ❌ Não
           </Badge>
         )}
