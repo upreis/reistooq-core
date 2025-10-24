@@ -379,18 +379,18 @@ serve(async (req) => {
           
           // ============================================
           // 🧹 DEDUPLICAÇÃO: Remover duplicatas antes do upsert
-          // ✅ CORREÇÃO CRÍTICA: Usar apenas (order_id, integration_account_id)
-          //    que é a constraint UNIQUE real da tabela!
+          // ✅ CONSTRAINT REAL da tabela pedidos_cancelados_ml:
+          //    (order_id, claim_id, integration_account_id)
           // ============================================
           const uniqueRecords = recordsToInsert.reduce((acc, record) => {
-            // ✅ CHAVE CORRETA: Apenas order_id + integration_account_id (SEM claim_id!)
-            const key = `${record.order_id}_${record.integration_account_id}`;
+            // ✅ CHAVE CORRETA para pedidos_cancelados_ml: order_id + claim_id + integration_account_id
+            const key = `${record.order_id}_${record.claim_id}_${record.integration_account_id}`;
             
             if (!acc.has(key)) {
               acc.set(key, record);
             } else {
               // ⚠️ Log quando encontrar duplicata
-              logger.warn(`⚠️ Duplicata removida: order_id=${record.order_id}`);
+              logger.warn(`⚠️ Duplicata removida: order_id=${record.order_id}, claim_id=${record.claim_id}`);
             }
             return acc;
           }, new Map());
@@ -411,7 +411,7 @@ serve(async (req) => {
             const { data, error } = await supabaseAdmin
               .from('pedidos_cancelados_ml')
               .upsert(deduplicatedRecords, {
-                onConflict: 'order_id,integration_account_id',
+                onConflict: 'order_id,claim_id,integration_account_id',
                 ignoreDuplicates: false
               });
             
