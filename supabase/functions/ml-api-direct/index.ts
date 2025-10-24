@@ -214,7 +214,6 @@ serve(async (req) => {
             
             // Dados do Comprador (Básicos)
             buyer_id: devolucao.buyer_id,
-            buyer_nickname: devolucao.buyer_nickname,
             
             // ✅ FASE 5: Dados Adicionais do Comprador (via extractor)
             ...extractBuyerData(devolucao.order_data),
@@ -2246,7 +2245,6 @@ async function buscarPedidosCancelados(
               // DADOS COMPLETOS DO COMPRADOR
               comprador_cpf_cnpj: safeOrderDetail?.buyer?.billing_info?.doc_number || null,
               comprador_nome_completo: `${safeOrderDetail?.buyer?.first_name || ''} ${safeOrderDetail?.buyer?.last_name || ''}`.trim() || null,
-              comprador_nickname: safeOrderDetail?.buyer?.nickname || null,
               
               // DADOS DE PAGAMENTO DETALHADOS
               metodo_pagamento: safeOrderDetail?.payments?.[0]?.payment_method_id || null,
