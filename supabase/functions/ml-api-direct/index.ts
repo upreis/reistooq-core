@@ -464,24 +464,65 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
           }))
           
-          // Fazer upsert (inserir ou atualizar baseado em order_id + integration_account_id)
-          const { data, error } = await supabaseAdmin
-            .from('pedidos_cancelados_ml')
-            .upsert(recordsToInsert, {
-              onConflict: 'order_id,integration_account_id',
-              ignoreDuplicates: false
-            })
+          // ============================================
+          // 🛡️ FASE 3: UPSERT COM TRY-CATCH DETALHADO
+          // ============================================
           
-          if (error) {
-            console.error('❌ Erro ao salvar pedidos cancelados:', error)
-            throw error
+          try {
+            logger.info(`Tentando salvar ${recordsToInsert.length} registros...`)
+            
+            const { data, error } = await supabaseAdmin
+              .from('pedidos_cancelados_ml')
+              .upsert(recordsToInsert, {
+                onConflict: 'order_id,integration_account_id',
+                ignoreDuplicates: false
+              })
+            
+            if (error) {
+              // 🔴 Erro detalhado do PostgreSQL
+              logger.error('❌ Erro PostgreSQL ao salvar pedidos:', {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                total_records: recordsToInsert.length
+              })
+              
+              // Analisar tipo de erro
+              if (error.code === '21000') {
+                logger.error('🔴 ERRO 21000: Constraint UNIQUE violada - múltiplos registros para mesmo order_id')
+                logger.error('Registros duplicados detectados:', 
+                  recordsToInsert
+                    .map(r => ({ order_id: r.order_id, claim_id: r.claim_id }))
+                    .filter((r, i, arr) => arr.findIndex(x => x.order_id === r.order_id) !== i)
+                )
+              } else if (error.code === 'PGRST204') {
+                logger.error('🔴 ERRO PGRST204: Coluna não encontrada na tabela')
+                logger.error('Detalhes:', error.message)
+              }
+              
+              throw error
+            }
+            
+            logger.success(`✅ ${recordsToInsert.length} pedidos cancelados salvos no Supabase com sucesso`)
+            
+          } catch (saveError: any) {
+            logger.error('❌ Exception ao salvar dados no Supabase:', {
+              name: saveError?.name,
+              message: saveError?.message,
+              code: saveError?.code,
+              stack: saveError?.stack?.split('\n').slice(0, 3)
+            })
+            
+            // 🔴 Não falhar a requisição - dados já foram retornados da API
+            // Mas logar detalhes para debug
+            console.error('Dados problemáticos (primeiros 2 registros):', 
+              JSON.stringify(recordsToInsert.slice(0, 2), null, 2)
+            )
           }
           
-          logger.success(`${recordsToInsert.length} pedidos cancelados salvos no Supabase`)
-          
-        } catch (saveError) {
-          console.error('❌ Erro ao salvar dados no Supabase:', saveError)
-          // Não falhar a requisição, apenas logar o erro
+        } catch (outerError) {
+          logger.error('❌ Erro fatal no bloco de salvamento:', outerError)
         }
       }
       // ============ FIM FASE 1: SALVAMENTO ============
