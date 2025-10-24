@@ -37,6 +37,21 @@ export const mapTrackingData = (item: any) => {
     status_devolucao: item.return_details_v2?.status || null,
     subtipo_devolucao: item.return_details_v2?.subtype || null,
     
+    // 📅 DATAS - API ML
+    data_ultimo_update: item.claim_details?.last_updated || 
+                       item.return_details_v2?.last_updated || null,
+    data_atualizacao_devolucao: item.return_details_v2?.results?.[0]?.last_updated || 
+                               item.return_details_v1?.results?.[0]?.last_updated || null,
+    data_ultimo_status: item.return_details_v2?.shipments?.[0]?.status_history?.[0]?.date || null,
+    data_criacao_devolucao: item.return_details_v2?.date_created || 
+                           item.return_details_v1?.date_created || null,
+    
+    // 📦 LOGÍSTICA ADICIONAL
+    shipment_id_devolucao: item.return_details_v2?.shipments?.[0]?.id?.toString() || null,
+    endereco_destino_devolucao: item.return_details_v2?.shipments?.[0]?.destination_address || null,
+    descricao_ultimo_status: item.return_details_v2?.shipments?.[0]?.substatus_description || 
+                            item.return_details_v2?.shipments?.[0]?.status_description || null,
+    
     // Review
     review_id: item.review_id || item.claim_details?.review?.id?.toString() || null,
     review_status: item.review_status || item.claim_details?.review?.status || null,

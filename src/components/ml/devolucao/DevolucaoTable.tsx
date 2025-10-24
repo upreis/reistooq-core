@@ -38,7 +38,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>SKU</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transação ID</th>
             
-            {/* GRUPO 2: DATAS E TIMELINE (11 colunas) */}
+            {/* GRUPO 2: DATAS E TIMELINE (16 colunas - +5 novas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Criação</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Criação Claim</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Fechamento</th>
@@ -50,6 +50,12 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Vencimento ACAS</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Processamento Reembolso</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Última Sync</th>
+            {/* 🆕 NOVAS DATAS DA API ML */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Última Atualização API</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Atualização Return</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>📅 Último Status</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Criação Devolução</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Última Movimentação</th>
             
             {/* GRUPO 3: STATUS E ESTADO (7 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Status</th>
@@ -150,7 +156,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Prazo Revisar</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '110px'}}>Eficiência</th>
             
-            {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (9 colunas - ✅ +2 novas: Tem Return + Status Reembolso) */}
+            {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (12 colunas - +3 novas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>📦 Tem Devolução</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>💰 Status Reembolso</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transportadora</th>
@@ -160,6 +166,10 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Centro Envio</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Plataforma</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>NF Autorizada</th>
+            {/* 🆕 NOVOS CAMPOS DE LOGÍSTICA */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>📦 Shipment ID Dev.</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>📍 Endereço Destino</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📝 Desc. Último Status</th>
             
             {/* GRUPO 12: QUALIDADE E SCORES (7 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Score Qualidade</th>

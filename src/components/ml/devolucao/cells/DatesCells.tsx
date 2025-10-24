@@ -77,6 +77,33 @@ export const DatesCells: React.FC<DatesCellsProps> = ({ devolucao }) => {
       <td className="px-3 py-3 text-center whitespace-nowrap text-xs text-muted-foreground">
         {formatDateTime(devolucao.ultima_sincronizacao)}
       </td>
+      
+      {/* 🆕 NOVAS DATAS DA API ML */}
+      
+      {/* Última Atualização API (data_ultimo_update) */}
+      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
+        {formatDateTime((devolucao as any).data_ultimo_update)}
+      </td>
+      
+      {/* Atualização Return (data_atualizacao_devolucao) */}
+      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
+        {formatDateTime((devolucao as any).data_atualizacao_devolucao)}
+      </td>
+      
+      {/* Último Status (data_ultimo_status) */}
+      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
+        {formatDateTime((devolucao as any).data_ultimo_status)}
+      </td>
+      
+      {/* Criação Devolução (data_criacao_devolucao) */}
+      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
+        {formatDateTime((devolucao as any).data_criacao_devolucao)}
+      </td>
+      
+      {/* Última Movimentação (data_ultima_movimentacao) */}
+      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
+        {formatDateTime(devolucao.data_ultima_movimentacao)}
+      </td>
     </>
   );
 };

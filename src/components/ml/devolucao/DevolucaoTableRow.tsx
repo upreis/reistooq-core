@@ -728,6 +728,33 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {getBooleanBadge(devolucao.nota_fiscal_autorizada)}
       </td>
       
+      {/* 🆕 NOVOS CAMPOS DE LOGÍSTICA */}
+      
+      {/* Shipment ID Devolução */}
+      <td className="px-3 py-3 text-center font-mono text-xs">
+        {(devolucao as any).shipment_id_devolucao || '-'}
+      </td>
+      
+      {/* Endereço Destino Devolução */}
+      <td className="px-3 py-3 text-left text-xs">
+        <div className="max-w-[200px] truncate" title={JSON.stringify((devolucao as any).endereco_destino_devolucao) || ''}>
+          {(devolucao as any).endereco_destino_devolucao ? (
+            typeof (devolucao as any).endereco_destino_devolucao === 'object' 
+              ? `${(devolucao as any).endereco_destino_devolucao?.city || ''} - ${(devolucao as any).endereco_destino_devolucao?.state || ''}` 
+              : String((devolucao as any).endereco_destino_devolucao)
+          ) : (
+            <span className="text-muted-foreground">-</span>
+          )}
+        </div>
+      </td>
+      
+      {/* Descrição Último Status */}
+      <td className="px-3 py-3 text-left text-xs">
+        <div className="max-w-[180px] truncate" title={(devolucao as any).descricao_ultimo_status || ''}>
+          {(devolucao as any).descricao_ultimo_status || <span className="text-muted-foreground">-</span>}
+        </div>
+      </td>
+      
       {/* GRUPO 12: QUALIDADE E SCORES (1 coluna) */}
       
       {/* Score Qualidade */}
