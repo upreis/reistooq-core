@@ -1921,6 +1921,10 @@ async function buscarPedidosCancelados(
                   return: shipmentCosts.return_costs ? mapShipmentCostsData(shipmentCosts.return_costs) : null
                 } : null
                 
+                // 🆕 FASE 1: MAPEAR REVIEWS usando mapper CORRETO
+                let mappedReviews = null;
+                let extractedReviewsFields = {};
+                
                 // Buscar reviews dos returns se existirem
                 let returnReviews = []
                 if (returnsV2?.results?.length > 0) {
@@ -1938,6 +1942,17 @@ async function buscarPedidosCancelados(
                   
                   try {
                     returnReviews = (await Promise.all(reviewPromises)).filter(review => review !== null)
+                    
+                    // 🆕 APLICAR MAPPER CORRETO aos reviews
+                    if (returnReviews.length > 0) {
+                      mappedReviews = mapReviewsData(returnReviews[0]);
+                      extractedReviewsFields = extractReviewsFields(returnReviews[0]);
+                      console.log(`✅ Reviews mapeados com sucesso:`, {
+                        hasReviews: !!mappedReviews,
+                        reviewStatus: mappedReviews?.stage,
+                        scoreQualidade: extractedReviewsFields.score_qualidade
+                      });
+                    }
                   } catch (error) {
                     console.warn(`⚠️ Erro ao buscar reviews dos returns:`, error)
                   }
@@ -2046,16 +2061,20 @@ async function buscarPedidosCancelados(
                   })()),
                   
                   // ============================================
-                  // 📋 FASE 2: DADOS DE REVIEW ENRIQUECIDOS
+                  // 📋 FASE 1: DADOS DE REVIEW CORRIGIDOS (USAR MAPPER)
                   // ============================================
-                  review_id: returnReviews[0]?.id?.toString() || null,
-                  review_status: enrichedReviewData.warehouseReviewStatus || enrichedReviewData.sellerReviewStatus,
-                  review_result: enrichedReviewData.reviewResult,
-                  review_problems: enrichedReviewData.reviewProblems,
-                  review_required_actions: enrichedReviewData.reviewRequiredActions,
-                  review_start_date: enrichedReviewData.reviewStartDate,
-                  review_quality_score: enrichedReviewData.reviewQualityScore,
-                  review_needs_manual_action: enrichedReviewData.reviewNeedsManualAction,
+                  // ✅ CORRIGIDO: Usar extractedReviewsFields ao invés de enrichedReviewData
+                  review_id: extractedReviewsFields.review_id || returnReviews[0]?.id?.toString() || null,
+                  review_status: extractedReviewsFields.review_status || null,
+                  review_result: extractedReviewsFields.review_result || null,
+                  score_qualidade: extractedReviewsFields.score_qualidade || null,
+                  necessita_acao_manual: extractedReviewsFields.necessita_acao_manual || false,
+                  revisor_responsavel: extractedReviewsFields.revisor_responsavel || null,
+                  observacoes_review: extractedReviewsFields.observacoes_review || null,
+                  categoria_problema: extractedReviewsFields.categoria_problema || null,
+                  
+                  // 🆕 JSONB COMPLETO (dados mapeados)
+                  dados_reviews: mappedReviews,
                   
                 // ============================================
                 // ⏱️ FASE 3: DADOS BRUTOS DA API (SEM CÁLCULOS)
@@ -2418,14 +2437,42 @@ async function buscarPedidosCancelados(
                 return safeClaimData?.last_tracking_update || null
               })(),
               
-              // ✅ Dados de tracking já incluídos acima (tracking_history, tracking_events, data_ultima_movimentacao)
-              
-              // 💰 CUSTOS DE SHIPMENT
-              shipment_costs: {
-                shipping_cost: safeClaimData?.return_details_v2?.results?.[0]?.shipping_cost || null,
-                handling_cost: safeClaimData?.return_details_v2?.results?.[0]?.handling_cost || null,
-                total_cost: safeClaimData?.return_details_v2?.results?.[0]?.total_cost || null
-              },
+              // 💰 CUSTOS DE SHIPMENT (🆕 FASE 1: Dados REAIS do endpoint /costs)
+              // ✅ CORRIGIDO: Usar mappedCosts ao invés de dados incorretos do return_details
+              ...(() => {
+                if (!safeClaimData?.shipment_costs) {
+                  return {
+                    shipment_costs: null,
+                    custo_envio_ida: null,
+                    custo_envio_retorno: null,
+                    custo_total_logistica: null,
+                    moeda_custo: null,
+                    dados_costs: null
+                  };
+                }
+                
+                // Usar custo de ida (original) ou de retorno conforme disponibilidade
+                const costData = safeClaimData.shipment_costs.return || safeClaimData.shipment_costs.original;
+                
+                return {
+                  // Objeto simplificado para compatibilidade
+                  shipment_costs: {
+                    shipping_cost: costData?.forward_shipping?.amount || null,
+                    handling_cost: costData?.return_shipping?.amount || null,
+                    total_cost: costData?.total_costs?.amount || null
+                  },
+                  
+                  // 🆕 CAMPOS INDIVIDUAIS (extraídos do mapper)
+                  custo_envio_ida: safeClaimData.shipment_costs.original?.forward_shipping?.amount || null,
+                  custo_envio_retorno: safeClaimData.shipment_costs.return?.return_shipping?.amount || 
+                                       safeClaimData.shipment_costs.original?.return_shipping?.amount || null,
+                  custo_total_logistica: costData?.total_costs?.amount || null,
+                  moeda_custo: costData?.total_costs?.currency || 'BRL',
+                  
+                  // 🆕 JSONB COMPLETO (dados mapeados)
+                  dados_costs: safeClaimData.shipment_costs
+                };
+              })(),
               
               // ✅ Dados de anexos removidos - endpoint retorna 405
               // ✅ Dados financeiros brutos já incluídos nos campos de pagamento/reembolso
