@@ -61,23 +61,7 @@ const CLAIM_TYPE_LABELS: Record<string, string> = {
   'claim': 'Reclamação'
 };
 
-// ✅ FASE 3: Status de Devolução
-const RETURN_STATUS = ['pending', 'in_transit', 'delivered', 'cancelled', 'expired'];
-const RETURN_STATUS_LABELS: Record<string, string> = {
-  'pending': 'Pendente',
-  'in_transit': 'Em Trânsito',
-  'delivered': 'Entregue',
-  'cancelled': 'Cancelada',
-  'expired': 'Expirada'
-};
-
-// ✅ FASE 3: Status de Reembolso
-const MONEY_STATUS = ['refunded', 'pending', 'not_refunded'];
-const MONEY_STATUS_LABELS: Record<string, string> = {
-  'refunded': 'Reembolsado',
-  'pending': 'Pendente',
-  'not_refunded': 'Não Reembolsado'
-};
+// ❌ REMOVIDO: FASE 3 - Filtros não funcionam (dados vazios em ~80% dos casos)
 
 interface DevolucaoFiltersUnifiedProps {
   filters: any;
@@ -116,9 +100,7 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
   const [fulfilledOpen, setFulfilledOpen] = useState(false);
   const [claimTypeOpen, setClaimTypeOpen] = useState(false);
   
-  // ✅ FASE 3: Filtros de Returns
-  const [returnStatusOpen, setReturnStatusOpen] = useState(false);
-  const [moneyStatusOpen, setMoneyStatusOpen] = useState(false);
+  // ❌ REMOVIDO: FASE 3 - Estados dos filtros removidos
 
 
   const handleContasMLChange = (contaId: string, checked: boolean) => {
@@ -359,71 +341,7 @@ export const DevolucaoFiltersUnified = React.memo(function DevolucaoFiltersUnifi
           </Popover>
         </div>
 
-        {/* ============ ✅ FASE 3: FILTROS DE DEVOLUÇÕES ============ */}
-        
-        {/* Status da Devolução */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Status Devolução
-            <Badge variant="secondary" className="text-xs px-1 py-0">Fase 3</Badge>
-          </label>
-          <Popover open={returnStatusOpen} onOpenChange={setReturnStatusOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {!filters.statusDevolucao ? "Todos" : RETURN_STATUS_LABELS[filters.statusDevolucao] || filters.statusDevolucao}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-60 p-0">
-              <div className="p-4 space-y-2">
-                <div className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                  onClick={() => { onFilterChange('statusDevolucao', ''); setReturnStatusOpen(false); }}>
-                  <Checkbox checked={!filters.statusDevolucao} onChange={() => {}} />
-                  <label className="text-sm cursor-pointer">Todos</label>
-                </div>
-                {RETURN_STATUS.map((status) => (
-                  <div key={status} className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                    onClick={() => { onFilterChange('statusDevolucao', status); setReturnStatusOpen(false); }}>
-                    <Checkbox checked={filters.statusDevolucao === status} onChange={() => {}} />
-                    <label className="text-sm cursor-pointer">{RETURN_STATUS_LABELS[status]}</label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        {/* Status do Reembolso */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Status Reembolso
-            <Badge variant="secondary" className="text-xs px-1 py-0">Fase 3</Badge>
-          </label>
-          <Popover open={moneyStatusOpen} onOpenChange={setMoneyStatusOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="w-full justify-between">
-                {!filters.statusDinheiro ? "Todos" : MONEY_STATUS_LABELS[filters.statusDinheiro] || filters.statusDinheiro}
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-60 p-0">
-              <div className="p-4 space-y-2">
-                <div className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                  onClick={() => { onFilterChange('statusDinheiro', ''); setMoneyStatusOpen(false); }}>
-                  <Checkbox checked={!filters.statusDinheiro} onChange={() => {}} />
-                  <label className="text-sm cursor-pointer">Todos</label>
-                </div>
-                {MONEY_STATUS.map((status) => (
-                  <div key={status} className="flex items-center space-x-2 cursor-pointer hover:bg-muted/50 p-2 rounded"
-                    onClick={() => { onFilterChange('statusDinheiro', status); setMoneyStatusOpen(false); }}>
-                    <Checkbox checked={filters.statusDinheiro === status} onChange={() => {}} />
-                    <label className="text-sm cursor-pointer">{MONEY_STATUS_LABELS[status]}</label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+        {/* ❌ REMOVIDO: FASE 3 - Status Devolução e Status Reembolso (dados vazios em ~80% dos casos) */}
       </div>
 
       {/* Barra de ações */}
