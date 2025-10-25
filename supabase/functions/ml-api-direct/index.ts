@@ -2514,19 +2514,27 @@ async function buscarPedidosCancelados(
               // ========================================
               ...(() => {
                 const reasonId = safeClaimData?.claim_details?.reason_id || claim?.reason_id || null;
+                
+                // 1️⃣ Tentar pegar dos dados já enriquecidos (claim.dados_reasons)
+                const existingReasonsData = (claim as any)?.dados_reasons;
+                
+                // 2️⃣ Se não tiver, buscar no Map de reasons da API
                 const apiData = reasonsDetailsMap.get(reasonId || '') || null;
                 
-                // Se temos dados da API, usar eles
-                if (apiData) {
+                // 3️⃣ Usar dados existentes ou da API
+                const reasonsData = existingReasonsData || apiData;
+                
+                // Se temos dados de reasons (já enriquecidos ou da API)
+                if (reasonsData) {
                   return {
-                    reason_id: apiData.reason_id,
-                    reason_name: apiData.reason_name,
-                    reason_detail: apiData.reason_detail,
-                    reason_flow: apiData.reason_flow,
-                    reason_category: apiData.reason_category,
-                    reason_position: apiData.reason_position,
-                    reason_settings: JSON.stringify(apiData.reason_settings || {}), // ✅ Serializar para evitar erro no banco
-                    dados_reasons: apiData, // Salvar objeto completo
+                    reason_id: reasonsData.reason_id || reasonId,
+                    reason_name: reasonsData.reason_name || null,
+                    reason_detail: reasonsData.reason_detail || null,
+                    reason_flow: reasonsData.reason_flow || null,
+                    reason_category: reasonsData.reason_category || null,
+                    reason_position: reasonsData.reason_position || null,
+                    reason_settings: reasonsData.reason_settings ? JSON.stringify(reasonsData.reason_settings) : null,
+                    dados_reasons: reasonsData, // Salvar objeto completo
                     motivo_categoria: reasonId // Compatibilidade
                   };
                 }
@@ -2535,7 +2543,7 @@ async function buscarPedidosCancelados(
                 const mappedReason = mapReasonWithApiData(reasonId, null);
                 return {
                   ...mappedReason,
-                  reason_settings: null, // ✅ Garantir que seja null se não houver dados
+                  reason_settings: null,
                   motivo_categoria: reasonId
                 };
               })(),
