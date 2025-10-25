@@ -229,6 +229,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
       
+      {/* Data Processamento */}
+      <td className="px-3 py-3 text-center text-xs">
+        {formatDateTime(devolucao.data_processamento_reembolso)}
+      </td>
+      
       {/* Reason ID */}
       <td className="px-3 py-3 text-center font-mono text-xs">
         {devolucao.reason_id || '-'}
