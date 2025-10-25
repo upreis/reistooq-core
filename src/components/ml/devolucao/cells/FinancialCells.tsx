@@ -70,7 +70,11 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
         {formatCurrency(frete.valor_reembolsado)}
       </td>
       
-      {/* ❌ REMOVIDO: Custo Devolução - vazio */}
+      {/* Custo Devolução */}
+      <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
+        {formatCurrency(frete.custo_devolucao)}
+      </td>
+      
       {/* ❌ REMOVIDO: Total Logística (calculado) */}
       
       {/* Taxa ML Original */}
@@ -88,16 +92,36 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
       
       {/* ❌ REMOVIDO: Compensação - não mapeado */}
       
-      {/* ❌ REMOVIDO: Método Reembolso - vazio */}
-      {/* ❌ REMOVIDO: Moeda - vazio */}
+      {/* Método Reembolso */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.metodo_pagamento ? (
+          <Badge variant="outline">{devolucao.metodo_pagamento}</Badge>
+        ) : (
+          <span className="text-muted-foreground">-</span>
+        )}
+      </td>
+      
+      {/* Moeda */}
+      <td className="px-3 py-3 text-center">
+        <Badge variant="secondary">
+          {devolucao.moeda_reembolso || 'BRL'}
+        </Badge>
+      </td>
       
       {/* Data Processamento */}
       <td className="px-3 py-3 text-center text-sm whitespace-nowrap">
         {formatDateTime(devolucao.data_processamento_reembolso)}
       </td>
       
-      {/* ❌ REMOVIDO: Parcelas - vazio */}
-      {/* ❌ REMOVIDO: Valor Parcela - vazio */}
+      {/* Parcelas */}
+      <td className="px-3 py-3 text-center">
+        {devolucao.parcelas || '-'}
+      </td>
+      
+      {/* Valor Parcela */}
+      <td className="px-3 py-3 text-right text-sm whitespace-nowrap">
+        {formatCurrency(devolucao.valor_parcela)}
+      </td>
     </>
   );
 };
