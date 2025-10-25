@@ -12,7 +12,7 @@ import { DevolucaoPagination } from '@/components/ml/devolucao/DevolucaoPaginati
 import { DevolucaoTable } from '@/components/ml/devolucao/DevolucaoTable';
 import { DevolucaoStatusBar } from './devolucao/DevolucaoStatusBar';
 import { NoFiltersAppliedState, NoResultsFoundState, LoadingProgressIndicator } from '@/components/ml/devolucao/DevolucaoEmptyStates';
-
+import { DevolucaoColumnSelector, DEFAULT_DEVOLUCAO_COLUMNS, type DevolucaoColumnConfig } from '@/components/ml/devolucao/DevolucaoColumnSelector';
 
 import { DevolucaoFiltersUnified } from './devolucao/DevolucaoFiltersUnified';
 import { DevolucaoFiltersSection } from './devolucao/DevolucaoFiltersSection';
@@ -61,7 +61,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
   const [quickFilter, setQuickFilter] = React.useState<'all' | 'opened' | 'closed' | 'under_review' | 'pending' | 'resolved' | 'cancelled'>('all');
   const [showDetails, setShowDetails] = React.useState(false);
   const [showExportDialog, setShowExportDialog] = React.useState(false);
-  const [showColumnManager, setShowColumnManager] = React.useState(false);
+  const [visibleColumns, setVisibleColumns] = React.useState<DevolucaoColumnConfig[]>(DEFAULT_DEVOLUCAO_COLUMNS);
 
   // Hook principal consolidado - ESTADO UNIFICADO
   const {
@@ -216,14 +216,10 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
 
       {/* Controles de ação */}
       <div className="flex justify-end gap-2">
-        <Button 
-          variant="outline" 
-          onClick={() => setShowColumnManager(true)}
-          className="flex items-center gap-2"
-        >
-          <Settings className="h-4 w-4" />
-          Colunas (~100)
-        </Button>
+        <DevolucaoColumnSelector
+          columns={visibleColumns}
+          onColumnsChange={setVisibleColumns}
+        />
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -381,32 +377,6 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
         onOpenChange={setShowDetails}
         devolucao={selectedDevolucao}
       />
-      
-      {/* Modal de gerenciamento de colunas */}
-      <Dialog open={showColumnManager} onOpenChange={setShowColumnManager}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Gerenciar Colunas</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground">
-              Em breve: sistema completo de gerenciamento de colunas similar ao /pedidos
-            </p>
-            <div className="mt-4 space-y-2">
-              <div className="text-xs text-muted-foreground">Colunas disponíveis:</div>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>✅ Order ID</div>
-                <div>✅ Claim ID</div>
-                <div>✅ SKU</div>
-                <div>✅ Produto</div>
-                <div>✅ Status</div>
-                <div>✅ Valor Retido</div>
-                <div>... e mais 23 colunas</div>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
       )}
     </>
