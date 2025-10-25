@@ -30,40 +30,40 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '160px'}}>Empresa</th>
             
             {/* GRUPO 1: IDENTIFICAÇÃO (3 colunas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Pedido ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Claim ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Return ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º da Venda</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º da Reclamação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º da Devolução</th>
             {/* ❌ REMOVIDO: Player Role - vazio */}
             {/* ❌ REMOVIDO: Item ID - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>SKU</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transação ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>ID de Pagamento</th>
             
             {/* GRUPO 2: DATAS E TIMELINE (16 colunas - +5 novas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Criação</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Criação Claim</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Fechamento</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Início Devolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Primeira Ação</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Prazo Limite</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data da Venda</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data da Reclamação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Final da Reclamação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Inicio da Devolução</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data da Primeira Ação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Limite da Ação</th>
             {/* ❌ REMOVIDO: Data Estimada Troca - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Limite Troca</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Vencimento ACAS</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Processamento Reembolso</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Última Sync</th>
+            {/* ❌ REMOVIDO: Vencimento ACAS - excluído conforme solicitação do usuário */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Pagamento do Reembolso</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Ultima Atualização de Busca</th>
             {/* 🆕 NOVAS DATAS DA API ML */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 last_updated (API ML)</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Atualização Return</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Data Atualizada do Status</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Data Atualizada da Devolução</th>
             {/* ❌ REMOVIDO: 📅 Último Status - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Criação Devolução</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Data Inicial da Devolução</th>
             {/* ❌ REMOVIDO: 📅 Última Movimentação - vazio */}
             
             {/* GRUPO 3: STATUS E ESTADO (3 colunas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Status</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Etapa</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Status da Devolução</th>
+            {/* ❌ REMOVIDO: Etapa - excluído conforme solicitação do usuário */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Resolução</th>
             {/* ❌ REMOVIDO: Status Rastreio - vazio */}
             {/* ❌ REMOVIDO: Status Review - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Status Moderação</th>
+            {/* ❌ REMOVIDO: Status Moderação - excluído conforme solicitação do usuário */}
             {/* ❌ REMOVIDO: SLA Cumprido (comparação de datas) */}
             
             {/* GRUPO 4: COMPRADOR (2 colunas) */}
@@ -106,17 +106,17 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: Valor Parcela - vazio */}
             
             {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Processamento</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Reason ID</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Reason Name</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Reembolso</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>N.º do Motivo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Motivo da Reclamação</th>
             {/* ❌ REMOVIDO: Reason Detail - vazio */}
             {/* ❌ REMOVIDO: Reason Flow - vazio */}
             {/* ❌ REMOVIDO: Categoria Motivo - vazio */}
             {/* ❌ REMOVIDO: Tipo Problema - vazio */}
             {/* ❌ REMOVIDO: Subtipo - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo Claim</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Estágio</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Complexidade</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo de Reclamação</th>
+            {/* ❌ REMOVIDO: Estágio - excluído conforme solicitação do usuário */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Nivel Dificuldade</th>
             {/* ❌ REMOVIDO: Nível Prioridade - vazio */}
             
             {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (9 colunas) */}
@@ -159,8 +159,8 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: 📦 Tem Devolução - vazio */}
             {/* ❌ REMOVIDO: 💰 Status Reembolso - vazio */}
             {/* ❌ REMOVIDO: Transportadora - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Shipment ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Rastreio</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º do Envio</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Codigo do Rastreio</th>
             {/* ❌ REMOVIDO: Status Envio - vazio */}
             {/* ❌ REMOVIDO: Centro Envio - vazio */}
             {/* ❌ REMOVIDO: Plataforma - vazio */}
@@ -177,7 +177,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: Impacto Reputação (calculado) */}
             {/* ❌ REMOVIDO: Calificação CARL - vazio */}
             {/* ❌ REMOVIDO: Review ID - vazio */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Revisor</th>
+            {/* ❌ REMOVIDO: Revisor - excluído conforme solicitação do usuário */}
       
       {/* ❌ REMOVIDO GRUPO 13: DADOS DETALHADOS - todos vazios */}
             {/* ❌ REMOVIDO: Dados Claim - vazio */}

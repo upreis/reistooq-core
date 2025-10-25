@@ -60,10 +60,7 @@ export const DatesCells: React.FC<DatesCellsProps> = ({ devolucao }) => {
         {formatDateTime(devolucao.data_limite_troca)}
       </td>
       
-      {/* Vencimento Ação */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_vencimento_acao)}
-      </td>
+      {/* ❌ REMOVIDO: Vencimento ACAS - excluído conforme solicitação do usuário */}
       
       {/* Processamento Reembolso */}
       <td className="px-3 py-3 text-center whitespace-nowrap">

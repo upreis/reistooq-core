@@ -261,14 +261,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Estágio (claim_stage) */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.claim_stage || devolucao.subtipo_claim ? (
-          <Badge variant="outline">{devolucao.claim_stage || devolucao.subtipo_claim}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
+      {/* ❌ REMOVIDO: Estágio - excluído conforme solicitação do usuário */}
       
       {/* Complexidade */}
       <td className="px-3 py-3 text-center">
@@ -489,11 +482,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* ❌ REMOVIDO: Impacto Reputação (calculado) */}
       {/* ❌ REMOVIDO: Calificação CARL - vazio */}
       {/* ❌ REMOVIDO: Review ID - vazio */}
-      
-      {/* Revisor */}
-      <td className="px-3 py-3 text-left text-sm">
-        {devolucao.revisor_responsavel || '-'}
-      </td>
+      {/* ❌ REMOVIDO: Revisor - excluído conforme solicitação do usuário */}
       
       {/* ❌ REMOVIDO GRUPO 13: DADOS DETALHADOS - todos vazios */}
       {/* ❌ REMOVIDO: Dados Claim - vazio */}

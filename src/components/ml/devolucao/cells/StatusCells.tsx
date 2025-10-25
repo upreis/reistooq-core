@@ -29,15 +29,12 @@ const getBooleanBadge = (value: boolean | null | undefined) => {
 export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
   return (
     <>
-      {/* Status */}
+      {/* Status da Devolução */}
       <td className="px-3 py-3 text-center">
         {getStatusBadge(devolucao.status_devolucao)}
       </td>
       
-      {/* Etapa */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.claim_stage ? <Badge variant="outline">{devolucao.claim_stage}</Badge> : <span className="text-muted-foreground">-</span>}
-      </td>
+      {/* ❌ REMOVIDO: Etapa - excluído conforme solicitação do usuário */}
       
       {/* Resolução */}
       <td className="px-3 py-3 text-center">
@@ -46,15 +43,7 @@ export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
       
       {/* ❌ REMOVIDO: Status Rastreio - vazio */}
       {/* ❌ REMOVIDO: Status Review - vazio */}
-      
-      {/* Status Moderação */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.status_moderacao ? (
-          <Badge variant="outline">{devolucao.status_moderacao}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
+      {/* ❌ REMOVIDO: Status Moderação - excluído conforme solicitação do usuário */}
     </>
   );
 };
