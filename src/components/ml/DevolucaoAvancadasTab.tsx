@@ -222,7 +222,7 @@ const DevolucaoAvancadasTab: React.FC<DevolucaoAvancadasTabProps> = ({
           className="flex items-center gap-2"
         >
           <Settings className="h-4 w-4" />
-          Colunas (29)
+          Colunas (~100)
         </Button>
         
         <DropdownMenu>

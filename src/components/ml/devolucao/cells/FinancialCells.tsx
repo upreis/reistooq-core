@@ -57,15 +57,8 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
         {formatCurrency(produto.valor_reembolsado || devolucao.valor_reembolso_produto)}
       </td>
       
-      {/* % Reembolsado */}
-      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-        {formatPercentage(produto.percentual_reembolsado || devolucao.percentual_reembolsado)}
-      </td>
-      
-      {/* Impacto Vendedor */}
-      <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
-        {formatCurrency(devolucao.impacto_financeiro_vendedor)}
-      </td>
+      {/* ❌ REMOVIDO: % Reembolsado (calculado) */}
+      {/* ❌ REMOVIDO: Impacto Vendedor (calculado) */}
       
       {/* Frete Original */}
       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
@@ -82,10 +75,7 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
         {formatCurrency(frete.custo_devolucao)}
       </td>
       
-      {/* Total Logística */}
-      <td className="px-3 py-3 text-right font-semibold text-red-600 dark:text-red-400 whitespace-nowrap">
-        {formatCurrency(frete.custo_total_logistica || devolucao.custo_logistico_total)}
-      </td>
+      {/* ❌ REMOVIDO: Total Logística (calculado) */}
       
       {/* Taxa ML Original */}
       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">

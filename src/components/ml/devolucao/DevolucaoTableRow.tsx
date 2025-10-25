@@ -190,6 +190,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 3: STATUS E ESTADO */}
       <StatusCells devolucao={devolucao} />
+      {/* ❌ REMOVIDO: SLA Cumprido (comparação de datas) */}
       
       {/* GRUPO 4: COMPRADOR (4 colunas) */}
       
@@ -376,12 +377,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {getBooleanBadge(devolucao.escalado_para_ml)}
       </td>
       
-      {/* Ação Seller Necessária */}
-      <td className="px-3 py-3 text-left">
-        <div className="max-w-[160px] truncate" title={String(devolucao.acao_seller_necessaria || '')}>
-          {devolucao.acao_seller_necessaria ? String(devolucao.acao_seller_necessaria) : '-'}
-        </div>
-      </td>
+      {/* ❌ REMOVIDO: Ação Seller Necessária (lógica de verificação) */}
       
       {/* Tags Pedido */}
       <td className="px-3 py-3 text-left">
@@ -396,10 +392,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </div>
       </td>
       
-      {/* Total Evidências */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.total_evidencias || 0}
-      </td>
+      {/* ❌ REMOVIDO: Total Evidências (soma) */}
       
       {/* Recursos Manuais */}
       <td className="px-3 py-3 text-left text-sm">
@@ -444,18 +437,8 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Qtd Comunicações */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.numero_interacoes || 
-         (Array.isArray(devolucao.timeline_mensagens) ? devolucao.timeline_mensagens.length : 0)}
-      </td>
-      
-      {/* Timeline */}
-      <td className="px-3 py-3 text-left">
-        {Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 
-          ? `${devolucao.timeline_mensagens.length} eventos` 
-          : <span className="text-muted-foreground">Sem mensagens</span>}
-      </td>
+      {/* ❌ REMOVIDO: Qtd Comunicações (calculado) */}
+      {/* ❌ REMOVIDO: Timeline (agregado) */}
       
       {/* Última Msg Data */}
       <td className="px-3 py-3 text-center text-xs">
@@ -540,36 +523,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 10: TEMPOS E MÉTRICAS (6 colunas) */}
       
-      {/* Tempo Resposta */}
-      <td className="px-3 py-3 text-center">
-        {(() => {
-          // Tentar usar campo direto primeiro
-          if (devolucao.tempo_resposta_medio) {
-            return formatTempo(devolucao.tempo_resposta_medio);
-          }
-          
-          // Calcular baseado em datas (retorna em minutos)
-          if (devolucao.data_primeira_acao && devolucao.data_criacao_claim) {
-            const diff = new Date(devolucao.data_primeira_acao).getTime() - new Date(devolucao.data_criacao_claim).getTime();
-            const minutos = Math.round(diff / (1000 * 60));
-            return formatTempo(minutos);
-          }
-          
-          // Buscar na timeline
-          if (Array.isArray(devolucao.timeline_mensagens) && devolucao.timeline_mensagens.length > 0 && devolucao.data_criacao_claim) {
-            const primeiraMensagem = devolucao.timeline_mensagens[0] as any;
-            const dataPrimeira = primeiraMensagem?.date || primeiraMensagem?.created_at || primeiraMensagem?.timestamp;
-            
-            if (dataPrimeira) {
-              const diff = new Date(dataPrimeira).getTime() - new Date(devolucao.data_criacao_claim).getTime();
-              const minutos = Math.round(diff / (1000 * 60));
-              return formatTempo(minutos);
-            }
-          }
-          
-          return <span className="text-muted-foreground">-</span>;
-        })()}
-      </td>
+      {/* ❌ REMOVIDO: Tempo Resposta (calculado) */}
       
       {/* 1ª Resposta Vendedor */}
       <td className="px-3 py-3 text-center">
@@ -603,12 +557,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         })()}
       </td>
       
-      {/* Tempo Total */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.tempo_total_resolucao 
-          ? `${Math.round(devolucao.tempo_total_resolucao / 60)}h` 
-          : '-'}
-      </td>
+      {/* ❌ REMOVIDO: Tempo Total (calculado) */}
       
       {/* Tempo Análise ML */}
       <td className="px-3 py-3 text-center text-sm">
@@ -624,24 +573,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
           : '-'}
       </td>
       
-      {/* Dias p/ Resolver */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.dias_ate_resolucao || '-'}
-      </td>
-      
-      {/* Prazo Revisar */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.prazo_revisao_dias || '-'}
-      </td>
-      
-      {/* Eficiência */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.eficiencia_resolucao ? (
-          <Badge variant="outline">{devolucao.eficiencia_resolucao}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
+      {/* ❌ REMOVIDO: Dias p/ Resolver (calculado) */}
+      {/* ❌ REMOVIDO: Prazo Revisar (calculado) */}
+      {/* ❌ REMOVIDO: Eficiência (calculado) */}
       
       {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (9 colunas - ✅ +2 novas) */}
       
@@ -766,29 +700,10 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 12: QUALIDADE E SCORES (1 coluna) */}
       
-      {/* Score Qualidade */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.score_qualidade || '-'}
-      </td>
-      
-      {/* Taxa Satisfação */}
-      <td className="px-3 py-3 text-center text-sm">
-        {formatPercentage(devolucao.taxa_satisfacao)}
-      </td>
-      
-      {/* Score Final */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.score_satisfacao_final ? (
-          <Badge variant="default">{devolucao.score_satisfacao_final}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* Impacto Reputação */}
-      <td className="px-3 py-3 text-center">
-        {getImpactoBadge(devolucao.impacto_reputacao)}
-      </td>
+      {/* ❌ REMOVIDO: Score Qualidade (calculado) */}
+      {/* ❌ REMOVIDO: Taxa Satisfação (calculado) */}
+      {/* ❌ REMOVIDO: Score Final (calculado) */}
+      {/* ❌ REMOVIDO: Impacto Reputação (calculado) */}
       
       {/* Calificação CARL */}
       <td className="px-3 py-3 text-center">
@@ -830,38 +745,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </span>
       </td>
       
-      {/* 🆕 REVIEWS DISPONÍVEIS */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.dados_reviews ? (
-          <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
-            ✓ Sim
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground">—</Badge>
-        )}
-      </td>
-      
-      {/* 🆕 CUSTOS DETALHADOS */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.dados_costs ? (
-          <Badge variant="default" className="bg-green-600 hover:bg-green-700">
-            ✓ Sim
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground">—</Badge>
-        )}
-      </td>
-      
-      {/* 🆕 REASONS DETALHADOS */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.dados_reasons ? (
-          <Badge variant="default" className="bg-purple-600 hover:bg-purple-700">
-            ✓ Sim
-          </Badge>
-        ) : (
-          <Badge variant="outline" className="text-muted-foreground">—</Badge>
-        )}
-      </td>
+      {/* ❌ REMOVIDO: Reviews (consolidação) */}
+      {/* ❌ REMOVIDO: Custos (consolidação) */}
+      {/* ❌ REMOVIDO: Reasons (consolidação) */}
       
       {/* AÇÕES */}
       <ActionCell devolucao={devolucao} onViewDetails={onViewDetails} />
