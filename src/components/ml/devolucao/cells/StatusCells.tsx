@@ -70,11 +70,6 @@ export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
           <span className="text-muted-foreground">-</span>
         )}
       </td>
-      
-      {/* SLA Cumprido */}
-      <td className="px-3 py-3 text-center">
-        {getBooleanBadge(devolucao.sla_cumprido)}
-      </td>
     </>
   );
 };
