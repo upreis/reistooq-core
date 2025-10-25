@@ -212,7 +212,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Cooperador */}
       <td className="px-3 py-3 text-left">
         <span className="text-muted-foreground">
-          {(devolucao.dados_claim as any)?.cooperador || '-'}
+          {(devolucao.dados_claim as any)?.players?.find((p: any) => p.role === 'cooperator')?.user_id || '-'}
         </span>
       </td>
       
