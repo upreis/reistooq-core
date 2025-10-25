@@ -44,23 +44,8 @@ export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
         {devolucao.resultado_final ? <Badge variant="secondary">{devolucao.resultado_final}</Badge> : <span className="text-muted-foreground">-</span>}
       </td>
       
-      {/* Status Rastreio */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.status_rastreamento_pedido ? (
-          <Badge variant="outline">{devolucao.status_rastreamento_pedido}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* Status Review */}
-      <td className="px-3 py-3 text-center">
-        {devolucao.review_status ? (
-          <Badge variant="outline">{devolucao.review_status}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
+      {/* ❌ REMOVIDO: Status Rastreio - vazio */}
+      {/* ❌ REMOVIDO: Status Review - vazio */}
       
       {/* Status Moderação */}
       <td className="px-3 py-3 text-center">
