@@ -106,12 +106,12 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: Parcelas - vazio */}
             {/* ❌ REMOVIDO: Valor Parcela - vazio */}
             
-            {/* GRUPO 7: MOTIVO E CATEGORIA (11 colunas) */}
+            {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Reason ID</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Reason Name</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '250px'}}>Reason Detail</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reason Flow</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Categoria Motivo</th>
+            {/* ❌ REMOVIDO: Reason Detail - vazio */}
+            {/* ❌ REMOVIDO: Reason Flow - vazio */}
+            {/* ❌ REMOVIDO: Categoria Motivo - vazio */}
             {/* ❌ REMOVIDO: Tipo Problema - vazio */}
             {/* ❌ REMOVIDO: Subtipo - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo Claim</th>

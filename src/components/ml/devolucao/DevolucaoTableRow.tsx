@@ -227,7 +227,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* GRUPO 6: VALORES FINANCEIROS */}
       <FinancialCells devolucao={devolucao} />
       
-      {/* GRUPO 7: MOTIVO E CATEGORIA (11 colunas) */}
+      {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
       
       {/* Reason ID */}
       <td className="px-3 py-3 text-center font-mono text-xs">
@@ -241,33 +241,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </div>
       </td>
       
-      {/* Reason Detail */}
-      <td className="px-3 py-3 text-left">
-        <div className="max-w-[250px] truncate" title={(devolucao as any).reason_detail || ''}>
-          {(devolucao as any).reason_detail || '-'}
-        </div>
-      </td>
-      
-      {/* Reason Flow */}
-      <td className="px-3 py-3 text-center">
-        {(devolucao as any).reason_flow ? (
-          <Badge variant="secondary">{(devolucao as any).reason_flow}</Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
-      {/* Categoria Motivo */}
-      <td className="px-3 py-3 text-left">
-        {devolucao.reason_category ? (
-          <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-            {devolucao.reason_category}
-          </Badge>
-        ) : (
-          <span className="text-muted-foreground">-</span>
-        )}
-      </td>
-      
+      {/* ❌ REMOVIDO: Reason Detail - vazio */}
+      {/* ❌ REMOVIDO: Reason Flow - vazio */}
+      {/* ❌ REMOVIDO: Categoria Motivo - vazio */}
       {/* ❌ REMOVIDO: Tipo Problema - vazio */}
       {/* ❌ REMOVIDO: Subtipo - vazio */}
       
