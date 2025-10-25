@@ -54,7 +54,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 last_updated (API ML)</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Atualização Return</th>
             {/* ❌ REMOVIDO: 📅 Último Status - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Criação Devolução</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Criação Reason</th>
             {/* ❌ REMOVIDO: 📅 Última Movimentação - vazio */}
             
             {/* GRUPO 3: STATUS E ESTADO (3 colunas) */}
@@ -107,7 +107,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: Valor Parcela - vazio */}
             
             {/* GRUPO 7: MOTIVO E CATEGORIA (11 colunas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Reason ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Reason ID</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Reason Name</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '250px'}}>Reason Detail</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reason Flow</th>
