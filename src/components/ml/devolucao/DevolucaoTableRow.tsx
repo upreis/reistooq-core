@@ -7,6 +7,13 @@ import { DatesCells } from './cells/DatesCells';
 import { StatusCells } from './cells/StatusCells';
 import { FinancialCells } from './cells/FinancialCells';
 import { ActionCell } from './cells/ActionCell';
+import { 
+  traduzirTipoClaim, 
+  traduzirStage, 
+  traduzirResultadoFinal, 
+  traduzirResponsavelCusto,
+  traduzirTags
+} from '@/utils/mlTranslations';
 
 interface DevolucaoTableRowProps {
   devolucao: DevolucaoAvancada;
@@ -255,7 +262,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Tipo Claim */}
       <td className="px-3 py-3 text-center">
         {devolucao.tipo_claim ? (
-          <Badge variant="outline">{devolucao.tipo_claim}</Badge>
+          <Badge variant="outline">{traduzirTipoClaim(devolucao.tipo_claim)}</Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
         )}
@@ -274,7 +281,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Resultado Mediação */}
       <td className="px-3 py-3 text-left">
-        {devolucao.resultado_mediacao || '-'}
+        {traduzirStage(devolucao.resultado_mediacao)}
       </td>
       
       {/* Mediador */}
@@ -286,13 +293,13 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Resultado Final */}
       <td className="px-3 py-3 text-left">
-        {devolucao.resultado_final || '-'}
+        {traduzirResultadoFinal(devolucao.resultado_final)}
       </td>
       
       {/* Responsável Custo */}
       <td className="px-3 py-3 text-center">
         {devolucao.responsavel_custo ? (
-          <Badge variant="secondary">{devolucao.responsavel_custo}</Badge>
+          <Badge variant="secondary">{traduzirResponsavelCusto(devolucao.responsavel_custo)}</Badge>
         ) : (
           <span className="text-muted-foreground">-</span>
         )}
@@ -317,7 +324,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3 text-left">
         <div className="flex flex-wrap gap-1 max-w-[180px]">
           {devolucao.tags_pedido && Array.isArray(devolucao.tags_pedido) && devolucao.tags_pedido.length > 0 ? (
-            devolucao.tags_pedido.slice(0, 3).map((tag: string, idx: number) => (
+            traduzirTags(devolucao.tags_pedido).slice(0, 3).map((tag: string, idx: number) => (
               <Badge key={idx} variant="outline" className="text-xs">{tag}</Badge>
             ))
           ) : (

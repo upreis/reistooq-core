@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-avancada.types';
+import { traduzirStatusDevolucao, traduzirResolucao } from '@/utils/mlTranslations';
 
 interface StatusCellsProps {
   devolucao: DevolucaoAvancada;
@@ -9,16 +10,16 @@ interface StatusCellsProps {
 const getStatusBadge = (status: string | null | undefined) => {
   if (!status) return <Badge variant="outline">-</Badge>;
   
-  const statusMap: Record<string, { variant: "default" | "destructive" | "outline" | "secondary", label: string }> = {
-    'completed': { variant: 'default', label: 'Completo' },
-    'cancelled': { variant: 'destructive', label: 'Cancelado' },
-    'closed': { variant: 'secondary', label: 'Fechado' },
-    'opened': { variant: 'outline', label: 'Aberto' },
-    'pending': { variant: 'outline', label: 'Pendente' }
+  const statusMap: Record<string, { variant: "default" | "destructive" | "outline" | "secondary" }> = {
+    'completed': { variant: 'default' },
+    'cancelled': { variant: 'destructive' },
+    'closed': { variant: 'secondary' },
+    'opened': { variant: 'outline' },
+    'pending': { variant: 'outline' }
   };
   
-  const config = statusMap[status] || { variant: 'outline' as const, label: status };
-  return <Badge variant={config.variant}>{config.label}</Badge>;
+  const config = statusMap[status] || { variant: 'outline' as const };
+  return <Badge variant={config.variant}>{traduzirStatusDevolucao(status)}</Badge>;
 };
 
 const getBooleanBadge = (value: boolean | null | undefined) => {
@@ -38,7 +39,7 @@ export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
       
       {/* Resolução */}
       <td className="px-3 py-3 text-center">
-        {devolucao.resultado_final ? <Badge variant="secondary">{devolucao.resultado_final}</Badge> : <span className="text-muted-foreground">-</span>}
+        {devolucao.resultado_final ? <Badge variant="secondary">{traduzirResolucao(devolucao.resultado_final)}</Badge> : <span className="text-muted-foreground">-</span>}
       </td>
       
       {/* ❌ REMOVIDO: Status Rastreio - vazio */}
