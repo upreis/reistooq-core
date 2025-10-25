@@ -82,25 +82,15 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
         {formatCurrency(taxas.taxa_ml_original)}
       </td>
       
-      {/* Taxa ML Reembolsada */}
-      <td className="px-3 py-3 text-right font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
-        {formatCurrency(taxas.taxa_ml_reembolsada)}
-      </td>
-      
-      {/* Taxa ML Retida */}
-      <td className="px-3 py-3 text-right font-semibold text-orange-600 dark:text-orange-400 whitespace-nowrap">
-        {formatCurrency(taxas.taxa_ml_retida)}
-      </td>
+      {/* ❌ REMOVIDO: Taxa ML Reembolsada - API não fornece */}
+      {/* ❌ REMOVIDO: Taxa ML Retida - API não fornece */}
       
       {/* Valor Retido */}
       <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
         {formatCurrency(devolucao.valor_retido)}
       </td>
       
-      {/* Compensação */}
-      <td className="px-3 py-3 text-right font-semibold whitespace-nowrap">
-        {formatCurrency(devolucao.valor_compensacao)}
-      </td>
+      {/* ❌ REMOVIDO: Compensação - não mapeado */}
       
       {/* Método Reembolso */}
       <td className="px-3 py-3 text-center">

@@ -93,12 +93,12 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             
             {/* Taxas ML Detalhado */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Taxa ML Original</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Taxa ML Reembolsada</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Taxa ML Retida</th>
+            {/* ❌ REMOVIDO: Taxa ML Reembolsada - API não fornece separadamente */}
+            {/* ❌ REMOVIDO: Taxa ML Retida - API não fornece este dado */}
             
             {/* Outros valores */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Retido</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Compensação</th>
+            {/* ❌ REMOVIDO: Compensação - não está sendo mapeado pela API */}
             
             {/* Informações de Pagamento */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Método Reembolso</th>
