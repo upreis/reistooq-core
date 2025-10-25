@@ -102,7 +102,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             
             {/* ❌ REMOVIDO: Método Reembolso - vazio */}
             {/* ❌ REMOVIDO: Moeda - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Processamento</th>
+            {/* ❌ REMOVIDO: Data Processamento - vazio */}
             {/* ❌ REMOVIDO: Parcelas - vazio */}
             {/* ❌ REMOVIDO: Valor Parcela - vazio */}
             
