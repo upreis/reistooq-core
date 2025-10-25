@@ -90,12 +90,7 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
       
       {/* ❌ REMOVIDO: Método Reembolso - vazio */}
       {/* ❌ REMOVIDO: Moeda - vazio */}
-      
-      {/* Data Processamento */}
-      <td className="px-3 py-3 text-center text-sm whitespace-nowrap">
-        {formatDateTime(devolucao.data_processamento_reembolso)}
-      </td>
-      
+      {/* ❌ REMOVIDO: Data Processamento - duplicada, agora está em GRUPO 7 */}
       {/* ❌ REMOVIDO: Parcelas - vazio */}
       {/* ❌ REMOVIDO: Valor Parcela - vazio */}
     </>
