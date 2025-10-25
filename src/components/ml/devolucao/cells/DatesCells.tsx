@@ -53,10 +53,7 @@ export const DatesCells: React.FC<DatesCellsProps> = ({ devolucao }) => {
         {formatDateTime(devolucao.tempo_limite_acao)}
       </td>
       
-      {/* Data Estimada Troca */}
-      <td className="px-3 py-3 text-center whitespace-nowrap">
-        {formatDateTime(devolucao.data_estimada_troca)}
-      </td>
+      {/* ❌ REMOVIDO: Data Estimada Troca - vazio */}
       
       {/* Data Limite Troca */}
       <td className="px-3 py-3 text-center whitespace-nowrap">
@@ -90,20 +87,14 @@ export const DatesCells: React.FC<DatesCellsProps> = ({ devolucao }) => {
         {formatDateTime(devolucao.data_atualizacao_devolucao)}
       </td>
       
-      {/* Último Status (data_ultimo_status) */}
-      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
-        {formatDateTime(devolucao.data_ultimo_status)}
-      </td>
+      {/* ❌ REMOVIDO: Último Status - vazio */}
       
       {/* Criação Devolução (data_criacao_devolucao) */}
       <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
         {formatDateTime(devolucao.data_criacao_devolucao)}
       </td>
       
-      {/* Última Movimentação (data_ultima_movimentacao) */}
-      <td className="px-3 py-3 text-center whitespace-nowrap text-xs">
-        {formatDateTime(devolucao.data_ultima_movimentacao)}
-      </td>
+      {/* ❌ REMOVIDO: Última Movimentação - vazio */}
     </>
   );
 };

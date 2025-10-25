@@ -29,12 +29,12 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* PRIMEIRA COLUNA - Nome da Conta */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '160px'}}>Empresa</th>
             
-            {/* GRUPO 1: IDENTIFICAÇÃO (7 colunas) */}
+            {/* GRUPO 1: IDENTIFICAÇÃO (3 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Pedido ID</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Claim ID</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Return ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Player Role</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Item ID</th>
+            {/* ❌ REMOVIDO: Player Role - vazio */}
+            {/* ❌ REMOVIDO: Item ID - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>SKU</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transação ID</th>
             
@@ -45,7 +45,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Início Devolução</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Primeira Ação</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Prazo Limite</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Estimada Troca</th>
+            {/* ❌ REMOVIDO: Data Estimada Troca - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data Limite Troca</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Vencimento ACAS</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Processamento Reembolso</th>
@@ -53,30 +53,30 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* 🆕 NOVAS DATAS DA API ML */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 last_updated (API ML)</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Atualização Return</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>📅 Último Status</th>
+            {/* ❌ REMOVIDO: 📅 Último Status - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Criação Devolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Última Movimentação</th>
+            {/* ❌ REMOVIDO: 📅 Última Movimentação - vazio */}
             
-            {/* GRUPO 3: STATUS E ESTADO (7 colunas) */}
+            {/* GRUPO 3: STATUS E ESTADO (3 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Status</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Etapa</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Resolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Status Rastreio</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Status Review</th>
+            {/* ❌ REMOVIDO: Status Rastreio - vazio */}
+            {/* ❌ REMOVIDO: Status Review - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Status Moderação</th>
             {/* ❌ REMOVIDO: SLA Cumprido (comparação de datas) */}
             
-            {/* GRUPO 4: COMPRADOR (4 colunas) */}
+            {/* GRUPO 4: COMPRADOR (2 colunas) */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Comprador</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Nickname</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Email</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Cooperador</th>
+            {/* ❌ REMOVIDO: Email - vazio */}
+            {/* ❌ REMOVIDO: Cooperador - vazio */}
             
-            {/* GRUPO 5: PRODUTO (4 colunas) */}
+            {/* GRUPO 5: PRODUTO (2 colunas) */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '300px'}}>Produto</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '60px'}}>Qtd</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Categoria</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Garantia</th>
+            {/* ❌ REMOVIDO: Categoria - vazio */}
+            {/* ❌ REMOVIDO: Garantia - vazio */}
             
             {/* GRUPO 6: VALORES FINANCEIROS (20 colunas - expandido com detalhes do modal) */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Original</th>
@@ -88,7 +88,7 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* Frete e Logística Detalhado */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Frete Original</th>
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Frete Reembolsado</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Custo Devolução</th>
+            {/* ❌ REMOVIDO: Custo Devolução - vazio */}
             {/* ❌ REMOVIDO: Total Logística (calculado) */}
             
             {/* Taxas ML Detalhado */}
@@ -100,12 +100,11 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Retido</th>
             {/* ❌ REMOVIDO: Compensação - não está sendo mapeado pela API */}
             
-            {/* Informações de Pagamento */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Método Reembolso</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>Moeda</th>
+            {/* ❌ REMOVIDO: Método Reembolso - vazio */}
+            {/* ❌ REMOVIDO: Moeda - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Processamento</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>Parcelas</th>
-            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '110px'}}>Valor Parcela</th>
+            {/* ❌ REMOVIDO: Parcelas - vazio */}
+            {/* ❌ REMOVIDO: Valor Parcela - vazio */}
             
             {/* GRUPO 7: MOTIVO E CATEGORIA (11 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Reason ID</th>
@@ -113,32 +112,32 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '250px'}}>Reason Detail</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reason Flow</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Categoria Motivo</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Tipo Problema</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Subtipo</th>
+            {/* ❌ REMOVIDO: Tipo Problema - vazio */}
+            {/* ❌ REMOVIDO: Subtipo - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo Claim</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Estágio</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Complexidade</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Nível Prioridade</th>
+            {/* ❌ REMOVIDO: Nível Prioridade - vazio */}
             
-            {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (14 colunas) */}
+            {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (9 colunas) */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Resultado Mediação</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Mediador</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Método Resolução</th>
+            {/* ❌ REMOVIDO: Método Resolução - vazio */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Resultado Final</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Responsável Custo</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Review Result</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Resolvida ACAS</th>
+            {/* ❌ REMOVIDO: Review Result - vazio */}
+            {/* ❌ REMOVIDO: Resolvida ACAS - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>É Troca?</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Escalado VIP</th>
             {/* ❌ REMOVIDO: Ação Seller Necessária (lógica de verificação) */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Tags Pedido</th>
             {/* ❌ REMOVIDO: Total Evidências (soma) */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Recursos Manuais</th>
+            {/* ❌ REMOVIDO: Recursos Manuais - vazio */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Problemas</th>
             
-            {/* GRUPO 9: FEEDBACK E COMUNICAÇÃO (7 colunas) */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '220px'}}>Feedback Comprador</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '220px'}}>Feedback Vendedor</th>
+            {/* GRUPO 9: FEEDBACK E COMUNICAÇÃO (4 colunas) */}
+            {/* ❌ REMOVIDO: Feedback Comprador - vazio */}
+            {/* ❌ REMOVIDO: Feedback Vendedor - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Msgs Não Lidas</th>
             {/* ❌ REMOVIDO: Qtd Comunicações (calculado) */}
             {/* ❌ REMOVIDO: Timeline (agregado) */}
@@ -146,44 +145,44 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Última Msg Remetente</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Mensagens</th>
             
-            {/* GRUPO 10: TEMPOS E MÉTRICAS (8 colunas) */}
+            {/* ❌ REMOVIDO GRUPO 10: TEMPOS E MÉTRICAS - todos vazios */}
             {/* ❌ REMOVIDO: Tempo Resposta (calculado) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>1ª Resposta Vendedor</th>
+            {/* ❌ REMOVIDO: 1ª Resposta Vendedor - vazio */}
             {/* ❌ REMOVIDO: Tempo Total (calculado) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Tempo Análise ML</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Tempo Resp. Inicial</th>
+            {/* ❌ REMOVIDO: Tempo Análise ML - vazio */}
+            {/* ❌ REMOVIDO: Tempo Resp. Inicial - vazio */}
             {/* ❌ REMOVIDO: Dias p/ Resolver (calculado) */}
             {/* ❌ REMOVIDO: Prazo Revisar (calculado) */}
             {/* ❌ REMOVIDO: Eficiência (calculado) */}
             
-            {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (12 colunas - +3 novas) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>📦 Tem Devolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>💰 Status Reembolso</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Transportadora</th>
+            {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (2 colunas) */}
+            {/* ❌ REMOVIDO: 📦 Tem Devolução - vazio */}
+            {/* ❌ REMOVIDO: 💰 Status Reembolso - vazio */}
+            {/* ❌ REMOVIDO: Transportadora - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Shipment ID</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Rastreio</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Status Envio</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Centro Envio</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Plataforma</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>NF Autorizada</th>
+            {/* ❌ REMOVIDO: Status Envio - vazio */}
+            {/* ❌ REMOVIDO: Centro Envio - vazio */}
+            {/* ❌ REMOVIDO: Plataforma - vazio */}
+            {/* ❌ REMOVIDO: NF Autorizada - vazio */}
             {/* 🆕 NOVOS CAMPOS DE LOGÍSTICA */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>📦 Shipment ID Dev.</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>📍 Endereço Destino</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📝 Desc. Último Status</th>
+            {/* ❌ REMOVIDO: 📦 Shipment ID Dev. - vazio */}
+            {/* ❌ REMOVIDO: 📍 Endereço Destino - vazio */}
+            {/* ❌ REMOVIDO: 📝 Desc. Último Status - vazio */}
             
-            {/* GRUPO 12: QUALIDADE E SCORES (7 colunas) */}
+            {/* ❌ REMOVIDO GRUPO 12: QUALIDADE E SCORES - todos vazios */}
             {/* ❌ REMOVIDO: Score Qualidade (calculado) */}
             {/* ❌ REMOVIDO: Taxa Satisfação (calculado) */}
             {/* ❌ REMOVIDO: Score Final (calculado) */}
             {/* ❌ REMOVIDO: Impacto Reputação (calculado) */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Calificação CARL</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Review ID</th>
+            {/* ❌ REMOVIDO: Calificação CARL - vazio */}
+            {/* ❌ REMOVIDO: Review ID - vazio */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Revisor</th>
-            
-      {/* GRUPO 13: DADOS DETALHADOS (3 colunas) */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Dados Claim</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Dados Return</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Envio Mediação</th>
+      
+      {/* ❌ REMOVIDO GRUPO 13: DADOS DETALHADOS - todos vazios */}
+            {/* ❌ REMOVIDO: Dados Claim - vazio */}
+            {/* ❌ REMOVIDO: Dados Return - vazio */}
+            {/* ❌ REMOVIDO: Envio Mediação - vazio */}
             
             {/* 🆕 GRUPO 14: NOVOS DADOS ESTRUTURADOS (3 colunas) - ANTES DE AÇÕES */}
             {/* ❌ REMOVIDO: Reviews (consolidação) */}
