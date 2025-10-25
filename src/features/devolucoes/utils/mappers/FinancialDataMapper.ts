@@ -20,13 +20,15 @@ export const mapFinancialData = (item: any) => {
     moeda_reembolso: item.order_data?.currency_id || null,
     moeda_custo: null,
     
-    // ✅ CORRIGIDO: benefited é STRING simples ('complainant' | 'respondent'), não array
+    // Responsável pelo custo
     responsavel_custo: item.claim_details?.resolution?.benefited || 
                       item.claim_details?.resolution?.responsible || null,
     
     // ✅ FASE 1: Novos campos financeiros de devolução
     status_dinheiro: item.return_details_v2?.money_status || null,
     data_reembolso: item.return_details_v2?.refund_at || null,
+    
+    // ⚠️ NOTA: Compensação vem de return_details_v2 (não está no mapper ainda)
     
     // Pagamento
     metodo_pagamento: payment?.payment_method_id || null,
@@ -47,12 +49,15 @@ export const mapFinancialData = (item: any) => {
       frete: {
         valor_original: payment?.shipping_cost || null,
         valor_reembolsado: payment?.shipping_cost || null,
+        // ⚠️ API ML: return_details_v2.shipping_cost pode ser custo de devolução OU frete original
         custo_devolucao: item.return_details_v2?.shipping_cost || null,
         custo_total_logistica: item.return_details_v2?.shipping_cost || null
       },
       taxas: {
         taxa_ml_original: payment?.marketplace_fee || null,
+        // ⚠️ API ML NÃO fornece taxa reembolsada separadamente - usando mesma que original
         taxa_ml_reembolsada: payment?.marketplace_fee || null,
+        // ⚠️ API ML NÃO fornece taxa retida - precisa calcular: original - reembolsada
         taxa_ml_retida: null
       },
       resumo: {
