@@ -165,8 +165,8 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>UF</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>País</th>
             
-            {/* AÇÕES - STICKY RIGHT */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground sticky right-0 bg-muted/50 dark:bg-muted z-10 border-l" style={{minWidth: '100px'}}>Ações</th>
+            {/* VISUALIZAR - STICKY RIGHT */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground sticky right-0 bg-muted/50 dark:bg-muted z-10 border-l" style={{minWidth: '100px'}}>Visualizar</th>
           </tr>
         </thead>
         <tbody>
