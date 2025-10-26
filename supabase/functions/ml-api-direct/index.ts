@@ -1557,16 +1557,16 @@ async function buscarPedidosCancelados(
     // ✅ LÓGICA OTIMIZADA: Processa até 300 imediatamente, resto em background
     const IMMEDIATE_LIMIT = (() => {
       // Se solicitou até 300 claims, processa todos imediatamente
-      if (requestLimit <= 300) return Math.min(allClaims.length, requestLimit);
+      if (requestLimit <= 300) return Math.min(enrichedClaims.length, requestLimit);
       
       // Se solicitou mais de 300, processa 300 imediatamente
-      return Math.min(allClaims.length, 300);
+      return Math.min(enrichedClaims.length, 300);
     })();
-    const claimsParaProcessar = allClaims.slice(0, IMMEDIATE_LIMIT);
-    const remainingClaims = allClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
+    const claimsParaProcessar = enrichedClaims.slice(0, IMMEDIATE_LIMIT); // ✅ Usar enrichedClaims
+    const remainingClaims = enrichedClaims.slice(IMMEDIATE_LIMIT); // Restante vai para fila
     
     console.log(`\n📊 PROCESSAMENTO ESTRATÉGICO:`)
-    console.log(`   • Total coletado da API ML: ${allClaims.length} claims`)
+    console.log(`   • Total coletado da API ML: ${enrichedClaims.length} claims`)
     console.log(`   • Processando AGORA: ${claimsParaProcessar.length} claims (resposta rápida)`)
     console.log(`   • Restante: ${remainingClaims.length} claims (fila + cron job)`)
     console.log(`   • A fila processará automaticamente a cada minuto\n`)
@@ -1576,7 +1576,7 @@ async function buscarPedidosCancelados(
         data: [],
         total: 0,
         hasMore: false,
-        queued: allClaims.length
+        queued: enrichedClaims.length
       }
     }
 
