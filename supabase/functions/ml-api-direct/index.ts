@@ -2564,15 +2564,32 @@ async function buscarPedidosCancelados(
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
               
               // ========================================
-              // 🔍 REASONS - Usar dados enriquecidos da API (Fase 2)
+              // 🔍 REASONS - Enriquecidos com fallbacks (Fase 3)
               // ========================================
-              reason_id: safeClaimData?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
-              reason_name: safeClaimData?.dados_reasons?.reason_name || safeClaimData?.claim_details?.reason?.name || null,
-              reason_detail: safeClaimData?.dados_reasons?.reason_detail || safeClaimData?.claim_details?.reason?.detail || null,
-              reason_flow: safeClaimData?.dados_reasons?.reason_flow || null,
-              reason_category: safeClaimData?.dados_reasons?.reason_category || null,
-              reason_position: safeClaimData?.dados_reasons?.reason_position || null,
-              reason_settings: safeClaimData?.dados_reasons?.reason_settings || null,
+              reason_id: safeClaimData?.dados_reasons?.reason_id || 
+                         safeClaimData?.claim_details?.reason_id || 
+                         claim?.reason_id || null,
+              
+              reason_name: safeClaimData?.dados_reasons?.reason_name || 
+                          safeClaimData?.claim_details?.reason?.name || 
+                          safeClaimData?.claim_details?.reason?.description || null,
+              
+              reason_detail: safeClaimData?.dados_reasons?.reason_detail || 
+                            safeClaimData?.claim_details?.reason?.detail || 
+                            safeClaimData?.claim_details?.reason?.children_title || null,
+              
+              reason_flow: safeClaimData?.dados_reasons?.reason_flow || 
+                          safeClaimData?.claim_details?.reason?.flow || null,
+              
+              reason_category: safeClaimData?.dados_reasons?.reason_category || 
+                              safeClaimData?.claim_details?.reason?.filter?.group?.[0] || null,
+              
+              reason_position: safeClaimData?.dados_reasons?.reason_position || 
+                              safeClaimData?.claim_details?.reason?.position || null,
+              
+              reason_settings: safeClaimData?.dados_reasons?.reason_settings || 
+                              safeClaimData?.claim_details?.reason?.settings || null,
+              
               dados_reasons: safeClaimData?.dados_reasons || null,
               motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               
