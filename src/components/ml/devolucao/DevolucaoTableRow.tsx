@@ -246,42 +246,42 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.reason_id || '-'}
       </td>
       
-      {/* Motivo da Reclamação (reason_detail) */}
+      {/* Descrição do Motivo (reason_name traduzido) */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[200px] truncate" title={devolucao.reason_detail || ''}>
-          {devolucao.reason_detail || '-'}
+        <div className="max-w-[200px] truncate" title={devolucao.subtipo_problema || ''}>
+          {devolucao.subtipo_problema || '-'}
         </div>
       </td>
       
-      {/* ✅ MANTIDO: Reason Detail */}
+      {/* Reason Detail */}
       <td className="px-3 py-3 text-left">
         <div className="max-w-[200px] truncate text-xs" title={devolucao.reason_detail || ''}>
           {devolucao.reason_detail || '-'}
         </div>
       </td>
       
-      {/* ✅ MANTIDO: Reason Flow */}
+      {/* Reason Flow */}
       <td className="px-3 py-3 text-left">
         <div className="max-w-[150px] truncate text-xs" title={devolucao.reason_flow || ''}>
           {devolucao.reason_flow || '-'}
         </div>
       </td>
       
-      {/* ✅ MANTIDO: Tipo Problema */}
+      {/* Tipo Problema (reason_category) */}
       <td className="px-3 py-3 text-left">
         <div className="max-w-[150px] truncate text-xs" title={devolucao.tipo_problema || ''}>
           {devolucao.tipo_problema || '-'}
         </div>
       </td>
       
-      {/* ✅ MANTIDO: Subtipo */}
+      {/* Subtipo Problema (reason_name) */}
       <td className="px-3 py-3 text-left">
         <div className="max-w-[150px] truncate text-xs" title={devolucao.subtipo_problema || ''}>
           {devolucao.subtipo_problema || '-'}
         </div>
       </td>
       
-      {/* Tipo de Reclamação (tipo_claim traduzido) */}
+      {/* Tipo de Claim (tipo_claim traduzido) */}
       <td className="px-3 py-3 text-center">
         {devolucao.tipo_claim ? (
           <Badge variant="outline">{traduzirTipoClaim(devolucao.tipo_claim)}</Badge>
@@ -290,19 +290,19 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Nível Dificuldade (nivel_prioridade) */}
+      {/* Prioridade (nivel_prioridade) */}
       <td className="px-3 py-3 text-center">
         {getPrioridadeBadge(devolucao.nivel_prioridade)}
       </td>
       
       {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (9 colunas) */}
       
-      {/* Resultado Mediação (claim_stage traduzido) */}
+      {/* Estágio do Claim (claim_stage traduzido) */}
       <td className="px-3 py-3 text-left">
         {traduzirStage(devolucao.claim_stage)}
       </td>
       
-      {/* Mediador (revisor_responsavel) */}
+      {/* ID do Revisor (revisor_responsavel) */}
       <td className="px-3 py-3 text-center">
         {devolucao.revisor_responsavel || '-'}
       </td>

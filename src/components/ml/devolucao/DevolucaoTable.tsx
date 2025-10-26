@@ -108,20 +108,18 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Reembolso</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>N.º do Motivo</th>
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Motivo da Reclamação</th>
-            {/* ❌ REMOVIDO: Reason Detail - vazio */}
-            {/* ❌ REMOVIDO: Reason Flow - vazio */}
-            {/* ❌ REMOVIDO: Categoria Motivo - vazio */}
-            {/* ❌ REMOVIDO: Tipo Problema - vazio */}
-            {/* ❌ REMOVIDO: Subtipo - vazio */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo de Reclamação</th>
-            {/* ❌ REMOVIDO: Estágio - excluído conforme solicitação do usuário */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Nivel Dificuldade</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Descrição do Motivo</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Reason Detail</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Reason Flow</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Tipo Problema</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Subtipo Problema</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tipo de Claim</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Prioridade</th>
             {/* ❌ REMOVIDO: Nível Prioridade - vazio */}
             
             {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (9 colunas) */}
-            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Resultado Mediação</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Mediador</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Estágio do Claim</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>ID do Revisor</th>
             {/* ❌ REMOVIDO: Método Resolução - vazio */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Resultado Final</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Responsável Custo</th>
