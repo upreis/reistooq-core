@@ -2559,6 +2559,12 @@ async function buscarPedidosCancelados(
               // 🔍 REASONS - Dados completos no JSONB (Fase 1+2)
               // ========================================
               reason_id: claim?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
+              reason_name: claim?.dados_reasons?.reason_name || null,
+              reason_detail: claim?.dados_reasons?.reason_detail || null,
+              reason_flow: claim?.dados_reasons?.reason_flow || null,
+              reason_category: claim?.dados_reasons?.reason_category || null,
+              reason_position: claim?.dados_reasons?.reason_position || null,
+              reason_settings: claim?.dados_reasons?.reason_settings || null,
               dados_reasons: claim?.dados_reasons || null, // ✅ JSONB completo com todos os campos
               motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null, // ✅ Duplicado para queries
               
