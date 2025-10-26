@@ -2556,17 +2556,11 @@ async function buscarPedidosCancelados(
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
               
               // ========================================
-              // 🔍 REASONS - Usar dados já enriquecidos (Fase 1+2)
+              // 🔍 REASONS - Dados completos no JSONB (Fase 1+2)
               // ========================================
               reason_id: claim?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
-              reason_name: claim?.dados_reasons?.reason_name || null,
-              reason_detail: claim?.dados_reasons?.reason_detail || null,
-              reason_flow: claim?.dados_reasons?.reason_flow || null,
-              reason_category: claim?.dados_reasons?.reason_category || null,
-              reason_position: claim?.dados_reasons?.reason_position || null,
-              reason_settings: claim?.dados_reasons?.reason_settings || null,
-              dados_reasons: claim?.dados_reasons || null,
-              motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
+              dados_reasons: claim?.dados_reasons || null, // ✅ JSONB completo com todos os campos
+              motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null, // ✅ Duplicado para queries
               
               em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
               nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
