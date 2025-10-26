@@ -1519,45 +1519,25 @@ async function buscarPedidosCancelados(
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
       
-      // ✅ SEMPRE retornar com dados_reasons (mesmo que vazio)
+      // ✅ SEMPRE retornar com dados_reasons (MANTENDO estrutura com prefixo reason_*)
       if (reasonData) {
         return {
           ...claim,
-          dados_reasons: {
-            id: reasonData.reason_id || reasonId,            // ✅ CORRIGIDO
-            name: reasonData.reason_name || null,            // ✅ CORRIGIDO
-            detail: reasonData.reason_detail || null,        // ✅ CORRIGIDO
-            flow: reasonData.reason_flow || null,            // ✅ CORRIGIDO
-            position: reasonData.reason_position || null,    // ✅ CORRIGIDO
-            settings: reasonData.reason_settings || null,    // ✅ CORRIGIDO
-            status: reasonData.reason_status || null,        // ✅ CORRIGIDO
-            date_created: reasonData.reason_date_created || null,     // ✅ CORRIGIDO
-            last_updated: reasonData.reason_last_updated || null      // ✅ CORRIGIDO
-          }
+          dados_reasons: reasonData  // ✅ Usar objeto completo do ReasonsService
         };
       }
       
-      // ⚠️ IMPORTANTE: Se reason não encontrado, retornar com dados_reasons VAZIO
-      // Isso evita undefined no frontend e permite identificar dados faltantes
+      // ⚠️ IMPORTANTE: Se reason não encontrado, retornar com dados_reasons NULL
+      // O processamento posterior usará fallback
       console.warn(`⚠️ Reason ${reasonId} não encontrado no map para claim ${claim.id}`);
       return {
         ...claim,
-        dados_reasons: {
-          id: reasonId || null,
-          name: null,
-          detail: null,
-          flow: null,
-          position: null,
-          settings: null,
-          status: null,
-          date_created: null,
-          last_updated: null
-        }
+        dados_reasons: null  // ✅ NULL em vez de objeto vazio (processamento posterior faz fallback)
       };
     });
     
     // 📊 Estatísticas de enriquecimento
-    const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.detail !== null).length;
+    const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail !== null && c.dados_reasons?.reason_detail !== undefined).length;
     console.log(`✅ ENRIQUECIMENTO COMPLETO: ${enrichedCount}/${allClaims.length} claims com dados_reasons válidos`);
     console.log(`⚠️ Claims sem dados: ${allClaims.length - enrichedCount}`);
     
