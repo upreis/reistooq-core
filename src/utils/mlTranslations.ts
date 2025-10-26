@@ -129,7 +129,10 @@ export const TAGS_PEDIDO_MAP: Record<string, string> = {
 export const traduzirGenerico = (valor: string | null | undefined): string => {
   if (!valor) return '-';
   
-  return valor
+  // ✅ PROTEÇÃO: Garantir que valor é string
+  const valorString = typeof valor === 'string' ? valor : String(valor);
+  
+  return valorString
     .replace(/_/g, ' ') // Substitui _ por espaço
     .split(' ')
     .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
