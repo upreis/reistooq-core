@@ -1498,11 +1498,12 @@ async function buscarPedidosCancelados(
       }
     }
     
-    // Enriquecer TODOS os claims com dados_reasons antes de adicionar na fila
+    // ✅ ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS (mesmo que vazio)
     const enrichedClaims = allClaims.map(claim => {
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
       
+      // ✅ SEMPRE retornar com dados_reasons (mesmo que vazio)
       if (reasonData) {
         return {
           ...claim,
@@ -1520,7 +1521,23 @@ async function buscarPedidosCancelados(
         };
       }
       
-      return claim;
+      // ⚠️ IMPORTANTE: Se reason não encontrado, retornar com dados_reasons VAZIO
+      // Isso evita undefined no frontend e permite identificar dados faltantes
+      console.warn(`⚠️ Reason ${reasonId} não encontrado no map para claim ${claim.id}`);
+      return {
+        ...claim,
+        dados_reasons: {
+          id: reasonId || null,
+          name: null,
+          detail: null,
+          flow: null,
+          position: null,
+          settings: null,
+          status: null,
+          date_created: null,
+          last_updated: null
+        }
+      };
     });
     
     // ✅ SISTEMA DE FILAS: Adicionar TODOS os claims na fila para processamento
