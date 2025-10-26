@@ -45,19 +45,12 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     taxa_satisfacao: null,
     score_satisfacao_final: null,
     
-    // ✅ CAMPOS SOLICITADOS (nomes corretos conforme API /claims/reasons/$REASON_ID)
-    reason_detail: item.dados_reasons?.detail || 
-                   item.claim_details?.reason_detail ||
-                   item.claim_details?.description ||
-                   null,
-    reason_flow: item.dados_reasons?.flow || 
-                 item.claim_details?.reason_flow ||
-                 null,
-    tipo_problema: item.dados_reasons?.flow || 
-                   item.claim_details?.reason_category ||
-                   null,
-    subtipo_problema: item.dados_reasons?.name || 
-                     item.claim_details?.reason_name ||
-                     null
+    // ✅ DADOS DE REASON (origem: /claims/reasons/$REASON_ID via dados_reasons)
+    // IMPORTANTE: Esses campos SÓ vêm de dados_reasons (enriquecido na edge function)
+    // claim_details NÃO contém reason_detail, reason_flow, etc. (conforme doc oficial ML)
+    reason_detail: item.dados_reasons?.detail || null,
+    reason_flow: item.dados_reasons?.flow || null,
+    tipo_problema: item.dados_reasons?.flow || null,
+    subtipo_problema: item.dados_reasons?.name || null
   };
 };
