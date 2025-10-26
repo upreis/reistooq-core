@@ -64,7 +64,11 @@ export const mapTrackingData = (item: any) => {
       
       return parts.length > 0 ? parts.join(', ') : null;
     })(),
-    descricao_ultimo_status: item.shipment_history?.combined_events?.[0]?.description || null,
+    descricao_ultimo_status: item.shipment_history?.combined_events?.[0]?.description || 
+                            item.tracking_events?.[0]?.description || 
+                            item.tracking_history?.[0]?.description || 
+                            returnShipment?.substatus || 
+                            null,
     
     // ✅ Review (agora endpoint separado: GET /returns/$RETURN_ID/reviews)
     review_id: item.review?.id?.toString() || null,
