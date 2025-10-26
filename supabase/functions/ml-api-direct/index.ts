@@ -2593,8 +2593,8 @@ async function buscarPedidosCancelados(
               dados_reasons: safeClaimData?.dados_reasons || null,
               motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               
-              em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
-              nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
+              em_mediacao: safeClaimData?.claim_details?.type === 'mediations' || safeClaimData?.mediation_details !== null,
+              nivel_prioridade: safeClaimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
               
               // ✅ Dados de ação removidos - calculados anteriormente
               
