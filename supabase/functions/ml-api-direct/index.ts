@@ -1481,13 +1481,13 @@ async function buscarPedidosCancelados(
     
     // Buscar todos os reasons em paralelo da API ML
     let allReasonsMap = new Map<string, any>();
+    const reasonsService = new ReasonsService(); // ✅ MOVER PARA FORA DO IF
     
     if (allUniqueReasonIds.size > 0) {
       try {
         logger.info(`🔍 FASE 1: Coletando ${allUniqueReasonIds.size} reasons únicos de ${allClaims.length} claims`);
         logger.debug(`📋 Reason IDs encontrados:`, Array.from(allUniqueReasonIds).slice(0, 10)); // Mostrar primeiros 10
         
-        const reasonsService = new ReasonsService();
         allReasonsMap = await reasonsService.fetchMultipleReasons(
           Array.from(allUniqueReasonIds),
           accessToken,
