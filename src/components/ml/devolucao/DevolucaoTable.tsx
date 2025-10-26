@@ -159,36 +159,14 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: Transportadora - vazio */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º do Envio</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Codigo do Rastreio</th>
-            {/* ❌ REMOVIDO: Status Envio - vazio */}
-            {/* ❌ REMOVIDO: Centro Envio - vazio */}
-            {/* ❌ REMOVIDO: Plataforma - vazio */}
-            {/* ❌ REMOVIDO: NF Autorizada - vazio */}
-            {/* 🆕 NOVOS CAMPOS DE LOGÍSTICA */}
-            {/* ❌ REMOVIDO: 📦 Shipment ID Dev. - vazio */}
-            {/* ❌ REMOVIDO: 📍 Endereço Destino - vazio */}
-            {/* ❌ REMOVIDO: 📝 Desc. Último Status - vazio */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '250px'}}>Endereço Completo</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>CEP</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Cidade</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>UF</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>País</th>
             
-            {/* ❌ REMOVIDO GRUPO 12: QUALIDADE E SCORES - todos vazios */}
-            {/* ❌ REMOVIDO: Score Qualidade (calculado) */}
-            {/* ❌ REMOVIDO: Taxa Satisfação (calculado) */}
-            {/* ❌ REMOVIDO: Score Final (calculado) */}
-            {/* ❌ REMOVIDO: Impacto Reputação (calculado) */}
-            {/* ❌ REMOVIDO: Calificação CARL - vazio */}
-            {/* ❌ REMOVIDO: Review ID - vazio */}
-            {/* ❌ REMOVIDO: Revisor - excluído conforme solicitação do usuário */}
-      
-      {/* ❌ REMOVIDO GRUPO 13: DADOS DETALHADOS - todos vazios */}
-            {/* ❌ REMOVIDO: Dados Claim - vazio */}
-            {/* ❌ REMOVIDO: Dados Return - vazio */}
-            {/* ❌ REMOVIDO: Envio Mediação - vazio */}
-            
-            {/* 🆕 GRUPO 14: NOVOS DADOS ESTRUTURADOS (3 colunas) - ANTES DE AÇÕES */}
-            {/* ❌ REMOVIDO: Reviews (consolidação) */}
-            {/* ❌ REMOVIDO: Custos (consolidação) */}
-            {/* ❌ REMOVIDO: Reasons (consolidação) */}
-            
-            {/* AÇÕES */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground sticky right-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '100px'}}>Ações</th>
+            {/* AÇÕES - STICKY RIGHT */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground sticky right-0 bg-muted/50 dark:bg-muted z-10 border-l" style={{minWidth: '100px'}}>Ações</th>
           </tr>
         </thead>
         <tbody>
