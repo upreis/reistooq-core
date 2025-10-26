@@ -46,9 +46,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     score_satisfacao_final: null,
     
     // ✅ CAMPOS SOLICITADOS (sem duplicação)
-    reason_detail: item.dados_reasons?.description || null,
-    reason_flow: item.dados_reasons?.workflow || null,
-    tipo_problema: item.dados_reasons?.category || null,
-    subtipo_problema: item.dados_reasons?.name || null
+    reason_detail: item.dados_reasons?.reason_detail || item.reason_detail || null,
+    reason_flow: item.dados_reasons?.reason_flow || item.reason_flow || null,
+    tipo_problema: item.dados_reasons?.reason_category || null,
+    subtipo_problema: item.dados_reasons?.reason_name || null
   };
 };

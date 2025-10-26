@@ -246,10 +246,10 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.reason_id || '-'}
       </td>
       
-      {/* Reason Name */}
+      {/* Motivo da Reclamação (reason_detail) */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[200px] truncate" title={(devolucao as any).reason_name || ''}>
-          {(devolucao as any).reason_name || '-'}
+        <div className="max-w-[200px] truncate" title={devolucao.reason_detail || ''}>
+          {devolucao.reason_detail || '-'}
         </div>
       </td>
       
@@ -281,7 +281,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </div>
       </td>
       
-      {/* Tipo Claim */}
+      {/* Tipo de Reclamação (tipo_claim traduzido) */}
       <td className="px-3 py-3 text-center">
         {devolucao.tipo_claim ? (
           <Badge variant="outline">{traduzirTipoClaim(devolucao.tipo_claim)}</Badge>
@@ -290,26 +290,21 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* Complexidade */}
-      <td className="px-3 py-3 text-center">
-        {getComplexityBadge(devolucao.nivel_complexidade)}
-      </td>
-      
-      {/* ✅ MANTIDO: Nível Prioridade */}
+      {/* Nível Dificuldade (nivel_prioridade) */}
       <td className="px-3 py-3 text-center">
         {getPrioridadeBadge(devolucao.nivel_prioridade)}
       </td>
       
       {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (9 colunas) */}
       
-      {/* Resultado Mediação */}
+      {/* Resultado Mediação (claim_stage traduzido) */}
       <td className="px-3 py-3 text-left">
-        {traduzirStage(devolucao.resultado_mediacao)}
+        {traduzirStage(devolucao.claim_stage)}
       </td>
       
-      {/* Mediador */}
+      {/* Mediador (revisor_responsavel) */}
       <td className="px-3 py-3 text-center">
-        {devolucao.mediador_ml || '-'}
+        {devolucao.revisor_responsavel || '-'}
       </td>
       
       {/* ❌ REMOVIDO: Método Resolução - vazio */}
