@@ -45,10 +45,21 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     taxa_satisfacao: null,
     score_satisfacao_final: null,
     
-    // ✅ CAMPOS SOLICITADOS (sem duplicação)
-    reason_detail: item.dados_reasons?.reason_detail || item.reason_detail || null,
-    reason_flow: item.dados_reasons?.reason_flow || item.reason_flow || null,
-    tipo_problema: item.dados_reasons?.reason_category || null,
-    subtipo_problema: item.dados_reasons?.reason_name || null
+    // ✅ CAMPOS SOLICITADOS (com fallbacks múltiplos para maior consistência)
+    reason_detail: item.dados_reasons?.reason_detail || 
+                   item.reason_detail || 
+                   item.claim_details?.reason_detail ||
+                   item.claim_details?.description ||
+                   null,
+    reason_flow: item.dados_reasons?.reason_flow || 
+                 item.reason_flow || 
+                 item.claim_details?.reason_flow ||
+                 null,
+    tipo_problema: item.dados_reasons?.reason_category || 
+                   item.claim_details?.reason_category ||
+                   null,
+    subtipo_problema: item.dados_reasons?.reason_name || 
+                     item.claim_details?.reason_name ||
+                     null
   };
 };
