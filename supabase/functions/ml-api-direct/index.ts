@@ -1481,13 +1481,13 @@ async function buscarPedidosCancelados(
     
     // Buscar todos os reasons em paralelo da API ML
     let allReasonsMap = new Map<string, any>();
-    const reasonsService = new ReasonsService(); // ✅ MOVER PARA FORA DO IF
     
     if (allUniqueReasonIds.size > 0) {
       try {
         logger.info(`🔍 FASE 1: Coletando ${allUniqueReasonIds.size} reasons únicos de ${allClaims.length} claims`);
         logger.debug(`📋 Reason IDs encontrados:`, Array.from(allUniqueReasonIds).slice(0, 10)); // Mostrar primeiros 10
         
+        const reasonsService = new ReasonsService();
         allReasonsMap = await reasonsService.fetchMultipleReasons(
           Array.from(allUniqueReasonIds),
           accessToken,
@@ -1517,36 +1517,9 @@ async function buscarPedidosCancelados(
       logger.warn(`⚠️ Nenhum reason_id encontrado nos ${allClaims.length} claims`);
     }
     
-    // ✅ FASE 2.1: IDENTIFICAR REASONS FALTANTES NO CACHE
+    // ✅ ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS
     logger.info(`\n🔄 FASE 2: Enriquecendo ${allClaims.length} claims com dados de reasons...`);
     
-    const missingReasonIds = new Set<string>();
-    allClaims.forEach(claim => {
-      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
-      if (reasonId && !allReasonsMap.has(reasonId)) {
-        missingReasonIds.add(reasonId);
-      }
-    });
-    
-    // ✅ FASE 2.2: BUSCAR REASONS FALTANTES SOB DEMANDA
-    if (missingReasonIds.size > 0) {
-      logger.info(`🔍 Detectados ${missingReasonIds.size} reasons não encontrados no cache inicial. Buscando agora...`);
-      
-      const additionalReasons = await reasonsService.fetchMultipleReasons(
-        Array.from(missingReasonIds),
-        accessToken,
-        integrationAccountId
-      );
-      
-      // Adicionar ao map existente
-      additionalReasons.forEach((data, reasonId) => {
-        allReasonsMap.set(reasonId, data);
-      });
-      
-      logger.success(`✅ ${additionalReasons.size} reasons adicionais carregados sob demanda`);
-    }
-    
-    // ✅ FASE 2.3: ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS (CACHE COMPLETO)
     const enrichedClaims = allClaims.map(claim => {
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
@@ -1568,14 +1541,8 @@ async function buscarPedidosCancelados(
     
     // 📊 Estatísticas de enriquecimento
     const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail).length;
-    const totalReasonsFetched = allReasonsMap.size;
-    
     logger.success(`✅ FASE 2 COMPLETA: ${enrichedCount}/${allClaims.length} claims enriquecidos`);
-    logger.info(`📊 Total de reasons carregados (cache + sob demanda): ${totalReasonsFetched}`);
-    
-    if (allClaims.length - enrichedCount > 0) {
-      logger.warn(`⚠️ ${allClaims.length - enrichedCount} claims sem dados de reasons (reason_id inválido ou inexistente na API ML)`);
-    }
+    logger.info(`⚠️ Claims sem dados de reasons: ${allClaims.length - enrichedCount}`);
     
     // ✅ SISTEMA DE FILAS: Adicionar TODOS os claims na fila para processamento
     const supabaseAdmin = makeServiceClient();
@@ -2589,57 +2556,17 @@ async function buscarPedidosCancelados(
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
               
               // ========================================
-              // 🔍 REASONS - Usar dados enriquecidos com FALLBACK LOCAL
+              // 🔍 REASONS - Usar dados já enriquecidos (Fase 1+2)
               // ========================================
-              ...(() => {
-                const reasonId = safeClaimData?.claim_details?.reason_id || claim?.reason_id || null;
-                
-                // ✅ PRIORIDADE 1: Usar dados enriquecidos da API ML (Fase 1+2)
-                if (claim?.dados_reasons) {
-                  return {
-                    reason_id: claim.dados_reasons.reason_id || reasonId,
-                    reason_name: claim.dados_reasons.reason_name || null,
-                    reason_detail: claim.dados_reasons.reason_detail || null,
-                    reason_flow: claim.dados_reasons.reason_flow || null,
-                    reason_category: claim.dados_reasons.reason_category || null,
-                    reason_position: claim.dados_reasons.reason_position || null,
-                    reason_settings: claim.dados_reasons.reason_settings || null,
-                    dados_reasons: claim.dados_reasons,
-                    motivo_categoria: reasonId
-                  };
-                }
-                
-                // ✅ PRIORIDADE 2: FALLBACK - Usar mapeamento LOCAL (quando API não retornou dados)
-                if (reasonId) {
-                  const mappedReason = mapReasonWithApiData(reasonId, null);
-                  logger.warn(`⚠️ Usando fallback local para reason ${reasonId} (não encontrado na API ML)`);
-                  
-                  return {
-                    reason_id: reasonId,
-                    reason_name: mappedReason.reason_name,
-                    reason_detail: mappedReason.reason_detail,
-                    reason_flow: mappedReason.reason_flow,
-                    reason_category: mappedReason.reason_category,
-                    reason_position: null,
-                    reason_settings: null,
-                    dados_reasons: null, // NULL indica que usou fallback local
-                    motivo_categoria: reasonId
-                  };
-                }
-                
-                // ✅ PRIORIDADE 3: Sem reason_id
-                return {
-                  reason_id: null,
-                  reason_name: null,
-                  reason_detail: null,
-                  reason_flow: null,
-                  reason_category: null,
-                  reason_position: null,
-                  reason_settings: null,
-                  dados_reasons: null,
-                  motivo_categoria: null
-                };
-              })(),
+              reason_id: claim?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
+              reason_name: claim?.dados_reasons?.reason_name || null,
+              reason_detail: claim?.dados_reasons?.reason_detail || null,
+              reason_flow: claim?.dados_reasons?.reason_flow || null,
+              reason_category: claim?.dados_reasons?.reason_category || null,
+              reason_position: claim?.dados_reasons?.reason_position || null,
+              reason_settings: claim?.dados_reasons?.reason_settings || null,
+              dados_reasons: claim?.dados_reasons || null,
+              motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               
               em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
               nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
