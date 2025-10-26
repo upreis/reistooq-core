@@ -1464,16 +1464,75 @@ async function buscarPedidosCancelados(
     
     const totalAvailable = allClaims.length;  // Guardar total coletado
     
+    // ========================================
+    // 🔍 BUSCAR REASONS DE TODOS OS CLAIMS (ANTES DA FILA)
+    // ========================================
+    
+    // Coletar todos os reason_ids únicos de TODOS os claims
+    const allUniqueReasonIds = new Set<string>();
+    
+    for (const claim of allClaims) {
+      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
+      
+      if (reasonId && typeof reasonId === 'string') {
+        allUniqueReasonIds.add(reasonId);
+      }
+    }
+    
+    // Buscar todos os reasons em paralelo da API ML
+    let allReasonsMap = new Map<string, any>();
+    
+    if (allUniqueReasonIds.size > 0) {
+      try {
+        console.log(`🔍 Buscando ${allUniqueReasonIds.size} reasons únicos para todos os claims...`);
+        const reasonsService = new ReasonsService();
+        allReasonsMap = await reasonsService.fetchMultipleReasons(
+          Array.from(allUniqueReasonIds),
+          accessToken,
+          integrationAccountId
+        );
+        logger.success(`✅ ${allReasonsMap.size}/${allUniqueReasonIds.size} reasons carregados com sucesso`);
+      } catch (error) {
+        console.error(`❌ Erro ao buscar reasons:`, error);
+        // Continuar mesmo se falhar
+      }
+    }
+    
+    // Enriquecer TODOS os claims com dados_reasons antes de adicionar na fila
+    const enrichedClaims = allClaims.map(claim => {
+      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
+      const reasonData = allReasonsMap.get(reasonId || '');
+      
+      if (reasonData) {
+        return {
+          ...claim,
+          dados_reasons: {
+            id: reasonData.id,
+            name: reasonData.name,
+            detail: reasonData.detail,
+            flow: reasonData.flow,
+            position: reasonData.position,
+            settings: reasonData.settings,
+            status: reasonData.status,
+            date_created: reasonData.date_created,
+            last_updated: reasonData.last_updated
+          }
+        };
+      }
+      
+      return claim;
+    });
+    
     // ✅ SISTEMA DE FILAS: Adicionar TODOS os claims na fila para processamento
     const supabaseAdmin = makeServiceClient();
     
-    console.log(`\n📦 ADICIONANDO ${allClaims.length} CLAIMS NA FILA DE PROCESSAMENTO...`)
+    console.log(`\n📦 ADICIONANDO ${enrichedClaims.length} CLAIMS ENRIQUECIDOS NA FILA DE PROCESSAMENTO...`)
     
-    const claimsForQueue = allClaims.map(claim => ({
+    const claimsForQueue = enrichedClaims.map(claim => ({
       integration_account_id: integrationAccountId,
       claim_id: claim.id,
       order_id: claim.resource_id || claim.order_id,
-      claim_data: claim,
+      claim_data: claim, // ✅ Agora contém dados_reasons
       status: 'pending'
     }));
     
@@ -1522,47 +1581,13 @@ async function buscarPedidosCancelados(
     }
 
     // ========================================
-    // 🔍 BUSCAR REASONS EM LOTE DA API ML
+    // 🔍 USAR REASONS JÁ CARREGADOS (não buscar novamente)
     // ========================================
     
-    // 1. Coletar todos os reason_ids únicos dos claims
-    const uniqueReasonIds = new Set<string>();
+    logger.info(`✅ Processando ${claimsParaProcessar.length} claims com reasons já enriquecidos`);
     
-    for (const claim of claimsParaProcessar) {
-      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
-      
-      if (reasonId && typeof reasonId === 'string') {
-        uniqueReasonIds.add(reasonId);
-      }
-    }
-    
-    // 2. Buscar todos os reasons em paralelo da API ML
-    let reasonsMap = new Map<string, any>();
-    
-    if (uniqueReasonIds.size > 0) {
-      try {
-        reasonsMap = await fetchMultipleReasons(
-          Array.from(uniqueReasonIds),
-          accessToken,
-          integrationAccountId
-        );
-      } catch (error) {
-        console.error(`❌ Erro ao buscar reasons:`, error);
-        // Continuar mesmo se falhar - usará mapeamento genérico
-      }
-    }
-    
-    // 3. Buscar detalhes dos reasons usando a API oficial
-    const reasonsService = new ReasonsService();
-    const reasonsDetailsMap = await reasonsService.fetchMultipleReasons(
-      Array.from(uniqueReasonIds),
-      accessToken,
-      integrationAccountId
-    );
-    
-    logger.info(`✅ Reasons detalhados carregados: ${reasonsDetailsMap.size}/${uniqueReasonIds.size}`);
-    
-    // 4. Agora processar cada claim com os reasons já carregados
+    // Criar map dos reasons para acesso rápido durante processamento
+    const reasonsDetailsMap = allReasonsMap; // ✅ Usar os reasons já buscados anteriormente
     
     // Processar cada claim para obter detalhes completos
     const ordersCancelados = []
