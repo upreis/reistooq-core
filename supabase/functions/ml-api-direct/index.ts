@@ -2556,38 +2556,17 @@ async function buscarPedidosCancelados(
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
               
               // ========================================
-              // 🔍 REASONS - ENRIQUECIDOS COM DADOS DA API ML
+              // 🔍 REASONS - Usar dados já enriquecidos (Fase 1+2)
               // ========================================
-              ...(() => {
-                const reasonId = safeClaimData?.claim_details?.reason_id || claim?.reason_id || null;
-                
-                // ✅ Usar dados_reasons já enriquecidos (sem reprocessamento)
-                const reasonsData = (claim as any)?.dados_reasons;
-                
-                // Se temos dados de reasons enriquecidos
-                if (reasonsData) {
-                  return {
-                    reason_id: reasonsData.reason_id || reasonId,
-                    reason_name: reasonsData.reason_name || null,
-                    reason_detail: reasonsData.reason_detail || null,
-                    reason_flow: reasonsData.reason_flow || null,
-                    reason_category: reasonsData.reason_category || null,
-                    reason_position: reasonsData.reason_position || null,
-                    reason_settings: reasonsData.reason_settings || null, // ✅ MANTER OBJETO (NÃO converter para string)
-                    dados_reasons: reasonsData, // Objeto completo já enriquecido
-                    motivo_categoria: reasonId // Compatibilidade
-                  };
-                }
-                
-                // Fallback: usar mapeamento local apenas se não houver dados
-                const mappedReason = mapReasonWithApiData(reasonId, null);
-                return {
-                  ...mappedReason,
-                  reason_settings: null,
-                  dados_reasons: null, // ✅ NULL em vez de vazio
-                  motivo_categoria: reasonId
-                };
-              })(),
+              reason_id: claim?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
+              reason_name: claim?.dados_reasons?.reason_name || null,
+              reason_detail: claim?.dados_reasons?.reason_detail || null,
+              reason_flow: claim?.dados_reasons?.reason_flow || null,
+              reason_category: claim?.dados_reasons?.reason_category || null,
+              reason_position: claim?.dados_reasons?.reason_position || null,
+              reason_settings: claim?.dados_reasons?.reason_settings || null,
+              dados_reasons: claim?.dados_reasons || null,
+              motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               
               em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
               nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
