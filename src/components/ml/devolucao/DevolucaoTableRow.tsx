@@ -255,29 +255,29 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* ✅ MANTIDO: Reason Detail */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[200px] truncate text-xs" title={(devolucao as any).reason_detail || ''}>
-          {(devolucao as any).reason_detail || '-'}
+        <div className="max-w-[200px] truncate text-xs" title={devolucao.reason_detail || ''}>
+          {devolucao.reason_detail || '-'}
         </div>
       </td>
       
       {/* ✅ MANTIDO: Reason Flow */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[150px] truncate text-xs" title={(devolucao as any).reason_flow || ''}>
-          {(devolucao as any).reason_flow || '-'}
+        <div className="max-w-[150px] truncate text-xs" title={devolucao.reason_flow || ''}>
+          {devolucao.reason_flow || '-'}
         </div>
       </td>
       
       {/* ✅ MANTIDO: Tipo Problema */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[150px] truncate text-xs" title={(devolucao as any).tipo_problema || ''}>
-          {(devolucao as any).tipo_problema || '-'}
+        <div className="max-w-[150px] truncate text-xs" title={devolucao.tipo_problema || ''}>
+          {devolucao.tipo_problema || '-'}
         </div>
       </td>
       
       {/* ✅ MANTIDO: Subtipo */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[150px] truncate text-xs" title={(devolucao as any).subtipo_problema || ''}>
-          {(devolucao as any).subtipo_problema || '-'}
+        <div className="max-w-[150px] truncate text-xs" title={devolucao.subtipo_problema || ''}>
+          {devolucao.subtipo_problema || '-'}
         </div>
       </td>
       

@@ -26,13 +26,11 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     valor_retido: item.amount || null,
     valor_original_produto: item.order_data?.order_items?.[0]?.unit_price || null,
     
-    // Classificação
-    tipo_claim: item.type || item.claim_details?.type || null,
+    // Classificação (✅ SEM DUPLICAÇÃO categoria_problema/subcategoria_problema)
+    tipo_claim: item.claim_details?.type || null,
     subtipo_claim: item.claim_details?.stage || null, // ✅ stage: claim | dispute | recontact | none | stale
     claim_stage: item.claim_details?.stage || null,
     motivo_categoria: reasonId,
-    categoria_problema: item.dados_reasons?.category || null,
-    subcategoria_problema: item.dados_reasons?.name || null,
     metodo_resolucao: item.claim_details?.resolution?.type || item.claim_details?.resolution?.reason_id || null,
     resultado_final: item.claim_details?.resolution?.reason || item.claim_details?.resolution?.status || null,
     // ✅ MANTIDO: Nível Prioridade (conforme solicitação)
@@ -47,7 +45,7 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     taxa_satisfacao: null,
     score_satisfacao_final: null,
     
-    // ✅ MANTIDO: Campos adicionais solicitados
+    // ✅ CAMPOS SOLICITADOS (sem duplicação)
     reason_detail: item.dados_reasons?.description || null,
     reason_flow: item.dados_reasons?.workflow || null,
     tipo_problema: item.dados_reasons?.category || null,

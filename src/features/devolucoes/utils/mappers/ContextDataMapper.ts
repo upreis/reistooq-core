@@ -16,10 +16,11 @@ export const mapContextData = (item: any) => {
     // ✅ CORRIGIDO: Troca (endpoint: GET /claims/$CLAIM_ID/changes)
     eh_troca: item.change_details?.type === 'change' || item.change_details?.type === 'replace' || false,
     produto_troca_id: item.change_details?.items?.[0]?.id || null,
-    // ✅ CORRIGIDO: estimated_exchange_date é objeto com {from, to}
-    data_estimada_troca: item.change_details?.estimated_exchange_date?.from || 
-                        item.change_details?.estimated_exchange_date?.to || null,
+    // ✅ CORRIGIDO: estimated_exchange_date é objeto com {from, to} - usar ?? (nullish coalescing)
+    data_estimada_troca: item.change_details?.estimated_exchange_date?.from ?? 
+                        item.change_details?.estimated_exchange_date?.to ?? null,
     data_limite_troca: item.change_details?.estimated_exchange_date?.to || null,
+    novo_pedido_id: item.change_details?.new_orders_ids?.[0] || null,
     data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
     dias_restantes_acao: null,
     prazo_revisao_dias: null,

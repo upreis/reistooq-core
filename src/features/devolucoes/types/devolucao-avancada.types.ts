@@ -57,12 +57,16 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   moeda_custo?: string | null;
   responsavel_custo?: string | null;
 
-  // 🏷️ CLASSIFICAÇÃO E RESOLUÇÃO (5 colunas)
+  // 🏷️ CLASSIFICAÇÃO E RESOLUÇÃO (9 colunas - EXPANDIDO)
   tipo_claim?: string | null;
   subtipo_claim?: string | null;
   motivo_categoria?: string | null;
   nivel_prioridade?: string | null;
   tags_automaticas?: string[] | null;
+  reason_detail?: string | null;
+  reason_flow?: string | null;
+  tipo_problema?: string | null;
+  subtipo_problema?: string | null;
 
   // 📊 MÉTRICAS E KPIS (4 colunas)
   tempo_resposta_medio?: number | null;
@@ -98,20 +102,16 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   valor_diferenca_troca?: number | null;
   account_name?: string | null;
   
-  // 🔍 REASONS API - FASE 4 (11 novos campos expandidos)
+  // 🔍 REASONS API - FASE 4 (9 campos expandidos - SEM DUPLICAÇÃO)
   reason_id?: string | null;
-  reason_detail?: string | null;
   reason_name?: string | null;
-  reason_flow?: string | null; // ✅ NOVO: flow do reason (ex: post_purchase_delivered)
   reason_category?: string | null;
-  tipo_problema?: string | null; // ✅ NOVO: alias para reason_category
-  subtipo_problema?: string | null; // ✅ NOVO: alias para reason_name
   reason_expected_resolutions?: string[] | null;
   reason_rules_engine?: string[] | null;
   reason_priority?: string | null;
   reason_type?: string | null;
-  reason_settings?: any | null; // ✅ NOVO: configurações completas do reason
-  reason_position?: number | null; // ✅ NOVO: posição de ordenação do reason
+  reason_settings?: any | null;
+  reason_position?: number | null;
   
   // ⏱️ ANÁLISE TEMPORAL E PERFORMANCE (Novas colunas)
   tempo_primeira_resposta_vendedor?: number | null;
