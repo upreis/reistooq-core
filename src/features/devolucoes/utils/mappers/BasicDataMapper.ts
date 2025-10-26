@@ -36,8 +36,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     
     // 📋 REASON DATA (seguindo documentação oficial ML)
     // Origem: GET /post-purchase/v1/claims/reasons/$REASON_ID
-    // Acessa dados enriquecidos via item.raw.dados_reasons (salvos no banco)
-    nivel_prioridade: item.raw?.dados_reasons?.settings?.rules_engine_triage?.[0] || null,
+    // IMPORTANTE: dados_reasons vem do edge function no nível raiz (item.dados_reasons)
+    // e é copiado para item.raw pelo RawDataMapper
+    nivel_prioridade: item.dados_reasons?.settings?.rules_engine_triage?.[0] || null,
     nivel_complexidade: item.claim_details?.resolution?.benefited ? 'high' : 'medium',
     acao_seller_necessaria: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.action || null,
     proxima_acao_requerida: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.action || null,
@@ -49,9 +50,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     score_satisfacao_final: null,
     
     // 🔍 Campos de REASON (documentação oficial ML)
-    reason_detail: item.raw?.dados_reasons?.detail || null,        // Ex: "Llegó lo que compré en buenas condiciones pero no lo quiero"
-    reason_flow: item.raw?.dados_reasons?.flow || null,           // Ex: "post_purchase_delivered"
-    tipo_problema: item.raw?.dados_reasons?.flow || null,         // Mesmo que reason_flow
-    subtipo_problema: item.raw?.dados_reasons?.name || null       // Ex: "repentant_buyer"
+    reason_detail: item.dados_reasons?.detail || null,        // Ex: "Llegó lo que compré en buenas condiciones pero no lo quiero"
+    reason_flow: item.dados_reasons?.flow || null,           // Ex: "post_purchase_delivered"
+    tipo_problema: item.dados_reasons?.flow || null,         // Mesmo que reason_flow
+    subtipo_problema: item.dados_reasons?.name || null       // Ex: "repentant_buyer"
   };
 };
