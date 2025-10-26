@@ -20,9 +20,18 @@ export const mapFinancialData = (item: any) => {
     moeda_reembolso: item.order_data?.currency_id || null,
     moeda_custo: null,
     
-    // Responsável pelo custo
-    responsavel_custo: item.claim_details?.resolution?.benefited || 
-                      item.claim_details?.resolution?.responsible || null,
+    // Responsável pelo custo - ✅ CORREÇÃO: benefited pode ser array
+    responsavel_custo: (() => {
+      const benefited = item.claim_details?.resolution?.benefited;
+      const responsible = item.claim_details?.resolution?.responsible;
+      
+      // Se benefited for array, pegar primeiro item
+      if (Array.isArray(benefited) && benefited.length > 0) {
+        return benefited[0];
+      }
+      
+      return benefited || responsible || null;
+    })(),
     
     // ✅ FASE 1: Novos campos financeiros de devolução
     status_dinheiro: item.return_details_v2?.money_status || null,

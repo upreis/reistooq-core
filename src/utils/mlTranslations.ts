@@ -167,9 +167,16 @@ export const traduzirResultadoFinal = (resultado: string | null | undefined): st
   return RESULTADO_FINAL_MAP[resultado] || traduzirGenerico(resultado);
 };
 
-export const traduzirResponsavelCusto = (responsavel: string | null | undefined): string => {
+export const traduzirResponsavelCusto = (responsavel: string | string[] | null | undefined): string => {
   if (!responsavel) return '-';
-  return RESPONSAVEL_CUSTO_MAP[responsavel] || traduzirGenerico(responsavel);
+  
+  // ✅ PROTEÇÃO: Se for array, pegar primeiro item
+  const valor = Array.isArray(responsavel) ? responsavel[0] : responsavel;
+  
+  // ✅ PROTEÇÃO: Garantir que é string
+  if (typeof valor !== 'string') return '-';
+  
+  return RESPONSAVEL_CUSTO_MAP[valor] || traduzirGenerico(valor);
 };
 
 export const traduzirTag = (tag: string | null | undefined): string => {
