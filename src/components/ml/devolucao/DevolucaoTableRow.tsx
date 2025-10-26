@@ -253,11 +253,33 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         </div>
       </td>
       
-      {/* ❌ REMOVIDO: Reason Detail - vazio */}
-      {/* ❌ REMOVIDO: Reason Flow - vazio */}
-      {/* ❌ REMOVIDO: Categoria Motivo - vazio */}
-      {/* ❌ REMOVIDO: Tipo Problema - vazio */}
-      {/* ❌ REMOVIDO: Subtipo - vazio */}
+      {/* ✅ MANTIDO: Reason Detail */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[200px] truncate text-xs" title={(devolucao as any).reason_detail || ''}>
+          {(devolucao as any).reason_detail || '-'}
+        </div>
+      </td>
+      
+      {/* ✅ MANTIDO: Reason Flow */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[150px] truncate text-xs" title={(devolucao as any).reason_flow || ''}>
+          {(devolucao as any).reason_flow || '-'}
+        </div>
+      </td>
+      
+      {/* ✅ MANTIDO: Tipo Problema */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[150px] truncate text-xs" title={(devolucao as any).tipo_problema || ''}>
+          {(devolucao as any).tipo_problema || '-'}
+        </div>
+      </td>
+      
+      {/* ✅ MANTIDO: Subtipo */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[150px] truncate text-xs" title={(devolucao as any).subtipo_problema || ''}>
+          {(devolucao as any).subtipo_problema || '-'}
+        </div>
+      </td>
       
       {/* Tipo Claim */}
       <td className="px-3 py-3 text-center">
@@ -268,14 +290,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         )}
       </td>
       
-      {/* ❌ REMOVIDO: Estágio - excluído conforme solicitação do usuário */}
-      
       {/* Complexidade */}
       <td className="px-3 py-3 text-center">
         {getComplexityBadge(devolucao.nivel_complexidade)}
       </td>
       
-      {/* ❌ REMOVIDO: Nível Prioridade - vazio */}
+      {/* ✅ MANTIDO: Nível Prioridade */}
+      <td className="px-3 py-3 text-center">
+        {getPrioridadeBadge(devolucao.nivel_prioridade)}
+      </td>
       
       {/* GRUPO 8: MEDIAÇÃO E RESOLUÇÃO (9 colunas) */}
       
@@ -457,11 +480,7 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* ❌ REMOVIDO: Prazo Revisar (calculado) */}
       {/* ❌ REMOVIDO: Eficiência (calculado) */}
       
-      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA (2 colunas) */}
-      
-      {/* ❌ REMOVIDO: 📦 Tem Devolução - vazio */}
-      {/* ❌ REMOVIDO: 💰 Status Reembolso - vazio */}
-      {/* ❌ REMOVIDO: Transportadora - vazio */}
+      {/* GRUPO 11: RASTREAMENTO E LOGÍSTICA */}
       
       {/* Shipment ID */}
       <td className="px-3 py-3 text-center font-mono text-xs">
@@ -473,13 +492,34 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
         {devolucao.codigo_rastreamento || '-'}
       </td>
       
-      {/* ❌ REMOVIDO: Status Envio - vazio */}
-      {/* ❌ REMOVIDO: Centro Envio - vazio */}
-      {/* ❌ REMOVIDO: Plataforma - vazio */}
-      {/* ❌ REMOVIDO: NF Autorizada - vazio */}
-      {/* ❌ REMOVIDO: Shipment ID Devolução - vazio */}
-      {/* ❌ REMOVIDO: Endereço Destino Devolução - vazio */}
-      {/* ❌ REMOVIDO: Descrição Último Status - vazio */}
+      {/* ✅ Status Rastreio */}
+      <td className="px-3 py-3 text-center">
+        {getShippingStatusBadge(devolucao.status_rastreamento)}
+      </td>
+      
+      {/* ✅ Status Review */}
+      <td className="px-3 py-3 text-center">
+        {getStatusBadge(devolucao.review_status)}
+      </td>
+      
+      {/* ✅ 📦 Shipment ID Devolução */}
+      <td className="px-3 py-3 text-center font-mono text-xs">
+        {devolucao.shipment_id_devolucao || '-'}
+      </td>
+      
+      {/* ✅ 📍 Endereço Destino */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[250px] truncate text-xs" title={devolucao.endereco_destino_devolucao || ''}>
+          {devolucao.endereco_destino_devolucao || '-'}
+        </div>
+      </td>
+      
+      {/* ✅ 📝 Descrição Último Status */}
+      <td className="px-3 py-3 text-left">
+        <div className="max-w-[200px] truncate text-xs" title={devolucao.descricao_ultimo_status || ''}>
+          {devolucao.descricao_ultimo_status || '-'}
+        </div>
+      </td>
       
       {/* ❌ REMOVIDO GRUPO 12: QUALIDADE E SCORES - todos vazios */}
       

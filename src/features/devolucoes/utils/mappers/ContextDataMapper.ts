@@ -7,27 +7,28 @@ export const mapContextData = (item: any) => {
   return {
     // Mediação (✅ CORRIGIDO: meditations com T)
     em_mediacao: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute',
-    data_inicio_mediacao: item.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
+    data_inicio_mediacao: item.claim_details?.date_created || null,
     mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     resultado_mediacao: item.claim_details?.resolution?.reason || null,
     detalhes_mediacao: null,
-    escalado_para_ml: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute', // ✅ CORRIGIDO: meditations
+    escalado_para_ml: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute',
     
-    // Troca (✅ CORRIGIDO: estimated_exchange_date está correto conforme doc oficial)
-    eh_troca: item.return_details_v2?.subtype === 'exchange',
-    produto_troca_id: item.return_details_v2?.change_details?.substitute_product?.id?.toString() || null,
-    data_estimada_troca: item.return_details_v2?.estimated_exchange_date || null, // ✅ CORRETO: estimated_exchange_date
-    data_limite_troca: item.return_details_v2?.date_closed || null,
+    // ✅ CORRIGIDO: Troca (endpoint: GET /claims/$CLAIM_ID/changes)
+    eh_troca: item.change_details?.type === 'change' || item.change_details?.type === 'replace' || false,
+    produto_troca_id: item.change_details?.items?.[0]?.id || null,
+    // ✅ CORRIGIDO: estimated_exchange_date é objeto com {from, to}
+    data_estimada_troca: item.change_details?.estimated_exchange_date?.from || 
+                        item.change_details?.estimated_exchange_date?.to || null,
+    data_limite_troca: item.change_details?.estimated_exchange_date?.to || null,
     data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
     dias_restantes_acao: null,
     prazo_revisao_dias: null,
     valor_diferenca_troca: null,
     
-    // Dados adicionais (✅ SOMENTE CAMPOS QUE EXISTEM NO SCHEMA)
+    // Dados adicionais
     tags_automaticas: [],
     usuario_ultima_acao: null,
     hash_verificacao: null,
-    // ❌ REMOVIDO: confiabilidade_dados (não existe no schema)
     versao_api_utilizada: null,
     origem_timeline: null,
     status_produto_novo: null,

@@ -48,6 +48,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   codigo_rastreamento?: string | null;
   transportadora?: string | null;
   status_rastreamento_pedido?: string | null;
+  status_rastreamento?: string | null; // ✅ NOVO: status do tracking (pending, shipped, delivered, etc)
   url_rastreamento?: string | null;
 
   // 💰 CUSTOS E FINANCEIRO (4 colunas)
@@ -103,6 +104,8 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   reason_name?: string | null;
   reason_flow?: string | null; // ✅ NOVO: flow do reason (ex: post_purchase_delivered)
   reason_category?: string | null;
+  tipo_problema?: string | null; // ✅ NOVO: alias para reason_category
+  subtipo_problema?: string | null; // ✅ NOVO: alias para reason_name
   reason_expected_resolutions?: string[] | null;
   reason_rules_engine?: string[] | null;
   reason_priority?: string | null;
