@@ -1485,13 +1485,27 @@ async function buscarPedidosCancelados(
     if (allUniqueReasonIds.size > 0) {
       try {
         console.log(`🔍 Buscando ${allUniqueReasonIds.size} reasons únicos para todos os claims...`);
+        console.log(`📋 Reason IDs a buscar:`, Array.from(allUniqueReasonIds));
+        
         const reasonsService = new ReasonsService();
         allReasonsMap = await reasonsService.fetchMultipleReasons(
           Array.from(allUniqueReasonIds),
           accessToken,
           integrationAccountId
         );
-        logger.success(`✅ ${allReasonsMap.size}/${allUniqueReasonIds.size} reasons carregados com sucesso`);
+        
+        console.log(`✅ ${allReasonsMap.size}/${allUniqueReasonIds.size} reasons carregados com sucesso`);
+        
+        // 🔍 LOG DETALHADO: Mostrar quais reasons foram carregados
+        if (allReasonsMap.size > 0) {
+          console.log(`📊 Reasons carregados:`, Array.from(allReasonsMap.keys()));
+          // Mostrar exemplo de um reason
+          const firstReason = allReasonsMap.values().next().value;
+          console.log(`📝 Exemplo de reason:`, firstReason);
+        } else {
+          console.error(`❌ NENHUM reason foi carregado! Verificar ReasonsService`);
+        }
+        
       } catch (error) {
         console.error(`❌ Erro ao buscar reasons:`, error);
         // Continuar mesmo se falhar
@@ -1499,6 +1513,8 @@ async function buscarPedidosCancelados(
     }
     
     // ✅ ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS (mesmo que vazio)
+    console.log(`\n🔄 INICIANDO ENRIQUECIMENTO DE ${allClaims.length} CLAIMS...`);
+    
     const enrichedClaims = allClaims.map(claim => {
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
@@ -1539,6 +1555,11 @@ async function buscarPedidosCancelados(
         }
       };
     });
+    
+    // 📊 Estatísticas de enriquecimento
+    const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.detail !== null).length;
+    console.log(`✅ ENRIQUECIMENTO COMPLETO: ${enrichedCount}/${allClaims.length} claims com dados_reasons válidos`);
+    console.log(`⚠️ Claims sem dados: ${allClaims.length - enrichedCount}`);
     
     // ✅ SISTEMA DE FILAS: Adicionar TODOS os claims na fila para processamento
     const supabaseAdmin = makeServiceClient();
