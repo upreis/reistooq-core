@@ -1484,8 +1484,8 @@ async function buscarPedidosCancelados(
     
     if (allUniqueReasonIds.size > 0) {
       try {
-        console.log(`🔍 Buscando ${allUniqueReasonIds.size} reasons únicos para todos os claims...`);
-        console.log(`📋 Reason IDs a buscar:`, Array.from(allUniqueReasonIds));
+        logger.info(`🔍 FASE 1: Coletando ${allUniqueReasonIds.size} reasons únicos de ${allClaims.length} claims`);
+        logger.debug(`📋 Reason IDs encontrados:`, Array.from(allUniqueReasonIds).slice(0, 10)); // Mostrar primeiros 10
         
         const reasonsService = new ReasonsService();
         allReasonsMap = await reasonsService.fetchMultipleReasons(
@@ -1494,26 +1494,31 @@ async function buscarPedidosCancelados(
           integrationAccountId
         );
         
-        console.log(`✅ ${allReasonsMap.size}/${allUniqueReasonIds.size} reasons carregados com sucesso`);
+        logger.success(`✅ FASE 1 COMPLETA: ${allReasonsMap.size}/${allUniqueReasonIds.size} reasons carregados`);
         
-        // 🔍 LOG DETALHADO: Mostrar quais reasons foram carregados
+        // 🔍 LOG DETALHADO: Mostrar exemplo de reason
         if (allReasonsMap.size > 0) {
-          console.log(`📊 Reasons carregados:`, Array.from(allReasonsMap.keys()));
-          // Mostrar exemplo de um reason
-          const firstReason = allReasonsMap.values().next().value;
-          console.log(`📝 Exemplo de reason:`, firstReason);
+          const firstReasonEntry = Array.from(allReasonsMap.entries())[0];
+          logger.debug(`📝 Exemplo de reason carregado:`, {
+            id: firstReasonEntry[0],
+            name: firstReasonEntry[1]?.reason_name,
+            detail: firstReasonEntry[1]?.reason_detail,
+            flow: firstReasonEntry[1]?.reason_flow
+          });
         } else {
-          console.error(`❌ NENHUM reason foi carregado! Verificar ReasonsService`);
+          logger.error(`❌ NENHUM reason foi carregado! Verificar ReasonsService`);
         }
         
       } catch (error) {
-        console.error(`❌ Erro ao buscar reasons:`, error);
+        logger.error(`❌ Erro ao buscar reasons:`, error);
         // Continuar mesmo se falhar
       }
+    } else {
+      logger.warn(`⚠️ Nenhum reason_id encontrado nos ${allClaims.length} claims`);
     }
     
-    // ✅ ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS (mesmo que vazio)
-    console.log(`\n🔄 INICIANDO ENRIQUECIMENTO DE ${allClaims.length} CLAIMS...`);
+    // ✅ ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS
+    logger.info(`\n🔄 FASE 2: Enriquecendo ${allClaims.length} claims com dados de reasons...`);
     
     const enrichedClaims = allClaims.map(claim => {
       const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
@@ -1528,18 +1533,16 @@ async function buscarPedidosCancelados(
       }
       
       // ⚠️ IMPORTANTE: Se reason não encontrado, retornar com dados_reasons NULL
-      // O processamento posterior usará fallback
-      console.warn(`⚠️ Reason ${reasonId} não encontrado no map para claim ${claim.id}`);
       return {
         ...claim,
-        dados_reasons: null  // ✅ NULL em vez de objeto vazio (processamento posterior faz fallback)
+        dados_reasons: null  // ✅ NULL = processamento posterior faz fallback
       };
     });
     
     // 📊 Estatísticas de enriquecimento
-    const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail !== null && c.dados_reasons?.reason_detail !== undefined).length;
-    console.log(`✅ ENRIQUECIMENTO COMPLETO: ${enrichedCount}/${allClaims.length} claims com dados_reasons válidos`);
-    console.log(`⚠️ Claims sem dados: ${allClaims.length - enrichedCount}`);
+    const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail).length;
+    logger.success(`✅ FASE 2 COMPLETA: ${enrichedCount}/${allClaims.length} claims enriquecidos`);
+    logger.info(`⚠️ Claims sem dados de reasons: ${allClaims.length - enrichedCount}`);
     
     // ✅ SISTEMA DE FILAS: Adicionar TODOS os claims na fila para processamento
     const supabaseAdmin = makeServiceClient();
