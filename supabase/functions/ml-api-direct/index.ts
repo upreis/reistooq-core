@@ -2558,16 +2558,10 @@ async function buscarPedidosCancelados(
               ...(() => {
                 const reasonId = safeClaimData?.claim_details?.reason_id || claim?.reason_id || null;
                 
-                // 1️⃣ Tentar pegar dos dados já enriquecidos (claim.dados_reasons)
-                const existingReasonsData = (claim as any)?.dados_reasons;
+                // ✅ Usar dados_reasons já enriquecidos (sem reprocessamento)
+                const reasonsData = (claim as any)?.dados_reasons;
                 
-                // 2️⃣ Se não tiver, buscar no Map de reasons da API
-                const apiData = reasonsDetailsMap.get(reasonId || '') || null;
-                
-                // 3️⃣ Usar dados existentes ou da API
-                const reasonsData = existingReasonsData || apiData;
-                
-                // Se temos dados de reasons (já enriquecidos ou da API)
+                // Se temos dados de reasons enriquecidos
                 if (reasonsData) {
                   return {
                     reason_id: reasonsData.reason_id || reasonId,
@@ -2576,17 +2570,18 @@ async function buscarPedidosCancelados(
                     reason_flow: reasonsData.reason_flow || null,
                     reason_category: reasonsData.reason_category || null,
                     reason_position: reasonsData.reason_position || null,
-                    reason_settings: reasonsData.reason_settings ? JSON.stringify(reasonsData.reason_settings) : null,
-                    dados_reasons: reasonsData, // Salvar objeto completo
+                    reason_settings: reasonsData.reason_settings || null, // ✅ MANTER OBJETO (NÃO converter para string)
+                    dados_reasons: reasonsData, // Objeto completo já enriquecido
                     motivo_categoria: reasonId // Compatibilidade
                   };
                 }
                 
-                // Fallback: usar mapeamento local
+                // Fallback: usar mapeamento local apenas se não houver dados
                 const mappedReason = mapReasonWithApiData(reasonId, null);
                 return {
                   ...mappedReason,
                   reason_settings: null,
+                  dados_reasons: null, // ✅ NULL em vez de vazio
                   motivo_categoria: reasonId
                 };
               })(),
