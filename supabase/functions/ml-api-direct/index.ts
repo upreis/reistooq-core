@@ -1524,15 +1524,15 @@ async function buscarPedidosCancelados(
         return {
           ...claim,
           dados_reasons: {
-            id: reasonData.id,
-            name: reasonData.name,
-            detail: reasonData.detail,
-            flow: reasonData.flow,
-            position: reasonData.position,
-            settings: reasonData.settings,
-            status: reasonData.status,
-            date_created: reasonData.date_created,
-            last_updated: reasonData.last_updated
+            id: reasonData.reason_id || reasonId,            // ✅ CORRIGIDO
+            name: reasonData.reason_name || null,            // ✅ CORRIGIDO
+            detail: reasonData.reason_detail || null,        // ✅ CORRIGIDO
+            flow: reasonData.reason_flow || null,            // ✅ CORRIGIDO
+            position: reasonData.reason_position || null,    // ✅ CORRIGIDO
+            settings: reasonData.reason_settings || null,    // ✅ CORRIGIDO
+            status: reasonData.reason_status || null,        // ✅ CORRIGIDO
+            date_created: reasonData.reason_date_created || null,     // ✅ CORRIGIDO
+            last_updated: reasonData.reason_last_updated || null      // ✅ CORRIGIDO
           }
         };
       }
