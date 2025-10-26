@@ -1,12 +1,14 @@
 // 📦 ML API DIRECT - Fase 4 Implementada: Endpoints + Mappers Integrados
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
 import { logger } from './utils/logger.ts'
 import { extractMediationData } from './utils/mediation-extractor.ts'
 import { analyzeInternalTags } from './utils/tags-analyzer.ts'
 import { mapReviewsData, extractReviewsFields } from './mappers/reviews-mapper.ts'
 import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper.ts'
+import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
 import { fetchMLWithRetry } from './utils/retryHandler.ts'
 import { ReasonsService } from './services/reasonsService.ts'
 
@@ -2554,7 +2556,7 @@ async function buscarPedidosCancelados(
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
               
               // ========================================
-              // 🔍 REASONS - Dados completos no JSONB (Fase 1+2)
+              // 🔍 REASONS - Usar dados já enriquecidos (Fase 1+2)
               // ========================================
               reason_id: claim?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               reason_name: claim?.dados_reasons?.reason_name || null,
@@ -2563,8 +2565,8 @@ async function buscarPedidosCancelados(
               reason_category: claim?.dados_reasons?.reason_category || null,
               reason_position: claim?.dados_reasons?.reason_position || null,
               reason_settings: claim?.dados_reasons?.reason_settings || null,
-              dados_reasons: claim?.dados_reasons || null, // ✅ JSONB completo com todos os campos
-              motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null, // ✅ Duplicado para queries
+              dados_reasons: claim?.dados_reasons || null,
+              motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               
               em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
               nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
