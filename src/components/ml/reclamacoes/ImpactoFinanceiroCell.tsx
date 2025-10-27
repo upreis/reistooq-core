@@ -81,14 +81,14 @@ export function ImpactoFinanceiroCell({
           <AnimatePresence>
             {showTooltip && (
             <motion.div
-              initial={{ opacity: 0, x: 5, scale: 0.95 }}
+              initial={{ opacity: 0, x: -5, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 5, scale: 0.95 }}
+              exit={{ opacity: 0, x: -5, scale: 0.95 }}
               transition={springConfig}
               className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-[100] pointer-events-none"
             >
               <div className={cn(
-                "w-[220px] px-3 py-2 rounded-lg",
+                "w-[180px] px-3 py-2 rounded-lg",
                 "bg-popover backdrop-blur-sm",
                 "border border-border",
                 "shadow-lg"
@@ -127,14 +127,14 @@ export function ImpactoFinanceiroCell({
         <AnimatePresence>
           {showTooltip && (
             <motion.div
-              initial={{ opacity: 0, x: 5, scale: 0.95 }}
+              initial={{ opacity: 0, x: -5, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 5, scale: 0.95 }}
+              exit={{ opacity: 0, x: -5, scale: 0.95 }}
               transition={springConfig}
               className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-[100] pointer-events-none"
             >
               <div className={cn(
-                "w-[220px] px-3 py-2 rounded-lg",
+                "w-[180px] px-3 py-2 rounded-lg",
                 "bg-popover backdrop-blur-sm",
                 "border border-border",
                 "shadow-lg"
