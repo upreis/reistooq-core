@@ -17,7 +17,10 @@ export function ReclamacoesPage() {
     status: '',
     type: '',
     date_from: '',
-    date_to: ''
+    date_to: '',
+    stage: '',
+    has_messages: '',
+    has_evidences: ''
   });
 
   const {

@@ -12,6 +12,9 @@ interface ClaimFilters {
   type?: string;
   date_from?: string;
   date_to?: string;
+  stage?: string;
+  has_messages?: string;
+  has_evidences?: string;
 }
 
 export function useReclamacoes(filters: ClaimFilters) {
@@ -67,6 +70,25 @@ export function useReclamacoes(filters: ClaimFilters) {
       if (filters.type) {
         query = query.eq('type', filters.type);
       }
+      if (filters.stage) {
+        query = query.eq('stage', filters.stage);
+      }
+      if (filters.has_messages === 'true') {
+        query = query.eq('tem_mensagens', true);
+      } else if (filters.has_messages === 'false') {
+        query = query.eq('tem_mensagens', false);
+      }
+      if (filters.has_evidences === 'true') {
+        query = query.eq('tem_evidencias', true);
+      } else if (filters.has_evidences === 'false') {
+        query = query.eq('tem_evidencias', false);
+      }
+      if (filters.date_from) {
+        query = query.gte('date_created', filters.date_from);
+      }
+      if (filters.date_to) {
+        query = query.lte('date_created', filters.date_to);
+      }
 
       const { data: cached, error: dbError } = await query;
 
@@ -110,7 +132,16 @@ export function useReclamacoes(filters: ClaimFilters) {
     if (selectedAccountId) {
       fetchReclamacoes();
     }
-  }, [selectedAccountId, filters.status, filters.type]);
+  }, [
+    selectedAccountId, 
+    filters.status, 
+    filters.type, 
+    filters.stage,
+    filters.has_messages,
+    filters.has_evidences,
+    filters.date_from,
+    filters.date_to
+  ]);
 
   return {
     reclamacoes,
