@@ -115,6 +115,10 @@ Deno.serve(async (req) => {
     const claimsData = await claimsRes.json();
     let claims = claimsData.data || [];
 
+    // 🔍 LOG TEMPORÁRIO - RESPOSTA RAW DA API ML
+    console.log('🔍 RESPOSTA COMPLETA DA API ML:', JSON.stringify(claimsData, null, 2));
+    console.log('🔍 PRIMEIRO CLAIM RAW:', JSON.stringify(claims[0], null, 2));
+    
     console.log(`[ml-claims-fetch] ${claims.length} claims encontrados`);
 
     // Aplicar filtro de data client-side (API ML não aceita date_from/date_to)
@@ -239,6 +243,10 @@ Deno.serve(async (req) => {
       ...claim,
       organization_id: organizationId
     }));
+
+    // 🔍 LOG TEMPORÁRIO - DADOS QUE SERÃO INSERIDOS NO BANCO
+    console.log('🔍 PRIMEIRO CLAIM MAPEADO PARA INSERÇÃO:', JSON.stringify(claimsToUpsert[0], null, 2));
+    console.log('🔍 TOTAL DE CLAIMS A INSERIR:', claimsToUpsert.length);
 
     if (claimsToUpsert.length > 0) {
       const { error: upsertError } = await supabase
