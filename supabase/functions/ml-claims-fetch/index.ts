@@ -223,7 +223,9 @@ Deno.serve(async (req) => {
         resolution_date: resolution.date || null,
         resolution_amount: resolution.amount?.value || null,
         resolution_reason: resolution.reason || null,
-        data_vencimento_acao: resolution.deadline || null, // ✨ NOVO CAMPO
+        
+        // ✅ Data de vencimento: pegar de available_actions (para claims abertos) ou resolution.deadline (para resolvidos)
+        data_vencimento_acao: respondent?.available_actions?.[0]?.due_date || resolution.deadline || null,
         
         // Related Entities (flags)
         tem_mensagens: relatedEntities.includes('messages'),
