@@ -491,6 +491,81 @@ Deno.serve(async (req) => {
       }
 
       console.log(`✅ Contadores atualizados com sucesso!`);
+
+      // ============================================
+      // 🔄 BUSCAR DADOS DE TROCAS (CHANGES)
+      // ============================================
+      
+      const claimsComTrocas = fullyEnrichedClaims.filter(c => c.tem_trocas);
+      console.log(`🔄 Buscando dados de trocas para ${claimsComTrocas.length} claims...`);
+      
+      for (const claim of claimsComTrocas) {
+        try {
+          const changesUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.claim_id}/changes`;
+          const changesRes = await fetch(changesUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+
+          if (changesRes.ok) {
+            const changesData = await changesRes.json();
+            
+            // Extrair dados da troca
+            const changeStatus = changesData.status || null;
+            const changeStatusDetail = changesData.status_detail || null;
+            const changeType = changesData.type || null;
+            const changeReturnId = changesData.return?.id ? String(changesData.return.id) : null;
+            const changeDateCreated = changesData.date_created || null;
+            
+            // Processar estimated_exchange_date
+            const estimatedExchange = changesData.estimated_exchange_date || {};
+            const changeEstimatedStart = estimatedExchange.from || null;
+            const changeEstimatedEnd = estimatedExchange.to || null;
+            
+            // Processar itens da troca
+            const changeItems = (changesData.items || []).map((item: any) => ({
+              id: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              price_at_creation: item.price_at_creation,
+              variation_id: item.variation_id,
+              currency_id: item.currency_id
+            }));
+            
+            // Processar novos pedidos
+            const newOrders = {
+              ids: changesData.new_orders_ids || [],
+              shipments: changesData.new_orders_shipments || []
+            };
+
+            // Atualizar claim com dados de troca
+            await supabase
+              .from('reclamacoes')
+              .update({
+                total_trocas: 1, // Por enquanto, 1 troca por claim
+                troca_status: changeStatus,
+                troca_status_detail: changeStatusDetail,
+                troca_type: changeType,
+                troca_data_criacao: changeDateCreated,
+                troca_data_estimada_inicio: changeEstimatedStart,
+                troca_data_estimada_fim: changeEstimatedEnd,
+                troca_return_id: changeReturnId,
+                troca_new_orders: newOrders,
+                troca_items: changeItems,
+                troca_raw_data: changesData,
+                updated_at: new Date().toISOString()
+              })
+              .eq('claim_id', claim.claim_id);
+
+            console.log(`✅ Claim ${claim.claim_id}: Troca [${changeType}] status=${changeStatus} (${changeItems.length} itens)`);
+          } else {
+            console.warn(`⚠️ Falha ao buscar troca do claim ${claim.claim_id}. Status: ${changesRes.status}`);
+          }
+        } catch (error) {
+          console.error(`❌ Erro ao buscar troca do claim ${claim.claim_id}:`, error.message);
+        }
+      }
+
+      console.log(`✅ Busca de trocas concluída!`);
     }
 
     return new Response(
