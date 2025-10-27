@@ -232,11 +232,52 @@ Deno.serve(async (req) => {
     }));
 
     console.log('📊 Total de claims mapeados:', enrichedClaims.length);
-    console.log('🔍 PRIMEIRO CLAIM MAPEADO PARA INSERÇÃO:', JSON.stringify(enrichedClaims[0], null, 2));
     
     const claimsComReasons = enrichedClaims.filter(c => c.reason_name !== null);
     console.log(`✅ Claims com reason_name: ${claimsComReasons.length}/${enrichedClaims.length}`);
-    console.log('🔍 TOTAL DE CLAIMS A INSERIR:', enrichedClaims.length);
+
+    // 4️⃣ ETAPA 2: Enriquecer com dados dos PEDIDOS (Orders)
+    console.log('🛒 Iniciando enriquecimento com dados dos pedidos...');
+    
+    const fullyEnrichedClaims = await Promise.all(enrichedClaims.map(async (claim) => {
+      // Só buscar orders para claims de pedidos (resource === 'order')
+      if (claim.resource !== 'order' || !claim.order_id) {
+        return claim;
+      }
+
+      try {
+        const orderUrl = `https://api.mercadolibre.com/orders/${claim.order_id}`;
+        const orderResponse = await fetch(orderUrl, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (orderResponse.ok) {
+          const order = await orderResponse.json();
+          
+          console.log(`[ml-claims-fetch] 🛒 Order ${claim.order_id} enriquecido`);
+          
+          return {
+            ...claim,
+            buyer_nickname: order.buyer?.nickname || claim.buyer_nickname,
+            seller_nickname: order.seller?.nickname || claim.seller_nickname,
+            amount_value: order.total_amount || claim.amount_value,
+            amount_currency: order.currency_id || claim.amount_currency,
+            order_status: order.status || null,
+            order_total: order.total_amount || null
+          };
+        } else {
+          console.warn(`[ml-claims-fetch] ⚠️ Order ${claim.order_id} não encontrado (${orderResponse.status})`);
+        }
+      } catch (error) {
+        console.error(`[ml-claims-fetch] ❌ Erro ao buscar order ${claim.order_id}:`, error);
+      }
+
+      return claim;
+    }));
+
+    console.log('✅ Enriquecimento com orders concluído');
+    console.log('🔍 PRIMEIRO CLAIM FINAL:', JSON.stringify(fullyEnrichedClaims[0], null, 2));
+    console.log('🔍 TOTAL DE CLAIMS A INSERIR:', fullyEnrichedClaims.length);
 
     // Buscar organization_id da conta
     const { data: accountData } = await supabase
@@ -248,14 +289,10 @@ Deno.serve(async (req) => {
     const organizationId = accountData?.organization_id;
 
     // Salvar ou atualizar claims no banco
-    const claimsToUpsert = enrichedClaims.map(claim => ({
+    const claimsToUpsert = fullyEnrichedClaims.map(claim => ({
       ...claim,
       organization_id: organizationId
     }));
-
-    // 🔍 LOG TEMPORÁRIO - DADOS QUE SERÃO INSERIDOS NO BANCO
-    console.log('🔍 PRIMEIRO CLAIM MAPEADO PARA INSERÇÃO:', JSON.stringify(claimsToUpsert[0], null, 2));
-    console.log('🔍 TOTAL DE CLAIMS A INSERIR:', claimsToUpsert.length);
 
     if (claimsToUpsert.length > 0) {
       const { error: upsertError } = await supabase
@@ -273,7 +310,7 @@ Deno.serve(async (req) => {
       console.log(`[ml-claims-fetch] ${claimsToUpsert.length} claims salvos no banco`);
 
       // Buscar evidências para claims que têm evidências
-      const claimsComEvidencias = enrichedClaims.filter(c => c.tem_evidencias);
+      const claimsComEvidencias = fullyEnrichedClaims.filter(c => c.tem_evidencias);
       
       for (const claim of claimsComEvidencias) {
         try {
