@@ -1500,23 +1500,15 @@ async function buscarPedidosCancelados(
     // ✅ ENRIQUECER TODOS OS CLAIMS COM DADOS_REASONS
     logger.info(`\n🔄 FASE 2: Enriquecendo ${allClaims.length} claims com dados de reasons...`);
     
-    const enrichedClaims = allClaims.map((claim, index) => {
+    const enrichedClaims = allClaims.map(claim => {
       const reasonId = claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
       
-      // ✅ LOG DETALHADO PARA OS PRIMEIROS 3 CLAIMS
-      if (index < 3) {
-        console.log(`🔍 Enriquecendo claim ${claim.id} (${index + 1}/${allClaims.length}):`, {
-          reasonId,
-          reasonIdType: typeof reasonId,
-          reasonIdValue: JSON.stringify(reasonId),
-          temReasonData: !!reasonData,
-          reasonDataKeys: reasonData ? Object.keys(reasonData) : [],
-          allReasonsMapSize: allReasonsMap.size,
-          allReasonsMapHasKey: allReasonsMap.has(reasonId || ''),
-          reasonName: reasonData?.reason_name || 'N/A'
-        });
-      }
+      console.log(`📦 Enriquecendo claim ${claim.id}:`, {
+        reasonId,
+        temReasonData: !!reasonData,
+        reasonDataKeys: reasonData ? Object.keys(reasonData) : []
+      });
       
       // ✅ SEMPRE retornar com dados_reasons (MANTENDO estrutura com prefixo reason_*)
       if (reasonData) {
@@ -1537,19 +1529,15 @@ async function buscarPedidosCancelados(
     const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail).length;
     const claimsComReasons = enrichedClaims.filter(c => c.dados_reasons !== null);
     
-    console.log(`✅ Resultado do enriquecimento:`, {
+    console.log(`✅ Enriquecimento completo:`, {
       total: enrichedClaims.length,
       comReasons: claimsComReasons.length,
       semReasons: enrichedClaims.length - claimsComReasons.length,
-      exemploComReasons: claimsComReasons.length > 0 ? {
-        id: claimsComReasons[0].id,
-        reason_id: claimsComReasons[0].dados_reasons?.reason_id,
-        reason_name: claimsComReasons[0].dados_reasons?.reason_name
-      } : 'nenhum',
-      exemploSemReasons: (enrichedClaims.length - claimsComReasons.length) > 0 ? {
-        id: enrichedClaims.find(c => !c.dados_reasons)?.id,
-        reason_id: enrichedClaims.find(c => !c.dados_reasons)?.reason_id
-      } : 'nenhum'
+      exemplo: enrichedClaims[0]?.dados_reasons ? {
+        id: enrichedClaims[0].id,
+        reason_id: enrichedClaims[0].dados_reasons.reason_id,
+        reason_name: enrichedClaims[0].dados_reasons.reason_name
+      } : null
     });
     
     logger.success(`✅ FASE 2 COMPLETA: ${enrichedCount}/${allClaims.length} claims enriquecidos`);
@@ -2211,15 +2199,12 @@ async function buscarPedidosCancelados(
             const safeOrderDetail = orderDetail || {}
             const safeShipmentData = claimData?.shipment_history || null
             
-            // 📋 LOG DE DEBUG: Verificar dados_reasons antes do mapeamento (só primeiro claim)
-            if (index === 0) {
-              console.log(`📋 Primeiro claim no mapeamento:`, {
-                id: claim.id,
-                temDadosReasons: !!claim?.dados_reasons,
-                reasonName: claim?.dados_reasons?.reason_name,
-                reasonId: claim?.reason_id
-              });
-            }
+            // 📋 LOG DE DEBUG: Verificar dados_reasons antes do mapeamento
+            console.log(`📋 Mapeando claim ${claim.id}:`, {
+              temDadosReasons: !!claim?.dados_reasons,
+              dadosReasonsKeys: claim?.dados_reasons ? Object.keys(claim.dados_reasons) : [],
+              reasonId: claim?.reason_id
+            });
             
             const devolucao = {
               type: 'cancellation',
