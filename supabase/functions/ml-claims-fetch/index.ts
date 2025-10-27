@@ -176,6 +176,8 @@ Deno.serve(async (req) => {
     // 3️⃣ Enriquecer claims com os reasons
     const enrichedClaims = claims.map((claim: any) => {
       const reasonData = claim.reason_id ? reasonsMap.get(claim.reason_id) : null;
+      
+      console.log(`[ml-claims-fetch] Reason ${claim.reason_id}:`, reasonData?.name || 'não encontrado');
 
       // Extrair dados importantes
       const complainant = claim.players?.find((p: any) => p.role === 'complainant');
