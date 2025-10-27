@@ -7,6 +7,9 @@ import { fetchMLWithRetry } from '../utils/retryHandler.ts';
 import { logger } from '../utils/logger.ts';
 
 export class ReasonsService {
+  // Cache de reasons (em memória)
+  private cache = new Map<string, any>();
+
   /**
    * Buscar detalhes completos de um reason usando a API oficial
    * GET /post-purchase/v1/claims/reasons/{reason_id}
@@ -69,7 +72,7 @@ export class ReasonsService {
   }
 
   /**
-   * Buscar múltiplos reasons em paralelo
+   * Buscar múltiplos reasons em paralelo (com cache)
    */
   async fetchMultipleReasons(
     reasonIds: string[],
@@ -84,25 +87,46 @@ export class ReasonsService {
     
     // Remover duplicatas
     const uniqueReasonIds = [...new Set(reasonIds)];
-    logger.debug(`Buscando ${uniqueReasonIds.length} reasons únicos da API ML`);
     
-    // Buscar em paralelo (mas com limite para não sobrecarregar)
-    const BATCH_SIZE = 10;
-    for (let i = 0; i < uniqueReasonIds.length; i += BATCH_SIZE) {
-      const batch = uniqueReasonIds.slice(i, i + BATCH_SIZE);
-      const promises = batch.map(reasonId => 
-        this.fetchReasonDetails(reasonId, accessToken, integrationAccountId)
-      );
-      
-      const results = await Promise.all(promises);
-      results.forEach((data, index) => {
-        if (data) {
-          reasonsMap.set(batch[index], data);
-        }
-      });
+    // Separar IDs que precisam ser buscados vs os que estão em cache
+    const idsParaBuscar: string[] = [];
+    const idsEmCache: string[] = [];
+    
+    for (const reasonId of uniqueReasonIds) {
+      if (this.cache.has(reasonId)) {
+        idsEmCache.push(reasonId);
+        reasonsMap.set(reasonId, this.cache.get(reasonId));
+      } else {
+        idsParaBuscar.push(reasonId);
+      }
     }
     
-    logger.info(`${reasonsMap.size} reasons carregados com sucesso da API`);
+    console.log(`🔥 ${uniqueReasonIds.length} reasons únicos | ${idsParaBuscar.length} para buscar | ${idsEmCache.length} em cache`);
+    
+    // Buscar apenas os que NÃO estão em cache
+    if (idsParaBuscar.length > 0) {
+      const BATCH_SIZE = 10;
+      for (let i = 0; i < idsParaBuscar.length; i += BATCH_SIZE) {
+        const batch = idsParaBuscar.slice(i, i + BATCH_SIZE);
+        const promises = batch.map(reasonId => 
+          this.fetchReasonDetails(reasonId, accessToken, integrationAccountId)
+        );
+        
+        const results = await Promise.all(promises);
+        results.forEach((data, index) => {
+          if (data) {
+            const reasonId = batch[index];
+            // Adicionar ao cache
+            this.cache.set(reasonId, data);
+            // Adicionar ao Map de retorno
+            reasonsMap.set(reasonId, data);
+          }
+        });
+      }
+    }
+    
+    console.log(`✅ Busca concluída: ${idsParaBuscar.length} novos + ${idsEmCache.length} do cache`);
+    
     return reasonsMap;
   }
 }
