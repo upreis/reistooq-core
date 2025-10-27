@@ -1500,12 +1500,19 @@ async function buscarPedidosCancelados(
     const allUniqueReasonIds = new Set<string>();
     
     for (const claim of allClaims) {
-      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
+      const reasonId = claim?.reason_id; // ✅ CORRIGIDO: API /search retorna reason_id direto
       
       if (reasonId && typeof reasonId === 'string') {
         allUniqueReasonIds.add(reasonId);
       }
     }
+    
+    // 📊 LOG DE DEBUG: Verificar extração
+    console.log(`📊 Extração de reasons:`, {
+      totalClaims: allClaims.length,
+      uniqueReasonIds: allUniqueReasonIds.size,
+      primeiros3: Array.from(allUniqueReasonIds).slice(0, 3)
+    });
     
     // Buscar todos os reasons em paralelo da API ML
     let allReasonsMap = new Map<string, any>();
@@ -1549,7 +1556,7 @@ async function buscarPedidosCancelados(
     logger.info(`\n🔄 FASE 2: Enriquecendo ${allClaims.length} claims com dados de reasons...`);
     
     const enrichedClaims = allClaims.map(claim => {
-      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
+      const reasonId = claim?.reason_id; // ✅ CORRIGIDO: API /search retorna reason_id direto
       const reasonData = allReasonsMap.get(reasonId || '');
       
       // ✅ SEMPRE retornar com dados_reasons (MANTENDO estrutura com prefixo reason_*)
@@ -1567,8 +1574,16 @@ async function buscarPedidosCancelados(
       };
     });
     
-    // 📊 Estatísticas de enriquecimento
+    // 📊 Estatísticas de enriquecimento com LOG DETALHADO
+    const claimsComReasons = enrichedClaims.filter(c => c.dados_reasons !== null);
     const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail).length;
+    
+    console.log(`✅ Enriquecimento:`, {
+      total: enrichedClaims.length,
+      comReasons: claimsComReasons.length,
+      semReasons: enrichedClaims.length - claimsComReasons.length
+    });
+    
     logger.success(`✅ FASE 2 COMPLETA: ${enrichedCount}/${allClaims.length} claims enriquecidos`);
     logger.info(`⚠️ Claims sem dados de reasons: ${allClaims.length - enrichedCount}`);
     
