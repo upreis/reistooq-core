@@ -1,6 +1,6 @@
 /**
  * 🎣 HOOK PRINCIPAL DE RECLAMAÇÕES
- * FASE 4.3: Suporte para filtros avançados
+ * FASE 4.4: Suporte para paginação
  */
 
 import { useState, useEffect } from 'react';
@@ -18,12 +18,25 @@ interface ClaimFilters {
   date_to?: string;
 }
 
+interface PaginationInfo {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+}
+
 export function useReclamacoes(filters: ClaimFilters) {
   const [reclamacoes, setReclamacoes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    currentPage: 1,
+    itemsPerPage: 50,
+    totalItems: 0,
+    totalPages: 1
+  });
   const { toast } = useToast();
 
   // Buscar primeira conta ML disponível
@@ -78,14 +91,18 @@ export function useReclamacoes(filters: ClaimFilters) {
         dataFim = new Date().toISOString();
       }
 
-      // Tentar buscar do banco primeiro (cache)
+      // Calcular offset para paginação
+      const offset = (pagination.currentPage - 1) * pagination.itemsPerPage;
+
+      // Tentar buscar do banco primeiro (cache) com paginação
       let query = supabase
         .from('reclamacoes')
-        .select('*')
+        .select('*', { count: 'exact' })
         .eq('integration_account_id', selectedAccountId)
         .gte('date_created', dataInicio)
         .lte('date_created', dataFim)
-        .order('date_created', { ascending: false });
+        .order('date_created', { ascending: false })
+        .range(offset, offset + pagination.itemsPerPage - 1);
 
       // Aplicar filtros
       if (filters.status) {
@@ -108,10 +125,17 @@ export function useReclamacoes(filters: ClaimFilters) {
         query = query.eq('tem_evidencias', false);
       }
 
-      const { data: cached, error: dbError } = await query;
+      const { data: cached, error: dbError, count } = await query;
 
-      if (!dbError && cached && cached.length > 0) {
+      if (!dbError && cached) {
         setReclamacoes(cached);
+        if (count !== null) {
+          setPagination(prev => ({
+            ...prev,
+            totalItems: count,
+            totalPages: Math.ceil(count / prev.itemsPerPage)
+          }));
+        }
       }
 
       // Buscar da API ML para atualizar
@@ -123,7 +147,9 @@ export function useReclamacoes(filters: ClaimFilters) {
             type: filters.type,
             date_from: dataInicio,
             date_to: dataFim
-          }
+          },
+          limit: pagination.itemsPerPage,
+          offset: offset
         }
       });
 
@@ -177,14 +203,35 @@ export function useReclamacoes(filters: ClaimFilters) {
     filters.has_messages,
     filters.has_evidences,
     filters.date_from,
-    filters.date_to
+    filters.date_to,
+    pagination.currentPage,
+    pagination.itemsPerPage
   ]);
+
+  const goToPage = (page: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: Math.max(1, Math.min(page, prev.totalPages))
+    }));
+  };
+
+  const changeItemsPerPage = (items: number) => {
+    setPagination(prev => ({
+      ...prev,
+      itemsPerPage: items,
+      currentPage: 1,
+      totalPages: Math.ceil(prev.totalItems / items)
+    }));
+  };
 
   return {
     reclamacoes,
     isLoading,
     isRefreshing,
     error,
+    pagination,
+    goToPage,
+    changeItemsPerPage,
     refresh: () => fetchReclamacoes(false)
   };
 }

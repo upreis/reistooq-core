@@ -29,6 +29,9 @@ export function ReclamacoesPage() {
     isLoading,
     isRefreshing,
     error,
+    pagination,
+    goToPage,
+    changeItemsPerPage,
     refresh
   } = useReclamacoes(filters);
 
@@ -69,6 +72,9 @@ export function ReclamacoesPage() {
           reclamacoes={reclamacoes}
           isLoading={isLoading}
           error={error}
+          pagination={pagination}
+          onPageChange={goToPage}
+          onItemsPerPageChange={changeItemsPerPage}
         />
       </Card>
     </div>

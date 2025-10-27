@@ -1,6 +1,6 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES
- * FASE 3: Com funcionalidade de expandir
+ * FASE 4.4: Com paginação
  */
 
 import { useState } from 'react';
@@ -11,14 +11,30 @@ import { ChevronRight, ChevronDown, MessageSquare, FileText, Package } from 'luc
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ReclamacoesExpandedPanel } from './ReclamacoesExpandedPanel';
+import { ReclamacoesPagination } from './ReclamacoesPagination';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
   isLoading: boolean;
   error: string | null;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
+  };
+  onPageChange: (page: number) => void;
+  onItemsPerPageChange: (items: number) => void;
 }
 
-export function ReclamacoesTable({ reclamacoes, isLoading, error }: ReclamacoesTableProps) {
+export function ReclamacoesTable({ 
+  reclamacoes, 
+  isLoading, 
+  error, 
+  pagination, 
+  onPageChange, 
+  onItemsPerPageChange 
+}: ReclamacoesTableProps) {
   const [expandedClaimId, setExpandedClaimId] = useState<string | null>(null);
 
   const toggleExpand = (claimId: string) => {
@@ -161,8 +177,17 @@ export function ReclamacoesTable({ reclamacoes, isLoading, error }: ReclamacoesT
               )}
             </>
           ))}
-        </TableBody>
-      </Table>
-    </div>
+      </TableBody>
+    </Table>
+
+    <ReclamacoesPagination
+      currentPage={pagination.currentPage}
+      totalPages={pagination.totalPages}
+      totalItems={pagination.totalItems}
+      itemsPerPage={pagination.itemsPerPage}
+      onPageChange={onPageChange}
+      onItemsPerPageChange={onItemsPerPageChange}
+    />
+  </div>
   );
 }
