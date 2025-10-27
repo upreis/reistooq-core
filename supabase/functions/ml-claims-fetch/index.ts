@@ -165,7 +165,8 @@ Deno.serve(async (req) => {
       }
 
       // Extrair dados importantes
-      const players = claim.players || {};
+      const complainant = claim.players?.find((p: any) => p.role === 'complainant');
+      const respondent = claim.players?.find((p: any) => p.role === 'respondent');
       const resolution = claim.resolution || {};
       const relatedEntities = claim.related_entities || [];
 
@@ -186,12 +187,12 @@ Deno.serve(async (req) => {
         reason_detail: reasonData?.reason_detail || null,
         reason_category: reasonData?.category || null,
         
-        // Players
-        buyer_id: players.buyer?.id || null,
-        buyer_nickname: players.buyer?.nickname || null,
-        seller_id: players.seller?.id || null,
-        seller_nickname: players.seller?.nickname || null,
-        mediator_id: players.mediator?.id || null,
+        // Players (extraídos corretamente do array)
+        buyer_id: complainant?.user_id || null,
+        buyer_nickname: complainant?.nickname || null,
+        seller_id: respondent?.user_id || null,
+        seller_nickname: respondent?.nickname || null,
+        mediator_id: claim.players?.find((p: any) => p.role === 'mediator')?.user_id || null,
         
         // Valores
         amount_value: claim.claim_details?.amount?.value || 0,
