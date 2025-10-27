@@ -4493,6 +4493,7 @@ export type Database = {
           buyer_nickname: string | null
           claim_id: string
           created_at: string | null
+          data_vencimento_acao: string | null
           date_created: string | null
           integration_account_id: string | null
           last_updated: string | null
@@ -4536,6 +4537,7 @@ export type Database = {
           buyer_nickname?: string | null
           claim_id: string
           created_at?: string | null
+          data_vencimento_acao?: string | null
           date_created?: string | null
           integration_account_id?: string | null
           last_updated?: string | null
@@ -4579,6 +4581,7 @@ export type Database = {
           buyer_nickname?: string | null
           claim_id?: string
           created_at?: string | null
+          data_vencimento_acao?: string | null
           date_created?: string | null
           integration_account_id?: string | null
           last_updated?: string | null
