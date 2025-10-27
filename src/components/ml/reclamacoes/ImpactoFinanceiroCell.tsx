@@ -80,13 +80,13 @@ export function ImpactoFinanceiroCell({
         >
           <AnimatePresence>
             {showTooltip && (
-              <motion.div
-                initial={{ opacity: 0, y: 5, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 5, scale: 0.95 }}
-                transition={springConfig}
-                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] pointer-events-none"
-              >
+            <motion.div
+              initial={{ opacity: 0, x: 5, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 5, scale: 0.95 }}
+              transition={springConfig}
+              className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-[100] pointer-events-none"
+            >
               <div className={cn(
                 "w-[220px] px-3 py-2 rounded-lg",
                 "bg-popover backdrop-blur-sm",
@@ -98,7 +98,7 @@ export function ImpactoFinanceiroCell({
                     {config.neutro.description}
                   </p>
                 </div>
-                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border" />
+              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-4 border-t-transparent border-b-transparent border-l-border" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -127,11 +127,11 @@ export function ImpactoFinanceiroCell({
         <AnimatePresence>
           {showTooltip && (
             <motion.div
-              initial={{ opacity: 0, y: 5, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 5, scale: 0.95 }}
+              initial={{ opacity: 0, x: 5, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 5, scale: 0.95 }}
               transition={springConfig}
-              className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] pointer-events-none"
+              className="absolute right-full mr-2 top-1/2 -translate-y-1/2 z-[100] pointer-events-none"
             >
               <div className={cn(
                 "w-[220px] px-3 py-2 rounded-lg",
@@ -144,7 +144,7 @@ export function ImpactoFinanceiroCell({
                   {description}
                 </p>
               </div>
-              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border" />
+              <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-4 border-b-4 border-l-4 border-t-transparent border-b-transparent border-l-border" />
             </motion.div>
           )}
         </AnimatePresence>
