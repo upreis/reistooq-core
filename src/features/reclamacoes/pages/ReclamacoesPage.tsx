@@ -15,12 +15,14 @@ import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { ReclamacoesAccountSelector } from '../components/ReclamacoesAccountSelector';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Download } from 'lucide-react';
 import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
 import { logger } from '@/utils/logger';
+import { toast } from 'sonner';
 
 export function ReclamacoesPage() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const [filters, setFilters] = useState({
     periodo: '7',
@@ -75,6 +77,56 @@ export function ReclamacoesPage() {
     refresh
   } = useReclamacoes(filters, selectedAccountIds);
 
+  // Sincronizar claims da API do ML
+  const handleSync = async () => {
+    if (selectedAccountIds.length === 0) {
+      toast.error('Selecione pelo menos uma conta');
+      return;
+    }
+
+    setIsSyncing(true);
+    toast.info('Sincronizando claims do Mercado Livre...', {
+      description: 'Isso pode levar alguns minutos'
+    });
+
+    try {
+      for (const accountId of selectedAccountIds) {
+        const account = mlAccounts?.find(a => a.id === accountId);
+        if (!account?.account_identifier) continue;
+
+        const { data, error: syncError } = await supabase.functions.invoke('ml-claims-fetch', {
+          body: {
+            accountId,
+            sellerId: account.account_identifier,
+            limit: 50,
+            offset: 0
+          }
+        });
+
+        if (syncError) throw syncError;
+        
+        logger.info('Claims sincronizados', {
+          accountId,
+          count: data?.count || 0
+        });
+      }
+
+      toast.success('Sincronização concluída!', {
+        description: 'Os dados foram atualizados com sucesso'
+      });
+      
+      // Atualizar a lista
+      await refresh();
+    } catch (error: any) {
+      logger.error('Erro ao sincronizar claims', { error });
+      toast.error('Erro na sincronização', {
+        description: error.message || 'Erro desconhecido'
+      });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   // Verificar se há erro de integração
   const hasIntegrationError = error?.includes('seller_id') || error?.includes('integração');
 
@@ -120,6 +172,14 @@ export function ReclamacoesPage() {
             reclamacoes={reclamacoes} 
             disabled={isLoading || isRefreshing}
           />
+          <Button
+            onClick={handleSync}
+            disabled={isSyncing || selectedAccountIds.length === 0}
+            variant="default"
+          >
+            <Download className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-bounce' : ''}`} />
+            {isSyncing ? 'Sincronizando...' : 'Sincronizar Claims'}
+          </Button>
           <Button
             onClick={refresh}
             disabled={isRefreshing || selectedAccountIds.length === 0}
