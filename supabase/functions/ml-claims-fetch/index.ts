@@ -139,12 +139,13 @@ Deno.serve(async (req) => {
       console.log(`[ml-claims-fetch] Após filtro de data: ${claims.length} claims`);
     }
 
-    // Enriquecer claims com reasons e order details
+    // Cache de reasons para evitar chamadas repetidas
+    const reasonsCache = new Map<string, any>();
+
+    // Enriquecer claims com reasons
     const enrichedClaims = await Promise.all(claims.map(async (claim: any) => {
       let reasonData = null;
-      let orderData = null;
 
-      // 1️⃣ Buscar Reason Details
       if (claim.reason_id && !reasonsCache.has(claim.reason_id)) {
         try {
           const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${claim.reason_id}`;
@@ -155,30 +156,13 @@ Deno.serve(async (req) => {
           if (reasonRes.ok) {
             reasonData = await reasonRes.json();
             reasonsCache.set(claim.reason_id, reasonData);
-            console.log(`[ml-claims-fetch] Reason ${claim.reason_id} enriquecido`);
+            console.log(`[ml-claims-fetch] ✅ Reason ${claim.reason_id} enriquecido:`, reasonData?.reason_name);
           }
         } catch (error) {
-          console.error(`[ml-claims-fetch] Erro ao buscar reason ${claim.reason_id}`, error);
+          console.error(`[ml-claims-fetch] ❌ Erro ao buscar reason ${claim.reason_id}`, error);
         }
       } else if (claim.reason_id) {
         reasonData = reasonsCache.get(claim.reason_id);
-      }
-
-      // 2️⃣ Buscar Order Details (para preencher nicknames e valores)
-      if (claim.resource === 'order' && claim.resource_id) {
-        try {
-          const orderUrl = `https://api.mercadolibre.com/orders/${claim.resource_id}`;
-          const orderRes = await fetch(orderUrl, {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-          });
-
-          if (orderRes.ok) {
-            orderData = await orderRes.json();
-            console.log(`[ml-claims-fetch] Order ${claim.resource_id} enriquecido`);
-          }
-        } catch (error) {
-          console.error(`[ml-claims-fetch] Erro ao buscar order ${claim.resource_id}`, error);
-        }
       }
 
       // Extrair dados importantes
@@ -199,21 +183,21 @@ Deno.serve(async (req) => {
         last_updated: claim.last_updated,
         site_id: claim.site_id,
         
-        // Reason (enriquecido)
+        // Reason
         reason_name: reasonData?.reason_name || null,
         reason_detail: reasonData?.reason_detail || null,
         reason_category: reasonData?.category || null,
         
-        // Players (enriquecidos com nicknames da order)
-        buyer_id: complainant?.user_id || orderData?.buyer?.id || null,
-        buyer_nickname: orderData?.buyer?.nickname || complainant?.nickname || null,
-        seller_id: respondent?.user_id || orderData?.seller?.id || null,
-        seller_nickname: orderData?.seller?.nickname || respondent?.nickname || null,
+        // Players (extraídos corretamente do array)
+        buyer_id: complainant?.user_id || null,
+        buyer_nickname: complainant?.nickname || null,
+        seller_id: respondent?.user_id || null,
+        seller_nickname: respondent?.nickname || null,
         mediator_id: claim.players?.find((p: any) => p.role === 'mediator')?.user_id || null,
         
-        // Valores (enriquecidos da order)
-        amount_value: orderData?.total_amount || claim.claim_details?.amount?.value || 0,
-        amount_currency: orderData?.currency_id || claim.claim_details?.amount?.currency_id || 'BRL',
+        // Valores
+        amount_value: claim.claim_details?.amount?.value || 0,
+        amount_currency: claim.claim_details?.amount?.currency_id || 'BRL',
         
         // Resolution
         resolution_type: resolution.type || null,
@@ -234,10 +218,10 @@ Deno.serve(async (req) => {
         total_evidencias: 0,
         mensagens_nao_lidas: 0,
         
-        // Order (enriquecido)
+        // Order (será enriquecido depois)
         order_id: claim.resource_id,
-        order_status: orderData?.status || null,
-        order_total: orderData?.total_amount || null,
+        order_status: null,
+        order_total: null,
         
         // Metadata
         integration_account_id: accountId,
@@ -246,6 +230,15 @@ Deno.serve(async (req) => {
         updated_at: new Date().toISOString()
       };
     }));
+
+    console.log('📊 Total de claims mapeados:', enrichedClaims.length);
+    console.log('🎯 Reasons buscados:', {
+      total: reasonsCache.size,
+      ids: Array.from(reasonsCache.keys())
+    });
+    
+    const claimsComReasons = enrichedClaims.filter(c => c.reason_name !== null);
+    console.log(`✅ Claims com reason_name: ${claimsComReasons.length}/${enrichedClaims.length}`);
 
     // Buscar organization_id da conta
     const { data: accountData } = await supabase
