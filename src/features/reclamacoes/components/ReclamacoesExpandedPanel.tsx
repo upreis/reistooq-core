@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { ReclamacoesGeralTab } from './tabs/ReclamacoesGeralTab';
 import { ReclamacoesMensagensTab } from './tabs/ReclamacoesMensagensTab';
+import { ReclamacoesResolucaoTab } from './tabs/ReclamacoesResolucaoTab';
 
 interface ReclamacoesExpandedPanelProps {
   claim: any;
@@ -46,8 +47,8 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="resolucao" disabled>
-              Resolução (Em breve)
+            <TabsTrigger value="resolucao" disabled={!claim.resolution_type}>
+              Resolução
             </TabsTrigger>
           </TabsList>
 
@@ -63,9 +64,7 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
           </TabsContent>
 
           <TabsContent value="resolucao" className="mt-6">
-            <div className="text-center text-muted-foreground py-8">
-              Funcionalidade disponível na próxima versão
-            </div>
+            <ReclamacoesResolucaoTab claim={claim} />
           </TabsContent>
         </Tabs>
       </CardContent>
