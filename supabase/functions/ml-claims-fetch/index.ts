@@ -207,14 +207,14 @@ Deno.serve(async (req) => {
         
         // Players (extraídos corretamente do array)
         buyer_id: complainant?.user_id || null,
-        buyer_nickname: complainant?.nickname || null,
+        buyer_nickname: null, // ✅ Será preenchido pelo enriquecimento de orders
         seller_id: respondent?.user_id || null,
-        seller_nickname: respondent?.nickname || null,
+        seller_nickname: null, // ✅ Será preenchido pelo enriquecimento de orders
         mediator_id: claim.players?.find((p: any) => p.role === 'mediator')?.user_id || null,
         
-        // Valores
-        amount_value: claim.claim_details?.amount?.value || 0,
-        amount_currency: claim.claim_details?.amount?.currency_id || 'BRL',
+        // Valores (✅ CORRIGIDO: claim.amount, não claim.claim_details.amount)
+        amount_value: claim.amount?.value || 0,
+        amount_currency: claim.amount?.currency_id || 'BRL',
         
         // Resolution
         resolution_type: resolution.type || null,
@@ -223,6 +223,7 @@ Deno.serve(async (req) => {
         resolution_date: resolution.date || null,
         resolution_amount: resolution.amount?.value || null,
         resolution_reason: resolution.reason || null,
+        data_vencimento_acao: resolution.deadline || null, // ✨ NOVO CAMPO
         
         // Related Entities (flags)
         tem_mensagens: relatedEntities.includes('messages'),
