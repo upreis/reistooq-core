@@ -13,6 +13,7 @@ const corsHeaders = {
 interface ClaimFilters {
   status?: string;
   type?: string;
+  stage?: string;
   date_from?: string;
   date_to?: string;
 }
@@ -132,6 +133,7 @@ Deno.serve(async (req) => {
       });
 
       console.log(`[ml-claims-fetch] Após filtro de data: ${claims.length} claims`);
+    }
 
     // Cache de reasons para evitar chamadas repetidas
     const reasonsCache = new Map<string, any>();
