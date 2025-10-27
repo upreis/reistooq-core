@@ -146,13 +146,27 @@ Deno.serve(async (req) => {
       ids: uniqueReasonIds
     });
 
-    // 2️⃣ Buscar todos os reasons de uma vez usando ReasonsService
-    const reasonsService = new ReasonsService();
-    const reasonsMap = await reasonsService.fetchMultipleReasons(
-      uniqueReasonIds,
-      accessToken,
-      accountId
-    );
+    // 2️⃣ Buscar todos os reasons de uma vez (batch)
+    const reasonsMap = new Map<string, any>();
+    
+    await Promise.all(uniqueReasonIds.map(async (reasonId) => {
+      try {
+        const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${reasonId}`;
+        const reasonRes = await fetch(reasonUrl, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (reasonRes.ok) {
+          const reasonData = await reasonRes.json();
+          reasonsMap.set(reasonId, reasonData);
+          console.log(`[ml-claims-fetch] ✅ Reason ${reasonId} encontrado:`, reasonData?.name || 'sem nome');
+        } else {
+          console.warn(`[ml-claims-fetch] ⚠️ Reason ${reasonId} não encontrado (${reasonRes.status})`);
+        }
+      } catch (error) {
+        console.error(`[ml-claims-fetch] ❌ Erro ao buscar reason ${reasonId}:`, error);
+      }
+    }));
 
     console.log('✅ Reasons buscados:', {
       total: reasonsMap.size,
@@ -162,8 +176,6 @@ Deno.serve(async (req) => {
     // 3️⃣ Enriquecer claims com os reasons
     const enrichedClaims = claims.map((claim: any) => {
       const reasonData = claim.reason_id ? reasonsMap.get(claim.reason_id) : null;
-      
-      console.log(`[ml-claims-fetch] ✅ Reason ${claim.reason_id} enriquecido:`, reasonData?.name);
 
       // Extrair dados importantes
       const complainant = claim.players?.find((p: any) => p.role === 'complainant');
