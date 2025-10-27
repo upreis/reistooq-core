@@ -25,28 +25,28 @@ export function ImpactoFinanceiroCell({
       icon: TrendingUp,
       label: 'Ganho',
       variant: 'default' as const,
-      className: 'bg-green-100 text-green-800 border-green-300',
+      className: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
       valorPrefix: '+'
     },
     perda: {
       icon: TrendingDown,
       label: 'Perda',
       variant: 'destructive' as const,
-      className: 'bg-red-100 text-red-800 border-red-300',
+      className: 'bg-destructive/10 text-destructive border-destructive/20',
       valorPrefix: '-'
     },
     coberto_ml: {
       icon: Shield,
       label: 'Coberto ML',
       variant: 'default' as const,
-      className: 'bg-blue-100 text-blue-800 border-blue-300',
+      className: 'bg-primary/10 text-primary border-primary/20',
       valorPrefix: ''
     },
     neutro: {
       icon: Clock,
       label: 'Pendente',
       variant: 'outline' as const,
-      className: 'bg-gray-100 text-gray-600 border-gray-300',
+      className: 'bg-muted text-muted-foreground border-border',
       valorPrefix: ''
     }
   };
