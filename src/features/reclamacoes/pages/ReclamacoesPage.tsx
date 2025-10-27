@@ -8,6 +8,7 @@ import { useReclamacoes } from '../hooks/useReclamacoes';
 import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
+import { ReclamacoesExport } from '../components/ReclamacoesExport';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -45,14 +46,20 @@ export function ReclamacoesPage() {
             Gerencie claims e mediações do Mercado Livre
           </p>
         </div>
-        <Button
-          onClick={refresh}
-          disabled={isRefreshing}
-          variant="outline"
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReclamacoesExport 
+            reclamacoes={reclamacoes} 
+            disabled={isLoading || isRefreshing}
+          />
+          <Button
+            onClick={refresh}
+            disabled={isRefreshing}
+            variant="outline"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Atualizar
+          </Button>
+        </div>
       </div>
 
       {/* Stats */}
