@@ -3,18 +3,25 @@
  * FASE 1: Estrutura básica com filtros e tabela
  */
 
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoes } from '../hooks/useReclamacoes';
 import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesExport } from '../components/ReclamacoesExport';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
+import { ReclamacoesAccountSelector } from '../components/ReclamacoesAccountSelector';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
+import { logger } from '@/utils/logger';
 
 export function ReclamacoesPage() {
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  
   const [filters, setFilters] = useState({
     periodo: '7',
     status: '',
@@ -26,6 +33,37 @@ export function ReclamacoesPage() {
     date_to: ''
   });
 
+  // Buscar contas ML disponíveis
+  const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
+    queryKey: ["ml-accounts-reclamacoes"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("integration_accounts")
+        .select("id, name, account_identifier, organization_id, is_active, provider")
+        .eq("provider", "mercadolivre")
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  // Auto-selecionar contas usando validação centralizada
+  React.useEffect(() => {
+    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
+      const { accountIds } = validateMLAccounts(mlAccounts, selectedAccountIds);
+      if (accountIds.length > 0) {
+        setSelectedAccountIds(accountIds);
+        logger.debug('Contas auto-selecionadas', { 
+          context: 'ReclamacoesPage',
+          count: accountIds.length,
+          accountIds 
+        });
+      }
+    }
+  }, [mlAccounts, selectedAccountIds.length]);
+
   const {
     reclamacoes,
     isLoading,
@@ -35,10 +73,37 @@ export function ReclamacoesPage() {
     goToPage,
     changeItemsPerPage,
     refresh
-  } = useReclamacoes(filters);
+  } = useReclamacoes(filters, selectedAccountIds);
 
   // Verificar se há erro de integração
   const hasIntegrationError = error?.includes('seller_id') || error?.includes('integração');
+
+  // Loading states
+  if (loadingAccounts) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Carregando contas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Sem contas ML
+  if (!mlAccounts || mlAccounts.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold">Reclamações</h1>
+          <p className="text-muted-foreground">
+            Gerencie claims e mediações do Mercado Livre
+          </p>
+        </div>
+        <ReclamacoesEmptyState type="no-integration" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -57,7 +122,7 @@ export function ReclamacoesPage() {
           />
           <Button
             onClick={refresh}
-            disabled={isRefreshing}
+            disabled={isRefreshing || selectedAccountIds.length === 0}
             variant="outline"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -65,6 +130,13 @@ export function ReclamacoesPage() {
           </Button>
         </div>
       </div>
+
+      {/* Seletor de Contas */}
+      <ReclamacoesAccountSelector
+        accounts={mlAccounts}
+        selectedIds={selectedAccountIds}
+        onSelectionChange={setSelectedAccountIds}
+      />
 
       {/* Stats - só mostrar se tiver dados */}
       {!isLoading && reclamacoes.length > 0 && (

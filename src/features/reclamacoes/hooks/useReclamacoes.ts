@@ -25,12 +25,11 @@ interface PaginationInfo {
   totalPages: number;
 }
 
-export function useReclamacoes(filters: ClaimFilters) {
+export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string[]) {
   const [reclamacoes, setReclamacoes] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
     itemsPerPage: 50,
@@ -39,30 +38,8 @@ export function useReclamacoes(filters: ClaimFilters) {
   });
   const { toast } = useToast();
 
-  // Buscar primeira conta ML disponível
-  useEffect(() => {
-    const fetchAccount = async () => {
-      const { data: accounts } = await supabase
-        .from('integration_accounts')
-        .select('id')
-        .eq('provider', 'mercadolivre')
-        .eq('is_active', true)
-        .limit(1);
-      
-      if (accounts && accounts.length > 0) {
-        setSelectedAccountId(accounts[0].id);
-      } else {
-        // Não há conta ML configurada
-        setSelectedAccountId(null);
-        setIsLoading(false);
-        setError('Nenhuma integração do Mercado Livre encontrada');
-      }
-    };
-    fetchAccount();
-  }, []);
-
   const fetchReclamacoes = async (showLoading = true) => {
-    if (!selectedAccountId) {
+    if (!selectedAccountIds || selectedAccountIds.length === 0) {
       setReclamacoes([]);
       setIsLoading(false);
       return;
@@ -103,7 +80,7 @@ export function useReclamacoes(filters: ClaimFilters) {
       let query = supabase
         .from('reclamacoes')
         .select('*', { count: 'exact' })
-        .eq('integration_account_id', selectedAccountId)
+        .in('integration_account_id', selectedAccountIds)
         .gte('date_created', dataInicio)
         .lte('date_created', dataFim)
         .order('date_created', { ascending: false })
@@ -143,20 +120,39 @@ export function useReclamacoes(filters: ClaimFilters) {
         }
       }
 
-      // Buscar da API ML para atualizar
-      const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
-        body: {
-          accountId: selectedAccountId,
-          filters: {
-            status: filters.status,
-            type: filters.type,
-            date_from: dataInicio,
-            date_to: dataFim
-          },
-          limit: pagination.itemsPerPage,
-          offset: offset
+      // Buscar da API ML para atualizar (buscar de todas as contas selecionadas)
+      const allClaims: any[] = [];
+      
+      for (const accountId of selectedAccountIds) {
+        const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
+          body: {
+            accountId,
+            filters: {
+              status: filters.status,
+              type: filters.type,
+              date_from: dataInicio,
+              date_to: dataFim
+            },
+            limit: pagination.itemsPerPage,
+            offset: offset
+          }
+        });
+
+        if (functionError) {
+          console.error('[useReclamacoes] Erro na edge function para conta', accountId, functionError);
+          continue; // Pular esta conta e continuar com as outras
         }
-      });
+
+        if (data?.claims) {
+          allClaims.push(...data.claims);
+        }
+      }
+
+      // Consolidar dados de todas as contas
+      const { data, error: functionError } = { 
+        data: { claims: allClaims }, 
+        error: allClaims.length === 0 ? new Error('Nenhum dado retornado') : null 
+      };
 
       if (functionError) {
         console.error('[useReclamacoes] Erro na edge function:', functionError);
@@ -204,11 +200,11 @@ export function useReclamacoes(filters: ClaimFilters) {
 
   // Recarregar quando filtros mudarem (mas não quando paginação interna mudar)
   useEffect(() => {
-    if (selectedAccountId) {
+    if (selectedAccountIds && selectedAccountIds.length > 0) {
       fetchReclamacoes();
     }
   }, [
-    selectedAccountId, 
+    selectedAccountIds.join(','), // Usar join para detectar mudanças no array
     filters.periodo, 
     filters.status, 
     filters.type,
@@ -222,7 +218,7 @@ export function useReclamacoes(filters: ClaimFilters) {
 
   // Recarregar quando página/items per page mudarem (via ações do usuário)
   useEffect(() => {
-    if (selectedAccountId && !isLoading) {
+    if (selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
       fetchReclamacoes(false);
     }
   }, [pagination.currentPage, pagination.itemsPerPage]);
