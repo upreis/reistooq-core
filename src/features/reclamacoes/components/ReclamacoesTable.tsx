@@ -184,8 +184,12 @@ export function ReclamacoesTable({
               <TableCell>
                 <ImpactoFinanceiroCell
                   impacto={claim.impacto_financeiro}
-                  valor={claim.impacto_financeiro === 'neutro' ? claim.amount_value : claim.valor_impacto || 0}
-                  moeda={claim.amount_currency}
+                  valor={
+                    claim.impacto_financeiro === 'neutro' 
+                      ? (claim.amount_value || 0)
+                      : (claim.valor_impacto || 0)
+                  }
+                  moeda={claim.amount_currency || 'BRL'}
                 />
               </TableCell>
             </TableRow>
