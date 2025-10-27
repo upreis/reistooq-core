@@ -87,12 +87,12 @@ export function ImpactoFinanceiroCell({
                 transition={springConfig}
                 className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] pointer-events-none"
               >
-                <div className={cn(
-                  "w-[160px] px-3 py-2 rounded-lg",
-                  "bg-popover backdrop-blur-sm",
-                  "border border-border",
-                  "shadow-lg"
-                )}>
+              <div className={cn(
+                "w-[220px] px-3 py-2 rounded-lg",
+                "bg-popover backdrop-blur-sm",
+                "border border-border",
+                "shadow-lg"
+              )}>
                   <p className="text-xs font-semibold mb-1 text-foreground">{config.neutro.label}</p>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     {config.neutro.description}
@@ -134,7 +134,7 @@ export function ImpactoFinanceiroCell({
               className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] pointer-events-none"
             >
               <div className={cn(
-                "w-[160px] px-3 py-2 rounded-lg",
+                "w-[220px] px-3 py-2 rounded-lg",
                 "bg-popover backdrop-blur-sm",
                 "border border-border",
                 "shadow-lg"
