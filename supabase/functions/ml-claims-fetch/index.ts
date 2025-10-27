@@ -37,14 +37,15 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { accountId, filters, limit, offset } = await req.json() as {
+    const { accountId, sellerId, filters, limit, offset } = await req.json() as {
       accountId: string;
+      sellerId: string;
       filters?: ClaimFilters;
       limit?: number;
       offset?: number;
     };
 
-    console.log('[ml-claims-fetch] Buscando claims', { accountId, filters });
+    console.log('[ml-claims-fetch] Buscando claims', { accountId, sellerId, filters });
 
     // Buscar token ML
     const tokenUrl = `${supabaseUrl}/functions/v1/integrations-get-secret`;
@@ -73,20 +74,10 @@ Deno.serve(async (req) => {
       throw new Error('Access token não encontrado');
     }
 
-    // Buscar seller_id da conta (usar account_identifier que já tem o seller_id do ML)
-    const { data: account } = await supabase
-      .from('integration_accounts')
-      .select('account_identifier, metadata')
-      .eq('id', accountId)
-      .single();
-
-    const sellerId = account?.account_identifier;
+    // Validar seller_id recebido
     if (!sellerId) {
-      console.error('[ml-claims-fetch] seller_id não encontrado', { 
-        accountId, 
-        account_identifier: account?.account_identifier 
-      });
-      throw new Error('seller_id não encontrado. Conta do Mercado Livre sem account_identifier.');
+      console.error('[ml-claims-fetch] seller_id não fornecido', { accountId });
+      throw new Error('seller_id não fornecido. Informe o seller_id da conta.');
     }
 
     // Construir URL da busca com paginação

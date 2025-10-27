@@ -120,13 +120,30 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         }
       }
 
+      // Buscar seller_id das contas
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('integration_accounts')
+        .select('id, account_identifier')
+        .in('id', selectedAccountIds);
+
+      if (accountsError || !accountsData || accountsData.length === 0) {
+        console.error('[useReclamacoes] Erro ao buscar dados das contas:', accountsError);
+        throw new Error('Não foi possível obter informações das contas do Mercado Livre');
+      }
+
       // Buscar da API ML para atualizar (buscar de todas as contas selecionadas)
       const allClaims: any[] = [];
       
-      for (const accountId of selectedAccountIds) {
+      for (const account of accountsData) {
+        if (!account.account_identifier) {
+          console.warn(`[useReclamacoes] Conta ${account.id} sem account_identifier (seller_id)`);
+          continue;
+        }
+
         const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
           body: {
-            accountId,
+            accountId: account.id,
+            sellerId: account.account_identifier,
             filters: {
               status: filters.status,
               type: filters.type,
@@ -139,7 +156,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         });
 
         if (functionError) {
-          console.error('[useReclamacoes] Erro na edge function para conta', accountId, functionError);
+          console.error('[useReclamacoes] Erro na edge function para conta', account.id, functionError);
           continue; // Pular esta conta e continuar com as outras
         }
 
