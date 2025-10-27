@@ -16,7 +16,12 @@ export function ReclamacoesPage() {
   const [filters, setFilters] = useState({
     periodo: '7',
     status: '',
-    type: ''
+    type: '',
+    stage: '',
+    has_messages: '',
+    has_evidences: '',
+    date_from: '',
+    date_to: ''
   });
 
   const {

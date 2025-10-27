@@ -1,6 +1,6 @@
 /**
  * 🎣 HOOK PRINCIPAL DE RECLAMAÇÕES
- * MVP: Busca e gerenciamento de claims
+ * FASE 4.3: Suporte para filtros avançados
  */
 
 import { useState, useEffect } from 'react';
@@ -11,6 +11,11 @@ interface ClaimFilters {
   periodo: string;
   status?: string;
   type?: string;
+  stage?: string;
+  has_messages?: string;
+  has_evidences?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 export function useReclamacoes(filters: ClaimFilters) {
@@ -61,19 +66,46 @@ export function useReclamacoes(filters: ClaimFilters) {
         return hoje.toISOString();
       };
 
+      // Determinar datas para busca
+      let dataInicio: string;
+      let dataFim: string;
+
+      if (filters.periodo === 'custom') {
+        dataInicio = filters.date_from || calcularDataInicio('7');
+        dataFim = filters.date_to || new Date().toISOString();
+      } else {
+        dataInicio = calcularDataInicio(filters.periodo);
+        dataFim = new Date().toISOString();
+      }
+
       // Tentar buscar do banco primeiro (cache)
       let query = supabase
         .from('reclamacoes')
         .select('*')
         .eq('integration_account_id', selectedAccountId)
-        .gte('date_created', calcularDataInicio(filters.periodo))
+        .gte('date_created', dataInicio)
+        .lte('date_created', dataFim)
         .order('date_created', { ascending: false });
 
+      // Aplicar filtros
       if (filters.status) {
         query = query.eq('status', filters.status);
       }
       if (filters.type) {
         query = query.eq('type', filters.type);
+      }
+      if (filters.stage) {
+        query = query.eq('stage', filters.stage);
+      }
+      if (filters.has_messages === 'true') {
+        query = query.eq('tem_mensagens', true);
+      } else if (filters.has_messages === 'false') {
+        query = query.eq('tem_mensagens', false);
+      }
+      if (filters.has_evidences === 'true') {
+        query = query.eq('tem_evidencias', true);
+      } else if (filters.has_evidences === 'false') {
+        query = query.eq('tem_evidencias', false);
       }
 
       const { data: cached, error: dbError } = await query;
@@ -89,8 +121,8 @@ export function useReclamacoes(filters: ClaimFilters) {
           filters: {
             status: filters.status,
             type: filters.type,
-            date_from: calcularDataInicio(filters.periodo),
-            date_to: new Date().toISOString()
+            date_from: dataInicio,
+            date_to: dataFim
           }
         }
       });
@@ -98,7 +130,24 @@ export function useReclamacoes(filters: ClaimFilters) {
       if (functionError) throw functionError;
 
       if (data?.claims) {
-        setReclamacoes(data.claims);
+        // Aplicar filtros locais adicionais
+        let filteredClaims = data.claims;
+
+        if (filters.stage) {
+          filteredClaims = filteredClaims.filter((c: any) => c.stage === filters.stage);
+        }
+        if (filters.has_messages === 'true') {
+          filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === true);
+        } else if (filters.has_messages === 'false') {
+          filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === false);
+        }
+        if (filters.has_evidences === 'true') {
+          filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === true);
+        } else if (filters.has_evidences === 'false') {
+          filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
+        }
+
+        setReclamacoes(filteredClaims);
       }
 
     } catch (err: any) {
@@ -119,7 +168,17 @@ export function useReclamacoes(filters: ClaimFilters) {
     if (selectedAccountId) {
       fetchReclamacoes();
     }
-  }, [selectedAccountId, filters.periodo, filters.status, filters.type]);
+  }, [
+    selectedAccountId, 
+    filters.periodo, 
+    filters.status, 
+    filters.type,
+    filters.stage,
+    filters.has_messages,
+    filters.has_evidences,
+    filters.date_from,
+    filters.date_to
+  ]);
 
   return {
     reclamacoes,
