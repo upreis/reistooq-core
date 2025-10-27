@@ -73,20 +73,20 @@ Deno.serve(async (req) => {
       throw new Error('Access token não encontrado');
     }
 
-    // Buscar seller_id da conta
+    // Buscar seller_id da conta (usar account_identifier que já tem o seller_id do ML)
     const { data: account } = await supabase
       .from('integration_accounts')
-      .select('metadata')
+      .select('account_identifier, metadata')
       .eq('id', accountId)
       .single();
 
-    const sellerId = account?.metadata?.user_id;
+    const sellerId = account?.account_identifier;
     if (!sellerId) {
-      console.error('[ml-claims-fetch] seller_id não encontrado no metadata da conta', { 
+      console.error('[ml-claims-fetch] seller_id não encontrado', { 
         accountId, 
-        metadata: account?.metadata 
+        account_identifier: account?.account_identifier 
       });
-      throw new Error('seller_id não encontrado. Configure a integração do Mercado Livre corretamente.');
+      throw new Error('seller_id não encontrado. Conta do Mercado Livre sem account_identifier.');
     }
 
     // Construir URL da busca com paginação
