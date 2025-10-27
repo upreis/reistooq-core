@@ -51,15 +51,25 @@ export function ImpactoFinanceiroCell({
     }
   };
 
-  // Se não tem impacto ou é neutro, mostrar pendente
+  // Se não tem impacto ou é neutro, mostrar pendente COM VALOR
   if (!impacto || impacto === 'neutro') {
     const Icon = config.neutro.icon;
+    const valorFormatadoNeutro = new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: moeda,
+    }).format(Math.abs(valor));
+    
     return (
       <div className="flex items-center gap-2">
         <Badge variant="outline" className={config.neutro.className}>
           <Icon className="w-3 h-3 mr-1" />
           {config.neutro.label}
         </Badge>
+        {valor !== 0 && (
+          <span className="text-sm font-medium text-muted-foreground">
+            {valorFormatadoNeutro}
+          </span>
+        )}
       </div>
     );
   }
