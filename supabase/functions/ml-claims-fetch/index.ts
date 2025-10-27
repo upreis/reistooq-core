@@ -159,12 +159,17 @@ Deno.serve(async (req) => {
         if (reasonRes.ok) {
           const reasonData = await reasonRes.json();
           reasonsMap.set(reasonId, reasonData);
-          console.log(`[ml-claims-fetch] ✅ Reason ${reasonId} encontrado:`, reasonData?.name || 'sem nome');
+          console.log(`✅ Reason ${reasonId}:`, {
+            id: reasonData.id,
+            name: reasonData.name,
+            detail: reasonData.detail,
+            flow: reasonData.flow
+          });
         } else {
-          console.warn(`[ml-claims-fetch] ⚠️ Reason ${reasonId} não encontrado (${reasonRes.status})`);
+          console.warn(`⚠️ Reason ${reasonId} não encontrado (${reasonRes.status})`);
         }
       } catch (error) {
-        console.error(`[ml-claims-fetch] ❌ Erro ao buscar reason ${reasonId}:`, error);
+        console.error(`❌ Erro ao buscar reason ${reasonId}:`, error);
       }
     }));
 
@@ -184,19 +189,19 @@ Deno.serve(async (req) => {
       const relatedEntities = claim.related_entities || [];
 
       return {
-        claim_id: claim.id,
+        claim_id: String(claim.id),  // ✅ Converter NUMBER para STRING
         type: claim.type,
         status: claim.status,
         stage: claim.stage,
-        resource_id: claim.resource_id,
+        resource_id: String(claim.resource_id),  // ✅ Converter NUMBER para STRING
         resource: claim.resource,
         reason_id: claim.reason_id,
         date_created: claim.date_created,
         last_updated: claim.last_updated,
         site_id: claim.site_id,
         
-        // Reason (usando dados da API - campos corretos)
-        reason_name: reasonData?.id || null,
+        // Reason (usando dados da API - priorizar "name" depois "id")
+        reason_name: reasonData?.name || reasonData?.id || null,
         reason_detail: reasonData?.detail || null,
         reason_category: reasonData?.filter?.group?.[0] || null,
         
@@ -231,7 +236,7 @@ Deno.serve(async (req) => {
         mensagens_nao_lidas: 0,
         
         // Order (será enriquecido depois)
-        order_id: claim.resource_id,
+        order_id: claim.resource === 'order' ? String(claim.resource_id) : null,  // ✅ Converter para STRING
         order_status: null,
         order_total: null,
         
@@ -249,6 +254,11 @@ Deno.serve(async (req) => {
     console.log(`✅ Claims com reason_name: ${claimsComReasons.length}/${enrichedClaims.length}`);
 
     // 4️⃣ ETAPA 2: Enriquecer com dados dos PEDIDOS (Orders)
+    console.log('🔍 Claims para enriquecer:', {
+      total: enrichedClaims.length,
+      tipoOrder: enrichedClaims.filter(c => c.resource === 'order').length,
+      comOrderId: enrichedClaims.filter(c => c.order_id !== null).length
+    });
     console.log('🛒 Iniciando enriquecimento com dados dos pedidos...');
     
     const fullyEnrichedClaims = await Promise.all(enrichedClaims.map(async (claim) => {
@@ -258,6 +268,8 @@ Deno.serve(async (req) => {
       }
 
       try {
+        console.log(`🔍 Buscando order ${claim.order_id}...`);
+        
         const orderUrl = `https://api.mercadolibre.com/orders/${claim.order_id}`;
         const orderResponse = await fetch(orderUrl, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -266,7 +278,12 @@ Deno.serve(async (req) => {
         if (orderResponse.ok) {
           const order = await orderResponse.json();
           
-          console.log(`[ml-claims-fetch] 🛒 Order ${claim.order_id} enriquecido`);
+          console.log(`✅ Order ${claim.order_id} enriquecido:`, {
+            buyer_nickname: order.buyer?.nickname,
+            seller_nickname: order.seller?.nickname,
+            status: order.status,
+            total_amount: order.total_amount
+          });
           
           return {
             ...claim,
@@ -278,10 +295,10 @@ Deno.serve(async (req) => {
             order_total: order.total_amount || null
           };
         } else {
-          console.warn(`[ml-claims-fetch] ⚠️ Order ${claim.order_id} não encontrado (${orderResponse.status})`);
+          console.warn(`⚠️ Order ${claim.order_id} não encontrado (${orderResponse.status})`);
         }
       } catch (error) {
-        console.error(`[ml-claims-fetch] ❌ Erro ao buscar order ${claim.order_id}:`, error);
+        console.error(`❌ Erro ao buscar order ${claim.order_id}:`, error);
       }
 
       return claim;
