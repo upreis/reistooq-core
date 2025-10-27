@@ -139,31 +139,31 @@ Deno.serve(async (req) => {
       console.log(`[ml-claims-fetch] Após filtro de data: ${claims.length} claims`);
     }
 
-    // Cache de reasons para evitar chamadas repetidas
-    const reasonsCache = new Map<string, any>();
+    // 1️⃣ Coletar IDs únicos de reasons
+    const uniqueReasonIds = [...new Set(claims.map((c: any) => c.reason_id).filter(Boolean))];
+    console.log('🎯 Reasons a buscar:', {
+      total: uniqueReasonIds.length,
+      ids: uniqueReasonIds
+    });
 
-    // Enriquecer claims com reasons
-    const enrichedClaims = await Promise.all(claims.map(async (claim: any) => {
-      let reasonData = null;
+    // 2️⃣ Buscar todos os reasons de uma vez usando ReasonsService
+    const reasonsService = new ReasonsService();
+    const reasonsMap = await reasonsService.fetchMultipleReasons(
+      uniqueReasonIds,
+      accessToken,
+      accountId
+    );
 
-      if (claim.reason_id && !reasonsCache.has(claim.reason_id)) {
-        try {
-          const reasonUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/reasons/${claim.reason_id}`;
-          const reasonRes = await fetch(reasonUrl, {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-          });
+    console.log('✅ Reasons buscados:', {
+      total: reasonsMap.size,
+      ids: Array.from(reasonsMap.keys())
+    });
 
-          if (reasonRes.ok) {
-            reasonData = await reasonRes.json();
-            reasonsCache.set(claim.reason_id, reasonData);
-            console.log(`[ml-claims-fetch] ✅ Reason ${claim.reason_id} enriquecido:`, reasonData?.reason_name);
-          }
-        } catch (error) {
-          console.error(`[ml-claims-fetch] ❌ Erro ao buscar reason ${claim.reason_id}`, error);
-        }
-      } else if (claim.reason_id) {
-        reasonData = reasonsCache.get(claim.reason_id);
-      }
+    // 3️⃣ Enriquecer claims com os reasons
+    const enrichedClaims = claims.map((claim: any) => {
+      const reasonData = claim.reason_id ? reasonsMap.get(claim.reason_id) : null;
+      
+      console.log(`[ml-claims-fetch] ✅ Reason ${claim.reason_id} enriquecido:`, reasonData?.name);
 
       // Extrair dados importantes
       const complainant = claim.players?.find((p: any) => p.role === 'complainant');
@@ -183,9 +183,9 @@ Deno.serve(async (req) => {
         last_updated: claim.last_updated,
         site_id: claim.site_id,
         
-        // Reason
-        reason_name: reasonData?.reason_name || null,
-        reason_detail: reasonData?.reason_detail || null,
+        // Reason (usando dados da API ou fallback)
+        reason_name: reasonData?.name || null,
+        reason_detail: reasonData?.description || null,
         reason_category: reasonData?.category || null,
         
         // Players (extraídos corretamente do array)
@@ -232,13 +232,11 @@ Deno.serve(async (req) => {
     }));
 
     console.log('📊 Total de claims mapeados:', enrichedClaims.length);
-    console.log('🎯 Reasons buscados:', {
-      total: reasonsCache.size,
-      ids: Array.from(reasonsCache.keys())
-    });
+    console.log('🔍 PRIMEIRO CLAIM MAPEADO PARA INSERÇÃO:', JSON.stringify(enrichedClaims[0], null, 2));
     
     const claimsComReasons = enrichedClaims.filter(c => c.reason_name !== null);
     console.log(`✅ Claims com reason_name: ${claimsComReasons.length}/${enrichedClaims.length}`);
+    console.log('🔍 TOTAL DE CLAIMS A INSERIR:', enrichedClaims.length);
 
     // Buscar organization_id da conta
     const { data: accountData } = await supabase
