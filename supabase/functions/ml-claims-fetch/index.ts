@@ -496,10 +496,13 @@ Deno.serve(async (req) => {
       // 🔄 BUSCAR DADOS DE TROCAS (CHANGES)
       // ============================================
       
-      const claimsComTrocas = fullyEnrichedClaims.filter(c => c.tem_trocas);
-      console.log(`🔄 Buscando dados de trocas para ${claimsComTrocas.length} claims...`);
+      // ⚠️ ATENÇÃO: A API /claims/search NÃO retorna related_entities
+      // Solução: Tentar buscar /changes para todos os claims e tratar 404
+      console.log(`🔄 Verificando trocas para ${fullyEnrichedClaims.length} claims...`);
       
-      for (const claim of claimsComTrocas) {
+      let trocasEncontradas = 0;
+      
+      for (const claim of fullyEnrichedClaims) {
         try {
           const changesUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.claim_id}/changes`;
           const changesRes = await fetch(changesUrl, {
@@ -508,6 +511,9 @@ Deno.serve(async (req) => {
 
           if (changesRes.ok) {
             const changesData = await changesRes.json();
+            
+            // ✅ Encontrou troca! Marcar flag
+            trocasEncontradas++;
             
             // Extrair dados da troca
             const changeStatus = changesData.status || null;
@@ -541,7 +547,8 @@ Deno.serve(async (req) => {
             await supabase
               .from('reclamacoes')
               .update({
-                total_trocas: 1, // Por enquanto, 1 troca por claim
+                tem_trocas: true, // ✅ Marcar como tendo troca
+                total_trocas: 1,
                 troca_status: changeStatus,
                 troca_status_detail: changeStatusDetail,
                 troca_type: changeType,
@@ -557,15 +564,18 @@ Deno.serve(async (req) => {
               .eq('claim_id', claim.claim_id);
 
             console.log(`✅ Claim ${claim.claim_id}: Troca [${changeType}] status=${changeStatus} (${changeItems.length} itens)`);
+          } else if (changesRes.status === 404) {
+            // 404 = Não tem troca, é esperado para a maioria dos claims
+            // Não fazer nada, apenas continuar
           } else {
-            console.warn(`⚠️ Falha ao buscar troca do claim ${claim.claim_id}. Status: ${changesRes.status}`);
+            console.warn(`⚠️ Erro ao buscar troca do claim ${claim.claim_id}. Status: ${changesRes.status}`);
           }
         } catch (error) {
           console.error(`❌ Erro ao buscar troca do claim ${claim.claim_id}:`, error.message);
         }
       }
 
-      console.log(`✅ Busca de trocas concluída!`);
+      console.log(`✅ Busca de trocas concluída! ${trocasEncontradas} trocas encontradas de ${fullyEnrichedClaims.length} claims.`);
     }
 
     return new Response(
