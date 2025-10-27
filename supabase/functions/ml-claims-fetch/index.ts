@@ -510,10 +510,29 @@ Deno.serve(async (req) => {
           });
 
           if (changesRes.ok) {
-            const changesData = await changesRes.json();
+            const changesResponse = await changesRes.json();
             
-            // ✅ Encontrou troca! Marcar flag
+            // ✅ A API retorna um objeto com paginação: { data: [], paging: {} }
+            const changesArray = changesResponse.data || [];
+            
+            // Se não há trocas, resetar flags e continuar
+            if (changesArray.length === 0) {
+              await supabase
+                .from('reclamacoes')
+                .update({
+                  tem_trocas: false,
+                  total_trocas: 0,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('claim_id', claim.claim_id);
+              continue;
+            }
+            
+            // ✅ Encontrou troca(s)! Processar a primeira
             trocasEncontradas++;
+            const changesData = changesArray[0]; // Pegar primeira troca
+            
+            console.log(`📦 Troca encontrada no claim ${claim.claim_id}:`, JSON.stringify(changesData, null, 2));
             
             // Extrair dados da troca
             const changeStatus = changesData.status || null;
@@ -548,7 +567,7 @@ Deno.serve(async (req) => {
               .from('reclamacoes')
               .update({
                 tem_trocas: true, // ✅ Marcar como tendo troca
-                total_trocas: 1,
+                total_trocas: changesArray.length, // Total de trocas no array
                 troca_status: changeStatus,
                 troca_status_detail: changeStatusDetail,
                 troca_type: changeType,
@@ -558,12 +577,12 @@ Deno.serve(async (req) => {
                 troca_return_id: changeReturnId,
                 troca_new_orders: newOrders,
                 troca_items: changeItems,
-                troca_raw_data: changesData,
+                troca_raw_data: changesResponse, // Salvar resposta completa com paginação
                 updated_at: new Date().toISOString()
               })
               .eq('claim_id', claim.claim_id);
 
-            console.log(`✅ Claim ${claim.claim_id}: Troca [${changeType}] status=${changeStatus} (${changeItems.length} itens)`);
+            console.log(`✅ Claim ${claim.claim_id}: Troca [${changeType}] status=${changeStatus} (${changeItems.length} itens, ${changesArray.length} troca(s) total)`);
           } else if (changesRes.status === 404) {
             // 404 = Não tem troca, é esperado para a maioria dos claims
             // Não fazer nada, apenas continuar
