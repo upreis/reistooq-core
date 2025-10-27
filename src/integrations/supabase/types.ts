@@ -4529,6 +4529,17 @@ export type Database = {
           tem_trocas: boolean | null
           total_evidencias: number | null
           total_mensagens: number | null
+          total_trocas: number | null
+          troca_data_criacao: string | null
+          troca_data_estimada_fim: string | null
+          troca_data_estimada_inicio: string | null
+          troca_items: Json | null
+          troca_new_orders: Json | null
+          troca_raw_data: Json | null
+          troca_return_id: string | null
+          troca_status: string | null
+          troca_status_detail: string | null
+          troca_type: string | null
           type: string | null
           updated_at: string | null
         }
@@ -4575,6 +4586,17 @@ export type Database = {
           tem_trocas?: boolean | null
           total_evidencias?: number | null
           total_mensagens?: number | null
+          total_trocas?: number | null
+          troca_data_criacao?: string | null
+          troca_data_estimada_fim?: string | null
+          troca_data_estimada_inicio?: string | null
+          troca_items?: Json | null
+          troca_new_orders?: Json | null
+          troca_raw_data?: Json | null
+          troca_return_id?: string | null
+          troca_status?: string | null
+          troca_status_detail?: string | null
+          troca_type?: string | null
           type?: string | null
           updated_at?: string | null
         }
@@ -4621,6 +4643,17 @@ export type Database = {
           tem_trocas?: boolean | null
           total_evidencias?: number | null
           total_mensagens?: number | null
+          total_trocas?: number | null
+          troca_data_criacao?: string | null
+          troca_data_estimada_fim?: string | null
+          troca_data_estimada_inicio?: string | null
+          troca_items?: Json | null
+          troca_new_orders?: Json | null
+          troca_raw_data?: Json | null
+          troca_return_id?: string | null
+          troca_status?: string | null
+          troca_status_detail?: string | null
+          troca_type?: string | null
           type?: string | null
           updated_at?: string | null
         }
