@@ -14,13 +14,9 @@ import { RefreshCw } from 'lucide-react';
 
 export function ReclamacoesPage() {
   const [filters, setFilters] = useState({
+    periodo: '7',
     status: '',
-    type: '',
-    date_from: '',
-    date_to: '',
-    stage: '',
-    has_messages: '',
-    has_evidences: ''
+    type: ''
   });
 
   const {

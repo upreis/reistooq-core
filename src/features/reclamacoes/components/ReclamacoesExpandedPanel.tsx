@@ -9,9 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { ReclamacoesGeralTab } from './tabs/ReclamacoesGeralTab';
-import { ReclamacoesMensagensTab } from './tabs/ReclamacoesMensagensTab';
-import { ReclamacoesMediacaoTab } from './tabs/ReclamacoesMediacaoTab';
-import { ReclamacoesEvidenciasTab } from './tabs/ReclamacoesEvidenciasTab';
 
 interface ReclamacoesExpandedPanelProps {
   claim: any;
@@ -38,35 +35,13 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-7 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="geral">Geral</TabsTrigger>
-            <TabsTrigger value="mensagens" disabled={!claim.tem_mensagens}>
-              Mensagens
-              {claim.total_mensagens > 0 && (
-                <span className="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5">
-                  {claim.total_mensagens}
-                </span>
-              )}
+            <TabsTrigger value="mensagens" disabled>
+              Mensagens (Em breve)
             </TabsTrigger>
-            <TabsTrigger value="mediacao" disabled={!claim.tem_mediacao}>
-              Mediação
-            </TabsTrigger>
-            <TabsTrigger value="evidencias" disabled={!claim.tem_evidencias}>
-              Evidências
-              {claim.total_evidencias > 0 && (
-                <span className="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5">
-                  {claim.total_evidencias}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="resolucao" disabled={!claim.resolution_type}>
-              Resolução
-            </TabsTrigger>
-            <TabsTrigger value="trocas" disabled={!claim.tem_trocas}>
-              Trocas
-            </TabsTrigger>
-            <TabsTrigger value="pedido">
-              Pedido
+            <TabsTrigger value="resolucao" disabled>
+              Resolução (Em breve)
             </TabsTrigger>
           </TabsList>
 
@@ -75,32 +50,14 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
           </TabsContent>
 
           <TabsContent value="mensagens" className="mt-6">
-            <ReclamacoesMensagensTab claimId={claim.claim_id} />
-          </TabsContent>
-
-          <TabsContent value="mediacao" className="mt-6">
-            <ReclamacoesMediacaoTab claimId={claim.claim_id} />
-          </TabsContent>
-
-          <TabsContent value="evidencias" className="mt-6">
-            <ReclamacoesEvidenciasTab claimId={claim.claim_id} />
+            <div className="text-center text-muted-foreground py-8">
+              Funcionalidade disponível na próxima versão
+            </div>
           </TabsContent>
 
           <TabsContent value="resolucao" className="mt-6">
             <div className="text-center text-muted-foreground py-8">
-              Aba de Resolução (FASE 4)
-            </div>
-          </TabsContent>
-
-          <TabsContent value="trocas" className="mt-6">
-            <div className="text-center text-muted-foreground py-8">
-              Aba de Trocas (FASE 4)
-            </div>
-          </TabsContent>
-
-          <TabsContent value="pedido" className="mt-6">
-            <div className="text-center text-muted-foreground py-8">
-              Aba de Pedido (FASE 4)
+              Funcionalidade disponível na próxima versão
             </div>
           </TabsContent>
         </Tabs>

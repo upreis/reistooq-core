@@ -1,6 +1,6 @@
 /**
  * 🎣 HOOK PRINCIPAL DE RECLAMAÇÕES
- * Gerencia estado e busca de claims
+ * MVP: Busca e gerenciamento de claims
  */
 
 import { useState, useEffect } from 'react';
@@ -8,13 +8,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 interface ClaimFilters {
+  periodo: string;
   status?: string;
   type?: string;
-  date_from?: string;
-  date_to?: string;
-  stage?: string;
-  has_messages?: string;
-  has_evidences?: string;
 }
 
 export function useReclamacoes(filters: ClaimFilters) {
@@ -57,11 +53,20 @@ export function useReclamacoes(filters: ClaimFilters) {
       }
       setError(null);
 
+      // Calcular data inicial baseada no período
+      const calcularDataInicio = (periodo: string) => {
+        const hoje = new Date();
+        const dias = parseInt(periodo);
+        hoje.setDate(hoje.getDate() - dias);
+        return hoje.toISOString();
+      };
+
       // Tentar buscar do banco primeiro (cache)
       let query = supabase
         .from('reclamacoes')
         .select('*')
         .eq('integration_account_id', selectedAccountId)
+        .gte('date_created', calcularDataInicio(filters.periodo))
         .order('date_created', { ascending: false });
 
       if (filters.status) {
@@ -69,25 +74,6 @@ export function useReclamacoes(filters: ClaimFilters) {
       }
       if (filters.type) {
         query = query.eq('type', filters.type);
-      }
-      if (filters.stage) {
-        query = query.eq('stage', filters.stage);
-      }
-      if (filters.has_messages === 'true') {
-        query = query.eq('tem_mensagens', true);
-      } else if (filters.has_messages === 'false') {
-        query = query.eq('tem_mensagens', false);
-      }
-      if (filters.has_evidences === 'true') {
-        query = query.eq('tem_evidencias', true);
-      } else if (filters.has_evidences === 'false') {
-        query = query.eq('tem_evidencias', false);
-      }
-      if (filters.date_from) {
-        query = query.gte('date_created', filters.date_from);
-      }
-      if (filters.date_to) {
-        query = query.lte('date_created', filters.date_to);
       }
 
       const { data: cached, error: dbError } = await query;
@@ -101,9 +87,10 @@ export function useReclamacoes(filters: ClaimFilters) {
         body: {
           accountId: selectedAccountId,
           filters: {
-            ...filters,
-            date_from: filters.date_from || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-            date_to: filters.date_to || new Date().toISOString()
+            status: filters.status,
+            type: filters.type,
+            date_from: calcularDataInicio(filters.periodo),
+            date_to: new Date().toISOString()
           }
         }
       });
@@ -132,16 +119,7 @@ export function useReclamacoes(filters: ClaimFilters) {
     if (selectedAccountId) {
       fetchReclamacoes();
     }
-  }, [
-    selectedAccountId, 
-    filters.status, 
-    filters.type, 
-    filters.stage,
-    filters.has_messages,
-    filters.has_evidences,
-    filters.date_from,
-    filters.date_to
-  ]);
+  }, [selectedAccountId, filters.periodo, filters.status, filters.type]);
 
   return {
     reclamacoes,
