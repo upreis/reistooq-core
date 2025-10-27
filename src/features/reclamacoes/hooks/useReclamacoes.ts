@@ -153,7 +153,14 @@ export function useReclamacoes(filters: ClaimFilters) {
         }
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error('[useReclamacoes] Erro na edge function:', functionError);
+        // Não lançar erro se temos dados em cache
+        if (!cached || cached.length === 0) {
+          throw functionError;
+        }
+        return; // Usar dados do cache se a API falhar
+      }
 
       if (data?.claims) {
         // Aplicar filtros locais adicionais

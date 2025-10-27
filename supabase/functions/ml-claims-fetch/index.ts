@@ -80,7 +80,11 @@ Deno.serve(async (req) => {
 
     const sellerId = account?.metadata?.user_id;
     if (!sellerId) {
-      throw new Error('seller_id não encontrado');
+      console.error('[ml-claims-fetch] seller_id não encontrado no metadata da conta', { 
+        accountId, 
+        metadata: account?.metadata 
+      });
+      throw new Error('seller_id não encontrado. Configure a integração do Mercado Livre corretamente.');
     }
 
     // Construir URL da busca

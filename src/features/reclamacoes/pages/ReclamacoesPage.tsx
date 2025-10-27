@@ -9,6 +9,7 @@ import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesExport } from '../components/ReclamacoesExport';
+import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
@@ -36,6 +37,9 @@ export function ReclamacoesPage() {
     refresh
   } = useReclamacoes(filters);
 
+  // Verificar se há erro de integração
+  const hasIntegrationError = error?.includes('seller_id') || error?.includes('integração');
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -62,8 +66,10 @@ export function ReclamacoesPage() {
         </div>
       </div>
 
-      {/* Stats */}
-      <ReclamacoesStats reclamacoes={reclamacoes} />
+      {/* Stats - só mostrar se tiver dados */}
+      {!isLoading && reclamacoes.length > 0 && (
+        <ReclamacoesStats reclamacoes={reclamacoes} />
+      )}
 
       {/* Filtros */}
       <Card className="p-6">
@@ -73,17 +79,25 @@ export function ReclamacoesPage() {
         />
       </Card>
 
-      {/* Tabela */}
-      <Card>
-        <ReclamacoesTable
-          reclamacoes={reclamacoes}
-          isLoading={isLoading}
-          error={error}
-          pagination={pagination}
-          onPageChange={goToPage}
-          onItemsPerPageChange={changeItemsPerPage}
-        />
-      </Card>
+      {/* Conteúdo principal */}
+      {hasIntegrationError ? (
+        <ReclamacoesEmptyState type="no-integration" message={error || undefined} />
+      ) : error ? (
+        <ReclamacoesEmptyState type="error" message={error} />
+      ) : !isLoading && reclamacoes.length === 0 ? (
+        <ReclamacoesEmptyState type="no-data" />
+      ) : (
+        <Card>
+          <ReclamacoesTable
+            reclamacoes={reclamacoes}
+            isLoading={isLoading}
+            error={error}
+            pagination={pagination}
+            onPageChange={goToPage}
+            onItemsPerPageChange={changeItemsPerPage}
+          />
+        </Card>
+      )}
     </div>
   );
 }
