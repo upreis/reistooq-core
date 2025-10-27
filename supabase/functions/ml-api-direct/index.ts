@@ -1,12 +1,14 @@
 // 📦 ML API DIRECT - Fase 4 Implementada: Endpoints + Mappers Integrados
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
 import { extractBuyerData, extractPaymentData } from './utils/field-extractor.ts'
 import { logger } from './utils/logger.ts'
 import { extractMediationData } from './utils/mediation-extractor.ts'
 import { analyzeInternalTags } from './utils/tags-analyzer.ts'
 import { mapReviewsData, extractReviewsFields } from './mappers/reviews-mapper.ts'
 import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper.ts'
+import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
 import { fetchMLWithRetry } from './utils/retryHandler.ts'
 import { ReasonsService } from './services/reasonsService.ts'
 
@@ -1152,10 +1154,7 @@ async function fetchReasonDetails(
 }
 
 /**
- * 🎯 Busca múltiplos reasons em LOTE OTIMIZADO (batch)
- * - Busca em paralelo com limite de 10 requisições por vez
- * - Delay de 500ms entre batches para evitar rate limit
- * - Cache em memória
+ * 🎯 Busca múltiplos reasons em paralelo
  */
 async function fetchMultipleReasons(
   reasonIds: string[],
@@ -1164,50 +1163,23 @@ async function fetchMultipleReasons(
 ): Promise<Map<string, any>> {
   const reasonsMap = new Map<string, any>();
   
-  if (reasonIds.length === 0) {
-    return reasonsMap;
-  }
+  // Buscar todos em paralelo com Promise.allSettled para não falhar se um reason der erro
+  const promises = reasonIds.map(reasonId =>
+    fetchReasonDetails(reasonId, accessToken, integrationAccountId)
+      .then(data => ({ reasonId, data, status: 'fulfilled' }))
+      .catch(error => ({ reasonId, error, status: 'rejected' }))
+  );
   
-  // Remover duplicatas
-  const uniqueReasonIds = [...new Set(reasonIds)];
-  console.log(`📦 Buscando ${uniqueReasonIds.length} reasons únicos em lote...`);
+  const results = await Promise.allSettled(promises);
   
-  // 🔥 BUSCA EM LOTE: Máximo 10 requisições paralelas por vez
-  const BATCH_SIZE = 10;
-  const DELAY_BETWEEN_BATCHES = 500; // ms
-  
-  for (let i = 0; i < uniqueReasonIds.length; i += BATCH_SIZE) {
-    const batch = uniqueReasonIds.slice(i, i + BATCH_SIZE);
-    console.log(`  📄 Batch ${Math.floor(i / BATCH_SIZE) + 1}: buscando ${batch.length} reasons...`);
-    
-    // Buscar batch em paralelo
-    const promises = batch.map(reasonId =>
-      fetchReasonDetails(reasonId, accessToken, integrationAccountId)
-        .then(data => ({ reasonId, data }))
-        .catch(error => {
-          console.error(`  ⚠️ Erro ao buscar reason ${reasonId}:`, error.message);
-          return { reasonId, data: null };
-        })
-    );
-    
-    const results = await Promise.all(promises);
-    
-    // Adicionar ao mapa
-    results.forEach(({ reasonId, data }) => {
-      if (data) {
-        reasonsMap.set(reasonId, data);
-      }
-    });
-    
-    console.log(`  ✅ Batch completado: ${results.filter(r => r.data).length}/${batch.length} reasons encontrados`);
-    
-    // Delay entre batches para evitar rate limit (exceto no último batch)
-    if (i + BATCH_SIZE < uniqueReasonIds.length) {
-      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+  // Processar resultados
+  results.forEach((result) => {
+    if (result.status === 'fulfilled' && result.value.data) {
+      reasonsMap.set(result.value.reasonId, result.value.data);
     }
-  }
+  });
   
-  console.log(`✅ Total: ${reasonsMap.size}/${uniqueReasonIds.length} reasons carregados com sucesso\n`);
+  logger.debug('Reasons fetched', { total: reasonIds.length, cached: reasonsMap.size });
   
   return reasonsMap;
 }
@@ -1500,19 +1472,12 @@ async function buscarPedidosCancelados(
     const allUniqueReasonIds = new Set<string>();
     
     for (const claim of allClaims) {
-      const reasonId = claim?.reason_id; // ✅ CORRIGIDO: API /search retorna reason_id direto
+      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       
       if (reasonId && typeof reasonId === 'string') {
         allUniqueReasonIds.add(reasonId);
       }
     }
-    
-    // 📊 LOG DE DEBUG: Verificar extração
-    console.log(`📊 Extração de reasons:`, {
-      totalClaims: allClaims.length,
-      uniqueReasonIds: allUniqueReasonIds.size,
-      primeiros3: Array.from(allUniqueReasonIds).slice(0, 3)
-    });
     
     // Buscar todos os reasons em paralelo da API ML
     let allReasonsMap = new Map<string, any>();
@@ -1556,7 +1521,7 @@ async function buscarPedidosCancelados(
     logger.info(`\n🔄 FASE 2: Enriquecendo ${allClaims.length} claims com dados de reasons...`);
     
     const enrichedClaims = allClaims.map(claim => {
-      const reasonId = claim?.reason_id; // ✅ CORRIGIDO: API /search retorna reason_id direto
+      const reasonId = claim?.claim_details?.reason_id || claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
       
       // ✅ SEMPRE retornar com dados_reasons (MANTENDO estrutura com prefixo reason_*)
@@ -1574,16 +1539,8 @@ async function buscarPedidosCancelados(
       };
     });
     
-    // 📊 Estatísticas de enriquecimento com LOG DETALHADO
-    const claimsComReasons = enrichedClaims.filter(c => c.dados_reasons !== null);
+    // 📊 Estatísticas de enriquecimento
     const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail).length;
-    
-    console.log(`✅ Enriquecimento:`, {
-      total: enrichedClaims.length,
-      comReasons: claimsComReasons.length,
-      semReasons: enrichedClaims.length - claimsComReasons.length
-    });
-    
     logger.success(`✅ FASE 2 COMPLETA: ${enrichedCount}/${allClaims.length} claims enriquecidos`);
     logger.info(`⚠️ Claims sem dados de reasons: ${allClaims.length - enrichedCount}`);
     
@@ -1992,16 +1949,6 @@ async function buscarPedidosCancelados(
                   }
                 })
                 
-                // ✅ OTIMIZAÇÃO: Usar dados_reasons JÁ ENRIQUECIDO no claim (não buscar novamente)
-                const reasonDetails = claim.dados_reasons // ✅ Já foi carregado na Fase 1
-                const reasonId = claimDetails?.reason_id
-                
-                if (reasonDetails) {
-                  console.log(`  ✅ Reason ${reasonId} usando dados pré-enriquecidos`)
-                } else if (reasonId) {
-                  console.log(`  ⚠️ Reason ${reasonId} não encontrado (será usado fallback)`)
-                }
-                
                 console.log(`📋 Dados obtidos para mediação ${mediationId}:`, {
                   claimDetails: !!claimDetails,
                   messagesCount: consolidatedMessages.messages.length,
@@ -2011,8 +1958,7 @@ async function buscarPedidosCancelados(
                   returnsV1: !!returnsV1,
                   shipmentHistory: !!shipmentHistory,
                   changeDetails: !!changeDetails,
-                  shipmentCosts: !!shipmentCosts, // 🆕 FASE 1
-                  reasonDetails: !!reasonDetails // 🆕 FASE 2
+                  shipmentCosts: !!shipmentCosts // 🆕 FASE 1
                 })
                 
                 // 🆕 FASE 1: MAPEAR COSTS usando mapper correto
@@ -2153,7 +2099,6 @@ async function buscarPedidosCancelados(
                   shipment_history: shipmentHistory,
                   change_details: changeDetails,
                   shipment_costs: mappedCosts, // 🆕 FASE 1: Custos de envio mapeados
-                  dados_reasons: reasonDetails, // 🆕 FASE 2: Dados do reason da API
                   
                   // ✅ FASE 1: Related Entities (para detectar returns associados)
                   related_entities: claimDetails?.related_entities || [],
@@ -2611,37 +2556,20 @@ async function buscarPedidosCancelados(
               subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
               
               // ========================================
-              // 🔍 REASONS - Enriquecidos com fallbacks (Fase 3)
+              // 🔍 REASONS - Usar dados já enriquecidos (Fase 1+2)
               // ========================================
-              reason_id: safeClaimData?.dados_reasons?.reason_id || 
-                         safeClaimData?.claim_details?.reason_id || 
-                         claim?.reason_id || null,
-              
-              reason_name: safeClaimData?.dados_reasons?.reason_name || 
-                          safeClaimData?.claim_details?.reason?.name || 
-                          safeClaimData?.claim_details?.reason?.description || null,
-              
-              reason_detail: safeClaimData?.dados_reasons?.reason_detail || 
-                            safeClaimData?.claim_details?.reason?.detail || 
-                            safeClaimData?.claim_details?.reason?.children_title || null,
-              
-              reason_flow: safeClaimData?.dados_reasons?.reason_flow || 
-                          safeClaimData?.claim_details?.reason?.flow || null,
-              
-              reason_category: safeClaimData?.dados_reasons?.reason_category || 
-                              safeClaimData?.claim_details?.reason?.filter?.group?.[0] || null,
-              
-              reason_position: safeClaimData?.dados_reasons?.reason_position || 
-                              safeClaimData?.claim_details?.reason?.position || null,
-              
-              reason_settings: safeClaimData?.dados_reasons?.reason_settings || 
-                              safeClaimData?.claim_details?.reason?.settings || null,
-              
-              dados_reasons: safeClaimData?.dados_reasons || null,
+              reason_id: claim?.dados_reasons?.reason_id || safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
+              reason_name: claim?.dados_reasons?.reason_name || null,
+              reason_detail: claim?.dados_reasons?.reason_detail || null,
+              reason_flow: claim?.dados_reasons?.reason_flow || null,
+              reason_category: claim?.dados_reasons?.reason_category || null,
+              reason_position: claim?.dados_reasons?.reason_position || null,
+              reason_settings: claim?.dados_reasons?.reason_settings || null,
+              dados_reasons: claim?.dados_reasons || null,
               motivo_categoria: safeClaimData?.claim_details?.reason_id || claim?.reason_id || null,
               
-              em_mediacao: safeClaimData?.claim_details?.type === 'mediations' || safeClaimData?.mediation_details !== null,
-              nivel_prioridade: safeClaimData?.claim_details?.type === 'mediations' ? 'high' : 'medium',
+              em_mediacao: safeClaimData?.claim_details?.type === 'meditations' || safeClaimData?.mediation_details !== null, // ✅ CORRIGIDO: meditations (com T)
+              nivel_prioridade: safeClaimData?.claim_details?.type === 'meditations' ? 'high' : 'medium', // ✅ CORRIGIDO: meditations (com T)
               
               // ✅ Dados de ação removidos - calculados anteriormente
               
