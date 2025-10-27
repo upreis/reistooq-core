@@ -4485,6 +4485,315 @@ export type Database = {
           },
         ]
       }
+      reclamacoes: {
+        Row: {
+          amount_currency: string | null
+          amount_value: number | null
+          buyer_id: number | null
+          buyer_nickname: string | null
+          claim_id: string
+          created_at: string | null
+          date_created: string | null
+          integration_account_id: string | null
+          last_updated: string | null
+          mediator_id: number | null
+          mensagens_nao_lidas: number | null
+          order_id: string | null
+          order_status: string | null
+          order_total: number | null
+          organization_id: string | null
+          raw_data: Json | null
+          reason_category: string | null
+          reason_detail: string | null
+          reason_id: string | null
+          reason_name: string | null
+          resolution_amount: number | null
+          resolution_benefited: string | null
+          resolution_date: string | null
+          resolution_reason: string | null
+          resolution_subtype: string | null
+          resolution_type: string | null
+          resource: string | null
+          resource_id: string | null
+          seller_id: number | null
+          seller_nickname: string | null
+          site_id: string | null
+          stage: string | null
+          status: string | null
+          tem_evidencias: boolean | null
+          tem_mediacao: boolean | null
+          tem_mensagens: boolean | null
+          tem_trocas: boolean | null
+          total_evidencias: number | null
+          total_mensagens: number | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_currency?: string | null
+          amount_value?: number | null
+          buyer_id?: number | null
+          buyer_nickname?: string | null
+          claim_id: string
+          created_at?: string | null
+          date_created?: string | null
+          integration_account_id?: string | null
+          last_updated?: string | null
+          mediator_id?: number | null
+          mensagens_nao_lidas?: number | null
+          order_id?: string | null
+          order_status?: string | null
+          order_total?: number | null
+          organization_id?: string | null
+          raw_data?: Json | null
+          reason_category?: string | null
+          reason_detail?: string | null
+          reason_id?: string | null
+          reason_name?: string | null
+          resolution_amount?: number | null
+          resolution_benefited?: string | null
+          resolution_date?: string | null
+          resolution_reason?: string | null
+          resolution_subtype?: string | null
+          resolution_type?: string | null
+          resource?: string | null
+          resource_id?: string | null
+          seller_id?: number | null
+          seller_nickname?: string | null
+          site_id?: string | null
+          stage?: string | null
+          status?: string | null
+          tem_evidencias?: boolean | null
+          tem_mediacao?: boolean | null
+          tem_mensagens?: boolean | null
+          tem_trocas?: boolean | null
+          total_evidencias?: number | null
+          total_mensagens?: number | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_currency?: string | null
+          amount_value?: number | null
+          buyer_id?: number | null
+          buyer_nickname?: string | null
+          claim_id?: string
+          created_at?: string | null
+          date_created?: string | null
+          integration_account_id?: string | null
+          last_updated?: string | null
+          mediator_id?: number | null
+          mensagens_nao_lidas?: number | null
+          order_id?: string | null
+          order_status?: string | null
+          order_total?: number | null
+          organization_id?: string | null
+          raw_data?: Json | null
+          reason_category?: string | null
+          reason_detail?: string | null
+          reason_id?: string | null
+          reason_name?: string | null
+          resolution_amount?: number | null
+          resolution_benefited?: string | null
+          resolution_date?: string | null
+          resolution_reason?: string | null
+          resolution_subtype?: string | null
+          resolution_type?: string | null
+          resource?: string | null
+          resource_id?: string | null
+          seller_id?: number | null
+          seller_nickname?: string | null
+          site_id?: string | null
+          stage?: string | null
+          status?: string | null
+          tem_evidencias?: boolean | null
+          tem_mediacao?: boolean | null
+          tem_mensagens?: boolean | null
+          tem_trocas?: boolean | null
+          total_evidencias?: number | null
+          total_mensagens?: number | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamacoes_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reclamacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reclamacoes_evidencias: {
+        Row: {
+          claim_id: string | null
+          created_at: string | null
+          date_created: string | null
+          description: string | null
+          id: string
+          status: string | null
+          type: string | null
+          uploader_id: number | null
+          uploader_role: string | null
+          url: string | null
+        }
+        Insert: {
+          claim_id?: string | null
+          created_at?: string | null
+          date_created?: string | null
+          description?: string | null
+          id: string
+          status?: string | null
+          type?: string | null
+          uploader_id?: number | null
+          uploader_role?: string | null
+          url?: string | null
+        }
+        Update: {
+          claim_id?: string | null
+          created_at?: string | null
+          date_created?: string | null
+          description?: string | null
+          id?: string
+          status?: string | null
+          type?: string | null
+          uploader_id?: number | null
+          uploader_role?: string | null
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamacoes_evidencias_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reclamacoes"
+            referencedColumns: ["claim_id"]
+          },
+        ]
+      }
+      reclamacoes_mensagens: {
+        Row: {
+          attachments: Json | null
+          claim_id: string | null
+          created_at: string | null
+          date_created: string | null
+          date_read: string | null
+          id: string
+          receiver_id: number | null
+          receiver_role: string | null
+          sender_id: number | null
+          sender_role: string | null
+          status: string | null
+          text: string | null
+        }
+        Insert: {
+          attachments?: Json | null
+          claim_id?: string | null
+          created_at?: string | null
+          date_created?: string | null
+          date_read?: string | null
+          id: string
+          receiver_id?: number | null
+          receiver_role?: string | null
+          sender_id?: number | null
+          sender_role?: string | null
+          status?: string | null
+          text?: string | null
+        }
+        Update: {
+          attachments?: Json | null
+          claim_id?: string | null
+          created_at?: string | null
+          date_created?: string | null
+          date_read?: string | null
+          id?: string
+          receiver_id?: number | null
+          receiver_role?: string | null
+          sender_id?: number | null
+          sender_role?: string | null
+          status?: string | null
+          text?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamacoes_mensagens_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "reclamacoes"
+            referencedColumns: ["claim_id"]
+          },
+        ]
+      }
+      reclamacoes_trocas: {
+        Row: {
+          claim_id: string
+          created_at: string | null
+          date_created: string | null
+          estimated_exchange_date_from: string | null
+          estimated_exchange_date_to: string | null
+          items: Json | null
+          last_updated: string | null
+          new_orders_ids: Json | null
+          new_orders_shipments: Json | null
+          resource: string | null
+          resource_id: string | null
+          return_id: number | null
+          status: string | null
+          status_detail: string | null
+          type: string | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string | null
+          date_created?: string | null
+          estimated_exchange_date_from?: string | null
+          estimated_exchange_date_to?: string | null
+          items?: Json | null
+          last_updated?: string | null
+          new_orders_ids?: Json | null
+          new_orders_shipments?: Json | null
+          resource?: string | null
+          resource_id?: string | null
+          return_id?: number | null
+          status?: string | null
+          status_detail?: string | null
+          type?: string | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string | null
+          date_created?: string | null
+          estimated_exchange_date_from?: string | null
+          estimated_exchange_date_to?: string | null
+          items?: Json | null
+          last_updated?: string | null
+          new_orders_ids?: Json | null
+          new_orders_shipments?: Json | null
+          resource?: string | null
+          resource_id?: string | null
+          return_id?: number | null
+          status?: string | null
+          status_detail?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamacoes_trocas_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "reclamacoes"
+            referencedColumns: ["claim_id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
