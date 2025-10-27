@@ -253,56 +253,93 @@ Deno.serve(async (req) => {
     const claimsComReasons = enrichedClaims.filter(c => c.reason_name !== null);
     console.log(`✅ Claims com reason_name: ${claimsComReasons.length}/${enrichedClaims.length}`);
 
-    // 4️⃣ ETAPA 2: Enriquecer com dados dos PEDIDOS (Orders)
-    console.log('🔍 Claims para enriquecer:', {
-      total: enrichedClaims.length,
-      tipoOrder: enrichedClaims.filter(c => c.resource === 'order').length,
-      comOrderId: enrichedClaims.filter(c => c.order_id !== null).length
-    });
-    console.log('🛒 Iniciando enriquecimento com dados dos pedidos...');
+    // ============================================
+    // 🎯 FASE 2: BUSCAR DADOS DOS PEDIDOS (ORDERS) EM LOTES
+    // ============================================
     
-    const fullyEnrichedClaims = await Promise.all(enrichedClaims.map(async (claim) => {
-      // Só buscar orders para claims de pedidos (resource === 'order')
-      if (claim.resource !== 'order' || !claim.order_id) {
-        return claim;
-      }
+    // 1️⃣ Extrair order_ids únicos (apenas de claims do tipo "order")
+    const orderIds = [
+      ...new Set(
+        claims
+          .filter((claim: any) => claim.resource === 'order' && claim.resource_id)
+          .map((claim: any) => String(claim.resource_id))
+      )
+    ];
 
-      try {
-        console.log(`🔍 Buscando order ${claim.order_id}...`);
-        
-        const orderUrl = `https://api.mercadolibre.com/orders/${claim.order_id}`;
-        const orderResponse = await fetch(orderUrl, {
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
+    console.log(`📦 Encontrados ${orderIds.length} pedidos únicos para buscar.`);
 
-        if (orderResponse.ok) {
-          const order = await orderResponse.json();
-          
-          console.log(`✅ Order ${claim.order_id} enriquecido:`, {
-            buyer_nickname: order.buyer?.nickname,
-            seller_nickname: order.seller?.nickname,
-            status: order.status,
-            total_amount: order.total_amount
+    // 2️⃣ Criar Map para cachear dados dos pedidos
+    const ordersMap = new Map<string, any>();
+
+    // 3️⃣ Buscar pedidos em LOTES para evitar timeout
+    const BATCH_SIZE = 10;   // Buscar 10 pedidos por vez
+    const DELAY_MS = 200;    // Delay de 200ms entre lotes
+
+    for (let i = 0; i < orderIds.length; i += BATCH_SIZE) {
+      const batch = orderIds.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(orderIds.length / BATCH_SIZE);
+
+      console.log(`🔄 Processando lote ${batchNumber}/${totalBatches} (${batch.length} pedidos)...`);
+
+      // Buscar pedidos do lote em paralelo
+      const batchPromises = batch.map(async (orderId) => {
+        try {
+          const orderUrl = `https://api.mercadolibre.com/orders/${orderId}`;
+          const orderRes = await fetch(orderUrl, {
+            headers: { Authorization: `Bearer ${accessToken}` }
           });
-          
-          return {
-            ...claim,
-            buyer_nickname: order.buyer?.nickname || claim.buyer_nickname,
-            seller_nickname: order.seller?.nickname || claim.seller_nickname,
-            amount_value: order.total_amount || claim.amount_value,
-            amount_currency: order.currency_id || claim.amount_currency,
-            order_status: order.status || null,
-            order_total: order.total_amount || null
-          };
-        } else {
-          console.warn(`⚠️ Order ${claim.order_id} não encontrado (${orderResponse.status})`);
+
+          if (orderRes.ok) {
+            const orderData = await orderRes.json();
+            ordersMap.set(orderId, orderData);
+            console.log(`✅ Pedido [${orderId}] buscado: ${orderData.buyer?.nickname || 'N/A'} → ${orderData.seller?.nickname || 'N/A'}`);
+            return { success: true, orderId };
+          } else {
+            console.warn(`⚠️ Falha ao buscar pedido [${orderId}]. Status: ${orderRes.status}`);
+            return { success: false, orderId };
+          }
+        } catch (error) {
+          console.error(`❌ Erro ao buscar pedido [${orderId}]:`, error.message);
+          return { success: false, orderId };
         }
-      } catch (error) {
-        console.error(`❌ Erro ao buscar order ${claim.order_id}:`, error);
+      });
+
+      // Aguardar conclusão do lote
+      await Promise.all(batchPromises);
+
+      // Delay entre lotes (exceto no último)
+      if (i + BATCH_SIZE < orderIds.length) {
+        console.log(`⏸️ Aguardando ${DELAY_MS}ms antes do próximo lote...`);
+        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+      }
+    }
+
+    console.log(`🎉 Busca de pedidos finalizada. ${ordersMap.size}/${orderIds.length} pedidos obtidos com sucesso.`);
+
+    // ============================================
+    // 4️⃣ MAPEAMENTO FINAL COM DADOS ENRIQUECIDOS
+    // ============================================
+
+    const fullyEnrichedClaims = enrichedClaims.map((claim) => {
+      const orderData = ordersMap.get(claim.order_id || '');
+
+      // Se temos dados do pedido, enriquecer
+      if (orderData) {
+        return {
+          ...claim,
+          buyer_nickname: orderData.buyer?.nickname || claim.buyer_nickname,
+          seller_nickname: orderData.seller?.nickname || claim.seller_nickname,
+          amount_value: orderData.total_amount || claim.amount_value,
+          amount_currency: orderData.currency_id || claim.amount_currency,
+          order_status: orderData.status || null,
+          order_total: orderData.total_amount || null
+        };
       }
 
+      // Caso contrário, manter o claim original
       return claim;
-    }));
+    });
 
     console.log('✅ Enriquecimento com orders concluído');
     
