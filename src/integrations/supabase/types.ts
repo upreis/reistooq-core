@@ -4509,7 +4509,9 @@ export type Database = {
           reason_id: string | null
           reason_name: string | null
           resolution_amount: number | null
+          resolution_applied_coverage: boolean | null
           resolution_benefited: string | null
+          resolution_closed_by: string | null
           resolution_date: string | null
           resolution_reason: string | null
           resolution_subtype: string | null
@@ -4553,7 +4555,9 @@ export type Database = {
           reason_id?: string | null
           reason_name?: string | null
           resolution_amount?: number | null
+          resolution_applied_coverage?: boolean | null
           resolution_benefited?: string | null
+          resolution_closed_by?: string | null
           resolution_date?: string | null
           resolution_reason?: string | null
           resolution_subtype?: string | null
@@ -4597,7 +4601,9 @@ export type Database = {
           reason_id?: string | null
           reason_name?: string | null
           resolution_amount?: number | null
+          resolution_applied_coverage?: boolean | null
           resolution_benefited?: string | null
+          resolution_closed_by?: string | null
           resolution_date?: string | null
           resolution_reason?: string | null
           resolution_subtype?: string | null
