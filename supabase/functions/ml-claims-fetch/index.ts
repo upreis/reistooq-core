@@ -216,12 +216,12 @@ Deno.serve(async (req) => {
         amount_value: claim.amount?.value || 0,
         amount_currency: claim.amount?.currency_id || 'BRL',
         
-        // Resolution
-        resolution_type: resolution.type || null,
-        resolution_subtype: resolution.subtype || null,
-        resolution_benefited: resolution.benefited || null,
-        resolution_date: resolution.date || null,
-        resolution_amount: resolution.amount?.value || null,
+        // Resolution (✅ CORRIGIDO: usando campos reais da API ML)
+        resolution_type: resolution.closed_by || null,  // ✅ CORRIGIDO: "mediator", "complainant", "respondent"
+        resolution_subtype: resolution.applied_coverage ? 'coverage' : null,  // ✅ Flag de cobertura
+        resolution_benefited: Array.isArray(resolution.benefited) ? resolution.benefited.join(', ') : null,
+        resolution_date: resolution.date_created || null,  // ✅ CORRIGIDO: date_created (não "date")
+        resolution_amount: null,  // ⚠️ API ML não retorna este campo
         resolution_reason: resolution.reason || null,
         
         // ✅ Data de vencimento: pegar de available_actions (para claims abertos) ou resolution.deadline (para resolvidos)
