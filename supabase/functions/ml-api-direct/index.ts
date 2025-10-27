@@ -1152,7 +1152,10 @@ async function fetchReasonDetails(
 }
 
 /**
- * 🎯 Busca múltiplos reasons em paralelo
+ * 🎯 Busca múltiplos reasons em LOTE OTIMIZADO (batch)
+ * - Busca em paralelo com limite de 10 requisições por vez
+ * - Delay de 500ms entre batches para evitar rate limit
+ * - Cache em memória
  */
 async function fetchMultipleReasons(
   reasonIds: string[],
@@ -1161,23 +1164,50 @@ async function fetchMultipleReasons(
 ): Promise<Map<string, any>> {
   const reasonsMap = new Map<string, any>();
   
-  // Buscar todos em paralelo com Promise.allSettled para não falhar se um reason der erro
-  const promises = reasonIds.map(reasonId =>
-    fetchReasonDetails(reasonId, accessToken, integrationAccountId)
-      .then(data => ({ reasonId, data, status: 'fulfilled' }))
-      .catch(error => ({ reasonId, error, status: 'rejected' }))
-  );
+  if (reasonIds.length === 0) {
+    return reasonsMap;
+  }
   
-  const results = await Promise.allSettled(promises);
+  // Remover duplicatas
+  const uniqueReasonIds = [...new Set(reasonIds)];
+  console.log(`📦 Buscando ${uniqueReasonIds.length} reasons únicos em lote...`);
   
-  // Processar resultados
-  results.forEach((result) => {
-    if (result.status === 'fulfilled' && result.value.data) {
-      reasonsMap.set(result.value.reasonId, result.value.data);
+  // 🔥 BUSCA EM LOTE: Máximo 10 requisições paralelas por vez
+  const BATCH_SIZE = 10;
+  const DELAY_BETWEEN_BATCHES = 500; // ms
+  
+  for (let i = 0; i < uniqueReasonIds.length; i += BATCH_SIZE) {
+    const batch = uniqueReasonIds.slice(i, i + BATCH_SIZE);
+    console.log(`  📄 Batch ${Math.floor(i / BATCH_SIZE) + 1}: buscando ${batch.length} reasons...`);
+    
+    // Buscar batch em paralelo
+    const promises = batch.map(reasonId =>
+      fetchReasonDetails(reasonId, accessToken, integrationAccountId)
+        .then(data => ({ reasonId, data }))
+        .catch(error => {
+          console.error(`  ⚠️ Erro ao buscar reason ${reasonId}:`, error.message);
+          return { reasonId, data: null };
+        })
+    );
+    
+    const results = await Promise.all(promises);
+    
+    // Adicionar ao mapa
+    results.forEach(({ reasonId, data }) => {
+      if (data) {
+        reasonsMap.set(reasonId, data);
+      }
+    });
+    
+    console.log(`  ✅ Batch completado: ${results.filter(r => r.data).length}/${batch.length} reasons encontrados`);
+    
+    // Delay entre batches para evitar rate limit (exceto no último batch)
+    if (i + BATCH_SIZE < uniqueReasonIds.length) {
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
     }
-  });
+  }
   
-  logger.debug('Reasons fetched', { total: reasonIds.length, cached: reasonsMap.size });
+  console.log(`✅ Total: ${reasonsMap.size}/${uniqueReasonIds.length} reasons carregados com sucesso\n`);
   
   return reasonsMap;
 }
@@ -1947,12 +1977,14 @@ async function buscarPedidosCancelados(
                   }
                 })
                 
-                // 🆕 FASE 2: BUSCAR REASON DETAILS
-                let reasonDetails = null
+                // ✅ OTIMIZAÇÃO: Usar dados_reasons JÁ ENRIQUECIDO no claim (não buscar novamente)
+                const reasonDetails = claim.dados_reasons // ✅ Já foi carregado na Fase 1
                 const reasonId = claimDetails?.reason_id
-                if (reasonId) {
-                  const reasonsService = new ReasonsService()
-                  reasonDetails = await reasonsService.fetchReasonDetails(reasonId, accessToken, integrationAccountId)
+                
+                if (reasonDetails) {
+                  console.log(`  ✅ Reason ${reasonId} usando dados pré-enriquecidos`)
+                } else if (reasonId) {
+                  console.log(`  ⚠️ Reason ${reasonId} não encontrado (será usado fallback)`)
                 }
                 
                 console.log(`📋 Dados obtidos para mediação ${mediationId}:`, {
