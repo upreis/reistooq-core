@@ -11,6 +11,7 @@ import { X } from 'lucide-react';
 import { ReclamacoesGeralTab } from './tabs/ReclamacoesGeralTab';
 import { ReclamacoesMensagensTab } from './tabs/ReclamacoesMensagensTab';
 import { ReclamacoesMediacaoTab } from './tabs/ReclamacoesMediacaoTab';
+import { ReclamacoesEvidenciasTab } from './tabs/ReclamacoesEvidenciasTab';
 
 interface ReclamacoesExpandedPanelProps {
   claim: any;
@@ -82,9 +83,7 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
           </TabsContent>
 
           <TabsContent value="evidencias" className="mt-6">
-            <div className="text-center text-muted-foreground py-8">
-              Aba de Evidências (FASE 4)
-            </div>
+            <ReclamacoesEvidenciasTab claimId={claim.claim_id} />
           </TabsContent>
 
           <TabsContent value="resolucao" className="mt-6">

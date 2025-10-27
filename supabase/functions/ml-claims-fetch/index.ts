@@ -233,6 +233,45 @@ Deno.serve(async (req) => {
       }
 
       console.log(`[ml-claims-fetch] ${claimsToUpsert.length} claims salvos no banco`);
+
+      // Buscar evidências para claims que têm evidências
+      const claimsComEvidencias = enrichedClaims.filter(c => c.tem_evidencias);
+      
+      for (const claim of claimsComEvidencias) {
+        try {
+          const evidenciasUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.claim_id}/evidences`;
+          const evidenciasRes = await fetch(evidenciasUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+
+          if (evidenciasRes.ok) {
+            const evidenciasData = await evidenciasRes.json();
+            const evidencias = evidenciasData.data || [];
+
+            if (evidencias.length > 0) {
+              const evidenciasToUpsert = evidencias.map((ev: any) => ({
+                id: ev.id,
+                claim_id: claim.claim_id,
+                type: ev.type,
+                url: ev.url,
+                uploader_id: ev.uploader_id,
+                uploader_role: ev.uploader_role,
+                date_created: ev.date_created,
+                status: ev.status,
+                description: ev.description
+              }));
+
+              await supabase
+                .from('reclamacoes_evidencias')
+                .upsert(evidenciasToUpsert, { onConflict: 'id' });
+
+              console.log(`[ml-claims-fetch] ${evidencias.length} evidências salvas para claim ${claim.claim_id}`);
+            }
+          }
+        } catch (error) {
+          console.error(`[ml-claims-fetch] Erro ao buscar evidências do claim ${claim.claim_id}`, error);
+        }
+      }
     }
 
     return new Response(
