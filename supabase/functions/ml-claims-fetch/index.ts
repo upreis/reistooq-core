@@ -178,6 +178,39 @@ Deno.serve(async (req) => {
       ids: Array.from(reasonsMap.keys())
     });
 
+    // ============================================
+    // FUNÇÃO AUXILIAR: CALCULAR IMPACTO FINANCEIRO
+    // ============================================
+    
+    function calcularImpactoFinanceiro(claim: any, resolution: any, amount: number) {
+      let impacto_financeiro = 'neutro';
+      let valor_impacto = 0;
+      
+      // Só calcular se claim estiver fechado e tiver resolução
+      if (claim.status === 'closed' && resolution && resolution.benefited) {
+        const beneficiado = Array.isArray(resolution.benefited)
+          ? resolution.benefited[0]
+          : resolution.benefited;
+        
+        if (beneficiado === 'complainant') {
+          // Comprador ganhou - verificar se ML cobriu
+          if (resolution.applied_coverage === true) {
+            impacto_financeiro = 'coberto_ml';
+            valor_impacto = 0; // ML pagou, você não perde
+          } else {
+            impacto_financeiro = 'perda';
+            valor_impacto = -amount; // Você perde o valor
+          }
+        } else if (beneficiado === 'respondent') {
+          // Vendedor ganhou
+          impacto_financeiro = 'ganho';
+          valor_impacto = amount; // Você mantém o valor
+        }
+      }
+      
+      return { impacto_financeiro, valor_impacto };
+    }
+
     // 3️⃣ Enriquecer claims com os reasons
     const enrichedClaims = claims.map((claim: any) => {
       const reasonData = claim.reason_id ? reasonsMap.get(claim.reason_id) : null;
@@ -187,6 +220,16 @@ Deno.serve(async (req) => {
       const respondent = claim.players?.find((p: any) => p.role === 'respondent');
       const resolution = claim.resolution || {};
       const relatedEntities = claim.related_entities || [];
+      
+      // Pegar o valor do pedido
+      const amount_value = claim.amount?.value || 0;
+      
+      // Calcular impacto financeiro
+      const { impacto_financeiro, valor_impacto } = calcularImpactoFinanceiro(
+        claim,
+        resolution,
+        amount_value
+      );
 
       return {
         claim_id: String(claim.id),  // ✅ Converter NUMBER para STRING
@@ -213,7 +256,7 @@ Deno.serve(async (req) => {
         mediator_id: claim.players?.find((p: any) => p.role === 'mediator')?.user_id || null,
         
         // Valores (✅ CORRIGIDO: claim.amount, não claim.claim_details.amount)
-        amount_value: claim.amount?.value || 0,
+        amount_value: amount_value,
         amount_currency: claim.amount?.currency_id || 'BRL',
         
         // Resolution (✅ CORRIGIDO: usando campos reais da API ML)
@@ -225,6 +268,10 @@ Deno.serve(async (req) => {
         resolution_reason: resolution.reason || null,  // ✅ OK
         resolution_closed_by: resolution.closed_by || null,  // ✅ NOVO: "mediator", "complainant", "respondent"
         resolution_applied_coverage: resolution.applied_coverage || false,  // ✅ NOVO: boolean
+        
+        // 💰 IMPACTO FINANCEIRO (NOVO)
+        impacto_financeiro: impacto_financeiro,
+        valor_impacto: valor_impacto,
         
         // ✅ Data de vencimento: pegar de available_actions (para claims abertos) ou resolution.deadline (para resolvidos)
         data_vencimento_acao: respondent?.available_actions?.[0]?.due_date || resolution.deadline || null,
@@ -257,6 +304,18 @@ Deno.serve(async (req) => {
     
     const claimsComReasons = enrichedClaims.filter(c => c.reason_name !== null);
     console.log(`✅ Claims com reason_name: ${claimsComReasons.length}/${enrichedClaims.length}`);
+    
+    // Log de estatísticas de impacto financeiro
+    const stats = {
+      total: enrichedClaims.length,
+      ganho: enrichedClaims.filter(c => c.impacto_financeiro === 'ganho').length,
+      perda: enrichedClaims.filter(c => c.impacto_financeiro === 'perda').length,
+      coberto_ml: enrichedClaims.filter(c => c.impacto_financeiro === 'coberto_ml').length,
+      neutro: enrichedClaims.filter(c => c.impacto_financeiro === 'neutro').length,
+      soma_impacto: enrichedClaims.reduce((sum, c) => sum + (c.valor_impacto || 0), 0),
+    };
+    
+    console.log('[ml-claims] 💰 Estatísticas de Impacto Financeiro:', stats);
 
     // ============================================
     // 🎯 FASE 2: BUSCAR DADOS DOS PEDIDOS (ORDERS) EM LOTES

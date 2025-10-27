@@ -8,6 +8,7 @@ import { MessageSquare, FileText, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ReclamacoesPagination } from './ReclamacoesPagination';
+import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -130,6 +131,7 @@ export function ReclamacoesTable({
             <TableHead>Order ID</TableHead>
             <TableHead>Order Status</TableHead>
             <TableHead>Order Total</TableHead>
+            <TableHead>Impacto Financeiro</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -179,6 +181,13 @@ export function ReclamacoesTable({
               <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
               <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
+              <TableCell>
+                <ImpactoFinanceiroCell
+                  impacto={claim.impacto_financeiro}
+                  valor={claim.valor_impacto || 0}
+                  moeda={claim.amount_currency}
+                />
+              </TableCell>
             </TableRow>
           ))}
       </TableBody>

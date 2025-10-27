@@ -4495,6 +4495,7 @@ export type Database = {
           created_at: string | null
           data_vencimento_acao: string | null
           date_created: string | null
+          impacto_financeiro: string | null
           integration_account_id: string | null
           last_updated: string | null
           mediator_id: number | null
@@ -4542,6 +4543,7 @@ export type Database = {
           troca_type: string | null
           type: string | null
           updated_at: string | null
+          valor_impacto: number | null
         }
         Insert: {
           amount_currency?: string | null
@@ -4552,6 +4554,7 @@ export type Database = {
           created_at?: string | null
           data_vencimento_acao?: string | null
           date_created?: string | null
+          impacto_financeiro?: string | null
           integration_account_id?: string | null
           last_updated?: string | null
           mediator_id?: number | null
@@ -4599,6 +4602,7 @@ export type Database = {
           troca_type?: string | null
           type?: string | null
           updated_at?: string | null
+          valor_impacto?: number | null
         }
         Update: {
           amount_currency?: string | null
@@ -4609,6 +4613,7 @@ export type Database = {
           created_at?: string | null
           data_vencimento_acao?: string | null
           date_created?: string | null
+          impacto_financeiro?: string | null
           integration_account_id?: string | null
           last_updated?: string | null
           mediator_id?: number | null
@@ -4656,6 +4661,7 @@ export type Database = {
           troca_type?: string | null
           type?: string | null
           updated_at?: string | null
+          valor_impacto?: number | null
         }
         Relationships: [
           {
