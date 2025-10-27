@@ -176,8 +176,6 @@ Deno.serve(async (req) => {
     // 3️⃣ Enriquecer claims com os reasons
     const enrichedClaims = claims.map((claim: any) => {
       const reasonData = claim.reason_id ? reasonsMap.get(claim.reason_id) : null;
-      
-      console.log(`[ml-claims-fetch] Reason ${claim.reason_id}:`, reasonData?.name || 'não encontrado');
 
       // Extrair dados importantes
       const complainant = claim.players?.find((p: any) => p.role === 'complainant');
@@ -197,10 +195,10 @@ Deno.serve(async (req) => {
         last_updated: claim.last_updated,
         site_id: claim.site_id,
         
-        // Reason (usando dados da API ou fallback)
-        reason_name: reasonData?.name || null,
-        reason_detail: reasonData?.description || null,
-        reason_category: reasonData?.category || null,
+        // Reason (usando dados da API - campos corretos)
+        reason_name: reasonData?.id || null,
+        reason_detail: reasonData?.detail || null,
+        reason_category: reasonData?.filter?.group?.[0] || null,
         
         // Players (extraídos corretamente do array)
         buyer_id: complainant?.user_id || null,
@@ -225,7 +223,7 @@ Deno.serve(async (req) => {
         tem_mensagens: relatedEntities.includes('messages'),
         tem_evidencias: relatedEntities.includes('evidences'),
         tem_trocas: relatedEntities.includes('changes'),
-        tem_mediacao: claim.type === 'mediation',
+        tem_mediacao: claim.type === 'mediations',
         
         // Contadores (serão atualizados depois quando buscar detalhes)
         total_mensagens: 0,
@@ -290,8 +288,19 @@ Deno.serve(async (req) => {
     }));
 
     console.log('✅ Enriquecimento com orders concluído');
+    
+    const claimsComBuyerNickname = fullyEnrichedClaims.filter(c => c.buyer_nickname !== null);
+    const claimsComSellerNickname = fullyEnrichedClaims.filter(c => c.seller_nickname !== null);
+    const claimsComReasonName = fullyEnrichedClaims.filter(c => c.reason_name !== null);
+    
+    console.log('📊 AUDITORIA FINAL:', {
+      total: fullyEnrichedClaims.length,
+      comBuyerNickname: claimsComBuyerNickname.length,
+      comSellerNickname: claimsComSellerNickname.length,
+      comReasonName: claimsComReasonName.length
+    });
+    
     console.log('🔍 PRIMEIRO CLAIM FINAL:', JSON.stringify(fullyEnrichedClaims[0], null, 2));
-    console.log('🔍 TOTAL DE CLAIMS A INSERIR:', fullyEnrichedClaims.length);
 
     // Buscar organization_id da conta
     const { data: accountData } = await supabase

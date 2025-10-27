@@ -99,4 +99,7 @@ verify_jwt = false
 [functions.auto-update-devolucoes.cron]
 schedule = "0 */4 * * *"  # 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
 
+[functions.ml-claims-fetch]
+verify_jwt = true
+
 
