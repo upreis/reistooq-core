@@ -74,24 +74,28 @@ Deno.serve(async (req) => {
       throw new Error('Access token não encontrado');
     }
 
-    // Validar seller_id recebido
-    if (!sellerId) {
-      console.error('[ml-claims-fetch] seller_id não fornecido', { accountId });
-      throw new Error('seller_id não fornecido. Informe o seller_id da conta.');
-    }
-
-    // Construir URL da busca com paginação
+    // Construir URL da busca usando os mesmos parâmetros que ml-api-direct
     const params = new URLSearchParams({
-      seller_id: sellerId.toString(),
+      player_role: 'respondent',
+      player_user_id: sellerId.toString(),
       limit: (limit || 50).toString(),
-      offset: (offset || 0).toString()
+      offset: (offset || 0).toString(),
+      sort: 'date_created:desc'
     });
 
-    // Adicionar filtros apenas se tiverem valor
-    if (filters?.date_from) params.append('date_from', filters.date_from);
-    if (filters?.date_to) params.append('date_to', filters.date_to);
-    if (filters?.status && filters.status !== '') params.append('status', filters.status);
-    if (filters?.type && filters.type !== '') params.append('type', filters.type);
+    // Adicionar filtros apenas se tiverem valor (igual ao ml-api-direct)
+    if (filters?.type && filters.type.trim().length > 0) {
+      params.append('type', filters.type);
+    }
+    if (filters?.stage && filters.stage.trim().length > 0) {
+      params.append('stage', filters.stage);
+    }
+    if (filters?.status && filters.status.trim().length > 0) {
+      params.append('status', filters.status);
+    }
+
+    // OBS: A API do ML não aceita date_from/date_to para claims
+    // O filtro de data será aplicado client-side após buscar os dados
 
     const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
     
@@ -108,9 +112,26 @@ Deno.serve(async (req) => {
     }
 
     const claimsData = await claimsRes.json();
-    const claims = claimsData.data || [];
+    let claims = claimsData.data || [];
 
     console.log(`[ml-claims-fetch] ${claims.length} claims encontrados`);
+
+    // Aplicar filtro de data client-side (API ML não aceita date_from/date_to)
+    if (filters?.date_from || filters?.date_to) {
+      const dateFrom = filters.date_from ? new Date(filters.date_from) : null;
+      const dateTo = filters.date_to ? new Date(filters.date_to) : null;
+
+      claims = claims.filter((claim: any) => {
+        if (!claim.date_created) return false;
+        const claimDate = new Date(claim.date_created);
+        
+        if (dateFrom && claimDate < dateFrom) return false;
+        if (dateTo && claimDate > dateTo) return false;
+        
+        return true;
+      });
+
+      console.log(`[ml-claims-fetch] Após filtro de data: ${claims.length} claims`);
 
     // Cache de reasons para evitar chamadas repetidas
     const reasonsCache = new Map<string, any>();
