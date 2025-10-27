@@ -25,16 +25,13 @@ export function ImpactoFinanceiroCell({
   }).format(Math.abs(valor));
 
   const [showTooltip, setShowTooltip] = useState(false);
-  const badgeRef = useRef<HTMLDivElement>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ left: 0, top: 0 });
 
   // Configuração de cada tipo de impacto
   const config = {
     ganho: {
       icon: TrendingUp,
       label: 'Ganho',
-      description: 'Reclamação fechada a seu favor. Você mantém o valor do pedido.',
+      description: 'Reclamação fechada a seu favor. Você mantém o valor.',
       variant: 'default' as const,
       className: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
       valorPrefix: '+'
@@ -42,7 +39,7 @@ export function ImpactoFinanceiroCell({
     perda: {
       icon: TrendingDown,
       label: 'Perda',
-      description: 'Comprador ganhou e ML não cobriu. Você perde o valor do pedido.',
+      description: 'Comprador ganhou e ML não cobriu. Você perde o valor.',
       variant: 'destructive' as const,
       className: 'bg-destructive/10 text-destructive border-destructive/20',
       valorPrefix: '-'
@@ -50,7 +47,7 @@ export function ImpactoFinanceiroCell({
     coberto_ml: {
       icon: Shield,
       label: 'Coberto ML',
-      description: 'Comprador ganhou mas o Mercado Livre cobriu o valor. Sem impacto para você.',
+      description: 'Comprador ganhou mas ML cobriu. Sem impacto.',
       variant: 'default' as const,
       className: 'bg-primary/10 text-primary border-primary/20',
       valorPrefix: ''
@@ -58,7 +55,7 @@ export function ImpactoFinanceiroCell({
     neutro: {
       icon: Clock,
       label: 'Pendente',
-      description: 'Reclamação ainda em andamento. Valor em disputa aguardando resolução.',
+      description: 'Reclamação em andamento. Aguardando resolução.',
       variant: 'outline' as const,
       className: 'bg-muted text-muted-foreground border-border',
       valorPrefix: ''
@@ -70,18 +67,6 @@ export function ImpactoFinanceiroCell({
     ease: "easeInOut" as const
   };
 
-  useEffect(() => {
-    if (showTooltip && badgeRef.current && tooltipRef.current) {
-      const badgeRect = badgeRef.current.getBoundingClientRect();
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
-      
-      setTooltipPosition({
-        left: (badgeRect.width - tooltipRect.width) / 2,
-        top: -tooltipRect.height - 8
-      });
-    }
-  }, [showTooltip]);
-
   // Se não tem impacto ou é neutro, mostrar pendente COM VALOR
   if (!impacto || impacto === 'neutro') {
     const Icon = config.neutro.icon;
@@ -89,7 +74,6 @@ export function ImpactoFinanceiroCell({
     return (
       <div className="flex items-center gap-2">
         <div 
-          ref={badgeRef}
           className="relative inline-block"
           onMouseEnter={() => setShowTooltip(true)}
           onMouseLeave={() => setShowTooltip(false)}
@@ -97,29 +81,24 @@ export function ImpactoFinanceiroCell({
           <AnimatePresence>
             {showTooltip && (
               <motion.div
-                ref={tooltipRef}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 5 }}
+                initial={{ opacity: 0, y: 5, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 5, scale: 0.95 }}
                 transition={springConfig}
-                className="absolute z-50 pointer-events-none whitespace-nowrap"
-                style={{
-                  left: tooltipPosition.left,
-                  top: tooltipPosition.top
-                }}
+                className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] pointer-events-none"
               >
                 <div className={cn(
-                  "px-3 py-2 rounded-lg",
-                  "bg-background/95 backdrop-blur",
-                  "border border-border/50",
-                  "shadow-lg",
-                  "dark:border-border/50"
+                  "w-[160px] px-3 py-2 rounded-lg",
+                  "bg-popover backdrop-blur-sm",
+                  "border border-border",
+                  "shadow-lg"
                 )}>
-                  <p className="text-xs font-medium mb-0.5">{config.neutro.label}</p>
-                  <p className="text-[11px] text-muted-foreground max-w-[220px]">
+                  <p className="text-xs font-semibold mb-1 text-foreground">{config.neutro.label}</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
                     {config.neutro.description}
                   </p>
                 </div>
+                <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -141,7 +120,6 @@ export function ImpactoFinanceiroCell({
   return (
     <div className="flex items-center gap-2">
       <div 
-        ref={badgeRef}
         className="relative inline-block"
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
@@ -149,29 +127,24 @@ export function ImpactoFinanceiroCell({
         <AnimatePresence>
           {showTooltip && (
             <motion.div
-              ref={tooltipRef}
-              initial={{ opacity: 0, y: 5 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
+              initial={{ opacity: 0, y: 5, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 5, scale: 0.95 }}
               transition={springConfig}
-              className="absolute z-50 pointer-events-none whitespace-nowrap"
-              style={{
-                left: tooltipPosition.left,
-                top: tooltipPosition.top
-              }}
+              className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-[100] pointer-events-none"
             >
               <div className={cn(
-                "px-3 py-2 rounded-lg",
-                "bg-background/95 backdrop-blur",
-                "border border-border/50",
-                "shadow-lg",
-                "dark:border-border/50"
+                "w-[160px] px-3 py-2 rounded-lg",
+                "bg-popover backdrop-blur-sm",
+                "border border-border",
+                "shadow-lg"
               )}>
-                <p className="text-xs font-medium mb-0.5">{label}</p>
-                <p className="text-[11px] text-muted-foreground max-w-[220px]">
+                <p className="text-xs font-semibold mb-1 text-foreground">{label}</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
                   {description}
                 </p>
               </div>
+              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-border" />
             </motion.div>
           )}
         </AnimatePresence>
