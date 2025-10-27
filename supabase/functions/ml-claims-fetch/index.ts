@@ -87,10 +87,11 @@ Deno.serve(async (req) => {
       offset: (offset || 0).toString()
     });
 
+    // Adicionar filtros apenas se tiverem valor
     if (filters?.date_from) params.append('date_from', filters.date_from);
     if (filters?.date_to) params.append('date_to', filters.date_to);
-    if (filters?.status) params.append('status', filters.status);
-    if (filters?.type) params.append('type', filters.type);
+    if (filters?.status && filters.status !== '') params.append('status', filters.status);
+    if (filters?.type && filters.type !== '') params.append('type', filters.type);
 
     const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
     
