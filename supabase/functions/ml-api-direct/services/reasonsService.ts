@@ -95,7 +95,12 @@ export class ReasonsService {
     for (const reasonId of uniqueReasonIds) {
       if (this.cache.has(reasonId)) {
         idsEmCache.push(reasonId);
-        reasonsMap.set(reasonId, this.cache.get(reasonId));
+        
+        // ✅ ADICIONAR DADOS DO CACHE AO MAP DE RETORNO
+        const cachedData = this.cache.get(reasonId);
+        if (cachedData) {
+          reasonsMap.set(reasonId, cachedData);
+        }
       } else {
         idsParaBuscar.push(reasonId);
       }
