@@ -389,8 +389,46 @@ Deno.serve(async (req) => {
 
       console.log(`[ml-claims-fetch] ${claimsToUpsert.length} claims salvos no banco`);
 
-      // Buscar evidências para claims que têm evidências
+      // ============================================
+      // 🔢 BUSCAR CONTADORES REAIS (mensagens, evidências, não lidas)
+      // ============================================
+      
+      const contadoresMap = new Map<string, { total_mensagens: number; total_evidencias: number; mensagens_nao_lidas: number }>();
+
+      // 1️⃣ Buscar MENSAGENS para claims que têm mensagens
+      const claimsComMensagens = fullyEnrichedClaims.filter(c => c.tem_mensagens);
+      console.log(`📨 Buscando mensagens para ${claimsComMensagens.length} claims...`);
+
+      for (const claim of claimsComMensagens) {
+        try {
+          const messagesUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.claim_id}/messages`;
+          const messagesRes = await fetch(messagesUrl, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+          });
+
+          if (messagesRes.ok) {
+            const messagesData = await messagesRes.json();
+            const messages = messagesData.messages || [];
+            const unreadCount = messagesData.unread_messages || 0;
+
+            // Atualizar map de contadores
+            const existingCounters = contadoresMap.get(claim.claim_id) || { total_mensagens: 0, total_evidencias: 0, mensagens_nao_lidas: 0 };
+            contadoresMap.set(claim.claim_id, {
+              ...existingCounters,
+              total_mensagens: messages.length,
+              mensagens_nao_lidas: unreadCount
+            });
+
+            console.log(`✅ Claim ${claim.claim_id}: ${messages.length} mensagens (${unreadCount} não lidas)`);
+          }
+        } catch (error) {
+          console.error(`[ml-claims-fetch] Erro ao buscar mensagens do claim ${claim.claim_id}`, error);
+        }
+      }
+
+      // 2️⃣ Buscar EVIDÊNCIAS para claims que têm evidências
       const claimsComEvidencias = fullyEnrichedClaims.filter(c => c.tem_evidencias);
+      console.log(`📎 Buscando evidências para ${claimsComEvidencias.length} claims...`);
       
       for (const claim of claimsComEvidencias) {
         try {
@@ -402,6 +440,13 @@ Deno.serve(async (req) => {
           if (evidenciasRes.ok) {
             const evidenciasData = await evidenciasRes.json();
             const evidencias = evidenciasData.data || [];
+
+            // Atualizar map de contadores
+            const existingCounters = contadoresMap.get(claim.claim_id) || { total_mensagens: 0, total_evidencias: 0, mensagens_nao_lidas: 0 };
+            contadoresMap.set(claim.claim_id, {
+              ...existingCounters,
+              total_evidencias: evidencias.length
+            });
 
             if (evidencias.length > 0) {
               const evidenciasToUpsert = evidencias.map((ev: any) => ({
@@ -420,13 +465,30 @@ Deno.serve(async (req) => {
                 .from('reclamacoes_evidencias')
                 .upsert(evidenciasToUpsert, { onConflict: 'id' });
 
-              console.log(`[ml-claims-fetch] ${evidencias.length} evidências salvas para claim ${claim.claim_id}`);
+              console.log(`✅ Claim ${claim.claim_id}: ${evidencias.length} evidências salvas`);
             }
           }
         } catch (error) {
           console.error(`[ml-claims-fetch] Erro ao buscar evidências do claim ${claim.claim_id}`, error);
         }
       }
+
+      // 3️⃣ ATUALIZAR CONTADORES NO BANCO
+      console.log(`🔄 Atualizando contadores de ${contadoresMap.size} claims...`);
+      
+      for (const [claimId, contadores] of contadoresMap.entries()) {
+        await supabase
+          .from('reclamacoes')
+          .update({
+            total_mensagens: contadores.total_mensagens,
+            total_evidencias: contadores.total_evidencias,
+            mensagens_nao_lidas: contadores.mensagens_nao_lidas,
+            updated_at: new Date().toISOString()
+          })
+          .eq('claim_id', claimId);
+      }
+
+      console.log(`✅ Contadores atualizados com sucesso!`);
     }
 
     return new Response(
