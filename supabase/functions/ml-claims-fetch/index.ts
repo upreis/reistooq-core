@@ -37,9 +37,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { accountId, filters } = await req.json() as {
+    const { accountId, filters, limit, offset } = await req.json() as {
       accountId: string;
       filters?: ClaimFilters;
+      limit?: number;
+      offset?: number;
     };
 
     console.log('[ml-claims-fetch] Buscando claims', { accountId, filters });
@@ -87,11 +89,11 @@ Deno.serve(async (req) => {
       throw new Error('seller_id não encontrado. Configure a integração do Mercado Livre corretamente.');
     }
 
-    // Construir URL da busca
+    // Construir URL da busca com paginação
     const params = new URLSearchParams({
       seller_id: sellerId.toString(),
-      limit: '50',
-      offset: '0'
+      limit: (limit || 50).toString(),
+      offset: (offset || 0).toString()
     });
 
     if (filters?.date_from) params.append('date_from', filters.date_from);

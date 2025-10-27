@@ -51,6 +51,11 @@ export function useReclamacoes(filters: ClaimFilters) {
       
       if (accounts && accounts.length > 0) {
         setSelectedAccountId(accounts[0].id);
+      } else {
+        // Não há conta ML configurada
+        setSelectedAccountId(null);
+        setIsLoading(false);
+        setError('Nenhuma integração do Mercado Livre encontrada');
       }
     };
     fetchAccount();
@@ -197,6 +202,7 @@ export function useReclamacoes(filters: ClaimFilters) {
     }
   };
 
+  // Recarregar quando filtros mudarem (mas não quando paginação interna mudar)
   useEffect(() => {
     if (selectedAccountId) {
       fetchReclamacoes();
@@ -210,16 +216,25 @@ export function useReclamacoes(filters: ClaimFilters) {
     filters.has_messages,
     filters.has_evidences,
     filters.date_from,
-    filters.date_to,
-    pagination.currentPage,
-    pagination.itemsPerPage
+    filters.date_to
+    // NÃO incluir pagination aqui para evitar loop infinito
   ]);
 
+  // Recarregar quando página/items per page mudarem (via ações do usuário)
+  useEffect(() => {
+    if (selectedAccountId && !isLoading) {
+      fetchReclamacoes(false);
+    }
+  }, [pagination.currentPage, pagination.itemsPerPage]);
+
   const goToPage = (page: number) => {
-    setPagination(prev => ({
-      ...prev,
-      currentPage: Math.max(1, Math.min(page, prev.totalPages))
-    }));
+    const newPage = Math.max(1, Math.min(page, pagination.totalPages));
+    if (newPage !== pagination.currentPage) {
+      setPagination(prev => ({
+        ...prev,
+        currentPage: newPage
+      }));
+    }
   };
 
   const changeItemsPerPage = (items: number) => {
