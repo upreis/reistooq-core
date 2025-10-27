@@ -21,6 +21,7 @@ import { logger } from '@/utils/logger';
 
 export function ReclamacoesPage() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [shouldFetch, setShouldFetch] = useState(false); // Controla quando buscar
   
   const [filters, setFilters] = useState({
     periodo: '7',
@@ -73,7 +74,14 @@ export function ReclamacoesPage() {
     goToPage,
     changeItemsPerPage,
     refresh
-  } = useReclamacoes(filters, selectedAccountIds);
+  } = useReclamacoes(filters, selectedAccountIds, shouldFetch);
+
+  const handleBuscar = () => {
+    if (selectedAccountIds.length === 0) {
+      return;
+    }
+    setShouldFetch(true);
+  };
 
   // Verificar se há erro de integração
   const hasIntegrationError = error?.includes('seller_id') || error?.includes('integração');
@@ -143,12 +151,29 @@ export function ReclamacoesPage() {
         <ReclamacoesStats reclamacoes={reclamacoes} />
       )}
 
-      {/* Filtros */}
+      {/* Filtros com Botão Buscar */}
       <Card className="p-6">
         <ReclamacoesFilters
           filters={filters}
           onFiltersChange={setFilters}
         />
+        
+        <div className="mt-4 flex justify-end">
+          <Button
+            onClick={handleBuscar}
+            disabled={isLoading || selectedAccountIds.length === 0}
+            size="lg"
+          >
+            {isLoading ? (
+              <>
+                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                Buscando...
+              </>
+            ) : (
+              'Buscar Reclamações'
+            )}
+          </Button>
+        </div>
       </Card>
 
       {/* Conteúdo principal */}

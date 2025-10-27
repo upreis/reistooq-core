@@ -25,9 +25,9 @@ interface PaginationInfo {
   totalPages: number;
 }
 
-export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string[]) {
+export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string[], shouldFetch: boolean = true) {
   const [reclamacoes, setReclamacoes] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -215,12 +215,13 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     }
   };
 
-  // Recarregar quando filtros mudarem (mas não quando paginação interna mudar)
+  // Recarregar quando filtros mudarem (mas só se shouldFetch for true)
   useEffect(() => {
-    if (selectedAccountIds && selectedAccountIds.length > 0) {
+    if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0) {
       fetchReclamacoes();
     }
   }, [
+    shouldFetch,
     selectedAccountIds.join(','), // Usar join para detectar mudanças no array
     filters.periodo, 
     filters.status, 
@@ -235,7 +236,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
 
   // Recarregar quando página/items per page mudarem (via ações do usuário)
   useEffect(() => {
-    if (selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
+    if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
       fetchReclamacoes(false);
     }
   }, [pagination.currentPage, pagination.itemsPerPage]);
