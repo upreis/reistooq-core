@@ -97,8 +97,9 @@ export function extractReviewsFields(reviewsData: any) {
   return {
     // ✅ Campos principais do review
     review_id: mapped?.resource_id?.toString() || null,
-    review_status: mapped?.stage || null, // 'closed', 'pending', etc
-    review_result: mapped?.status || null, // 'success', 'failed'
+    review_status: mapped?.status || null, // 'success', 'failed', null (resultado da revisão)
+    review_stage: mapped?.stage || null, // 'closed', 'pending', 'seller_review_pending', 'timeout' (etapa)
+    review_result: mapped?.status || null, // 'success', 'failed' (duplicado para compatibilidade)
     
     // ✅ Score de qualidade calculado
     score_qualidade: (() => {

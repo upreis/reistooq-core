@@ -64,11 +64,29 @@ export const mapTrackingData = (item: any) => {
       
       return parts.length > 0 ? parts.join(', ') : null;
     })(),
-    descricao_ultimo_status: item.shipment_history?.history?.[0]?.description || 
-                            item.tracking_events?.[0]?.description || 
-                            item.tracking_history?.[0]?.description || 
-                            returnShipment?.substatus || 
-                            null,
+    descricao_ultimo_status: (() => {
+      // 1. Se claim está fechado, usar o motivo da resolução
+      if (item.claim_details?.resolution?.reason) {
+        return item.claim_details.resolution.reason;
+      }
+      
+      // 2. Se há devolução, usar o status dela
+      if (item.return_details_v2?.status) {
+        return item.return_details_v2.status;
+      }
+      
+      // 3. Usar substatus do shipment de devolução
+      if (returnShipment?.substatus) {
+        return returnShipment.substatus;
+      }
+      
+      // 4. Usar stage do claim como fallback
+      if (item.claim_details?.stage) {
+        return item.claim_details.stage;
+      }
+      
+      return null;
+    })(),
     
     // ✅ Review (agora endpoint separado: GET /returns/$RETURN_ID/reviews)
     review_id: item.review_id || null,
