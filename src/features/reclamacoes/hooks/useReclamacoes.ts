@@ -109,15 +109,18 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
 
       const { data: cached, error: dbError, count } = await query;
 
-      if (!dbError && cached) {
-        setReclamacoes(cached);
-        if (count !== null) {
-          setPagination(prev => ({
-            ...prev,
-            totalItems: count,
-            totalPages: Math.ceil(count / prev.itemsPerPage)
-          }));
-        }
+      // Não usar cache vazio - esperar API
+      if (dbError) {
+        console.warn('[useReclamacoes] Erro no cache, ignorando:', dbError);
+      }
+
+      // Guardar count para paginação, mas NÃO mostrar dados ainda
+      if (count !== null) {
+        setPagination(prev => ({
+          ...prev,
+          totalItems: count,
+          totalPages: Math.ceil(count / prev.itemsPerPage)
+        }));
       }
 
       // Buscar seller_id das contas
@@ -173,11 +176,13 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
 
       if (functionError) {
         console.error('[useReclamacoes] Erro na edge function:', functionError);
-        // Não lançar erro se temos dados em cache
-        if (!cached || cached.length === 0) {
-          throw functionError;
+        // Se a API falhar, usar dados do cache se existir
+        if (cached && cached.length > 0) {
+          console.warn('[useReclamacoes] Usando dados do cache como fallback');
+          setReclamacoes(cached);
+          return;
         }
-        return; // Usar dados do cache se a API falhar
+        throw functionError;
       }
 
       if (data?.claims) {
