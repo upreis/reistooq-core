@@ -64,16 +64,16 @@ export const mapTrackingData = (item: any) => {
       
       return parts.length > 0 ? parts.join(', ') : null;
     })(),
-    descricao_ultimo_status: item.shipment_history?.combined_events?.[0]?.description || 
+    descricao_ultimo_status: item.shipment_history?.history?.[0]?.description || 
                             item.tracking_events?.[0]?.description || 
                             item.tracking_history?.[0]?.description || 
                             returnShipment?.substatus || 
                             null,
     
     // ✅ Review (agora endpoint separado: GET /returns/$RETURN_ID/reviews)
-    review_id: item.review?.id?.toString() || null,
-    review_status: item.review?.status || null,
-    review_result: item.review?.result || null,
+    review_id: item.review_id || null,
+    review_status: item.review_status || null,
+    review_result: item.review_result || null,
     score_qualidade: item.review?.score || null,
     necessita_acao_manual: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
     problemas_encontrados: item.problemas_encontrados || [],
