@@ -1504,6 +1504,12 @@ async function buscarPedidosCancelados(
       const reasonId = claim?.reason_id;
       const reasonData = allReasonsMap.get(reasonId || '');
       
+      console.log(`📦 Enriquecendo claim ${claim.id}:`, {
+        reasonId,
+        temReasonData: !!reasonData,
+        reasonDataKeys: reasonData ? Object.keys(reasonData) : []
+      });
+      
       // ✅ SEMPRE retornar com dados_reasons (MANTENDO estrutura com prefixo reason_*)
       if (reasonData) {
         return {
@@ -1521,6 +1527,19 @@ async function buscarPedidosCancelados(
     
     // 📊 Estatísticas de enriquecimento
     const enrichedCount = enrichedClaims.filter(c => c.dados_reasons?.reason_detail).length;
+    const claimsComReasons = enrichedClaims.filter(c => c.dados_reasons !== null);
+    
+    console.log(`✅ Enriquecimento completo:`, {
+      total: enrichedClaims.length,
+      comReasons: claimsComReasons.length,
+      semReasons: enrichedClaims.length - claimsComReasons.length,
+      exemplo: enrichedClaims[0]?.dados_reasons ? {
+        id: enrichedClaims[0].id,
+        reason_id: enrichedClaims[0].dados_reasons.reason_id,
+        reason_name: enrichedClaims[0].dados_reasons.reason_name
+      } : null
+    });
+    
     logger.success(`✅ FASE 2 COMPLETA: ${enrichedCount}/${allClaims.length} claims enriquecidos`);
     logger.info(`⚠️ Claims sem dados de reasons: ${allClaims.length - enrichedCount}`);
     
@@ -2179,6 +2198,13 @@ async function buscarPedidosCancelados(
             const safeClaimData = claimData || {}
             const safeOrderDetail = orderDetail || {}
             const safeShipmentData = claimData?.shipment_history || null
+            
+            // 📋 LOG DE DEBUG: Verificar dados_reasons antes do mapeamento
+            console.log(`📋 Mapeando claim ${claim.id}:`, {
+              temDadosReasons: !!claim?.dados_reasons,
+              dadosReasonsKeys: claim?.dados_reasons ? Object.keys(claim.dados_reasons) : [],
+              reasonId: claim?.reason_id
+            });
             
             const devolucao = {
               type: 'cancellation',
