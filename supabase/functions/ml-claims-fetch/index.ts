@@ -640,8 +640,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        count: enrichedClaims.length,
-        claims: enrichedClaims,
+        count: fullyEnrichedClaims.length,
+        claims: fullyEnrichedClaims,
         paging: claimsData.paging || {}
       }),
       {
