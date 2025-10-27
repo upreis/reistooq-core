@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { ReclamacoesGeralTab } from './tabs/ReclamacoesGeralTab';
+import { ReclamacoesMensagensTab } from './tabs/ReclamacoesMensagensTab';
 
 interface ReclamacoesExpandedPanelProps {
   claim: any;
@@ -37,8 +38,13 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="geral">Geral</TabsTrigger>
-            <TabsTrigger value="mensagens" disabled>
-              Mensagens (Em breve)
+            <TabsTrigger value="mensagens" disabled={!claim.tem_mensagens}>
+              Mensagens
+              {claim.total_mensagens > 0 && (
+                <span className="ml-1 text-xs bg-primary text-primary-foreground rounded-full px-1.5">
+                  {claim.total_mensagens}
+                </span>
+              )}
             </TabsTrigger>
             <TabsTrigger value="resolucao" disabled>
               Resolução (Em breve)
@@ -50,9 +56,10 @@ export function ReclamacoesExpandedPanel({ claim, onClose }: ReclamacoesExpanded
           </TabsContent>
 
           <TabsContent value="mensagens" className="mt-6">
-            <div className="text-center text-muted-foreground py-8">
-              Funcionalidade disponível na próxima versão
-            </div>
+            <ReclamacoesMensagensTab 
+              claimId={claim.claim_id} 
+              accountId={claim.integration_account_id}
+            />
           </TabsContent>
 
           <TabsContent value="resolucao" className="mt-6">
