@@ -168,16 +168,7 @@ export function ReclamacoesTable({
                 {claim.tem_evidencias ? <FileText className="h-4 w-4 inline text-purple-500" /> : '-'}
               </TableCell>
               <TableCell className="text-center">
-                {claim.tem_trocas ? (
-                  <div className="flex items-center justify-center gap-1">
-                    <Package className="h-4 w-4 inline text-green-500" />
-                    {claim.total_trocas > 0 && (
-                      <span className="text-xs font-medium text-green-600">
-                        {claim.total_trocas}
-                      </span>
-                    )}
-                  </div>
-                ) : '-'}
+                {claim.tem_trocas ? <Package className="h-4 w-4 inline text-green-500" /> : '-'}
               </TableCell>
               <TableCell className="text-center">
                 {claim.tem_mediacao ? '✅' : '-'}

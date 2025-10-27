@@ -496,13 +496,10 @@ Deno.serve(async (req) => {
       // 🔄 BUSCAR DADOS DE TROCAS (CHANGES)
       // ============================================
       
-      // ⚠️ ATENÇÃO: A API /claims/search NÃO retorna related_entities
-      // Solução: Tentar buscar /changes para todos os claims e tratar 404
-      console.log(`🔄 Verificando trocas para ${fullyEnrichedClaims.length} claims...`);
+      const claimsComTrocas = fullyEnrichedClaims.filter(c => c.tem_trocas);
+      console.log(`🔄 Buscando dados de trocas para ${claimsComTrocas.length} claims...`);
       
-      let trocasEncontradas = 0;
-      
-      for (const claim of fullyEnrichedClaims) {
+      for (const claim of claimsComTrocas) {
         try {
           const changesUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.claim_id}/changes`;
           const changesRes = await fetch(changesUrl, {
@@ -510,29 +507,7 @@ Deno.serve(async (req) => {
           });
 
           if (changesRes.ok) {
-            const changesResponse = await changesRes.json();
-            
-            // ✅ A API retorna um objeto com paginação: { data: [], paging: {} }
-            const changesArray = changesResponse.data || [];
-            
-            // Se não há trocas, resetar flags e continuar
-            if (changesArray.length === 0) {
-              await supabase
-                .from('reclamacoes')
-                .update({
-                  tem_trocas: false,
-                  total_trocas: 0,
-                  updated_at: new Date().toISOString()
-                })
-                .eq('claim_id', claim.claim_id);
-              continue;
-            }
-            
-            // ✅ Encontrou troca(s)! Processar a primeira
-            trocasEncontradas++;
-            const changesData = changesArray[0]; // Pegar primeira troca
-            
-            console.log(`📦 Troca encontrada no claim ${claim.claim_id}:`, JSON.stringify(changesData, null, 2));
+            const changesData = await changesRes.json();
             
             // Extrair dados da troca
             const changeStatus = changesData.status || null;
@@ -566,8 +541,7 @@ Deno.serve(async (req) => {
             await supabase
               .from('reclamacoes')
               .update({
-                tem_trocas: true, // ✅ Marcar como tendo troca
-                total_trocas: changesArray.length, // Total de trocas no array
+                total_trocas: 1, // Por enquanto, 1 troca por claim
                 troca_status: changeStatus,
                 troca_status_detail: changeStatusDetail,
                 troca_type: changeType,
@@ -577,24 +551,21 @@ Deno.serve(async (req) => {
                 troca_return_id: changeReturnId,
                 troca_new_orders: newOrders,
                 troca_items: changeItems,
-                troca_raw_data: changesResponse, // Salvar resposta completa com paginação
+                troca_raw_data: changesData,
                 updated_at: new Date().toISOString()
               })
               .eq('claim_id', claim.claim_id);
 
-            console.log(`✅ Claim ${claim.claim_id}: Troca [${changeType}] status=${changeStatus} (${changeItems.length} itens, ${changesArray.length} troca(s) total)`);
-          } else if (changesRes.status === 404) {
-            // 404 = Não tem troca, é esperado para a maioria dos claims
-            // Não fazer nada, apenas continuar
+            console.log(`✅ Claim ${claim.claim_id}: Troca [${changeType}] status=${changeStatus} (${changeItems.length} itens)`);
           } else {
-            console.warn(`⚠️ Erro ao buscar troca do claim ${claim.claim_id}. Status: ${changesRes.status}`);
+            console.warn(`⚠️ Falha ao buscar troca do claim ${claim.claim_id}. Status: ${changesRes.status}`);
           }
         } catch (error) {
           console.error(`❌ Erro ao buscar troca do claim ${claim.claim_id}:`, error.message);
         }
       }
 
-      console.log(`✅ Busca de trocas concluída! ${trocasEncontradas} trocas encontradas de ${fullyEnrichedClaims.length} claims.`);
+      console.log(`✅ Busca de trocas concluída!`);
     }
 
     return new Response(
