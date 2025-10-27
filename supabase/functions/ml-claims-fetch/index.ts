@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
-    }));
+    });
 
     console.log('📊 Total de claims mapeados:', enrichedClaims.length);
     
