@@ -1,16 +1,12 @@
 /**
- * 📋 TABELA DE RECLAMAÇÕES
- * FASE 4.4: Com paginação
+ * 📋 TABELA DE RECLAMAÇÕES - TODAS AS COLUNAS
  */
 
-import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, ChevronDown, MessageSquare, FileText, Package } from 'lucide-react';
+import { MessageSquare, FileText, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ReclamacoesExpandedPanel } from './ReclamacoesExpandedPanel';
 import { ReclamacoesPagination } from './ReclamacoesPagination';
 
 interface ReclamacoesTableProps {
@@ -35,11 +31,6 @@ export function ReclamacoesTable({
   onPageChange, 
   onItemsPerPageChange 
 }: ReclamacoesTableProps) {
-  const [expandedClaimId, setExpandedClaimId] = useState<string | null>(null);
-
-  const toggleExpand = (claimId: string) => {
-    setExpandedClaimId(expandedClaimId === claimId ? null : claimId);
-  };
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       opened: { variant: 'default', label: 'Aberta' },
@@ -103,79 +94,92 @@ export function ReclamacoesTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[120px]">N.º Claim</TableHead>
-            <TableHead>Data Criação</TableHead>
+            <TableHead>Claim ID</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Estágio</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Motivo</TableHead>
-            <TableHead>Comprador</TableHead>
-            <TableHead>Vendedor</TableHead>
-            <TableHead>Valor</TableHead>
-            <TableHead>N.º Pedido</TableHead>
-            <TableHead className="text-center">📨</TableHead>
-            <TableHead className="text-center">📎</TableHead>
-            <TableHead className="text-center">🔄</TableHead>
+            <TableHead>Stage</TableHead>
+            <TableHead>Resource ID</TableHead>
+            <TableHead>Resource</TableHead>
+            <TableHead>Reason ID</TableHead>
+            <TableHead>Data Criação</TableHead>
             <TableHead>Última Atualização</TableHead>
-            <TableHead className="text-center">Ações</TableHead>
+            <TableHead>Site ID</TableHead>
+            <TableHead>Reason Name</TableHead>
+            <TableHead>Reason Detail</TableHead>
+            <TableHead>Reason Category</TableHead>
+            <TableHead>Buyer ID</TableHead>
+            <TableHead>Buyer Nickname</TableHead>
+            <TableHead>Seller ID</TableHead>
+            <TableHead>Seller Nickname</TableHead>
+            <TableHead>Mediator ID</TableHead>
+            <TableHead>Amount Value</TableHead>
+            <TableHead>Amount Currency</TableHead>
+            <TableHead>Resolution Type</TableHead>
+            <TableHead>Resolution Subtype</TableHead>
+            <TableHead>Resolution Benefited</TableHead>
+            <TableHead>Resolution Date</TableHead>
+            <TableHead>Resolution Amount</TableHead>
+            <TableHead>Resolution Reason</TableHead>
+            <TableHead className="text-center">Mensagens</TableHead>
+            <TableHead className="text-center">Evidências</TableHead>
+            <TableHead className="text-center">Trocas</TableHead>
+            <TableHead className="text-center">Mediação</TableHead>
+            <TableHead>Total Mensagens</TableHead>
+            <TableHead>Total Evidências</TableHead>
+            <TableHead>Mensagens Não Lidas</TableHead>
+            <TableHead>Order ID</TableHead>
+            <TableHead>Order Status</TableHead>
+            <TableHead>Order Total</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {reclamacoes.map((claim) => (
-            <>
-              <TableRow 
-                key={claim.claim_id}
-                className={expandedClaimId === claim.claim_id ? 'bg-muted/50' : ''}
-              >
-                <TableCell className="font-mono text-xs">{claim.claim_id}</TableCell>
-                <TableCell className="text-sm">{formatDate(claim.date_created)}</TableCell>
-                <TableCell>{getStatusBadge(claim.status)}</TableCell>
-                <TableCell className="text-sm">{claim.stage || '-'}</TableCell>
-                <TableCell>{getTypeBadge(claim.type)}</TableCell>
-                <TableCell className="max-w-[200px] truncate" title={claim.reason_name}>
-                  {claim.reason_name || '-'}
-                </TableCell>
-                <TableCell className="text-sm">{claim.buyer_nickname || '-'}</TableCell>
-                <TableCell className="text-sm">{claim.seller_nickname || '-'}</TableCell>
-                <TableCell className="text-sm font-medium">
-                  {formatCurrency(claim.amount_value, claim.amount_currency)}
-                </TableCell>
-                <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
-                <TableCell className="text-center">
-                  {claim.tem_mensagens && <MessageSquare className="h-4 w-4 inline text-blue-500" />}
-                </TableCell>
-                <TableCell className="text-center">
-                  {claim.tem_evidencias && <FileText className="h-4 w-4 inline text-purple-500" />}
-                </TableCell>
-                <TableCell className="text-center">
-                  {claim.tem_trocas && <Package className="h-4 w-4 inline text-green-500" />}
-                </TableCell>
-                <TableCell className="text-sm">{formatDate(claim.last_updated)}</TableCell>
-                <TableCell>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => toggleExpand(claim.claim_id)}
-                  >
-                    {expandedClaimId === claim.claim_id ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                </TableCell>
-              </TableRow>
-              {expandedClaimId === claim.claim_id && (
-                <TableRow>
-                  <TableCell colSpan={15} className="p-0">
-                    <ReclamacoesExpandedPanel
-                      claim={claim}
-                      onClose={() => setExpandedClaimId(null)}
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
-            </>
+            <TableRow key={claim.claim_id}>
+              <TableCell className="font-mono text-xs">{claim.claim_id}</TableCell>
+              <TableCell>{getTypeBadge(claim.type)}</TableCell>
+              <TableCell>{getStatusBadge(claim.status)}</TableCell>
+              <TableCell className="text-sm">{claim.stage || '-'}</TableCell>
+              <TableCell className="font-mono text-xs">{claim.resource_id || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.resource || '-'}</TableCell>
+              <TableCell className="font-mono text-xs">{claim.reason_id || '-'}</TableCell>
+              <TableCell className="text-sm">{formatDate(claim.date_created)}</TableCell>
+              <TableCell className="text-sm">{formatDate(claim.last_updated)}</TableCell>
+              <TableCell className="text-sm">{claim.site_id || '-'}</TableCell>
+              <TableCell className="max-w-[200px]">{claim.reason_name || '-'}</TableCell>
+              <TableCell className="max-w-[200px]">{claim.reason_detail || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.reason_category || '-'}</TableCell>
+              <TableCell className="font-mono text-xs">{claim.buyer_id || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.buyer_nickname || '-'}</TableCell>
+              <TableCell className="font-mono text-xs">{claim.seller_id || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.seller_nickname || '-'}</TableCell>
+              <TableCell className="font-mono text-xs">{claim.mediator_id || '-'}</TableCell>
+              <TableCell className="text-sm font-medium">{formatCurrency(claim.amount_value, claim.amount_currency)}</TableCell>
+              <TableCell className="text-sm">{claim.amount_currency || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.resolution_type || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.resolution_subtype || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.resolution_benefited || '-'}</TableCell>
+              <TableCell className="text-sm">{formatDate(claim.resolution_date)}</TableCell>
+              <TableCell className="text-sm">{formatCurrency(claim.resolution_amount)}</TableCell>
+              <TableCell className="max-w-[200px]">{claim.resolution_reason || '-'}</TableCell>
+              <TableCell className="text-center">
+                {claim.tem_mensagens ? <MessageSquare className="h-4 w-4 inline text-blue-500" /> : '-'}
+              </TableCell>
+              <TableCell className="text-center">
+                {claim.tem_evidencias ? <FileText className="h-4 w-4 inline text-purple-500" /> : '-'}
+              </TableCell>
+              <TableCell className="text-center">
+                {claim.tem_trocas ? <Package className="h-4 w-4 inline text-green-500" /> : '-'}
+              </TableCell>
+              <TableCell className="text-center">
+                {claim.tem_mediacao ? '✅' : '-'}
+              </TableCell>
+              <TableCell className="text-center">{claim.total_mensagens || 0}</TableCell>
+              <TableCell className="text-center">{claim.total_evidencias || 0}</TableCell>
+              <TableCell className="text-center">{claim.mensagens_nao_lidas || 0}</TableCell>
+              <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
+              <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
+            </TableRow>
           ))}
       </TableBody>
     </Table>
