@@ -136,10 +136,10 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         }));
       }
 
-      // Buscar seller_id das contas
+      // Buscar seller_id e nome das contas
       const { data: accountsData, error: accountsError } = await supabase
         .from('integration_accounts')
-        .select('id, account_identifier')
+        .select('id, account_identifier, name')
         .in('id', selectedAccountIds);
 
       if (accountsError || !accountsData || accountsData.length === 0) {
@@ -177,7 +177,12 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         }
 
         if (data?.claims) {
-          allClaims.push(...data.claims);
+          // Adicionar o nome da empresa a cada claim
+          const claimsWithEmpresa = data.claims.map((claim: any) => ({
+            ...claim,
+            empresa: account.name || account.account_identifier
+          }));
+          allClaims.push(...claimsWithEmpresa);
         }
       }
 

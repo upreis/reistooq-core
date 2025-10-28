@@ -127,6 +127,7 @@ export function ReclamacoesTable({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Empresa</TableHead>
             <TableHead>Claim ID</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Status</TableHead>
@@ -169,6 +170,7 @@ export function ReclamacoesTable({
         <TableBody>
           {reclamacoes.map((claim) => (
             <TableRow key={claim.claim_id}>
+              <TableCell className="text-sm">{claim.empresa || '-'}</TableCell>
               <TableCell className="font-mono text-xs">{claim.claim_id}</TableCell>
               <TableCell>{getTypeBadge(claim.type)}</TableCell>
               <TableCell>{getStatusBadge(claim.status)}</TableCell>
