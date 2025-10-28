@@ -142,7 +142,7 @@ export function ReclamacoesTable({
             <TableHead>Reason Detail</TableHead>
             <TableHead>Reason Category</TableHead>
             <TableHead>Buyer ID</TableHead>
-            <TableHead>Data da Venda</TableHead>
+            <TableHead>Buyer Nickname</TableHead>
             <TableHead>Seller ID</TableHead>
             <TableHead>Amount Value</TableHead>
             <TableHead>Amount Currency</TableHead>
@@ -175,7 +175,7 @@ export function ReclamacoesTable({
               <TableCell className="max-w-[200px]">{claim.reason_detail || '-'}</TableCell>
               <TableCell className="text-sm">{claim.reason_category || '-'}</TableCell>
               <TableCell className="font-mono text-xs">{claim.buyer_id || '-'}</TableCell>
-              <TableCell className="text-sm">{formatDate(claim.order_date_created)}</TableCell>
+              <TableCell className="text-sm">{claim.buyer_nickname || '-'}</TableCell>
               <TableCell className="font-mono text-xs">{claim.seller_id || '-'}</TableCell>
               <TableCell className="text-sm font-medium">{formatCurrency(claim.amount_value, claim.amount_currency)}</TableCell>
               <TableCell className="text-sm">{claim.amount_currency || '-'}</TableCell>
