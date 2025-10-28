@@ -38,6 +38,13 @@ export function ReclamacoesTable({
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   
   const handleOpenMensagens = (claim: any) => {
+    console.log('🔍 Opening messages for claim:', {
+      claim_id: claim.claim_id,
+      tem_mensagens: claim.tem_mensagens,
+      total_mensagens: claim.total_mensagens,
+      timeline_mensagens: claim.timeline_mensagens,
+      timeline_mensagens_length: claim.timeline_mensagens?.length || 0
+    });
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
   };
