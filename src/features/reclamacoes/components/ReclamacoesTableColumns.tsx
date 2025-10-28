@@ -9,6 +9,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
 import { Button } from '@/components/ui/button';
+import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 export type ReclamacaoRow = any;
 
@@ -223,7 +225,33 @@ const formatCurrency = (value: number | null, currency: string = 'BRL') => {
   }).format(value);
 };
 
-export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
+export const reclamacoesColumns = (
+  onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void
+): ColumnDef<ReclamacaoRow>[] => [
+  // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA STICKY
+  {
+    id: 'status_analise',
+    accessorKey: 'status_analise',
+    header: () => (
+      <div className="sticky left-0 bg-background z-10 px-2">
+        <span className="font-semibold">Análise</span>
+      </div>
+    ),
+    cell: ({ row }) => {
+      const claimId = row.original.claim_id;
+      const currentStatus = (row.original.status_analise || 'pendente') as StatusAnalise;
+      
+      return (
+        <div className="sticky left-0 bg-background z-10 px-2">
+          <StatusAnaliseSelect
+            value={currentStatus}
+            onChange={(newStatus) => onStatusChange?.(claimId, newStatus)}
+          />
+        </div>
+      );
+    },
+    size: 180,
+  },
   {
     accessorKey: 'empresa',
     header: ({ column }) => {

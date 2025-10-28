@@ -3,7 +3,7 @@
  * FASE 1: Estrutura básica com filtros e tabela
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoes } from '../hooks/useReclamacoes';
@@ -21,13 +21,25 @@ import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { OMSNav } from '@/features/oms/components/OMSNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import type { StatusAnalise, STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
+import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
+import { useToast } from '@/hooks/use-toast';
 
 
 export function ReclamacoesPage() {
+  const { toast } = useToast();
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-  const [shouldFetch, setShouldFetch] = useState(false); // Controla quando buscar
+  const [shouldFetch, setShouldFetch] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  
+  // Estado in-memory para análises (persiste entre tabs)
+  const [analiseStatus, setAnaliseStatus] = useState<Record<string, StatusAnalise>>({});
   
   const [filters, setFilters] = useState({
     periodo: '60',
@@ -72,7 +84,7 @@ export function ReclamacoesPage() {
   }, [mlAccounts, selectedAccountIds.length]);
 
   const {
-    reclamacoes,
+    reclamacoes: rawReclamacoes,
     isLoading,
     isRefreshing,
     error,
@@ -81,6 +93,54 @@ export function ReclamacoesPage() {
     changeItemsPerPage,
     refresh
   } = useReclamacoes(filters, selectedAccountIds, shouldFetch);
+
+  // 🔄 Auto-refresh a cada 30 segundos quando habilitado
+  React.useEffect(() => {
+    if (!autoRefreshEnabled || !shouldFetch) return;
+    
+    const interval = setInterval(() => {
+      console.log('🔄 Auto-refresh ativado - atualizando reclamações...');
+      refresh();
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [autoRefreshEnabled, refresh, shouldFetch]);
+
+  // Merge dos dados da API com análises in-memory
+  const reclamacoesWithAnalise = useMemo(() => {
+    return rawReclamacoes.map((claim: any) => ({
+      ...claim,
+      status_analise: analiseStatus[claim.claim_id] || 'pendente'
+    }));
+  }, [rawReclamacoes, analiseStatus]);
+
+  // Handler de mudança de status
+  const handleStatusChange = (claimId: string, newStatus: StatusAnalise) => {
+    setAnaliseStatus(prev => ({
+      ...prev,
+      [claimId]: newStatus
+    }));
+    
+    toast({
+      title: 'Status atualizado',
+      description: `Reclamação ${claimId} marcada como ${newStatus}`
+    });
+  };
+
+  // Filtrar por aba ativa
+  const reclamacoesAtivas = useMemo(() => {
+    return reclamacoesWithAnalise.filter((claim: any) => 
+      ACTIVE_STATUSES.includes(claim.status_analise)
+    );
+  }, [reclamacoesWithAnalise]);
+
+  const reclamacoesHistorico = useMemo(() => {
+    return reclamacoesWithAnalise.filter((claim: any) => 
+      HISTORIC_STATUSES.includes(claim.status_analise)
+    );
+  }, [reclamacoesWithAnalise]);
+
+  const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
 
   const handleBuscar = () => {
     if (selectedAccountIds.length === 0) {
@@ -176,9 +236,22 @@ export function ReclamacoesPage() {
               Gerencie claims e mediações do Mercado Livre
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            {/* Toggle Auto-Refresh */}
+            <div className="flex items-center gap-2">
+              <Switch
+                id="auto-refresh"
+                checked={autoRefreshEnabled}
+                onCheckedChange={setAutoRefreshEnabled}
+                disabled={!shouldFetch}
+              />
+              <Label htmlFor="auto-refresh" className="text-sm cursor-pointer">
+                Auto-refresh (30s)
+              </Label>
+            </div>
+            
             <ReclamacoesExport 
-              reclamacoes={reclamacoes} 
+              reclamacoes={reclamacoesWithAnalise} 
               disabled={isLoading || isRefreshing}
             />
             <Button
@@ -261,28 +334,56 @@ export function ReclamacoesPage() {
         </Card>
 
         {/* Stats - só mostrar se tiver dados */}
-        {!isLoading && reclamacoes.length > 0 && (
-          <ReclamacoesStats reclamacoes={reclamacoes} />
+        {!isLoading && reclamacoesWithAnalise.length > 0 && (
+          <ReclamacoesStats reclamacoes={reclamacoesWithAnalise} />
         )}
 
-        {/* Conteúdo principal */}
+        {/* Conteúdo principal com Tabs */}
         {hasIntegrationError ? (
           <ReclamacoesEmptyState type="no-integration" message={error || undefined} />
         ) : error ? (
           <ReclamacoesEmptyState type="error" message={error} />
-        ) : !isLoading && reclamacoes.length === 0 ? (
+        ) : !isLoading && reclamacoesWithAnalise.length === 0 ? (
           <ReclamacoesEmptyState type="no-data" />
         ) : (
-          <Card>
-            <ReclamacoesTable
-              reclamacoes={reclamacoes}
-              isLoading={isLoading}
-              error={error}
-              pagination={pagination}
-              onPageChange={goToPage}
-              onItemsPerPageChange={changeItemsPerPage}
-            />
-          </Card>
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="ativas">
+                Ativas ({reclamacoesAtivas.length})
+              </TabsTrigger>
+              <TabsTrigger value="historico">
+                Histórico ({reclamacoesHistorico.length})
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ativas">
+              <Card>
+                <ReclamacoesTable
+                  reclamacoes={reclamacoesAtivas}
+                  isLoading={isLoading}
+                  error={error}
+                  pagination={pagination}
+                  onPageChange={goToPage}
+                  onItemsPerPageChange={changeItemsPerPage}
+                  onStatusChange={handleStatusChange}
+                />
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="historico">
+              <Card>
+                <ReclamacoesTable
+                  reclamacoes={reclamacoesHistorico}
+                  isLoading={isLoading}
+                  error={error}
+                  pagination={pagination}
+                  onPageChange={goToPage}
+                  onItemsPerPageChange={changeItemsPerPage}
+                  onStatusChange={handleStatusChange}
+                />
+              </Card>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </ErrorBoundary>

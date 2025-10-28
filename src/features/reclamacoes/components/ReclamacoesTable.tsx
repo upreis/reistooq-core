@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Eye, EyeOff } from 'lucide-react';
+import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -32,6 +33,7 @@ interface ReclamacoesTableProps {
   };
   onPageChange: (page: number) => void;
   onItemsPerPageChange: (items: number) => void;
+  onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void;
 }
 
 export function ReclamacoesTable({ 
@@ -40,7 +42,8 @@ export function ReclamacoesTable({
   error, 
   pagination, 
   onPageChange, 
-  onItemsPerPageChange 
+  onItemsPerPageChange,
+  onStatusChange 
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -58,7 +61,7 @@ export function ReclamacoesTable({
 
   const table = useReactTable({
     data: reclamacoes,
-    columns: reclamacoesColumns,
+    columns: reclamacoesColumns(onStatusChange),
     state: {
       globalFilter,
       columnVisibility,
@@ -174,7 +177,7 @@ export function ReclamacoesTable({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={reclamacoesColumns.length} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
                   {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
                 </TableCell>
               </TableRow>
