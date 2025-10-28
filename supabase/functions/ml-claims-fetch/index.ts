@@ -357,6 +357,15 @@ Deno.serve(async (req) => {
           if (orderRes.ok) {
             const orderData = await orderRes.json();
             ordersMap.set(orderId, orderData);
+            
+            // 🔍 LOG: Ver estrutura do status_detail
+            console.log(`📊 Order [${orderId}] status_detail:`, JSON.stringify({
+              status: orderData.status,
+              status_detail: orderData.status_detail,
+              status_detail_type: typeof orderData.status_detail,
+              status_detail_keys: orderData.status_detail ? Object.keys(orderData.status_detail) : null
+            }, null, 2));
+            
             console.log(`✅ Pedido [${orderId}] buscado: ${orderData.buyer?.nickname || 'N/A'} → ${orderData.seller?.nickname || 'N/A'}`);
             return { success: true, orderId };
           } else {
