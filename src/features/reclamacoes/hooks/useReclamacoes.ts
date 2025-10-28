@@ -156,18 +156,23 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           continue;
         }
 
-        const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
+        // ✅ CORREÇÃO: Usar ml-api-direct igual a página de devoluções
+        const { data, error: functionError } = await supabase.functions.invoke('ml-api-direct', {
           body: {
-            accountId: account.id,
-            sellerId: account.account_identifier,
-            filters: {
-              status: filters.status,
-              type: filters.type,
-              date_from: dataInicio,
-              date_to: dataFim
-            },
+            action: 'get_claims_and_returns',
+            integration_account_id: account.id,
+            seller_id: account.account_identifier,
             limit: pagination.itemsPerPage,
-            offset: offset
+            offset: offset,
+            filters: {
+              periodoDias: filters.periodo === 'custom' ? 0 : parseInt(filters.periodo),
+              claim_type: filters.type || '',
+              stage: filters.stage || '',
+              fulfilled: undefined,
+              quantity_type: '',
+              reason_id: '',
+              resource: ''
+            }
           }
         });
 
@@ -176,8 +181,9 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           continue; // Pular esta conta e continuar com as outras
         }
 
-        if (data?.claims) {
-          allClaims.push(...data.claims);
+        // ✅ CORREÇÃO: A resposta do ml-api-direct vem em data.data, não data.claims
+        if (data?.success && data?.data) {
+          allClaims.push(...data.data);
         }
       }
 
@@ -198,12 +204,45 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         throw functionError;
       }
 
-      if (data?.claims) {
+      if (allClaims.length > 0) {
+        // ✅ CORREÇÃO: Processar claims seguindo o padrão de /ml-orders-completas
+        // As mensagens já vêm no campo claim_messages.messages
+        const formattedClaims = allClaims.map((claim: any) => {
+          const claimMessages = claim.claim_messages?.messages || [];
+          
+          return {
+            claim_id: claim.claim_details?.id || claim.id,
+            order_id: claim.order_details?.id || claim.resource_id || claim.order_id,
+            tipo: claim.claim_details?.type || claim.type,
+            subtipo: claim.claim_details?.subtype || claim.subtype,
+            estagio: claim.claim_details?.stage || claim.stage,
+            status: claim.claim_details?.status || claim.status,
+            motivo_id: claim.claim_details?.reason_id || claim.reason_id,
+            motivo_descricao: claim.reason?.description,
+            tem_mensagens: claimMessages.length > 0,
+            total_mensagens: claimMessages.length || 0,
+            tem_evidencias: (claim.claim_details?.attachments_quantity || 0) > 0,
+            total_evidencias: claim.claim_details?.attachments_quantity || 0,
+            data_criacao: claim.claim_details?.date_created || claim.date_created,
+            data_atualizacao: claim.claim_details?.last_updated || claim.last_updated,
+            comprador_id: claim.order_details?.buyer?.id || claim.buyer_id,
+            
+            // ✅ CAMPO CRÍTICO: timeline_mensagens com as mensagens da API ML
+            timeline_mensagens: claimMessages,
+            
+            // Campos adicionais
+            resolution: claim.claim_details?.resolution || claim.resolution,
+            site_id: claim.claim_details?.site_id || claim.site_id,
+            mediations: claim.claim_details?.mediations || claim.mediations,
+            integration_account_id: claim.integration_account_id
+          };
+        });
+
         // Aplicar filtros locais adicionais
-        let filteredClaims = data.claims;
+        let filteredClaims = formattedClaims;
 
         if (filters.stage) {
-          filteredClaims = filteredClaims.filter((c: any) => c.stage === filters.stage);
+          filteredClaims = filteredClaims.filter((c: any) => c.estagio === filters.stage);
         }
         if (filters.has_messages === 'true') {
           filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === true);
@@ -216,23 +255,9 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
         }
 
-        // Buscar mensagens para cada claim do banco local (CACHE apenas)
-        const claimsWithMessages = await Promise.all(
-          filteredClaims.map(async (claim: any) => {
-            const { data: mensagens } = await supabase
-              .from('reclamacoes_mensagens')
-              .select('*')
-              .eq('claim_id', claim.claim_id)
-              .order('date_created', { ascending: false });
-            
-            return {
-              ...claim,
-              timeline_mensagens: mensagens || []
-            };
-          })
-        );
-
-        setReclamacoes(claimsWithMessages);
+        setReclamacoes(filteredClaims);
+      } else {
+        setReclamacoes([]);
       }
 
     } catch (err: any) {
