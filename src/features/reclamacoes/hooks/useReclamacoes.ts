@@ -216,46 +216,18 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
         }
 
-        // Buscar mensagens para cada claim do banco local E da API se necessário
+        // Buscar mensagens para cada claim do banco local (CACHE apenas)
         const claimsWithMessages = await Promise.all(
           filteredClaims.map(async (claim: any) => {
-            // Primeiro tentar buscar do cache
-            const { data: cachedMessages } = await supabase
+            const { data: mensagens } = await supabase
               .from('reclamacoes_mensagens')
               .select('*')
               .eq('claim_id', claim.claim_id)
               .order('date_created', { ascending: false });
             
-            // Se não tiver mensagens no cache MAS o claim indica que tem mensagens, buscar da API
-            if ((!cachedMessages || cachedMessages.length === 0) && claim.tem_mensagens) {
-              console.log(`[useReclamacoes] Buscando mensagens da API para claim ${claim.claim_id}`);
-              
-              try {
-                // Buscar account_id do claim
-                const accountId = claim.integration_account_id || selectedAccountIds[0];
-                
-                // Chamar edge function para buscar mensagens da API ML
-                const { data: apiMessages, error: apiError } = await supabase.functions.invoke('ml-claims-messages', {
-                  body: {
-                    claimId: claim.claim_id,
-                    accountId: accountId
-                  }
-                });
-                
-                if (!apiError && apiMessages?.messages) {
-                  return {
-                    ...claim,
-                    timeline_mensagens: apiMessages.messages
-                  };
-                }
-              } catch (err) {
-                console.warn(`[useReclamacoes] Erro ao buscar mensagens do claim ${claim.claim_id}:`, err);
-              }
-            }
-            
             return {
               ...claim,
-              timeline_mensagens: cachedMessages || []
+              timeline_mensagens: mensagens || []
             };
           })
         );

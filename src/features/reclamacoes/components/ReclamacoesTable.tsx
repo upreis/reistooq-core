@@ -5,12 +5,13 @@
 import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, FileText, Package } from 'lucide-react';
+import { MessageSquare, FileText, Package, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ReclamacoesPagination } from './ReclamacoesPagination';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -36,17 +37,48 @@ export function ReclamacoesTable({
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   
-  const handleOpenMensagens = (claim: any) => {
-    console.log('🔍 Opening messages for claim:', {
-      claim_id: claim.claim_id,
-      tem_mensagens: claim.tem_mensagens,
-      total_mensagens: claim.total_mensagens,
-      timeline_mensagens: claim.timeline_mensagens,
-      timeline_mensagens_length: claim.timeline_mensagens?.length || 0
-    });
+  const handleOpenMensagens = async (claim: any) => {
     setSelectedClaim(claim);
-    setMensagensModalOpen(true);
+    
+    // Se já tem mensagens no cache, abrir modal direto
+    if (claim.timeline_mensagens && claim.timeline_mensagens.length > 0) {
+      setMensagensModalOpen(true);
+      return;
+    }
+    
+    // Se o claim indica que tem mensagens mas não estão no cache, buscar da API
+    if (claim.tem_mensagens) {
+      setIsLoadingMessages(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('ml-claims-messages', {
+          body: {
+            claimId: claim.claim_id,
+            accountId: claim.integration_account_id
+          }
+        });
+        
+        if (!error && data?.messages) {
+          // Atualizar o claim com as mensagens buscadas
+          setSelectedClaim({
+            ...claim,
+            timeline_mensagens: data.messages
+          });
+        }
+        
+        setMensagensModalOpen(true);
+      } catch (err) {
+        console.error('Erro ao buscar mensagens:', err);
+        setMensagensModalOpen(true); // Abrir mesmo com erro para mostrar "sem mensagens"
+      } finally {
+        setIsLoadingMessages(false);
+      }
+    } else {
+      // Não tem mensagens
+      setMensagensModalOpen(true);
+    }
   };
   
   const getStatusBadge = (status: string) => {
@@ -206,10 +238,17 @@ export function ReclamacoesTable({
                 {claim.tem_mensagens ? (
                   <button
                     onClick={() => handleOpenMensagens(claim)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors"
+                    disabled={isLoadingMessages}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <MessageSquare className="h-4 w-4" />
-                    <span className="text-sm font-medium">Ver ({claim.total_mensagens || 0})</span>
+                    {isLoadingMessages ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <MessageSquare className="h-4 w-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isLoadingMessages ? 'Carregando...' : `Ver (${claim.total_mensagens || 0})`}
+                    </span>
                   </button>
                 ) : (
                   <span className="text-muted-foreground">-</span>
