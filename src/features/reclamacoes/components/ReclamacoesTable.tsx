@@ -57,6 +57,19 @@ export function ReclamacoesTable({
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  const getStageBadge = (stage: string | null) => {
+    if (!stage) return '-';
+    const stageConfig: Record<string, { variant: any; label: string }> = {
+      claim: { variant: 'default', label: 'Reclamação' },
+      dispute: { variant: 'destructive', label: 'Mediação ML' },
+      recontact: { variant: 'secondary', label: 'Recontato' },
+      none: { variant: 'outline', label: 'N/A' },
+      stale: { variant: 'outline', label: 'Stale' }
+    };
+    const config = stageConfig[stage] || { variant: 'default', label: stage };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
   const formatDate = (date: string | null) => {
     if (!date) return '-';
     try {
@@ -149,7 +162,7 @@ export function ReclamacoesTable({
               <TableCell className="font-mono text-xs">{claim.claim_id}</TableCell>
               <TableCell>{getTypeBadge(claim.type)}</TableCell>
               <TableCell>{getStatusBadge(claim.status)}</TableCell>
-              <TableCell className="text-sm">{claim.stage || '-'}</TableCell>
+              <TableCell>{getStageBadge(claim.stage)}</TableCell>
               <TableCell className="font-mono text-xs">{claim.resource_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.resource || '-'}</TableCell>
               <TableCell className="font-mono text-xs">{claim.reason_id || '-'}</TableCell>
