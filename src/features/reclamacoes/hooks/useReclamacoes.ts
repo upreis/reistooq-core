@@ -27,6 +27,7 @@ interface PaginationInfo {
 
 export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string[], shouldFetch: boolean = true) {
   const [reclamacoes, setReclamacoes] = useState<any[]>([]);
+  const [allFilteredClaims, setAllFilteredClaims] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
   const fetchReclamacoes = async (showLoading = true) => {
     if (!selectedAccountIds || selectedAccountIds.length === 0) {
       setReclamacoes([]);
+      setAllFilteredClaims([]);
       setIsLoading(false);
       return;
     }
@@ -73,69 +75,6 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         dataFim = new Date().toISOString();
       }
 
-      // Calcular offset para paginação
-      const offset = (pagination.currentPage - 1) * pagination.itemsPerPage;
-
-      // Tentar buscar do banco primeiro (cache) com paginação E MENSAGENS
-      let query = supabase
-        .from('reclamacoes')
-        .select(`
-          *,
-          timeline_mensagens:reclamacoes_mensagens(
-            id,
-            sender_id,
-            sender_role,
-            receiver_id,
-            receiver_role,
-            message,
-            attachments,
-            date_created,
-            status
-          )
-        `, { count: 'exact' })
-        .in('integration_account_id', selectedAccountIds)
-        .gte('date_created', dataInicio)
-        .lte('date_created', dataFim)
-        .order('date_created', { ascending: false })
-        .range(offset, offset + pagination.itemsPerPage - 1);
-
-      // Aplicar filtros
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      if (filters.type) {
-        query = query.eq('type', filters.type);
-      }
-      if (filters.stage) {
-        query = query.eq('stage', filters.stage);
-      }
-      if (filters.has_messages === 'true') {
-        query = query.eq('tem_mensagens', true);
-      } else if (filters.has_messages === 'false') {
-        query = query.eq('tem_mensagens', false);
-      }
-      if (filters.has_evidences === 'true') {
-        query = query.eq('tem_evidencias', true);
-      } else if (filters.has_evidences === 'false') {
-        query = query.eq('tem_evidencias', false);
-      }
-
-      const { data: cached, error: dbError, count } = await query;
-
-      // Não usar cache vazio - esperar API
-      if (dbError) {
-        console.warn('[useReclamacoes] Erro no cache, ignorando:', dbError);
-      }
-
-      // Guardar count para paginação, mas NÃO mostrar dados ainda
-      if (count !== null) {
-        setPagination(prev => ({
-          ...prev,
-          totalItems: count,
-          totalPages: Math.ceil(count / prev.itemsPerPage)
-        }));
-      }
-
       // Buscar seller_id e nome das contas
       const { data: accountsData, error: accountsError } = await supabase
         .from('integration_accounts')
@@ -147,7 +86,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         throw new Error('Não foi possível obter informações das contas do Mercado Livre');
       }
 
-      // Buscar da API ML para atualizar (buscar de todas as contas selecionadas)
+      // ✅ BUSCAR TODAS AS CLAIMS EM LOTE DE 100 (igual /ml-orders-completas)
       const allClaims: any[] = [];
       
       for (const account of accountsData) {
@@ -156,89 +95,160 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           continue;
         }
 
-        const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
-          body: {
-            accountId: account.id,
-            sellerId: account.account_identifier,
-            filters: {
-              status: filters.status,
-              type: filters.type,
-              date_from: dataInicio,
-              date_to: dataFim
-            },
-            limit: pagination.itemsPerPage,
-            offset: offset
-          }
-        });
+        console.log(`🔍 Buscando claims de ${account.name} em lotes de 100...`);
 
-        if (functionError) {
-          console.error('[useReclamacoes] Erro na edge function para conta', account.id, functionError);
-          continue; // Pular esta conta e continuar com as outras
-        }
+        // ✅ LOOP PARA BUSCAR TODAS AS CLAIMS EM LOTE
+        let offset = 0;
+        const limit = 100;
+        let hasMore = true;
+        let tentativas = 0;
+        const maxTentativas = 50; // Máximo 5000 claims (50 * 100)
 
-        if (data?.claims) {
-          // Adicionar o nome da empresa a cada claim
-          const claimsWithEmpresa = data.claims.map((claim: any) => ({
-            ...claim,
-            empresa: account.name || account.account_identifier
-          }));
-          allClaims.push(...claimsWithEmpresa);
-        }
-      }
+        while (hasMore && tentativas < maxTentativas) {
+          tentativas++;
+          
+          try {
+            console.log(`📦 Lote ${tentativas}: buscando claims ${offset}-${offset + limit} de ${account.name}...`);
 
-      // Consolidar dados de todas as contas
-      const { data, error: functionError } = { 
-        data: { claims: allClaims }, 
-        error: allClaims.length === 0 ? new Error('Nenhum dado retornado') : null 
-      };
+            const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
+              body: {
+                accountId: account.id,
+                sellerId: account.account_identifier,
+                filters: {
+                  status: filters.status,
+                  type: filters.type,
+                  date_from: dataInicio,
+                  date_to: dataFim
+                },
+                limit: limit,
+                offset: offset
+              }
+            });
 
-      if (functionError) {
-        console.error('[useReclamacoes] Erro na edge function:', functionError);
-        // Se a API falhar, usar dados do cache se existir
-        if (cached && cached.length > 0) {
-          console.warn('[useReclamacoes] Usando dados do cache como fallback');
-          setReclamacoes(cached);
-          return;
-        }
-        throw functionError;
-      }
+            if (functionError) {
+              console.error('[useReclamacoes] Erro na edge function para conta', account.id, functionError);
+              break; // Pular esta conta
+            }
 
-      if (data?.claims) {
-        // Aplicar filtros locais adicionais
-        let filteredClaims = data.claims;
+            if (!data?.claims || data.claims.length === 0) {
+              console.log(`✅ Lote vazio - finalizando busca para ${account.name}`);
+              break;
+            }
 
-        if (filters.stage) {
-          filteredClaims = filteredClaims.filter((c: any) => c.stage === filters.stage);
-        }
-        if (filters.has_messages === 'true') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === true);
-        } else if (filters.has_messages === 'false') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === false);
-        }
-        if (filters.has_evidences === 'true') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === true);
-        } else if (filters.has_evidences === 'false') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
-        }
-
-        // Buscar mensagens para cada claim do banco local
-        const claimsWithMessages = await Promise.all(
-          filteredClaims.map(async (claim: any) => {
-            const { data: mensagens } = await supabase
-              .from('reclamacoes_mensagens')
-              .select('*')
-              .eq('claim_id', claim.claim_id)
-              .order('date_created', { ascending: false });
-            
-            return {
+            // Adicionar o nome da empresa a cada claim
+            const claimsWithEmpresa = data.claims.map((claim: any) => ({
               ...claim,
-              timeline_mensagens: mensagens || []
-            };
-          })
-        );
+              empresa: account.name || account.account_identifier
+            }));
+            
+            allClaims.push(...claimsWithEmpresa);
+            
+            console.log(`✅ Lote ${tentativas}: ${claimsWithEmpresa.length} claims | Total acumulado: ${allClaims.length}`);
 
-        setReclamacoes(claimsWithMessages);
+            // Verificar se há mais dados (usando paging da API ML)
+            const paging = data.paging;
+            if (paging) {
+              const totalFromApi = paging.total || 0;
+              hasMore = (offset + limit) < totalFromApi;
+            } else {
+              // Se não tem paging, verificar se recebeu menos que o limit
+              hasMore = data.claims.length >= limit;
+            }
+
+            if (!hasMore) {
+              console.log(`🏁 Não há mais dados para ${account.name}`);
+              break;
+            }
+
+            offset += limit;
+
+            // Delay para não sobrecarregar API ML
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+          } catch (error) {
+            console.error(`❌ Erro no lote ${tentativas}:`, error);
+            break;
+          }
+        }
+
+        console.log(`🎉 Total de claims carregados para ${account.name}: ${allClaims.length}`);
       }
+
+      console.log(`📊 TOTAL GERAL: ${allClaims.length} claims de todas as contas`);
+
+      if (allClaims.length === 0) {
+        toast({
+          title: 'Nenhuma reclamação encontrada',
+          description: 'Tente ajustar os filtros de busca.'
+        });
+        setReclamacoes([]);
+        setAllFilteredClaims([]);
+        setPagination(prev => ({
+          ...prev,
+          totalItems: 0,
+          totalPages: 1,
+          currentPage: 1
+        }));
+        return;
+      }
+
+      // Aplicar filtros locais adicionais
+      let filteredClaims = allClaims;
+
+      if (filters.stage) {
+        filteredClaims = filteredClaims.filter((c: any) => c.stage === filters.stage);
+      }
+      if (filters.has_messages === 'true') {
+        filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === true);
+      } else if (filters.has_messages === 'false') {
+        filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === false);
+      }
+      if (filters.has_evidences === 'true') {
+        filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === true);
+      } else if (filters.has_evidences === 'false') {
+        filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
+      }
+
+      console.log(`🔍 Após filtros locais: ${filteredClaims.length} claims`);
+
+      // ✅ ARMAZENAR TODAS AS CLAIMS FILTRADAS
+      setAllFilteredClaims(filteredClaims);
+
+      // ✅ ATUALIZAR PAGINAÇÃO COM TOTAL CORRETO
+      setPagination(prev => ({
+        ...prev,
+        totalItems: filteredClaims.length,
+        totalPages: Math.ceil(filteredClaims.length / prev.itemsPerPage),
+        currentPage: 1 // Reset para página 1
+      }));
+
+      // ✅ APLICAR PAGINAÇÃO CLIENT-SIDE (SLICE LOCAL)
+      const startIndex = 0;
+      const endIndex = pagination.itemsPerPage;
+      const paginatedClaims = filteredClaims.slice(startIndex, endIndex);
+
+      // Buscar mensagens apenas para claims da página atual
+      const claimsWithMessages = await Promise.all(
+        paginatedClaims.map(async (claim: any) => {
+          const { data: mensagens } = await supabase
+            .from('reclamacoes_mensagens')
+            .select('*')
+            .eq('claim_id', claim.claim_id)
+            .order('date_created', { ascending: false });
+          
+          return {
+            ...claim,
+            timeline_mensagens: mensagens || []
+          };
+        })
+      );
+
+      setReclamacoes(claimsWithMessages);
+
+      toast({
+        title: `${filteredClaims.length} reclamações encontradas`,
+        description: `Mostrando página 1 de ${Math.ceil(filteredClaims.length / pagination.itemsPerPage)}`
+      });
 
     } catch (err: any) {
       console.error('[useReclamacoes] Erro:', err);
@@ -261,12 +271,36 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     }
   }, [shouldFetch]);
 
-  // Recarregar quando página mudar (mas só se já tiver feito uma busca antes)
+  // ✅ PAGINAÇÃO CLIENT-SIDE - Aplicar slice local quando página mudar
   useEffect(() => {
-    if (shouldFetch && reclamacoes.length > 0 && selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
-      fetchReclamacoes(false);
+    if (allFilteredClaims.length > 0) {
+      const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+      const endIndex = startIndex + pagination.itemsPerPage;
+      const paginatedClaims = allFilteredClaims.slice(startIndex, endIndex);
+
+      // Buscar mensagens apenas para claims da página atual
+      const fetchMessagesForPage = async () => {
+        const claimsWithMessages = await Promise.all(
+          paginatedClaims.map(async (claim: any) => {
+            const { data: mensagens } = await supabase
+              .from('reclamacoes_mensagens')
+              .select('*')
+              .eq('claim_id', claim.claim_id)
+              .order('date_created', { ascending: false });
+            
+            return {
+              ...claim,
+              timeline_mensagens: mensagens || []
+            };
+          })
+        );
+
+        setReclamacoes(claimsWithMessages);
+      };
+
+      fetchMessagesForPage();
     }
-  }, [pagination.currentPage, pagination.itemsPerPage]);
+  }, [pagination.currentPage, pagination.itemsPerPage, allFilteredClaims]);
 
   const goToPage = (page: number) => {
     const newPage = Math.max(1, Math.min(page, pagination.totalPages));
