@@ -37,20 +37,20 @@ export function ReclamacoesTable({
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
-  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [loadingClaimIds, setLoadingClaimIds] = useState<Set<string>>(new Set());
   
   const handleOpenMensagens = async (claim: any) => {
-    setSelectedClaim(claim);
-    
     // Se já tem mensagens no cache, abrir modal direto
     if (claim.timeline_mensagens && claim.timeline_mensagens.length > 0) {
+      setSelectedClaim(claim);
       setMensagensModalOpen(true);
       return;
     }
     
     // Se o claim indica que tem mensagens mas não estão no cache, buscar da API
     if (claim.tem_mensagens) {
-      setIsLoadingMessages(true);
+      // Marcar este claim como loading
+      setLoadingClaimIds(prev => new Set([...prev, claim.claim_id]));
       
       try {
         const { data, error } = await supabase.functions.invoke('ml-claims-messages', {
@@ -60,23 +60,38 @@ export function ReclamacoesTable({
           }
         });
         
-        if (!error && data?.messages) {
+        if (error) {
+          console.error('Erro ao buscar mensagens:', error);
+          // Abrir modal mesmo com erro, mostrando mensagem apropriada
+          setSelectedClaim(claim);
+          setMensagensModalOpen(true);
+        } else if (data?.messages) {
           // Atualizar o claim com as mensagens buscadas
           setSelectedClaim({
             ...claim,
             timeline_mensagens: data.messages
           });
+          setMensagensModalOpen(true);
+        } else {
+          // Sem mensagens retornadas
+          setSelectedClaim(claim);
+          setMensagensModalOpen(true);
         }
-        
-        setMensagensModalOpen(true);
       } catch (err) {
         console.error('Erro ao buscar mensagens:', err);
-        setMensagensModalOpen(true); // Abrir mesmo com erro para mostrar "sem mensagens"
+        setSelectedClaim(claim);
+        setMensagensModalOpen(true);
       } finally {
-        setIsLoadingMessages(false);
+        // Remover do loading
+        setLoadingClaimIds(prev => {
+          const next = new Set(prev);
+          next.delete(claim.claim_id);
+          return next;
+        });
       }
     } else {
       // Não tem mensagens
+      setSelectedClaim(claim);
       setMensagensModalOpen(true);
     }
   };
@@ -238,16 +253,16 @@ export function ReclamacoesTable({
                 {claim.tem_mensagens ? (
                   <button
                     onClick={() => handleOpenMensagens(claim)}
-                    disabled={isLoadingMessages}
+                    disabled={loadingClaimIds.has(claim.claim_id)}
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoadingMessages ? (
+                    {loadingClaimIds.has(claim.claim_id) ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <MessageSquare className="h-4 w-4" />
                     )}
                     <span className="text-sm font-medium">
-                      {isLoadingMessages ? 'Carregando...' : `Ver (${claim.total_mensagens || 0})`}
+                      {loadingClaimIds.has(claim.claim_id) ? 'Carregando...' : `Ver (${claim.total_mensagens || 0})`}
                     </span>
                   </button>
                 ) : (
