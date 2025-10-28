@@ -192,7 +192,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
   {
     accessorKey: 'order_item_seller_sku',
     header: 'SKU',
-    cell: ({ row }) => <span className="font-mono text-xs whitespace-normal break-words">{row.getValue('order_item_seller_sku') || '-'}</span>,
+    cell: ({ row }) => <span className="font-mono text-xs whitespace-nowrap">{row.getValue('order_item_seller_sku') || '-'}</span>,
   },
   {
     accessorKey: 'amount_value',
