@@ -357,6 +357,17 @@ Deno.serve(async (req) => {
           if (orderRes.ok) {
             const orderData = await orderRes.json();
             ordersMap.set(orderId, orderData);
+            
+            // 🔍 LOG DETALHADO: Ver dados completos do status
+            if (orderData.status === 'cancelled') {
+              console.log(`🔍 PEDIDO CANCELADO [${orderId}]:`, JSON.stringify({
+                status: orderData.status,
+                status_detail: orderData.status_detail,
+                status_detail_type: typeof orderData.status_detail,
+                has_status_detail: !!orderData.status_detail
+              }, null, 2));
+            }
+            
             console.log(`✅ Pedido [${orderId}] buscado: ${orderData.buyer?.nickname || 'N/A'} → ${orderData.seller?.nickname || 'N/A'}`);
             return { success: true, orderId };
           } else {
