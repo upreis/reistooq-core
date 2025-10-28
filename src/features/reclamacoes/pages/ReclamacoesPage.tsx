@@ -111,6 +111,7 @@ export function ReclamacoesPage() {
 
   const {
     reclamacoes: rawReclamacoes,
+    allClaims: allRawClaims, // ✅ TODOS OS DADOS (não apenas a página atual)
     isLoading,
     isRefreshing,
     error,
@@ -212,13 +213,16 @@ export function ReclamacoesPage() {
   }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, fetchIncremental, setDadosInMemory]);
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
+  // ✅ USAR TODOS OS DADOS (allRawClaims) não apenas a página atual
   React.useEffect(() => {
-    if (rawReclamacoes.length > 0) {
+    if (allRawClaims.length > 0) {
+      console.log(`💾 Salvando ${allRawClaims.length} reclamações no localStorage...`);
+      
       setDadosInMemory(prevData => {
         const newData = { ...prevData };
         const agora = new Date().toISOString();
 
-        rawReclamacoes.forEach((claim: any) => {
+        allRawClaims.forEach((claim: any) => {
           const claimId = claim.claim_id;
           const existing = newData[claimId];
 
@@ -261,10 +265,11 @@ export function ReclamacoesPage() {
           }
         });
 
+        console.log(`✅ Total salvo no localStorage: ${Object.keys(newData).length} registros`);
         return newData;
       });
     }
-  }, [rawReclamacoes]);
+  }, [allRawClaims, setDadosInMemory]);
 
   // Converter dados in-memory para array e aplicar análise
   const reclamacoesWithAnalise = useMemo(() => {

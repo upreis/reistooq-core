@@ -359,6 +359,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
 
   return {
     reclamacoes,
+    allClaims: allFilteredClaims, // ✅ EXPOR TODOS OS DADOS FILTRADOS
     isLoading,
     isRefreshing,
     error,
