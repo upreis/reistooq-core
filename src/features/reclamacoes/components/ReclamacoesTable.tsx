@@ -2,7 +2,6 @@
  * 📋 TABELA DE RECLAMAÇÕES - TODAS AS COLUNAS
  */
 
-import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, FileText, Package } from 'lucide-react';
@@ -10,7 +9,6 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ReclamacoesPagination } from './ReclamacoesPagination';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
-import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -34,14 +32,6 @@ export function ReclamacoesTable({
   onPageChange, 
   onItemsPerPageChange 
 }: ReclamacoesTableProps) {
-  const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
-  const [selectedClaim, setSelectedClaim] = useState<any>(null);
-  
-  const handleOpenMensagens = (claim: any) => {
-    setSelectedClaim(claim);
-    setMensagensModalOpen(true);
-  };
-  
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       opened: { variant: 'default', label: 'Aberta' },
@@ -159,11 +149,7 @@ export function ReclamacoesTable({
             <TableHead className="text-center">Mediação</TableHead>
             <TableHead>Total Mensagens</TableHead>
             <TableHead>Total Evidências</TableHead>
-            <TableHead>Msgs Não Lidas</TableHead>
-            <TableHead className="text-center">Última Msg Data</TableHead>
-            <TableHead className="text-left">Última Msg Remetente</TableHead>
-            <TableHead className="text-center">Mensagens</TableHead>
-            <TableHead className="text-center">Ícone Mensagens</TableHead>
+            <TableHead>Mensagens Não Lidas</TableHead>
             <TableHead>Order ID</TableHead>
             <TableHead>Order Status</TableHead>
             <TableHead>Order Total</TableHead>
@@ -199,82 +185,6 @@ export function ReclamacoesTable({
               <TableCell className="text-sm">{formatDate(claim.resolution_date)}</TableCell>
               <TableCell className="text-sm">{formatCurrency(claim.resolution_amount)}</TableCell>
               <TableCell className="max-w-[200px]">{claim.resolution_reason || '-'}</TableCell>
-              
-              {/* Msgs Não Lidas */}
-              <TableCell className="text-center">
-                {claim.mensagens_nao_lidas > 0 ? (
-                  <Badge variant="destructive" className="font-semibold">
-                    {claim.mensagens_nao_lidas}
-                  </Badge>
-                ) : (
-                  <span className="text-muted-foreground">0</span>
-                )}
-              </TableCell>
-              
-              {/* Última Msg Data */}
-              <TableCell className="text-center text-xs">
-                {(() => {
-                  const rawData = claim.raw_data;
-                  const mensagens = rawData?.timeline_mensagens || rawData?.messages || [];
-                  
-                  if (!Array.isArray(mensagens) || mensagens.length === 0) {
-                    return <span className="text-muted-foreground">Sem mensagens</span>;
-                  }
-                  
-                  const ultimaMensagem = mensagens[mensagens.length - 1];
-                  const dataMsg = ultimaMensagem?.date || ultimaMensagem?.created_at || ultimaMensagem?.timestamp;
-                  
-                  return dataMsg ? formatDate(dataMsg) : <span className="text-muted-foreground">-</span>;
-                })()}
-              </TableCell>
-              
-              {/* Última Msg Remetente */}
-              <TableCell className="text-left text-sm">
-                {(() => {
-                  const rawData = claim.raw_data;
-                  const mensagens = rawData?.timeline_mensagens || rawData?.messages || [];
-                  
-                  if (!Array.isArray(mensagens) || mensagens.length === 0) {
-                    return <span className="text-muted-foreground">Sem mensagens</span>;
-                  }
-                  
-                  const ultimaMensagem = mensagens[mensagens.length - 1];
-                  const role = ultimaMensagem?.from?.role || ultimaMensagem?.role || ultimaMensagem?.sender_role;
-                  
-                  let remetentePt = 'Desconhecido';
-                  if (role === 'seller' || role === 'respondent') remetentePt = 'Vendedor';
-                  else if (role === 'buyer' || role === 'complainant') remetentePt = 'Comprador';
-                  else if (role === 'mediator') remetentePt = 'Mediador ML';
-                  
-                  return <span className="font-medium">{remetentePt}</span>;
-                })()}
-              </TableCell>
-              
-              {/* Mensagens - Botão clicável */}
-              <TableCell className="text-center">
-                {(() => {
-                  const rawData = claim.raw_data;
-                  const mensagens = rawData?.timeline_mensagens || rawData?.messages || [];
-                  
-                  if (!Array.isArray(mensagens) || mensagens.length === 0) {
-                    return <span className="text-muted-foreground text-sm">Sem mensagens</span>;
-                  }
-                  
-                  return (
-                    <button
-                      onClick={() => handleOpenMensagens(claim)}
-                      className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 hover:underline transition-colors mx-auto"
-                      title="Clique para ver todas as mensagens"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                      <span>
-                        Ver ({mensagens.length})
-                      </span>
-                    </button>
-                  );
-                })()}
-              </TableCell>
-              
               <TableCell className="text-center">
                 {claim.tem_mensagens ? <MessageSquare className="h-4 w-4 inline text-blue-500" /> : '-'}
               </TableCell>
@@ -289,6 +199,7 @@ export function ReclamacoesTable({
               </TableCell>
               <TableCell className="text-center">{claim.total_mensagens || 0}</TableCell>
               <TableCell className="text-center">{claim.total_evidencias || 0}</TableCell>
+              <TableCell className="text-center">{claim.mensagens_nao_lidas || 0}</TableCell>
               <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
               <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
@@ -308,24 +219,14 @@ export function ReclamacoesTable({
       </TableBody>
     </Table>
 
-      <ReclamacoesPagination
-        currentPage={pagination.currentPage}
-        totalPages={pagination.totalPages}
-        totalItems={pagination.totalItems}
-        itemsPerPage={pagination.itemsPerPage}
-        onPageChange={onPageChange}
-        onItemsPerPageChange={onItemsPerPageChange}
-      />
-      
-      {/* Modal de Mensagens */}
-      {selectedClaim && (
-        <ReclamacoesMensagensModal
-          open={mensagensModalOpen}
-          onOpenChange={setMensagensModalOpen}
-          mensagens={selectedClaim.raw_data?.timeline_mensagens || selectedClaim.raw_data?.messages || []}
-          claimId={String(selectedClaim.claim_id)}
-        />
-      )}
-    </div>
+    <ReclamacoesPagination
+      currentPage={pagination.currentPage}
+      totalPages={pagination.totalPages}
+      totalItems={pagination.totalItems}
+      itemsPerPage={pagination.itemsPerPage}
+      onPageChange={onPageChange}
+      onItemsPerPageChange={onItemsPerPageChange}
+    />
+  </div>
   );
 }
