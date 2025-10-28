@@ -391,15 +391,15 @@ export function ReclamacoesPage() {
             
             <ReclamacoesExport 
               reclamacoes={reclamacoesWithAnalise} 
-              disabled={isLoading || isRefreshing}
+              disabled={isLoading || isRefreshing || isLoadingIncremental}
             />
             <Button
               onClick={refresh}
-              disabled={isRefreshing || selectedAccountIds.length === 0}
+              disabled={isRefreshing || isLoadingIncremental || selectedAccountIds.length === 0}
               variant="outline"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              Atualizar
+              <RefreshCw className={`h-4 w-4 mr-2 ${(isRefreshing || isLoadingIncremental) ? 'animate-spin' : ''}`} />
+              {isRefreshing || isLoadingIncremental ? 'Atualizando...' : 'Atualizar'}
             </Button>
           </div>
         </div>
@@ -480,11 +480,11 @@ export function ReclamacoesPage() {
         {/* Conteúdo principal com Tabs */}
         {hasIntegrationError ? (
           <ReclamacoesEmptyState type="no-integration" message={error || undefined} />
-        ) : error ? (
+        ) : error && Object.keys(dadosInMemory).length === 0 ? (
           <ReclamacoesEmptyState type="error" message={error} />
-        ) : !isLoading && reclamacoesWithAnalise.length === 0 ? (
+        ) : !isLoading && Object.keys(dadosInMemory).length === 0 && shouldFetch ? (
           <ReclamacoesEmptyState type="no-data" />
-        ) : (
+        ) : Object.keys(dadosInMemory).length > 0 ? (
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
             <TabsList className="mb-4">
               <TabsTrigger value="ativas">
@@ -499,7 +499,7 @@ export function ReclamacoesPage() {
               <Card>
                 <ReclamacoesTable
                   reclamacoes={reclamacoesAtivas}
-                  isLoading={isLoading}
+                  isLoading={false}
                   error={error}
                   pagination={pagination}
                   onPageChange={goToPage}
@@ -513,7 +513,7 @@ export function ReclamacoesPage() {
               <Card>
                 <ReclamacoesTable
                   reclamacoes={reclamacoesHistorico}
-                  isLoading={isLoading}
+                  isLoading={false}
                   error={error}
                   pagination={pagination}
                   onPageChange={goToPage}
@@ -523,7 +523,7 @@ export function ReclamacoesPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        )}
+        ) : null}
       </div>
     </ErrorBoundary>
   );
