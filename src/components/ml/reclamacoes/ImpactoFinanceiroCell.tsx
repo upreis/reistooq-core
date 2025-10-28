@@ -15,6 +15,9 @@ export function ImpactoFinanceiroCell({
   valor,
   moeda = 'BRL'
 }: ImpactoFinanceiroCellProps) {
+  // Debug: ver o que está chegando
+  console.log('🔍 ImpactoFinanceiroCell:', { impacto, valor, moeda });
+  
   // Formatar valor em moeda
   const valorFormatado = new Intl.NumberFormat('pt-BR', {
     style: 'currency',

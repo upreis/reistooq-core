@@ -80,8 +80,7 @@ export function ReclamacoesPage() {
     if (selectedAccountIds.length === 0) {
       return;
     }
-    // ✅ Toggle para forçar re-fetch mesmo que já tenha buscado antes
-    setShouldFetch(prev => !prev);
+    setShouldFetch(true);
   };
 
   // Verificar se há erro de integração
