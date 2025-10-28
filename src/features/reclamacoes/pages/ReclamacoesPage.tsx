@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoes } from '../hooks/useReclamacoes';
 import { useReclamacoesIncremental } from '../hooks/useReclamacoesIncremental';
+import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
@@ -39,9 +40,20 @@ export function ReclamacoesPage() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
-  // 🔥 ESTADO IN-MEMORY COMPLETO - Persiste TODOS os dados buscados
-  const [dadosInMemory, setDadosInMemory] = useState<Record<string, any>>({});
-  const [analiseStatus, setAnaliseStatus] = useState<Record<string, StatusAnalise>>({});
+  // 💾 PERSISTÊNCIA COM LOCALSTORAGE
+  const {
+    dadosInMemory,
+    setDadosInMemory,
+    analiseStatus,
+    setAnaliseStatus,
+    clearOldData,
+    clearStorage
+  } = useReclamacoesStorage();
+
+  // Limpar dados antigos ao montar componente
+  React.useEffect(() => {
+    clearOldData();
+  }, [clearOldData]);
   
   const [filters, setFilters] = useState({
     periodo: '60',
@@ -289,6 +301,16 @@ export function ReclamacoesPage() {
     setShouldFetch(prev => !prev);
   };
 
+  const handleLimparDados = () => {
+    if (confirm('Tem certeza que deseja limpar todos os dados salvos?')) {
+      clearStorage();
+      toast({
+        title: 'Dados limpos',
+        description: 'Todos os dados foram removidos. Faça uma nova busca.'
+      });
+    }
+  };
+
   const hasActiveAdvancedFilters = filters.status !== '' || 
                                    filters.type !== '' ||
                                    filters.stage !== '' ||
@@ -393,6 +415,19 @@ export function ReclamacoesPage() {
               reclamacoes={reclamacoesWithAnalise} 
               disabled={isLoading || isRefreshing || isLoadingIncremental}
             />
+            
+            {Object.keys(dadosInMemory).length > 0 && (
+              <Button
+                onClick={handleLimparDados}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpar ({Object.keys(dadosInMemory).length})
+              </Button>
+            )}
+            
             <Button
               onClick={refresh}
               disabled={isRefreshing || isLoadingIncremental || selectedAccountIds.length === 0}
