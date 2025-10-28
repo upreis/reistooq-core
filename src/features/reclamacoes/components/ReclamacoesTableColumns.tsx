@@ -153,7 +153,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
   {
     accessorKey: 'reason_detail',
     header: 'Detalhe da Razão',
-    cell: ({ row }) => <span className="max-w-[12.5rem] block whitespace-normal break-words text-sm">{row.getValue('reason_detail') || '-'}</span>,
+    cell: ({ row }) => <span className="max-w-[20rem] block whitespace-normal break-words text-sm">{row.getValue('reason_detail') || '-'}</span>,
   },
   {
     accessorKey: 'reason_category',
