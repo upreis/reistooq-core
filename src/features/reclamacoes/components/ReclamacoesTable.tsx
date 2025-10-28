@@ -43,9 +43,9 @@ export function ReclamacoesTable({
   };
 
   const getTypeBadge = (type: string) => {
-    const typeConfig: Record<string, { variant: any; label: string }> = {
+    const typeConfig: Record<string, { variant: any; label: string; className?: string }> = {
       mediations: { variant: 'destructive', label: 'Mediação' },
-      returns: { variant: 'default', label: 'Devolução' },
+      returns: { variant: 'outline', label: 'Devolução', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
       fulfillment: { variant: 'secondary', label: 'Full' },
       ml_case: { variant: 'outline', label: 'ML Case' },
       cancel_sale: { variant: 'outline', label: 'Cancelamento Vendedor' },
@@ -54,7 +54,7 @@ export function ReclamacoesTable({
       service: { variant: 'secondary', label: 'Serviço' }
     };
     const config = typeConfig[type] || { variant: 'default', label: type };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
   };
 
   const getStageBadge = (stage: string | null) => {
