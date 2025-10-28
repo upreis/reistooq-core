@@ -30,8 +30,6 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
   const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [allFilteredClaims, setAllFilteredClaims] = useState<any[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo>({
     currentPage: 1,
     itemsPerPage: 50,
@@ -232,9 +230,6 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
 
         console.log(`[useReclamacoes] Claims após filtros locais: ${filteredClaims.length}`);
 
-        // Guardar todas as claims filtradas para paginação
-        setAllFilteredClaims(filteredClaims);
-        
         // Atualizar paginação com total correto
         const totalItems = filteredClaims.length;
         const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
@@ -269,7 +264,6 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         );
 
         setReclamacoes(claimsWithMessages);
-        setHasSearched(true);
       }
 
     } catch (err: any) {
@@ -293,36 +287,10 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     }
   }, [shouldFetch]);
 
-  // Aplicar paginação local quando a página mudar (sem fazer nova busca na API)
+  // Recarregar quando página mudar (mas só se já tiver feito uma busca antes)
   useEffect(() => {
-    if (hasSearched && allFilteredClaims.length > 0) {
-      const offset = (pagination.currentPage - 1) * pagination.itemsPerPage;
-      const startIdx = offset;
-      const endIdx = offset + pagination.itemsPerPage;
-      const paginatedClaims = allFilteredClaims.slice(startIdx, endIdx);
-
-      console.log(`[useReclamacoes] Mudança de página - Claims paginadas (${startIdx}-${endIdx}): ${paginatedClaims.length}`);
-
-      // Buscar mensagens para cada claim do banco local
-      const loadMessages = async () => {
-        const claimsWithMessages = await Promise.all(
-          paginatedClaims.map(async (claim: any) => {
-            const { data: mensagens } = await supabase
-              .from('reclamacoes_mensagens')
-              .select('*')
-              .eq('claim_id', claim.claim_id)
-              .order('date_created', { ascending: false });
-            
-            return {
-              ...claim,
-              timeline_mensagens: mensagens || []
-            };
-          })
-        );
-        setReclamacoes(claimsWithMessages);
-      };
-
-      loadMessages();
+    if (shouldFetch && reclamacoes.length > 0 && selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
+      fetchReclamacoes(false);
     }
   }, [pagination.currentPage, pagination.itemsPerPage]);
 
