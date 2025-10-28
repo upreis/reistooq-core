@@ -4507,8 +4507,6 @@ export type Database = {
           order_item_title: string | null
           order_item_unit_price: number | null
           order_status: string | null
-          order_status_code: string | null
-          order_status_description: string | null
           order_status_detail: string | null
           order_total: number | null
           organization_id: string | null
@@ -4574,8 +4572,6 @@ export type Database = {
           order_item_title?: string | null
           order_item_unit_price?: number | null
           order_status?: string | null
-          order_status_code?: string | null
-          order_status_description?: string | null
           order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
@@ -4641,8 +4637,6 @@ export type Database = {
           order_item_title?: string | null
           order_item_unit_price?: number | null
           order_status?: string | null
-          order_status_code?: string | null
-          order_status_description?: string | null
           order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
