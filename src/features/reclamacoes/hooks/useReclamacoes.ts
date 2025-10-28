@@ -147,18 +147,14 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         throw new Error('Não foi possível obter informações das contas do Mercado Livre');
       }
 
-      // Buscar da API ML para atualizar (buscar TODAS as claims de todas as contas - sem limit)
+      // Buscar da API ML para atualizar (buscar de todas as contas selecionadas)
       const allClaims: any[] = [];
-      
-      console.log('[useReclamacoes] Buscando claims do período:', dataInicio, 'até', dataFim);
       
       for (const account of accountsData) {
         if (!account.account_identifier) {
           console.warn(`[useReclamacoes] Conta ${account.id} sem account_identifier (seller_id)`);
           continue;
         }
-
-        console.log(`[useReclamacoes] Buscando claims da conta ${account.name || account.id}`);
 
         const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
           body: {
@@ -170,8 +166,8 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
               date_from: dataInicio,
               date_to: dataFim
             },
-            limit: 1000, // Buscar muitos registros de uma vez
-            offset: 0    // Sempre do início
+            limit: pagination.itemsPerPage,
+            offset: offset
           }
         });
 
@@ -181,7 +177,6 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         }
 
         if (data?.claims) {
-          console.log(`[useReclamacoes] Conta ${account.name}: ${data.claims.length} claims encontradas`);
           // Adicionar o nome da empresa a cada claim
           const claimsWithEmpresa = data.claims.map((claim: any) => ({
             ...claim,
@@ -190,8 +185,6 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           allClaims.push(...claimsWithEmpresa);
         }
       }
-
-      console.log(`[useReclamacoes] Total de claims antes dos filtros locais: ${allClaims.length}`);
 
       // Consolidar dados de todas as contas
       const { data, error: functionError } = { 
@@ -228,28 +221,9 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
         }
 
-        console.log(`[useReclamacoes] Claims após filtros locais: ${filteredClaims.length}`);
-
-        // Atualizar paginação com total correto
-        const totalItems = filteredClaims.length;
-        const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
-        
-        setPagination(prev => ({
-          ...prev,
-          totalItems,
-          totalPages
-        }));
-
-        // Aplicar paginação local
-        const startIdx = offset;
-        const endIdx = offset + pagination.itemsPerPage;
-        const paginatedClaims = filteredClaims.slice(startIdx, endIdx);
-
-        console.log(`[useReclamacoes] Claims paginadas (${startIdx}-${endIdx}): ${paginatedClaims.length}`);
-
         // Buscar mensagens para cada claim do banco local
         const claimsWithMessages = await Promise.all(
-          paginatedClaims.map(async (claim: any) => {
+          filteredClaims.map(async (claim: any) => {
             const { data: mensagens } = await supabase
               .from('reclamacoes_mensagens')
               .select('*')
