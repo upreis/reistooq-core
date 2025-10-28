@@ -18,6 +18,10 @@ import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
 import { logger } from '@/utils/logger';
+import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { OMSNav } from '@/features/oms/components/OMSNav';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+
 
 export function ReclamacoesPage() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
@@ -102,100 +106,130 @@ export function ReclamacoesPage() {
   // Sem contas ML
   if (!mlAccounts || mlAccounts.length === 0) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Reclamações</h1>
-          <p className="text-muted-foreground">
-            Gerencie claims e mediações do Mercado Livre
-          </p>
+      <ErrorBoundary>
+        <div className="space-y-6">
+          {/* Breadcrumb principal */}
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <span>📦</span>
+            <span>/</span>
+            <span className="text-primary">Vendas</span>
+          </div>
+
+          {/* Navigation tabs principais */}
+          <OMSNav />
+
+          {/* Sub-navegação de Pedidos */}
+          <MLOrdersNav />
+
+          <div>
+            <h1 className="text-3xl font-bold">Reclamações</h1>
+            <p className="text-muted-foreground">
+              Gerencie claims e mediações do Mercado Livre
+            </p>
+          </div>
+          <ReclamacoesEmptyState type="no-integration" />
         </div>
-        <ReclamacoesEmptyState type="no-integration" />
-      </div>
+      </ErrorBoundary>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Reclamações</h1>
-          <p className="text-muted-foreground">
-            Gerencie claims e mediações do Mercado Livre
-          </p>
+    <ErrorBoundary>
+      <div className="space-y-6">
+        {/* Breadcrumb principal */}
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <span>📦</span>
+          <span>/</span>
+          <span className="text-primary">Vendas</span>
         </div>
-        <div className="flex items-center gap-2">
-          <ReclamacoesExport 
-            reclamacoes={reclamacoes} 
-            disabled={isLoading || isRefreshing}
-          />
-          <Button
-            onClick={refresh}
-            disabled={isRefreshing || selectedAccountIds.length === 0}
-            variant="outline"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            Atualizar
-          </Button>
+
+        {/* Navigation tabs principais */}
+        <OMSNav />
+
+        {/* Sub-navegação de Pedidos */}
+        <MLOrdersNav />
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Reclamações</h1>
+            <p className="text-muted-foreground">
+              Gerencie claims e mediações do Mercado Livre
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <ReclamacoesExport 
+              reclamacoes={reclamacoes} 
+              disabled={isLoading || isRefreshing}
+            />
+            <Button
+              onClick={refresh}
+              disabled={isRefreshing || selectedAccountIds.length === 0}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Atualizar
+            </Button>
+          </div>
         </div>
-      </div>
 
-      {/* Seletor de Contas */}
-      <ReclamacoesAccountSelector
-        accounts={mlAccounts}
-        selectedIds={selectedAccountIds}
-        onSelectionChange={setSelectedAccountIds}
-      />
-
-      {/* Stats - só mostrar se tiver dados */}
-      {!isLoading && reclamacoes.length > 0 && (
-        <ReclamacoesStats reclamacoes={reclamacoes} />
-      )}
-
-      {/* Filtros com Botão Buscar */}
-      <Card className="p-6">
-        <ReclamacoesFilters
-          filters={filters}
-          onFiltersChange={setFilters}
+        {/* Seletor de Contas */}
+        <ReclamacoesAccountSelector
+          accounts={mlAccounts}
+          selectedIds={selectedAccountIds}
+          onSelectionChange={setSelectedAccountIds}
         />
-        
-        <div className="mt-4 flex justify-end">
-          <Button
-            onClick={handleBuscar}
-            disabled={isLoading || selectedAccountIds.length === 0}
-            size="lg"
-          >
-            {isLoading ? (
-              <>
-                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                Buscando...
-              </>
-            ) : (
-              'Buscar Reclamações'
-            )}
-          </Button>
-        </div>
-      </Card>
 
-      {/* Conteúdo principal */}
-      {hasIntegrationError ? (
-        <ReclamacoesEmptyState type="no-integration" message={error || undefined} />
-      ) : error ? (
-        <ReclamacoesEmptyState type="error" message={error} />
-      ) : !isLoading && reclamacoes.length === 0 ? (
-        <ReclamacoesEmptyState type="no-data" />
-      ) : (
-        <Card>
-          <ReclamacoesTable
-            reclamacoes={reclamacoes}
-            isLoading={isLoading}
-            error={error}
-            pagination={pagination}
-            onPageChange={goToPage}
-            onItemsPerPageChange={changeItemsPerPage}
+        {/* Stats - só mostrar se tiver dados */}
+        {!isLoading && reclamacoes.length > 0 && (
+          <ReclamacoesStats reclamacoes={reclamacoes} />
+        )}
+
+        {/* Filtros com Botão Buscar */}
+        <Card className="p-6">
+          <ReclamacoesFilters
+            filters={filters}
+            onFiltersChange={setFilters}
           />
+          
+          <div className="mt-4 flex justify-end">
+            <Button
+              onClick={handleBuscar}
+              disabled={isLoading || selectedAccountIds.length === 0}
+              size="lg"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                  Buscando...
+                </>
+              ) : (
+                'Buscar Reclamações'
+              )}
+            </Button>
+          </div>
         </Card>
-      )}
-    </div>
+
+        {/* Conteúdo principal */}
+        {hasIntegrationError ? (
+          <ReclamacoesEmptyState type="no-integration" message={error || undefined} />
+        ) : error ? (
+          <ReclamacoesEmptyState type="error" message={error} />
+        ) : !isLoading && reclamacoes.length === 0 ? (
+          <ReclamacoesEmptyState type="no-data" />
+        ) : (
+          <Card>
+            <ReclamacoesTable
+              reclamacoes={reclamacoes}
+              isLoading={isLoading}
+              error={error}
+              pagination={pagination}
+              onPageChange={goToPage}
+              onItemsPerPageChange={changeItemsPerPage}
+            />
+          </Card>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
