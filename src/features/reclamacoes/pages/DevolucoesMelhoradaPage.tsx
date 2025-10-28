@@ -51,24 +51,35 @@ export function DevolucoesMelhoradaPage({ selectedAccountIds }: DevolucoesMelhor
   // Handler para mudança de status
   const handleStatusChange = async (devolucaoId: string, newStatus: StatusAnalise) => {
     try {
+      // Verificar autenticação
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        toast.error('Você precisa estar autenticado para alterar o status');
+        return;
+      }
+
       const { error } = await supabase
         .from('devolucoes_avancadas')
         .update({
           status_analise: newStatus,
           data_status_analise: new Date().toISOString(),
-          usuario_status_analise: (await supabase.auth.getUser()).data.user?.id
+          usuario_status_analise: user.id
         })
         .eq('id', devolucaoId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar status:', error);
+        throw error;
+      }
 
       toast.success('Status atualizado com sucesso');
       
       // Refetch para atualizar a lista
       refetchAll();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao atualizar status:', error);
-      toast.error('Erro ao atualizar status');
+      toast.error(error?.message || 'Erro ao atualizar status');
     }
   };
 

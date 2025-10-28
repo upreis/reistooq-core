@@ -46,16 +46,34 @@ export function useAutoRefreshDevolucoes({
     queryFn: async () => {
       if (accountIds.length === 0) return [];
       
+      // Evitar query muito grande - máximo 10 contas por vez
+      const limitedAccountIds = accountIds.slice(0, 10);
+      
       const { data, error } = await supabase
         .from('devolucoes_avancadas')
         .select('*')
-        .in('integration_account_id', accountIds)
+        .in('integration_account_id', limitedAccountIds)
         .in('status_analise', STATUS_ATIVOS)
         .order('ultima_atualizacao_real', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return (data || []) as unknown as DevolucaoComAnalise[];
+      if (error) {
+        console.error('Erro ao buscar devoluções ativas:', error);
+        throw error;
+      }
+      
+      // Parse seguro dos campos JSONB
+      const parsedData = (data || []).map(item => ({
+        ...item,
+        campos_atualizados: Array.isArray(item.campos_atualizados) 
+          ? item.campos_atualizados 
+          : [],
+        snapshot_anterior: typeof item.snapshot_anterior === 'object' 
+          ? item.snapshot_anterior 
+          : {}
+      }));
+      
+      return parsedData as unknown as DevolucaoComAnalise[];
     },
     enabled: accountIds.length > 0,
     refetchInterval: autoRefreshEnabled ? refreshIntervalMs : false,
@@ -74,17 +92,35 @@ export function useAutoRefreshDevolucoes({
     queryFn: async () => {
       if (accountIds.length === 0) return [];
       
+      // Evitar query muito grande - máximo 10 contas por vez
+      const limitedAccountIds = accountIds.slice(0, 10);
+      
       const { data, error } = await supabase
         .from('devolucoes_avancadas')
         .select('*')
-        .in('integration_account_id', accountIds)
+        .in('integration_account_id', limitedAccountIds)
         .in('status_analise', STATUS_HISTORICO)
         .order('data_status_analise', { ascending: false, nullsFirst: false })
         .order('updated_at', { ascending: false })
         .limit(200); // Limitar histórico para performance
       
-      if (error) throw error;
-      return (data || []) as unknown as DevolucaoComAnalise[];
+      if (error) {
+        console.error('Erro ao buscar histórico de devoluções:', error);
+        throw error;
+      }
+      
+      // Parse seguro dos campos JSONB
+      const parsedData = (data || []).map(item => ({
+        ...item,
+        campos_atualizados: Array.isArray(item.campos_atualizados) 
+          ? item.campos_atualizados 
+          : [],
+        snapshot_anterior: typeof item.snapshot_anterior === 'object' 
+          ? item.snapshot_anterior 
+          : {}
+      }));
+      
+      return parsedData as unknown as DevolucaoComAnalise[];
     },
     enabled: accountIds.length > 0,
     staleTime: 60000, // Histórico não muda tanto, 60s
