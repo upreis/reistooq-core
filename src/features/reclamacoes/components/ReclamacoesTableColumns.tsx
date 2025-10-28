@@ -21,20 +21,25 @@ const translations: Record<string, string> = {
   'payment': 'Pagamento',
   'product': 'Produto',
   
+  // Frases completas do Nome da Razão
+  'estimated delivery out of time': 'Entrega Estimada Fora do Prazo',
+  'entregue but not receive embalagem': 'Entregue Mas Não Recebeu Embalagem',
+  'diferente color or size': 'Cor ou Tamanho Diferente',
+  
   // Nomes e Categorias de Razão
-  'missing_accessories': 'Acessórios faltando',
-  'missing_parts': 'Peças faltando',
-  'different_product': 'Produto diferente',
-  'defective_product': 'Produto com defeito',
-  'damaged_product': 'Produto danificado',
-  'wrong_product': 'Produto errado',
-  'late_delivery': 'Entrega atrasada',
-  'not_delivered': 'Não entregue',
-  'incomplete_order': 'Pedido incompleto',
-  'quality_issues': 'Problemas de qualidade',
-  'description_mismatch': 'Descrição não corresponde',
-  'warranty_issues': 'Problemas de garantia',
-  'packaging_issues': 'Problemas de embalagem',
+  'missing_accessories': 'Acessórios Faltando',
+  'missing_parts': 'Peças Faltando',
+  'different_product': 'Produto Diferente',
+  'defective_product': 'Produto com Defeito',
+  'damaged_product': 'Produto Danificado',
+  'wrong_product': 'Produto Errado',
+  'late_delivery': 'Entrega Atrasada',
+  'not_delivered': 'Não Entregue',
+  'incomplete_order': 'Pedido Incompleto',
+  'quality_issues': 'Problemas de Qualidade',
+  'description_mismatch': 'Descrição Não Corresponde',
+  'warranty_issues': 'Problemas de Garantia',
+  'packaging_issues': 'Problemas de Embalagem',
   
   // Nome da Razão (adicionados das imagens)
   'repentant': 'Arrependido',
@@ -45,17 +50,33 @@ const translations: Record<string, string> = {
   'damaged package': 'Embalagem Danificada',
   'damaged': 'Danificado',
   'package': 'Embalagem',
+  'embalagem': 'Embalagem',
   'not working item': 'Item Não Funciona',
   'not working': 'Não Funciona',
   'working': 'Funciona',
   'different item other': 'Item Diferente Outro',
   'different item': 'Item Diferente',
   'different': 'Diferente',
+  'diferente': 'Diferente',
   'other': 'Outro',
   'missing item': 'Item Faltando',
   'missing': 'Faltando',
   'undelivered other': 'Não Entregue Outro',
   'undelivered': 'Não Entregue',
+  
+  // Palavras adicionais para tradução composta
+  'estimated': 'Estimada',
+  'delivery': 'Entrega',
+  'entregue': 'Entregue',
+  'out': 'Fora',
+  'of': 'do',
+  'time': 'Prazo',
+  'but': 'Mas',
+  'not': 'Não',
+  'receive': 'Recebeu',
+  'color': 'Cor',
+  'or': 'ou',
+  'size': 'Tamanho',
   
   // Categoria
   'generic': 'Genérico',
@@ -80,11 +101,11 @@ const translations: Record<string, string> = {
   'cost': 'Custo',
   'refund': 'Reembolso',
   'replacement': 'Substituição',
-  'partial refund': 'Reembolso parcial',
+  'partial refund': 'Reembolso Parcial',
   'partial': 'Parcial',
-  'no action': 'Sem ação',
+  'no action': 'Sem Ação',
   'action': 'Ação',
-  'store credit': 'Crédito na loja',
+  'store credit': 'Crédito na Loja',
   'store': 'Loja',
   'credit': 'Crédito',
   'return': 'Devolução',
@@ -97,8 +118,8 @@ const translations: Record<string, string> = {
   'delivered': 'Entregue',
   'shipped': 'Enviado',
   'confirmed': 'Confirmado',
-  'payment_required': 'Pagamento necessário',
-  'payment_in_process': 'Pagamento em processo',
+  'payment_required': 'Pagamento Necessário',
+  'payment_in_process': 'Pagamento em Processo',
   'payment required': 'Pagamento Necessário',
   'payment in process': 'Pagamento em Processo',
   'required': 'Necessário',
@@ -114,7 +135,7 @@ const translateText = (text: string | null | undefined): string => {
   
   const lowerText = text.toLowerCase().trim();
   
-  // Verifica se existe tradução direta
+  // Verifica se existe tradução direta da frase completa
   if (translations[lowerText]) {
     return translations[lowerText];
   }
@@ -130,7 +151,11 @@ const translateText = (text: string | null | undefined): string => {
   // Traduz palavra por palavra
   const translated = withSpaces
     .split(' ')
-    .map(word => translations[word] || word)
+    .map(word => {
+      // Remove pontuação para traduzir
+      const cleanWord = word.replace(/[.,;!?]/g, '');
+      return translations[cleanWord] || word;
+    })
     .join(' ');
   
   // Capitaliza primeira letra de cada palavra
