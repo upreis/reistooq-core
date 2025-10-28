@@ -144,23 +144,13 @@ export function ReclamacoesTable({
             <TableHead>Buyer ID</TableHead>
             <TableHead>Buyer Nickname</TableHead>
             <TableHead>Seller ID</TableHead>
-            <TableHead>Seller Nickname</TableHead>
-            <TableHead>Mediator ID</TableHead>
             <TableHead>Amount Value</TableHead>
             <TableHead>Amount Currency</TableHead>
-            <TableHead>Resolution Type</TableHead>
-            <TableHead>Resolution Subtype</TableHead>
             <TableHead>Resolution Benefited</TableHead>
             <TableHead>Resolution Date</TableHead>
-            <TableHead>Resolution Amount</TableHead>
             <TableHead>Resolution Reason</TableHead>
-            <TableHead className="text-center">Mensagens</TableHead>
-            <TableHead className="text-center">Evidências</TableHead>
             <TableHead className="text-center">Trocas</TableHead>
             <TableHead className="text-center">Mediação</TableHead>
-            <TableHead>Total Mensagens</TableHead>
-            <TableHead>Total Evidências</TableHead>
-            <TableHead>Mensagens Não Lidas</TableHead>
             <TableHead>Order ID</TableHead>
             <TableHead>Order Status</TableHead>
             <TableHead>Order Total</TableHead>
@@ -187,41 +177,17 @@ export function ReclamacoesTable({
               <TableCell className="font-mono text-xs">{claim.buyer_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.buyer_nickname || '-'}</TableCell>
               <TableCell className="font-mono text-xs">{claim.seller_id || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.seller_nickname || '-'}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.mediator_id || '-'}</TableCell>
               <TableCell className="text-sm font-medium">{formatCurrency(claim.amount_value, claim.amount_currency)}</TableCell>
               <TableCell className="text-sm">{claim.amount_currency || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.resolution_type || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.resolution_subtype || '-'}</TableCell>
               <TableCell className="text-sm">{claim.resolution_benefited || '-'}</TableCell>
               <TableCell className="text-sm">{formatDate(claim.resolution_date)}</TableCell>
-              <TableCell className="text-sm">{formatCurrency(claim.resolution_amount)}</TableCell>
               <TableCell className="max-w-[200px]">{claim.resolution_reason || '-'}</TableCell>
-              <TableCell className="text-center">
-                {claim.tem_mensagens ? (
-                  <button
-                    onClick={() => handleOpenMensagens(claim)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    <span className="text-sm font-medium">Ver ({claim.total_mensagens || 0})</span>
-                  </button>
-                ) : (
-                  <span className="text-muted-foreground">-</span>
-                )}
-              </TableCell>
-              <TableCell className="text-center">
-                {claim.tem_evidencias ? <FileText className="h-4 w-4 inline text-purple-500" /> : '-'}
-              </TableCell>
               <TableCell className="text-center">
                 {claim.tem_trocas ? <Package className="h-4 w-4 inline text-green-500" /> : '-'}
               </TableCell>
               <TableCell className="text-center">
                 {claim.tem_mediacao ? '✅' : '-'}
               </TableCell>
-              <TableCell className="text-center">{claim.total_mensagens || 0}</TableCell>
-              <TableCell className="text-center">{claim.total_evidencias || 0}</TableCell>
-              <TableCell className="text-center">{claim.mensagens_nao_lidas || 0}</TableCell>
               <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
               <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
