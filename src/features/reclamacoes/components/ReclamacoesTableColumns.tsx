@@ -36,12 +36,59 @@ const translations: Record<string, string> = {
   'warranty_issues': 'Problemas de garantia',
   'packaging_issues': 'Problemas de embalagem',
   
+  // Nome da Razão (adicionados das imagens)
+  'repentant': 'Arrependido',
+  'comprador': 'Comprador',
+  'repentant comprador': 'Comprador Arrependido',
+  'broken item': 'Item Quebrado',
+  'broken': 'Quebrado',
+  'damaged package': 'Embalagem Danificada',
+  'damaged': 'Danificado',
+  'package': 'Embalagem',
+  'not working item': 'Item Não Funciona',
+  'not working': 'Não Funciona',
+  'working': 'Funciona',
+  'different item other': 'Item Diferente Outro',
+  'different item': 'Item Diferente',
+  'different': 'Diferente',
+  'other': 'Outro',
+  'missing item': 'Item Faltando',
+  'missing': 'Faltando',
+  'undelivered other': 'Não Entregue Outro',
+  'undelivered': 'Não Entregue',
+  
+  // Categoria
+  'generic': 'Genérico',
+  
   // Resolução Beneficiada
   'buyer': 'Comprador',
   'seller': 'Vendedor',
   'both': 'Ambos',
   'none': 'Nenhum',
   'platform': 'Plataforma',
+  'complainant': 'Reclamante',
+  'respondent': 'Réu',
+  
+  // Razões de Resolução
+  'item returned': 'Item Devolvido',
+  'returned': 'Devolvido',
+  'coverage decision': 'Decisão de Cobertura',
+  'coverage': 'Cobertura',
+  'decision': 'Decisão',
+  'low cost': 'Baixo Custo',
+  'low': 'Baixo',
+  'cost': 'Custo',
+  'refund': 'Reembolso',
+  'replacement': 'Substituição',
+  'partial refund': 'Reembolso parcial',
+  'partial': 'Parcial',
+  'no action': 'Sem ação',
+  'action': 'Ação',
+  'store credit': 'Crédito na loja',
+  'store': 'Loja',
+  'credit': 'Crédito',
+  'return': 'Devolução',
+  'exchange': 'Troca',
   
   // Status da Venda
   'paid': 'Pago',
@@ -52,15 +99,10 @@ const translations: Record<string, string> = {
   'confirmed': 'Confirmado',
   'payment_required': 'Pagamento necessário',
   'payment_in_process': 'Pagamento em processo',
-  
-  // Razões de Resolução
-  'refund': 'Reembolso',
-  'replacement': 'Substituição',
-  'partial_refund': 'Reembolso parcial',
-  'no_action': 'Sem ação',
-  'store_credit': 'Crédito na loja',
-  'return': 'Devolução',
-  'exchange': 'Troca',
+  'payment required': 'Pagamento Necessário',
+  'payment in process': 'Pagamento em Processo',
+  'required': 'Necessário',
+  'process': 'Processo',
 };
 
 /**
@@ -77,21 +119,27 @@ const translateText = (text: string | null | undefined): string => {
     return translations[lowerText];
   }
   
-  // Converte snake_case e capitaliza
-  const formatted = lowerText
-    .replace(/_/g, ' ')
-    .split(' ')
-    .map(word => {
-      // Traduz palavra individual se existir
-      if (translations[word]) {
-        return translations[word].toLowerCase();
-      }
-      return word;
-    })
-    .join(' ')
-    .replace(/\b\w/g, char => char.toUpperCase()); // Capitaliza primeira letra de cada palavra
+  // Converte snake_case e underscores para espaços
+  const withSpaces = lowerText.replace(/_/g, ' ');
   
-  return formatted;
+  // Verifica novamente após conversão
+  if (translations[withSpaces]) {
+    return translations[withSpaces];
+  }
+  
+  // Traduz palavra por palavra
+  const translated = withSpaces
+    .split(' ')
+    .map(word => translations[word] || word)
+    .join(' ');
+  
+  // Capitaliza primeira letra de cada palavra
+  const capitalized = translated
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
+  return capitalized;
 };
 
 
