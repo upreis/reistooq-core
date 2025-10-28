@@ -157,8 +157,10 @@ export function ReclamacoesTable({
             <TableHead className="text-center">Trocas</TableHead>
             <TableHead className="text-center">Mediação</TableHead>
             <TableHead>Order ID</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>Order Status</TableHead>
             <TableHead>Status Detail</TableHead>
+            <TableHead>Status Code</TableHead>
+            <TableHead>Status Description</TableHead>
             <TableHead>Order Total</TableHead>
             <TableHead>Impacto Financeiro</TableHead>
           </TableRow>
@@ -202,6 +204,8 @@ export function ReclamacoesTable({
               <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
               <TableCell className="text-sm">{claim.order_status_detail || '-'}</TableCell>
+              <TableCell className="text-sm">{claim.order_status_code || '-'}</TableCell>
+              <TableCell className="max-w-[200px] text-sm">{claim.order_status_description || '-'}</TableCell>
               <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
               <TableCell>
                 <ImpactoFinanceiroCell
