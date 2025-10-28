@@ -397,7 +397,13 @@ Deno.serve(async (req) => {
           amount_value: orderData.total_amount || claim.amount_value,
           amount_currency: orderData.currency_id || claim.amount_currency,
           order_status: orderData.status || null,
-          order_total: orderData.total_amount || null
+          order_status_detail: orderData.status_detail || null,
+          order_total: orderData.total_amount || null,
+          order_date_created: orderData.date_created || null,
+          order_item_title: orderData.order_items?.[0]?.item?.title || null,
+          order_item_quantity: orderData.order_items?.[0]?.quantity || null,
+          order_item_unit_price: orderData.order_items?.[0]?.unit_price || null,
+          order_item_seller_sku: orderData.order_items?.[0]?.item?.seller_sku || null,
         };
       }
 
