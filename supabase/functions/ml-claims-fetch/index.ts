@@ -399,6 +399,19 @@ Deno.serve(async (req) => {
 
       // Se temos dados do pedido, enriquecer
       if (orderData) {
+        // Processar status_detail conforme estrutura real da API
+        let statusCode = null;
+        let statusDescription = null;
+        
+        if (orderData.status_detail) {
+          if (typeof orderData.status_detail === 'string') {
+            statusDescription = orderData.status_detail;
+          } else if (typeof orderData.status_detail === 'object') {
+            statusCode = orderData.status_detail.code || null;
+            statusDescription = orderData.status_detail.description || orderData.status_detail.id || null;
+          }
+        }
+        
         return {
           ...claim,
           buyer_nickname: orderData.buyer?.nickname || claim.buyer_nickname,
@@ -406,9 +419,9 @@ Deno.serve(async (req) => {
           amount_value: orderData.total_amount || claim.amount_value,
           amount_currency: orderData.currency_id || claim.amount_currency,
           order_status: orderData.status || null,
-          order_status_detail: orderData.status_detail?.id || orderData.status_detail || null,
-          order_status_code: orderData.status_detail?.code || null,
-          order_status_description: orderData.status_detail?.description || null,
+          order_status_detail: orderData.status_detail || null,
+          order_status_code: statusCode,
+          order_status_description: statusDescription,
           order_total: orderData.total_amount || null,
           order_date_created: orderData.date_created || null,
           order_item_title: orderData.order_items?.[0]?.item?.title || null,
