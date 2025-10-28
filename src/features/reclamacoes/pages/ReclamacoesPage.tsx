@@ -129,13 +129,17 @@ export function ReclamacoesPage() {
     const interval = setInterval(async () => {
       console.log('🔄 Auto-refresh incremental - buscando atualizações...');
       
+      // ✅ SEMPRE usar 60 dias no auto-refresh
+      const dataInicio60Dias = new Date();
+      dataInicio60Dias.setDate(dataInicio60Dias.getDate() - 60);
+      
       const { newClaims, updatedClaims } = await fetchIncremental({
-        selectedAccountIds,
+        selectedAccountIds, // Todas as contas selecionadas
         filters: {
           status: filters.status,
           type: filters.type,
-          date_from: filters.date_from,
-          date_to: filters.date_to
+          date_from: dataInicio60Dias.toISOString(), // Sempre 60 dias
+          date_to: new Date().toISOString() // Agora
         }
       });
 
@@ -199,7 +203,7 @@ export function ReclamacoesPage() {
       clearInterval(interval);
       console.log('🛑 Auto-refresh desativado');
     };
-  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, filters.date_from, filters.date_to, fetchIncremental, setDadosInMemory]);
+  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, fetchIncremental, setDadosInMemory]);
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   React.useEffect(() => {
