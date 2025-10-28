@@ -43,9 +43,18 @@ export function ReclamacoesTable({
   };
 
   const getTypeBadge = (type: string) => {
-    return type === 'mediation' 
-      ? <Badge variant="destructive">Mediação</Badge>
-      : <Badge>Reclamação</Badge>;
+    const typeConfig: Record<string, { variant: any; label: string }> = {
+      mediations: { variant: 'destructive', label: 'Mediação' },
+      returns: { variant: 'default', label: 'Devolução' },
+      fulfillment: { variant: 'secondary', label: 'Full' },
+      ml_case: { variant: 'outline', label: 'ML Case' },
+      cancel_sale: { variant: 'outline', label: 'Cancelamento Vendedor' },
+      cancel_purchase: { variant: 'outline', label: 'Cancelamento Comprador' },
+      change: { variant: 'default', label: 'Troca' },
+      service: { variant: 'secondary', label: 'Serviço' }
+    };
+    const config = typeConfig[type] || { variant: 'default', label: type };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   const formatDate = (date: string | null) => {
