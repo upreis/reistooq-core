@@ -12,6 +12,89 @@ import { Button } from '@/components/ui/button';
 
 export type ReclamacaoRow = any;
 
+// Dicionário de traduções
+const translations: Record<string, string> = {
+  // Tipos de Recurso
+  'order': 'Pedido',
+  'shipping': 'Envio',
+  'item': 'Item',
+  'payment': 'Pagamento',
+  'product': 'Produto',
+  
+  // Nomes e Categorias de Razão
+  'missing_accessories': 'Acessórios faltando',
+  'missing_parts': 'Peças faltando',
+  'different_product': 'Produto diferente',
+  'defective_product': 'Produto com defeito',
+  'damaged_product': 'Produto danificado',
+  'wrong_product': 'Produto errado',
+  'late_delivery': 'Entrega atrasada',
+  'not_delivered': 'Não entregue',
+  'incomplete_order': 'Pedido incompleto',
+  'quality_issues': 'Problemas de qualidade',
+  'description_mismatch': 'Descrição não corresponde',
+  'warranty_issues': 'Problemas de garantia',
+  'packaging_issues': 'Problemas de embalagem',
+  
+  // Resolução Beneficiada
+  'buyer': 'Comprador',
+  'seller': 'Vendedor',
+  'both': 'Ambos',
+  'none': 'Nenhum',
+  'platform': 'Plataforma',
+  
+  // Status da Venda
+  'paid': 'Pago',
+  'pending': 'Pendente',
+  'cancelled': 'Cancelado',
+  'delivered': 'Entregue',
+  'shipped': 'Enviado',
+  'confirmed': 'Confirmado',
+  'payment_required': 'Pagamento necessário',
+  'payment_in_process': 'Pagamento em processo',
+  
+  // Razões de Resolução
+  'refund': 'Reembolso',
+  'replacement': 'Substituição',
+  'partial_refund': 'Reembolso parcial',
+  'no_action': 'Sem ação',
+  'store_credit': 'Crédito na loja',
+  'return': 'Devolução',
+  'exchange': 'Troca',
+};
+
+/**
+ * Traduz e formata textos do inglês para português
+ * Converte snake_case para espaços e traduz termos conhecidos
+ */
+const translateText = (text: string | null | undefined): string => {
+  if (!text) return '-';
+  
+  const lowerText = text.toLowerCase().trim();
+  
+  // Verifica se existe tradução direta
+  if (translations[lowerText]) {
+    return translations[lowerText];
+  }
+  
+  // Converte snake_case e capitaliza
+  const formatted = lowerText
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => {
+      // Traduz palavra individual se existir
+      if (translations[word]) {
+        return translations[word].toLowerCase();
+      }
+      return word;
+    })
+    .join(' ')
+    .replace(/\b\w/g, char => char.toUpperCase()); // Capitaliza primeira letra de cada palavra
+  
+  return formatted;
+};
+
+
 const getStatusBadge = (status: string) => {
   const variants: Record<string, any> = {
     opened: { variant: 'default', label: 'Aberta' },
@@ -178,7 +261,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('resource') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('resource'))}</span>,
   },
   {
     accessorKey: 'reason_id',
@@ -258,7 +341,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <span className="max-w-[200px] block whitespace-normal break-words">{row.getValue('reason_name') || '-'}</span>,
+    cell: ({ row }) => <span className="max-w-[200px] block whitespace-normal break-words">{translateText(row.getValue('reason_name'))}</span>,
   },
   {
     accessorKey: 'reason_detail',
@@ -290,7 +373,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('reason_category') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_category'))}</span>,
   },
   {
     accessorKey: 'order_date_created',
@@ -426,7 +509,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('resolution_benefited') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('resolution_benefited'))}</span>,
   },
   {
     accessorKey: 'resolution_date',
@@ -458,7 +541,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.getValue('resolution_reason') || '-'}</span>,
+    cell: ({ row }) => <span className="max-w-[200px] truncate block">{translateText(row.getValue('resolution_reason'))}</span>,
   },
   {
     accessorKey: 'tem_trocas',
@@ -508,7 +591,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('order_status') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('order_status'))}</span>,
   },
   {
     accessorKey: 'order_total',
