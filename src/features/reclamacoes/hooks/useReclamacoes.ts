@@ -76,67 +76,15 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
       // Calcular offset para paginação
       const offset = (pagination.currentPage - 1) * pagination.itemsPerPage;
 
-      // Tentar buscar do banco primeiro (cache) com paginação E MENSAGENS
-      let query = supabase
-        .from('reclamacoes')
-        .select(`
-          *,
-          timeline_mensagens:reclamacoes_mensagens(
-            id,
-            sender_id,
-            sender_role,
-            receiver_id,
-            receiver_role,
-            message,
-            attachments,
-            date_created,
-            status
-          )
-        `, { count: 'exact' })
-        .in('integration_account_id', selectedAccountIds)
-        .gte('date_created', dataInicio)
-        .lte('date_created', dataFim)
-        .order('date_created', { ascending: false })
-        .range(offset, offset + pagination.itemsPerPage - 1);
+      // ✅ Calcular período em dias para API
+      const calcularPeriodoDias = (periodo: string): number => {
+        if (periodo === 'custom') return 0; // 0 = usar date_from/date_to
+        return parseInt(periodo) || 0;
+      };
 
-      // Aplicar filtros
-      if (filters.status) {
-        query = query.eq('status', filters.status);
-      }
-      if (filters.type) {
-        query = query.eq('type', filters.type);
-      }
-      if (filters.stage) {
-        query = query.eq('stage', filters.stage);
-      }
-      if (filters.has_messages === 'true') {
-        query = query.eq('tem_mensagens', true);
-      } else if (filters.has_messages === 'false') {
-        query = query.eq('tem_mensagens', false);
-      }
-      if (filters.has_evidences === 'true') {
-        query = query.eq('tem_evidencias', true);
-      } else if (filters.has_evidences === 'false') {
-        query = query.eq('tem_evidencias', false);
-      }
+      const periodoDias = calcularPeriodoDias(filters.periodo);
 
-      const { data: cached, error: dbError, count } = await query;
-
-      // Não usar cache vazio - esperar API
-      if (dbError) {
-        console.warn('[useReclamacoes] Erro no cache, ignorando:', dbError);
-      }
-
-      // Guardar count para paginação, mas NÃO mostrar dados ainda
-      if (count !== null) {
-        setPagination(prev => ({
-          ...prev,
-          totalItems: count,
-          totalPages: Math.ceil(count / prev.itemsPerPage)
-        }));
-      }
-
-      // Buscar seller_id das contas
+      // ✅ Buscar seller_id das contas
       const { data: accountsData, error: accountsError } = await supabase
         .from('integration_accounts')
         .select('id, account_identifier')
@@ -147,93 +95,119 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         throw new Error('Não foi possível obter informações das contas do Mercado Livre');
       }
 
-      // Buscar da API ML para atualizar (buscar de todas as contas selecionadas)
-      const allClaims: any[] = [];
-      
-      for (const account of accountsData) {
+      // ✅ Buscar TODAS as claims de TODAS as contas JUNTAS (sem paginação individual)
+      const allClaimsPromises = accountsData.map(async (account) => {
         if (!account.account_identifier) {
-          console.warn(`[useReclamacoes] Conta ${account.id} sem account_identifier (seller_id)`);
-          continue;
+          console.warn(`[useReclamacoes] Conta ${account.id} sem account_identifier`);
+          return [];
         }
 
-        const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
+        const { data, error } = await supabase.functions.invoke('ml-api-direct', {
           body: {
-            accountId: account.id,
-            sellerId: account.account_identifier,
+            action: 'get_claims_and_returns',
+            integration_account_id: account.id,
+            seller_id: account.account_identifier,
+            limit: 1000, // ✅ Buscar máximo possível de cada conta
+            offset: 0,
             filters: {
-              status: filters.status,
-              type: filters.type,
-              date_from: dataInicio,
-              date_to: dataFim
-            },
-            limit: pagination.itemsPerPage,
-            offset: offset
+              periodoDias,
+              claim_type: filters.type || '',
+              stage: filters.stage || ''
+            }
           }
         });
 
-        if (functionError) {
-          console.error('[useReclamacoes] Erro na edge function para conta', account.id, functionError);
-          continue; // Pular esta conta e continuar com as outras
+        if (error) {
+          console.error('[useReclamacoes] Erro na conta', account.id, error);
+          return [];
         }
 
-        if (data?.claims) {
-          allClaims.push(...data.claims);
-        }
+        return data?.data || [];
+      });
+
+      const allClaimsArrays = await Promise.all(allClaimsPromises);
+      const allClaims = allClaimsArrays.flat();
+
+      console.log(`[useReclamacoes] Total de claims encontradas: ${allClaims.length}`);
+
+      if (allClaims.length === 0) {
+        setReclamacoes([]);
+        setPagination(prev => ({
+          ...prev,
+          totalItems: 0,
+          totalPages: 1
+        }));
+        return;
       }
 
-      // Consolidar dados de todas as contas
-      const { data, error: functionError } = { 
-        data: { claims: allClaims }, 
-        error: allClaims.length === 0 ? new Error('Nenhum dado retornado') : null 
-      };
+      // ✅ Processar mensagens (usando mapper igual /ml-orders-completas)
+      const claimsWithMessages = allClaims.map((item: any) => {
+        const rawMessages = item.claim_messages?.messages || [];
+        
+        // Deduplicação por hash
+        const uniqueMessages = rawMessages.reduce((acc: any[], msg: any) => {
+          const msgDate = msg.date_created || msg.message_date?.created || '';
+          const messageHash = msg.hash || `${msg.sender_role}_${msg.receiver_role}_${msgDate}_${msg.message}`;
+          
+          const isDuplicate = acc.some(existingMsg => {
+            const existingDate = existingMsg.date_created || existingMsg.message_date?.created || '';
+            const existingHash = existingMsg.hash || `${existingMsg.sender_role}_${existingMsg.receiver_role}_${existingDate}_${existingMsg.message}`;
+            return existingHash === messageHash;
+          });
+          
+          if (!isDuplicate) acc.push(msg);
+          return acc;
+        }, []);
+        
+        // Ordenar por data (mais recente primeiro)
+        const sortedMessages = uniqueMessages.sort((a, b) => {
+          const dateA = new Date(a.date_created || a.message_date?.created || 0).getTime();
+          const dateB = new Date(b.date_created || b.message_date?.created || 0).getTime();
+          return dateB - dateA;
+        });
+        
+        const lastMessage = sortedMessages[0] || null;
+        
+        return {
+          ...item,
+          timeline_mensagens: sortedMessages,
+          ultima_mensagem_data: lastMessage?.date_created || lastMessage?.message_date?.created || null,
+          ultima_mensagem_remetente: lastMessage?.sender_role || null,
+          mensagens_nao_lidas: item.claim_messages?.unread_messages || 0
+        };
+      });
 
-      if (functionError) {
-        console.error('[useReclamacoes] Erro na edge function:', functionError);
-        // Se a API falhar, usar dados do cache se existir
-        if (cached && cached.length > 0) {
-          console.warn('[useReclamacoes] Usando dados do cache como fallback');
-          setReclamacoes(cached);
-          return;
-        }
-        throw functionError;
+      // ✅ Aplicar filtros locais DEPOIS de processar
+      let filteredClaims = claimsWithMessages;
+
+      if (filters.status) {
+        filteredClaims = filteredClaims.filter(c => c.status === filters.status);
+      }
+      if (filters.has_messages === 'true') {
+        filteredClaims = filteredClaims.filter(c => c.timeline_mensagens?.length > 0);
+      } else if (filters.has_messages === 'false') {
+        filteredClaims = filteredClaims.filter(c => !c.timeline_mensagens || c.timeline_mensagens.length === 0);
+      }
+      if (filters.has_evidences === 'true') {
+        filteredClaims = filteredClaims.filter(c => c.tem_evidencias === true);
+      } else if (filters.has_evidences === 'false') {
+        filteredClaims = filteredClaims.filter(c => c.tem_evidencias === false);
       }
 
-      if (data?.claims) {
-        // Aplicar filtros locais adicionais
-        let filteredClaims = data.claims;
+      // ✅ Atualizar paginação com total REAL
+      const totalItems = filteredClaims.length;
+      setPagination(prev => ({
+        ...prev,
+        totalItems,
+        totalPages: Math.ceil(totalItems / prev.itemsPerPage)
+      }));
 
-        if (filters.stage) {
-          filteredClaims = filteredClaims.filter((c: any) => c.stage === filters.stage);
-        }
-        if (filters.has_messages === 'true') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === true);
-        } else if (filters.has_messages === 'false') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_mensagens === false);
-        }
-        if (filters.has_evidences === 'true') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === true);
-        } else if (filters.has_evidences === 'false') {
-          filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
-        }
+      // ✅ Aplicar paginação CLIENT-SIDE (após filtros)
+      const startIndex = offset;
+      const endIndex = offset + pagination.itemsPerPage;
+      const paginatedClaims = filteredClaims.slice(startIndex, endIndex);
 
-        // Buscar mensagens para cada claim do banco local (CACHE apenas)
-        const claimsWithMessages = await Promise.all(
-          filteredClaims.map(async (claim: any) => {
-            const { data: mensagens } = await supabase
-              .from('reclamacoes_mensagens')
-              .select('*')
-              .eq('claim_id', claim.claim_id)
-              .order('date_created', { ascending: false });
-            
-            return {
-              ...claim,
-              timeline_mensagens: mensagens || []
-            };
-          })
-        );
-
-        setReclamacoes(claimsWithMessages);
-      }
+      setReclamacoes(paginatedClaims);
 
     } catch (err: any) {
       console.error('[useReclamacoes] Erro:', err);
