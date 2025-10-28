@@ -20,6 +20,7 @@ import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Eye, EyeOff } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { calcularDiasDesdeAtualizacao, getHighlightConfig } from '../utils/highlight-utils';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -166,15 +167,27 @@ export function ReclamacoesTable({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
+              table.getRowModel().rows.map((row) => {
+                // 🎨 HIGHLIGHT de linhas atualizadas
+                const claim = row.original;
+                const diasDesdeAtualizacao = calcularDiasDesdeAtualizacao(
+                  claim.ultima_atualizacao_real || claim.last_updated
+                );
+                const highlightConfig = getHighlightConfig(diasDesdeAtualizacao);
+
+                return (
+                  <TableRow 
+                    key={row.id}
+                    className={highlightConfig ? highlightConfig.rowClass : ''}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
             ) : (
               <TableRow>
                 <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">

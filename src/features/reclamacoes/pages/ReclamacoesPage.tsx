@@ -38,7 +38,8 @@ export function ReclamacoesPage() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
-  // Estado in-memory para análises (persiste entre tabs)
+  // 🔥 ESTADO IN-MEMORY COMPLETO - Persiste TODOS os dados buscados
+  const [dadosInMemory, setDadosInMemory] = useState<Record<string, any>>({});
   const [analiseStatus, setAnaliseStatus] = useState<Record<string, StatusAnalise>>({});
   
   const [filters, setFilters] = useState({
@@ -106,13 +107,77 @@ export function ReclamacoesPage() {
     return () => clearInterval(interval);
   }, [autoRefreshEnabled, refresh, shouldFetch]);
 
-  // Merge dos dados da API com análises in-memory
+  // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
+  React.useEffect(() => {
+    if (rawReclamacoes.length > 0) {
+      setDadosInMemory(prevData => {
+        const newData = { ...prevData };
+        const agora = new Date().toISOString();
+
+        rawReclamacoes.forEach((claim: any) => {
+          const claimId = claim.claim_id;
+          const existing = newData[claimId];
+
+          if (!existing) {
+            // Novo registro
+            newData[claimId] = {
+              ...claim,
+              primeira_vez_visto: agora,
+              campos_atualizados: [],
+              snapshot_anterior: null
+            };
+          } else {
+            // Registro existente - detectar mudanças
+            const camposAtualizados = [];
+            const camposParaMonitorar = [
+              'status', 'stage', 'last_updated', 'resolution', 
+              'benefited', 'resolution_reason', 'messages_count'
+            ];
+
+            for (const campo of camposParaMonitorar) {
+              if (claim[campo] !== existing[campo]) {
+                camposAtualizados.push({
+                  campo,
+                  valor_anterior: existing[campo],
+                  valor_novo: claim[campo],
+                  data_mudanca: agora
+                });
+              }
+            }
+
+            newData[claimId] = {
+              ...claim,
+              primeira_vez_visto: existing.primeira_vez_visto,
+              campos_atualizados: camposAtualizados.length > 0 
+                ? camposAtualizados 
+                : (existing.campos_atualizados || []),
+              snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
+              ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
+            };
+          }
+        });
+
+        return newData;
+      });
+    }
+  }, [rawReclamacoes]);
+
+  // Converter dados in-memory para array e aplicar análise
   const reclamacoesWithAnalise = useMemo(() => {
-    return rawReclamacoes.map((claim: any) => ({
-      ...claim,
-      status_analise: analiseStatus[claim.claim_id] || 'pendente'
-    }));
-  }, [rawReclamacoes, analiseStatus]);
+    const dataArray = Object.values(dadosInMemory);
+    
+    return dataArray
+      .map((claim: any) => ({
+        ...claim,
+        status_analise: analiseStatus[claim.claim_id] || 'pendente'
+      }))
+      // 🔥 ORDENAÇÃO AUTOMÁTICA por Última Atualização (mais recentes primeiro)
+      .sort((a, b) => {
+        const dateA = new Date(a.last_updated || a.date_created);
+        const dateB = new Date(b.last_updated || b.date_created);
+        return dateB.getTime() - dateA.getTime();
+      });
+  }, [dadosInMemory, analiseStatus]);
 
   // Handler de mudança de status
   const handleStatusChange = (claimId: string, newStatus: StatusAnalise) => {
