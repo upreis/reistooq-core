@@ -42,16 +42,6 @@ export function DevolucaoTableRowEnhanced({
 
   return (
     <TableRow className={cn("hover:bg-muted/50", highlightConfig?.rowClass)}>
-      {/* PRIMEIRA COLUNA: Status Análise */}
-      <TableCell className="sticky left-0 bg-background z-10">
-        <StatusAnaliseSelect
-          value={devolucao.status_analise}
-          onChange={(newStatus) =>
-            onStatusChange(devolucao.id, newStatus)
-          }
-        />
-      </TableCell>
-
       {/* Ordem */}
       <TableCell className="font-mono text-sm">
         {devolucao.order_id}
@@ -112,6 +102,16 @@ export function DevolucaoTableRowEnhanced({
       {/* Última Atualização */}
       <TableCell className="text-sm text-muted-foreground">
         {formatarDataAtualizacao(devolucao.ultima_atualizacao_real)}
+      </TableCell>
+
+      {/* Status Análise */}
+      <TableCell>
+        <StatusAnaliseSelect
+          value={devolucao.status_analise}
+          onChange={(newStatus) =>
+            onStatusChange(devolucao.id, newStatus)
+          }
+        />
       </TableCell>
     </TableRow>
   );
