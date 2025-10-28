@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoes } from '../hooks/useReclamacoes';
+import { useReclamacoesIncremental } from '../hooks/useReclamacoesIncremental';
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
@@ -95,17 +96,88 @@ export function ReclamacoesPage() {
     refresh
   } = useReclamacoes(filters, selectedAccountIds, shouldFetch);
 
-  // 🔄 Auto-refresh a cada 30 segundos quando habilitado
+  // 🚀 Hook incremental para buscar apenas mudanças
+  const { 
+    fetchIncremental, 
+    resetIncremental, 
+    isLoadingIncremental 
+  } = useReclamacoesIncremental();
+
+  // 🔄 Auto-refresh INCREMENTAL a cada 30 segundos
   React.useEffect(() => {
     if (!autoRefreshEnabled || !shouldFetch) return;
     
-    const interval = setInterval(() => {
-      console.log('🔄 Auto-refresh ativado - atualizando reclamações...');
-      refresh();
+    const interval = setInterval(async () => {
+      console.log('🔄 Auto-refresh incremental - buscando atualizações...');
+      
+      const { newClaims, updatedClaims } = await fetchIncremental({
+        selectedAccountIds,
+        filters: {
+          status: filters.status,
+          type: filters.type,
+          date_from: filters.date_from,
+          date_to: filters.date_to
+        }
+      });
+
+      // Processar novos e atualizados no estado in-memory
+      if (newClaims.length > 0 || updatedClaims.length > 0) {
+        const allChanges = [...newClaims, ...updatedClaims];
+        
+        setDadosInMemory(prevData => {
+          const newData = { ...prevData };
+          const agora = new Date().toISOString();
+
+          allChanges.forEach((claim: any) => {
+            const claimId = claim.claim_id;
+            const existing = newData[claimId];
+
+            if (!existing) {
+              // Novo registro
+              newData[claimId] = {
+                ...claim,
+                primeira_vez_visto: agora,
+                campos_atualizados: [],
+                snapshot_anterior: null
+              };
+            } else {
+              // Registro existente - detectar mudanças
+              const camposAtualizados = [];
+              const camposParaMonitorar = [
+                'status', 'stage', 'last_updated', 'resolution', 
+                'benefited', 'resolution_reason', 'messages_count'
+              ];
+
+              for (const campo of camposParaMonitorar) {
+                if (claim[campo] !== existing[campo]) {
+                  camposAtualizados.push({
+                    campo,
+                    valor_anterior: existing[campo],
+                    valor_novo: claim[campo],
+                    data_mudanca: agora
+                  });
+                }
+              }
+
+              newData[claimId] = {
+                ...claim,
+                primeira_vez_visto: existing.primeira_vez_visto,
+                campos_atualizados: camposAtualizados.length > 0 
+                  ? camposAtualizados 
+                  : (existing.campos_atualizados || []),
+                snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
+                ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
+              };
+            }
+          });
+
+          return newData;
+        });
+      }
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [autoRefreshEnabled, refresh, shouldFetch]);
+  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters, fetchIncremental]);
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   React.useEffect(() => {
@@ -211,6 +283,8 @@ export function ReclamacoesPage() {
     if (selectedAccountIds.length === 0) {
       return;
     }
+    // Reset incremental ao fazer busca manual completa
+    resetIncremental();
     // Alternar o valor para forçar nova busca mesmo se já estava true
     setShouldFetch(prev => !prev);
   };
