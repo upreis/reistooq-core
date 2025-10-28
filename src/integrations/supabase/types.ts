@@ -4500,8 +4500,14 @@ export type Database = {
           last_updated: string | null
           mediator_id: number | null
           mensagens_nao_lidas: number | null
+          order_date_created: string | null
           order_id: string | null
+          order_item_quantity: number | null
+          order_item_seller_sku: string | null
+          order_item_title: string | null
+          order_item_unit_price: number | null
           order_status: string | null
+          order_status_detail: string | null
           order_total: number | null
           organization_id: string | null
           raw_data: Json | null
@@ -4559,8 +4565,14 @@ export type Database = {
           last_updated?: string | null
           mediator_id?: number | null
           mensagens_nao_lidas?: number | null
+          order_date_created?: string | null
           order_id?: string | null
+          order_item_quantity?: number | null
+          order_item_seller_sku?: string | null
+          order_item_title?: string | null
+          order_item_unit_price?: number | null
           order_status?: string | null
+          order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
           raw_data?: Json | null
@@ -4618,8 +4630,14 @@ export type Database = {
           last_updated?: string | null
           mediator_id?: number | null
           mensagens_nao_lidas?: number | null
+          order_date_created?: string | null
           order_id?: string | null
+          order_item_quantity?: number | null
+          order_item_seller_sku?: string | null
+          order_item_title?: string | null
+          order_item_unit_price?: number | null
           order_status?: string | null
+          order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
           raw_data?: Json | null
