@@ -1035,6 +1035,7 @@ export type Database = {
           acao_seller_necessaria: string | null
           account_name: string | null
           anexos_ml: Json | null
+          campos_atualizados: Json | null
           carrier_info: Json | null
           categoria_problema: string | null
           claim_fulfilled: boolean | null
@@ -1062,6 +1063,7 @@ export type Database = {
           data_fechamento_devolucao: string | null
           data_inicio_return: string | null
           data_reembolso: string | null
+          data_status_analise: string | null
           data_ultima_movimentacao: string | null
           data_ultimo_status: string | null
           descricao_ultimo_status: string | null
@@ -1123,6 +1125,8 @@ export type Database = {
           shipment_id: string | null
           shipment_id_devolucao: number | null
           sku: string | null
+          snapshot_anterior: Json | null
+          status_analise: string | null
           status_devolucao: string | null
           status_dinheiro: string | null
           status_envio_devolucao: string | null
@@ -1151,11 +1155,13 @@ export type Database = {
           transaction_id: string | null
           transportadora: string | null
           transportadora_devolucao: string | null
+          ultima_atualizacao_real: string | null
           ultima_mensagem_data: string | null
           ultima_mensagem_remetente: string | null
           ultima_sincronizacao: string | null
           updated_at: string | null
           url_rastreamento: string | null
+          usuario_status_analise: string | null
           usuario_ultima_acao: string | null
           valor_original_produto: number | null
           valor_parcela: number | null
@@ -1166,6 +1172,7 @@ export type Database = {
           acao_seller_necessaria?: string | null
           account_name?: string | null
           anexos_ml?: Json | null
+          campos_atualizados?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
           claim_fulfilled?: boolean | null
@@ -1193,6 +1200,7 @@ export type Database = {
           data_fechamento_devolucao?: string | null
           data_inicio_return?: string | null
           data_reembolso?: string | null
+          data_status_analise?: string | null
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
           descricao_ultimo_status?: string | null
@@ -1254,6 +1262,8 @@ export type Database = {
           shipment_id?: string | null
           shipment_id_devolucao?: number | null
           sku?: string | null
+          snapshot_anterior?: Json | null
+          status_analise?: string | null
           status_devolucao?: string | null
           status_dinheiro?: string | null
           status_envio_devolucao?: string | null
@@ -1282,11 +1292,13 @@ export type Database = {
           transaction_id?: string | null
           transportadora?: string | null
           transportadora_devolucao?: string | null
+          ultima_atualizacao_real?: string | null
           ultima_mensagem_data?: string | null
           ultima_mensagem_remetente?: string | null
           ultima_sincronizacao?: string | null
           updated_at?: string | null
           url_rastreamento?: string | null
+          usuario_status_analise?: string | null
           usuario_ultima_acao?: string | null
           valor_original_produto?: number | null
           valor_parcela?: number | null
@@ -1297,6 +1309,7 @@ export type Database = {
           acao_seller_necessaria?: string | null
           account_name?: string | null
           anexos_ml?: Json | null
+          campos_atualizados?: Json | null
           carrier_info?: Json | null
           categoria_problema?: string | null
           claim_fulfilled?: boolean | null
@@ -1324,6 +1337,7 @@ export type Database = {
           data_fechamento_devolucao?: string | null
           data_inicio_return?: string | null
           data_reembolso?: string | null
+          data_status_analise?: string | null
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
           descricao_ultimo_status?: string | null
@@ -1385,6 +1399,8 @@ export type Database = {
           shipment_id?: string | null
           shipment_id_devolucao?: number | null
           sku?: string | null
+          snapshot_anterior?: Json | null
+          status_analise?: string | null
           status_devolucao?: string | null
           status_dinheiro?: string | null
           status_envio_devolucao?: string | null
@@ -1413,11 +1429,13 @@ export type Database = {
           transaction_id?: string | null
           transportadora?: string | null
           transportadora_devolucao?: string | null
+          ultima_atualizacao_real?: string | null
           ultima_mensagem_data?: string | null
           ultima_mensagem_remetente?: string | null
           ultima_sincronizacao?: string | null
           updated_at?: string | null
           url_rastreamento?: string | null
+          usuario_status_analise?: string | null
           usuario_ultima_acao?: string | null
           valor_original_produto?: number | null
           valor_parcela?: number | null
@@ -4507,6 +4525,8 @@ export type Database = {
           order_item_title: string | null
           order_item_unit_price: number | null
           order_status: string | null
+          order_status_code: string | null
+          order_status_description: string | null
           order_status_detail: string | null
           order_total: number | null
           organization_id: string | null
@@ -4572,6 +4592,8 @@ export type Database = {
           order_item_title?: string | null
           order_item_unit_price?: number | null
           order_status?: string | null
+          order_status_code?: string | null
+          order_status_description?: string | null
           order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
@@ -4637,6 +4659,8 @@ export type Database = {
           order_item_title?: string | null
           order_item_unit_price?: number | null
           order_status?: string | null
+          order_status_code?: string | null
+          order_status_description?: string | null
           order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
