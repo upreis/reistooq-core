@@ -254,28 +254,16 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     }
   };
 
-  // Recarregar quando filtros mudarem (mas só se shouldFetch for true)
+  // Buscar SOMENTE quando shouldFetch mudar (disparado pelo botão Buscar)
   useEffect(() => {
     if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0) {
       fetchReclamacoes();
     }
-  }, [
-    shouldFetch,
-    selectedAccountIds.join(','), // Usar join para detectar mudanças no array
-    filters.periodo, 
-    filters.status, 
-    filters.type,
-    filters.stage,
-    filters.has_messages,
-    filters.has_evidences,
-    filters.date_from,
-    filters.date_to
-    // NÃO incluir pagination aqui para evitar loop infinito
-  ]);
+  }, [shouldFetch]);
 
-  // Recarregar quando página/items per page mudarem (via ações do usuário)
+  // Recarregar quando página mudar (mas só se já tiver feito uma busca antes)
   useEffect(() => {
-    if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
+    if (shouldFetch && reclamacoes.length > 0 && selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
       fetchReclamacoes(false);
     }
   }, [pagination.currentPage, pagination.itemsPerPage]);
