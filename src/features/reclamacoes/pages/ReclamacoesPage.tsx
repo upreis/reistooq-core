@@ -111,7 +111,8 @@ export function ReclamacoesPage() {
     pagination,
     goToPage,
     changeItemsPerPage,
-    refresh
+    refresh,
+    cancelFetch
   } = useReclamacoes(filters, selectedAccountIds, shouldFetch);
 
   // 🚀 Hook incremental para buscar apenas mudanças
@@ -496,6 +497,17 @@ export function ReclamacoesPage() {
 
           {/* Botão Buscar */}
           <div className="mt-4 flex justify-end gap-2">
+            {isLoading && (
+              <Button
+                onClick={cancelFetch}
+                variant="destructive"
+                size="lg"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+            )}
+            
             <Button
               onClick={handleBuscar}
               disabled={isLoading || selectedAccountIds.length === 0}

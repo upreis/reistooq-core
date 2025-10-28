@@ -3,7 +3,7 @@
  * FASE 4.4: Suporte para paginação
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -38,8 +38,20 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     totalPages: 1
   });
   const { toast } = useToast();
+  
+  // ✅ CONTROLE DE CANCELAMENTO
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchReclamacoes = async (showLoading = true) => {
+    // ✅ Cancelar requisição anterior se existir
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Criar novo AbortController
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
+    
     if (!selectedAccountIds || selectedAccountIds.length === 0) {
       setReclamacoes([]);
       setAllFilteredClaims([]);
@@ -105,6 +117,12 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         const maxTentativas = 50; // Máximo 5000 claims (50 * 100)
 
         while (hasMore && tentativas < maxTentativas) {
+          // ✅ Verificar se foi cancelado
+          if (signal.aborted) {
+            console.log('🛑 Busca cancelada pelo usuário');
+            throw new Error('Busca cancelada');
+          }
+          
           tentativas++;
           
           try {
@@ -251,6 +269,16 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
       });
 
     } catch (err: any) {
+      if (err.message === 'Busca cancelada') {
+        console.log('ℹ️ Busca cancelada pelo usuário');
+        toast({
+          title: 'Busca cancelada',
+          description: 'A busca foi interrompida.'
+        });
+        setError(null);
+        return;
+      }
+      
       console.error('[useReclamacoes] Erro:', err);
       setError(err.message || 'Erro ao buscar reclamações');
       toast({
@@ -261,6 +289,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -321,6 +350,13 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     }));
   };
 
+  const cancelFetch = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
   return {
     reclamacoes,
     isLoading,
@@ -329,6 +365,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     pagination,
     goToPage,
     changeItemsPerPage,
-    refresh: () => fetchReclamacoes(false)
+    refresh: () => fetchReclamacoes(false),
+    cancelFetch
   };
 }
