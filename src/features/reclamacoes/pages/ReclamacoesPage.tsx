@@ -39,6 +39,7 @@ export function ReclamacoesPage() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   
   // 💾 PERSISTÊNCIA COM LOCALSTORAGE
   const {
@@ -50,9 +51,14 @@ export function ReclamacoesPage() {
     clearStorage
   } = useReclamacoesStorage();
 
-  // Limpar dados antigos ao montar componente
+  // Limpar dados antigos ao montar componente e verificar se já tem dados no storage
   React.useEffect(() => {
     clearOldData();
+    // Marcar que já carregou do storage se houver dados
+    if (Object.keys(dadosInMemory).length > 0) {
+      setHasLoadedFromStorage(true);
+      console.log('📦 Dados carregados do localStorage:', Object.keys(dadosInMemory).length, 'registros');
+    }
   }, [clearOldData]);
   
   const [filters, setFilters] = useState({
@@ -298,6 +304,7 @@ export function ReclamacoesPage() {
     if (selectedAccountIds.length === 0) {
       return;
     }
+    setHasLoadedFromStorage(true); // Marcar que iniciou uma busca
     // Reset incremental ao fazer busca manual completa
     resetIncremental();
     // Alternar o valor para forçar nova busca mesmo se já estava true
@@ -520,7 +527,7 @@ export function ReclamacoesPage() {
           <ReclamacoesEmptyState type="no-integration" message={error || undefined} />
         ) : error && Object.keys(dadosInMemory).length === 0 ? (
           <ReclamacoesEmptyState type="error" message={error} />
-        ) : !isLoading && Object.keys(dadosInMemory).length === 0 && shouldFetch ? (
+        ) : !isLoading && Object.keys(dadosInMemory).length === 0 ? (
           <ReclamacoesEmptyState type="no-data" />
         ) : Object.keys(dadosInMemory).length > 0 ? (
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
