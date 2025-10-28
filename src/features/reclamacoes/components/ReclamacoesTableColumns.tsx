@@ -148,12 +148,12 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
   {
     accessorKey: 'reason_name',
     header: 'Nome da Razão',
-    cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.getValue('reason_name') || '-'}</span>,
+    cell: ({ row }) => <span className="max-w-[200px] block whitespace-normal break-words">{row.getValue('reason_name') || '-'}</span>,
   },
   {
     accessorKey: 'reason_detail',
     header: 'Detalhe da Razão',
-    cell: ({ row }) => <span className="max-w-[200px] truncate block">{row.getValue('reason_detail') || '-'}</span>,
+    cell: ({ row }) => <span className="max-w-[200px] block whitespace-normal break-words">{row.getValue('reason_detail') || '-'}</span>,
   },
   {
     accessorKey: 'reason_category',
@@ -192,7 +192,7 @@ export const reclamacoesColumns: ColumnDef<ReclamacaoRow>[] = [
   {
     accessorKey: 'order_item_seller_sku',
     header: 'SKU',
-    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('order_item_seller_sku') || '-'}</span>,
+    cell: ({ row }) => <span className="font-mono text-xs whitespace-normal break-words">{row.getValue('order_item_seller_sku') || '-'}</span>,
   },
   {
     accessorKey: 'amount_value',
