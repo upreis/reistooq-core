@@ -33,7 +33,6 @@ import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
 import MLOrdersCompletas from "./pages/MLOrdersCompletas";
 import Reclamacoes from "./pages/Reclamacoes";
-import DevolucoesAnalise from "./pages/DevolucoesAnalise";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import IntegracoesPage from "./pages/configuracoes/IntegracoesPage";
@@ -256,11 +255,6 @@ function App() {
                     <Route path="/reclamacoes" element={
                       <PermissionRoute requiredPermissions={['integrations:manage']}>
                         <Reclamacoes />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/devolucoes-analise" element={
-                      <PermissionRoute requiredPermissions={['integrations:manage']}>
-                        <DevolucoesAnalise />
                       </PermissionRoute>
                     } />
                     <Route path="/scanner" element={
