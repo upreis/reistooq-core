@@ -41,6 +41,12 @@ export function ReclamacoesPage() {
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   
+  // 📄 PAGINAÇÃO LOCAL PARA DADOS IN-MEMORY
+  const [localPagination, setLocalPagination] = useState({
+    currentPage: 1,
+    itemsPerPage: 50
+  });
+  
   // 💾 PERSISTÊNCIA COM LOCALSTORAGE
   const {
     dadosInMemory,
@@ -305,11 +311,26 @@ export function ReclamacoesPage() {
 
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
 
+  // 📊 PAGINAÇÃO CALCULADA BASEADA NOS DADOS ATUAIS
+  const paginacaoCalculada = useMemo(() => {
+    const total = reclamacoes.length;
+    const totalPages = Math.ceil(total / localPagination.itemsPerPage) || 1;
+    const currentPage = Math.min(localPagination.currentPage, totalPages);
+    
+    return {
+      currentPage,
+      itemsPerPage: localPagination.itemsPerPage,
+      totalItems: total,
+      totalPages
+    };
+  }, [reclamacoes.length, localPagination.currentPage, localPagination.itemsPerPage]);
+
   const handleBuscar = () => {
     if (selectedAccountIds.length === 0) {
       return;
     }
     setHasLoadedFromStorage(true); // Marcar que iniciou uma busca
+    setLocalPagination({ currentPage: 1, itemsPerPage: 50 }); // Reset paginação
     // Reset incremental ao fazer busca manual completa
     resetIncremental();
     // Alternar o valor para forçar nova busca mesmo se já estava true
@@ -562,9 +583,9 @@ export function ReclamacoesPage() {
                   reclamacoes={reclamacoesAtivas}
                   isLoading={false}
                   error={error}
-                  pagination={pagination}
-                  onPageChange={goToPage}
-                  onItemsPerPageChange={changeItemsPerPage}
+                  pagination={paginacaoCalculada}
+                  onPageChange={(page) => setLocalPagination(prev => ({ ...prev, currentPage: page }))}
+                  onItemsPerPageChange={(items) => setLocalPagination({ currentPage: 1, itemsPerPage: items })}
                   onStatusChange={handleStatusChange}
                 />
               </Card>
@@ -576,9 +597,9 @@ export function ReclamacoesPage() {
                   reclamacoes={reclamacoesHistorico}
                   isLoading={false}
                   error={error}
-                  pagination={pagination}
-                  onPageChange={goToPage}
-                  onItemsPerPageChange={changeItemsPerPage}
+                  pagination={paginacaoCalculada}
+                  onPageChange={(page) => setLocalPagination(prev => ({ ...prev, currentPage: page }))}
+                  onItemsPerPageChange={(items) => setLocalPagination({ currentPage: 1, itemsPerPage: items })}
                   onStatusChange={handleStatusChange}
                 />
               </Card>
