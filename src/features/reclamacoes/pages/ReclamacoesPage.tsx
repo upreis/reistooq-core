@@ -7,15 +7,15 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoes } from '../hooks/useReclamacoes';
+import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesExport } from '../components/ReclamacoesExport';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
-import { ReclamacoesAccountSelector } from '../components/ReclamacoesAccountSelector';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ChevronDown, X, Search } from 'lucide-react';
 import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
 import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
@@ -26,9 +26,11 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 export function ReclamacoesPage() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [shouldFetch, setShouldFetch] = useState(false); // Controla quando buscar
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   const [filters, setFilters] = useState({
-    periodo: '7',
+    periodo: '60',
     status: '',
     type: '',
     stage: '',
@@ -86,6 +88,23 @@ export function ReclamacoesPage() {
     }
     // Alternar o valor para forçar nova busca mesmo se já estava true
     setShouldFetch(prev => !prev);
+  };
+
+  const hasActiveAdvancedFilters = filters.status !== '' || 
+                                   filters.type !== '' ||
+                                   filters.stage !== '' ||
+                                   filters.has_messages !== '' ||
+                                   filters.has_evidences !== '';
+
+  const clearAdvancedFilters = () => {
+    setFilters({
+      ...filters,
+      status: '',
+      type: '',
+      stage: '',
+      has_messages: '',
+      has_evidences: ''
+    });
   };
 
   // Verificar se há erro de integração
@@ -173,30 +192,58 @@ export function ReclamacoesPage() {
           </div>
         </div>
 
-        {/* Seletor de Contas */}
-        <ReclamacoesAccountSelector
-          accounts={mlAccounts}
-          selectedIds={selectedAccountIds}
-          onSelectionChange={setSelectedAccountIds}
-        />
-
-        {/* Stats - só mostrar se tiver dados */}
-        {!isLoading && reclamacoes.length > 0 && (
-          <ReclamacoesStats reclamacoes={reclamacoes} />
-        )}
-
-        {/* Filtros com Botão Buscar */}
+        {/* Barra de Filtros Compacta */}
         <Card className="p-6">
-          <ReclamacoesFilters
-            filters={filters}
-            onFiltersChange={setFilters}
+          <ReclamacoesFilterBar
+            accounts={mlAccounts}
+            selectedAccountIds={selectedAccountIds}
+            onAccountsChange={setSelectedAccountIds}
+            periodo={filters.periodo}
+            onPeriodoChange={(periodo) => setFilters({ ...filters, periodo })}
+            searchTerm={searchTerm}
+            onSearchChange={setSearchTerm}
           />
-          
-          <div className="mt-4 flex justify-end">
+
+          {/* Botão Filtros Avançados */}
+          <div className="mt-4 flex items-center justify-between border-t pt-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            >
+              <ChevronDown className={`h-4 w-4 mr-2 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+              {showAdvancedFilters ? 'Ocultar' : 'Mostrar'} filtros avançados
+            </Button>
+
+            {hasActiveAdvancedFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAdvancedFilters}
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpar filtros avançados
+              </Button>
+            )}
+          </div>
+
+          {/* Filtros Avançados */}
+          {showAdvancedFilters && (
+            <div className="mt-4 pt-4 border-t">
+              <ReclamacoesFilters
+                filters={filters}
+                onFiltersChange={setFilters}
+              />
+            </div>
+          )}
+
+          {/* Botão Buscar */}
+          <div className="mt-4 flex justify-end gap-2">
             <Button
               onClick={handleBuscar}
               disabled={isLoading || selectedAccountIds.length === 0}
               size="lg"
+              className="min-w-40"
             >
               {isLoading ? (
                 <>
@@ -204,11 +251,19 @@ export function ReclamacoesPage() {
                   Buscando...
                 </>
               ) : (
-                'Buscar Reclamações'
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Aplicar Filtros e Buscar
+                </>
               )}
             </Button>
           </div>
         </Card>
+
+        {/* Stats - só mostrar se tiver dados */}
+        {!isLoading && reclamacoes.length > 0 && (
+          <ReclamacoesStats reclamacoes={reclamacoes} />
+        )}
 
         {/* Conteúdo principal */}
         {hasIntegrationError ? (
