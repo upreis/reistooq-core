@@ -45,7 +45,7 @@ export function ReclamacoesTable({
   const getTypeBadge = (type: string) => {
     const typeConfig: Record<string, { variant: any; label: string; className?: string }> = {
       mediations: { variant: 'destructive', label: 'Mediação' },
-      returns: { variant: 'outline', label: 'Devolução', className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+      returns: { variant: 'outline', label: 'Devolução', className: 'bg-yellow-400 text-black border-yellow-500 font-semibold' },
       fulfillment: { variant: 'secondary', label: 'Full' },
       ml_case: { variant: 'outline', label: 'ML Case' },
       cancel_sale: { variant: 'outline', label: 'Cancelamento Vendedor' },
