@@ -76,10 +76,23 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
       // Calcular offset para paginação
       const offset = (pagination.currentPage - 1) * pagination.itemsPerPage;
 
-      // Tentar buscar do banco primeiro (cache) com paginação
+      // Tentar buscar do banco primeiro (cache) com paginação E MENSAGENS
       let query = supabase
         .from('reclamacoes')
-        .select('*', { count: 'exact' })
+        .select(`
+          *,
+          timeline_mensagens:reclamacoes_mensagens(
+            id,
+            sender_id,
+            sender_role,
+            receiver_id,
+            receiver_role,
+            message,
+            attachments,
+            date_created,
+            status
+          )
+        `, { count: 'exact' })
         .in('integration_account_id', selectedAccountIds)
         .gte('date_created', dataInicio)
         .lte('date_created', dataFim)
@@ -203,7 +216,23 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
         }
 
-        setReclamacoes(filteredClaims);
+        // Buscar mensagens para cada claim do banco local
+        const claimsWithMessages = await Promise.all(
+          filteredClaims.map(async (claim: any) => {
+            const { data: mensagens } = await supabase
+              .from('reclamacoes_mensagens')
+              .select('*')
+              .eq('claim_id', claim.claim_id)
+              .order('date_created', { ascending: false });
+            
+            return {
+              ...claim,
+              timeline_mensagens: mensagens || []
+            };
+          })
+        );
+
+        setReclamacoes(claimsWithMessages);
       }
 
     } catch (err: any) {
