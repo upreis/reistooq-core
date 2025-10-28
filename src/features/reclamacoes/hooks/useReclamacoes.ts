@@ -147,7 +147,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         throw new Error('Não foi possível obter informações das contas do Mercado Livre');
       }
 
-      // Buscar da API ML para atualizar (buscar de todas as contas selecionadas)
+      // ✅ OPÇÃO A: Usar ml-api-direct (mesmo endpoint de /ml-orders-completas)
       const allClaims: any[] = [];
       
       for (const account of accountsData) {
@@ -156,13 +156,17 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           continue;
         }
 
-        const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
+        // ✅ Chamar ml-api-direct com action: 'get_claims_and_returns'
+        const { data, error: functionError } = await supabase.functions.invoke('ml-api-direct', {
           body: {
-            accountId: account.id,
-            sellerId: account.account_identifier,
+            action: 'get_claims_and_returns',
+            integration_account_id: account.id,
+            seller_id: account.account_identifier,
             filters: {
-              status: filters.status,
-              type: filters.type,
+              periodoDias: 0, // Usar date_from/date_to
+              claim_type: filters.type || '',
+              stage: filters.stage || '',
+              status: filters.status || '',
               date_from: dataInicio,
               date_to: dataFim
             },
@@ -176,8 +180,9 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           continue; // Pular esta conta e continuar com as outras
         }
 
-        if (data?.claims) {
-          allClaims.push(...data.claims);
+        // ✅ ml-api-direct retorna { success, data: [...] }
+        if (data?.success && data?.data) {
+          allClaims.push(...data.data);
         }
       }
 
@@ -216,23 +221,11 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
           filteredClaims = filteredClaims.filter((c: any) => c.tem_evidencias === false);
         }
 
-        // Buscar mensagens para cada claim do banco local (CACHE apenas)
-        const claimsWithMessages = await Promise.all(
-          filteredClaims.map(async (claim: any) => {
-            const { data: mensagens } = await supabase
-              .from('reclamacoes_mensagens')
-              .select('*')
-              .eq('claim_id', claim.claim_id)
-              .order('date_created', { ascending: false });
-            
-            return {
-              ...claim,
-              timeline_mensagens: mensagens || []
-            };
-          })
-        );
-
-        setReclamacoes(claimsWithMessages);
+        // ✅ As mensagens já vêm processadas no campo timeline_mensagens
+        // pelo CommunicationDataMapper dentro do ml-api-direct
+        // Não precisa buscar separado da tabela reclamacoes_mensagens
+        
+        setReclamacoes(filteredClaims);
       }
 
     } catch (err: any) {
