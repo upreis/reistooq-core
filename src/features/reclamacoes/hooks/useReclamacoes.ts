@@ -223,26 +223,14 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
     }
   };
 
-  // Recarregar quando filtros mudarem (mas só se shouldFetch for true)
+  // ✅ Buscar APENAS quando shouldFetch mudar para true (botão "Buscar")
   useEffect(() => {
     if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0) {
       fetchReclamacoes();
     }
-  }, [
-    shouldFetch,
-    selectedAccountIds.join(','), // Usar join para detectar mudanças no array
-    filters.periodo, 
-    filters.status, 
-    filters.type,
-    filters.stage,
-    filters.has_messages,
-    filters.has_evidences,
-    filters.date_from,
-    filters.date_to
-    // NÃO incluir pagination aqui para evitar loop infinito
-  ]);
+  }, [shouldFetch]); // ✅ Apenas shouldFetch - não reagir a mudanças de filtros
 
-  // Recarregar quando página/items per page mudarem (via ações do usuário)
+  // ✅ Recarregar quando página mudar (mantém busca já realizada)
   useEffect(() => {
     if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0 && !isLoading) {
       fetchReclamacoes(false);
