@@ -2,6 +2,7 @@
  * 📋 TABELA DE RECLAMAÇÕES - TODAS AS COLUNAS
  */
 
+import { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, FileText, Package } from 'lucide-react';
@@ -9,6 +10,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ReclamacoesPagination } from './ReclamacoesPagination';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
+import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -32,6 +34,14 @@ export function ReclamacoesTable({
   onPageChange, 
   onItemsPerPageChange 
 }: ReclamacoesTableProps) {
+  const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
+  const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
+  
+  const handleOpenMensagens = (claim: any) => {
+    setSelectedClaim(claim);
+    setMensagensModalOpen(true);
+  };
+  
   const getStatusBadge = (status: string) => {
     const variants: Record<string, any> = {
       opened: { variant: 'default', label: 'Aberta' },
@@ -186,7 +196,17 @@ export function ReclamacoesTable({
               <TableCell className="text-sm">{formatCurrency(claim.resolution_amount)}</TableCell>
               <TableCell className="max-w-[200px]">{claim.resolution_reason || '-'}</TableCell>
               <TableCell className="text-center">
-                {claim.tem_mensagens ? <MessageSquare className="h-4 w-4 inline text-blue-500" /> : '-'}
+                {claim.tem_mensagens ? (
+                  <button
+                    onClick={() => handleOpenMensagens(claim)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 transition-colors"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    <span className="text-sm font-medium">Ver ({claim.total_mensagens || 0})</span>
+                  </button>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
               </TableCell>
               <TableCell className="text-center">
                 {claim.tem_evidencias ? <FileText className="h-4 w-4 inline text-purple-500" /> : '-'}
@@ -227,6 +247,16 @@ export function ReclamacoesTable({
       onPageChange={onPageChange}
       onItemsPerPageChange={onItemsPerPageChange}
     />
+    
+    {/* Modal de Mensagens */}
+    {selectedClaim && (
+      <ReclamacoesMensagensModal
+        open={mensagensModalOpen}
+        onOpenChange={setMensagensModalOpen}
+        mensagens={selectedClaim.timeline_mensagens || []}
+        claimId={String(selectedClaim.claim_id)}
+      />
+    )}
   </div>
   );
 }
