@@ -45,7 +45,10 @@ export function ReclamacoesTable({
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+    reason_id: false,
+    reason_category: false,
+  });
   const [sorting, setSorting] = useState<SortingState>([]);
   
   const handleOpenMensagens = (claim: any) => {
