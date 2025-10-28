@@ -205,8 +205,16 @@ export function ReclamacoesTable({
 
       {/* Paginação */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-        <div className="text-sm text-muted-foreground">
-          Página {pagination.currentPage} de {pagination.totalPages} • Total: {pagination.totalItems} reclamações
+        <div className="flex flex-col sm:flex-row gap-2 text-sm text-muted-foreground">
+          <span className="font-medium">
+            Página {pagination.currentPage} de {pagination.totalPages}
+          </span>
+          <span className="hidden sm:inline">•</span>
+          <span>
+            Mostrando {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} até{' '}
+            {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} de{' '}
+            <strong>{pagination.totalItems}</strong> reclamações
+          </span>
         </div>
         
         <div className="flex items-center gap-2">
