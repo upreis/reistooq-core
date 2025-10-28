@@ -132,7 +132,7 @@ export function ReclamacoesPage() {
         }
       });
 
-      // Processar novos e atualizados no estado in-memory
+      // ✅ PROCESSAR apenas se houver mudanças
       if (newClaims.length > 0 || updatedClaims.length > 0) {
         const allChanges = [...newClaims, ...updatedClaims];
         
@@ -188,8 +188,11 @@ export function ReclamacoesPage() {
       }
     }, 30000);
 
-    return () => clearInterval(interval);
-  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters, fetchIncremental]);
+    return () => {
+      clearInterval(interval);
+      console.log('🛑 Auto-refresh desativado');
+    };
+  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, filters.date_from, filters.date_to, fetchIncremental, setDadosInMemory]);
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   React.useEffect(() => {

@@ -21,7 +21,22 @@ export function useReclamacoesIncremental() {
   const [lastFetchTimestamp, setLastFetchTimestamp] = useState<string | null>(null);
   const [isLoadingIncremental, setIsLoadingIncremental] = useState(false);
   const { toast } = useToast();
-  const processedClaimIds = useRef<Set<string>>(new Set());
+  
+  // ✅ CORREÇÃO: Sincronizar processedClaimIds com dadosInMemory do localStorage
+  const getInitialClaimIds = (): Set<string> => {
+    try {
+      const stored = localStorage.getItem('reclamacoes-data');
+      if (stored) {
+        const data = JSON.parse(stored);
+        return new Set(Object.keys(data));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar claim IDs:', error);
+    }
+    return new Set();
+  };
+  
+  const processedClaimIds = useRef<Set<string>>(getInitialClaimIds());
 
   /**
    * Busca apenas claims novos ou atualizados desde o último fetch
@@ -52,8 +67,8 @@ export function useReclamacoesIncremental() {
       for (const account of accountsData) {
         if (!account.account_identifier) continue;
 
-        // 🔍 Buscar apenas registros novos/atualizados
-        // Usando offset 0 e limit pequeno para pegar apenas os mais recentes
+        // ✅ CORREÇÃO: Edge function não suporta last_updated_from
+        // Buscar sempre os 50 mais recentes e filtrar no cliente
         const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
           body: {
             accountId: account.id,
@@ -62,13 +77,10 @@ export function useReclamacoesIncremental() {
               status: filters.status,
               type: filters.type,
               date_from: filters.date_from,
-              date_to: filters.date_to,
-              // 🔥 FILTRO INCREMENTAL: apenas desde último fetch
-              last_updated_from: lastFetchTimestamp || undefined
+              date_to: filters.date_to
             },
-            limit: 50, // Buscar apenas os 50 mais recentes
-            offset: 0,
-            sort: 'last_updated:desc' // Ordenar por data de atualização
+            limit: 50,
+            offset: 0
           }
         });
 
@@ -81,8 +93,18 @@ export function useReclamacoesIncremental() {
           continue;
         }
 
+        // ✅ FILTRAR apenas claims atualizados desde lastFetchTimestamp
+        let relevantClaims = data.claims;
+        if (lastFetchTimestamp) {
+          const lastFetchTime = new Date(lastFetchTimestamp).getTime();
+          relevantClaims = data.claims.filter((claim: any) => {
+            const claimUpdateTime = new Date(claim.last_updated || claim.date_created).getTime();
+            return claimUpdateTime > lastFetchTime;
+          });
+        }
+
         // Classificar claims em novos ou atualizados
-        const claimsWithEmpresa = data.claims.map((claim: any) => ({
+        const claimsWithEmpresa = relevantClaims.map((claim: any) => ({
           ...claim,
           empresa: account.name || account.account_identifier
         }));

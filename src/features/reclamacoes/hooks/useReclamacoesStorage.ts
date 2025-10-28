@@ -49,12 +49,53 @@ export function useReclamacoesStorage() {
   useEffect(() => {
     try {
       if (Object.keys(dadosInMemory).length > 0) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(dadosInMemory));
-        localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
-        console.log('💾 Dados salvos no localStorage:', Object.keys(dadosInMemory).length, 'registros');
+        const dataToStore = JSON.stringify(dadosInMemory);
+        
+        // ⚠️ PROTEÇÃO: Verificar tamanho antes de salvar (limite ~5MB)
+        const sizeInMB = new Blob([dataToStore]).size / (1024 * 1024);
+        if (sizeInMB > 4.5) {
+          console.warn('⚠️ Dados muito grandes para localStorage (>4.5MB). Limpando dados antigos...');
+          // Manter apenas os últimos 100 registros mais recentes
+          const sortedEntries = Object.entries(dadosInMemory)
+            .sort((a: any, b: any) => {
+              const dateA = new Date(a[1].last_updated || a[1].date_created);
+              const dateB = new Date(b[1].last_updated || b[1].date_created);
+              return dateB.getTime() - dateA.getTime();
+            })
+            .slice(0, 100);
+          
+          const reducedData = Object.fromEntries(sortedEntries);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedData));
+          console.log('💾 Dados reduzidos salvos:', Object.keys(reducedData).length, 'registros');
+        } else {
+          localStorage.setItem(STORAGE_KEY, dataToStore);
+          localStorage.setItem(TIMESTAMP_KEY, new Date().toISOString());
+          console.log('💾 Dados salvos no localStorage:', Object.keys(dadosInMemory).length, 'registros');
+        }
       }
-    } catch (error) {
-      console.error('Erro ao salvar dados no localStorage:', error);
+    } catch (error: any) {
+      // ⚠️ TRATAMENTO: QuotaExceededError
+      if (error.name === 'QuotaExceededError') {
+        console.error('❌ localStorage cheio! Limpando dados antigos...');
+        try {
+          localStorage.removeItem(STORAGE_KEY);
+          // Salvar apenas os últimos 50 registros
+          const sortedEntries = Object.entries(dadosInMemory)
+            .sort((a: any, b: any) => {
+              const dateA = new Date(a[1].last_updated || a[1].date_created);
+              const dateB = new Date(b[1].last_updated || b[1].date_created);
+              return dateB.getTime() - dateA.getTime();
+            })
+            .slice(0, 50);
+          
+          const reducedData = Object.fromEntries(sortedEntries);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(reducedData));
+        } catch (retryError) {
+          console.error('❌ Não foi possível salvar dados mesmo após limpeza:', retryError);
+        }
+      } else {
+        console.error('Erro ao salvar dados no localStorage:', error);
+      }
     }
   }, [dadosInMemory]);
 
