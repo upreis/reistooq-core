@@ -1,16 +1,24 @@
 /**
- * 📋 TABELA DE RECLAMAÇÕES - TODAS AS COLUNAS
+ * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  */
 
 import { useState } from 'react';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  flexRender,
+  VisibilityState,
+  SortingState,
+} from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { MessageSquare, FileText, Package } from 'lucide-react';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { ReclamacoesPagination } from './ReclamacoesPagination';
-import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
+import { reclamacoesColumns } from './ReclamacoesTableColumns';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -36,66 +44,33 @@ export function ReclamacoesTable({
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([]);
   
   const handleOpenMensagens = (claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
   };
-  
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
-      opened: { variant: 'default', label: 'Aberta' },
-      closed: { variant: 'secondary', label: 'Fechada' },
-      under_review: { variant: 'outline', label: 'Em análise' }
-    };
-    const config = variants[status] || { variant: 'default', label: status };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
 
-  const getTypeBadge = (type: string) => {
-    const typeConfig: Record<string, { variant: any; label: string; className?: string }> = {
-      mediations: { variant: 'destructive', label: 'Mediação' },
-      returns: { variant: 'outline', label: 'Devolução', className: 'bg-yellow-400 text-black border-yellow-500 font-semibold' },
-      fulfillment: { variant: 'secondary', label: 'Full' },
-      ml_case: { variant: 'outline', label: 'ML Case' },
-      cancel_sale: { variant: 'outline', label: 'Cancelamento Vendedor' },
-      cancel_purchase: { variant: 'outline', label: 'Cancelamento Comprador' },
-      change: { variant: 'default', label: 'Troca' },
-      service: { variant: 'secondary', label: 'Serviço' }
-    };
-    const config = typeConfig[type] || { variant: 'default', label: type };
-    return <Badge variant={config.variant} className={config.className}>{config.label}</Badge>;
-  };
-
-  const getStageBadge = (stage: string | null) => {
-    if (!stage) return '-';
-    const stageConfig: Record<string, { variant: any; label: string }> = {
-      claim: { variant: 'default', label: 'Reclamação' },
-      dispute: { variant: 'destructive', label: 'Mediação ML' },
-      recontact: { variant: 'secondary', label: 'Recontato' },
-      none: { variant: 'outline', label: 'N/A' },
-      stale: { variant: 'outline', label: 'Stale' }
-    };
-    const config = stageConfig[stage] || { variant: 'default', label: stage };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  const formatDate = (date: string | null) => {
-    if (!date) return '-';
-    try {
-      return format(new Date(date), 'dd/MM/yy HH:mm', { locale: ptBR });
-    } catch {
-      return '-';
-    }
-  };
-
-  const formatCurrency = (value: number | null, currency: string = 'BRL') => {
-    if (!value) return '-';
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: currency
-    }).format(value);
-  };
+  const table = useReactTable({
+    data: reclamacoes,
+    columns: reclamacoesColumns,
+    state: {
+      globalFilter,
+      columnVisibility,
+      sorting,
+    },
+    onGlobalFilterChange: setGlobalFilter,
+    onColumnVisibilityChange: setColumnVisibility,
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    pageCount: pagination.totalPages,
+  });
 
   if (isLoading) {
     return (
@@ -114,7 +89,7 @@ export function ReclamacoesTable({
     );
   }
 
-  if (reclamacoes.length === 0) {
+  if (reclamacoes.length === 0 && !globalFilter) {
     return (
       <div className="p-8 text-center text-muted-foreground">
         <p>Nenhuma reclamação encontrada</p>
@@ -123,112 +98,152 @@ export function ReclamacoesTable({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Empresa</TableHead>
-            <TableHead>N.º da Reclamação</TableHead>
-            <TableHead>Tipo de Reclamação</TableHead>
-            <TableHead>Status da Reclamação</TableHead>
-            <TableHead>Estagio da Reclamação</TableHead>
-            <TableHead>N.º do Recurso Origem</TableHead>
-            <TableHead>Tipo do Recurso</TableHead>
-            <TableHead>N.º da Razão da Reclamação</TableHead>
-            <TableHead>Data Criação</TableHead>
-            <TableHead>Última Atualização</TableHead>
-            <TableHead>Site ID</TableHead>
-            <TableHead>Nome da Razão</TableHead>
-            <TableHead>Detalhe da Razão</TableHead>
-            <TableHead>Categoria da Razão</TableHead>
-            <TableHead>Data da Venda</TableHead>
-            <TableHead>Nome do Cliente</TableHead>
-            <TableHead>Nome do Produto</TableHead>
-            <TableHead>Quantidade</TableHead>
-            <TableHead>Valor do Produto</TableHead>
-            <TableHead>SKU</TableHead>
-            <TableHead>Valor na Reclamação</TableHead>
-            <TableHead>Resolução Beneficiada</TableHead>
-            <TableHead>Data da Resolução</TableHead>
-            <TableHead>Razão da Resolução</TableHead>
-            <TableHead className="text-center">Trocas</TableHead>
-            <TableHead className="text-center">Mediação</TableHead>
-            <TableHead>N.º da Venda</TableHead>
-            <TableHead>Status da Venda</TableHead>
-            <TableHead>Total da Venda</TableHead>
-            <TableHead>Impacto Financeiro</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {reclamacoes.map((claim) => (
-            <TableRow key={claim.claim_id}>
-              <TableCell className="text-sm">{claim.empresa || '-'}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.claim_id}</TableCell>
-              <TableCell>{getTypeBadge(claim.type)}</TableCell>
-              <TableCell>{getStatusBadge(claim.status)}</TableCell>
-              <TableCell>{getStageBadge(claim.stage)}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.resource_id || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.resource || '-'}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.reason_id || '-'}</TableCell>
-              <TableCell className="text-sm">{formatDate(claim.date_created)}</TableCell>
-              <TableCell className="text-sm">{formatDate(claim.last_updated)}</TableCell>
-              <TableCell className="text-sm">{claim.site_id || '-'}</TableCell>
-              <TableCell className="max-w-[200px]">{claim.reason_name || '-'}</TableCell>
-              <TableCell className="max-w-[200px]">{claim.reason_detail || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.reason_category || '-'}</TableCell>
-              <TableCell className="text-sm">{formatDate(claim.order_date_created)}</TableCell>
-              <TableCell className="text-sm">{claim.buyer_nickname || '-'}</TableCell>
-              <TableCell className="max-w-[250px] text-sm truncate">{claim.order_item_title || '-'}</TableCell>
-              <TableCell className="text-sm text-center">{claim.order_item_quantity || '-'}</TableCell>
-              <TableCell className="text-sm font-medium">{formatCurrency(claim.order_item_unit_price, claim.amount_currency)}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.order_item_seller_sku || '-'}</TableCell>
-              <TableCell className="text-sm font-medium">{formatCurrency(claim.amount_value, claim.amount_currency)}</TableCell>
-              <TableCell className="text-sm">{claim.resolution_benefited || '-'}</TableCell>
-              <TableCell className="text-sm">{formatDate(claim.resolution_date)}</TableCell>
-              <TableCell className="max-w-[200px]">{claim.resolution_reason || '-'}</TableCell>
-              <TableCell className="text-center">
-                {claim.tem_trocas ? <Package className="h-4 w-4 inline text-green-500" /> : '-'}
-              </TableCell>
-              <TableCell className="text-center">
-                {claim.tem_mediacao ? '✅' : '-'}
-              </TableCell>
-              <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
-              <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
-              <TableCell>
-                <ImpactoFinanceiroCell
-                  impacto={claim.impacto_financeiro}
-                  valor={
-                    claim.impacto_financeiro === 'neutro' 
-                      ? (claim.amount_value || 0)
-                      : (claim.valor_impacto || 0)
-                  }
-                  moeda={claim.amount_currency || 'BRL'}
-                />
-              </TableCell>
-            </TableRow>
-          ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-4">
+      {/* Barra de Ferramentas */}
+      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+        <div className="flex-1 max-w-sm">
+          <Input
+            placeholder="Buscar em todas as colunas..."
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        
+        <Button
+          variant="outline"
+          onClick={() => {
+            const keys = table.getAllLeafColumns().map((col) => col.id);
+            const allVisible = keys.every(key => columnVisibility[key] !== false);
+            setColumnVisibility(
+              keys.reduce((acc, key) => {
+                acc[key] = !allVisible;
+                return acc;
+              }, {} as VisibilityState)
+            );
+          }}
+          className="gap-2"
+        >
+          {Object.keys(columnVisibility).length > 0 && 
+           Object.values(columnVisibility).some(v => v === false) ? (
+            <>
+              <Eye className="h-4 w-4" />
+              Mostrar Todas
+            </>
+          ) : (
+            <>
+              <EyeOff className="h-4 w-4" />
+              Ocultar Todas
+            </>
+          )}
+        </Button>
+      </div>
 
-    <ReclamacoesPagination
-      currentPage={pagination.currentPage}
-      totalPages={pagination.totalPages}
-      totalItems={pagination.totalItems}
-      itemsPerPage={pagination.itemsPerPage}
-      onPageChange={onPageChange}
-      onItemsPerPageChange={onItemsPerPageChange}
-    />
+      {/* Tabela */}
+      <div className="overflow-x-auto border rounded-lg">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id} className="whitespace-nowrap">
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={reclamacoesColumns.length} className="text-center py-8 text-muted-foreground">
+                  {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Paginação */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
+        <div className="text-sm text-muted-foreground">
+          Página {pagination.currentPage} de {pagination.totalPages} • Total: {pagination.totalItems} reclamações
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <select
+            value={pagination.itemsPerPage}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
+          >
+            <option value={10}>10 por página</option>
+            <option value={20}>20 por página</option>
+            <option value={50}>50 por página</option>
+            <option value={100}>100 por página</option>
+          </select>
+          
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(1)}
+              disabled={pagination.currentPage === 1}
+            >
+              Primeira
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.currentPage - 1)}
+              disabled={pagination.currentPage === 1}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.currentPage + 1)}
+              disabled={pagination.currentPage === pagination.totalPages}
+            >
+              Próxima
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(pagination.totalPages)}
+              disabled={pagination.currentPage === pagination.totalPages}
+            >
+              Última
+            </Button>
+          </div>
+        </div>
+      </div>
     
-    {/* Modal de Mensagens */}
-    {selectedClaim && (
-      <ReclamacoesMensagensModal
-        open={mensagensModalOpen}
-        onOpenChange={setMensagensModalOpen}
-        mensagens={selectedClaim.timeline_mensagens || []}
-        claimId={String(selectedClaim.claim_id)}
-      />
-    )}
-  </div>
+      {/* Modal de Mensagens */}
+      {selectedClaim && (
+        <ReclamacoesMensagensModal
+          open={mensagensModalOpen}
+          onOpenChange={setMensagensModalOpen}
+          mensagens={selectedClaim.timeline_mensagens || []}
+          claimId={String(selectedClaim.claim_id)}
+        />
+      )}
+    </div>
   );
 }
