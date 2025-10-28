@@ -21,6 +21,7 @@ import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Eye, EyeOff } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { calcularDiasDesdeAtualizacao, getHighlightConfig } from '../utils/highlight-utils';
+import { cn } from '@/lib/utils';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -147,13 +148,13 @@ export function ReclamacoesTable({
       </div>
 
       {/* Tabela */}
-      <div className="overflow-x-auto border rounded-lg">
+      <div className="overflow-x-auto border rounded-lg bg-card">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+              <TableRow key={headerGroup.id} className="bg-card hover:bg-card">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap">
+                  <TableHead key={header.id} className="whitespace-nowrap bg-card text-card-foreground">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -178,10 +179,13 @@ export function ReclamacoesTable({
                 return (
                   <TableRow 
                     key={row.id}
-                    className={highlightConfig ? highlightConfig.rowClass : ''}
+                    className={cn(
+                      "bg-card text-card-foreground hover:bg-muted/50",
+                      highlightConfig ? highlightConfig.rowClass : ''
+                    )}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell key={cell.id} className="bg-card text-card-foreground">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -189,7 +193,7 @@ export function ReclamacoesTable({
                 );
               })
             ) : (
-              <TableRow>
+              <TableRow className="bg-card hover:bg-card">
                 <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
                   {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
                 </TableCell>
