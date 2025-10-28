@@ -128,38 +128,34 @@ export function ReclamacoesTable({
         <TableHeader>
           <TableRow>
             <TableHead>Empresa</TableHead>
-            <TableHead>Claim ID</TableHead>
-            <TableHead>Type</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Stage</TableHead>
-            <TableHead>Resource ID</TableHead>
-            <TableHead>Resource</TableHead>
-            <TableHead>Reason ID</TableHead>
+            <TableHead>N.º da Reclamação</TableHead>
+            <TableHead>Tipo de Reclamação</TableHead>
+            <TableHead>Status da Reclamação</TableHead>
+            <TableHead>Estagio da Reclamação</TableHead>
+            <TableHead>N.º do Recurso Origem</TableHead>
+            <TableHead>Tipo do Recurso</TableHead>
+            <TableHead>N.º da Razão da Reclamação</TableHead>
             <TableHead>Data Criação</TableHead>
             <TableHead>Última Atualização</TableHead>
             <TableHead>Site ID</TableHead>
-            <TableHead>Reason Name</TableHead>
-            <TableHead>Reason Detail</TableHead>
-            <TableHead>Reason Category</TableHead>
-            <TableHead>Buyer ID</TableHead>
+            <TableHead>Nome da Razão</TableHead>
+            <TableHead>Detalhe da Razão</TableHead>
+            <TableHead>Categoria da Razão</TableHead>
             <TableHead>Data da Venda</TableHead>
             <TableHead>Nome do Cliente</TableHead>
             <TableHead>Nome do Produto</TableHead>
             <TableHead>Quantidade</TableHead>
             <TableHead>Valor do Produto</TableHead>
             <TableHead>SKU</TableHead>
-            <TableHead>Seller ID</TableHead>
-            <TableHead>Amount Value</TableHead>
-            <TableHead>Amount Currency</TableHead>
-            <TableHead>Resolution Benefited</TableHead>
-            <TableHead>Resolution Date</TableHead>
-            <TableHead>Resolution Reason</TableHead>
+            <TableHead>Valor na Reclamação</TableHead>
+            <TableHead>Resolução Beneficiada</TableHead>
+            <TableHead>Data da Resolução</TableHead>
+            <TableHead>Razão da Resolução</TableHead>
             <TableHead className="text-center">Trocas</TableHead>
             <TableHead className="text-center">Mediação</TableHead>
-            <TableHead>Order ID</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Status Detail</TableHead>
-            <TableHead>Order Total</TableHead>
+            <TableHead>N.º da Venda</TableHead>
+            <TableHead>Status da Venda</TableHead>
+            <TableHead>Total da Venda</TableHead>
             <TableHead>Impacto Financeiro</TableHead>
           </TableRow>
         </TableHeader>
@@ -180,16 +176,13 @@ export function ReclamacoesTable({
               <TableCell className="max-w-[200px]">{claim.reason_name || '-'}</TableCell>
               <TableCell className="max-w-[200px]">{claim.reason_detail || '-'}</TableCell>
               <TableCell className="text-sm">{claim.reason_category || '-'}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.buyer_id || '-'}</TableCell>
               <TableCell className="text-sm">{formatDate(claim.order_date_created)}</TableCell>
               <TableCell className="text-sm">{claim.buyer_nickname || '-'}</TableCell>
               <TableCell className="max-w-[250px] text-sm truncate">{claim.order_item_title || '-'}</TableCell>
               <TableCell className="text-sm text-center">{claim.order_item_quantity || '-'}</TableCell>
               <TableCell className="text-sm font-medium">{formatCurrency(claim.order_item_unit_price, claim.amount_currency)}</TableCell>
               <TableCell className="font-mono text-xs">{claim.order_item_seller_sku || '-'}</TableCell>
-              <TableCell className="font-mono text-xs">{claim.seller_id || '-'}</TableCell>
               <TableCell className="text-sm font-medium">{formatCurrency(claim.amount_value, claim.amount_currency)}</TableCell>
-              <TableCell className="text-sm">{claim.amount_currency || '-'}</TableCell>
               <TableCell className="text-sm">{claim.resolution_benefited || '-'}</TableCell>
               <TableCell className="text-sm">{formatDate(claim.resolution_date)}</TableCell>
               <TableCell className="max-w-[200px]">{claim.resolution_reason || '-'}</TableCell>
@@ -201,7 +194,6 @@ export function ReclamacoesTable({
               </TableCell>
               <TableCell className="font-mono text-xs">{claim.order_id || '-'}</TableCell>
               <TableCell className="text-sm">{claim.order_status || '-'}</TableCell>
-              <TableCell className="text-sm">{claim.order_status_detail || '-'}</TableCell>
               <TableCell className="text-sm">{formatCurrency(claim.order_total)}</TableCell>
               <TableCell>
                 <ImpactoFinanceiroCell
