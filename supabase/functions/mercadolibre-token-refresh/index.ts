@@ -28,7 +28,10 @@ function getMlConfig() {
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
-const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "ML_DEV_2025_INTERNAL_TOKEN";
+const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+if (!INTERNAL_TOKEN) {
+  throw new Error("CRITICAL: INTERNAL_SHARED_TOKEN environment variable must be configured");
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {

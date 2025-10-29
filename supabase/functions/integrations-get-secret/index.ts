@@ -58,9 +58,12 @@ function makeUserClient(req: Request) {
 }
 
 function isInternal(req: Request) {
-  const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") ?? "";
+  const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+  if (!INTERNAL_TOKEN) {
+    console.error("CRITICAL: INTERNAL_SHARED_TOKEN not configured");
+    return false;
+  }
   return req.headers.get("x-internal-call") === "true" && 
-         INTERNAL_TOKEN && 
          req.headers.get("x-internal-token") === INTERNAL_TOKEN;
 }
 
