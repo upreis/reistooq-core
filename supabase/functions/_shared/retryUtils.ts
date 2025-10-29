@@ -66,19 +66,25 @@ export async function fetchWithRetry(
   let lastError: any;
   
   for (let attempt = 0; attempt < opts.maxRetries; attempt++) {
+    // ✅ IMPORTANTE: Manter referência do timeoutId para limpeza correta
+    let timeoutId: number | undefined;
+    
     try {
       // Adicionar timeout usando AbortController
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), opts.timeout);
+      timeoutId = setTimeout(() => controller.abort(), opts.timeout);
       
       // Combinar signals se usuário já passou um
       let combinedSignal = controller.signal;
       
       if (init?.signal) {
         const userController = new AbortController();
+        
+        // ✅ CORREÇÃO: Usar { once: true } para evitar memory leak
         const abortHandler = () => userController.abort();
-        controller.signal.addEventListener('abort', abortHandler);
-        init.signal.addEventListener('abort', abortHandler);
+        controller.signal.addEventListener('abort', abortHandler, { once: true });
+        init.signal.addEventListener('abort', abortHandler, { once: true });
+        
         combinedSignal = userController.signal;
       }
       
@@ -87,7 +93,10 @@ export async function fetchWithRetry(
         signal: combinedSignal
       });
       
-      clearTimeout(timeoutId);
+      // ✅ CORREÇÃO: Limpar timeout corretamente
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
       
       // Verificar status HTTP (apenas 4xx e 5xx são erros)
       if (response.status >= 400) {
@@ -114,7 +123,11 @@ export async function fetchWithRetry(
       
       return response;
     } catch (error: any) {
-      clearTimeout;
+      // ✅ CORREÇÃO: Limpar timeout em caso de erro
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+      
       lastError = error;
       
       // Se não deve retentar ou é a última tentativa, lançar erro
