@@ -322,13 +322,23 @@ export function ReclamacoesPage() {
     const totalPages = Math.ceil(total / localPagination.itemsPerPage) || 1;
     const currentPage = Math.min(localPagination.currentPage, totalPages);
     
+    console.log(`📊 Paginação [${activeTab}]:`, {
+      total,
+      totalPages,
+      currentPage,
+      itemsPerPage: localPagination.itemsPerPage,
+      ativas: reclamacoesAtivas.length,
+      historico: reclamacoesHistorico.length,
+      totalMemoria: Object.keys(dadosInMemory).length
+    });
+    
     return {
       currentPage,
       itemsPerPage: localPagination.itemsPerPage,
       totalItems: total,
       totalPages
     };
-  }, [reclamacoes.length, localPagination.currentPage, localPagination.itemsPerPage]);
+  }, [reclamacoes.length, localPagination.currentPage, localPagination.itemsPerPage, activeTab, reclamacoesAtivas.length, reclamacoesHistorico.length, dadosInMemory]);
 
   const handleBuscar = () => {
     if (selectedAccountIds.length === 0) {
