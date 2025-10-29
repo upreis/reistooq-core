@@ -17,7 +17,9 @@ import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesExport } from '../components/ReclamacoesExport';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
+import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
 import { Card } from '@/components/ui/card';
+import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronDown, X, Search } from 'lucide-react';
 import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
@@ -45,6 +47,7 @@ export function ReclamacoesPage() {
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   const [filteredReclamacoes, setFilteredReclamacoes] = useState<any[]>([]);
+  const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   
   
   // 💾 PERSISTÊNCIA COM LOCALSTORAGE
@@ -332,19 +335,54 @@ export function ReclamacoesPage() {
   // Filtrar por aba ativa - usa dados filtrados se houver filtros aplicados
   const dadosParaFiltrar = filteredReclamacoes.length > 0 ? filteredReclamacoes : reclamacoesWithAnalise;
   
+  // Aplicar filtro de ciclo de vida
+  const dadosComLifecycleFilter = useMemo(() => {
+    if (!lifecycleFilter) return dadosParaFiltrar;
+
+    return dadosParaFiltrar.filter((claim: any) => {
+      const status = calcularStatusCiclo(claim);
+      
+      switch (lifecycleFilter) {
+        case 'critical':
+          return status.statusCiclo === 'critica';
+        case 'urgent':
+          return status.statusCiclo === 'urgente';
+        case 'attention':
+          return status.statusCiclo === 'atencao';
+        default:
+          return true;
+      }
+    });
+  }, [dadosParaFiltrar, lifecycleFilter]);
+  
   const reclamacoesAtivas = useMemo(() => {
-    return dadosParaFiltrar.filter((claim: any) => 
+    return dadosComLifecycleFilter.filter((claim: any) => 
       ACTIVE_STATUSES.includes(claim.status_analise)
     );
-  }, [dadosParaFiltrar]);
+  }, [dadosComLifecycleFilter]);
 
   const reclamacoesHistorico = useMemo(() => {
-    return dadosParaFiltrar.filter((claim: any) => 
+    return dadosComLifecycleFilter.filter((claim: any) => 
       HISTORIC_STATUSES.includes(claim.status_analise)
     );
-  }, [dadosParaFiltrar]);
+  }, [dadosComLifecycleFilter]);
 
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
+  
+  // Calcular contadores para o filtro rápido
+  const lifecycleCounts = useMemo(() => {
+    const counts = { critical: 0, urgent: 0, attention: 0 };
+    
+    dadosParaFiltrar.forEach((claim: any) => {
+      const status = calcularStatusCiclo(claim);
+      
+      if (status.statusCiclo === 'critica') counts.critical++;
+      else if (status.statusCiclo === 'urgente') counts.urgent++;
+      else if (status.statusCiclo === 'atencao') counts.attention++;
+    });
+    
+    return counts;
+  }, [dadosParaFiltrar]);
 
 
   const handleBuscar = () => {
@@ -582,17 +620,18 @@ export function ReclamacoesPage() {
         </Card>
 
 
+        {/* Filtro Rápido de Ciclo de Vida */}
+        {!isLoading && reclamacoesWithAnalise.length > 0 && (
+          <ReclamacoesLifecycleQuickFilter
+            onFilterChange={setLifecycleFilter}
+            counts={lifecycleCounts}
+          />
+        )}
+
         {/* Alertas de Ciclo de Vida */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesLifecycleAlert 
             reclamacoes={reclamacoesWithAnalise}
-            onExportarEmRisco={() => {
-              // Trigger export de reclamações em risco
-              toast({
-                title: 'Exportação iniciada',
-                description: 'Baixando dados das reclamações em risco...'
-              });
-            }}
           />
         )}
 
