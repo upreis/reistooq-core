@@ -760,11 +760,14 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => {
-      const trackingNumber = row.original.codigo_rastreamento || row.original.tracking_number;
+      // ✅ Buscar do dados_order.shipping.tracking_number ou tracking_number direto
+      const trackingNumber = row.original.dados_order?.shipping?.tracking_number || 
+                            row.original.tracking_number;
+      
       return trackingNumber ? (
         <span className="font-mono text-xs">{trackingNumber}</span>
       ) : (
-        <span className="text-muted-foreground">-</span>
+        <span className="text-muted-foreground text-xs">-</span>
       );
     },
   },
