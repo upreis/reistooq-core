@@ -69,6 +69,9 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     // Tipos de reclamação
     'claim': 'Reclamação',
     'mediation': 'Mediação',
+    'mediations': 'Mediações',
+    'returns': 'Devoluções',
+    'cancel_purchase': 'Cancelar Compra',
     
     // Status de reclamação
     'opened': 'Aberto',
@@ -83,6 +86,8 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     'claim_closed': 'Reclamação Fechada',
     'claim_answered': 'Reclamação Respondida',
     'claim_in_review': 'Em Revisão',
+    'in_process': 'Em Processo',
+    'finalized': 'Finalizado',
     
     // Beneficiados
     'buyer': 'Comprador',
@@ -94,6 +99,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     'delivered': 'Entregue',
     'partially_refunded': 'Parcialmente Reembolsado',
     'refunded': 'Reembolsado',
+    'paid': 'Pago',
     
     // Razões de resolução
     'warehouse': 'Armazém',
