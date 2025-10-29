@@ -125,66 +125,62 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
   }, [filteredData, onFilteredDataChange]);
 
 
-  // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções uma única vez por combinação de filtros
+  // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam
+  // ⚡ REDUZIR COMPLEXIDADE: Single-pass através dos dados
   const optionsCache = useMemo(() => {
     const cache: Record<string, { value: string; label: string; count: number }[]> = {};
     
-    // Função helper para calcular opções de um campo específico
-    const calculateOptions = (field: keyof FilterState, dataField: string) => {
-      // Criar filtros temporários excluindo o campo atual
-      const tempFilters = { ...filters };
-      delete tempFilters[field];
-      
-      // Aplicar filtros temporários
-      let data = reclamacoes.filter(r => {
-        if (tempFilters.empresa && r.empresa !== tempFilters.empresa) return false;
-        if (tempFilters.tipoReclamacao && r.type !== tempFilters.tipoReclamacao) return false;
-        if (tempFilters.statusReclamacao && r.status !== tempFilters.statusReclamacao) return false;
-        if (tempFilters.estagioReclamacao && r.stage !== tempFilters.estagioReclamacao) return false;
-        if (tempFilters.nomeRazao && r.reason_id !== tempFilters.nomeRazao) return false;
-        if (tempFilters.detalheRazao && r.reason_category !== tempFilters.detalheRazao) return false;
-        if (tempFilters.razaoResolucao && r.resolution_reason !== tempFilters.razaoResolucao) return false;
-        if (tempFilters.statusVenda && r.order_status !== tempFilters.statusVenda) return false;
-        
-        if (tempFilters.impactoFinanceiro) {
-          const [min, max] = tempFilters.impactoFinanceiro.split('-').map(Number);
-          const valor = Math.abs(r.transaction_amount || 0);
-          if (max && (valor < min || valor > max)) return false;
-          if (!max && valor < min) return false;
-        }
-        
-        return true;
+    // Single-pass: percorrer dados UMA VEZ e acumular contagens
+    const buildAllOptions = () => {
+      const tempCounts: Record<string, Record<string, number>> = {
+        empresa: {},
+        tipoReclamacao: {},
+        statusReclamacao: {},
+        estagioReclamacao: {},
+        nomeRazao: {},
+        detalheRazao: {},
+        razaoResolucao: {},
+        statusVenda: {}
+      };
+
+      // ⚡ Uma única passagem pelos dados filtrados
+      filteredData.forEach(r => {
+        if (r.empresa) tempCounts.empresa[r.empresa] = (tempCounts.empresa[r.empresa] || 0) + 1;
+        if (r.type) tempCounts.tipoReclamacao[r.type] = (tempCounts.tipoReclamacao[r.type] || 0) + 1;
+        if (r.status) tempCounts.statusReclamacao[r.status] = (tempCounts.statusReclamacao[r.status] || 0) + 1;
+        if (r.stage) tempCounts.estagioReclamacao[r.stage] = (tempCounts.estagioReclamacao[r.stage] || 0) + 1;
+        if (r.reason_id) tempCounts.nomeRazao[r.reason_id] = (tempCounts.nomeRazao[r.reason_id] || 0) + 1;
+        if (r.reason_category) tempCounts.detalheRazao[r.reason_category] = (tempCounts.detalheRazao[r.reason_category] || 0) + 1;
+        if (r.resolution_reason) tempCounts.razaoResolucao[r.resolution_reason] = (tempCounts.razaoResolucao[r.resolution_reason] || 0) + 1;
+        if (r.order_status) tempCounts.statusVenda[r.order_status] = (tempCounts.statusVenda[r.order_status] || 0) + 1;
       });
-      
-      // Contar ocorrências
-      const counts: Record<string, number> = {};
-      data.forEach(r => {
-        const val = r[dataField];
-        if (val) counts[val] = (counts[val] || 0) + 1;
+
+      // Converter para arrays ordenados
+      const fieldTypeMap: Record<string, string> = {
+        tipoReclamacao: 'type',
+        statusReclamacao: 'status',
+        estagioReclamacao: 'stage',
+        nomeRazao: 'reason_id',
+        detalheRazao: 'reason_category',
+        razaoResolucao: 'resolution_reason',
+        statusVenda: 'order_status'
+      };
+
+      Object.keys(tempCounts).forEach(field => {
+        cache[field] = Object.entries(tempCounts[field])
+          .map(([value, count]) => ({
+            value,
+            label: field === 'empresa' ? value : translate(value, fieldTypeMap[field] || field),
+            count
+          }))
+          .sort((a, b) => b.count - a.count);
       });
-      
-      // Criar opções únicas
-      return Object.entries(counts)
-        .map(([value, count]) => ({
-          value,
-          label: field === 'empresa' ? value : translate(value, dataField),
-          count
-        }))
-        .sort((a, b) => b.count - a.count);
+
+      return cache;
     };
     
-    // Calcular para cada filtro
-    cache.empresa = calculateOptions('empresa', 'empresa');
-    cache.tipoReclamacao = calculateOptions('tipoReclamacao', 'type');
-    cache.statusReclamacao = calculateOptions('statusReclamacao', 'status');
-    cache.estagioReclamacao = calculateOptions('estagioReclamacao', 'stage');
-    cache.nomeRazao = calculateOptions('nomeRazao', 'reason_id');
-    cache.detalheRazao = calculateOptions('detalheRazao', 'reason_category');
-    cache.razaoResolucao = calculateOptions('razaoResolucao', 'resolution_reason');
-    cache.statusVenda = calculateOptions('statusVenda', 'order_status');
-    
-    return cache;
-  }, [reclamacoes, filters, translate]);
+    return buildAllOptions();
+  }, [filteredData, translate]);
 
   // 🚀 OTIMIZAÇÃO: Calcular opções de impacto financeiro apenas uma vez
   const impactoFinanceiroOptions = useMemo(() => {

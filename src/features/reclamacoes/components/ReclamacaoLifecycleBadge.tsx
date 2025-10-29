@@ -6,7 +6,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Clock, AlertTriangle, Trash2, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import {
   Tooltip,
   TooltipContent,
@@ -25,7 +24,11 @@ export function ReclamacaoLifecycleBadge({
   compact = false,
   className 
 }: ReclamacaoLifecycleBadgeProps) {
-  const lifecycle = calcularStatusCiclo(reclamacao);
+  // ⚡ USAR STATUS PRÉ-CALCULADO (_lifecycleStatus)
+  const lifecycle = reclamacao._lifecycleStatus;
+  
+  // Se não tiver status pré-calculado, não renderizar
+  if (!lifecycle) return null;
   
   // Não mostrar badge para reclamações normais/novas sem avisos
   if (lifecycle.statusCiclo === 'normal' || lifecycle.statusCiclo === 'nova') {

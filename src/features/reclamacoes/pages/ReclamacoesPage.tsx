@@ -292,14 +292,22 @@ export function ReclamacoesPage() {
   }, [allRawClaims]);
 
   // Converter dados in-memory para array e aplicar análise
+  // ✅ PRÉ-CALCULAR STATUS DE CICLO DE VIDA UMA ÚNICA VEZ
   const reclamacoesWithAnalise = useMemo(() => {
     const dataArray = Object.values(dadosInMemory);
     
     return dataArray
-      .map((claim: any) => ({
-        ...claim,
-        status_analise: analiseStatus[claim.claim_id] || 'pendente'
-      }))
+      .map((claim: any) => {
+        // ⚡ Calcular status do ciclo de vida uma única vez
+        const lifecycleStatus = calcularStatusCiclo(claim);
+        
+        return {
+          ...claim,
+          status_analise: analiseStatus[claim.claim_id] || 'pendente',
+          // 🎯 Armazenar resultado do cálculo para reutilização
+          _lifecycleStatus: lifecycleStatus
+        };
+      })
       // 🔥 ORDENAÇÃO AUTOMÁTICA por Última Atualização (mais recentes primeiro)
       .sort((a, b) => {
         const dateA = new Date(a.last_updated || a.date_created);
@@ -336,11 +344,14 @@ export function ReclamacoesPage() {
   const dadosParaFiltrar = filteredReclamacoes.length > 0 ? filteredReclamacoes : reclamacoesWithAnalise;
   
   // Aplicar filtro de ciclo de vida
+  // ⚡ USAR STATUS PRÉ-CALCULADO (_lifecycleStatus)
   const dadosComLifecycleFilter = useMemo(() => {
     if (!lifecycleFilter) return dadosParaFiltrar;
 
     return dadosParaFiltrar.filter((claim: any) => {
-      const status = calcularStatusCiclo(claim);
+      // ✅ Reutilizar status já calculado
+      const status = claim._lifecycleStatus;
+      if (!status) return true;
       
       switch (lifecycleFilter) {
         case 'critical':
@@ -370,11 +381,14 @@ export function ReclamacoesPage() {
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
   
   // Calcular contadores para o filtro rápido
+  // ⚡ USAR STATUS PRÉ-CALCULADO
   const lifecycleCounts = useMemo(() => {
     const counts = { critical: 0, urgent: 0, attention: 0 };
     
     dadosParaFiltrar.forEach((claim: any) => {
-      const status = calcularStatusCiclo(claim);
+      // ✅ Reutilizar status já calculado
+      const status = claim._lifecycleStatus;
+      if (!status) return;
       
       if (status.statusCiclo === 'critica') counts.critical++;
       else if (status.statusCiclo === 'urgente') counts.urgent++;
