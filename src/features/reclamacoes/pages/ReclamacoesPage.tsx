@@ -16,6 +16,7 @@ import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesExport } from '../components/ReclamacoesExport';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
+import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronDown, X, Search } from 'lucide-react';
@@ -579,6 +580,21 @@ export function ReclamacoesPage() {
             </Button>
           </div>
         </Card>
+
+
+        {/* Alertas de Ciclo de Vida */}
+        {!isLoading && reclamacoesWithAnalise.length > 0 && (
+          <ReclamacoesLifecycleAlert 
+            reclamacoes={reclamacoesWithAnalise}
+            onExportarEmRisco={() => {
+              // Trigger export de reclamações em risco
+              toast({
+                title: 'Exportação iniciada',
+                description: 'Baixando dados das reclamações em risco...'
+              });
+            }}
+          />
+        )}
 
         {/* Stats - só mostrar se tiver dados */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (

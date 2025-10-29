@@ -10,6 +10,7 @@ import { ptBR } from 'date-fns/locale';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
 import { Button } from '@/components/ui/button';
 import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import { ReclamacaoLifecycleBadge } from './ReclamacaoLifecycleBadge';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 export type ReclamacaoRow = any;
@@ -297,7 +298,12 @@ export const reclamacoesColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('claim_id')}</span>,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-xs">{row.getValue('claim_id')}</span>
+        <ReclamacaoLifecycleBadge reclamacao={row.original} compact />
+      </div>
+    ),
   },
   {
     accessorKey: 'type',
