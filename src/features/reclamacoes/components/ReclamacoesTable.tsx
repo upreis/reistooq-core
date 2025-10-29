@@ -1,18 +1,18 @@
 /**
- * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
+ * 📋 TABELA DE RECLAMAÇÕES - COM VIRTUALIZAÇÃO
  */
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   flexRender,
   VisibilityState,
   SortingState,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,26 +27,16 @@ interface ReclamacoesTableProps {
   reclamacoes: any[];
   isLoading: boolean;
   error: string | null;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-  };
-  onPageChange: (page: number) => void;
-  onItemsPerPageChange: (items: number) => void;
   onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void;
 }
 
 export function ReclamacoesTable({ 
   reclamacoes, 
   isLoading, 
-  error, 
-  pagination, 
-  onPageChange, 
-  onItemsPerPageChange,
+  error,
   onStatusChange 
 }: ReclamacoesTableProps) {
+  const tableContainerRef = useRef<HTMLDivElement>(null);
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
@@ -78,9 +68,16 @@ export function ReclamacoesTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
+  });
+
+  // ⚡ VIRTUALIZAÇÃO - apenas renderizar linhas visíveis
+  const { rows } = table.getRowModel();
+  
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 60, // altura estimada de cada linha em pixels
+    overscan: 10, // quantidade de linhas extras para renderizar fora da tela
   });
 
   if (isLoading) {
@@ -150,101 +147,85 @@ export function ReclamacoesTable({
         </Button>
       </div>
 
-      {/* Tabela */}
-      <div className="overflow-x-auto border rounded-lg bg-card">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-card hover:bg-card">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap bg-card text-card-foreground">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => {
-                return <OptimizedTableRow key={row.id} row={row} />;
-              })
-            ) : (
-              <TableRow className="bg-card hover:bg-card">
-                <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
-                  {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Paginação */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-        <div className="flex flex-col sm:flex-row gap-2 text-sm text-muted-foreground">
-          <span className="font-medium">
-            Página {pagination.currentPage} de {pagination.totalPages}
-          </span>
-          <span className="hidden sm:inline">•</span>
-          <span>
-            Mostrando {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} até{' '}
-            {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} de{' '}
-            <strong>{pagination.totalItems}</strong> reclamações
-          </span>
+      {/* Tabela com Virtualização */}
+      <div className="border rounded-lg bg-card overflow-hidden">
+        {/* Header fixo */}
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="bg-card hover:bg-card">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="whitespace-nowrap bg-card text-card-foreground">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+          </Table>
         </div>
-        
-        <div className="flex items-center gap-2">
-          <select
-            value={pagination.itemsPerPage}
-            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-          >
-            <option value={10}>10 por página</option>
-            <option value={20}>20 por página</option>
-            <option value={50}>50 por página</option>
-            <option value={100}>100 por página</option>
-          </select>
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(1)}
-              disabled={pagination.currentPage === 1}
+
+        {/* Container com scroll virtualizado */}
+        <div
+          ref={tableContainerRef}
+          className="overflow-auto"
+          style={{ height: '600px' }}
+        >
+          {rows.length ? (
+            <div
+              style={{
+                height: `${rowVirtualizer.getTotalSize()}px`,
+                width: '100%',
+                position: 'relative',
+              }}
             >
-              Primeira
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.currentPage - 1)}
-              disabled={pagination.currentPage === 1}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.currentPage + 1)}
-              disabled={pagination.currentPage === pagination.totalPages}
-            >
-              Próxima
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.totalPages)}
-              disabled={pagination.currentPage === pagination.totalPages}
-            >
-              Última
-            </Button>
-          </div>
+              <Table>
+                <TableBody>
+                  {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                    const row = rows[virtualRow.index];
+                    return (
+                      <OptimizedTableRow 
+                        key={row.id} 
+                        row={row}
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          transform: `translateY(${virtualRow.start}px)`,
+                        }}
+                      />
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
+            </div>
+          )}
+        </div>
+
+        {/* Info do total */}
+        <div className="border-t px-4 py-3 text-sm text-muted-foreground bg-card">
+          <span className="font-medium">
+            Total: {rows.length} reclamações
+          </span>
+          {globalFilter && (
+            <span className="ml-2">
+              (filtradas de {reclamacoes.length})
+            </span>
+          )}
+          <span className="ml-2 text-xs text-muted-foreground/70">
+            • Renderizando apenas {rowVirtualizer.getVirtualItems().length} linhas visíveis
+          </span>
         </div>
       </div>
     
@@ -262,7 +243,7 @@ export function ReclamacoesTable({
 }
 
 // ⚡ COMPONENTE OTIMIZADO PARA LINHA DA TABELA (memo evita re-renders desnecessários)
-const OptimizedTableRow = memo(({ row }: { row: any }) => {
+const OptimizedTableRow = memo(({ row, style }: { row: any; style?: React.CSSProperties }) => {
   // 🎨 Memoizar cálculo de highlight (só recalcula se claim mudar)
   const highlightConfig = useMemo(() => {
     const claim = row.original;
@@ -278,6 +259,7 @@ const OptimizedTableRow = memo(({ row }: { row: any }) => {
         "bg-card text-card-foreground hover:bg-muted/50",
         highlightConfig ? highlightConfig.rowClass : ''
       )}
+      style={style}
     >
       {row.getVisibleCells().map((cell: any) => (
         <TableCell key={cell.id} className="bg-card text-card-foreground">
