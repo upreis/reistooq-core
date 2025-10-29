@@ -2489,7 +2489,10 @@ async function buscarPedidosCancelados(
                           safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id || null,
               
               // 📦 CÓDIGO DE RASTREAMENTO
-              codigo_rastreamento: safeClaimData?.return_details_v2?.results?.[0]?.tracking_number || 
+              // ✅ PRIORIZAR tracking_number buscado do endpoint /shipments/{id}
+              codigo_rastreamento: safeClaimData?.shipment_tracking?.original_tracking?.tracking_number || 
+                                  safeClaimData?.shipment_tracking?.return_tracking?.tracking_number ||
+                                  safeClaimData?.return_details_v2?.results?.[0]?.tracking_number || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.tracking_number ||
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
