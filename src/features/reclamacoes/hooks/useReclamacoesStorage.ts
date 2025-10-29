@@ -8,6 +8,7 @@ import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 const STORAGE_KEY = 'reclamacoes-data';
 const ANALISE_STORAGE_KEY = 'reclamacoes-analise-status';
+const ANOTACOES_STORAGE_KEY = 'reclamacoes-anotacoes';
 const TIMESTAMP_KEY = 'reclamacoes-last-update';
 
 interface StorageData {
@@ -41,6 +42,19 @@ export function useReclamacoesStorage() {
       }
     } catch (error) {
       console.error('Erro ao carregar status de análise:', error);
+    }
+    return {};
+  });
+
+  const [anotacoes, setAnotacoes] = useState<Record<string, string>>(() => {
+    // Carregar anotações do localStorage
+    try {
+      const stored = localStorage.getItem(ANOTACOES_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar anotações:', error);
     }
     return {};
   });
@@ -110,6 +124,17 @@ export function useReclamacoesStorage() {
     }
   }, [analiseStatus]);
 
+  // Salvar anotações no localStorage sempre que mudar
+  useEffect(() => {
+    try {
+      if (Object.keys(anotacoes).length > 0) {
+        localStorage.setItem(ANOTACOES_STORAGE_KEY, JSON.stringify(anotacoes));
+      }
+    } catch (error) {
+      console.error('Erro ao salvar anotações:', error);
+    }
+  }, [anotacoes]);
+
   // Limpar dados antigos (opcional - após 7 dias)
   const clearOldData = useCallback(() => {
     try {
@@ -134,9 +159,11 @@ export function useReclamacoesStorage() {
   const clearStorage = useCallback(() => {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(ANALISE_STORAGE_KEY);
+    localStorage.removeItem(ANOTACOES_STORAGE_KEY);
     localStorage.removeItem(TIMESTAMP_KEY);
     setDadosInMemory({});
     setAnaliseStatus({});
+    setAnotacoes({});
     console.log('🗑️ Todos os dados foram limpos');
   }, []);
 
@@ -156,11 +183,22 @@ export function useReclamacoesStorage() {
     });
   }, []);
 
+  // Salvar anotação de uma reclamação
+  const saveAnotacao = useCallback((claimId: string, anotacao: string) => {
+    setAnotacoes(prevAnotacoes => ({
+      ...prevAnotacoes,
+      [claimId]: anotacao
+    }));
+    console.log(`📝 Anotação salva para ${claimId}`);
+  }, []);
+
   return {
     dadosInMemory,
     setDadosInMemory,
     analiseStatus,
     setAnaliseStatus,
+    anotacoes,
+    saveAnotacao,
     clearOldData,
     clearStorage,
     removeReclamacao

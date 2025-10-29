@@ -18,6 +18,7 @@ import { ReclamacoesExport } from '../components/ReclamacoesExport';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
+import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
@@ -56,10 +57,16 @@ export function ReclamacoesPage() {
     setDadosInMemory,
     analiseStatus,
     setAnaliseStatus,
+    anotacoes,
+    saveAnotacao,
     clearOldData,
     clearStorage,
     removeReclamacao
   } = useReclamacoesStorage();
+
+  // Estado do modal de anotações
+  const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
+  const [selectedClaimForAnotacoes, setSelectedClaimForAnotacoes] = useState<any | null>(null);
 
   // Limpar dados antigos ao montar componente e verificar se já tem dados no storage
   React.useEffect(() => {
@@ -338,6 +345,12 @@ export function ReclamacoesPage() {
         description: `Reclamação ${claimId} foi removida com sucesso`
       });
     }
+  };
+
+  // Handler de abertura do modal de anotações
+  const handleOpenAnotacoes = (claim: any) => {
+    setSelectedClaimForAnotacoes(claim);
+    setAnotacoesModalOpen(true);
   };
 
   // Filtrar por aba ativa - usa dados filtrados se houver filtros aplicados
@@ -642,6 +655,8 @@ export function ReclamacoesPage() {
                   error={error}
                   onStatusChange={handleStatusChange}
                   onDeleteReclamacao={handleDeleteReclamacao}
+                  onOpenAnotacoes={handleOpenAnotacoes}
+                  anotacoes={anotacoes}
                 />
               </Card>
             </TabsContent>
@@ -654,11 +669,25 @@ export function ReclamacoesPage() {
                   error={error}
                   onStatusChange={handleStatusChange}
                   onDeleteReclamacao={handleDeleteReclamacao}
+                  onOpenAnotacoes={handleOpenAnotacoes}
+                  anotacoes={anotacoes}
                 />
               </Card>
             </TabsContent>
           </Tabs>
         ) : null}
+
+        {/* Modal de Anotações */}
+        {selectedClaimForAnotacoes && (
+          <ReclamacoesAnotacoesModal
+            open={anotacoesModalOpen}
+            onOpenChange={setAnotacoesModalOpen}
+            claimId={selectedClaimForAnotacoes.claim_id}
+            orderId={selectedClaimForAnotacoes.order_id}
+            anotacaoAtual={anotacoes[selectedClaimForAnotacoes.claim_id] || ''}
+            onSave={saveAnotacao}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

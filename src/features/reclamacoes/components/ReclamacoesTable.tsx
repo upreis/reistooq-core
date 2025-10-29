@@ -29,6 +29,8 @@ interface ReclamacoesTableProps {
   error: string | null;
   onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void;
   onDeleteReclamacao?: (claimId: string) => void;
+  onOpenAnotacoes?: (claim: any) => void;
+  anotacoes?: Record<string, string>;
 }
 
 export function ReclamacoesTable({ 
@@ -36,7 +38,9 @@ export function ReclamacoesTable({
   isLoading, 
   error, 
   onStatusChange,
-  onDeleteReclamacao 
+  onDeleteReclamacao,
+  onOpenAnotacoes,
+  anotacoes
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -53,7 +57,10 @@ export function ReclamacoesTable({
   };
 
   // ⚡ Memoizar colunas para evitar re-criação
-  const columns = useMemo(() => reclamacoesColumns(onStatusChange, onDeleteReclamacao), [onStatusChange, onDeleteReclamacao]);
+  const columns = useMemo(() => 
+    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes), 
+    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes]
+  );
 
   const table = useReactTable({
     data: reclamacoes,

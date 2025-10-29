@@ -4,7 +4,7 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import { Package, ArrowUpDown, Trash2 } from 'lucide-react';
+import { Package, ArrowUpDown, Trash2, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
@@ -242,7 +242,9 @@ const formatCurrency = (value: number | null, currency: string = 'BRL') => {
 
 export const reclamacoesColumns = (
   onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void,
-  onDeleteReclamacao?: (claimId: string) => void
+  onDeleteReclamacao?: (claimId: string) => void,
+  onOpenAnotacoes?: (claim: any) => void,
+  anotacoes?: Record<string, string>
 ): ColumnDef<ReclamacaoRow>[] => [
   // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA STICKY
   {
@@ -283,6 +285,34 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => <span className="text-sm">{row.getValue('empresa') || '-'}</span>,
+  },
+  // 📝 COLUNA DE ANOTAÇÕES
+  {
+    id: 'anotacoes',
+    header: () => (
+      <div className="text-center">
+        <span className="font-semibold text-xs">Anotações</span>
+      </div>
+    ),
+    cell: ({ row }) => {
+      const claimId = row.original.claim_id;
+      const hasAnotacao = anotacoes?.[claimId]?.trim().length > 0;
+      
+      return (
+        <div className="flex justify-center">
+          <Button
+            variant={hasAnotacao ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onOpenAnotacoes?.(row.original)}
+            className="h-8 w-8 p-0"
+            title={hasAnotacao ? 'Ver/Editar anotações' : 'Adicionar anotações'}
+          >
+            <FileText className={`h-4 w-4 ${hasAnotacao ? '' : 'text-muted-foreground'}`} />
+          </Button>
+        </div>
+      );
+    },
+    size: 80,
   },
   {
     accessorKey: 'claim_id',
