@@ -25,7 +25,7 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
   
   const columnGroups = {
     'Identificação': ['status_analise', 'empresa', 'claim_id', 'type', 'status', 'stage'],
-    'Recurso': ['resource_id', 'resource', 'reason_id', 'reason_name', 'reason_detail', 'reason_category'],
+    'Recurso': ['resource_id', 'resource', 'reason_name', 'reason_detail'],
     'Datas': ['date_created', 'last_updated', 'order_date_created', 'resolution_date'],
     'Cliente & Produto': ['buyer_nickname', 'order_item_title', 'order_item_quantity', 'order_item_unit_price', 'order_item_seller_sku'],
     'Valores': ['amount_value', 'order_total', 'impacto_financeiro'],
@@ -49,7 +49,7 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
         column.toggleVisibility(true);
       }
       // Escondidos por padrão
-      else if (['reason_id', 'reason_category', 'site_id', 'resource_id'].includes(column.id)) {
+      else if (['site_id', 'resource_id'].includes(column.id)) {
         column.toggleVisibility(false);
       }
       // Resto visível
