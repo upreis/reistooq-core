@@ -1,9 +1,10 @@
 /**
  * 🎯 BARRA DE FILTROS CASCATA PARA RECLAMAÇÕES
  * Sistema de filtros interativos estilo Excel - mostra apenas opções disponíveis
+ * OTIMIZADO: Usa memoização agressiva para evitar recálculos desnecessários
  */
 
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useCallback, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -72,8 +73,8 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     impactoFinanceiro: ''
   });
 
-  // Função de tradução inteligente por tipo de campo
-  const translate = (value: string, fieldType: string): string => {
+  // Função de tradução inteligente por tipo de campo (memoizada)
+  const translate = useCallback((value: string, fieldType: string): string => {
     if (!value) return value;
     
     switch (fieldType) {
@@ -93,187 +94,192 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
       default:
         return value;
     }
-  };
+  }, []);
 
-  // Aplicar filtros cascata
+  // 🚀 OTIMIZAÇÃO: Aplicar todos os filtros de uma vez
   const filteredData = useMemo(() => {
-    let result = [...reclamacoes];
-    
-    if (filters.empresa) {
-      result = result.filter(r => r.empresa === filters.empresa);
-    }
-    if (filters.tipoReclamacao) {
-      result = result.filter(r => r.type === filters.tipoReclamacao);
-    }
-    if (filters.statusReclamacao) {
-      result = result.filter(r => r.status === filters.statusReclamacao);
-    }
-    if (filters.estagioReclamacao) {
-      result = result.filter(r => r.stage === filters.estagioReclamacao);
-    }
-    if (filters.nomeRazao) {
-      result = result.filter(r => r.reason_id === filters.nomeRazao);
-    }
-    if (filters.detalheRazao) {
-      result = result.filter(r => r.reason_category === filters.detalheRazao);
-    }
-    if (filters.razaoResolucao) {
-      result = result.filter(r => r.resolution_reason === filters.razaoResolucao);
-    }
-    if (filters.statusVenda) {
-      result = result.filter(r => r.order_status === filters.statusVenda);
-    }
-    if (filters.impactoFinanceiro) {
-      const [min, max] = filters.impactoFinanceiro.split('-').map(Number);
-      result = result.filter(r => {
+    return reclamacoes.filter(r => {
+      if (filters.empresa && r.empresa !== filters.empresa) return false;
+      if (filters.tipoReclamacao && r.type !== filters.tipoReclamacao) return false;
+      if (filters.statusReclamacao && r.status !== filters.statusReclamacao) return false;
+      if (filters.estagioReclamacao && r.stage !== filters.estagioReclamacao) return false;
+      if (filters.nomeRazao && r.reason_id !== filters.nomeRazao) return false;
+      if (filters.detalheRazao && r.reason_category !== filters.detalheRazao) return false;
+      if (filters.razaoResolucao && r.resolution_reason !== filters.razaoResolucao) return false;
+      if (filters.statusVenda && r.order_status !== filters.statusVenda) return false;
+      
+      if (filters.impactoFinanceiro) {
+        const [min, max] = filters.impactoFinanceiro.split('-').map(Number);
         const valor = Math.abs(r.transaction_amount || 0);
-        if (max) return valor >= min && valor <= max;
-        return valor >= min;
-      });
-    }
-    
-    return result;
+        if (max && (valor < min || valor > max)) return false;
+        if (!max && valor < min) return false;
+      }
+      
+      return true;
+    });
   }, [reclamacoes, filters]);
 
-  // Notificar mudanças nos dados filtrados
-  useMemo(() => {
+  // Notificar mudanças nos dados filtrados (com useEffect para evitar warns)
+  useEffect(() => {
     onFilteredDataChange?.(filteredData);
   }, [filteredData, onFilteredDataChange]);
 
-  // Extrair opções únicas disponíveis (baseado nos dados filtrados)
-  const getUniqueOptions = (field: keyof typeof filters, dataField: string) => {
-    const currentFilters = { ...filters };
-    delete currentFilters[field];
-    
-    let data = [...reclamacoes];
-    Object.entries(currentFilters).forEach(([key, value]) => {
-      if (!value) return;
-      
-      if (key === 'empresa') data = data.filter(r => r.empresa === value);
-      else if (key === 'tipoReclamacao') data = data.filter(r => r.type === value);
-      else if (key === 'statusReclamacao') data = data.filter(r => r.status === value);
-      else if (key === 'estagioReclamacao') data = data.filter(r => r.stage === value);
-      else if (key === 'nomeRazao') data = data.filter(r => r.reason_id === value);
-      else if (key === 'detalheRazao') data = data.filter(r => r.reason_category === value);
-      else if (key === 'razaoResolucao') data = data.filter(r => r.resolution_reason === value);
-      else if (key === 'statusVenda') data = data.filter(r => r.order_status === value);
-      else if (key === 'impactoFinanceiro') {
-        const [min, max] = value.split('-').map(Number);
-        data = data.filter(r => {
-          const valor = Math.abs(r.transaction_amount || 0);
-          if (max) return valor >= min && valor <= max;
-          return valor >= min;
-        });
-      }
-    });
-    
-    const options = [...new Set(data.map(r => r[dataField]).filter(Boolean))];
-    const counts: Record<string, number> = {};
-    
-    data.forEach(r => {
-      const val = r[dataField];
-      if (val) counts[val] = (counts[val] || 0) + 1;
-    });
-    
-    return options.map(opt => ({
-      value: opt,
-      label: field === 'empresa' ? opt : translate(opt, dataField),
-      count: counts[opt] || 0
-    })).sort((a, b) => b.count - a.count);
-  };
 
-  const impactoFinanceiroOptions = [
-    { value: '0-100', label: 'R$ 0 - 100', count: 0 },
-    { value: '100-500', label: 'R$ 100 - 500', count: 0 },
-    { value: '500-1000', label: 'R$ 500 - 1.000', count: 0 },
-    { value: '1000-5000', label: 'R$ 1.000 - 5.000', count: 0 },
-    { value: '5000', label: 'Acima de R$ 5.000', count: 0 }
-  ].map(opt => {
-    // Recalcular contadores baseado nos dados já filtrados (exceto impactoFinanceiro)
-    const currentFilters = { ...filters };
-    delete currentFilters.impactoFinanceiro;
+  // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções uma única vez por combinação de filtros
+  const optionsCache = useMemo(() => {
+    const cache: Record<string, { value: string; label: string; count: number }[]> = {};
     
-    let data = [...reclamacoes];
-    Object.entries(currentFilters).forEach(([key, value]) => {
-      if (!value) return;
+    // Função helper para calcular opções de um campo específico
+    const calculateOptions = (field: keyof FilterState, dataField: string) => {
+      // Criar filtros temporários excluindo o campo atual
+      const tempFilters = { ...filters };
+      delete tempFilters[field];
       
-      if (key === 'empresa') data = data.filter(r => r.empresa === value);
-      else if (key === 'tipoReclamacao') data = data.filter(r => r.type === value);
-      else if (key === 'statusReclamacao') data = data.filter(r => r.status === value);
-      else if (key === 'estagioReclamacao') data = data.filter(r => r.stage === value);
-      else if (key === 'nomeRazao') data = data.filter(r => r.reason_id === value);
-      else if (key === 'detalheRazao') data = data.filter(r => r.reason_category === value);
-      else if (key === 'razaoResolucao') data = data.filter(r => r.resolution_reason === value);
-      else if (key === 'statusVenda') data = data.filter(r => r.order_status === value);
+      // Aplicar filtros temporários
+      let data = reclamacoes.filter(r => {
+        if (tempFilters.empresa && r.empresa !== tempFilters.empresa) return false;
+        if (tempFilters.tipoReclamacao && r.type !== tempFilters.tipoReclamacao) return false;
+        if (tempFilters.statusReclamacao && r.status !== tempFilters.statusReclamacao) return false;
+        if (tempFilters.estagioReclamacao && r.stage !== tempFilters.estagioReclamacao) return false;
+        if (tempFilters.nomeRazao && r.reason_id !== tempFilters.nomeRazao) return false;
+        if (tempFilters.detalheRazao && r.reason_category !== tempFilters.detalheRazao) return false;
+        if (tempFilters.razaoResolucao && r.resolution_reason !== tempFilters.razaoResolucao) return false;
+        if (tempFilters.statusVenda && r.order_status !== tempFilters.statusVenda) return false;
+        
+        if (tempFilters.impactoFinanceiro) {
+          const [min, max] = tempFilters.impactoFinanceiro.split('-').map(Number);
+          const valor = Math.abs(r.transaction_amount || 0);
+          if (max && (valor < min || valor > max)) return false;
+          if (!max && valor < min) return false;
+        }
+        
+        return true;
+      });
+      
+      // Contar ocorrências
+      const counts: Record<string, number> = {};
+      data.forEach(r => {
+        const val = r[dataField];
+        if (val) counts[val] = (counts[val] || 0) + 1;
+      });
+      
+      // Criar opções únicas
+      return Object.entries(counts)
+        .map(([value, count]) => ({
+          value,
+          label: field === 'empresa' ? value : translate(value, dataField),
+          count
+        }))
+        .sort((a, b) => b.count - a.count);
+    };
+    
+    // Calcular para cada filtro
+    cache.empresa = calculateOptions('empresa', 'empresa');
+    cache.tipoReclamacao = calculateOptions('tipoReclamacao', 'type');
+    cache.statusReclamacao = calculateOptions('statusReclamacao', 'status');
+    cache.estagioReclamacao = calculateOptions('estagioReclamacao', 'stage');
+    cache.nomeRazao = calculateOptions('nomeRazao', 'reason_id');
+    cache.detalheRazao = calculateOptions('detalheRazao', 'reason_category');
+    cache.razaoResolucao = calculateOptions('razaoResolucao', 'resolution_reason');
+    cache.statusVenda = calculateOptions('statusVenda', 'order_status');
+    
+    return cache;
+  }, [reclamacoes, filters, translate]);
+
+  // 🚀 OTIMIZAÇÃO: Calcular opções de impacto financeiro apenas uma vez
+  const impactoFinanceiroOptions = useMemo(() => {
+    const ranges = [
+      { value: '0-100', label: 'R$ 0 - 100', min: 0, max: 100 },
+      { value: '100-500', label: 'R$ 100 - 500', min: 100, max: 500 },
+      { value: '500-1000', label: 'R$ 500 - 1.000', min: 500, max: 1000 },
+      { value: '1000-5000', label: 'R$ 1.000 - 5.000', min: 1000, max: 5000 },
+      { value: '5000', label: 'Acima de R$ 5.000', min: 5000, max: null }
+    ];
+    
+    // Filtrar dados excluindo impactoFinanceiro
+    const tempFilters = { ...filters };
+    delete tempFilters.impactoFinanceiro;
+    
+    const data = reclamacoes.filter(r => {
+      if (tempFilters.empresa && r.empresa !== tempFilters.empresa) return false;
+      if (tempFilters.tipoReclamacao && r.type !== tempFilters.tipoReclamacao) return false;
+      if (tempFilters.statusReclamacao && r.status !== tempFilters.statusReclamacao) return false;
+      if (tempFilters.estagioReclamacao && r.stage !== tempFilters.estagioReclamacao) return false;
+      if (tempFilters.nomeRazao && r.reason_id !== tempFilters.nomeRazao) return false;
+      if (tempFilters.detalheRazao && r.reason_category !== tempFilters.detalheRazao) return false;
+      if (tempFilters.razaoResolucao && r.resolution_reason !== tempFilters.razaoResolucao) return false;
+      if (tempFilters.statusVenda && r.order_status !== tempFilters.statusVenda) return false;
+      return true;
     });
     
-    return {
-      ...opt,
+    return ranges.map(range => ({
+      ...range,
       count: data.filter(r => {
         const valor = Math.abs(r.transaction_amount || 0);
-        const [min, max] = opt.value.split('-').map(Number);
-        if (max) return valor >= min && valor <= max;
-        return valor >= min;
+        if (range.max) return valor >= range.min && valor <= range.max;
+        return valor >= range.min;
       }).length
-    };
-  });
+    }));
+  }, [reclamacoes, filters]);
 
-  const filterConfigs = [
+
+  // 🚀 Configurações dos filtros usando cache de opções
+  const filterConfigs = useMemo(() => [
     {
       key: 'empresa' as const,
       label: 'Empresa',
       icon: Building2,
       dataField: 'empresa',
-      options: getUniqueOptions('empresa', 'empresa')
+      options: optionsCache.empresa || []
     },
     {
       key: 'tipoReclamacao' as const,
       label: 'Tipo',
       icon: FileText,
       dataField: 'type',
-      options: getUniqueOptions('tipoReclamacao', 'type')
+      options: optionsCache.tipoReclamacao || []
     },
     {
       key: 'statusReclamacao' as const,
       label: 'Status',
       icon: AlertCircle,
       dataField: 'status',
-      options: getUniqueOptions('statusReclamacao', 'status')
+      options: optionsCache.statusReclamacao || []
     },
     {
       key: 'estagioReclamacao' as const,
       label: 'Estágio',
       icon: GitBranch,
       dataField: 'stage',
-      options: getUniqueOptions('estagioReclamacao', 'stage')
+      options: optionsCache.estagioReclamacao || []
     },
     {
       key: 'nomeRazao' as const,
       label: 'Nome da Razão',
       icon: Tag,
       dataField: 'reason_id',
-      options: getUniqueOptions('nomeRazao', 'reason_id')
+      options: optionsCache.nomeRazao || []
     },
     {
       key: 'detalheRazao' as const,
       label: 'Detalhe',
       icon: Info,
       dataField: 'reason_category',
-      options: getUniqueOptions('detalheRazao', 'reason_category')
+      options: optionsCache.detalheRazao || []
     },
     {
       key: 'razaoResolucao' as const,
       label: 'Resolução',
       icon: CheckCircle,
       dataField: 'resolution_reason',
-      options: getUniqueOptions('razaoResolucao', 'resolution_reason')
+      options: optionsCache.razaoResolucao || []
     },
     {
       key: 'statusVenda' as const,
       label: 'Status Venda',
       icon: ShoppingCart,
       dataField: 'order_status',
-      options: getUniqueOptions('statusVenda', 'order_status')
+      options: optionsCache.statusVenda || []
     },
     {
       key: 'impactoFinanceiro' as const,
@@ -282,11 +288,13 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
       dataField: 'transaction_amount',
       options: impactoFinanceiroOptions
     }
-  ];
+  ], [optionsCache, impactoFinanceiroOptions]);
 
-  const activeFiltersCount = Object.values(filters).filter(v => v !== '').length;
+  const activeFiltersCount = useMemo(() => 
+    Object.values(filters).filter(v => v !== '').length
+  , [filters]);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       empresa: '',
       tipoReclamacao: '',
@@ -298,7 +306,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
       statusVenda: '',
       impactoFinanceiro: ''
     });
-  };
+  }, []);
 
   return (
     <Card className={cn("sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
