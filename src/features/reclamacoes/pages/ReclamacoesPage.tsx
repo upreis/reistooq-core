@@ -26,6 +26,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { StatusAnalise, STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +39,7 @@ export function ReclamacoesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(3600000); // 1 hora em ms (padrão)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   
@@ -129,9 +131,12 @@ export function ReclamacoesPage() {
     isLoadingIncremental 
   } = useReclamacoesIncremental();
 
-  // 🔄 Auto-refresh INCREMENTAL a cada 30 segundos
+  // 🔄 Auto-refresh INCREMENTAL configurável (mínimo 1 hora)
   React.useEffect(() => {
     if (!autoRefreshEnabled || !shouldFetch) return;
+    
+    const intervalMs = Math.max(autoRefreshInterval, 3600000); // Mínimo de 1 hora
+    console.log(`🔄 Auto-refresh ativo (${intervalMs / 60000} minutos)`);
     
     const interval = setInterval(async () => {
       console.log('🔄 Auto-refresh incremental - buscando atualizações...');
@@ -204,79 +209,82 @@ export function ReclamacoesPage() {
           return newData;
         });
       }
-    }, 30000);
+    }, intervalMs);
 
     return () => {
       clearInterval(interval);
       console.log('🛑 Auto-refresh desativado');
     };
-  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, fetchIncremental, setDadosInMemory]);
+  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, fetchIncremental, setDadosInMemory, autoRefreshInterval]);
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   // ✅ USAR TODOS OS DADOS (allRawClaims) não apenas a página atual
+  // ⚡ COM DEBOUNCE para evitar múltiplas gravações
   React.useEffect(() => {
     if (allRawClaims.length > 0) {
-      console.log(`💾 Salvando ${allRawClaims.length} reclamações no localStorage...`);
+      console.log(`💾 Preparando para salvar ${allRawClaims.length} reclamações...`);
       
-      setDadosInMemory(prevData => {
-        const newData = { ...prevData };
-        const agora = new Date().toISOString();
-        const idsBuscaAtual = new Set<string>();
+      // Debounce: esperar 500ms antes de salvar
+      const timeoutId = setTimeout(() => {
+        setDadosInMemory(prevData => {
+          const newData = { ...prevData };
+          const agora = new Date().toISOString();
+          const idsBuscaAtual = new Set<string>();
 
-        allRawClaims.forEach((claim: any) => {
-          const claimId = claim.claim_id;
-          idsBuscaAtual.add(claimId);
-          const existing = newData[claimId];
+          allRawClaims.forEach((claim: any) => {
+            const claimId = claim.claim_id;
+            idsBuscaAtual.add(claimId);
+            const existing = newData[claimId];
 
-          if (!existing) {
-            // Novo registro
-            newData[claimId] = {
-              ...claim,
-              primeira_vez_visto: agora,
-              ultima_busca: agora,
-              campos_atualizados: [],
-              snapshot_anterior: null
-            };
-          } else {
-            // Registro existente - detectar mudanças
-            const camposAtualizados = [];
-            const camposParaMonitorar = [
-              'status', 'stage', 'last_updated', 'resolution', 
-              'benefited', 'resolution_reason', 'messages_count'
-            ];
+            if (!existing) {
+              newData[claimId] = {
+                ...claim,
+                primeira_vez_visto: agora,
+                ultima_busca: agora,
+                campos_atualizados: [],
+                snapshot_anterior: null
+              };
+            } else {
+              const camposAtualizados = [];
+              const camposParaMonitorar = [
+                'status', 'stage', 'last_updated', 'resolution', 
+                'benefited', 'resolution_reason', 'messages_count'
+              ];
 
-            for (const campo of camposParaMonitorar) {
-              if (claim[campo] !== existing[campo]) {
-                camposAtualizados.push({
-                  campo,
-                  valor_anterior: existing[campo],
-                  valor_novo: claim[campo],
-                  data_mudanca: agora
-                });
+              for (const campo of camposParaMonitorar) {
+                if (claim[campo] !== existing[campo]) {
+                  camposAtualizados.push({
+                    campo,
+                    valor_anterior: existing[campo],
+                    valor_novo: claim[campo],
+                    data_mudanca: agora
+                  });
+                }
               }
+
+              newData[claimId] = {
+                ...claim,
+                primeira_vez_visto: existing.primeira_vez_visto,
+                ultima_busca: agora,
+                campos_atualizados: camposAtualizados.length > 0 
+                  ? camposAtualizados 
+                  : (existing.campos_atualizados || []),
+                snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
+                ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
+              };
             }
+          });
 
-            newData[claimId] = {
-              ...claim,
-              primeira_vez_visto: existing.primeira_vez_visto,
-              ultima_busca: agora, // ✅ Marca quando foi visto pela última vez
-              campos_atualizados: camposAtualizados.length > 0 
-                ? camposAtualizados 
-                : (existing.campos_atualizados || []),
-              snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
-              ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
-            };
-          }
+          console.log(`✅ Salvamento concluído: ${Object.keys(newData).length} registros`);
+          console.log(`📋 Busca atual: ${idsBuscaAtual.size} | 📚 Total histórico: ${Object.keys(newData).length}`);
+          
+          return newData;
         });
+      }, 500);
 
-        console.log(`✅ Total salvo no localStorage: ${Object.keys(newData).length} registros`);
-        console.log(`📋 Registros da busca atual: ${idsBuscaAtual.size}`);
-        console.log(`📚 Total de registros históricos: ${Object.keys(newData).length}`);
-        
-        return newData;
-      });
+      return () => clearTimeout(timeoutId);
     }
-  }, [allRawClaims]); // ✅ REMOVIDO setDadosInMemory das dependências
+  }, [allRawClaims]);
 
   // Converter dados in-memory para array e aplicar análise
   const reclamacoesWithAnalise = useMemo(() => {
@@ -456,17 +464,38 @@ export function ReclamacoesPage() {
             </p>
           </div>
           <div className="flex items-center gap-4">
-            {/* Toggle Auto-Refresh */}
-            <div className="flex items-center gap-2">
-              <Switch
-                id="auto-refresh"
-                checked={autoRefreshEnabled}
-                onCheckedChange={setAutoRefreshEnabled}
-                disabled={!shouldFetch}
-              />
-              <Label htmlFor="auto-refresh" className="text-sm cursor-pointer">
-                Auto-refresh (30s)
-              </Label>
+            {/* Toggle Auto-Refresh com configuração de intervalo */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="auto-refresh"
+                  checked={autoRefreshEnabled}
+                  onCheckedChange={setAutoRefreshEnabled}
+                  disabled={!shouldFetch}
+                />
+                <Label htmlFor="auto-refresh" className="text-sm cursor-pointer">
+                  Auto-refresh
+                </Label>
+              </div>
+              
+              {autoRefreshEnabled && (
+                <Select
+                  value={autoRefreshInterval.toString()}
+                  onValueChange={(value) => setAutoRefreshInterval(Number(value))}
+                >
+                  <SelectTrigger className="w-32 h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="3600000">1 hora</SelectItem>
+                    <SelectItem value="7200000">2 horas</SelectItem>
+                    <SelectItem value="14400000">4 horas</SelectItem>
+                    <SelectItem value="21600000">6 horas</SelectItem>
+                    <SelectItem value="43200000">12 horas</SelectItem>
+                    <SelectItem value="86400000">24 horas</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             
             <ReclamacoesExport 
