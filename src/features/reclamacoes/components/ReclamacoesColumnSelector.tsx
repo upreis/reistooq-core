@@ -19,13 +19,49 @@ interface ReclamacoesColumnSelectorProps {
   table: Table<any>;
 }
 
+// Mapa de tradução dos IDs das colunas para português
+const columnLabels: Record<string, string> = {
+  'status_analise': 'Análise',
+  'empresa': 'Empresa',
+  'anotacoes': 'Anotações',
+  'claim_id': 'N.º da Reclamação',
+  'type': 'Tipo de Reclamação',
+  'status': 'Status da Reclamação',
+  'stage': 'Estágio da Reclamação',
+  'resource_id': 'N.º do Recurso Origem',
+  'resource': 'Tipo do Recurso',
+  'reason_id': 'N.º da Razão',
+  'reason_name': 'Nome da Razão',
+  'reason_detail': 'Detalhe da Razão',
+  'date_created': 'Data Criação',
+  'last_updated': 'Última Atualização',
+  'order_date_created': 'Data Criação Pedido',
+  'resolution_date': 'Data Resolução',
+  'buyer_nickname': 'Apelido Comprador',
+  'order_item_title': 'Título Item',
+  'order_item_quantity': 'Quantidade',
+  'order_item_unit_price': 'Preço Unitário',
+  'order_item_seller_sku': 'SKU',
+  'amount_value': 'Valor Reclamado',
+  'order_total': 'Total Pedido',
+  'impacto_financeiro': 'Impacto Financeiro',
+  'resolution_benefited': 'Beneficiado',
+  'resolution_reason': 'Razão Resolução',
+  'site_id': 'Site ID',
+  'tem_trocas': 'Tem Trocas',
+  'tem_mediacao': 'Tem Mediação',
+  'order_id': 'N.º Pedido',
+  'order_status': 'Status Pedido',
+  'actions': 'Ações'
+};
+
 export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorProps) {
   const allColumns = table.getAllLeafColumns();
   const visibleColumns = allColumns.filter(col => col.getIsVisible());
   
   const columnGroups = {
-    'Identificação': ['status_analise', 'empresa', 'claim_id', 'type', 'status', 'stage'],
-    'Recurso': ['resource_id', 'resource', 'reason_name', 'reason_detail'],
+    'Identificação': ['status_analise', 'empresa', 'anotacoes', 'claim_id', 'type', 'status', 'stage'],
+    'Recurso': ['resource_id', 'resource', 'reason_id', 'reason_name', 'reason_detail'],
     'Datas': ['date_created', 'last_updated', 'order_date_created', 'resolution_date'],
     'Cliente & Produto': ['buyer_nickname', 'order_item_title', 'order_item_quantity', 'order_item_unit_price', 'order_item_seller_sku'],
     'Valores': ['amount_value', 'order_total', 'impacto_financeiro'],
@@ -124,9 +160,8 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
                 {groupName}
               </DropdownMenuLabel>
               {groupColumns.map((column) => {
-                const columnTitle = typeof column.columnDef.header === 'function' 
-                  ? column.id 
-                  : String(column.columnDef.header || column.id);
+                // Usar mapa de tradução para exibir nome em português
+                const columnTitle = columnLabels[column.id] || column.id;
                 
                 const isFixed = column.id === 'status_analise' || column.id === 'actions';
                 
