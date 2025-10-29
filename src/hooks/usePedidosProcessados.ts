@@ -5,6 +5,7 @@
 
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { withRetry } from '@/utils/apiRetry';
 import { SimpleBaixaService } from '@/services/SimpleBaixaService';
 import { Pedido } from '@/types/pedido';
 import { buildIdUnico } from '@/utils/idUnico';
@@ -39,7 +40,16 @@ export function usePedidosProcessados() {
       
       for (const idUnico of idsUnicos) {
         try {
-          const { data } = await supabase.rpc('hv_exists', { p_id_unico: idUnico });
+          // ✅ ADICIONAR RETRY em chamadas RPC
+          const { data } = await withRetry(
+            async () => {
+              const result = await supabase.rpc('hv_exists', { p_id_unico: idUnico });
+              if (result.error) throw result.error;
+              return result;
+            },
+            { maxRetries: 2, retryDelay: 500 }
+          ) as any;
+          
           resultados.set(idUnico, Boolean(data));
         } catch {
           resultados.set(idUnico, false);

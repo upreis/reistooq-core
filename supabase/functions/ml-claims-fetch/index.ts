@@ -4,6 +4,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+import { fetchWithRetry } from '../_shared/retryUtils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,9 +49,9 @@ Deno.serve(async (req) => {
 
     console.log('[ml-claims-fetch] Buscando claims', { accountId, sellerId, filters });
 
-    // Buscar token ML
+    // ✅ Buscar token ML COM RETRY
     const tokenUrl = `${supabaseUrl}/functions/v1/integrations-get-secret`;
-    const tokenRes = await fetch(tokenUrl, {
+    const tokenRes = await fetchWithRetry(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
         integration_account_id: accountId,
         provider: 'mercadolivre'
       })
-    });
+    }, { maxRetries: 2, retryDelay: 500 });
 
     if (!tokenRes.ok) {
       throw new Error('Token ML indisponível');
@@ -102,9 +103,10 @@ Deno.serve(async (req) => {
     
     console.log('[ml-claims-fetch] Buscando claims da API ML', { url: claimsUrl });
 
-    const claimsRes = await fetch(claimsUrl, {
+    // ✅ Buscar claims COM RETRY (ML API pode ter rate limiting)
+    const claimsRes = await fetchWithRetry(claimsUrl, {
       headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+    }, { maxRetries: 3, retryDelay: 1000 });
 
     if (!claimsRes.ok) {
       const errorText = await claimsRes.text();
