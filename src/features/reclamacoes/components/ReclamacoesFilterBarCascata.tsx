@@ -41,7 +41,7 @@ import {
 interface ReclamacoesFilterBarCascataProps {
   reclamacoes: any[];
   className?: string;
-  // ✅ FASE 4.1: Removido onFilteredDataChange - filtros são apenas visuais
+  onFilteredDataChange?: (filteredData: any[]) => void;
 }
 
 interface FilterState {
@@ -58,7 +58,8 @@ interface FilterState {
 
 export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps>(({ 
   reclamacoes,
-  className
+  className,
+  onFilteredDataChange
 }) => {
   const [filters, setFilters] = useState<FilterState>({
     empresa: '',
@@ -125,8 +126,12 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     });
   }, [reclamacoes, filters]);
 
-  // ✅ FASE 4.1: Filtros são APENAS VISUAIS - não propagam mudanças
-  // Removido sistema de callback para eliminar loops de re-render
+  // Propagar dados filtrados para componente pai
+  useEffect(() => {
+    if (onFilteredDataChange) {
+      onFilteredDataChange(filteredData);
+    }
+  }, [filteredData, onFilteredDataChange]);
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam

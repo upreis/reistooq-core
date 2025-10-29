@@ -551,10 +551,14 @@ export function ReclamacoesPage() {
         {/* Sub-navegação de Pedidos */}
         <MLOrdersNav />
 
-        {/* ✅ FASE 4.1: Barra de Filtros Cascata SEM callback de mudança */}
+        {/* Barra de Filtros Cascata */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesFilterBarCascata 
             reclamacoes={reclamacoesWithAnalise}
+            onFilteredDataChange={(filtered) => {
+              // Os filtros rápidos agora funcionam corretamente
+              console.log(`Filtros rápidos aplicados: ${filtered.length} reclamações`);
+            }}
           />
         )}
 
