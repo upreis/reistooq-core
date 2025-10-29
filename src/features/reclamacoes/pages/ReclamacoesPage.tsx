@@ -303,25 +303,15 @@ export function ReclamacoesPage() {
 
   // Filtrar por aba ativa
   const reclamacoesAtivas = useMemo(() => {
-    // ✅ CONSIDERA ATIVA se: status ML ativo OU status análise é ativo
-    return reclamacoesWithAnalise.filter((claim: any) => {
-      const statusML = claim.status?.toLowerCase() || '';
-      const isMLActive = !['closed', 'canceled', 'finalized'].includes(statusML);
-      const isAnaliseActive = ACTIVE_STATUSES.includes(claim.status_analise);
-      
-      return isMLActive || isAnaliseActive;
-    });
+    return reclamacoesWithAnalise.filter((claim: any) => 
+      ACTIVE_STATUSES.includes(claim.status_analise)
+    );
   }, [reclamacoesWithAnalise]);
 
   const reclamacoesHistorico = useMemo(() => {
-    // ✅ CONSIDERA HISTÓRICO se: status ML fechado E status análise NÃO é ativo
-    return reclamacoesWithAnalise.filter((claim: any) => {
-      const statusML = claim.status?.toLowerCase() || '';
-      const isMLClosed = ['closed', 'canceled', 'finalized'].includes(statusML);
-      const isAnaliseActive = ACTIVE_STATUSES.includes(claim.status_analise);
-      
-      return isMLClosed && !isAnaliseActive;
-    });
+    return reclamacoesWithAnalise.filter((claim: any) => 
+      HISTORIC_STATUSES.includes(claim.status_analise)
+    );
   }, [reclamacoesWithAnalise]);
 
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
