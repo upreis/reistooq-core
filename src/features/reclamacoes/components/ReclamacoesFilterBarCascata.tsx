@@ -121,6 +121,8 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
 
   // ⚡ DEBOUNCE: Notificar mudanças nos dados filtrados com delay de 300ms
   const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const filteredDataRef = useRef(filteredData);
+  filteredDataRef.current = filteredData;
   
   useEffect(() => {
     // Limpar timer anterior
@@ -130,7 +132,9 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     
     // Agendar nova notificação
     debounceTimerRef.current = setTimeout(() => {
-      onFilteredDataChange?.(filteredData);
+      if (onFilteredDataChange) {
+        onFilteredDataChange(filteredDataRef.current);
+      }
     }, 300); // 300ms de delay
     
     // Cleanup
@@ -139,7 +143,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filteredData, onFilteredDataChange]);
+  }, [filteredData]); // Remover onFilteredDataChange das dependências
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam
