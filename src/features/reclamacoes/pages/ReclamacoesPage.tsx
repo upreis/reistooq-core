@@ -43,6 +43,7 @@ export function ReclamacoesPage() {
   const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(3600000); // 1 hora em ms (padrão)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
+  const [filteredReclamacoes, setFilteredReclamacoes] = useState<any[]>([]);
   
   
   // 💾 PERSISTÊNCIA COM LOCALSTORAGE
@@ -327,18 +328,20 @@ export function ReclamacoesPage() {
     }
   };
 
-  // Filtrar por aba ativa
+  // Filtrar por aba ativa - usa dados filtrados se houver filtros aplicados
+  const dadosParaFiltrar = filteredReclamacoes.length > 0 ? filteredReclamacoes : reclamacoesWithAnalise;
+  
   const reclamacoesAtivas = useMemo(() => {
-    return reclamacoesWithAnalise.filter((claim: any) => 
+    return dadosParaFiltrar.filter((claim: any) => 
       ACTIVE_STATUSES.includes(claim.status_analise)
     );
-  }, [reclamacoesWithAnalise]);
+  }, [dadosParaFiltrar]);
 
   const reclamacoesHistorico = useMemo(() => {
-    return reclamacoesWithAnalise.filter((claim: any) => 
+    return dadosParaFiltrar.filter((claim: any) => 
       HISTORIC_STATUSES.includes(claim.status_analise)
     );
-  }, [reclamacoesWithAnalise]);
+  }, [dadosParaFiltrar]);
 
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
 
@@ -446,6 +449,7 @@ export function ReclamacoesPage() {
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesFilterBarCascata 
             reclamacoes={reclamacoesWithAnalise}
+            onFilteredDataChange={setFilteredReclamacoes}
           />
         )}
 
