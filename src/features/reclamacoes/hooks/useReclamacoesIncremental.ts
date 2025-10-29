@@ -6,6 +6,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { withRetry } from '@/utils/apiRetry';
 
 interface IncrementalFetchOptions {
   selectedAccountIds: string[];
@@ -51,11 +52,18 @@ export function useReclamacoesIncremental() {
     try {
       setIsLoadingIncremental(true);
 
-      // Buscar dados das contas
-      const { data: accountsData, error: accountsError } = await supabase
-        .from('integration_accounts')
-        .select('id, account_identifier, name')
-        .in('id', selectedAccountIds);
+      // ✅ Buscar dados das contas COM RETRY
+      const accountsResult = await withRetry(
+        async () => {
+          return await supabase
+            .from('integration_accounts')
+            .select('id, account_identifier, name')
+            .in('id', selectedAccountIds);
+        },
+        { maxRetries: 3 }
+      );
+      
+      const { data: accountsData, error: accountsError } = accountsResult as any;
 
       if (accountsError || !accountsData || accountsData.length === 0) {
         throw new Error('Não foi possível obter informações das contas');
@@ -67,22 +75,28 @@ export function useReclamacoesIncremental() {
       for (const account of accountsData) {
         if (!account.account_identifier) continue;
 
-        // ✅ CORREÇÃO: Edge function não suporta last_updated_from
-        // Buscar sempre os 50 mais recentes e filtrar no cliente
-        const { data, error: functionError } = await supabase.functions.invoke('ml-claims-fetch', {
-          body: {
-            accountId: account.id,
-            sellerId: account.account_identifier,
-            filters: {
-              status: filters.status,
-              type: filters.type,
-              date_from: filters.date_from,
-              date_to: filters.date_to
-            },
-            limit: 50,
-            offset: 0
-          }
-        });
+        // ✅ Edge function COM RETRY para evitar falhas de rede
+        const functionResult = await withRetry(
+          async () => {
+            return await supabase.functions.invoke('ml-claims-fetch', {
+              body: {
+                accountId: account.id,
+                sellerId: account.account_identifier,
+                filters: {
+                  status: filters.status,
+                  type: filters.type,
+                  date_from: filters.date_from,
+                  date_to: filters.date_to
+                },
+                limit: 50,
+                offset: 0
+              }
+            });
+          },
+          { maxRetries: 3, retryDelay: 1000 }
+        );
+        
+        const { data, error: functionError } = functionResult as any;
 
         if (functionError) {
           console.error('[Incremental] Erro na edge function:', functionError);
