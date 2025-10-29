@@ -480,35 +480,34 @@ export function ReclamacoesPage() {
                   className="text-sm cursor-pointer whitespace-nowrap"
                   title={!shouldFetch ? "Clique em 'Aplicar Filtros' primeiro" : ""}
                 >
-                  Auto-refresh {!shouldFetch && "(inativo)"}
+                  Auto-refresh
                 </Label>
               </div>
               
-              {autoRefreshEnabled && (
-                <div className="flex items-center gap-2 border-l pl-3">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">A cada:</span>
-                  <Select
-                    value={autoRefreshInterval.toString()}
-                    onValueChange={(value) => {
-                      const newInterval = Number(value);
-                      console.log(`⏱️ Intervalo alterado: ${newInterval / 60000} minutos`);
-                      setAutoRefreshInterval(newInterval);
-                    }}
-                  >
-                    <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
-                      <SelectValue placeholder="Selecione" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border shadow-lg z-[100]">
-                      <SelectItem value="3600000">1 hora</SelectItem>
-                      <SelectItem value="7200000">2 horas</SelectItem>
-                      <SelectItem value="14400000">4 horas</SelectItem>
-                      <SelectItem value="21600000">6 horas</SelectItem>
-                      <SelectItem value="43200000">12 horas</SelectItem>
-                      <SelectItem value="86400000">24 horas</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div className="flex items-center gap-2 border-l pl-3">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">A cada:</span>
+                <Select
+                  value={autoRefreshInterval.toString()}
+                  onValueChange={(value) => {
+                    const newInterval = Number(value);
+                    console.log(`⏱️ Intervalo alterado: ${newInterval / 60000} minutos (${newInterval / 3600000}h)`);
+                    setAutoRefreshInterval(newInterval);
+                  }}
+                  disabled={!autoRefreshEnabled}
+                >
+                  <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border shadow-lg z-[100]">
+                    <SelectItem value="3600000">1 hora</SelectItem>
+                    <SelectItem value="7200000">2 horas</SelectItem>
+                    <SelectItem value="14400000">4 horas</SelectItem>
+                    <SelectItem value="21600000">6 horas</SelectItem>
+                    <SelectItem value="43200000">12 horas</SelectItem>
+                    <SelectItem value="86400000">24 horas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <ReclamacoesExport 
