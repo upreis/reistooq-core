@@ -28,6 +28,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import {
+  traduzirStatusDevolucao,
+  traduzirTipoClaim,
+  traduzirStage,
+  traduzirResolucao,
+  traduzirResponsavelCusto,
+  traduzirGenerico
+} from '@/utils/mlTranslations';
 
 interface ReclamacoesFilterBarCascataProps {
   reclamacoes: any[];
@@ -64,69 +72,27 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     impactoFinanceiro: ''
   });
 
-  // Tradução de valores
-  const translations: Record<string, string> = {
-    // Tipos de reclamação
-    'claim': 'Reclamação',
-    'mediation': 'Mediação',
-    'mediations': 'Mediações',
-    'returns': 'Devoluções',
-    'cancel_purchase': 'Cancelar Compra',
-    
-    // Status de reclamação
-    'opened': 'Aberto',
-    'closed': 'Fechado',
-    'under_review': 'Em Análise',
-    'pending': 'Pendente',
-    'resolved': 'Resolvido',
-    'cancelled': 'Cancelado',
-    
-    // Estágios
-    'claim_opened': 'Reclamação Aberta',
-    'claim_closed': 'Reclamação Fechada',
-    'claim_answered': 'Reclamação Respondida',
-    'claim_in_review': 'Em Revisão',
-    'in_process': 'Em Processo',
-    'finalized': 'Finalizado',
-    
-    // Beneficiados
-    'buyer': 'Comprador',
-    'seller': 'Vendedor',
-    'none': 'Nenhum',
-    
-    // Status de venda
-    'shipped': 'Enviado',
-    'delivered': 'Entregue',
-    'partially_refunded': 'Parcialmente Reembolsado',
-    'refunded': 'Reembolsado',
-    'paid': 'Pago',
-    
-    // Razões de resolução
-    'warehouse': 'Armazém',
-    'preferred_to_keep_product': 'Preferiu manter produto',
-    'timeout': 'Tempo esgotado',
-    'buyer_regrets': 'Arrependimento do comprador',
-    'seller_refunds': 'Vendedor reembolsa',
-    
-    // Detalhes de razão
-    'different_than_published': 'Diferente do publicado',
-    'missing_parts': 'Faltam peças',
-    'doesnt_work': 'Não funciona',
-    'arrived_damaged': 'Chegou danificado',
-    
-    // Razões (nomes)
-    'not_received': 'Não recebido',
-    'not_as_described': 'Diferente do anunciado',
-    'defective': 'Defeituoso',
-    'buyer_remorse': 'Arrependimento',
-    
-    // Outros
-    'shipment': 'Envio'
-  };
-
-  const translate = (value: string): string => {
+  // Função de tradução inteligente por tipo de campo
+  const translate = (value: string, fieldType: string): string => {
     if (!value) return value;
-    return translations[value.toLowerCase()] || value;
+    
+    switch (fieldType) {
+      case 'type':
+        return traduzirTipoClaim(value);
+      case 'status':
+        return traduzirStatusDevolucao(value);
+      case 'stage':
+        return traduzirStage(value);
+      case 'resolution_reason':
+        return traduzirResolucao(value);
+      case 'reason_id':
+      case 'reason_category':
+        return traduzirGenerico(value);
+      case 'order_status':
+        return traduzirStatusDevolucao(value);
+      default:
+        return value;
+    }
   };
 
   // Aplicar filtros cascata
@@ -211,7 +177,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     
     return options.map(opt => ({
       value: opt,
-      label: field === 'empresa' ? opt : translate(opt), // Empresa não precisa tradução
+      label: field === 'empresa' ? opt : translate(opt, dataField),
       count: counts[opt] || 0
     })).sort((a, b) => b.count - a.count);
   };
