@@ -269,7 +269,7 @@ export function ReclamacoesPage() {
         return newData;
       });
     }
-  }, [allRawClaims, setDadosInMemory]);
+  }, [allRawClaims]); // ✅ REMOVIDO setDadosInMemory das dependências
 
   // Converter dados in-memory para array e aplicar análise
   const reclamacoesWithAnalise = useMemo(() => {
