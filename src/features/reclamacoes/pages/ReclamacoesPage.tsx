@@ -596,41 +596,10 @@ export function ReclamacoesPage() {
             onPeriodoChange={(periodo) => setFilters({ ...filters, periodo })}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
+            onBuscar={handleBuscar}
+            isLoading={isLoading}
+            onCancel={cancelFetch}
           />
-
-
-          {/* Botão Buscar */}
-          <div className="mt-4 flex justify-end gap-2">
-            {isLoading && (
-              <Button
-                onClick={cancelFetch}
-                variant="destructive"
-                size="lg"
-              >
-                <X className="h-4 w-4 mr-2" />
-                Cancelar
-              </Button>
-            )}
-            
-            <Button
-              onClick={handleBuscar}
-              disabled={isLoading || selectedAccountIds.length === 0}
-              size="lg"
-              className="min-w-40"
-            >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                  Buscando...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Aplicar Filtros e Buscar
-                </>
-              )}
-            </Button>
-          </div>
         </Card>
 
 

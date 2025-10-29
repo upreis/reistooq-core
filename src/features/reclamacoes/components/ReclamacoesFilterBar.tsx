@@ -27,6 +27,9 @@ interface ReclamacoesFilterBarProps {
   onPeriodoChange: (periodo: string) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
+  onBuscar: () => void;
+  isLoading?: boolean;
+  onCancel?: () => void;
 }
 
 export function ReclamacoesFilterBar({
@@ -36,7 +39,10 @@ export function ReclamacoesFilterBar({
   periodo,
   onPeriodoChange,
   searchTerm,
-  onSearchChange
+  onSearchChange,
+  onBuscar,
+  isLoading = false,
+  onCancel
 }: ReclamacoesFilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -81,9 +87,9 @@ export function ReclamacoesFilterBar({
       </div>
 
       {/* Barra de Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
         {/* Busca Manual */}
-        <div className="space-y-2">
+        <div className="md:col-span-3 space-y-2">
           <Label className="text-xs text-muted-foreground">Buscar · Manual</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -97,7 +103,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Contas ML */}
-        <div className="space-y-2">
+        <div className="md:col-span-3 space-y-2">
           <Label className="text-xs text-muted-foreground">Contas ML · Manual</Label>
           <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
             <PopoverTrigger asChild>
@@ -168,7 +174,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Período de Busca */}
-        <div className="space-y-2">
+        <div className="md:col-span-3 space-y-2">
           <Label className="text-xs text-muted-foreground">Período de Busca · Data da Venda</Label>
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -184,6 +190,43 @@ export function ReclamacoesFilterBar({
                 <SelectItem value="custom">Personalizado</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+
+        {/* Botão Aplicar Filtros */}
+        <div className="md:col-span-3 space-y-2">
+          <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
+          <div className="flex gap-2">
+            {isLoading && onCancel && (
+              <Button
+                onClick={onCancel}
+                variant="destructive"
+                className="flex-1"
+              >
+                <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Cancelar
+              </Button>
+            )}
+            
+            <Button
+              onClick={onBuscar}
+              disabled={isLoading || selectedAccountIds.length === 0}
+              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
+                  Buscando...
+                </>
+              ) : (
+                <>
+                  <Search className="h-4 w-4 mr-2" />
+                  Aplicar Filtros e Buscar
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
