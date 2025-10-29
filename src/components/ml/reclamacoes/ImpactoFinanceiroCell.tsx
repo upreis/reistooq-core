@@ -15,14 +15,13 @@ export function ImpactoFinanceiroCell({
   valor,
   moeda = 'BRL'
 }: ImpactoFinanceiroCellProps) {
-  // Debug: ver o que está chegando
-  console.log('🔍 ImpactoFinanceiroCell:', { impacto, valor, moeda });
-  
-  // Formatar valor em moeda
-  const valorFormatado = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: moeda,
-  }).format(Math.abs(valor));
+  // ⚡ Formatar valor em moeda (memoizado)
+  const valorFormatado = React.useMemo(() => 
+    new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: moeda,
+    }).format(Math.abs(valor))
+  , [valor, moeda]);
 
   // Configuração de cada tipo de impacto
   const config = {
@@ -66,7 +65,7 @@ export function ImpactoFinanceiroCell({
     
     return (
       <div className="flex items-center gap-2">
-        <HoverCard openDelay={200}>
+        <HoverCard openDelay={300}>
           <HoverCardTrigger asChild>
             <div className="cursor-help">
               <Badge variant="outline" className={config.neutro.className}>
@@ -75,7 +74,7 @@ export function ImpactoFinanceiroCell({
               </Badge>
             </div>
           </HoverCardTrigger>
-          <HoverCardContent side="left" className="w-80">
+          <HoverCardContent side="left" className="w-80 pointer-events-auto">
             <div className="space-y-2">
               <h4 className="text-sm font-semibold">{config.neutro.label}</h4>
               <p className="text-sm text-muted-foreground">
@@ -95,7 +94,7 @@ export function ImpactoFinanceiroCell({
 
   return (
     <div className="flex items-center gap-2">
-      <HoverCard openDelay={200}>
+      <HoverCard openDelay={300}>
         <HoverCardTrigger asChild>
           <div className="cursor-help">
             <Badge className={className}>
@@ -104,7 +103,7 @@ export function ImpactoFinanceiroCell({
             </Badge>
           </div>
         </HoverCardTrigger>
-        <HoverCardContent side="left" className="w-80">
+        <HoverCardContent side="left" className="w-80 pointer-events-auto">
           <div className="space-y-2">
             <h4 className="text-sm font-semibold">{label}</h4>
             <p className="text-sm text-muted-foreground">

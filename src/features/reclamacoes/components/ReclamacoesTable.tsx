@@ -2,7 +2,7 @@
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  */
 
-import { useState } from 'react';
+import { useState, useMemo, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -61,9 +61,12 @@ export function ReclamacoesTable({
     setMensagensModalOpen(true);
   };
 
+  // ⚡ Memoizar colunas para evitar re-criação
+  const columns = useMemo(() => reclamacoesColumns(onStatusChange), [onStatusChange]);
+
   const table = useReactTable({
     data: reclamacoes,
-    columns: reclamacoesColumns(onStatusChange),
+    columns,
     state: {
       globalFilter,
       columnVisibility,
@@ -169,28 +172,7 @@ export function ReclamacoesTable({
           <TableBody>
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
-                // 🎨 HIGHLIGHT de linhas atualizadas
-                const claim = row.original;
-                const diasDesdeAtualizacao = calcularDiasDesdeAtualizacao(
-                  claim.ultima_atualizacao_real || claim.last_updated
-                );
-                const highlightConfig = getHighlightConfig(diasDesdeAtualizacao);
-
-                return (
-                  <TableRow 
-                    key={row.id}
-                    className={cn(
-                      "bg-card text-card-foreground hover:bg-muted/50",
-                      highlightConfig ? highlightConfig.rowClass : ''
-                    )}
-                  >
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id} className="bg-card text-card-foreground">
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                );
+                return <OptimizedTableRow key={row.id} row={row} />;
               })
             ) : (
               <TableRow className="bg-card hover:bg-card">
@@ -278,3 +260,30 @@ export function ReclamacoesTable({
     </div>
   );
 }
+
+// ⚡ COMPONENTE OTIMIZADO PARA LINHA DA TABELA (memo evita re-renders desnecessários)
+const OptimizedTableRow = memo(({ row }: { row: any }) => {
+  // 🎨 Memoizar cálculo de highlight (só recalcula se claim mudar)
+  const highlightConfig = useMemo(() => {
+    const claim = row.original;
+    const diasDesdeAtualizacao = calcularDiasDesdeAtualizacao(
+      claim.ultima_atualizacao_real || claim.last_updated
+    );
+    return getHighlightConfig(diasDesdeAtualizacao);
+  }, [row.original.ultima_atualizacao_real, row.original.last_updated]);
+
+  return (
+    <TableRow 
+      className={cn(
+        "bg-card text-card-foreground hover:bg-muted/50",
+        highlightConfig ? highlightConfig.rowClass : ''
+      )}
+    >
+      {row.getVisibleCells().map((cell: any) => (
+        <TableCell key={cell.id} className="bg-card text-card-foreground">
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+});
