@@ -25,32 +25,11 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // ✅ Pegar o token JWT do header Authorization
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: 'Unauthorized - Missing token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
-
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
-    // ✅ Criar client com o token do usuário
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      global: { headers: { Authorization: authHeader } }
-    });
-
-    // ✅ Validar autenticação
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      console.error('[ml-claims-fetch] Erro de autenticação:', authError);
-      return new Response(JSON.stringify({ error: 'Unauthorized - Invalid token' }), {
-        status: 401,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    // ✅ Usar SERVICE ROLE para operações internas (não precisa validar usuário)
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     const { accountId, sellerId, filters, limit, offset } = await req.json() as {
       accountId: string;
