@@ -47,7 +47,9 @@ export function ReclamacoesPage() {
   const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(3600000); // 1 hora em ms (padrão)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
-  const [filteredReclamacoes, setFilteredReclamacoes] = useState<any[]>([]);
+  // ⚡ USAR useRef para evitar loop infinito ao atualizar dados filtrados
+  const filteredReclamacoesRef = React.useRef<any[]>([]);
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   
   
@@ -354,7 +356,7 @@ export function ReclamacoesPage() {
   };
 
   // Filtrar por aba ativa - usa dados filtrados se houver filtros aplicados
-  const dadosParaFiltrar = filteredReclamacoes.length > 0 ? filteredReclamacoes : reclamacoesWithAnalise;
+  const dadosParaFiltrar = filteredReclamacoesRef.current.length > 0 ? filteredReclamacoesRef.current : reclamacoesWithAnalise;
   
   // Aplicar filtro de ciclo de vida
   // ⚡ USAR STATUS PRÉ-CALCULADO (_lifecycleStatus)
@@ -515,7 +517,10 @@ export function ReclamacoesPage() {
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesFilterBarCascata 
             reclamacoes={reclamacoesWithAnalise}
-            onFilteredDataChange={setFilteredReclamacoes}
+            onFilteredDataChange={(data) => {
+              filteredReclamacoesRef.current = data;
+              forceUpdate(); // Forçar re-render quando filtros mudarem
+            }}
           />
         )}
 

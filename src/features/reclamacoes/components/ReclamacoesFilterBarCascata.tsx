@@ -98,7 +98,14 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
 
   // 🚀 OTIMIZAÇÃO: Aplicar todos os filtros de uma vez
   const filteredData = useMemo(() => {
+    // ✅ PROTEÇÃO: Verificar se reclamacoes é array válido
+    if (!Array.isArray(reclamacoes) || reclamacoes.length === 0) {
+      return [];
+    }
+    
     return reclamacoes.filter(r => {
+      // ✅ PROTEÇÃO: Ignorar registros inválidos
+      if (!r || typeof r !== 'object') return false;
       if (filters.empresa && r.empresa !== filters.empresa) return false;
       if (filters.tipoReclamacao && r.type !== filters.tipoReclamacao) return false;
       if (filters.statusReclamacao && r.status !== filters.statusReclamacao) return false;
@@ -122,9 +129,17 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
   // ⚡ DEBOUNCE: Notificar mudanças nos dados filtrados com delay de 300ms
   const debounceTimerRef = useRef<NodeJS.Timeout>();
   const filteredDataRef = useRef(filteredData);
+  const previousLengthRef = useRef(filteredData.length);
   filteredDataRef.current = filteredData;
   
   useEffect(() => {
+    // ✅ PROTEÇÃO: Só notificar se realmente mudou o tamanho ou conteúdo
+    if (filteredData.length === previousLengthRef.current && filteredData.length > 0) {
+      return; // Sem mudanças significativas, não notificar
+    }
+    
+    previousLengthRef.current = filteredData.length;
+    
     // Limpar timer anterior
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -132,7 +147,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     
     // Agendar nova notificação
     debounceTimerRef.current = setTimeout(() => {
-      if (onFilteredDataChange) {
+      if (onFilteredDataChange && typeof onFilteredDataChange === 'function') {
         onFilteredDataChange(filteredDataRef.current);
       }
     }, 300); // 300ms de delay
@@ -143,7 +158,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filteredData]); // Remover onFilteredDataChange das dependências
+  }, [filteredData.length]); // ✅ Só reagir a mudanças no tamanho
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam

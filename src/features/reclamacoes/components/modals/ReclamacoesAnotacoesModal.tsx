@@ -13,11 +13,13 @@ import { Save, X } from 'lucide-react';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 
-// ✅ VALIDAÇÃO com Zod
+// ✅ VALIDAÇÃO com Zod - SEGURANÇA CRÍTICA
 const anotacaoSchema = z.object({
   texto: z.string()
     .trim()
     .max(5000, { message: "Anotação deve ter no máximo 5000 caracteres" })
+    // ✅ Remover caracteres potencialmente perigosos
+    .transform(str => str.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, ''))
     .optional()
 });
 
@@ -59,8 +61,9 @@ export function ReclamacoesAnotacoesModal({
         return;
       }
 
-      // Salvar anotação
-      onSave(claimId, anotacao.trim());
+      // ✅ Salvar anotação já validada e sanitizada
+      const textoValidado = validation.data?.texto || '';
+      onSave(claimId, textoValidado);
       
       toast({
         title: 'Anotação salva',
