@@ -52,18 +52,17 @@ export function ReclamacoesPage() {
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   
   // ✅ CALLBACK MEMOIZADO FORA DO JSX para evitar recriação
+  // 🔥 PROTEÇÃO ANTI-LOOP: Comparar hash dos IDs ao invés do array completo
   const handleFilteredDataChange = React.useCallback((data: any[]) => {
     setFilteredReclamacoes(prev => {
-      // ⚡ PROTEÇÃO INTELIGENTE: Comparar por conteúdo, não apenas tamanho
-      if (prev.length === data.length) {
-        // Se ambos vazios, não atualizar
-        if (prev.length === 0) return prev;
-        
-        // Se tiverem mesmo tamanho, verificar se são os mesmos IDs
-        const prevIds = prev.map(p => p.claim_id).sort().join(',');
-        const dataIds = data.map(d => d.claim_id).sort().join(',');
-        if (prevIds === dataIds) return prev;
+      // ⚡ PROTEÇÃO INTELIGENTE: Comparar por hash de IDs
+      const prevHash = prev.map(p => p.claim_id).sort().join('|');
+      const dataHash = data.map(d => d.claim_id).sort().join('|');
+      
+      if (prevHash === dataHash) {
+        return prev; // Mesmos dados, não atualizar
       }
+      
       return data;
     });
   }, []);
@@ -250,15 +249,28 @@ export function ReclamacoesPage() {
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   // ✅ USAR TODOS OS DADOS (allRawClaims) não apenas a página atual
   // ⚡ COM DEBOUNCE para evitar múltiplas gravações
+  // 🔥 PROTEÇÃO ANTI-LOOP: Limitar atualizações do localStorage
+  const lastSaveRef = React.useRef<number>(0);
+  
   React.useEffect(() => {
     if (allRawClaims.length > 0) {
+      const agora = Date.now();
+      
+      // 🔥 PROTEÇÃO: Não salvar mais de uma vez a cada 2 segundos
+      if (agora - lastSaveRef.current < 2000) {
+        console.log('⏸️ Salvamento bloqueado - aguardando intervalo mínimo');
+        return;
+      }
+      
       console.log(`💾 Preparando para salvar ${allRawClaims.length} reclamações...`);
       
       // Debounce: esperar 500ms antes de salvar
       const timeoutId = setTimeout(() => {
+        lastSaveRef.current = Date.now();
+        
         setDadosInMemory(prevData => {
           const newData = { ...prevData };
-          const agora = new Date().toISOString();
+          const agoraISO = new Date().toISOString();
           const idsBuscaAtual = new Set<string>();
 
           allRawClaims.forEach((claim: any) => {
@@ -269,8 +281,8 @@ export function ReclamacoesPage() {
             if (!existing) {
               newData[claimId] = {
                 ...claim,
-                primeira_vez_visto: agora,
-                ultima_busca: agora,
+                primeira_vez_visto: agoraISO,
+                ultima_busca: agoraISO,
                 campos_atualizados: [],
                 snapshot_anterior: null
               };
@@ -287,7 +299,7 @@ export function ReclamacoesPage() {
                     campo,
                     valor_anterior: existing[campo],
                     valor_novo: claim[campo],
-                    data_mudanca: agora
+                    data_mudanca: agoraISO
                   });
                 }
               }
@@ -295,12 +307,12 @@ export function ReclamacoesPage() {
               newData[claimId] = {
                 ...claim,
                 primeira_vez_visto: existing.primeira_vez_visto,
-                ultima_busca: agora,
+                ultima_busca: agoraISO,
                 campos_atualizados: camposAtualizados.length > 0 
                   ? camposAtualizados 
                   : (existing.campos_atualizados || []),
                 snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
-                ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
+                ultima_atualizacao_real: camposAtualizados.length > 0 ? agoraISO : existing.ultima_atualizacao_real
               };
             }
           });
@@ -314,7 +326,7 @@ export function ReclamacoesPage() {
 
       return () => clearTimeout(timeoutId);
     }
-  }, [allRawClaims]);
+  }, [allRawClaims, setDadosInMemory]);
 
   // Converter dados in-memory para array e aplicar análise
   // ✅ PRÉ-CALCULAR STATUS DE CICLO DE VIDA UMA ÚNICA VEZ

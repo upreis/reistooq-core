@@ -126,13 +126,22 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     });
   }, [reclamacoes, filters]);
 
-  // ⚡ DEBOUNCE: Notificar mudanças nos dados filtrados com delay de 300ms
+  // ⚡ DEBOUNCE OTIMIZADO: Notificar mudanças apenas quando realmente necessário
   const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const lastNotifiedDataRef = useRef<string>(''); // Cache do último hash notificado
   
   useEffect(() => {
     // ✅ PROTEÇÃO: Verificar se callback é válido
     if (!onFilteredDataChange || typeof onFilteredDataChange !== 'function') {
       return;
+    }
+    
+    // ⚡ OTIMIZAÇÃO CRÍTICA: Criar hash dos IDs para comparação eficiente
+    const currentHash = filteredData.map(d => d.claim_id).sort().join('|');
+    
+    // 🔥 PROTEÇÃO: Só notificar se realmente mudou
+    if (currentHash === lastNotifiedDataRef.current) {
+      return; // Dados iguais, não notificar
     }
     
     // Limpar timer anterior
@@ -142,6 +151,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     
     // ⚡ Agendar notificação com debounce
     debounceTimerRef.current = setTimeout(() => {
+      lastNotifiedDataRef.current = currentHash;
       onFilteredDataChange(filteredData);
     }, 300); // 300ms de delay
     
@@ -151,7 +161,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filteredData.length, filters]); // ✅ Reagir a mudanças no tamanho OU nos filtros
+  }, [filteredData]); // ✅ CRÍTICO: Só reagir a mudanças nos dados filtrados
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam
