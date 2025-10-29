@@ -2,7 +2,7 @@
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  */
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useRef } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -13,6 +13,7 @@ import {
   VisibilityState,
   SortingState,
 } from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,9 @@ export function ReclamacoesTable({
   });
   const [sorting, setSorting] = useState<SortingState>([]);
   
+  // Ref para o container da tabela (virtualização)
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  
   const handleOpenMensagens = (claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
@@ -81,6 +85,16 @@ export function ReclamacoesTable({
     getPaginationRowModel: getPaginationRowModel(),
     manualPagination: true,
     pageCount: pagination.totalPages,
+  });
+
+  // 🚀 VIRTUALIZAÇÃO - Renderizar apenas linhas visíveis
+  const { rows } = table.getRowModel();
+  
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 60, // Altura estimada de cada linha em pixels
+    overscan: 5, // Renderizar 5 linhas extras acima/abaixo para scroll suave
   });
 
   if (isLoading) {
@@ -150,39 +164,89 @@ export function ReclamacoesTable({
         </Button>
       </div>
 
-      {/* Tabela */}
-      <div className="overflow-x-auto border rounded-lg bg-card">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-card hover:bg-card">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap bg-card text-card-foreground">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => {
-                return <OptimizedTableRow key={row.id} row={row} />;
-              })
-            ) : (
-              <TableRow className="bg-card hover:bg-card">
-                <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
-                  {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+      {/* Tabela com Virtualização */}
+      <div className="border rounded-lg bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="sticky top-0 z-10 bg-card">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="bg-card hover:bg-card">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="whitespace-nowrap bg-card text-card-foreground">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+          </Table>
+        </div>
+
+        {/* Container Virtualizador */}
+        <div
+          ref={tableContainerRef}
+          className="overflow-auto"
+          style={{ maxHeight: '600px' }}
+        >
+          <Table>
+            <TableBody>
+              {rows.length ? (
+                <tr>
+                  <td colSpan={table.getAllColumns().length} style={{ padding: 0 }}>
+                    <div
+                      style={{
+                        height: `${rowVirtualizer.getTotalSize()}px`,
+                        width: '100%',
+                        position: 'relative',
+                      }}
+                    >
+                      {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const row = rows[virtualRow.index];
+                        return (
+                          <div
+                            key={row.id}
+                            style={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              width: '100%',
+                              height: `${virtualRow.size}px`,
+                              transform: `translateY(${virtualRow.start}px)`,
+                            }}
+                          >
+                            <table style={{ width: '100%', tableLayout: 'fixed' }}>
+                              <tbody>
+                                <OptimizedTableRow row={row} />
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                <TableRow className="bg-card hover:bg-card">
+                  <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
+                    {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Indicador de Performance */}
+        {rows.length > 20 && (
+          <div className="px-4 py-2 text-xs text-muted-foreground bg-muted/30 border-t">
+            🚀 Virtual Scrolling ativo • Renderizando {rowVirtualizer.getVirtualItems().length} de {rows.length} linhas
+          </div>
+        )}
       </div>
 
       {/* Paginação */}
