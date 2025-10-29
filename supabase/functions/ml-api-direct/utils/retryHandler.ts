@@ -9,11 +9,13 @@ export async function fetchMLWithRetry(
   url: string, 
   accessToken: string, 
   integrationAccountId: string,
+  customHeaders: Record<string, string> = {},
   maxRetries = 3
 ): Promise<Response> {
   const headers = {
     'Authorization': `Bearer ${accessToken}`,
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    ...customHeaders  // ✅ Permite adicionar headers customizados
   };
   
   // ✅ CORREÇÃO: Loop de 0 até maxRetries-1 (total de maxRetries tentativas)

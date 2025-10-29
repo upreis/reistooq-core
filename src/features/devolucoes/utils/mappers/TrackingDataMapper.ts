@@ -8,16 +8,23 @@ export const mapTrackingData = (item: any) => {
   const returnShipment = item.return_details_v2?.shipments?.find((s: any) => s.type === 'return') || 
                         item.return_details_v2?.shipments?.[0];
   
+  // 🆕 PRIORIDADE: Usar tracking real da API se disponível
+  const originalTracking = item.shipment_tracking?.original_tracking?.tracking_number || 
+                          item.order_data?.shipping?.tracking_number || 
+                          returnShipment?.tracking_number;
+  
+  const returnTracking = item.shipment_tracking?.return_tracking?.tracking_number || 
+                        returnShipment?.tracking_number;
+  
   return {
     // ✅ FASE 1.5: ID único do return
     return_id: item.return_details_v2?.id?.toString() || null,
     
-    // Rastreamento (✅ CORRIGIDO: usar shipments array)
+    // Rastreamento (✅ CORRIGIDO: usar tracking real da API primeiro)
     shipment_id: returnShipment?.shipment_id?.toString() || 
                  item.order_data?.shipping?.id?.toString() || null,
-    codigo_rastreamento: returnShipment?.tracking_number || 
-                        item.order_data?.shipping?.tracking_number || null,
-    codigo_rastreamento_devolucao: returnShipment?.tracking_number || null,
+    codigo_rastreamento: originalTracking || null,
+    codigo_rastreamento_devolucao: returnTracking || null,
     transportadora: null, // Não disponível em v2
     transportadora_devolucao: null,
     // ✅ CORRIGIDO: status vem de shipments[].status com fallback robusto

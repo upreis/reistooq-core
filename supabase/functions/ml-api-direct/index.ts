@@ -1910,8 +1910,80 @@ async function buscarPedidosCancelados(
                   return (costsResults.original_costs || costsResults.return_costs) ? costsResults : null
                 })()
               )
+
+              // 🆕 10. BUSCAR TRACKING NUMBER DO SHIPMENT (NOVO)
+              claimPromises.push(
+                (async () => {
+                  const trackingResults = {
+                    original_tracking: null,
+                    return_tracking: null
+                  }
+                  
+                  // Buscar tracking do envio original
+                  const originalShipmentId = orderDetail?.shipping?.id
+                  if (originalShipmentId) {
+                    try {
+                      const response = await fetchMLWithRetry(
+                        `https://api.mercadolibre.com/shipments/${originalShipmentId}`,
+                        accessToken,
+                        integrationAccountId,
+                        { 'x-format-new': 'true' }  // ✅ Header customizado
+                      )
+                      if (response.ok) {
+                        const shipmentData = await response.json()
+                        trackingResults.original_tracking = {
+                          tracking_number: shipmentData.tracking_number,
+                          tracking_method: shipmentData.tracking_method,
+                          status: shipmentData.status,
+                          substatus: shipmentData.substatus
+                        }
+                        console.log(`📦 Tracking do envio original: ${shipmentData.tracking_number || 'N/A'}`)
+                      }
+                    } catch (e) {
+                      console.warn(`⚠️ Erro ao buscar tracking do envio original:`, e)
+                    }
+                  }
+                  
+                  // Buscar tracking do shipment de devolução
+                  try {
+                    const returnsResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
+                      accessToken,
+                      integrationAccountId
+                    )
+                    if (returnsResponse.ok) {
+                      const returnsData = await returnsResponse.json()
+                      const shipmentId = returnsData?.results?.[0]?.shipments?.[0]?.id || 
+                                        returnsData?.results?.[0]?.shipments?.[0]?.shipment_id
+                      if (shipmentId) {
+                        console.log(`📦 Buscando tracking do return shipment ${shipmentId}...`)
+                        const trackingResponse = await fetchMLWithRetry(
+                          `https://api.mercadolibre.com/shipments/${shipmentId}`,
+                          accessToken,
+                          integrationAccountId,
+                          { 'x-format-new': 'true' }  // ✅ Header customizado
+                        )
+                        if (trackingResponse.ok) {
+                          const returnShipment = await trackingResponse.json()
+                          trackingResults.return_tracking = {
+                            tracking_number: returnShipment.tracking_number,
+                            tracking_method: returnShipment.tracking_method,
+                            status: returnShipment.status,
+                            substatus: returnShipment.substatus
+                          }
+                          console.log(`📦 Tracking de devolução: ${returnShipment.tracking_number || 'N/A'}`)
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn(`⚠️ Erro ao buscar tracking de devolução:`, e)
+                  }
+                  
+                  return (trackingResults.original_tracking || trackingResults.return_tracking) ? trackingResults : null
+                })()
+              )
               
-              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails, shipmentCosts] = await Promise.all(claimPromises)
+              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails, shipmentCosts, shipmentTracking] = await Promise.all(claimPromises)
                 
                 // Consolidar mensagens de ambas as fontes
                 const allMessages = [
@@ -2098,6 +2170,7 @@ async function buscarPedidosCancelados(
                   shipment_history: shipmentHistory,
                   change_details: changeDetails,
                   shipment_costs: mappedCosts, // 🆕 FASE 1: Custos de envio mapeados
+                  shipment_tracking: shipmentTracking, // 🆕 NOVO: Tracking numbers
                   
                   // ✅ FASE 1: Related Entities (para detectar returns associados)
                   related_entities: claimDetails?.related_entities || [],

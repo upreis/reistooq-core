@@ -760,9 +760,8 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => {
-      // ✅ Buscar do dados_order.shipping.tracking_number ou tracking_number direto
-      const trackingNumber = row.original.dados_order?.shipping?.tracking_number || 
-                            row.original.tracking_number;
+      // ✅ Buscar tracking_number do campo codigo_rastreamento (agora atualizado pela API)
+      const trackingNumber = row.original.codigo_rastreamento;
       
       return trackingNumber ? (
         <span className="font-mono text-xs">{trackingNumber}</span>
