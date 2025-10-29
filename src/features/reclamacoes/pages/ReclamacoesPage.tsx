@@ -642,13 +642,6 @@ export function ReclamacoesPage() {
           />
         )}
 
-        {/* Alertas de Ciclo de Vida */}
-        {!isLoading && reclamacoesWithAnalise.length > 0 && (
-          <ReclamacoesLifecycleAlert 
-            reclamacoes={reclamacoesWithAnalise}
-          />
-        )}
-
         {/* Stats - só mostrar se tiver dados */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesStats reclamacoes={reclamacoesWithAnalise} />
