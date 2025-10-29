@@ -442,6 +442,13 @@ export function ReclamacoesPage() {
         {/* Sub-navegação de Pedidos */}
         <MLOrdersNav />
 
+        {/* Barra de Filtros Cascata */}
+        {!isLoading && reclamacoesWithAnalise.length > 0 && (
+          <ReclamacoesFilterBarCascata 
+            reclamacoes={reclamacoesWithAnalise}
+          />
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -568,13 +575,6 @@ export function ReclamacoesPage() {
             </Button>
           </div>
         </Card>
-
-        {/* Barra de Filtros Cascata */}
-        {!isLoading && reclamacoesWithAnalise.length > 0 && (
-          <ReclamacoesFilterBarCascata 
-            reclamacoes={reclamacoesWithAnalise}
-          />
-        )}
 
         {/* Stats - só mostrar se tiver dados */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
