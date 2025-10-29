@@ -133,13 +133,16 @@ export function ReclamacoesPage() {
 
   // 🔄 Auto-refresh INCREMENTAL configurável (mínimo 1 hora)
   React.useEffect(() => {
-    if (!autoRefreshEnabled || !shouldFetch) return;
+    if (!autoRefreshEnabled || !shouldFetch) {
+      console.log('⏸️ Auto-refresh pausado:', { autoRefreshEnabled, shouldFetch });
+      return;
+    }
     
     const intervalMs = Math.max(autoRefreshInterval, 3600000); // Mínimo de 1 hora
-    console.log(`🔄 Auto-refresh ativo (${intervalMs / 60000} minutos)`);
+    console.log(`🔄 Auto-refresh ativo: ${intervalMs / 60000} minutos (${intervalMs / 3600000}h)`);
     
     const interval = setInterval(async () => {
-      console.log('🔄 Auto-refresh incremental - buscando atualizações...');
+      console.log(`🔄 Auto-refresh executando (intervalo: ${intervalMs / 60000} minutos)...`);
       
       // ✅ SEMPRE usar 60 dias no auto-refresh
       const dataInicio60Dias = new Date();
@@ -471,24 +474,31 @@ export function ReclamacoesPage() {
                   id="auto-refresh"
                   checked={autoRefreshEnabled}
                   onCheckedChange={setAutoRefreshEnabled}
-                  disabled={!shouldFetch}
                 />
-                <Label htmlFor="auto-refresh" className="text-sm cursor-pointer whitespace-nowrap">
-                  Auto-refresh
+                <Label 
+                  htmlFor="auto-refresh" 
+                  className="text-sm cursor-pointer whitespace-nowrap"
+                  title={!shouldFetch ? "Clique em 'Aplicar Filtros' primeiro" : ""}
+                >
+                  Auto-refresh {!shouldFetch && "(inativo)"}
                 </Label>
               </div>
               
               {autoRefreshEnabled && (
                 <div className="flex items-center gap-2 border-l pl-3">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">Intervalo:</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">A cada:</span>
                   <Select
                     value={autoRefreshInterval.toString()}
-                    onValueChange={(value) => setAutoRefreshInterval(Number(value))}
+                    onValueChange={(value) => {
+                      const newInterval = Number(value);
+                      console.log(`⏱️ Intervalo alterado: ${newInterval / 60000} minutos`);
+                      setAutoRefreshInterval(newInterval);
+                    }}
                   >
                     <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
-                    <SelectContent className="bg-popover z-50">
+                    <SelectContent className="bg-popover border shadow-lg z-[100]">
                       <SelectItem value="3600000">1 hora</SelectItem>
                       <SelectItem value="7200000">2 horas</SelectItem>
                       <SelectItem value="14400000">4 horas</SelectItem>
