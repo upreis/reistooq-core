@@ -7,7 +7,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   flexRender,
   VisibilityState,
@@ -27,14 +26,6 @@ interface ReclamacoesTableProps {
   reclamacoes: any[];
   isLoading: boolean;
   error: string | null;
-  pagination: {
-    currentPage: number;
-    totalPages: number;
-    totalItems: number;
-    itemsPerPage: number;
-  };
-  onPageChange: (page: number) => void;
-  onItemsPerPageChange: (items: number) => void;
   onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void;
 }
 
@@ -42,9 +33,6 @@ export function ReclamacoesTable({
   reclamacoes, 
   isLoading, 
   error, 
-  pagination, 
-  onPageChange, 
-  onItemsPerPageChange,
   onStatusChange 
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
@@ -78,9 +66,6 @@ export function ReclamacoesTable({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
   });
 
   if (isLoading) {
@@ -185,67 +170,11 @@ export function ReclamacoesTable({
         </Table>
       </div>
 
-      {/* Paginação */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-        <div className="flex flex-col sm:flex-row gap-2 text-sm text-muted-foreground">
-          <span className="font-medium">
-            Página {pagination.currentPage} de {pagination.totalPages}
-          </span>
-          <span className="hidden sm:inline">•</span>
-          <span>
-            Mostrando {((pagination.currentPage - 1) * pagination.itemsPerPage) + 1} até{' '}
-            {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)} de{' '}
-            <strong>{pagination.totalItems}</strong> reclamações
-          </span>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <select
-            value={pagination.itemsPerPage}
-            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
-            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
-          >
-            <option value={10}>10 por página</option>
-            <option value={20}>20 por página</option>
-            <option value={50}>50 por página</option>
-            <option value={100}>100 por página</option>
-          </select>
-          
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(1)}
-              disabled={pagination.currentPage === 1}
-            >
-              Primeira
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.currentPage - 1)}
-              disabled={pagination.currentPage === 1}
-            >
-              Anterior
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.currentPage + 1)}
-              disabled={pagination.currentPage === pagination.totalPages}
-            >
-              Próxima
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(pagination.totalPages)}
-              disabled={pagination.currentPage === pagination.totalPages}
-            >
-              Última
-            </Button>
-          </div>
-        </div>
+      {/* Informação de total de reclamações */}
+      <div className="flex justify-center py-2 text-sm text-muted-foreground">
+        <span>
+          Total: <strong>{reclamacoes.length}</strong> reclamações
+        </span>
       </div>
     
       {/* Modal de Mensagens */}
