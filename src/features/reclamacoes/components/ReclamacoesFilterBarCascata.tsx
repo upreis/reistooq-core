@@ -1,10 +1,10 @@
 /**
  * 🎯 BARRA DE FILTROS CASCATA PARA RECLAMAÇÕES
  * Sistema de filtros interativos estilo Excel - mostra apenas opções disponíveis
- * OTIMIZADO: Usa memoização agressiva para evitar recálculos desnecessários
+ * ⚡ OTIMIZADO: Memoização agressiva + DEBOUNCE para evitar recálculos desnecessários
  */
 
-import { memo, useMemo, useState, useCallback, useEffect } from 'react';
+import { memo, useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -119,9 +119,26 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     });
   }, [reclamacoes, filters]);
 
-  // Notificar mudanças nos dados filtrados (com useEffect para evitar warns)
+  // ⚡ DEBOUNCE: Notificar mudanças nos dados filtrados com delay de 300ms
+  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  
   useEffect(() => {
-    onFilteredDataChange?.(filteredData);
+    // Limpar timer anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    
+    // Agendar nova notificação
+    debounceTimerRef.current = setTimeout(() => {
+      onFilteredDataChange?.(filteredData);
+    }, 300); // 300ms de delay
+    
+    // Cleanup
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [filteredData, onFilteredDataChange]);
 
 
