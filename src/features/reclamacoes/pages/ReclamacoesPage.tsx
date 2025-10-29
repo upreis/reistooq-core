@@ -51,6 +51,23 @@ export function ReclamacoesPage() {
   const [filteredReclamacoes, setFilteredReclamacoes] = useState<any[]>([]);
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   
+  // ✅ CALLBACK MEMOIZADO FORA DO JSX para evitar recriação
+  const handleFilteredDataChange = React.useCallback((data: any[]) => {
+    setFilteredReclamacoes(prev => {
+      // ⚡ PROTEÇÃO INTELIGENTE: Comparar por conteúdo, não apenas tamanho
+      if (prev.length === data.length) {
+        // Se ambos vazios, não atualizar
+        if (prev.length === 0) return prev;
+        
+        // Se tiverem mesmo tamanho, verificar se são os mesmos IDs
+        const prevIds = prev.map(p => p.claim_id).sort().join(',');
+        const dataIds = data.map(d => d.claim_id).sort().join(',');
+        if (prevIds === dataIds) return prev;
+      }
+      return data;
+    });
+  }, []);
+  
   
   // 💾 PERSISTÊNCIA COM LOCALSTORAGE
   const {
@@ -516,13 +533,7 @@ export function ReclamacoesPage() {
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesFilterBarCascata 
             reclamacoes={reclamacoesWithAnalise}
-            onFilteredDataChange={React.useCallback((data: any[]) => {
-              // ✅ PROTEÇÃO: Só atualizar se realmente mudou
-              setFilteredReclamacoes(prev => {
-                if (prev.length === data.length && prev.length === 0) return prev;
-                return data;
-              });
-            }, [])}
+            onFilteredDataChange={handleFilteredDataChange}
           />
         )}
 
