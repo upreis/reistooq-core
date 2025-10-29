@@ -144,6 +144,9 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
       return; // Dados iguais, não notificar
     }
     
+    // ✅ CORREÇÃO: Atualizar ref ANTES de agendar para evitar race condition
+    lastNotifiedDataRef.current = currentHash;
+    
     // Limpar timer anterior
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
@@ -151,7 +154,6 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     
     // ⚡ Agendar notificação com debounce
     debounceTimerRef.current = setTimeout(() => {
-      lastNotifiedDataRef.current = currentHash;
       onFilteredDataChange(filteredData);
     }, 300); // 300ms de delay
     
@@ -161,7 +163,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filteredData]); // ✅ CRÍTICO: Só reagir a mudanças nos dados filtrados
+  }, [filteredData, onFilteredDataChange]); // ✅ CRÍTICO: Incluir callback nas dependências
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam

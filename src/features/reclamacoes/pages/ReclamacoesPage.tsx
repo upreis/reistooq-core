@@ -248,17 +248,16 @@ export function ReclamacoesPage() {
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   // ✅ USAR TODOS OS DADOS (allRawClaims) não apenas a página atual
-  // ⚡ COM DEBOUNCE para evitar múltiplas gravações
-  // 🔥 PROTEÇÃO ANTI-LOOP: Limitar atualizações do localStorage
-  const lastSaveRef = React.useRef<number>(0);
+  // ⚡ COM DEBOUNCE INTELIGENTE para evitar múltiplas gravações
+  const lastSaveHashRef = React.useRef<string>('');
   
   React.useEffect(() => {
     if (allRawClaims.length > 0) {
-      const agora = Date.now();
+      // ⚡ PROTEÇÃO INTELIGENTE: Comparar hash dos dados ao invés de tempo
+      const currentHash = allRawClaims.map(c => c.claim_id).sort().join('|');
       
-      // 🔥 PROTEÇÃO: Não salvar mais de uma vez a cada 2 segundos
-      if (agora - lastSaveRef.current < 2000) {
-        console.log('⏸️ Salvamento bloqueado - aguardando intervalo mínimo');
+      if (currentHash === lastSaveHashRef.current) {
+        console.log('⏸️ Salvamento bloqueado - dados idênticos aos últimos salvos');
         return;
       }
       
@@ -266,7 +265,7 @@ export function ReclamacoesPage() {
       
       // Debounce: esperar 500ms antes de salvar
       const timeoutId = setTimeout(() => {
-        lastSaveRef.current = Date.now();
+        lastSaveHashRef.current = currentHash;
         
         setDadosInMemory(prevData => {
           const newData = { ...prevData };
