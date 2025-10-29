@@ -128,19 +128,19 @@ const translations: Record<string, string> = {
   'timeout': 'Expirado',
   'to': 'para',
   
-  // Status da Venda
+  // Status da Venda (Order Status - Conforme API ML)
+  'confirmed': 'Confirmado',
+  'payment_required': 'Aguardando Pagamento',
+  'payment_in_process': 'Processando Pagamento',
+  'partially_paid': 'Parcialmente Pago',
   'paid': 'Pago',
-  'pending': 'Pendente',
+  'partially_refunded': 'Parcialmente Reembolsado',
+  'pending_cancel': 'Cancelamento Pendente',
   'cancelled': 'Cancelado',
+  'invalid': 'Inválido',
+  'pending': 'Pendente',
   'delivered': 'Entregue',
   'shipped': 'Enviado',
-  'confirmed': 'Confirmado',
-  'payment_required': 'Pagamento Necessário',
-  'payment_in_process': 'Pagamento em Processo',
-  'payment required': 'Pagamento Necessário',
-  'payment in process': 'Pagamento em Processo',
-  'required': 'Necessário',
-  'process': 'Processo',
 };
 
 /**
