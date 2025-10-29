@@ -27,13 +27,15 @@ interface ReclamacoesTableProps {
   isLoading: boolean;
   error: string | null;
   onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void;
+  onDeleteReclamacao?: (claimId: string) => void;
 }
 
 export function ReclamacoesTable({ 
   reclamacoes, 
   isLoading, 
   error, 
-  onStatusChange 
+  onStatusChange,
+  onDeleteReclamacao 
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -50,7 +52,7 @@ export function ReclamacoesTable({
   };
 
   // ⚡ Memoizar colunas para evitar re-criação
-  const columns = useMemo(() => reclamacoesColumns(onStatusChange), [onStatusChange]);
+  const columns = useMemo(() => reclamacoesColumns(onStatusChange, onDeleteReclamacao), [onStatusChange, onDeleteReclamacao]);
 
   const table = useReactTable({
     data: reclamacoes,

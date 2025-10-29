@@ -4,7 +4,7 @@
 
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
-import { Package, ArrowUpDown } from 'lucide-react';
+import { Package, ArrowUpDown, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanceiroCell';
@@ -226,7 +226,8 @@ const formatCurrency = (value: number | null, currency: string = 'BRL') => {
 };
 
 export const reclamacoesColumns = (
-  onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void
+  onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void,
+  onDeleteReclamacao?: (claimId: string) => void
 ): ColumnDef<ReclamacaoRow>[] => [
   // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA STICKY
   {
@@ -742,5 +743,28 @@ export const reclamacoesColumns = (
         />
       );
     },
+  },
+  // 🗑️ COLUNA DE AÇÕES (DELETAR)
+  {
+    id: 'actions',
+    header: () => <div className="text-center">Ações</div>,
+    cell: ({ row }) => {
+      const claimId = row.original.claim_id;
+      
+      return (
+        <div className="flex justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={() => onDeleteReclamacao?.(claimId)}
+            title="Excluir reclamação"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      );
+    },
+    size: 80,
   },
 ];

@@ -140,12 +140,29 @@ export function useReclamacoesStorage() {
     console.log('🗑️ Todos os dados foram limpos');
   }, []);
 
+  // Remover uma reclamação específica
+  const removeReclamacao = useCallback((claimId: string) => {
+    setDadosInMemory(prevData => {
+      const newData = { ...prevData };
+      delete newData[claimId];
+      console.log(`🗑️ Reclamação ${claimId} removida`);
+      return newData;
+    });
+    
+    setAnaliseStatus(prevStatus => {
+      const newStatus = { ...prevStatus };
+      delete newStatus[claimId];
+      return newStatus;
+    });
+  }, []);
+
   return {
     dadosInMemory,
     setDadosInMemory,
     analiseStatus,
     setAnaliseStatus,
     clearOldData,
-    clearStorage
+    clearStorage,
+    removeReclamacao
   };
 }

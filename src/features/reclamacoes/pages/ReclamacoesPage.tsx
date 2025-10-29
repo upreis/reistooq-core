@@ -51,7 +51,8 @@ export function ReclamacoesPage() {
     analiseStatus,
     setAnaliseStatus,
     clearOldData,
-    clearStorage
+    clearStorage,
+    removeReclamacao
   } = useReclamacoesStorage();
 
   // Limpar dados antigos ao montar componente e verificar se já tem dados no storage
@@ -312,6 +313,17 @@ export function ReclamacoesPage() {
       title: 'Status atualizado',
       description: `Reclamação ${claimId} marcada como ${newStatus}`
     });
+  };
+
+  // Handler de exclusão de reclamação
+  const handleDeleteReclamacao = (claimId: string) => {
+    if (confirm(`Tem certeza que deseja excluir a reclamação ${claimId}?`)) {
+      removeReclamacao(claimId);
+      toast({
+        title: 'Reclamação excluída',
+        description: `Reclamação ${claimId} foi removida com sucesso`
+      });
+    }
   };
 
   // Filtrar por aba ativa
@@ -618,6 +630,7 @@ export function ReclamacoesPage() {
                   isLoading={false}
                   error={error}
                   onStatusChange={handleStatusChange}
+                  onDeleteReclamacao={handleDeleteReclamacao}
                 />
               </Card>
             </TabsContent>
@@ -629,6 +642,7 @@ export function ReclamacoesPage() {
                   isLoading={false}
                   error={error}
                   onStatusChange={handleStatusChange}
+                  onDeleteReclamacao={handleDeleteReclamacao}
                 />
               </Card>
             </TabsContent>
