@@ -41,6 +41,9 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
   
   // ✅ CONTROLE DE CANCELAMENTO
   const abortControllerRef = useRef<AbortController | null>(null);
+  
+  // 🚀 CACHE DE MENSAGENS - Evita buscas repetidas ao mudar de página
+  const mensagensCache = useRef<Record<string, any[]>>({});
 
   const fetchReclamacoes = async (showLoading = true) => {
     // ✅ Cancelar requisição anterior se existir
@@ -245,14 +248,30 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
       const endIndex = pagination.itemsPerPage;
       const paginatedClaims = filteredClaims.slice(startIndex, endIndex);
 
-      // Buscar mensagens apenas para claims da página atual
+      // 🚀 OTIMIZAÇÃO: Buscar mensagens apenas para claims que NÃO estão em cache
       const claimsWithMessages = await Promise.all(
         paginatedClaims.map(async (claim: any) => {
+          const claimId = claim.claim_id;
+          
+          // ✅ Verificar se já temos mensagens em cache
+          if (mensagensCache.current[claimId]) {
+            console.log(`📦 Cache HIT para claim ${claimId}`);
+            return {
+              ...claim,
+              timeline_mensagens: mensagensCache.current[claimId]
+            };
+          }
+          
+          // ❌ Cache MISS - Buscar do Supabase
+          console.log(`🔍 Cache MISS para claim ${claimId} - buscando do Supabase`);
           const { data: mensagens } = await supabase
             .from('reclamacoes_mensagens')
             .select('*')
-            .eq('claim_id', claim.claim_id)
+            .eq('claim_id', claimId)
             .order('date_created', { ascending: false });
+          
+          // ✅ Salvar no cache
+          mensagensCache.current[claimId] = mensagens || [];
           
           return {
             ...claim,
@@ -296,6 +315,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
   // Buscar SOMENTE quando shouldFetch mudar (disparado pelo botão Buscar)
   useEffect(() => {
     if (shouldFetch && selectedAccountIds && selectedAccountIds.length > 0) {
+      clearCache(); // 🧹 Limpar cache ao fazer nova busca
       fetchReclamacoes();
     }
   }, [shouldFetch]);
@@ -307,15 +327,31 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
       const endIndex = startIndex + pagination.itemsPerPage;
       const paginatedClaims = allFilteredClaims.slice(startIndex, endIndex);
 
-      // Buscar mensagens apenas para claims da página atual
+      // 🚀 OTIMIZAÇÃO: Buscar mensagens com cache
       const fetchMessagesForPage = async () => {
         const claimsWithMessages = await Promise.all(
           paginatedClaims.map(async (claim: any) => {
+            const claimId = claim.claim_id;
+            
+            // ✅ Verificar se já temos mensagens em cache
+            if (mensagensCache.current[claimId]) {
+              console.log(`📦 Cache HIT para claim ${claimId}`);
+              return {
+                ...claim,
+                timeline_mensagens: mensagensCache.current[claimId]
+              };
+            }
+            
+            // ❌ Cache MISS - Buscar do Supabase
+            console.log(`🔍 Cache MISS para claim ${claimId} - buscando do Supabase`);
             const { data: mensagens } = await supabase
               .from('reclamacoes_mensagens')
               .select('*')
-              .eq('claim_id', claim.claim_id)
+              .eq('claim_id', claimId)
               .order('date_created', { ascending: false });
+            
+            // ✅ Salvar no cache
+            mensagensCache.current[claimId] = mensagens || [];
             
             return {
               ...claim,
@@ -355,6 +391,12 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
+  };
+
+  // 🧹 LIMPAR CACHE ao fazer nova busca
+  const clearCache = () => {
+    mensagensCache.current = {};
+    console.log('🧹 Cache de mensagens limpo');
   };
 
   return {
