@@ -47,25 +47,9 @@ export function ReclamacoesPage() {
   const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(3600000); // 1 hora em ms (padrão)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
-  // ⚡ Estado para dados filtrados (mais eficiente que useRef + forceUpdate)
-  const [filteredReclamacoes, setFilteredReclamacoes] = useState<any[]>([]);
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   
-  // ✅ CALLBACK MEMOIZADO FORA DO JSX para evitar recriação
-  // 🔥 PROTEÇÃO ANTI-LOOP: Comparar hash dos IDs ao invés do array completo
-  const handleFilteredDataChange = React.useCallback((data: any[]) => {
-    setFilteredReclamacoes(prev => {
-      // ⚡ PROTEÇÃO INTELIGENTE: Comparar por hash de IDs
-      const prevHash = prev.map(p => p.claim_id).sort().join('|');
-      const dataHash = data.map(d => d.claim_id).sort().join('|');
-      
-      if (prevHash === dataHash) {
-        return prev; // Mesmos dados, não atualizar
-      }
-      
-      return data;
-    });
-  }, []);
+  // ✅ FASE 4.1: Filtros em cascata aplicados diretamente no componente filho
   
   
   // 💾 PERSISTÊNCIA COM LOCALSTORAGE
@@ -362,20 +346,18 @@ export function ReclamacoesPage() {
     };
   }, [allRawClaims]); // ✅ CRÍTICO: Apenas allRawClaims como dependência
 
-  // Converter dados in-memory para array e aplicar análise
-  // ✅ PRÉ-CALCULAR STATUS DE CICLO DE VIDA UMA ÚNICA VEZ
+  // ✅ FASE 4.1: PRÉ-CALCULAR TUDO UMA ÚNICA VEZ (análise + lifecycle)
   const reclamacoesWithAnalise = useMemo(() => {
     const dataArray = Object.values(dadosInMemory);
     
     return dataArray
       .map((claim: any) => {
-        // ⚡ Calcular status do ciclo de vida uma única vez
+        // ⚡ Calcular status do ciclo de vida e análise juntos
         const lifecycleStatus = calcularStatusCiclo(claim);
         
         return {
           ...claim,
           status_analise: analiseStatus[claim.claim_id] || 'pendente',
-          // 🎯 Armazenar resultado do cálculo para reutilização
           _lifecycleStatus: lifecycleStatus
         };
       })
@@ -417,16 +399,11 @@ export function ReclamacoesPage() {
     setAnotacoesModalOpen(true);
   };
 
-  // Filtrar por aba ativa - usa dados filtrados se houver filtros aplicados
-  const dadosParaFiltrar = filteredReclamacoes.length > 0 ? filteredReclamacoes : reclamacoesWithAnalise;
-  
-  // Aplicar filtro de ciclo de vida
-  // ⚡ USAR STATUS PRÉ-CALCULADO (_lifecycleStatus)
+  // ✅ FASE 4.1: Aplicar filtro de ciclo de vida diretamente
   const dadosComLifecycleFilter = useMemo(() => {
-    if (!lifecycleFilter) return dadosParaFiltrar;
+    if (!lifecycleFilter) return reclamacoesWithAnalise;
 
-    return dadosParaFiltrar.filter((claim: any) => {
-      // ✅ Reutilizar status já calculado
+    return reclamacoesWithAnalise.filter((claim: any) => {
       const status = claim._lifecycleStatus;
       if (!status) return true;
       
@@ -441,8 +418,9 @@ export function ReclamacoesPage() {
           return true;
       }
     });
-  }, [dadosParaFiltrar, lifecycleFilter]);
+  }, [reclamacoesWithAnalise, lifecycleFilter]);
   
+  // ✅ FASE 4.1: Separar ativas/histórico diretamente dos dados com lifecycle filter
   const reclamacoesAtivas = useMemo(() => {
     return dadosComLifecycleFilter.filter((claim: any) => 
       ACTIVE_STATUSES.includes(claim.status_analise)
@@ -457,13 +435,11 @@ export function ReclamacoesPage() {
 
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
   
-  // Calcular contadores para o filtro rápido
-  // ⚡ USAR STATUS PRÉ-CALCULADO
+  // ✅ FASE 4.1: Calcular contadores de lifecycle de forma otimizada
   const lifecycleCounts = useMemo(() => {
     const counts = { critical: 0, urgent: 0, attention: 0 };
     
-    dadosParaFiltrar.forEach((claim: any) => {
-      // ✅ Reutilizar status já calculado
+    reclamacoesWithAnalise.forEach((claim: any) => {
       const status = claim._lifecycleStatus;
       if (!status) return;
       
@@ -473,7 +449,7 @@ export function ReclamacoesPage() {
     });
     
     return counts;
-  }, [dadosParaFiltrar]);
+  }, [reclamacoesWithAnalise]);
 
 
   const handleBuscar = () => {
@@ -575,11 +551,10 @@ export function ReclamacoesPage() {
         {/* Sub-navegação de Pedidos */}
         <MLOrdersNav />
 
-        {/* Barra de Filtros Cascata */}
+        {/* ✅ FASE 4.1: Barra de Filtros Cascata SEM callback de mudança */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
           <ReclamacoesFilterBarCascata 
             reclamacoes={reclamacoesWithAnalise}
-            onFilteredDataChange={handleFilteredDataChange}
           />
         )}
 

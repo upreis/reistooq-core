@@ -40,8 +40,8 @@ import {
 
 interface ReclamacoesFilterBarCascataProps {
   reclamacoes: any[];
-  onFilteredDataChange?: (data: any[]) => void;
   className?: string;
+  // ✅ FASE 4.1: Removido onFilteredDataChange - filtros são apenas visuais
 }
 
 interface FilterState {
@@ -58,7 +58,6 @@ interface FilterState {
 
 export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps>(({ 
   reclamacoes,
-  onFilteredDataChange,
   className
 }) => {
   const [filters, setFilters] = useState<FilterState>({
@@ -126,44 +125,8 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     });
   }, [reclamacoes, filters]);
 
-  // ⚡ DEBOUNCE OTIMIZADO: Notificar mudanças apenas quando realmente necessário
-  const debounceTimerRef = useRef<NodeJS.Timeout>();
-  const lastNotifiedDataRef = useRef<string>(''); // Cache do último hash notificado
-  
-  useEffect(() => {
-    // ✅ PROTEÇÃO: Verificar se callback é válido
-    if (!onFilteredDataChange || typeof onFilteredDataChange !== 'function') {
-      return;
-    }
-    
-    // ⚡ OTIMIZAÇÃO CRÍTICA: Criar hash dos IDs para comparação eficiente
-    const currentHash = filteredData.map(d => d.claim_id).sort().join('|');
-    
-    // 🔥 PROTEÇÃO: Só notificar se realmente mudou
-    if (currentHash === lastNotifiedDataRef.current) {
-      return; // Dados iguais, não notificar
-    }
-    
-    // ✅ CORREÇÃO: Atualizar ref ANTES de agendar para evitar race condition
-    lastNotifiedDataRef.current = currentHash;
-    
-    // Limpar timer anterior
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    
-    // ⚡ Agendar notificação com debounce
-    debounceTimerRef.current = setTimeout(() => {
-      onFilteredDataChange(filteredData);
-    }, 300); // 300ms de delay
-    
-    // Cleanup
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [filteredData, onFilteredDataChange]); // ✅ CRÍTICO: Incluir callback nas dependências
+  // ✅ FASE 4.1: Filtros são APENAS VISUAIS - não propagam mudanças
+  // Removido sistema de callback para eliminar loops de re-render
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam
