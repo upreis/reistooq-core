@@ -4510,6 +4510,7 @@ export type Database = {
           buyer_id: number | null
           buyer_nickname: string | null
           claim_id: string
+          codigo_rastreamento: string | null
           created_at: string | null
           data_vencimento_acao: string | null
           date_created: string | null
@@ -4557,6 +4558,10 @@ export type Database = {
           total_evidencias: number | null
           total_mensagens: number | null
           total_trocas: number | null
+          tracking_method: string | null
+          tracking_number: string | null
+          tracking_status: string | null
+          tracking_substatus: string | null
           troca_data_criacao: string | null
           troca_data_estimada_fim: string | null
           troca_data_estimada_inicio: string | null
@@ -4577,6 +4582,7 @@ export type Database = {
           buyer_id?: number | null
           buyer_nickname?: string | null
           claim_id: string
+          codigo_rastreamento?: string | null
           created_at?: string | null
           data_vencimento_acao?: string | null
           date_created?: string | null
@@ -4624,6 +4630,10 @@ export type Database = {
           total_evidencias?: number | null
           total_mensagens?: number | null
           total_trocas?: number | null
+          tracking_method?: string | null
+          tracking_number?: string | null
+          tracking_status?: string | null
+          tracking_substatus?: string | null
           troca_data_criacao?: string | null
           troca_data_estimada_fim?: string | null
           troca_data_estimada_inicio?: string | null
@@ -4644,6 +4654,7 @@ export type Database = {
           buyer_id?: number | null
           buyer_nickname?: string | null
           claim_id?: string
+          codigo_rastreamento?: string | null
           created_at?: string | null
           data_vencimento_acao?: string | null
           date_created?: string | null
@@ -4691,6 +4702,10 @@ export type Database = {
           total_evidencias?: number | null
           total_mensagens?: number | null
           total_trocas?: number | null
+          tracking_method?: string | null
+          tracking_number?: string | null
+          tracking_status?: string | null
+          tracking_substatus?: string | null
           troca_data_criacao?: string | null
           troca_data_estimada_fim?: string | null
           troca_data_estimada_inicio?: string | null
