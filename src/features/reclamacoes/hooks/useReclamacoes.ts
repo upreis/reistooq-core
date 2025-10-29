@@ -243,9 +243,9 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
         currentPage: 1 // Reset para página 1
       }));
 
-      // ✅ APLICAR PAGINAÇÃO CLIENT-SIDE (SLICE LOCAL)
+      // ✅ MOSTRAR TODOS OS DADOS (sem paginação)
       const startIndex = 0;
-      const endIndex = pagination.itemsPerPage;
+      const endIndex = filteredClaims.length; // ✅ Todos os itens
       const paginatedClaims = filteredClaims.slice(startIndex, endIndex);
 
       // 🚀 OTIMIZAÇÃO: Buscar mensagens apenas para claims que NÃO estão em cache
@@ -284,7 +284,7 @@ export function useReclamacoes(filters: ClaimFilters, selectedAccountIds: string
 
       toast({
         title: `${filteredClaims.length} reclamações encontradas`,
-        description: `Mostrando página 1 de ${Math.ceil(filteredClaims.length / pagination.itemsPerPage)}`
+        description: undefined // ✅ Removido texto de paginação
       });
 
     } catch (err: any) {
