@@ -746,6 +746,29 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('order_status'))}</span>,
   },
   {
+    accessorKey: 'tracking_number',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Número de Rastreio
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const trackingNumber = row.original.codigo_rastreamento || row.original.tracking_number;
+      return trackingNumber ? (
+        <span className="font-mono text-xs">{trackingNumber}</span>
+      ) : (
+        <span className="text-muted-foreground">-</span>
+      );
+    },
+  },
+  {
     accessorKey: 'order_total',
     header: ({ column }) => {
       return (

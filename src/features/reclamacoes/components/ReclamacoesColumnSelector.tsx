@@ -52,6 +52,7 @@ const columnLabels: Record<string, string> = {
   'tem_mediacao': 'Tem Mediação',
   'order_id': 'N.º Pedido',
   'order_status': 'Status Pedido',
+  'tracking_number': 'Número de Rastreio',
   'actions': 'Ações'
 };
 
@@ -66,7 +67,7 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
     'Cliente & Produto': ['buyer_nickname', 'order_item_title', 'order_item_quantity', 'order_item_unit_price', 'order_item_seller_sku'],
     'Valores': ['amount_value', 'order_total', 'impacto_financeiro'],
     'Resolução': ['resolution_benefited', 'resolution_reason'],
-    'Outros': ['site_id', 'tem_trocas', 'tem_mediacao', 'order_id', 'order_status'],
+    'Outros': ['site_id', 'tem_trocas', 'tem_mediacao', 'order_id', 'order_status', 'tracking_number'],
     'Ações': ['actions']
   };
 
