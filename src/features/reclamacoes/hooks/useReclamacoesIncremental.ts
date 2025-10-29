@@ -53,17 +53,19 @@ export function useReclamacoesIncremental() {
       setIsLoadingIncremental(true);
 
       // ✅ Buscar dados das contas COM RETRY
-      const accountsResult = await withRetry(
+      const { data: accountsData, error: accountsError } = await withRetry(
         async () => {
-          return await supabase
+          const result = await supabase
             .from('integration_accounts')
             .select('id, account_identifier, name')
             .in('id', selectedAccountIds);
+          
+          // ✅ CRÍTICO: withRetry precisa que retornemos o resultado completo
+          if (result.error) throw result.error;
+          return result;
         },
         { maxRetries: 3 }
-      );
-      
-      const { data: accountsData, error: accountsError } = accountsResult as any;
+      ) as any;
 
       if (accountsError || !accountsData || accountsData.length === 0) {
         throw new Error('Não foi possível obter informações das contas');
@@ -75,10 +77,10 @@ export function useReclamacoesIncremental() {
       for (const account of accountsData) {
         if (!account.account_identifier) continue;
 
-        // ✅ Edge function COM RETRY para evitar falhas de rede
-        const functionResult = await withRetry(
+        // ✅ Edge function COM RETRY
+        const { data, error: functionError } = await withRetry(
           async () => {
-            return await supabase.functions.invoke('ml-claims-fetch', {
+            const result = await supabase.functions.invoke('ml-claims-fetch', {
               body: {
                 accountId: account.id,
                 sellerId: account.account_identifier,
@@ -92,11 +94,18 @@ export function useReclamacoesIncremental() {
                 offset: 0
               }
             });
+            
+            // ✅ CRÍTICO: Se edge function retornar erro, lançar para trigger retry
+            if (result.error) throw result.error;
+            return result;
           },
-          { maxRetries: 3, retryDelay: 1000 }
-        );
-        
-        const { data, error: functionError } = functionResult as any;
+          { 
+            maxRetries: 3, 
+            retryDelay: 1000,
+            // ✅ IMPORTANTE: Não retentar em erros 4xx (ex: 404, 401)
+            retryOnStatus: [408, 429, 500, 502, 503, 504]
+          }
+        ) as any;
 
         if (functionError) {
           console.error('[Incremental] Erro na edge function:', functionError);

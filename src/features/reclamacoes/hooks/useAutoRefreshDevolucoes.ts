@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { withRetry } from "@/utils/apiRetry";
 import { DevolucaoComAnalise, STATUS_ATIVOS, STATUS_HISTORICO } from "../types/devolucao-analise.types";
 
 interface UseAutoRefreshDevolucoesProps {
@@ -49,13 +50,22 @@ export function useAutoRefreshDevolucoes({
       // Evitar query muito grande - máximo 10 contas por vez
       const limitedAccountIds = accountIds.slice(0, 10);
       
-      const { data, error } = await supabase
-        .from('devolucoes_avancadas')
-        .select('*')
-        .in('integration_account_id', limitedAccountIds)
-        .in('status_analise', STATUS_ATIVOS)
-        .order('ultima_atualizacao_real', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+      // ✅ ADICIONAR RETRY nas queries Supabase
+      const { data, error } = await withRetry(
+        async () => {
+          const result = await supabase
+            .from('devolucoes_avancadas')
+            .select('*')
+            .in('integration_account_id', limitedAccountIds)
+            .in('status_analise', STATUS_ATIVOS)
+            .order('ultima_atualizacao_real', { ascending: false, nullsFirst: false })
+            .order('created_at', { ascending: false });
+          
+          if (result.error) throw result.error;
+          return result;
+        },
+        { maxRetries: 3, retryDelay: 1000 }
+      ) as any;
       
       if (error) {
         console.error('Erro ao buscar devoluções ativas:', error);
@@ -95,14 +105,23 @@ export function useAutoRefreshDevolucoes({
       // Evitar query muito grande - máximo 10 contas por vez
       const limitedAccountIds = accountIds.slice(0, 10);
       
-      const { data, error } = await supabase
-        .from('devolucoes_avancadas')
-        .select('*')
-        .in('integration_account_id', limitedAccountIds)
-        .in('status_analise', STATUS_HISTORICO)
-        .order('data_status_analise', { ascending: false, nullsFirst: false })
-        .order('updated_at', { ascending: false })
-        .limit(200); // Limitar histórico para performance
+      // ✅ ADICIONAR RETRY nas queries Supabase
+      const { data, error } = await withRetry(
+        async () => {
+          const result = await supabase
+            .from('devolucoes_avancadas')
+            .select('*')
+            .in('integration_account_id', limitedAccountIds)
+            .in('status_analise', STATUS_HISTORICO)
+            .order('data_status_analise', { ascending: false, nullsFirst: false })
+            .order('updated_at', { ascending: false })
+            .limit(200);
+          
+          if (result.error) throw result.error;
+          return result;
+        },
+        { maxRetries: 3, retryDelay: 1000 }
+      ) as any;
       
       if (error) {
         console.error('Erro ao buscar histórico de devoluções:', error);
