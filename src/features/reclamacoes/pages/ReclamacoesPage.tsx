@@ -221,9 +221,11 @@ export function ReclamacoesPage() {
       setDadosInMemory(prevData => {
         const newData = { ...prevData };
         const agora = new Date().toISOString();
+        const idsBuscaAtual = new Set<string>();
 
         allRawClaims.forEach((claim: any) => {
           const claimId = claim.claim_id;
+          idsBuscaAtual.add(claimId);
           const existing = newData[claimId];
 
           if (!existing) {
@@ -231,6 +233,7 @@ export function ReclamacoesPage() {
             newData[claimId] = {
               ...claim,
               primeira_vez_visto: agora,
+              ultima_busca: agora,
               campos_atualizados: [],
               snapshot_anterior: null
             };
@@ -256,6 +259,7 @@ export function ReclamacoesPage() {
             newData[claimId] = {
               ...claim,
               primeira_vez_visto: existing.primeira_vez_visto,
+              ultima_busca: agora, // ✅ Marca quando foi visto pela última vez
               campos_atualizados: camposAtualizados.length > 0 
                 ? camposAtualizados 
                 : (existing.campos_atualizados || []),
@@ -266,6 +270,9 @@ export function ReclamacoesPage() {
         });
 
         console.log(`✅ Total salvo no localStorage: ${Object.keys(newData).length} registros`);
+        console.log(`📋 Registros da busca atual: ${idsBuscaAtual.size}`);
+        console.log(`📚 Total de registros históricos: ${Object.keys(newData).length}`);
+        
         return newData;
       });
     }
