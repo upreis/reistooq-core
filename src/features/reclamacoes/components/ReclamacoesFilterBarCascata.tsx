@@ -128,28 +128,21 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
 
   // ⚡ DEBOUNCE: Notificar mudanças nos dados filtrados com delay de 300ms
   const debounceTimerRef = useRef<NodeJS.Timeout>();
-  const filteredDataRef = useRef(filteredData);
-  const previousLengthRef = useRef(filteredData.length);
-  filteredDataRef.current = filteredData;
   
   useEffect(() => {
-    // ✅ PROTEÇÃO: Só notificar se realmente mudou o tamanho ou conteúdo
-    if (filteredData.length === previousLengthRef.current && filteredData.length > 0) {
-      return; // Sem mudanças significativas, não notificar
+    // ✅ PROTEÇÃO: Verificar se callback é válido
+    if (!onFilteredDataChange || typeof onFilteredDataChange !== 'function') {
+      return;
     }
-    
-    previousLengthRef.current = filteredData.length;
     
     // Limpar timer anterior
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     
-    // Agendar nova notificação
+    // ⚡ Agendar notificação com debounce
     debounceTimerRef.current = setTimeout(() => {
-      if (onFilteredDataChange && typeof onFilteredDataChange === 'function') {
-        onFilteredDataChange(filteredDataRef.current);
-      }
+      onFilteredDataChange(filteredData);
     }, 300); // 300ms de delay
     
     // Cleanup
@@ -158,7 +151,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [filteredData.length]); // ✅ Só reagir a mudanças no tamanho
+  }, [filteredData.length, filters]); // ✅ Reagir a mudanças no tamanho OU nos filtros
 
 
   // 🚀 OTIMIZAÇÃO CRÍTICA: Calcular opções APENAS quando filtros mudam
