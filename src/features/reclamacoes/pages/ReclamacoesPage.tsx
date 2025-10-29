@@ -534,38 +534,6 @@ export function ReclamacoesPage() {
             onSearchChange={setSearchTerm}
           />
 
-          {/* Botão Filtros Avançados */}
-          <div className="mt-4 flex items-center justify-between border-t pt-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-            >
-              <ChevronDown className={`h-4 w-4 mr-2 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-              {showAdvancedFilters ? 'Ocultar' : 'Mostrar'} filtros avançados
-            </Button>
-
-            {hasActiveAdvancedFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAdvancedFilters}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Limpar filtros avançados
-              </Button>
-            )}
-          </div>
-
-          {/* Filtros Avançados */}
-          {showAdvancedFilters && (
-            <div className="mt-4 pt-4 border-t">
-              <ReclamacoesFilters
-                filters={filters}
-                onFiltersChange={setFilters}
-              />
-            </div>
-          )}
 
           {/* Botão Buscar */}
           <div className="mt-4 flex justify-end gap-2">
