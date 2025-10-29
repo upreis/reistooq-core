@@ -6361,10 +6361,7 @@ export type Database = {
         Args: { p_integration_account_id: string; p_provider: string }
         Returns: Json
       }
-      get_user_organization_id: {
-        Args: { target_user_id: string }
-        Returns: string
-      }
+      get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       get_user_permissions: { Args: never; Returns: string[] }
       has_permission: { Args: { permission_key: string }; Returns: boolean }
       hv_delete: { Args: { _id: string }; Returns: undefined }
