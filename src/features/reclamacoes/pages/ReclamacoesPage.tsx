@@ -122,7 +122,7 @@ export function ReclamacoesPage() {
     },
   });
 
-  // Auto-selecionar contas usando validação centralizada
+  // ✅ CORREÇÃO ANTI-LOOP: Auto-selecionar contas APENAS UMA VEZ
   React.useEffect(() => {
     if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
       const { accountIds } = validateMLAccounts(mlAccounts, selectedAccountIds);
@@ -135,7 +135,7 @@ export function ReclamacoesPage() {
         });
       }
     }
-  }, [mlAccounts, selectedAccountIds.length]);
+  }, [mlAccounts]); // ✅ CRÍTICO: Remover selectedAccountIds.length das dependências
 
   const {
     reclamacoes: rawReclamacoes,
@@ -157,8 +157,35 @@ export function ReclamacoesPage() {
     isLoadingIncremental 
   } = useReclamacoesIncremental();
 
+  // ✅ CORREÇÃO ANTI-LOOP: Ref para controlar se interval já foi criado
+  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const lastAutoRefreshConfig = React.useRef<string>('');
+  
   // 🔄 Auto-refresh INCREMENTAL configurável (mínimo 1 hora)
   React.useEffect(() => {
+    // ✅ Gerar hash de configuração para evitar recriar interval desnecessariamente
+    const config = JSON.stringify({
+      enabled: autoRefreshEnabled,
+      shouldFetch,
+      interval: autoRefreshInterval,
+      accounts: selectedAccountIds.sort(),
+      status: filters.status,
+      type: filters.type
+    });
+    
+    // ✅ Se configuração não mudou, não fazer nada
+    if (config === lastAutoRefreshConfig.current && intervalRef.current) {
+      return;
+    }
+    
+    lastAutoRefreshConfig.current = config;
+    
+    // ✅ Limpar interval anterior se existir
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    
     if (!autoRefreshEnabled || !shouldFetch) {
       console.log('⏸️ Auto-refresh pausado:', { autoRefreshEnabled, shouldFetch });
       return;
@@ -167,165 +194,173 @@ export function ReclamacoesPage() {
     const intervalMs = Math.max(autoRefreshInterval, 3600000); // Mínimo de 1 hora
     console.log(`🔄 Auto-refresh ativo: ${intervalMs / 60000} minutos (${intervalMs / 3600000}h)`);
     
-    const interval = setInterval(async () => {
+    intervalRef.current = setInterval(async () => {
       console.log(`🔄 Auto-refresh executando (intervalo: ${intervalMs / 60000} minutos)...`);
       
       // ✅ SEMPRE usar 60 dias no auto-refresh
       const dataInicio60Dias = new Date();
       dataInicio60Dias.setDate(dataInicio60Dias.getDate() - 60);
       
-      const { newClaims, updatedClaims } = await fetchIncremental({
-        selectedAccountIds, // Todas as contas selecionadas
-        filters: {
-          status: filters.status,
-          type: filters.type,
-          date_from: dataInicio60Dias.toISOString(), // Sempre 60 dias
-          date_to: new Date().toISOString() // Agora
-        }
-      });
-
-      // ✅ PROCESSAR apenas se houver mudanças
-      if (newClaims.length > 0 || updatedClaims.length > 0) {
-        const allChanges = [...newClaims, ...updatedClaims];
-        
-        setDadosInMemory(prevData => {
-          const newData = { ...prevData };
-          const agora = new Date().toISOString();
-
-          allChanges.forEach((claim: any) => {
-            const claimId = claim.claim_id;
-            const existing = newData[claimId];
-
-            if (!existing) {
-              // Novo registro
-              newData[claimId] = {
-                ...claim,
-                primeira_vez_visto: agora,
-                campos_atualizados: [],
-                snapshot_anterior: null
-              };
-            } else {
-              // Registro existente - detectar mudanças
-              const camposAtualizados = [];
-              const camposParaMonitorar = [
-                'status', 'stage', 'last_updated', 'resolution', 
-                'benefited', 'resolution_reason', 'messages_count'
-              ];
-
-              for (const campo of camposParaMonitorar) {
-                if (claim[campo] !== existing[campo]) {
-                  camposAtualizados.push({
-                    campo,
-                    valor_anterior: existing[campo],
-                    valor_novo: claim[campo],
-                    data_mudanca: agora
-                  });
-                }
-              }
-
-              newData[claimId] = {
-                ...claim,
-                primeira_vez_visto: existing.primeira_vez_visto,
-                campos_atualizados: camposAtualizados.length > 0 
-                  ? camposAtualizados 
-                  : (existing.campos_atualizados || []),
-                snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
-                ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
-              };
-            }
-          });
-
-          return newData;
+      try {
+        const { newClaims, updatedClaims } = await fetchIncremental({
+          selectedAccountIds,
+          filters: {
+            status: filters.status,
+            type: filters.type,
+            date_from: dataInicio60Dias.toISOString(),
+            date_to: new Date().toISOString()
+          }
         });
+
+        // ✅ PROCESSAR apenas se houver mudanças
+        if (newClaims.length > 0 || updatedClaims.length > 0) {
+          const allChanges = [...newClaims, ...updatedClaims];
+          
+          setDadosInMemory(prevData => {
+            const newData = { ...prevData };
+            const agora = new Date().toISOString();
+
+            allChanges.forEach((claim: any) => {
+              const claimId = claim.claim_id;
+              const existing = newData[claimId];
+
+              if (!existing) {
+                newData[claimId] = {
+                  ...claim,
+                  primeira_vez_visto: agora,
+                  campos_atualizados: [],
+                  snapshot_anterior: null
+                };
+              } else {
+                const camposAtualizados = [];
+                const camposParaMonitorar = [
+                  'status', 'stage', 'last_updated', 'resolution', 
+                  'benefited', 'resolution_reason', 'messages_count'
+                ];
+
+                for (const campo of camposParaMonitorar) {
+                  if (claim[campo] !== existing[campo]) {
+                    camposAtualizados.push({
+                      campo,
+                      valor_anterior: existing[campo],
+                      valor_novo: claim[campo],
+                      data_mudanca: agora
+                    });
+                  }
+                }
+
+                newData[claimId] = {
+                  ...claim,
+                  primeira_vez_visto: existing.primeira_vez_visto,
+                  campos_atualizados: camposAtualizados.length > 0 
+                    ? camposAtualizados 
+                    : (existing.campos_atualizados || []),
+                  snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
+                  ultima_atualizacao_real: camposAtualizados.length > 0 ? agora : existing.ultima_atualizacao_real
+                };
+              }
+            });
+
+            return newData;
+          });
+        }
+      } catch (error) {
+        console.error('❌ Erro no auto-refresh:', error);
       }
     }, intervalMs);
 
     return () => {
-      clearInterval(interval);
-      console.log('🛑 Auto-refresh desativado');
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        console.log('🛑 Auto-refresh desativado');
+      }
     };
-  }, [autoRefreshEnabled, shouldFetch, selectedAccountIds, filters.status, filters.type, fetchIncremental, setDadosInMemory, autoRefreshInterval]);
+  }, [autoRefreshEnabled, shouldFetch, autoRefreshInterval]); // ✅ CRÍTICO: Remover deps que causam loop
 
   // 🔥 MERGE de dados da API com in-memory (mantém histórico + detecta mudanças)
   // ✅ USAR TODOS OS DADOS (allRawClaims) não apenas a página atual
-  // ⚡ COM DEBOUNCE INTELIGENTE para evitar múltiplas gravações
+  // ⚡ CORREÇÃO ANTI-LOOP: Usar ref para controlar se merge já foi executado
   const lastSaveHashRef = React.useRef<string>('');
+  const mergeTimeoutRef = React.useRef<NodeJS.Timeout>();
   
   React.useEffect(() => {
-    if (allRawClaims.length > 0) {
-      // ⚡ PROTEÇÃO INTELIGENTE: Comparar hash dos dados ao invés de tempo
-      const currentHash = allRawClaims.map(c => c.claim_id).sort().join('|');
-      
-      if (currentHash === lastSaveHashRef.current) {
-        console.log('⏸️ Salvamento bloqueado - dados idênticos aos últimos salvos');
-        return;
-      }
-      
-      console.log(`💾 Preparando para salvar ${allRawClaims.length} reclamações...`);
-      
-      // Debounce: esperar 500ms antes de salvar
-      const timeoutId = setTimeout(() => {
-        lastSaveHashRef.current = currentHash;
-        
-        setDadosInMemory(prevData => {
-          const newData = { ...prevData };
-          const agoraISO = new Date().toISOString();
-          const idsBuscaAtual = new Set<string>();
-
-          allRawClaims.forEach((claim: any) => {
-            const claimId = claim.claim_id;
-            idsBuscaAtual.add(claimId);
-            const existing = newData[claimId];
-
-            if (!existing) {
-              newData[claimId] = {
-                ...claim,
-                primeira_vez_visto: agoraISO,
-                ultima_busca: agoraISO,
-                campos_atualizados: [],
-                snapshot_anterior: null
-              };
-            } else {
-              const camposAtualizados = [];
-              const camposParaMonitorar = [
-                'status', 'stage', 'last_updated', 'resolution', 
-                'benefited', 'resolution_reason', 'messages_count'
-              ];
-
-              for (const campo of camposParaMonitorar) {
-                if (claim[campo] !== existing[campo]) {
-                  camposAtualizados.push({
-                    campo,
-                    valor_anterior: existing[campo],
-                    valor_novo: claim[campo],
-                    data_mudanca: agoraISO
-                  });
-                }
-              }
-
-              newData[claimId] = {
-                ...claim,
-                primeira_vez_visto: existing.primeira_vez_visto,
-                ultima_busca: agoraISO,
-                campos_atualizados: camposAtualizados.length > 0 
-                  ? camposAtualizados 
-                  : (existing.campos_atualizados || []),
-                snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
-                ultima_atualizacao_real: camposAtualizados.length > 0 ? agoraISO : existing.ultima_atualizacao_real
-              };
-            }
-          });
-
-          console.log(`✅ Salvamento concluído: ${Object.keys(newData).length} registros`);
-          console.log(`📋 Busca atual: ${idsBuscaAtual.size} | 📚 Total histórico: ${Object.keys(newData).length}`);
-          
-          return newData;
-        });
-      }, 500);
-
-      return () => clearTimeout(timeoutId);
+    // ✅ Limpar timeout anterior se existir
+    if (mergeTimeoutRef.current) {
+      clearTimeout(mergeTimeoutRef.current);
     }
-  }, [allRawClaims, setDadosInMemory]);
+    
+    if (allRawClaims.length === 0) return;
+    
+    // ⚡ PROTEÇÃO INTELIGENTE: Comparar hash dos dados
+    const currentHash = allRawClaims.map(c => c.claim_id).sort().join('|');
+    
+    if (currentHash === lastSaveHashRef.current) {
+      return; // Dados idênticos, não fazer nada
+    }
+    
+    // Debounce: esperar 1000ms antes de salvar (aumentado de 500ms para evitar salvar muito frequentemente)
+    mergeTimeoutRef.current = setTimeout(() => {
+      lastSaveHashRef.current = currentHash;
+      
+      setDadosInMemory(prevData => {
+        const newData = { ...prevData };
+        const agoraISO = new Date().toISOString();
+
+        allRawClaims.forEach((claim: any) => {
+          const claimId = claim.claim_id;
+          const existing = newData[claimId];
+
+          if (!existing) {
+            newData[claimId] = {
+              ...claim,
+              primeira_vez_visto: agoraISO,
+              ultima_busca: agoraISO,
+              campos_atualizados: [],
+              snapshot_anterior: null
+            };
+          } else {
+            const camposAtualizados = [];
+            const camposParaMonitorar = [
+              'status', 'stage', 'last_updated', 'resolution', 
+              'benefited', 'resolution_reason', 'messages_count'
+            ];
+
+            for (const campo of camposParaMonitorar) {
+              if (claim[campo] !== existing[campo]) {
+                camposAtualizados.push({
+                  campo,
+                  valor_anterior: existing[campo],
+                  valor_novo: claim[campo],
+                  data_mudanca: agoraISO
+                });
+              }
+            }
+
+            newData[claimId] = {
+              ...claim,
+              primeira_vez_visto: existing.primeira_vez_visto,
+              ultima_busca: agoraISO,
+              campos_atualizados: camposAtualizados.length > 0 
+                ? camposAtualizados 
+                : (existing.campos_atualizados || []),
+              snapshot_anterior: camposAtualizados.length > 0 ? existing : existing.snapshot_anterior,
+              ultima_atualizacao_real: camposAtualizados.length > 0 ? agoraISO : existing.ultima_atualizacao_real
+            };
+          }
+        });
+
+        console.log(`✅ Merge concluído: ${Object.keys(newData).length} registros`);
+        return newData;
+      });
+    }, 1000);
+
+    return () => {
+      if (mergeTimeoutRef.current) {
+        clearTimeout(mergeTimeoutRef.current);
+      }
+    };
+  }, [allRawClaims]); // ✅ CRÍTICO: Apenas allRawClaims como dependência
 
   // Converter dados in-memory para array e aplicar análise
   // ✅ PRÉ-CALCULAR STATUS DE CICLO DE VIDA UMA ÚNICA VEZ
