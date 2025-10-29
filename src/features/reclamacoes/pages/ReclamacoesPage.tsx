@@ -646,6 +646,9 @@ export function ReclamacoesPage() {
                   reclamacoes={reclamacoesAtivas}
                   isLoading={false}
                   error={error}
+                  pagination={paginacaoCalculada}
+                  onPageChange={(page) => setLocalPagination(prev => ({ ...prev, currentPage: page }))}
+                  onItemsPerPageChange={(items) => setLocalPagination({ currentPage: 1, itemsPerPage: items })}
                   onStatusChange={handleStatusChange}
                 />
               </Card>
@@ -657,6 +660,9 @@ export function ReclamacoesPage() {
                   reclamacoes={reclamacoesHistorico}
                   isLoading={false}
                   error={error}
+                  pagination={paginacaoCalculada}
+                  onPageChange={(page) => setLocalPagination(prev => ({ ...prev, currentPage: page }))}
+                  onItemsPerPageChange={(items) => setLocalPagination({ currentPage: 1, itemsPerPage: items })}
                   onStatusChange={handleStatusChange}
                 />
               </Card>
