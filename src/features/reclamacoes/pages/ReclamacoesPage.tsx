@@ -465,7 +465,7 @@ export function ReclamacoesPage() {
           </div>
           <div className="flex items-center gap-4">
             {/* Toggle Auto-Refresh com configuração de intervalo */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 border rounded-lg px-3 py-2 bg-card">
               <div className="flex items-center gap-2">
                 <Switch
                   id="auto-refresh"
@@ -473,28 +473,31 @@ export function ReclamacoesPage() {
                   onCheckedChange={setAutoRefreshEnabled}
                   disabled={!shouldFetch}
                 />
-                <Label htmlFor="auto-refresh" className="text-sm cursor-pointer">
+                <Label htmlFor="auto-refresh" className="text-sm cursor-pointer whitespace-nowrap">
                   Auto-refresh
                 </Label>
               </div>
               
               {autoRefreshEnabled && (
-                <Select
-                  value={autoRefreshInterval.toString()}
-                  onValueChange={(value) => setAutoRefreshInterval(Number(value))}
-                >
-                  <SelectTrigger className="w-32 h-8 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="3600000">1 hora</SelectItem>
-                    <SelectItem value="7200000">2 horas</SelectItem>
-                    <SelectItem value="14400000">4 horas</SelectItem>
-                    <SelectItem value="21600000">6 horas</SelectItem>
-                    <SelectItem value="43200000">12 horas</SelectItem>
-                    <SelectItem value="86400000">24 horas</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 border-l pl-3">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Intervalo:</span>
+                  <Select
+                    value={autoRefreshInterval.toString()}
+                    onValueChange={(value) => setAutoRefreshInterval(Number(value))}
+                  >
+                    <SelectTrigger className="w-[110px] h-8 text-xs bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      <SelectItem value="3600000">1 hora</SelectItem>
+                      <SelectItem value="7200000">2 horas</SelectItem>
+                      <SelectItem value="14400000">4 horas</SelectItem>
+                      <SelectItem value="21600000">6 horas</SelectItem>
+                      <SelectItem value="43200000">12 horas</SelectItem>
+                      <SelectItem value="86400000">24 horas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
             
