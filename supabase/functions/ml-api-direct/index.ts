@@ -174,9 +174,9 @@ serve(async (req) => {
       
       // ============ BUSCAR PEDIDOS CANCELADOS DA API MERCADO LIVRE ============
       
-      // ⏱️ Timeout de 2 minutos (aumentado para contas com muitas devoluções)
+      // ⏱️ Timeout de 5 minutos para evitar erro de Network connection lost
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: A busca excedeu 2 minutos. Use filtros de data para reduzir os resultados.')), 120000)
+        setTimeout(() => reject(new Error('Timeout: A busca excedeu 5 minutos. Use filtros de data para reduzir os resultados.')), 300000)
       );
       
       // ✅ PAGINAÇÃO: buscar com limit/offset
