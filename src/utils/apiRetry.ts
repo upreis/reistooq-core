@@ -85,10 +85,10 @@ export async function withRetry<T>(
         throw error;
       }
       
-      // ✅ CORREÇÃO: Calcular delay com exponential backoff começando do attempt atual
-      // Primeira retry (attempt=0): delay base
-      // Segunda retry (attempt=1): delay * 2
-      // Terceira retry (attempt=2): delay * 4
+      // ✅ CORREÇÃO: Calcular delay com exponential backoff
+      // attempt=0 (primeira falha): delay base (1s)
+      // attempt=1 (segunda falha): delay * 2 (2s)
+      // attempt=2 (terceira falha): delay * 4 (4s)
       let delay = opts.retryDelay * Math.pow(2, attempt);
       
       // ✅ ADICIONAR JITTER para evitar thundering herd
@@ -100,9 +100,9 @@ export async function withRetry<T>(
       delay = Math.min(delay, 30000);
       
       // ✅ MELHOR LOG: Só em desenvolvimento
-      if (process.env.NODE_ENV !== 'production') {
+      if (import.meta.env.DEV) {
         console.log(`⚠️ Tentativa ${attempt + 1}/${opts.maxRetries} falhou. Retentando em ${Math.round(delay)}ms...`);
-        console.log(`   Erro: ${error.message}`);
+        console.log(`   Erro: ${error instanceof Error ? error.message : String(error)}`);
       }
       
       await sleep(delay);
@@ -127,10 +127,25 @@ export async function fetchWithRetry(
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), opts.timeout);
     
+    // ✅ CORREÇÃO: Combinar signals se usuário já passou um
+    let combinedSignal = controller.signal;
+    
+    if (init?.signal) {
+      // Criar um novo AbortController que responde a ambos os signals
+      const userController = new AbortController();
+      
+      // Se qualquer um abortar, abortar o combinado
+      const abortHandler = () => userController.abort();
+      controller.signal.addEventListener('abort', abortHandler);
+      init.signal.addEventListener('abort', abortHandler);
+      
+      combinedSignal = userController.signal;
+    }
+    
     try {
       const response = await fetch(input, {
         ...init,
-        signal: controller.signal
+        signal: combinedSignal
       });
       
       clearTimeout(timeoutId);
@@ -169,7 +184,20 @@ export async function postWithRetry<T = any>(
   body: any,
   options?: RetryOptions & { headers?: HeadersInit }
 ): Promise<T> {
+  // ✅ VALIDAÇÃO: Verificar entrada
+  if (!url || typeof url !== 'string') {
+    throw new TypeError('URL deve ser uma string não vazia');
+  }
+  
   const { headers, ...retryOptions } = options || {};
+  
+  // ✅ VALIDAÇÃO: Verificar se body é serializável
+  let serializedBody: string;
+  try {
+    serializedBody = JSON.stringify(body);
+  } catch (error) {
+    throw new TypeError('Body contém estrutura circular ou não serializável');
+  }
   
   const response = await fetchWithRetry(
     url,
@@ -179,12 +207,22 @@ export async function postWithRetry<T = any>(
         'Content-Type': 'application/json',
         ...headers
       },
-      body: JSON.stringify(body)
+      body: serializedBody
     },
     retryOptions
   );
   
-  return response.json();
+  // ✅ VALIDAÇÃO: Verificar se resposta é JSON válido
+  const contentType = response.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    throw new TypeError(`Response não é JSON. Content-Type: ${contentType}`);
+  }
+  
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new TypeError('Resposta contém JSON inválido');
+  }
 }
 
 /**
@@ -194,6 +232,11 @@ export async function getWithRetry<T = any>(
   url: string,
   options?: RetryOptions & { headers?: HeadersInit }
 ): Promise<T> {
+  // ✅ VALIDAÇÃO: Verificar entrada
+  if (!url || typeof url !== 'string') {
+    throw new TypeError('URL deve ser uma string não vazia');
+  }
+  
   const { headers, ...retryOptions } = options || {};
   
   const response = await fetchWithRetry(
@@ -205,5 +248,15 @@ export async function getWithRetry<T = any>(
     retryOptions
   );
   
-  return response.json();
+  // ✅ VALIDAÇÃO: Verificar se resposta é JSON válido
+  const contentType = response.headers.get('content-type');
+  if (!contentType?.includes('application/json')) {
+    throw new TypeError(`Response não é JSON. Content-Type: ${contentType}`);
+  }
+  
+  try {
+    return await response.json();
+  } catch (error) {
+    throw new TypeError('Resposta contém JSON inválido');
+  }
 }
