@@ -16,8 +16,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
+import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
-import { Eye, EyeOff } from 'lucide-react';
+import { Search } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { calcularDiasDesdeAtualizacao, getHighlightConfig } from '../utils/highlight-utils';
 import { cn } from '@/lib/utils';
@@ -100,41 +101,18 @@ export function ReclamacoesTable({
       {/* Barra de Ferramentas */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div className="flex-1 max-w-sm">
-          <Input
-            placeholder="Buscar em todas as colunas..."
-            value={globalFilter ?? ''}
-            onChange={(e) => setGlobalFilter(e.target.value)}
-            className="w-full"
-          />
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar em todas as colunas..."
+              value={globalFilter ?? ''}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              className="w-full pl-9"
+            />
+          </div>
         </div>
         
-        <Button
-          variant="outline"
-          onClick={() => {
-            const keys = table.getAllLeafColumns().map((col) => col.id);
-            const allVisible = keys.every(key => columnVisibility[key] !== false);
-            setColumnVisibility(
-              keys.reduce((acc, key) => {
-                acc[key] = !allVisible;
-                return acc;
-              }, {} as VisibilityState)
-            );
-          }}
-          className="gap-2"
-        >
-          {Object.keys(columnVisibility).length > 0 && 
-           Object.values(columnVisibility).some(v => v === false) ? (
-            <>
-              <Eye className="h-4 w-4" />
-              Mostrar Todas
-            </>
-          ) : (
-            <>
-              <EyeOff className="h-4 w-4" />
-              Ocultar Todas
-            </>
-          )}
-        </Button>
+        <ReclamacoesColumnSelector table={table} />
       </div>
 
       {/* Tabela */}
