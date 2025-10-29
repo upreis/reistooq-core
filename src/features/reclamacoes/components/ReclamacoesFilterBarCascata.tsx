@@ -205,7 +205,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     
     return options.map(opt => ({
       value: opt,
-      label: translate(opt),
+      label: field === 'empresa' ? opt : translate(opt), // Empresa não precisa tradução
       count: counts[opt] || 0
     })).sort((a, b) => b.count - a.count);
   };
