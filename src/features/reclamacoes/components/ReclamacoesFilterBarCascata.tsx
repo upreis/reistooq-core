@@ -100,7 +100,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     let result = [...reclamacoes];
     
     if (filters.empresa) {
-      result = result.filter(r => r.account_name === filters.empresa);
+      result = result.filter(r => r.empresa === filters.empresa);
     }
     if (filters.tipoReclamacao) {
       result = result.filter(r => r.type === filters.tipoReclamacao);
@@ -149,7 +149,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     Object.entries(currentFilters).forEach(([key, value]) => {
       if (!value) return;
       
-      if (key === 'empresa') data = data.filter(r => r.account_name === value);
+      if (key === 'empresa') data = data.filter(r => r.empresa === value);
       else if (key === 'tipoReclamacao') data = data.filter(r => r.type === value);
       else if (key === 'statusReclamacao') data = data.filter(r => r.status === value);
       else if (key === 'estagioReclamacao') data = data.filter(r => r.stage === value);
@@ -197,7 +197,7 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
     Object.entries(currentFilters).forEach(([key, value]) => {
       if (!value) return;
       
-      if (key === 'empresa') data = data.filter(r => r.account_name === value);
+      if (key === 'empresa') data = data.filter(r => r.empresa === value);
       else if (key === 'tipoReclamacao') data = data.filter(r => r.type === value);
       else if (key === 'statusReclamacao') data = data.filter(r => r.status === value);
       else if (key === 'estagioReclamacao') data = data.filter(r => r.stage === value);
@@ -223,8 +223,8 @@ export const ReclamacoesFilterBarCascata = memo<ReclamacoesFilterBarCascataProps
       key: 'empresa' as const,
       label: 'Empresa',
       icon: Building2,
-      dataField: 'account_name',
-      options: getUniqueOptions('empresa', 'account_name')
+      dataField: 'empresa',
+      options: getUniqueOptions('empresa', 'empresa')
     },
     {
       key: 'tipoReclamacao' as const,
