@@ -286,6 +286,10 @@ Deno.serve(async (req) => {
         order_status: null,
         order_total: null,
         
+        // ✅ TRACKING (será preenchido na fase 3)
+        tracking_number: null,
+        codigo_rastreamento: null, // ✅ Mesmo que tracking_number (compatibilidade)
+        
         // Metadata
         integration_account_id: accountId,
         raw_data: claim,
@@ -376,11 +380,52 @@ Deno.serve(async (req) => {
     console.log(`🎉 Busca de pedidos finalizada. ${ordersMap.size}/${orderIds.length} pedidos obtidos com sucesso.`);
 
     // ============================================
+    // 📦 FASE 3: BUSCAR TRACKING NUMBERS DOS SHIPMENTS
+    // ============================================
+    
+    console.log(`📦 Buscando tracking numbers de ${ordersMap.size} pedidos...`);
+    
+    const trackingMap = new Map<string, any>();
+    
+    for (const [orderId, orderData] of ordersMap) {
+      const shipmentId = orderData?.shipping?.id;
+      if (!shipmentId) continue;
+      
+      try {
+        const trackingUrl = `https://api.mercadolibre.com/shipments/${shipmentId}`;
+        const trackingRes = await fetch(trackingUrl, {
+          headers: { 
+            'Authorization': `Bearer ${accessToken}`,
+            'x-format-new': 'true' // ✅ CRÍTICO: Header para novo formato
+          }
+        });
+        
+        if (trackingRes.ok) {
+          const trackingData = await trackingRes.json();
+          trackingMap.set(orderId, {
+            tracking_number: trackingData.tracking_number,
+            tracking_method: trackingData.tracking_method,
+            status: trackingData.status,
+            substatus: trackingData.substatus
+          });
+          console.log(`✅ Tracking ${orderId}: ${trackingData.tracking_number || 'N/A'}`);
+        } else {
+          console.warn(`⚠️ Falha ao buscar tracking do pedido ${orderId}`);
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao buscar tracking do pedido ${orderId}:`, error.message);
+      }
+    }
+    
+    console.log(`✅ ${trackingMap.size} tracking numbers obtidos`);
+
+    // ============================================
     // 4️⃣ MAPEAMENTO FINAL COM DADOS ENRIQUECIDOS
     // ============================================
 
     const fullyEnrichedClaims = enrichedClaims.map((claim) => {
       const orderData = ordersMap.get(claim.order_id || '');
+      const trackingData = trackingMap.get(claim.order_id || '');
 
       // Se temos dados do pedido, enriquecer
       if (orderData) {
@@ -398,6 +443,13 @@ Deno.serve(async (req) => {
           order_item_quantity: orderData.order_items?.[0]?.quantity || null,
           order_item_unit_price: orderData.order_items?.[0]?.unit_price || null,
           order_item_seller_sku: orderData.order_items?.[0]?.item?.seller_sku || null,
+          // ✅ ADICIONAR TRACKING NUMBER
+          tracking_number: trackingData?.tracking_number || null,
+          tracking_method: trackingData?.tracking_method || null,
+          tracking_status: trackingData?.status || null,
+          tracking_substatus: trackingData?.substatus || null,
+          // ✅ COMPATIBILIDADE: Preencher codigo_rastreamento também
+          codigo_rastreamento: trackingData?.tracking_number || null,
         };
       }
 
