@@ -10,6 +10,7 @@ import { useReclamacoes } from '../hooks/useReclamacoes';
 import { useReclamacoesIncremental } from '../hooks/useReclamacoesIncremental';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
+import { ReclamacoesFilterBarCascata } from '../components/ReclamacoesFilterBarCascata';
 import { ReclamacoesFilters } from '../components/ReclamacoesFilters';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
@@ -599,6 +600,13 @@ export function ReclamacoesPage() {
             </Button>
           </div>
         </Card>
+
+        {/* Barra de Filtros Cascata */}
+        {!isLoading && reclamacoesWithAnalise.length > 0 && (
+          <ReclamacoesFilterBarCascata 
+            reclamacoes={reclamacoesWithAnalise}
+          />
+        )}
 
         {/* Stats - só mostrar se tiver dados */}
         {!isLoading && reclamacoesWithAnalise.length > 0 && (
