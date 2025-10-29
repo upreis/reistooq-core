@@ -19,6 +19,7 @@ const translations: Record<string, string> = {
   // Tipos de Recurso
   'order': 'Pedido',
   'shipping': 'Envio',
+  'shipment': 'Envio',
   'item': 'Item',
   'payment': 'Pagamento',
   'product': 'Produto',
@@ -27,6 +28,8 @@ const translations: Record<string, string> = {
   'estimated delivery out of time': 'Entrega Estimada Fora do Prazo',
   'entregue but not receive embalagem': 'Entregue Mas Não Recebeu Embalagem',
   'diferente color or size': 'Cor ou Tamanho Diferente',
+  'different than published': 'Diferente do Publicado',
+  'diferente than published': 'Diferente do Publicado',
   
   // Nomes e Categorias de Razão
   'missing_accessories': 'Acessórios Faltando',
@@ -65,6 +68,8 @@ const translations: Record<string, string> = {
   'missing': 'Faltando',
   'undelivered other': 'Não Entregue Outro',
   'undelivered': 'Não Entregue',
+  'published': 'Publicado',
+  'than': 'do que',
   
   // Palavras adicionais para tradução composta
   'estimated': 'Estimada',
@@ -102,9 +107,12 @@ const translations: Record<string, string> = {
   'low': 'Baixo',
   'cost': 'Custo',
   'refund': 'Reembolso',
+  'refunded': 'Reembolsado',
   'replacement': 'Substituição',
   'partial refund': 'Reembolso Parcial',
+  'partially refunded': 'Parcialmente Reembolsado',
   'partial': 'Parcial',
+  'partially': 'Parcialmente',
   'no action': 'Sem Ação',
   'action': 'Ação',
   'store credit': 'Crédito na Loja',
@@ -112,6 +120,12 @@ const translations: Record<string, string> = {
   'credit': 'Crédito',
   'return': 'Devolução',
   'exchange': 'Troca',
+  'warehouse': 'Armazém',
+  'preferred to keep': 'Preferiu Manter',
+  'preferred': 'Preferiu',
+  'keep': 'Manter',
+  'timeout': 'Expirado',
+  'to': 'para',
   
   // Status da Venda
   'paid': 'Pago',
