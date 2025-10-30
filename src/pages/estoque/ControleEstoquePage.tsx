@@ -163,7 +163,10 @@ export default function ControleEstoquePage() {
     try {
       // Tentar excluir cada produto válido
       const results = await Promise.allSettled(
-        validProductIds.map(id => deleteProduct(id))
+        validProductIds.map(id => {
+          console.log(`🗑️ Excluindo produto ID: ${id}`);
+          return deleteProduct(id);
+        })
       );
       
       // Contar sucessos e falhas
@@ -174,6 +177,8 @@ export default function ControleEstoquePage() {
       const erros = results
         .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
         .map(r => r.reason?.message || 'Erro desconhecido');
+      
+      console.log(`✅ Exclusão concluída: ${sucessos} sucessos, ${falhas} falhas`);
       
       if (falhas > 0) {
         toast({
@@ -188,8 +193,15 @@ export default function ControleEstoquePage() {
         });
       }
       
+      // Limpar seleção e recarregar produtos
       setSelectedProducts([]);
-      loadProducts();
+      
+      // Forçar reload com delay para garantir que o banco foi atualizado
+      setTimeout(() => {
+        console.log('🔄 Recarregando produtos após exclusão...');
+        loadProducts();
+      }, 300);
+      
     } catch (error) {
       console.error('❌ Erro ao excluir:', error);
       toast({
@@ -312,17 +324,24 @@ export default function ControleEstoquePage() {
   };
 
   const handleDeleteProduct = async (productId: string) => {
+    console.log('🗑️ Excluindo produto individual:', productId);
     try {
       await deleteProduct(productId);
       toast({
         title: "Produto excluído",
         description: "Produto excluído com sucesso.",
       });
-      loadProducts();
+      
+      // Forçar reload com delay
+      setTimeout(() => {
+        console.log('🔄 Recarregando produtos após exclusão individual...');
+        loadProducts();
+      }, 300);
     } catch (error) {
+      console.error('❌ Erro ao excluir produto:', error);
       toast({
         title: "Erro ao excluir",
-        description: "Não foi possível excluir o produto.",
+        description: error instanceof Error ? error.message : "Não foi possível excluir o produto.",
         variant: "destructive",
       });
     }
