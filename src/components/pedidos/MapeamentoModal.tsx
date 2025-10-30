@@ -242,7 +242,7 @@ export function MapeamentoModal({
                 name="sku_correspondente"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>SKU Estoque Filho *</FormLabel>
+                    <FormLabel>SKU Mapeamento de-para *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Ex: EST-SKU001"
