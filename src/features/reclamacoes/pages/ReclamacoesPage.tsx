@@ -49,6 +49,9 @@ export function ReclamacoesPage() {
   const [hasLoadedFromStorage, setHasLoadedFromStorage] = useState(false);
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   
+  // 🎯 ETAPA 1: Estado para armazenar dados filtrados pelos filtros rápidos (empresa, tipo, status, etc.)
+  const [filteredByQuickFilter, setFilteredByQuickFilter] = useState<any[]>([]);
+  
   // ✅ FASE 4.1: Filtros em cascata aplicados diretamente no componente filho
   
   
