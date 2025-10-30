@@ -21,32 +21,32 @@ interface EstoqueExportProps {
 }
 
 const availableFields = [
-  { id: 'sku_interno', label: 'SKU Interno', required: true },
+  { id: 'sku_interno', label: 'SKU', required: true },
   { id: 'nome', label: 'Nome', required: true },
-  { id: 'descricao', label: 'Descrição' },
+  { id: 'quantidade_atual', label: 'Quantidade Atual', required: true },
+  { id: 'preco_custo', label: 'Preço Custo', required: true },
+  { id: 'preco_venda', label: 'Preço Venda', required: true },
+  { id: 'estoque_minimo', label: 'Estoque Mínimo', required: true },
+  { id: 'estoque_maximo', label: 'Estoque Máximo', required: true },
+  { id: 'url_imagem', label: 'URL da Imagem', required: true },
   { id: 'sku_pai', label: 'SKU Pai' },
-  { id: 'quantidade_atual', label: 'Quantidade Atual' },
-  { id: 'estoque_minimo', label: 'Estoque Mínimo' },
-  { id: 'estoque_maximo', label: 'Estoque Máximo' },
-  { id: 'preco_custo', label: 'Preço de Custo' },
-  { id: 'preco_venda', label: 'Preço de Venda' },
-  { id: 'codigo_barras', label: 'Código de Barras' },
-  { id: 'url_imagem', label: 'URL da Imagem' },
-  { id: 'localizacao', label: 'Localização' },
+  { id: 'descricao', label: 'Descrição' },
   { id: 'categoria', label: 'Categoria' },
-  { id: 'categoria_principal', label: 'Categoria Principal' },
   { id: 'ativo', label: 'Status' },
-  { id: 'peso_liquido', label: 'Peso Líquido (Kg)' },
-  { id: 'peso_bruto', label: 'Peso Bruto (Kg)' },
-  { id: 'ncm', label: 'NCM' },
-  { id: 'codigo_cest', label: 'Código CEST' },
-  { id: 'sob_encomenda', label: 'Sob Encomenda' },
-  { id: 'dias_preparacao', label: 'Dias para Preparação' },
-  { id: 'unidade_medida', label: 'Unid. Medida' },
-  { id: 'numero_volumes', label: 'Nº Volumes' },
-  { id: 'tipo_embalagem', label: 'Tipo Embalagem' },
+  { id: 'peso_bruto_kg', label: 'Peso Bruto (Kg)' },
+  { id: 'codigo_barras', label: 'Código EAN' },
   { id: 'dimensoes', label: 'Dimensões (cm)' },
+  { id: 'ncm', label: 'NCM' },
+  { id: 'numero_volumes', label: 'Nº Volumes' },
   { id: 'origem', label: 'Origem' },
+  { id: 'localizacao', label: 'Localização' },
+  { id: 'unidade_medida_id', label: 'Unid. Medida' },
+  { id: 'sob_encomenda', label: 'Sob Encomenda' },
+  { id: 'dias_preparacao', label: 'Dias Preparação' },
+  { id: 'tipo_embalagem', label: 'Tipo Embalagem' },
+  { id: 'peso_liquido_kg', label: 'Peso Líquido (Kg)' },
+  { id: 'codigo_cest', label: 'Código CEST' },
+  { id: 'categoria_principal', label: 'Categoria Principal' },
 ];
 
 export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps) {
@@ -54,7 +54,32 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
   const [includeInactive, setIncludeInactive] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('xlsx');
   const [selectedFields, setSelectedFields] = useState<string[]>([
-    'sku_interno', 'nome', 'quantidade_atual', 'preco_custo', 'preco_venda', 'estoque_minimo', 'estoque_maximo', 'url_imagem'
+    'sku_interno', 
+    'nome', 
+    'quantidade_atual', 
+    'preco_custo', 
+    'preco_venda', 
+    'estoque_minimo', 
+    'estoque_maximo',
+    'url_imagem',
+    'sku_pai',
+    'descricao',
+    'categoria',
+    'ativo',
+    'peso_bruto_kg',
+    'codigo_barras',
+    'dimensoes',
+    'ncm',
+    'numero_volumes',
+    'origem',
+    'localizacao',
+    'unidade_medida_id',
+    'sob_encomenda',
+    'dias_preparacao',
+    'tipo_embalagem',
+    'peso_liquido_kg',
+    'codigo_cest',
+    'categoria_principal'
   ]);
 
   const { toast } = useToast();
@@ -88,17 +113,39 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
           case 'ativo':
             row[field.label] = product.ativo ? 'Ativo' : 'Inativo';
             break;
+          case 'sob_encomenda':
+            row[field.label] = product.sob_encomenda ? 'Sim' : 'Não';
+            break;
           case 'preco_custo':
           case 'preco_venda':
-            row[field.label] = product[fieldId] 
-              ? `R$ ${product[fieldId].toFixed(2).replace('.', ',')}`
-              : 'R$ 0,00';
+            row[field.label] = product[fieldId] || 0;
             break;
           case 'url_imagem':
             row[field.label] = product.url_imagem || '';
             break;
+          case 'dimensoes':
+            row[field.label] = `L:${product.largura || 0} A:${product.altura || 0} C:${product.comprimento || 0}`;
+            break;
+          case 'peso_bruto_kg':
+            row[field.label] = product.peso_bruto_kg || 0;
+            break;
+          case 'peso_liquido_kg':
+            row[field.label] = product.peso_liquido_kg || 0;
+            break;
+          case 'unidade_medida_id':
+            row[field.label] = product.unidade_medida_id || 'UN';
+            break;
+          case 'codigo_barras':
+            row[field.label] = product.codigo_barras || '';
+            break;
+          case 'dias_preparacao':
+            row[field.label] = product.dias_preparacao || 0;
+            break;
+          case 'numero_volumes':
+            row[field.label] = product.numero_volumes || 1;
+            break;
           default:
-            row[field.label] = product[fieldId] || '';
+            row[field.label] = product[fieldId as keyof Product] || '';
         }
       });
 
