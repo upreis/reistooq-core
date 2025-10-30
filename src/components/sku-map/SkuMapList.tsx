@@ -107,17 +107,6 @@ export function SkuMapList({
                     </Button>
                   </TableHead>
                   <TableHead>SKU Correto</TableHead>
-                  <TableHead>SKU Unitário</TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort('quantidade')}
-                      className="h-auto p-0 font-medium"
-                    >
-                      Quantidade
-                      {getSortIcon('quantidade')}
-                    </Button>
-                  </TableHead>
                   <TableHead>
                     <Button
                       variant="ghost"
@@ -159,7 +148,7 @@ export function SkuMapList({
                   ))
                 ) : data?.data.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       Nenhum mapeamento encontrado
                     </TableCell>
                   </TableRow>
@@ -174,8 +163,6 @@ export function SkuMapList({
                       </TableCell>
                       <TableCell className="font-medium">{item.sku_pedido}</TableCell>
                       <TableCell>{item.sku_correspondente || "-"}</TableCell>
-                      <TableCell>{item.sku_simples || "-"}</TableCell>
-                      <TableCell>{item.quantidade}</TableCell>
                       <TableCell>
                         <Badge variant={item.ativo ? "default" : "secondary"}>
                           {item.ativo ? "Ativo" : "Inativo"}
@@ -320,14 +307,6 @@ export function SkuMapList({
                       <div>
                         <div className="text-xs text-muted-foreground">SKU Correto</div>
                         <div className="font-medium">{item.sku_correspondente || "-"}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">SKU Unitário</div>
-                        <div className="font-medium">{item.sku_simples || "-"}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs text-muted-foreground">Quantidade</div>
-                        <div className="font-medium">{item.quantidade}</div>
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground">Status</div>
