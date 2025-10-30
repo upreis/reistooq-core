@@ -66,26 +66,19 @@ export function SidebarItemWithChildren({
   const isFlyoutPinned = false;
 
   const handleParentClick = useCallback((e: React.MouseEvent) => {
-    // Prevent navigation for items WITH children only when we want to toggle
+    // Navegação para o primeiro filho disponível
     const hasChildren = item.children && item.children.length > 0;
     
     if (hasChildren) {
       e.preventDefault();
       const firstChild = item.children?.[0];
       
-      // SEMPRE navegar para o primeiro filho, independente do estado collapsed
       if (firstChild?.path) {
         console.log(`🔄 Navegando para primeira página filho: ${firstChild.path}`);
         navigate(firstChild.path);
-        return;
-      }
-      
-      // Fallback toggle behavior apenas se não houver primeiro filho válido
-      if (!isCollapsed || isMobile) {
-        toggleGroup(item.id);
       }
     }
-  }, [isCollapsed, isMobile, item.children, item.id, toggleGroup, navigate]);
+  }, [item.children, navigate]);
 
   const handleChevronClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
