@@ -50,7 +50,7 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   const downloadTemplate = (format: 'csv' | 'xlsx' = templateFormat) => {
-    const headers = ['sku_interno', 'nome', 'descricao', 'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo', 'preco_venda', 'codigo_barras', 'localizacao', 'categoria', 'categoria_principal', 'sku_pai', 'ativo', 'peso_liquido', 'peso_bruto', 'ncm', 'codigo_cest', 'sob_encomenda', 'dias_preparacao', 'unidade_medida', 'numero_volumes', 'tipo_embalagem', 'dimensoes', 'origem'];
+    const headers = ['sku_interno', 'nome', 'descricao', 'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo', 'preco_venda', 'url_imagem', 'codigo_barras', 'localizacao', 'categoria', 'categoria_principal', 'sku_pai', 'ativo', 'peso_liquido', 'peso_bruto', 'ncm', 'codigo_cest', 'sob_encomenda', 'dias_preparacao', 'unidade_medida', 'numero_volumes', 'tipo_embalagem', 'dimensoes', 'origem'];
     const exampleData = [
       {
         sku_interno: 'EXEMPLO-001',
@@ -61,6 +61,7 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
         estoque_maximo: 50,
         preco_custo: 15.00,
         preco_venda: 29.90,
+        url_imagem: 'https://exemplo.com/imagem1.jpg',
         codigo_barras: '1234567890123',
         localizacao: 'Setor A',
         categoria: 'Eletrônicos',
@@ -88,6 +89,7 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
         estoque_maximo: 20,
         preco_custo: 12.00,
         preco_venda: 24.90,
+        url_imagem: 'https://exemplo.com/imagem2.jpg',
         codigo_barras: '1234567890124',
         localizacao: 'Setor A',
         categoria: 'Eletrônicos',
@@ -118,8 +120,8 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
       // Criar CSV
       const template = [
         headers.join(','),
-        'EXEMPLO-001,Produto Exemplo,Descrição do produto exemplo,10,5,50,15.00,29.90,1234567890123,Setor A,Eletrônicos,Tecnologia,,true,1.5,2.0,85171231,01.001.00,Não,5,UN,1,Caixa,20x15x10,Nacional',
-        'EXEMPLO-002,Produto Filho,Variação do produto pai,5,2,20,12.00,24.90,1234567890124,Setor A,Eletrônicos,Tecnologia,EXEMPLO-001,true,1.2,1.8,85171231,01.001.00,Não,3,UN,1,Caixa,18x12x8,Nacional'
+        'EXEMPLO-001,Produto Exemplo,Descrição do produto exemplo,10,5,50,15.00,29.90,https://exemplo.com/imagem1.jpg,1234567890123,Setor A,Eletrônicos,Tecnologia,,true,1.5,2.0,85171231,01.001.00,Não,5,UN,1,Caixa,20x15x10,Nacional',
+        'EXEMPLO-002,Produto Filho,Variação do produto pai,5,2,20,12.00,24.90,https://exemplo.com/imagem2.jpg,1234567890124,Setor A,Eletrônicos,Tecnologia,EXEMPLO-001,true,1.2,1.8,85171231,01.001.00,Não,3,UN,1,Caixa,18x12x8,Nacional'
       ].join('\n');
 
       const blob = new Blob([template], { type: 'text/csv;charset=utf-8;' });
