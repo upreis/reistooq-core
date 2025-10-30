@@ -331,6 +331,119 @@ export function EstoqueTable({
           {value || "-"}
         </span>
       )
+    },
+    {
+      key: "peso_liquido_kg",
+      label: "Peso Líquido (Kg)",
+      sortable: true,
+      width: "90px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">
+          {value || "-"}
+        </span>
+      )
+    },
+    {
+      key: "dimensoes",
+      label: "Dimensões (LxAxC)",
+      width: "120px",
+      render: (_, product: Product) => (
+        <span className="text-[10px]">
+          {product.largura && product.altura && product.comprimento 
+            ? `${product.largura}x${product.altura}x${product.comprimento}`
+            : "-"}
+        </span>
+      )
+    },
+    {
+      key: "numero_volumes",
+      label: "Nº Volumes",
+      sortable: true,
+      width: "80px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">
+          {value || "1"}
+        </span>
+      )
+    },
+    {
+      key: "unidade",
+      label: "Unidade",
+      sortable: true,
+      width: "70px",
+      render: (value: string) => (
+        <span className="text-[11px] block text-center">
+          {value || "UN"}
+        </span>
+      )
+    },
+    {
+      key: "origem",
+      label: "Origem",
+      sortable: true,
+      width: "70px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">
+          {value !== null && value !== undefined ? value : "-"}
+        </span>
+      )
+    },
+    {
+      key: "sob_encomenda",
+      label: "Sob Encomenda",
+      sortable: true,
+      width: "100px",
+      render: (value: boolean) => (
+        <Badge 
+          variant={value ? "default" : "outline"} 
+          className="text-[10px] px-2 py-0.5"
+        >
+          {value ? "Sim" : "Não"}
+        </Badge>
+      )
+    },
+    {
+      key: "dias_preparacao",
+      label: "Dias Prep.",
+      sortable: true,
+      width: "80px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">
+          {value && value > 0 ? value : "-"}
+        </span>
+      )
+    },
+    {
+      key: "tipo_embalagem",
+      label: "Tipo Embalagem",
+      width: "120px",
+      render: (value: string) => (
+        <span className="text-[11px] block truncate">
+          {value || "-"}
+        </span>
+      )
+    },
+    {
+      key: "codigo_cest",
+      label: "Código CEST",
+      sortable: true,
+      width: "110px",
+      render: (value: string) => (
+        <span className="text-[10px] font-mono block truncate">
+          {value || "-"}
+        </span>
+      )
+    },
+    {
+      key: "categoria_principal",
+      label: "Categoria Principal",
+      sortable: true,
+      width: "150px",
+      render: (value: string) => (
+        <span className="text-[11px] block truncate max-w-[150px]" title={value}>
+          {value || "-"}
+        </span>
+      )
     }
   ];
 
