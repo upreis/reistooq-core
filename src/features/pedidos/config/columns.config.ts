@@ -373,6 +373,26 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Método de envio combinado',
     width: 180
   },
+  {
+    key: 'codigo_rastreamento',
+    label: 'Código Rastreamento',
+    category: 'shipping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Código de rastreamento do envio',
+    width: 150
+  },
+  {
+    key: 'url_rastreamento',
+    label: 'URL Rastreamento',
+    category: 'shipping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Link para rastreamento do envio',
+    width: 120
+  },
 
   // ====== ENDEREÇO (novo) ======
   {
