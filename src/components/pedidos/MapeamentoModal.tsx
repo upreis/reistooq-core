@@ -214,7 +214,7 @@ export function MapeamentoModal({
                 name="sku_correspondente"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>SKU de Estoque *</FormLabel>
+                    <FormLabel>SKU Estoque Filho *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Ex: EST-SKU001"
@@ -233,7 +233,7 @@ export function MapeamentoModal({
                 name="sku_simples"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>SKU Unitário</FormLabel>
+                    <FormLabel>SKU Composição do Produto</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Ex: UNIT-SKU001 (opcional)"
@@ -251,7 +251,7 @@ export function MapeamentoModal({
                 name="quantidade"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantidade por Kit</FormLabel>
+                    <FormLabel>Quantidade Por Kit ou Unidade</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
