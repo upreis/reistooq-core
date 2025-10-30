@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { AjusteEstoqueModal, AjusteEstoqueData } from "./AjusteEstoqueModal";
 import {
   Form,
   FormControl,
@@ -83,6 +84,8 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const [isUploading, setIsUploading] = useState(false);
   const [selectedCategoriaPrincipal, setSelectedCategoriaPrincipal] = useState<string>("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
+  const [ajusteModalOpen, setAjusteModalOpen] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<ProductFormData | null>(null);
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
   const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
@@ -264,6 +267,24 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   };
 
   const onSubmit = async (data: ProductFormData) => {
+    // Verificar se é uma atualização e se a quantidade mudou
+    if (product && product.quantidade_atual !== data.quantidade_atual) {
+      // Abrir modal de ajuste de estoque
+      setPendingFormData(data);
+      setAjusteModalOpen(true);
+      return;
+    }
+    
+    // Se não houver mudança de quantidade, processar normalmente
+    await processarSubmit(data, null);
+  };
+
+  const handleAjusteConfirm = async (ajusteData: AjusteEstoqueData) => {
+    if (!pendingFormData) return;
+    await processarSubmit(pendingFormData, ajusteData);
+  };
+
+  const processarSubmit = async (data: ProductFormData, ajusteData: AjusteEstoqueData | null) => {
     try {
       setIsUploading(true);
       
@@ -279,6 +300,42 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           ...data,
           url_imagem: imageUrl,
         });
+
+        // Se houve ajuste de estoque, registrar na movimentação
+        if (ajusteData && data.quantidade_atual !== product.quantidade_atual) {
+          const quantidadeAnterior = product.quantidade_atual;
+          const quantidadeNova = data.quantidade_atual;
+          const diferenca = quantidadeNova - quantidadeAnterior;
+          const tipoMovimentacao = diferenca > 0 ? 'entrada' : 'saida';
+
+          // Obter informações do usuário
+          const { data: { user } } = await supabase.auth.getUser();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('nome_completo, organizacao_id')
+            .eq('id', user?.id)
+            .single();
+
+          // Registrar movimentação
+          await supabase.from('movimentacoes_estoque').insert({
+            produto_id: product.id,
+            sku_produto: product.sku_interno,
+            nome_produto: product.nome,
+            tipo_movimentacao: tipoMovimentacao,
+            quantidade: Math.abs(diferenca),
+            quantidade_anterior: quantidadeAnterior,
+            quantidade_movimentada: Math.abs(diferenca),
+            quantidade_nova: quantidadeNova,
+            origem_movimentacao: 'ajuste_manual',
+            pagina_origem: '/estoque',
+            motivo: ajusteData.motivo,
+            observacoes: ajusteData.observacoes,
+            usuario_id: user?.id,
+            usuario_nome: profile?.nome_completo,
+            usuario_email: user?.email,
+            organization_id: profile?.organizacao_id,
+          });
+        }
 
         toast({
           title: "Sucesso",
@@ -332,6 +389,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
 
       onSuccess();
       onOpenChange(false);
+      setPendingFormData(null);
     } catch (error: any) {
       console.error('Erro ao salvar produto:', error);
       
@@ -1004,6 +1062,18 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           </form>
         </Form>
       </DialogContent>
+      
+      {/* Modal de Ajuste de Estoque */}
+      {product && pendingFormData && (
+        <AjusteEstoqueModal
+          open={ajusteModalOpen}
+          onOpenChange={setAjusteModalOpen}
+          produtoNome={product.nome}
+          quantidadeAnterior={product.quantidade_atual}
+          quantidadeNova={pendingFormData.quantidade_atual}
+          onConfirm={handleAjusteConfirm}
+        />
+      )}
     </Dialog>
   );
 }
