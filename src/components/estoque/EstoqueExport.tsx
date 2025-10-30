@@ -75,6 +75,8 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
       productsToExport = productsToExport.filter(p => p.ativo);
     }
 
+    console.log('Campos selecionados para exportação:', selectedFields);
+
     return productsToExport.map(product => {
       const row: any = {};
       
@@ -91,6 +93,9 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
             row[field.label] = product[fieldId] 
               ? `R$ ${product[fieldId].toFixed(2).replace('.', ',')}`
               : 'R$ 0,00';
+            break;
+          case 'url_imagem':
+            row[field.label] = product.url_imagem || '';
             break;
           default:
             row[field.label] = product[fieldId] || '';
