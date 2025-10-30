@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { Package, Plus, Trash2, Save, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import type { ComposicaoInsumoEnriquecida } from '../../types/insumos.types';
 
 const schema = z.object({
@@ -130,166 +133,226 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
     onClose();
   };
 
+
+  const produtoSelecionado = produtos.find(p => p.sku === form.watch('sku_produto'));
   const insumoSelecionado = insumos.find(i => i.sku === form.watch('sku_insumo'));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {insumo ? 'Editar Insumo' : 'Novo Insumo'}
+          <DialogTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5" />
+            {insumo ? 'Editar Composições' : 'Editar Composições'} - {insumo ? 'Nova Composição' : 'Nova Composição'}
           </DialogTitle>
-          <DialogDescription>
-            Insumos são debitados <strong>1 vez por pedido</strong>, independente da quantidade.
+          <DialogDescription className="sr-only">
+            Insumos são debitados 1 vez por pedido, independente da quantidade.
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            {/* SKU Produto */}
-            <FormField
-              control={form.control}
-              name="sku_produto"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Produto</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={!!insumo || loading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o produto..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {produtos.map(p => (
-                        <SelectItem key={p.sku} value={p.sku}>
-                          <span className="font-mono text-sm">{p.sku}</span>
-                          <span className="text-muted-foreground ml-2">- {p.nome}</span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Produto que utilizará este insumo
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Seção de Dados do Produto */}
+            <Card className="border-primary/20 bg-primary/5">
+              <CardHeader>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Package className="h-5 w-5 text-primary" />
+                  Dados do Produto
+                </h3>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* SKU do Produto */}
+                  <FormField
+                    control={form.control}
+                    name="sku_produto"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label className="text-sm font-medium">SKU do Produto</Label>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={!!insumo || loading}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Selecione o produto..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {produtos.map(p => (
+                              <SelectItem key={p.sku} value={p.sku}>
+                                {p.sku}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            {/* SKU Insumo */}
-            <FormField
-              control={form.control}
-              name="sku_insumo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Insumo</FormLabel>
-                  <Select
-                    value={field.value}
-                    onValueChange={field.onChange}
-                    disabled={!!insumo || loading}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o insumo..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {insumos.map(i => (
-                        <SelectItem key={i.sku} value={i.sku}>
-                          <div className="flex items-center justify-between w-full gap-4">
-                            <div>
-                              <span className="font-mono text-sm">{i.sku}</span>
-                              <span className="text-muted-foreground ml-2">- {i.nome}</span>
-                            </div>
-                            <Badge 
-                              variant={i.estoque > 0 ? 'default' : 'destructive'}
-                              className={i.estoque > 0 ? 'bg-green-500' : ''}
-                            >
-                              Est: {i.estoque}
-                            </Badge>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Etiqueta, embalagem ou outro material consumível
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Estoque disponível */}
-            {insumoSelecionado && (
-              <div className="p-4 border rounded-lg bg-muted/30">
-                <div className="text-sm">
-                  <strong>Estoque disponível:</strong>{' '}
-                  <Badge 
-                    variant={insumoSelecionado.estoque > 0 ? 'default' : 'destructive'}
-                    className={insumoSelecionado.estoque > 0 ? 'bg-green-500' : ''}
-                  >
-                    {insumoSelecionado.estoque} unidades
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* Quantidade */}
-            <FormField
-              control={form.control}
-              name="quantidade"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantidade por Pedido</FormLabel>
-                  <FormControl>
+                  {/* Nome do Produto */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Nome do Produto</Label>
                     <Input
-                      type="number"
-                      min={1}
-                      {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      className="max-w-xs"
+                      value={produtoSelecionado?.nome || ''}
+                      disabled
+                      placeholder="Selecione um produto..."
+                      className="w-full bg-muted"
                     />
-                  </FormControl>
-                  <FormDescription>
-                    Quantidade fixa de insumo por pedido (padrão: 1)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            {/* Observações */}
-            <FormField
-              control={form.control}
-              name="observacoes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Observações (opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Informações adicionais sobre este insumo..."
-                      rows={3}
+            {/* Componentes da Composição */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-semibold">Componentes da Composição</h3>
+              </div>
+
+              {/* Botão adicionar componente */}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-dashed"
+                onClick={() => {/* placeholder - sempre um único insumo */}}
+                disabled
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Componente
+              </Button>
+
+              {/* Lista de componentes */}
+              <div className="space-y-3">
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                      {/* SKU Insumo */}
+                      <div className="lg:col-span-4">
+                        <FormField
+                          control={form.control}
+                          name="sku_insumo"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label className="text-sm font-medium">SKU</Label>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                                disabled={!!insumo || loading}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Buscar SKU..." />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {insumos.map(i => (
+                                    <SelectItem key={i.sku} value={i.sku}>
+                                      {i.sku}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Nome do Insumo */}
+                      <div className="lg:col-span-4">
+                        <Label className="text-sm font-medium">Nome do Componente</Label>
+                        <Input
+                          value={insumoSelecionado?.nome || ''}
+                          disabled
+                          placeholder="Selecione um insumo..."
+                          className="bg-muted"
+                        />
+                      </div>
+
+                      {/* Estoque */}
+                      <div className="lg:col-span-2">
+                        <Label className="text-sm font-medium">Custo Uni</Label>
+                        <div className="flex items-center h-10">
+                          {insumoSelecionado && (
+                            <Badge 
+                              variant={insumoSelecionado.estoque > 0 ? 'default' : 'destructive'}
+                              className={insumoSelecionado.estoque > 0 ? 'bg-green-500 hover:bg-green-600' : ''}
+                            >
+                              {insumoSelecionado.estoque}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Quantidade */}
+                      <div className="lg:col-span-2">
+                        <FormField
+                          control={form.control}
+                          name="quantidade"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label className="text-sm font-medium">Qtd</Label>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  {...field}
+                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Observações */}
+                    <FormField
+                      control={form.control}
+                      name="observacoes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <Label className="text-sm font-medium">Observações (opcional)</Label>
+                          <FormControl>
+                            <Textarea
+                              {...field}
+                              placeholder="Informações adicionais sobre este insumo..."
+                              rows={3}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+            {/* Footer com botões */}
+            <div className="flex justify-end gap-2 pt-4 border-t">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onClose}
+                className="gap-2"
+              >
+                <X className="h-4 w-4" />
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
-                {insumo ? 'Atualizar' : 'Cadastrar'}
+              <Button 
+                type="submit" 
+                disabled={loading}
+                className="gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {insumo ? 'Salvar Composições' : 'Salvar Composições'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>
