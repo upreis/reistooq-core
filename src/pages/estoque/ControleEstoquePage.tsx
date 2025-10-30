@@ -849,18 +849,18 @@ export default function ControleEstoquePage() {
         }}
       />
 
-      {/* Diálogo de confirmação de exclusão de componentes em uso */}
+      {/* Diálogo de alerta - componentes em uso */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent className="max-w-2xl">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="w-5 h-5" />
-              Exclusão Parcial - Componentes em Uso
+              Exclusão Bloqueada - Componente em Uso
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4 text-sm">
                 <p className="text-foreground font-medium">
-                  {deleteErrors?.failedProducts.length === 1 ? 'O produto não pôde ser excluído:' : 'Os seguintes produtos não puderam ser excluídos:'}
+                  {deleteErrors?.failedProducts.length === 1 ? 'O produto não pode ser excluído:' : 'Os seguintes produtos não podem ser excluídos:'}
                 </p>
                 
                 <div className="bg-muted p-4 rounded-lg space-y-2 max-h-40 overflow-y-auto">
@@ -875,34 +875,32 @@ export default function ControleEstoquePage() {
                 <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
                   <p className="text-destructive font-medium mb-2">Motivo:</p>
                   <p className="text-foreground">
-                    {deleteErrors?.errorMessage || 'Este componente está sendo usado nas seguintes composições.'}
+                    {deleteErrors?.errorMessage || 'Este componente está sendo usado em composições.'}
                   </p>
                 </div>
 
-                <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg">
-                  <p className="text-foreground">
-                    <strong>⚠️ Atenção:</strong> Se você excluir {deleteErrors?.failedProducts.length === 1 ? 'este produto' : 'estes produtos'} mesmo assim, 
-                    as composições que {deleteErrors?.failedProducts.length === 1 ? 'o utilizam' : 'os utilizam'} ficarão com componentes faltando.
+                <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg">
+                  <p className="text-foreground font-medium mb-2">
+                    🔒 Para excluir {deleteErrors?.failedProducts.length === 1 ? 'este produto' : 'estes produtos'}:
                   </p>
+                  <ol className="list-decimal list-inside space-y-1 text-foreground">
+                    <li>Acesse a aba <strong>Composições</strong></li>
+                    <li>Remova {deleteErrors?.failedProducts.length === 1 ? 'o produto' : 'os produtos'} das composições onde {deleteErrors?.failedProducts.length === 1 ? 'está sendo usado' : 'estão sendo usados'}</li>
+                    <li>Ou substitua por outro componente</li>
+                    <li>Depois volte aqui e tente excluir novamente</li>
+                  </ol>
                 </div>
 
-                <p className="text-muted-foreground">
-                  Deseja excluir mesmo assim? Recomendamos remover {deleteErrors?.failedProducts.length === 1 ? 'o produto' : 'os produtos'} das 
-                  composições antes de excluir {deleteErrors?.failedProducts.length === 1 ? 'ou substituí-lo' : 'ou substituí-los'} por {deleteErrors?.failedProducts.length === 1 ? 'outro componente' : 'outros componentes'}.
+                <p className="text-muted-foreground italic">
+                  A exclusão forçada não é permitida para garantir a integridade das composições cadastradas no sistema.
                 </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteErrors(null)}>
-              Cancelar
+              Entendi
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleForceDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Excluir Mesmo Assim
-            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
