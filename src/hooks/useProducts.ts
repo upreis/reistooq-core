@@ -305,11 +305,11 @@ export const useProducts = () => {
   const deleteProduct = useCallback(async (id: string) => {
     const orgId = await getCurrentOrgId();
 
-    // SIMPLIFICADO: Sem verificação de hierarquia pai/filho
-    // Apenas fazer soft delete (marcar como inativo)
+    // 🗑️ EXCLUSÃO REAL do banco de dados (não apenas soft delete)
+    // Remove o produto permanentemente
     const { data, error } = await supabase
       .from('produtos')
-      .update({ ativo: false })
+      .delete()
       .eq('id', id)
       .eq('organization_id', orgId)
       .select()
@@ -320,6 +320,7 @@ export const useProducts = () => {
       throw error;
     }
 
+    console.log('✅ Produto excluído permanentemente do banco:', id);
     return data as unknown as Product;
   }, [getCurrentOrgId]);
 
