@@ -87,7 +87,7 @@ export function useInsumosComposicoes() {
         .insert({
           sku_produto: data.sku_produto,
           sku_insumo: data.sku_insumo,
-          quantidade: 1, // Sempre 1
+          quantidade: data.quantidade,
           observacoes: data.observacoes || null
         } as any)
         .select()
@@ -118,6 +118,7 @@ export function useInsumosComposicoes() {
       const { data: result, error } = await supabase
         .from('composicoes_insumos')
         .update({
+          quantidade: data.quantidade,
           observacoes: data.observacoes
         })
         .eq('id', id)

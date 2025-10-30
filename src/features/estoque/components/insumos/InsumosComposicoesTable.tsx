@@ -100,7 +100,7 @@ export function InsumosComposicoesTable({ onEdit, onDelete }: InsumosComposicoes
                     <TableCell>{insumo.nome_insumo}</TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="font-mono">
-                        1
+                        {insumo.quantidade}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">

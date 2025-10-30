@@ -20,7 +20,7 @@ export class InsumosService {
       // 1. Buscar insumos cadastrados para o produto
       const { data: composicoes, error: erroComposicoes } = await supabase
         .from('composicoes_insumos')
-        .select('sku_insumo')
+        .select('sku_insumo, quantidade')
         .eq('sku_produto', skuProduto)
         .eq('ativo', true);
 
@@ -46,26 +46,26 @@ export class InsumosService {
       if (erroProdutos) throw erroProdutos;
 
       // 3. Validar cada insumo
-      const validacoes: ValidacaoInsumo[] = skusInsumos.map(sku => {
-        const produto = produtos?.find(p => p.sku_interno === sku);
+      const validacoes: ValidacaoInsumo[] = composicoes.map(comp => {
+        const produto = produtos?.find(p => p.sku_interno === comp.sku_insumo);
         
         if (!produto) {
           return {
-            sku,
+            sku: comp.sku_insumo,
             existe: false,
             estoque_disponivel: 0,
             estoque_suficiente: false,
-            erro: `Insumo ${sku} não cadastrado no estoque`
+            erro: `Insumo ${comp.sku_insumo} não cadastrado no estoque`
           };
         }
 
-        const suficiente = produto.quantidade_atual >= 1;
+        const suficiente = produto.quantidade_atual >= comp.quantidade;
         return {
-          sku,
+          sku: comp.sku_insumo,
           existe: true,
           estoque_disponivel: produto.quantidade_atual,
           estoque_suficiente: suficiente,
-          erro: suficiente ? undefined : `Estoque insuficiente (disponível: ${produto.quantidade_atual})`
+          erro: suficiente ? undefined : `Estoque insuficiente (disponível: ${produto.quantidade_atual}, necessário: ${comp.quantidade})`
         };
       });
 
@@ -89,14 +89,14 @@ export class InsumosService {
 
   /**
    * 📥 Baixar insumos de um pedido
-   * SEMPRE baixa 1 unidade de cada insumo, independente da quantidade do produto
+   * Baixa a quantidade cadastrada de cada insumo
    */
   static async baixarInsumosPedido(skuProduto: string): Promise<ResultadoBaixaInsumos> {
     try {
       // 1. Buscar insumos cadastrados
       const { data: composicoes, error: erroComposicoes } = await supabase
         .from('composicoes_insumos')
-        .select('sku_insumo')
+        .select('sku_insumo, quantidade')
         .eq('sku_produto', skuProduto)
         .eq('ativo', true);
 
@@ -112,9 +112,10 @@ export class InsumosService {
         };
       }
 
-      // 2. Preparar array de insumos para RPC
+      // 2. Preparar array de insumos para RPC com quantidade
       const insumosParaBaixar = composicoes.map(c => ({
-        sku: c.sku_insumo
+        sku: c.sku_insumo,
+        quantidade: c.quantidade
       }));
 
       // 3. Chamar RPC para baixar insumos

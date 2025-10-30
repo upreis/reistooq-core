@@ -41,6 +41,7 @@ import type { ComposicaoInsumoEnriquecida } from '../../types/insumos.types';
 const schema = z.object({
   sku_produto: z.string().min(1, 'Selecione um produto'),
   sku_insumo: z.string().min(1, 'Selecione um insumo'),
+  quantidade: z.number().int().min(1, 'Quantidade deve ser no mínimo 1').default(1),
   observacoes: z.string().optional()
 });
 
@@ -63,6 +64,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
     defaultValues: {
       sku_produto: '',
       sku_insumo: '',
+      quantidade: 1,
       observacoes: ''
     }
   });
@@ -80,12 +82,14 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
       form.reset({
         sku_produto: insumo.sku_produto,
         sku_insumo: insumo.sku_insumo,
+        quantidade: insumo.quantidade,
         observacoes: insumo.observacoes || ''
       });
     } else {
       form.reset({
         sku_produto: '',
         sku_insumo: '',
+        quantidade: 1,
         observacoes: ''
       });
     }
@@ -235,16 +239,29 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
               </div>
             )}
 
-            {/* Quantidade (fixo em 1) */}
-            <FormItem>
-              <FormLabel>Quantidade por Pedido</FormLabel>
-              <FormControl>
-                <Input value="1" disabled className="max-w-xs" />
-              </FormControl>
-              <FormDescription>
-                Sempre 1 unidade por pedido (não pode ser alterado)
-              </FormDescription>
-            </FormItem>
+            {/* Quantidade */}
+            <FormField
+              control={form.control}
+              name="quantidade"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantidade por Pedido</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      {...field}
+                      onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                      className="max-w-xs"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Quantidade fixa de insumo por pedido (padrão: 1)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Observações */}
             <FormField

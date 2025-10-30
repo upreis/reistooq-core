@@ -24,7 +24,7 @@ export interface ComposicaoInsumoEnriquecida extends ComposicaoInsumo {
 export interface InsumoFormData {
   sku_produto: string;
   sku_insumo: string;
-  quantidade?: number;
+  quantidade: number;
   observacoes?: string;
 }
 
