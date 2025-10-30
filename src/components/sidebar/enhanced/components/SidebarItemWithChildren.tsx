@@ -83,8 +83,9 @@ export function SidebarItemWithChildren({
   const handleChevronClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log(`🔽 Toggle grupo "${item.label}" (${item.id})`);
     toggleGroup(item.id);
-  }, [item.id, toggleGroup]);
+  }, [item.id, item.label, toggleGroup]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
