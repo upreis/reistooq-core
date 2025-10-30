@@ -72,6 +72,8 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'shipping_status', label: 'Status do Envio', visible: true, category: 'ml' },
   { key: 'shipping_mode', label: 'Modo de Envio', visible: true, category: 'ml' },
   { key: 'shipping_substatus', label: 'Sub-status Detalhado', visible: true, category: 'ml' },
+  { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: true, category: 'ml' },
+  { key: 'url_rastreamento', label: 'URL Rastreamento', visible: true, category: 'ml' },
   
   // Status Avançados (Novos) - Visíveis por padrão para melhor entendimento
   { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: true, category: 'ml' },

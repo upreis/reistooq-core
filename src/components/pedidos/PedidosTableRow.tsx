@@ -132,6 +132,21 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 );
               case 'obs':
                 return <TruncatedCell content={get(row.unified, 'obs')} />;
+              case 'codigo_rastreamento':
+                const codigoRastreamento = get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping.tracking_number');
+                return <TruncatedCell content={codigoRastreamento} maxLength={30} />;
+              case 'url_rastreamento':
+                const urlRastreamento = get(row.unified, 'url_rastreamento') ?? get(row.raw, 'shipping.tracking_url');
+                return urlRastreamento ? (
+                  <a 
+                    href={urlRastreamento} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline text-sm"
+                  >
+                    Rastrear
+                  </a>
+                ) : <span>-</span>;
               case 'status_baixa':
                 // Renderizar status da baixa usando callback personalizado
                 return renderStatusBaixa ? renderStatusBaixa(rowId) : <span className="text-xs text-muted-foreground">—</span>;
