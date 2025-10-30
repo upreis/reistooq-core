@@ -15,6 +15,16 @@ import { useProducts, Product } from "@/hooks/useProducts";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Package, AlertTriangle, Filter, Upload, Plus, Settings, X, Trash2, Link as LinkIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EstoqueSkeleton } from "@/components/estoque/EstoqueSkeleton";
@@ -59,6 +69,11 @@ export default function ControleEstoquePage() {
   const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
   const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
   const [bulkCategoryModalOpen, setBulkCategoryModalOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteErrors, setDeleteErrors] = useState<{
+    failedProducts: string[];
+    errorMessage: string;
+  } | null>(null);
   
   console.log('🔍 DEBUG: Estados:', {
     parentProductModalOpen,
@@ -175,19 +190,41 @@ export default function ControleEstoquePage() {
       const sucessos = results.filter(r => r.status === 'fulfilled').length;
       const falhas = results.filter(r => r.status === 'rejected').length;
       
-      // Coletar mensagens de erro
+      // Coletar mensagens de erro e produtos que falharam
       const erros = results
         .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
         .map(r => r.reason?.message || 'Erro desconhecido');
       
+      const failedProductIds = validProductIds.filter((_, index) => 
+        results[index].status === 'rejected'
+      );
+      
+      const failedProductNames = failedProductIds
+        .map(id => products.find(p => p.id === id)?.nome || id)
+        .join(', ');
+      
       console.log(`✅ Exclusão concluída: ${sucessos} sucessos, ${falhas} falhas`);
       
       if (falhas > 0) {
-        toast({
-          title: "Exclusão parcial",
-          description: `${sucessos} produto(s) excluído(s). ${falhas} falhou(aram): ${erros[0]}`,
-          variant: "destructive",
-        });
+        // Verificar se é erro de componente em uso
+        const isComponentInUseError = erros.some(e => 
+          e.includes('COMPONENTE_EM_USO') || e.includes('composições')
+        );
+        
+        if (isComponentInUseError) {
+          // Mostrar diálogo de confirmação
+          setDeleteErrors({
+            failedProducts: failedProductNames.split(', '),
+            errorMessage: erros[0]
+          });
+          setDeleteConfirmOpen(true);
+        } else {
+          toast({
+            title: "Exclusão parcial",
+            description: `${sucessos} produto(s) excluído(s). ${falhas} falhou(aram): ${erros[0]}`,
+            variant: "destructive",
+          });
+        }
       } else {
         toast({
           title: "Produtos excluídos",
@@ -212,6 +249,19 @@ export default function ControleEstoquePage() {
         variant: "destructive",
       });
     }
+  };
+
+  const handleForceDelete = async () => {
+    // Aqui você pode implementar a lógica de exclusão forçada
+    // que remove o produto das composições antes de excluir
+    setDeleteConfirmOpen(false);
+    setDeleteErrors(null);
+    
+    toast({
+      title: "Funcionalidade em desenvolvimento",
+      description: "A exclusão forçada de componentes será implementada em breve.",
+      variant: "default",
+    });
   };
 
   const handleBulkStatusChange = async (productIds: string[], newStatus: boolean) => {
@@ -743,6 +793,64 @@ export default function ControleEstoquePage() {
           loadProducts();
         }}
       />
+
+      {/* Diálogo de confirmação de exclusão de componentes em uso */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent className="max-w-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Exclusão Parcial - Componentes em Uso
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-sm">
+                <p className="text-foreground font-medium">
+                  {deleteErrors?.failedProducts.length === 1 ? 'O produto não pôde ser excluído:' : 'Os seguintes produtos não puderam ser excluídos:'}
+                </p>
+                
+                <div className="bg-muted p-4 rounded-lg space-y-2 max-h-40 overflow-y-auto">
+                  {deleteErrors?.failedProducts.map((product, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium">{product}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-lg">
+                  <p className="text-destructive font-medium mb-2">Motivo:</p>
+                  <p className="text-foreground">
+                    {deleteErrors?.errorMessage || 'Este componente está sendo usado nas seguintes composições.'}
+                  </p>
+                </div>
+
+                <div className="bg-yellow-500/10 border border-yellow-500/20 p-4 rounded-lg">
+                  <p className="text-foreground">
+                    <strong>⚠️ Atenção:</strong> Se você excluir {deleteErrors?.failedProducts.length === 1 ? 'este produto' : 'estes produtos'} mesmo assim, 
+                    as composições que {deleteErrors?.failedProducts.length === 1 ? 'o utilizam' : 'os utilizam'} ficarão com componentes faltando.
+                  </p>
+                </div>
+
+                <p className="text-muted-foreground">
+                  Deseja excluir mesmo assim? Recomendamos remover {deleteErrors?.failedProducts.length === 1 ? 'o produto' : 'os produtos'} das 
+                  composições antes de excluir {deleteErrors?.failedProducts.length === 1 ? 'ou substituí-lo' : 'ou substituí-los'} por {deleteErrors?.failedProducts.length === 1 ? 'outro componente' : 'outros componentes'}.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteErrors(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleForceDelete}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Excluir Mesmo Assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
