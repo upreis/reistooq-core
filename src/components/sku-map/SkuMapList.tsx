@@ -107,7 +107,7 @@ export function SkuMapList({
                     </Button>
                   </TableHead>
                   <TableHead>SKU Correto</TableHead>
-                  <TableHead>SKU Unitário</TableHead>
+                  <TableHead>SKU Composição do Produto</TableHead>
                   <TableHead>
                     <Button
                       variant="ghost"
@@ -322,7 +322,7 @@ export function SkuMapList({
                         <div className="font-medium">{item.sku_correspondente || "-"}</div>
                       </div>
                       <div>
-                        <div className="text-xs text-muted-foreground">SKU Unitário</div>
+                        <div className="text-xs text-muted-foreground">SKU Composição do Produto</div>
                         <div className="font-medium">{item.sku_simples || "-"}</div>
                       </div>
                       <div>
