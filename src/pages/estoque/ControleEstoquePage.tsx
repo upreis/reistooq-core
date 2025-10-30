@@ -252,16 +252,71 @@ export default function ControleEstoquePage() {
   };
 
   const handleForceDelete = async () => {
-    // Aqui você pode implementar a lógica de exclusão forçada
-    // que remove o produto das composições antes de excluir
-    setDeleteConfirmOpen(false);
-    setDeleteErrors(null);
+    if (!deleteErrors || deleteErrors.failedProducts.length === 0) {
+      setDeleteConfirmOpen(false);
+      return;
+    }
     
-    toast({
-      title: "Funcionalidade em desenvolvimento",
-      description: "A exclusão forçada de componentes será implementada em breve.",
-      variant: "default",
-    });
+    try {
+      // Obter IDs dos produtos que falharam
+      const failedProductIds = selectedProducts.filter(id => {
+        const productName = products.find(p => p.id === id)?.nome || '';
+        return deleteErrors.failedProducts.includes(productName);
+      });
+      
+      console.log('🗑️ Excluindo forçadamente produtos:', failedProductIds);
+      
+      // Importar o supabase client
+      const { supabase } = await import('@/integrations/supabase/client');
+      
+      // Para cada produto, remover das composições e excluir
+      for (const productId of failedProductIds) {
+        const product = products.find(p => p.id === productId);
+        if (!product) continue;
+        
+        console.log(`🗑️ Removendo ${product.sku_interno} das composições...`);
+        
+        // Remover produto de todas as composições onde é componente
+        const { error: deleteComposicoesError } = await supabase
+          .from('composicoes_produtos' as any)
+          .delete()
+          .eq('sku_componente', product.sku_interno);
+        
+        if (deleteComposicoesError) {
+          console.warn('⚠️ Erro ao remover das composições:', deleteComposicoesError);
+        }
+        
+        console.log(`✅ Removido das composições, agora excluindo produto...`);
+        
+        // Agora excluir o produto
+        await deleteProduct(productId);
+      }
+      
+      toast({
+        title: "Produtos excluídos",
+        description: `${failedProductIds.length} produto(s) excluído(s) com sucesso.`,
+      });
+      
+      // Limpar estados e recarregar
+      setDeleteConfirmOpen(false);
+      setDeleteErrors(null);
+      setSelectedProducts([]);
+      
+      setTimeout(() => {
+        console.log('🔄 Recarregando produtos após exclusão forçada...');
+        loadProducts();
+      }, 300);
+      
+    } catch (error) {
+      console.error('❌ Erro na exclusão forçada:', error);
+      toast({
+        title: "Erro ao excluir",
+        description: error instanceof Error ? error.message : "Não foi possível excluir os produtos.",
+        variant: "destructive",
+      });
+      setDeleteConfirmOpen(false);
+      setDeleteErrors(null);
+    }
   };
 
   const handleBulkStatusChange = async (productIds: string[], newStatus: boolean) => {
