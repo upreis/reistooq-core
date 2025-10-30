@@ -87,6 +87,12 @@ export function SidebarItemWithChildren({
     }
   }, [isCollapsed, isMobile, item.children, item.id, toggleGroup, navigate]);
 
+  const handleChevronClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleGroup(item.id);
+  }, [item.id, toggleGroup]);
+
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -139,13 +145,21 @@ export function SidebarItemWithChildren({
         {item.label}
       </span>
 
-      {/* Chevron com animação suave */}
-      <ChevronDown className={cn(
-        'h-4 w-4 ml-auto transition-all duration-300 shrink-0',
-        isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : 'rotate-0',
-        !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-        hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))]' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]'
-      )} />
+      {/* Chevron com animação suave - clickável independente */}
+      <button
+        onClick={handleChevronClick}
+        className={cn(
+          'ml-auto p-1 rounded-md hover:bg-[hsl(var(--accent))] transition-all shrink-0',
+          !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
+        )}
+        aria-label={isOpen ? 'Recolher' : 'Expandir'}
+      >
+        <ChevronDown className={cn(
+          'h-4 w-4 transition-all duration-300',
+          isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : 'rotate-0',
+          hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))]' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]'
+        )} />
+      </button>
 
       {/* Badge melhorado */}
       {item.badge && (
