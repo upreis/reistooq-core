@@ -423,18 +423,28 @@ export function ReclamacoesPage() {
     });
   }, [reclamacoesWithAnalise, lifecycleFilter]);
   
-  // ✅ FASE 4.1: Separar ativas/histórico diretamente dos dados com lifecycle filter
+  // 🎯 ETAPA 3: Determinar fonte de dados (filtro rápido tem prioridade)
+  const dadosParaSeparacao = useMemo(() => {
+    // Se filtro rápido está ativo (tem dados), usar ele (PRIORIDADE)
+    if (filteredByQuickFilter.length > 0) {
+      return filteredByQuickFilter;
+    }
+    // Senão, usar dados com lifecycle filter aplicado (fluxo normal)
+    return dadosComLifecycleFilter;
+  }, [filteredByQuickFilter, dadosComLifecycleFilter]);
+
+  // ✅ FASE 4.1: Separar ativas/histórico dos dados determinados acima
   const reclamacoesAtivas = useMemo(() => {
-    return dadosComLifecycleFilter.filter((claim: any) => 
+    return dadosParaSeparacao.filter((claim: any) => 
       ACTIVE_STATUSES.includes(claim.status_analise)
     );
-  }, [dadosComLifecycleFilter]);
+  }, [dadosParaSeparacao]);
 
   const reclamacoesHistorico = useMemo(() => {
-    return dadosComLifecycleFilter.filter((claim: any) => 
+    return dadosParaSeparacao.filter((claim: any) => 
       HISTORIC_STATUSES.includes(claim.status_analise)
     );
-  }, [dadosComLifecycleFilter]);
+  }, [dadosParaSeparacao]);
 
   const reclamacoes = activeTab === 'ativas' ? reclamacoesAtivas : reclamacoesHistorico;
   
@@ -559,8 +569,9 @@ export function ReclamacoesPage() {
           <ReclamacoesFilterBarCascata 
             reclamacoes={reclamacoesWithAnalise}
             onFilteredDataChange={(filtered) => {
-              // Os filtros rápidos agora funcionam corretamente
+              // 🎯 ETAPA 2: Atualizar estado com dados filtrados
               console.log(`Filtros rápidos aplicados: ${filtered.length} reclamações`);
+              setFilteredByQuickFilter(filtered);
             }}
           />
         )}
