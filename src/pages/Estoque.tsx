@@ -4,6 +4,7 @@ import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
 import { Routes, Route } from "react-router-dom";
 import ControleEstoquePage from "./estoque/ControleEstoquePage";
 import ComposicoesPage from "./estoque/ComposicoesPage";
+import InsumosPage from "./estoque/InsumosPage";
 import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 
@@ -28,6 +29,7 @@ const EstoqueContent = () => {
           <Routes>
             <Route index element={<ControleEstoquePage />} />
             <Route path="composicoes" element={<ComposicoesPage />} />
+            <Route path="insumos" element={<InsumosPage />} />
             <Route path="historico" element={<HistoricoMovimentacoesPage />} />
           </Routes>
         </div>

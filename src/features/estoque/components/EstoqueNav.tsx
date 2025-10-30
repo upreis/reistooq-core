@@ -1,10 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
-import { Package, Layers, Clock } from "lucide-react";
+import { Package, Layers, Clock, PackageCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "Controle de Estoque", href: "/estoque", icon: Package },
-  { name: "Composições", href: "/estoque/composicoes", icon: Layers },
+  { name: "Composições de Produtos", href: "/estoque/composicoes", icon: Layers },
+  { name: "Composições de Insumos", href: "/estoque/insumos", icon: PackageCheck },
   { name: "Histórico", href: "/estoque/historico", icon: Clock },
 ];
 

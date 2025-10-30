@@ -476,6 +476,50 @@ export type Database = {
         }
         Relationships: []
       }
+      composicoes_insumos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          observacoes: string | null
+          organization_id: string
+          quantidade: number
+          sku_insumo: string
+          sku_produto: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          organization_id: string
+          quantidade?: number
+          sku_insumo: string
+          sku_produto: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          organization_id?: string
+          quantidade?: number
+          sku_insumo?: string
+          sku_produto?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "composicoes_insumos_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compras_importacoes_historico: {
         Row: {
           created_at: string | null
@@ -5738,6 +5782,7 @@ export type Database = {
       backfill_config_for_current_org: { Args: never; Returns: Json }
       backfill_historico_vendas_orphans: { Args: never; Returns: Json }
       baixar_estoque_direto: { Args: { p_baixas: Json }; Returns: Json }
+      baixar_insumos_pedido: { Args: { p_insumos: Json }; Returns: Json }
       can_view_sensitive_customer_data: { Args: never; Returns: boolean }
       check_access_schedule: { Args: { _user_id: string }; Returns: boolean }
       check_clientes_secure_access: { Args: never; Returns: boolean }
