@@ -11,6 +11,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { 
   Select, 
   SelectContent, 
@@ -23,10 +24,12 @@ import {
   ArrowUp, 
   Clock, 
   Search,
-  User 
+  User,
+  FileText
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { MovimentacaoObservacoesModal } from "./MovimentacaoObservacoesModal";
 
 type MovimentacaoRow = {
   id: string;
@@ -56,6 +59,8 @@ export function MovimentacoesHistorico() {
   const [searchTerm, setSearchTerm] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("all");
   const [origemFiltro, setOrigemFiltro] = useState("all");
+  const [observacoesModalOpen, setObservacoesModalOpen] = useState(false);
+  const [selectedMovimentacao, setSelectedMovimentacao] = useState<MovimentacaoRow | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -100,6 +105,24 @@ export function MovimentacoesHistorico() {
 
     fetchData();
   }, [tipoFiltro, origemFiltro, searchTerm]);
+
+  const handleOpenObservacoes = (movimentacao: MovimentacaoRow) => {
+    setSelectedMovimentacao(movimentacao);
+    setObservacoesModalOpen(true);
+  };
+
+  const handleSaveObservacoes = async () => {
+    // Recarregar dados após salvar
+    const { data } = await supabase
+      .from('movimentacoes_estoque')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    
+    if (data) {
+      setMovimentacoes(data as unknown as MovimentacaoRow[]);
+    }
+  };
 
   const getOrigemLabel = (origem: string): string => {
     const labels: Record<string, string> = {
@@ -199,18 +222,19 @@ export function MovimentacoesHistorico() {
                 <TableHead>Origem</TableHead>
                 <TableHead>Página</TableHead>
                 <TableHead>Operador</TableHead>
+                <TableHead className="text-center">Observações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
+                  <TableCell colSpan={11} className="text-center py-8">
                     Carregando...
                   </TableCell>
                 </TableRow>
               ) : movimentacoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
+                  <TableCell colSpan={11} className="text-center py-8">
                     Nenhuma movimentação encontrada
                   </TableCell>
                 </TableRow>
@@ -259,6 +283,17 @@ export function MovimentacoesHistorico() {
                         <span className="text-muted-foreground text-sm">Sistema</span>
                       )}
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        variant={mov.observacoes?.trim() ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => handleOpenObservacoes(mov)}
+                        className="h-8 w-8 p-0"
+                        title={mov.observacoes?.trim() ? 'Ver/Editar observações' : 'Adicionar observações'}
+                      >
+                        <FileText className={`h-4 w-4 ${mov.observacoes?.trim() ? '' : 'text-muted-foreground'}`} />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -272,6 +307,19 @@ export function MovimentacoesHistorico() {
           </div>
         )}
       </CardContent>
+
+      {/* Modal de Observações */}
+      {selectedMovimentacao && (
+        <MovimentacaoObservacoesModal
+          open={observacoesModalOpen}
+          onOpenChange={setObservacoesModalOpen}
+          movimentacaoId={selectedMovimentacao.id}
+          skuProduto={selectedMovimentacao.sku_produto}
+          nomeProduto={selectedMovimentacao.nome_produto}
+          observacaoAtual={selectedMovimentacao.observacoes || ''}
+          onSave={handleSaveObservacoes}
+        />
+      )}
     </Card>
   );
 }
