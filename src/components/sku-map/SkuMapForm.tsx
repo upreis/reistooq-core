@@ -100,7 +100,7 @@ export function SkuMapForm({ initialData, onSuccess, onCancel }: SkuMapFormProps
               name="sku_simples"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>SKU Unitário</FormLabel>
+                  <FormLabel>SKU Mapeamento</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Ex: SKU001-UNIT"
