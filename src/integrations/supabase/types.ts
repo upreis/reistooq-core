@@ -2878,35 +2878,71 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          metadados: Json | null
           motivo: string | null
+          nome_produto: string | null
           observacoes: string | null
+          organization_id: string | null
+          origem_movimentacao: string | null
+          pagina_origem: string | null
           produto_id: string
+          quantidade: number | null
           quantidade_anterior: number
           quantidade_movimentada: number
           quantidade_nova: number
+          referencia_id: string | null
+          referencia_tipo: string | null
+          sku_produto: string | null
           tipo_movimentacao: string
+          usuario_email: string | null
+          usuario_id: string | null
+          usuario_nome: string | null
         }
         Insert: {
           created_at?: string
           id?: string
+          metadados?: Json | null
           motivo?: string | null
+          nome_produto?: string | null
           observacoes?: string | null
+          organization_id?: string | null
+          origem_movimentacao?: string | null
+          pagina_origem?: string | null
           produto_id: string
+          quantidade?: number | null
           quantidade_anterior: number
           quantidade_movimentada: number
           quantidade_nova: number
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          sku_produto?: string | null
           tipo_movimentacao: string
+          usuario_email?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
         }
         Update: {
           created_at?: string
           id?: string
+          metadados?: Json | null
           motivo?: string | null
+          nome_produto?: string | null
           observacoes?: string | null
+          organization_id?: string | null
+          origem_movimentacao?: string | null
+          pagina_origem?: string | null
           produto_id?: string
+          quantidade?: number | null
           quantidade_anterior?: number
           quantidade_movimentada?: number
           quantidade_nova?: number
+          referencia_id?: string | null
+          referencia_tipo?: string | null
+          sku_produto?: string | null
           tipo_movimentacao?: string
+          usuario_email?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
         }
         Relationships: [
           {

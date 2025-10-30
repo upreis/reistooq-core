@@ -85,8 +85,10 @@ export function MovimentacoesHistorico() {
         if (error) {
           console.error('Erro ao carregar movimentações:', error);
           setMovimentacoes([]);
+        } else if (data) {
+          setMovimentacoes(data as unknown as MovimentacaoRow[]);
         } else {
-          setMovimentacoes(data as MovimentacaoRow[]);
+          setMovimentacoes([]);
         }
       } catch (error) {
         console.error('Erro ao carregar movimentações:', error);
