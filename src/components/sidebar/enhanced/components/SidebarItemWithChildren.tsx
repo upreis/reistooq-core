@@ -55,12 +55,12 @@ export function SidebarItemWithChildren({
   // Check if this group is open (força re-renderização com openGroups como dependência)
   const isOpen = useMemo(() => isGroupOpen(item.id), [isGroupOpen, item.id, openGroups]);
   
-  // Auto-expand group when child is active
+  // Auto-expand group when child is active (só na primeira vez)
   useEffect(() => {
     if (!isCollapsed && hasActiveChild && !isOpen) {
       openGroup(item.id);
     }
-  }, [hasActiveChild, isCollapsed, isOpen, item.id, openGroup]);
+  }, [hasActiveChild, isCollapsed, item.id, openGroup]); // Removido isOpen para evitar loop
 
   // Remove flyout functionality temporarily as it's not used in the unified context
   const isFlyoutPinned = false;
