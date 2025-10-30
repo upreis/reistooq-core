@@ -28,13 +28,13 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-interface Movimentacao {
+type MovimentacaoRow = {
   id: string;
   organization_id: string;
   produto_id: string | null;
   sku_produto: string;
   nome_produto: string;
-  tipo_movimentacao: 'entrada' | 'saida';
+  tipo_movimentacao: string;
   quantidade: number;
   quantidade_anterior: number;
   quantidade_nova: number;
@@ -46,21 +46,19 @@ interface Movimentacao {
   usuario_nome: string | null;
   usuario_email: string | null;
   observacoes: string | null;
-  metadados: any;
+  metadados: Record<string, any> | null;
   created_at: string;
-}
+};
 
 export function MovimentacoesHistorico() {
-  const [movimentacoes, setMovimentacoes] = useState<Movimentacao[]>([]);
+  const [movimentacoes, setMovimentacoes] = useState<MovimentacaoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [tipoFiltro, setTipoFiltro] = useState<string>("all");
-  const [origemFiltro, setOrigemFiltro] = useState<string>("all");
+  const [tipoFiltro, setTipoFiltro] = useState("all");
+  const [origemFiltro, setOrigemFiltro] = useState("all");
 
   useEffect(() => {
-    let isMounted = true;
-    
-    const loadData = async () => {
+    async function fetchData() {
       try {
         setLoading(true);
         
@@ -84,32 +82,24 @@ export function MovimentacoesHistorico() {
 
         const { data, error } = await query;
 
-        if (!isMounted) return;
-
         if (error) {
           console.error('Erro ao carregar movimentações:', error);
+          setMovimentacoes([]);
         } else {
-          setMovimentacoes((data as any) || []);
+          setMovimentacoes(data as MovimentacaoRow[]);
         }
-      } catch (error: any) {
-        if (isMounted) {
-          console.error('Erro ao carregar movimentações:', error);
-        }
+      } catch (error) {
+        console.error('Erro ao carregar movimentações:', error);
+        setMovimentacoes([]);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
-    };
+    }
 
-    loadData();
-    
-    return () => {
-      isMounted = false;
-    };
+    fetchData();
   }, [tipoFiltro, origemFiltro, searchTerm]);
 
-  const getOrigemLabel = (origem: string) => {
+  const getOrigemLabel = (origem: string): string => {
     const labels: Record<string, string> = {
       'venda': 'Venda',
       'compra': 'Compra',
@@ -125,7 +115,7 @@ export function MovimentacoesHistorico() {
     return labels[origem] || origem;
   };
 
-  const getPaginaLabel = (pagina: string | null) => {
+  const getPaginaLabel = (pagina: string | null): string => {
     if (!pagina) return '-';
     const labels: Record<string, string> = {
       '/estoque': 'Estoque',
@@ -156,7 +146,6 @@ export function MovimentacoesHistorico() {
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -194,7 +183,6 @@ export function MovimentacoesHistorico() {
           </Select>
         </div>
 
-        {/* Tabela */}
         <div className="rounded-md border">
           <Table>
             <TableHeader>
