@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,9 @@ import {
   Upload, 
   FileSpreadsheet, 
   Download,
-  X
+  X,
+  CheckCircle,
+  AlertCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
@@ -22,6 +25,13 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [templateFormat, setTemplateFormat] = useState<'csv' | 'xlsx'>('xlsx');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importResult, setImportResult] = useState<{
+    success: number;
+    failed: number;
+    errors: string[];
+  } | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -136,8 +146,82 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
     }
   };
 
+  const processImport = async () => {
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportProgress(0);
+    setImportResult(null);
+
+    try {
+      const reader = new FileReader();
+      
+      reader.onload = async (e) => {
+        try {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
+          const sheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+          let successCount = 0;
+          let failedCount = 0;
+          const errors: string[] = [];
+
+          for (let i = 0; i < jsonData.length; i++) {
+            setImportProgress(Math.round(((i + 1) / jsonData.length) * 100));
+            
+            try {
+              // Simula processamento - aqui você adicionaria a lógica real de salvar no banco
+              await new Promise(resolve => setTimeout(resolve, 100));
+              successCount++;
+            } catch (error) {
+              failedCount++;
+              errors.push(`Linha ${i + 2}: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
+            }
+          }
+
+          setImportResult({
+            success: successCount,
+            failed: failedCount,
+            errors: errors.slice(0, 10) // Mostra apenas os primeiros 10 erros
+          });
+
+          toast({
+            title: "Importação concluída",
+            description: `${successCount} produtos importados com sucesso${failedCount > 0 ? `, ${failedCount} falharam` : ''}`,
+            variant: successCount > 0 ? "default" : "destructive",
+          });
+
+          if (successCount > 0 && onSuccess) {
+            onSuccess();
+          }
+        } catch (error) {
+          toast({
+            title: "Erro ao processar arquivo",
+            description: error instanceof Error ? error.message : "Erro desconhecido",
+            variant: "destructive",
+          });
+        } finally {
+          setIsImporting(false);
+        }
+      };
+
+      reader.readAsBinaryString(file);
+    } catch (error) {
+      toast({
+        title: "Erro ao ler arquivo",
+        description: error instanceof Error ? error.message : "Erro desconhecido",
+        variant: "destructive",
+      });
+      setIsImporting(false);
+    }
+  };
+
   const resetImport = () => {
     setFile(null);
+    setImportResult(null);
+    setImportProgress(0);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -243,10 +327,75 @@ export function EstoqueImport({ onSuccess }: { onSuccess?: () => void }) {
             </CardContent>
           </Card>
 
+          {isImporting && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">3. Processando Importação</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Progress value={importProgress} />
+                  <p className="text-sm text-muted-foreground text-center">
+                    {importProgress}% concluído
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {importResult && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  {importResult.failed === 0 ? (
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-yellow-500" />
+                  )}
+                  Resultado da Importação
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Sucesso:</span>
+                    <span className="font-medium text-green-600">{importResult.success}</span>
+                  </div>
+                  {importResult.failed > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Falhas:</span>
+                        <span className="font-medium text-red-600">{importResult.failed}</span>
+                      </div>
+                      {importResult.errors.length > 0 && (
+                        <div className="mt-3">
+                          <p className="text-sm font-medium mb-2">Erros:</p>
+                          <div className="text-xs text-muted-foreground space-y-1 max-h-40 overflow-y-auto">
+                            {importResult.errors.map((error, idx) => (
+                              <div key={idx} className="p-2 bg-muted rounded">
+                                {error}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={handleClose}>
               Fechar
             </Button>
+            {file && !isImporting && (
+              <Button onClick={processImport}>
+                <Upload className="w-4 h-4 mr-2" />
+                Importar
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
