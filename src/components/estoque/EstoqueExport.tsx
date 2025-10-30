@@ -31,6 +31,7 @@ const availableFields = [
   { id: 'preco_custo', label: 'Preço de Custo' },
   { id: 'preco_venda', label: 'Preço de Venda' },
   { id: 'codigo_barras', label: 'Código de Barras' },
+  { id: 'url_imagem', label: 'URL da Imagem' },
   { id: 'localizacao', label: 'Localização' },
   { id: 'categoria', label: 'Categoria' },
   { id: 'categoria_principal', label: 'Categoria Principal' },
@@ -53,7 +54,7 @@ export function EstoqueExport({ products, filteredProducts }: EstoqueExportProps
   const [includeInactive, setIncludeInactive] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'xlsx'>('xlsx');
   const [selectedFields, setSelectedFields] = useState<string[]>([
-    'sku_interno', 'nome', 'quantidade_atual', 'preco_custo', 'preco_venda', 'estoque_minimo', 'estoque_maximo'
+    'sku_interno', 'nome', 'quantidade_atual', 'preco_custo', 'preco_venda', 'estoque_minimo', 'estoque_maximo', 'url_imagem'
   ]);
 
   const { toast } = useToast();
