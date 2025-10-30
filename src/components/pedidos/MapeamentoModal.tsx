@@ -19,6 +19,7 @@ import { AlertTriangle, Package, CheckCircle } from 'lucide-react';
 import { SkuMapping, SkuMappingSchema } from '@/types/sku-mapping.types';
 import { useCreateSkuMapping, useUpdateSkuMapping } from '@/hooks/useSkuMappings';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MapeamentoModalProps {
   isOpen: boolean;
@@ -77,24 +78,51 @@ export function MapeamentoModal({
 
   // Buscar mapeamento existente quando modal abrir
   useEffect(() => {
-    if (isOpen && pedido) {
-      console.log('🔄 Atualizando form com dados do pedido:', { pedido, skuToMap });
-      
-      // Reset do form sempre que o modal abrir
-      form.reset({
-        sku_pedido: skuToMap,
-        sku_correspondente: '',
-        sku_simples: '',
-        quantidade: 1,
-        ativo: true,
-        observacoes: `Mapeamento criado a partir do pedido ${pedido?.numero || pedido?.order_number || pedido?.id}`,
-      });
-      
-      // Force update do campo SKU do pedido se não foi preenchido
-      if (skuToMap) {
-        form.setValue('sku_pedido', skuToMap, { shouldValidate: true });
+    const checkExistingMapping = async () => {
+      if (isOpen && skuToMap) {
+        console.log('🔄 Verificando mapeamento existente para SKU:', skuToMap);
+        
+        try {
+          const { data, error } = await supabase
+            .from('mapeamentos_depara')
+            .select('*')
+            .eq('sku_pedido', skuToMap)
+            .maybeSingle();
+
+          if (error) {
+            console.error('Erro ao buscar mapeamento:', error);
+          }
+
+          if (data) {
+            console.log('✅ Mapeamento existente encontrado:', data);
+            setExistingMapping(data as SkuMapping);
+            form.reset({
+              sku_pedido: data.sku_pedido,
+              sku_correspondente: data.sku_correspondente || '',
+              sku_simples: data.sku_simples || '',
+              quantidade: data.quantidade || 1,
+              ativo: data.ativo ?? true,
+              observacoes: data.observacoes || '',
+            });
+          } else {
+            console.log('ℹ️ Nenhum mapeamento existente encontrado');
+            setExistingMapping(null);
+            form.reset({
+              sku_pedido: skuToMap,
+              sku_correspondente: '',
+              sku_simples: '',
+              quantidade: 1,
+              ativo: true,
+              observacoes: `Mapeamento criado a partir do pedido ${pedido?.numero || pedido?.order_number || pedido?.id}`,
+            });
+          }
+        } catch (error) {
+          console.error('❌ Erro ao verificar mapeamento:', error);
+        }
       }
-    }
+    };
+
+    checkExistingMapping();
   }, [isOpen, pedido, skuToMap, form]);
 
   const onSubmit = async (data: SkuMapping) => {
