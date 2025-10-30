@@ -15,14 +15,10 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { AlertTriangle, Package, CheckCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { AlertTriangle, Package, CheckCircle } from 'lucide-react';
 import { SkuMapping, SkuMappingSchema } from '@/types/sku-mapping.types';
 import { useCreateSkuMapping, useUpdateSkuMapping } from '@/hooks/useSkuMappings';
-import { useProdutosComposicoes } from '@/hooks/useProdutosComposicoes';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 interface MapeamentoModalProps {
   isOpen: boolean;
@@ -40,10 +36,8 @@ export function MapeamentoModal({
   onSuccess 
 }: MapeamentoModalProps) {
   const [existingMapping, setExistingMapping] = useState<SkuMapping | null>(null);
-  const [openSkuPopover, setOpenSkuPopover] = useState(false);
   const createMapping = useCreateSkuMapping();
   const updateMapping = useUpdateSkuMapping();
-  const { produtos, isLoading: isLoadingProdutos } = useProdutosComposicoes();
 
   // Determinar SKU do pedido - verificar múltiplas estruturas possíveis
   const skuToMap = skuPedido || 
@@ -219,72 +213,16 @@ export function MapeamentoModal({
                 control={form.control}
                 name="sku_correspondente"
                 render={({ field }) => (
-                  <FormItem className="flex flex-col">
+                  <FormItem>
                     <FormLabel>SKU Estoque Filho *</FormLabel>
-                    <Popover open={openSkuPopover} onOpenChange={setOpenSkuPopover}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={openSkuPopover}
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}
-                            disabled={isLoading}
-                          >
-                            {field.value || "Selecione ou digite o SKU..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[400px] p-0" align="start">
-                        <Command>
-                          <CommandInput 
-                            placeholder="Digite para buscar SKU..." 
-                            value={field.value}
-                            onValueChange={(value) => {
-                              field.onChange(value);
-                            }}
-                          />
-                          <CommandList className="max-h-[300px] overflow-y-auto">
-                            <CommandEmpty>Nenhum produto encontrado.</CommandEmpty>
-                            <CommandGroup>
-                              {produtos
-                                .filter(p => 
-                                  !field.value || 
-                                  p.sku_interno.toLowerCase().includes(field.value.toLowerCase()) ||
-                                  p.nome.toLowerCase().includes(field.value.toLowerCase())
-                                )
-                                .map((produto) => (
-                                  <CommandItem
-                                    key={produto.id}
-                                    value={produto.sku_interno}
-                                    onSelect={() => {
-                                      field.onChange(produto.sku_interno);
-                                      setOpenSkuPopover(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        field.value === produto.sku_interno
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      )}
-                                    />
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{produto.sku_interno}</span>
-                                      <span className="text-xs text-muted-foreground">{produto.nome}</span>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <FormControl>
+                      <Input
+                        placeholder="Ex: EST-SKU001"
+                        {...field}
+                        disabled={isLoading}
+                        autoFocus
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
