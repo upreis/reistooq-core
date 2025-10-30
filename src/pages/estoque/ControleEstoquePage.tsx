@@ -77,16 +77,15 @@ export default function ControleEstoquePage() {
     try {
       setLoading(true);
       
-      // 🎯 CORRIGIDO: Por padrão, mostrar apenas produtos ATIVOS
-      // Isso garante que produtos "excluídos" (soft delete) desapareçam
-      let ativoFilter: boolean | undefined = true; // PADRÃO: apenas ativos
+      // Determinar o filtro de ativo/inativo baseado no selectedStatus
+      let ativoFilter: boolean | undefined;
       
-      if (selectedStatus === "inactive_only") {
-        ativoFilter = false; // Mostrar apenas inativos
-      } else if (selectedStatus === "all_including_inactive") {
-        ativoFilter = undefined; // Mostrar todos (ativos + inativos)
+      if (selectedStatus === "active_only") {
+        ativoFilter = true;
+      } else if (selectedStatus === "inactive_only") {
+        ativoFilter = false;
       }
-      // Qualquer outro status (low, out, high, critical, all) = apenas ativos
+      // Se for "all" ou outros status, não filtra por ativo (undefined)
       
       console.log('🔍 Carregando produtos com filtro ativo:', ativoFilter);
       
