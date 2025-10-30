@@ -159,58 +159,10 @@ export function EstoqueTable({
 
   const columns = [
     {
-      key: "nome",
-      label: "Produto/Descrição",
-      primary: true,
-      sortable: true,
-      render: (value: string, product: Product) => (
-        <div className="flex items-center space-x-2 min-w-0">
-          <div className="relative w-8 h-8 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-            {product.url_imagem ? (
-              <img 
-                src={product.url_imagem} 
-                alt={product.nome} 
-                className="w-full h-full object-cover rounded-md"
-                onError={(e) => {
-                  console.error('Erro ao carregar imagem:', product.url_imagem);
-                  const target = e.target as HTMLImageElement;
-                  target.style.display = 'none';
-                  target.nextElementSibling?.classList.remove('hidden');
-                }}
-                onLoad={() => {
-                  console.log('Imagem carregada com sucesso:', product.url_imagem);
-                }}
-              />
-            ) : (
-              <Package className="w-3 h-3 text-muted-foreground" />
-            )}
-            <Package className="w-3 h-3 text-muted-foreground hidden" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-medium text-xs truncate leading-tight">{product.nome}</p>
-            <p className="text-[10px] text-muted-foreground truncate leading-tight">
-              {product.descricao || "Sem descrição"}
-            </p>
-          </div>
-        </div>
-      )
-    },
-    {
-      key: "codigo_barras",
-      label: "Código de Barras",
-      sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] font-mono text-muted-foreground block truncate">
-          {value || "Sem código"}
-        </span>
-      )
-    },
-    {
       key: "sku_interno",
       label: "SKU",
       sortable: true,
       render: (value: string, product: Product) => {
-        // Detecta SKU filho órfão: tem mais de 2 partes mas não tem sku_pai definido
         const isOrphanChild = value.split('-').length > 2 && !product.sku_pai && !product.eh_produto_pai;
         
         return (
@@ -239,18 +191,19 @@ export function EstoqueTable({
       }
     },
     {
-      key: "categorias",
-      label: "Categoria Principal/Categoria",
-      render: (_, product: Product) => (
-        <div className="text-[10px] leading-tight">
-          <div className="text-primary font-medium">Principal: {product.categoria_principal || "N/A"}</div>
-          <div className="text-foreground">Categoria: {product.categoria_nivel2 || "N/A"}</div>
+      key: "nome",
+      label: "Nome",
+      primary: true,
+      sortable: true,
+      render: (value: string, product: Product) => (
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-xs truncate leading-tight">{product.nome}</p>
         </div>
       )
     },
     {
       key: "quantidade_atual",
-      label: "Estoque",
+      label: "Quantidade Atual",
       sortable: true,
       render: (value: number, product: Product) => {
         const stockStatus = getStockStatus(product);
@@ -265,133 +218,97 @@ export function EstoqueTable({
       }
     },
     {
-      key: "estoque_range",
-      label: "Mín/Máx",
-      render: (_, product: Product) => (
-        <div className="text-[10px] leading-tight">
-          <div className="text-green-600 font-medium">Mín: {product.estoque_minimo}</div>
-          <div className="text-orange-600 font-medium">Máx: {product.estoque_maximo}</div>
-        </div>
-      )
-    },
-    {
-      key: "precos",
-      label: "Preços",
-      render: (_, product: Product) => (
-        <div className="text-[10px] leading-tight">
-          <div className={`${product.preco_custo && product.preco_custo > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
-            C: {formatPrice(product.preco_custo)}
-          </div>
-          <div className={`${product.preco_venda && product.preco_venda > 0 ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
-            V: {formatPrice(product.preco_venda)}
-          </div>
-        </div>
-      )
-    },
-    {
-      key: "pesos",
-      label: "Peso Líquido/Bruto (Kg)",
-      render: (_, product: Product) => (
-        <div className="text-[10px] leading-tight">
-          <div className="text-foreground font-medium">L: {product.peso_liquido_kg ? `${product.peso_liquido_kg} kg` : "N/A"}</div>
-          <div className="text-foreground font-medium">B: {product.peso_bruto_kg ? `${product.peso_bruto_kg} kg` : "N/A"}</div>
-        </div>
-      )
-    },
-    {
-      key: "ncm_cest",
-      label: "NCM/Cód CEST",
-      render: (_, product: Product) => (
-        <div className="text-[10px] leading-tight">
-          <div className="text-foreground font-medium font-mono">
-            NCM: {product.ncm || "N/A"}
-          </div>
-          <div className="text-muted-foreground font-mono">
-            CEST: {product.codigo_cest || "N/A"}
-          </div>
-        </div>
-      )
-    },
-    {
-      key: "sob_encomenda",
-      label: "Sob Encomenda",
-      sortable: true,
-      render: (value: boolean) => (
-        <Badge 
-          variant={value ? "default" : "outline"} 
-          className="text-[9px] px-1 py-0 leading-tight"
-        >
-          {value ? "Sim" : "Não"}
-        </Badge>
-      )
-    },
-    {
-      key: "dias_preparacao",
-      label: "Dias para Preparação",
+      key: "preco_custo",
+      label: "Preço Custo",
       sortable: true,
       render: (value: number) => (
-        <span className="text-[10px] text-foreground font-medium block leading-tight">
-          {value && value > 0 ? `${value} dias` : "N/A"}
+        <span className={`text-[10px] leading-tight ${value && value > 0 ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+          {formatPrice(value)}
         </span>
       )
     },
     {
-      key: "unidade",
-      label: "Unid. Medida",
+      key: "preco_venda",
+      label: "Preço Venda",
       sortable: true,
-      render: (value: string) => (
-        <span className="text-[10px] font-medium text-foreground block leading-tight">
-          {value || "UN"}
+      render: (value: number) => (
+        <span className={`text-[10px] leading-tight ${value && value > 0 ? 'text-blue-600 font-medium' : 'text-muted-foreground'}`}>
+          {formatPrice(value)}
         </span>
       )
     },
     {
-      key: "localizacao",
-      label: "Localização",
+      key: "estoque_minimo",
+      label: "Estoque Mínimo",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-green-600 font-medium block leading-tight">
+          {value}
+        </span>
+      )
+    },
+    {
+      key: "estoque_maximo",
+      label: "Estoque Máximo",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-orange-600 font-medium block leading-tight">
+          {value}
+        </span>
+      )
+    },
+    {
+      key: "url_imagem",
+      label: "URL da Imagem",
+      render: (value: string, product: Product) => (
+        <div className="flex items-center gap-2">
+          {value ? (
+            <>
+              <img 
+                src={value} 
+                alt={product.nome} 
+                className="w-8 h-8 object-cover rounded-md"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+              <span className="text-[9px] font-mono text-muted-foreground truncate max-w-[100px]" title={value}>
+                {value}
+              </span>
+            </>
+          ) : (
+            <span className="text-[9px] text-muted-foreground">Sem imagem</span>
+          )}
+        </div>
+      )
+    },
+    {
+      key: "sku_pai",
+      label: "SKU Pai",
       sortable: true,
       render: (value: string) => (
-        <span className="text-[10px] text-foreground block leading-tight">
+        <span className="text-[10px] font-mono text-foreground block leading-tight">
+          {value || "-"}
+        </span>
+      )
+    },
+    {
+      key: "descricao",
+      label: "Descrição",
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block truncate max-w-[200px]" title={value}>
+          {value || "Sem descrição"}
+        </span>
+      )
+    },
+    {
+      key: "categoria",
+      label: "Categoria",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block truncate max-w-[150px]" title={value}>
           {value || "N/A"}
-        </span>
-      )
-    },
-    {
-      key: "numero_volumes",
-      label: "Nº Volumes",
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-[10px] text-foreground font-medium block leading-tight">
-          {value || "1"}
-        </span>
-      )
-    },
-    {
-      key: "tipo_embalagem",
-      label: "Tipo Embalagem",
-      render: (value: string) => (
-        <span className="text-[10px] text-foreground block leading-tight">
-          {value || "N/A"}
-        </span>
-      )
-    },
-    {
-      key: "dimensoes",
-      label: "Dimensões (cm)",
-      render: (_, product: Product) => (
-        <div className="text-[10px] leading-tight">
-          <div className="text-foreground">L: {product.largura || "N/A"}</div>
-          <div className="text-foreground">A: {product.altura || "N/A"}</div>
-          <div className="text-foreground">C: {product.comprimento || "N/A"}</div>
-        </div>
-      )
-    },
-    {
-      key: "origem",
-      label: "Origem",
-      sortable: true,
-      render: (value: number) => (
-        <span className="text-[10px] text-foreground block leading-tight">
-          {value !== null && value !== undefined ? value : "N/A"}
         </span>
       )
     },
@@ -409,11 +326,145 @@ export function EstoqueTable({
       )
     },
     {
-      key: "ultima_movimentacao",
-      label: "Última Mov.",
+      key: "peso_bruto_kg",
+      label: "Peso Bruto (Kg)",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value ? `${value} kg` : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "codigo_barras",
+      label: "Código EAN",
+      sortable: true,
       render: (value: string) => (
-        <span className="text-[10px] text-muted-foreground block leading-tight">
-          {value ? formatDate(value) : "N/A"}
+        <span className="text-[10px] font-mono text-muted-foreground block truncate">
+          {value || "Sem código"}
+        </span>
+      )
+    },
+    {
+      key: "dimensoes",
+      label: "Dimensões (cm)",
+      render: (_, product: Product) => (
+        <div className="text-[10px] leading-tight">
+          <div className="text-foreground">L: {product.largura || "N/A"}</div>
+          <div className="text-foreground">A: {product.altura || "N/A"}</div>
+          <div className="text-foreground">C: {product.comprimento || "N/A"}</div>
+        </div>
+      )
+    },
+    {
+      key: "ncm",
+      label: "NCM",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground font-medium font-mono block leading-tight">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "numero_volumes",
+      label: "Nº Volumes",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value || "1"}
+        </span>
+      )
+    },
+    {
+      key: "origem",
+      label: "Origem",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground block leading-tight">
+          {value !== null && value !== undefined ? value : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "localizacao",
+      label: "Localização",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block leading-tight">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "unidade",
+      label: "Unid. Medida",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] font-medium text-foreground block leading-tight">
+          {value || "UN"}
+        </span>
+      )
+    },
+    {
+      key: "sob_encomenda",
+      label: "Sob Encomenda",
+      sortable: true,
+      render: (value: boolean) => (
+        <Badge 
+          variant={value ? "default" : "outline"} 
+          className="text-[9px] px-1 py-0 leading-tight"
+        >
+          {value ? "Sim" : "Não"}
+        </Badge>
+      )
+    },
+    {
+      key: "dias_preparacao",
+      label: "Dias Preparação",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value && value > 0 ? `${value} dias` : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "tipo_embalagem",
+      label: "Tipo Embalagem",
+      render: (value: string) => (
+        <span className="text-[10px] text-foreground block leading-tight">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "peso_liquido_kg",
+      label: "Peso Líquido (Kg)",
+      sortable: true,
+      render: (value: number) => (
+        <span className="text-[10px] text-foreground font-medium block leading-tight">
+          {value ? `${value} kg` : "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "codigo_cest",
+      label: "Código CEST",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] text-muted-foreground font-mono block leading-tight">
+          {value || "N/A"}
+        </span>
+      )
+    },
+    {
+      key: "categoria_principal",
+      label: "Categoria Principal",
+      sortable: true,
+      render: (value: string) => (
+        <span className="text-[10px] text-primary font-medium block truncate max-w-[150px]" title={value}>
+          {value || "N/A"}
         </span>
       )
     }
