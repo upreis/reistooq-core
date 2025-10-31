@@ -91,27 +91,37 @@ export class MapeamentoService {
         ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
         : new Map();
 
-      // 🔍 CORREÇÃO CRÍTICA: Verificar composições em produtos_composicoes
+      // 🔍 FLUXO CORRETO: Verificar se SKU está cadastrado como COMPOSIÇÃO
       const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
-      let composicoesMap = new Map<string, boolean>();
+      let composicoesMap = new Map<string, { temComposicao: boolean; componentes?: any[] }>();
       
-      console.log('🔍 [FLUXO CORRETO] Verificando composições em produtos_composicoes para SKUs:', skusParaVerificarComposicao);
+      console.log('🔍 [FLUXO CORRETO] Verificando se SKUs são COMPOSIÇÕES em produtos_composicoes:', skusParaVerificarComposicao);
       
       if (skusParaVerificarComposicao.length > 0) {
-        const { data: composicoesExistentes, error: composicaoError } = await supabase
+        // Verificar se o produto está cadastrado em produtos_composicoes
+        const { data: produtosComposicoes, error: composicaoError } = await supabase
           .from('produtos_composicoes')
           .select('sku_interno')
           .in('sku_interno', skusParaVerificarComposicao)
           .eq('ativo', true);
 
-        console.log('🔍 [FLUXO CORRETO] Composições encontradas em produtos_composicoes:', composicoesExistentes);
-        console.log('🔍 [FLUXO CORRETO] Erro ao buscar composições:', composicaoError);
+        console.log('🔍 [FLUXO CORRETO] Composições encontradas em produtos_composicoes:', produtosComposicoes);
 
-        if (!composicaoError && composicoesExistentes) {
-          composicoesExistentes.forEach(c => {
-            composicoesMap.set(c.sku_interno, true);
-          });
-          console.log('🔍 [FLUXO CORRETO] Map de composições criado:', Array.from(composicoesMap.entries()));
+        if (!composicaoError && produtosComposicoes) {
+          // Para cada produto que é composição, buscar seus componentes
+          for (const prodComp of produtosComposicoes) {
+            const { data: componentes } = await supabase
+              .from('produto_componentes')
+              .select('*')
+              .eq('sku_produto', prodComp.sku_interno);
+            
+            composicoesMap.set(prodComp.sku_interno, {
+              temComposicao: true,
+              componentes: componentes || []
+            });
+            
+            console.log(`✅ [FLUXO CORRETO] SKU ${prodComp.sku_interno} tem ${componentes?.length || 0} componentes`);
+          }
         }
       }
 
@@ -139,18 +149,23 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // 🔍 FLUXO CORRETO: Verificar se tem composição em produtos_composicoes
-            const temComposicao = composicoesMap.get(skuEstoque);
+            // 🔍 FLUXO CORRETO: Verificar se produto está em produtos_composicoes
+            const composicaoData = composicoesMap.get(skuEstoque);
             
-            console.log(`🔍 [FLUXO CORRETO] SKU: ${skuEstoque} | Cadastrado em produtos_composicoes: ${temComposicao}`);
+            console.log(`🔍 [FLUXO CORRETO] SKU: ${skuEstoque} | É composição: ${!!composicaoData?.temComposicao}`);
             
-            if (!temComposicao) {
-              // Não está em produtos_composicoes = Sem Mapear
+            if (!composicaoData?.temComposicao) {
+              // NÃO está cadastrado como composição = Sem Mapear
               statusBaixa = 'sem_mapear';
-              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} NÃO está em produtos_composicoes -> SEM_MAPEAR`);
+              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} NÃO está em produtos_composicoes -> SEM_MAPEAR`);
+            } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
+              // Está em produtos_composicoes mas sem componentes cadastrados
+              statusBaixa = 'sem_mapear';
+              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} está em produtos_composicoes mas SEM componentes -> SEM_MAPEAR`);
             } else {
+              // Tem composição E componentes = Pronto para baixar
               statusBaixa = 'pronto_baixar';
-              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} está em produtos_composicoes -> PRONTO_BAIXAR`);
+              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} tem composição com ${composicaoData.componentes.length} componentes -> PRONTO_BAIXAR`);
             }
             skuCadastradoNoEstoque = true;
           }
