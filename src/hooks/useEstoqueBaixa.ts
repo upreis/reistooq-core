@@ -322,30 +322,22 @@ export function useProcessarBaixaEstoque() {
         // 🔧 BAIXA DE INSUMOS - Processar insumos dos produtos
         console.log('🔧🔧🔧 INICIANDO PROCESSO DE BAIXA DE INSUMOS 🔧🔧🔧');
         try {
-          console.log('🔧 Processando baixa de insumos...');
-          
           const skusUnicos = [...new Set(baixas.map(b => b.sku))];
           console.log('🔍 SKUs únicos para baixa de insumos:', skusUnicos);
+          console.log('🔍 Verificando InsumosBaixaService:', InsumosBaixaService);
+          console.log('🔍 Verificando método processarBaixaInsumos:', InsumosBaixaService.processarBaixaInsumos);
           
-          // Importar dinamicamente para evitar problemas de build
-          console.log('📦 Importando InsumosBaixaService...');
-          const { InsumosBaixaService: InsumoService } = await import('@/services/InsumosBaixaService');
-          console.log('✅ InsumosBaixaService importado com sucesso');
-          
-          console.log('🚀 Chamando processarBaixaInsumos...');
-          const resultadoInsumos = await InsumoService.processarBaixaInsumos(skusUnicos);
+          const resultadoInsumos = await InsumosBaixaService.processarBaixaInsumos(skusUnicos);
           console.log('📊 Resultado da baixa de insumos:', resultadoInsumos);
           
           if (!resultadoInsumos.success) {
             console.warn('⚠️ Aviso na baixa de insumos:', resultadoInsumos.message);
-            // Não falha a operação, apenas loga o aviso
           } else {
-            console.log('✅✅✅ BAIXA DE INSUMOS CONCLUÍDA COM SUCESSO:', resultadoInsumos.message);
+            console.log('✅✅✅ BAIXA DE INSUMOS CONCLUÍDA:', resultadoInsumos.message);
           }
         } catch (insumoError) {
-          console.error('❌❌❌ ERRO AO PROCESSAR INSUMOS:', insumoError);
+          console.error('❌ ERRO AO PROCESSAR INSUMOS:', insumoError);
           console.error('Stack trace:', insumoError instanceof Error ? insumoError.stack : 'N/A');
-          // Não falha a operação principal se insumos falharem
         }
         
         console.log('📸 Iniciando processo de snapshots...');
