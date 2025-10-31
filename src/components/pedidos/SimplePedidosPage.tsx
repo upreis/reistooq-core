@@ -299,7 +299,7 @@ function SimplePedidosPage({ className }: Props) {
   );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado'>(() => {
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'pronto' | 'pendente_insumo' | 'sem_mapeamento_insumo' | 'sem_cadastro_insumo'>(() => {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
 
@@ -688,7 +688,35 @@ function SimplePedidosPage({ className }: Props) {
     }
 
     // ✅ Pronto para baixar (tem mapeamento e não tem problemas)
-    if (statusBaixa === 'pronto_baixar') {
+    // Novos status de insumos
+    if (statusBaixa === 'sem_mapeamento_insumo') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+          <span className="text-xs text-yellow-600 font-medium">Sem insumos mapeados</span>
+        </div>
+      );
+    }
+
+    if (statusBaixa === 'sem_cadastro_insumo') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+          <span className="text-xs text-orange-600 font-medium">Insumos sem cadastro</span>
+        </div>
+      );
+    }
+
+    if (statusBaixa === 'pendente_insumo') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-xs text-red-600 font-medium">Insumos sem estoque</span>
+        </div>
+      );
+    }
+
+    if (statusBaixa === 'pronto' || statusBaixa === 'pronto_baixar') {
       return (
         <div className="flex items-center gap-1 text-green-600">
           <CheckCircle2 className="h-4 w-4" />

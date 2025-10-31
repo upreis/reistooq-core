@@ -8,7 +8,7 @@ export interface MapeamentoVerificacao {
   skuKit?: string;          // sku_simples (SKU Unitário)
   quantidadeKit?: number;
   skuCadastradoNoEstoque?: boolean; // 🛡️ NOVO: Se o SKU existe na tabela produtos
-  statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
+  statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'pronto' | 'pendente_insumo' | 'sem_mapeamento_insumo' | 'sem_cadastro_insumo';
 }
 
 export class MapeamentoService {
