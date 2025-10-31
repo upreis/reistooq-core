@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,17 +14,6 @@ import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
-
-// Verificação crítica de React - antes de importar outros módulos
-console.log('🔧 React check:', { React: typeof React, ReactUseEffect: typeof React?.useEffect });
-
-if (!React || typeof React.useEffect !== 'function') {
-  console.error('🚨 CRITICAL: React or React.useEffect not available!', { 
-    React: typeof React, 
-    ReactUseEffect: typeof React?.useEffect
-  });
-  // Não lançar erro aqui para permitir que o componente seja renderizado com fallback
-}
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -78,113 +67,29 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  console.log('🔧 App component rendering...');
-  
-  // Verificação crítica de React no início da função
-  if (!React || typeof React.useEffect !== 'function') {
-    console.error('🚨 React não está disponível no App component!');
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1a1a1a',
-        color: '#ffffff',
-        fontFamily: 'system-ui, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1>🚨 Erro Crítico do React</h1>
-          <p>React ou React.useEffect não está disponível</p>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 20px',
-              marginTop: '10px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Recarregar
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  console.log('🔧 React hooks available:', { useEffect: typeof React.useEffect });
-  
-  // Usar React.useEffect ao invés de useEffect destructurado
-  try {
-    React.useEffect(() => {
-      console.log('🔧 App useEffect running...');
-      // Simplificado para evitar problemas de inicialização
-      if (typeof validateConfig === 'function') {
-        try {
-          const validation = validateConfig();
-          if (!validation.valid) {
-            console.error('❌ Configuration errors:', validation.errors);
-          }
-          console.log('✅ Configuration validation complete');
-        } catch (error) {
-          console.error('🚨 Error in configuration validation:', error);
-        }
-      }
-    }, []);
-  } catch (hookError) {
-    console.error('🚨 Error setting up React.useEffect:', hookError);
-    return (
-      <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: '#1a1a1a',
-        color: '#ffffff',
-        fontFamily: 'system-ui, sans-serif'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <h1>🚨 Erro no React.useEffect</h1>
-          <p>{hookError?.toString()}</p>
-          <button 
-            onClick={() => window.location.reload()}
-            style={{
-              padding: '10px 20px',
-              marginTop: '10px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer'
-            }}
-          >
-            Recarregar
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const validation = validateConfig();
+    if (!validation.valid) {
+      console.error('❌ Configuration errors:', validation.errors);
+    }
+  }, []);
 
   // Verificar modo de manutenção
   if (config.features.maintenanceMode) {
     return <MaintenanceMode />;
   }
 
-  try {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
-          <TooltipProvider>
-            <AuthProvider>
-            <MobileProvider>
-              <SidebarUIProvider>
-                <InactivityTracker />
-                <Toaster />
-                <Sonner />
-                <Routes>
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
+        <TooltipProvider>
+          <AuthProvider>
+          <MobileProvider>
+            <SidebarUIProvider>
+              <InactivityTracker />
+              <Toaster />
+              <Sonner />
+              <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
                   {/* Rota pública para redefinição de senha */}
@@ -388,36 +293,6 @@ function App() {
       </ThemeProvider>
     </QueryClientProvider>
   );
-  } catch (error) {
-    console.error('App rendering error:', error);
-    return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#1a1a1a', 
-        color: '#ffffff',
-        padding: '2rem',
-        textAlign: 'center',
-        fontFamily: 'Inter, system-ui, sans-serif'
-      }}>
-        <h1>⚠️ Erro no Sistema</h1>
-        <p>Ocorreu um erro ao carregar o sistema principal.</p>
-        <button 
-          onClick={() => window.location.reload()}
-          style={{ 
-            padding: '0.5rem 1rem', 
-            marginTop: '1rem',
-            backgroundColor: '#3b82f6',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: 'pointer'
-          }}
-        >
-          Recarregar Sistema
-        </button>
-      </div>
-    );
-  }
 }
 
 export default App;
