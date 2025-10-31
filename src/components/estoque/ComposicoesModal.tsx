@@ -150,14 +150,15 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         comp.quantidade > 0
       );
 
-      // Deletar composições existentes
-      if (composicoes.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('produto_componentes')
-          .delete()
-          .eq('sku_produto', produtoSku.trim());
+      // Deletar TODAS as composições existentes deste produto
+      const { error: deleteError } = await supabase
+        .from('produto_componentes')
+        .delete()
+        .eq('sku_produto', produtoSku.trim());
 
-        if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Erro ao deletar composições:', deleteError);
+        throw deleteError;
       }
 
       // Inserir novas composições se houver alguma válida
@@ -182,11 +183,16 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           organization_id: productData.organization_id
         }));
 
+        console.log('📦 Inserindo composições:', composicoesParaInserir);
+
         const { error: insertError } = await supabase
           .from('produto_componentes')
           .insert(composicoesParaInserir);
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          console.error('Erro ao inserir composições:', insertError);
+          throw insertError;
+        }
       }
 
       toast({
