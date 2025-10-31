@@ -59,19 +59,70 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
   useEffect(() => {
     if (open) {
       loadData();
-      
-      if (insumo) {
-        // Modo edição: carregar produto e resetar componentes para adicionar novos
+    }
+  }, [open]);
+
+  // Carregar dados do insumo quando estiver em modo edição
+  useEffect(() => {
+    const loadInsumoData = async () => {
+      if (open && insumo) {
+        // Modo edição: carregar produto e seus insumos existentes
         setProdutoSku(insumo.sku_produto);
         const produtoEncontrado = produtos.find(p => p.sku === insumo.sku_produto);
-        setProdutoNome(produtoEncontrado?.nome || '');
-        setFormComposicoes([{
-          sku_insumo: '',
-          nome_insumo: '',
-          quantidade: 1,
-          observacoes: ''
-        }]);
-      } else {
+        setProdutoNome(produtoEncontrado?.nome || insumo.nome_produto || '');
+        
+        // Buscar todos os insumos existentes para este produto
+        try {
+          const { data: insumosExistentes, error } = await supabase
+            .from('composicoes_insumos')
+            .select('*')
+            .eq('sku_produto', insumo.sku_produto)
+            .eq('ativo', true);
+
+          if (error) throw error;
+
+          if (insumosExistentes && insumosExistentes.length > 0) {
+            // Buscar nomes dos insumos do estoque
+            const skusInsumos = insumosExistentes.map(ins => ins.sku_insumo);
+            const { data: insumosEstoque } = await supabase
+              .from('produtos')
+              .select('sku_interno, nome, quantidade_atual')
+              .in('sku_interno', skusInsumos);
+            
+            const nomesInsumos = new Map(
+              insumosEstoque?.map(i => [i.sku_interno, { nome: i.nome, estoque: i.quantidade_atual }]) || []
+            );
+
+            // Carregar insumos existentes no formulário com nomes
+            setFormComposicoes(
+              insumosExistentes.map(ins => ({
+                id: ins.id,
+                sku_insumo: ins.sku_insumo,
+                nome_insumo: nomesInsumos.get(ins.sku_insumo)?.nome || ins.sku_insumo,
+                quantidade: ins.quantidade,
+                estoque_disponivel: nomesInsumos.get(ins.sku_insumo)?.estoque || 0,
+                observacoes: ins.observacoes || ''
+              }))
+            );
+          } else {
+            // Se não houver insumos, iniciar com um campo vazio
+            setFormComposicoes([{
+              sku_insumo: '',
+              nome_insumo: '',
+              quantidade: 1,
+              observacoes: ''
+            }]);
+          }
+        } catch (error) {
+          console.error('Erro ao carregar insumos existentes:', error);
+          setFormComposicoes([{
+            sku_insumo: '',
+            nome_insumo: '',
+            quantidade: 1,
+            observacoes: ''
+          }]);
+        }
+      } else if (open && !insumo) {
         // Modo criação: limpar tudo
         setProdutoSku('');
         setProdutoNome('');
@@ -82,8 +133,10 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
           observacoes: ''
         }]);
       }
-    }
-  }, [open, insumo]);
+    };
+
+    loadInsumoData();
+  }, [open, insumo, produtos]);
 
   const loadData = async () => {
     setLoading(true);
@@ -161,6 +214,16 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
 
     setSaving(true);
     try {
+      // Se estiver editando, deletar insumos existentes primeiro
+      if (insumo) {
+        const { error: deleteError } = await supabase
+          .from('composicoes_insumos')
+          .delete()
+          .eq('sku_produto', produtoSku.trim());
+
+        if (deleteError) throw deleteError;
+      }
+
       // Salvar cada componente
       for (const comp of composicoesValidas) {
         await onSubmit({
@@ -171,7 +234,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
         });
       }
 
-      toast.success(`${composicoesValidas.length} insumo(s) adicionado(s) com sucesso`);
+      toast.success(`${composicoesValidas.length} insumo(s) salvo(s) com sucesso`);
       onClose();
     } catch (error) {
       console.error('Erro ao salvar:', error);
@@ -187,7 +250,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            {insumo ? `Adicionar Insumos - ${produtoNome || insumo.sku_produto}` : 'Nova Composição de Insumos'}
+            {insumo ? `Editar Composições - ${produtoNome || insumo.sku_produto}` : 'Nova Composição de Insumos'}
           </DialogTitle>
           <DialogDescription className="sr-only">
             {insumo 
