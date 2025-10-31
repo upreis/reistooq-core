@@ -112,6 +112,102 @@ export default function InsumosPage({ hideHeader = false }: { hideHeader?: boole
 
   return (
     <div className="space-y-8">
+      {/* Botões de ação - visível sempre */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {!isSelectMode ? (
+          <>
+            <Button onClick={handleCreate} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Nova Composição
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => toast.info('Importar do Estoque - Em breve')}
+              className="gap-2"
+            >
+              <Import className="w-4 h-4" />
+              Importar do Estoque
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => toast.info('Importar Excel - Em breve')}
+              className="gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Importar Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => toast.info('Baixar Dados - Em breve')}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Baixar Dados
+            </Button>
+            <Button
+              variant="outline"
+              onClick={toggleSelectMode}
+              className="gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Selecionar
+            </Button>
+          </>
+        ) : (
+          <>
+            <Badge variant="secondary" className="text-sm px-3 py-1.5">
+              {selectedCount} selecionado(s)
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => selectAll(insumosEnriquecidos)}
+              className="gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Selecionar Todos
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={selectedCount === 0}
+                  className="gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Excluir ({selectedCount})
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir {selectedCount} insumo{selectedCount === 1 ? '' : 's'}? 
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSelectMode}
+              className="gap-2"
+            >
+              <X className="w-4 h-4" />
+              Cancelar
+            </Button>
+          </>
+        )}
+      </div>
+
       {/* Header moderno melhorado - oculto no mobile ou quando hideHeader */}
       {!hideHeader && (
         <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
@@ -131,102 +227,6 @@ export default function InsumosPage({ hideHeader = false }: { hideHeader?: boole
                   Gerencie insumos debitados <strong>1 vez por pedido</strong> (etiquetas, embalagens, etc.)
                 </p>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3 flex-wrap justify-end">
-              {/* Modo de seleção */}
-              {!isSelectMode ? (
-                <>
-                  <Button onClick={handleCreate} className="gap-2">
-                    <Plus className="w-4 h-4" />
-                    Nova Composição
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => toast.info('Importar do Estoque - Em breve')}
-                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                  >
-                    <Import className="w-4 h-4" />
-                    Importar do Estoque
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => toast.info('Importar Excel - Em breve')}
-                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Importar Excel
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => toast.info('Baixar Dados - Em breve')}
-                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                  >
-                    <Download className="w-4 h-4" />
-                    Baixar Dados
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={toggleSelectMode}
-                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Selecionar
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Badge variant="secondary" className="text-sm px-3 py-1.5">
-                    {selectedCount} selecionado(s)
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => selectAll(insumosEnriquecidos)}
-                    className="gap-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    Selecionar Todos
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={selectedCount === 0}
-                        className="gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        Excluir ({selectedCount})
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tem certeza que deseja excluir {selectedCount} insumo{selectedCount === 1 ? '' : 's'}? 
-                          Esta ação não pode ser desfeita.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                          Excluir
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleSelectMode}
-                    className="gap-2"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancelar
-                  </Button>
-                </>
-              )}
             </div>
           </div>
         </div>
