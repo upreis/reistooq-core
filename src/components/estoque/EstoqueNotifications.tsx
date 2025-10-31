@@ -9,7 +9,9 @@ import {
   Package, 
   X,
   Eye,
-  Settings
+  Settings,
+  ChevronUp,
+  ChevronDown
 } from "lucide-react";
 import { Product } from "@/hooks/useProducts";
 import { useProductHierarchy } from "@/hooks/useProductHierarchy";
@@ -39,6 +41,7 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const hierarchy = useProductHierarchy(products);
   const { config } = useEstoqueSettings();
 
@@ -154,18 +157,85 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const visibleNotifications = notifications.filter(n => !dismissed.has(n.id));
 
   if (visibleNotifications.length === 0) {
+    if (isCollapsed) {
+      return (
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Notificações do Estoque
+            <Badge variant="secondary">0</Badge>
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(false)}
+            className="h-8"
+          >
+            <ChevronDown className="w-4 h-4" />
+          </Button>
+        </div>
+      );
+    }
+
     return (
-      <Card className="border-success/50 bg-success/10">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-success">
-            <Package className="w-5 h-5" />
-            <span className="font-medium">Tudo certo com seu estoque!</span>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Notificações do Estoque
+            <Badge variant="secondary">0</Badge>
+          </h3>
+          <div className="flex items-center gap-2">
+            <EstoqueSettings />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCollapsed(true)}
+              className="h-8"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Não há alertas ou problemas detectados no momento.
-          </p>
-        </CardContent>
-      </Card>
+        </div>
+        <Card className="border-success/50 bg-success/10">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 text-success">
+              <Package className="w-5 h-5" />
+              <span className="font-medium">Tudo certo com seu estoque!</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Não há alertas ou problemas detectados no momento.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Se está colapsado e há notificações, mostrar apenas o indicador
+  if (isCollapsed) {
+    return (
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold flex items-center gap-2">
+          <div className="relative">
+            <Bell className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+            </span>
+          </div>
+          Notificações do Estoque
+          <Badge variant="destructive" className="animate-pulse">{visibleNotifications.length}</Badge>
+        </h3>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(false)}
+          className="h-8"
+        >
+          <ChevronDown className="w-4 h-4" />
+        </Button>
+      </div>
     );
   }
 
@@ -177,7 +247,18 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
           Notificações do Estoque
           <Badge variant="secondary">{visibleNotifications.length}</Badge>
         </h3>
-        <EstoqueSettings />
+        <div className="flex items-center gap-2">
+          <EstoqueSettings />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsCollapsed(true)}
+            className="h-8"
+            title="Ocultar notificações"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 pb-2">
