@@ -32,6 +32,8 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
         .in('sku_produto', skusProdutos)
         .eq('ativo', true);
 
+      console.log('📦 Composições encontradas no banco:', composicoes);
+
       if (composicoesError) {
         console.error('Erro ao buscar composições:', composicoesError);
         return {
@@ -48,24 +50,36 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
         };
       }
 
+      console.log(`📊 Total de composições encontradas: ${composicoes.length}`);
+
       // 2. Agrupar insumos por SKU e somar quantidades
       // IMPORTANTE: 1 unidade por SKU único, não multiplicado pela quantidade do produto
       const insumosMap = new Map<string, number>();
       
-      composicoes.forEach(comp => {
+      composicoes.forEach((comp, index) => {
+        console.log(`🔍 Processando composição ${index + 1}/${composicoes.length}:`, {
+          sku_produto: comp.sku_produto,
+          sku_insumo: comp.sku_insumo,
+          quantidade: comp.quantidade
+        });
+
         const quantidadeNecessaria = comp.quantidade || 1; // Quantidade de insumo por unidade do produto
         const quantidadeAtual = insumosMap.get(comp.sku_insumo) || 0;
         
         // Somar quantidade (1 produto = quantidade definida na composição)
         insumosMap.set(comp.sku_insumo, quantidadeAtual + quantidadeNecessaria);
+        
+        console.log(`✅ Insumo ${comp.sku_insumo}: ${quantidadeAtual} + ${quantidadeNecessaria} = ${quantidadeAtual + quantidadeNecessaria}`);
       });
+
+      console.log('🗺️ Map de insumos agrupados:', Object.fromEntries(insumosMap));
 
       const insumosBaixar: InsumoParaBaixa[] = Array.from(insumosMap.entries()).map(([sku, quantidade]) => ({
         sku: sku.trim().toUpperCase(),
         quantidade
       }));
 
-      console.log('📋 Insumos para baixa:', insumosBaixar);
+      console.log('📋 Array final de insumos para baixa:', insumosBaixar);
 
       // 3. Executar baixa via RPC function
       const { data: resultado, error: baixaError } = await supabase.rpc('baixar_estoque_direto', {
