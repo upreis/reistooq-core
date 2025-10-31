@@ -41,19 +41,25 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import type { ComposicaoInsumoEnriquecida } from '../../types/insumos.types';
 
-const schema = z.object({
-  sku_produto: z.string().min(1, 'Selecione um produto'),
+// Schema para um componente individual
+const componenteSchema = z.object({
   sku_insumo: z.string().min(1, 'Selecione um insumo'),
   quantidade: z.number().int().min(1, 'Quantidade deve ser no mínimo 1').default(1),
   observacoes: z.string().optional()
 });
 
+const schema = z.object({
+  sku_produto: z.string().min(1, 'Selecione um produto'),
+  componentes: z.array(componenteSchema).min(1, 'Adicione pelo menos um componente')
+});
+
 type FormData = z.infer<typeof schema>;
+type ComponenteData = z.infer<typeof componenteSchema>;
 
 interface InsumoFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: FormData) => Promise<void>;
+  onSubmit: (data: any) => Promise<void>;
   insumo?: ComposicaoInsumoEnriquecida | null;
 }
 
@@ -61,14 +67,15 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
   const [produtos, setProdutos] = useState<Array<{ sku: string; nome: string }>>([]);
   const [insumos, setInsumos] = useState<Array<{ sku: string; nome: string; estoque: number }>>([]);
   const [loading, setLoading] = useState(true);
+  const [componentes, setComponentes] = useState<ComponenteData[]>([
+    { sku_insumo: '', quantidade: 1, observacoes: '' }
+  ]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       sku_produto: '',
-      sku_insumo: '',
-      quantidade: 1,
-      observacoes: ''
+      componentes: [{ sku_insumo: '', quantidade: 1, observacoes: '' }]
     }
   });
 
@@ -82,18 +89,21 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
   // Preencher form se estiver editando
   useEffect(() => {
     if (insumo) {
-      form.reset({
-        sku_produto: insumo.sku_produto,
+      const componenteData = {
         sku_insumo: insumo.sku_insumo,
         quantidade: insumo.quantidade,
         observacoes: insumo.observacoes || ''
+      };
+      setComponentes([componenteData]);
+      form.reset({
+        sku_produto: insumo.sku_produto,
+        componentes: [componenteData]
       });
     } else {
+      setComponentes([{ sku_insumo: '', quantidade: 1, observacoes: '' }]);
       form.reset({
         sku_produto: '',
-        sku_insumo: '',
-        quantidade: 1,
-        observacoes: ''
+        componentes: [{ sku_insumo: '', quantidade: 1, observacoes: '' }]
       });
     }
   }, [insumo, form]);
@@ -129,13 +139,40 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
   };
 
   const handleSubmit = async (data: FormData) => {
-    await onSubmit(data);
+    // Salvar cada componente separadamente
+    for (const componente of data.componentes) {
+      await onSubmit({
+        sku_produto: data.sku_produto,
+        sku_insumo: componente.sku_insumo,
+        quantidade: componente.quantidade,
+        observacoes: componente.observacoes
+      });
+    }
     onClose();
   };
 
+  const adicionarComponente = () => {
+    const novosComponentes = [...componentes, { sku_insumo: '', quantidade: 1, observacoes: '' }];
+    setComponentes(novosComponentes);
+    form.setValue('componentes', novosComponentes);
+  };
+
+  const removerComponente = (index: number) => {
+    if (componentes.length > 1) {
+      const novosComponentes = componentes.filter((_, i) => i !== index);
+      setComponentes(novosComponentes);
+      form.setValue('componentes', novosComponentes);
+    }
+  };
+
+  const atualizarComponente = (index: number, campo: keyof ComponenteData, valor: any) => {
+    const novosComponentes = [...componentes];
+    novosComponentes[index] = { ...novosComponentes[index], [campo]: valor };
+    setComponentes(novosComponentes);
+    form.setValue('componentes', novosComponentes);
+  };
 
   const produtoSelecionado = produtos.find(p => p.sku === form.watch('sku_produto'));
-  const insumoSelecionado = insumos.find(i => i.sku === form.watch('sku_insumo'));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -217,8 +254,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                 type="button"
                 variant="outline"
                 className="w-full border-dashed"
-                onClick={() => {/* placeholder - sempre um único insumo */}}
-                disabled
+                onClick={adicionarComponente}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Adicionar Componente
@@ -226,110 +262,102 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
 
               {/* Lista de componentes */}
               <div className="space-y-3">
-                <Card className="border-border/50">
-                  <CardContent className="pt-6 space-y-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                      {/* SKU Insumo */}
-                      <div className="lg:col-span-4">
-                        <FormField
-                          control={form.control}
-                          name="sku_insumo"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Label className="text-sm font-medium">SKU</Label>
-                              <Select
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                disabled={!!insumo || loading}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Buscar SKU..." />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {insumos.map(i => (
-                                    <SelectItem key={i.sku} value={i.sku}>
-                                      {i.sku}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      {/* Nome do Insumo */}
-                      <div className="lg:col-span-4">
-                        <Label className="text-sm font-medium">Nome do Componente</Label>
-                        <Input
-                          value={insumoSelecionado?.nome || ''}
-                          disabled
-                          placeholder="Selecione um insumo..."
-                          className="bg-muted"
-                        />
-                      </div>
-
-                      {/* Estoque */}
-                      <div className="lg:col-span-2">
-                        <Label className="text-sm font-medium">Custo Uni</Label>
-                        <div className="flex items-center h-10">
-                          {insumoSelecionado && (
-                            <Badge 
-                              variant={insumoSelecionado.estoque > 0 ? 'default' : 'destructive'}
-                              className={insumoSelecionado.estoque > 0 ? 'bg-green-500 hover:bg-green-600' : ''}
+                {componentes.map((componente, index) => {
+                  const insumoSelecionado = insumos.find(i => i.sku === componente.sku_insumo);
+                  
+                  return (
+                    <Card key={index} className="border-border/50">
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                          {/* SKU Insumo */}
+                          <div className="lg:col-span-4">
+                            <Label className="text-sm font-medium">SKU</Label>
+                            <Select
+                              value={componente.sku_insumo}
+                              onValueChange={(value) => atualizarComponente(index, 'sku_insumo', value)}
+                              disabled={!!insumo || loading}
                             >
-                              {insumoSelecionado.estoque}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Buscar SKU..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {insumos.map(i => (
+                                  <SelectItem key={i.sku} value={i.sku}>
+                                    {i.sku}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
 
-                      {/* Quantidade */}
-                      <div className="lg:col-span-2">
-                        <FormField
-                          control={form.control}
-                          name="quantidade"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Label className="text-sm font-medium">Qtd</Label>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  {...field}
-                                  onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Observações */}
-                    <FormField
-                      control={form.control}
-                      name="observacoes"
-                      render={({ field }) => (
-                        <FormItem>
-                          <Label className="text-sm font-medium">Observações (opcional)</Label>
-                          <FormControl>
-                            <Textarea
-                              {...field}
-                              placeholder="Informações adicionais sobre este insumo..."
-                              rows={3}
+                          {/* Nome do Insumo */}
+                          <div className="lg:col-span-4">
+                            <Label className="text-sm font-medium">Nome do Componente</Label>
+                            <Input
+                              value={insumoSelecionado?.nome || ''}
+                              disabled
+                              placeholder="Selecione um insumo..."
+                              className="bg-muted"
                             />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
+                          </div>
+
+                          {/* Estoque */}
+                          <div className="lg:col-span-2">
+                            <Label className="text-sm font-medium">Custo Uni</Label>
+                            <div className="flex items-center h-10">
+                              {insumoSelecionado && (
+                                <Badge 
+                                  variant={insumoSelecionado.estoque > 0 ? 'default' : 'destructive'}
+                                  className={insumoSelecionado.estoque > 0 ? 'bg-green-500 hover:bg-green-600' : ''}
+                                >
+                                  {insumoSelecionado.estoque}
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Quantidade */}
+                          <div className="lg:col-span-2">
+                            <Label className="text-sm font-medium">Qtd</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={componente.quantidade}
+                              onChange={(e) => atualizarComponente(index, 'quantidade', parseInt(e.target.value) || 1)}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Observações */}
+                        <div>
+                          <Label className="text-sm font-medium">Observações (opcional)</Label>
+                          <Textarea
+                            value={componente.observacoes || ''}
+                            onChange={(e) => atualizarComponente(index, 'observacoes', e.target.value)}
+                            placeholder="Informações adicionais sobre este insumo..."
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* Botão remover */}
+                        {componentes.length > 1 && (
+                          <div className="flex justify-end">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removerComponente(index)}
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remover
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
 
