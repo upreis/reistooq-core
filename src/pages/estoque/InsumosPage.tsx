@@ -71,19 +71,32 @@ export default function InsumosPage() {
   };
 
   const handleDeleteSelected = async () => {
-    const selectedInsumos = getSelectedItems(insumosEnriquecidos);
-    if (selectedInsumos.length === 0) return;
+    const selectedInsumos = getSelectedItems(insumosEnriquecidos || []);
+    console.log('🗑️ DEBUG - Deletando insumos:', {
+      selectedCount,
+      selectedItems: Array.from(selectedItems),
+      selectedInsumos,
+      insumosEnriquecidos
+    });
+    
+    if (selectedInsumos.length === 0) {
+      toast.error('Nenhum insumo selecionado');
+      return;
+    }
 
     try {
       for (const insumo of selectedInsumos) {
+        console.log('🗑️ Deletando insumo:', insumo.id);
         await deleteInsumo(insumo.id);
       }
       clearSelection();
       toggleSelectMode();
       toast.success(`${selectedInsumos.length} insumo(s) excluído(s) com sucesso`);
-    } catch (error) {
-      console.error('Erro ao excluir insumos:', error);
-      toast.error('Erro ao excluir insumos selecionados');
+    } catch (error: any) {
+      console.error('❌ Erro ao excluir insumos:', error);
+      toast.error(error.message || 'Erro ao excluir insumos selecionados');
+    } finally {
+      setDeleteConfirmOpen(false);
     }
   };
 
