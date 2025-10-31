@@ -608,6 +608,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
     { key: 'total_itens', label: 'Total de Itens', default: true, category: 'mapping' },
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
+    { key: 'status_insumos', label: 'Status Insumos', default: true, category: 'mapping' },
     
     // Status
     { key: 'situacao', label: 'Status do Pagamento', default: true, category: 'shipping' },
@@ -704,6 +705,49 @@ function SimplePedidosPage({ className }: Props) {
         <span className="text-xs font-medium">Sem mapear</span>
       </div>
     );
+  };
+
+  // 🔧 Renderizar Status de Insumos
+  const renderStatusInsumos = (pedidoId: string) => {
+    const mapping = mappingData.get(pedidoId);
+    if (!mapping || !mapping.statusInsumo) {
+      return <span className="text-xs text-muted-foreground">—</span>;
+    }
+
+    const statusInsumo = mapping.statusInsumo;
+
+    switch (statusInsumo) {
+      case 'pronto':
+        return (
+          <div className="flex items-center gap-1 text-green-600">
+            <CheckCircle className="h-4 w-4" />
+            <span className="text-xs font-medium">🟢 Pronto</span>
+          </div>
+        );
+      case 'sem_mapeamento_insumo':
+        return (
+          <div className="flex items-center gap-1 text-yellow-600">
+            <AlertTriangle className="h-4 w-4" />
+            <span className="text-xs font-medium">⚠️ Sem Mapeamento</span>
+          </div>
+        );
+      case 'sem_cadastro_insumo':
+        return (
+          <div className="flex items-center gap-1 text-destructive">
+            <AlertCircle className="h-4 w-4" />
+            <span className="text-xs font-medium">❌ Sem Cadastro</span>
+          </div>
+        );
+      case 'pendente_insumo':
+        return (
+          <div className="flex items-center gap-1 text-orange-600">
+            <Clock className="h-4 w-4" />
+            <span className="text-xs font-medium">🔴 Sem Estoque</span>
+          </div>
+        );
+      default:
+        return <span className="text-xs text-muted-foreground">—</span>;
+    }
   };
 
   // 🛡️ FUNÇÃO SIMPLIFICADA - usa sistema centralizado
@@ -1172,6 +1216,8 @@ useEffect(() => {
           actions.setPage(page);
         }}
         isPedidoProcessado={isPedidoProcessado}
+        renderStatusBaixa={renderStatusBaixa}
+        renderStatusInsumos={renderStatusInsumos}
       />
 
 

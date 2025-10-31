@@ -105,6 +105,28 @@ export function useProcessarBaixaEstoque() {
         );
         throw new Error(erroMsg);
       }
+
+      // 🔧 VALIDAÇÃO DE INSUMOS - Bloquear baixa se algum pedido tiver problemas com insumos
+      if (contextoDaUI?.mappingData) {
+        const pedidosComProblemaInsumo = pedidos.filter(pedido => {
+          const mapping = contextoDaUI.mappingData?.get(pedido.id);
+          const statusInsumo = mapping?.statusInsumo;
+          
+          // Bloquear se status não for "pronto" (ou seja, tem algum problema)
+          return statusInsumo && statusInsumo !== 'pronto';
+        });
+
+        if (pedidosComProblemaInsumo.length > 0) {
+          const detalhes = pedidosComProblemaInsumo.map(p => {
+            const mapping = contextoDaUI.mappingData?.get(p.id);
+            return `Pedido ${p.numero || p.id}: ${mapping?.statusInsumo} - ${mapping?.detalhesInsumo || ''}`;
+          }).join('\n');
+          
+          const erroMsg = `❌ Não é possível fazer a baixa. ${pedidosComProblemaInsumo.length} pedido(s) com problemas nos insumos:\n${detalhes}`;
+          console.error(erroMsg);
+          throw new Error(erroMsg);
+        }
+      }
       try {
         // 🔍 AUDITORIA: Verificar dados recebidos dos pedidos
         console.log('🔍 AUDITORIA - Pedidos completos recebidos:', pedidos.map(p => ({

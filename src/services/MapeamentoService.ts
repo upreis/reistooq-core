@@ -1,5 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido } from '@/types/pedido';
+import { InsumosValidationService } from './InsumosValidationService';
+
+export type StatusBaixaInsumo = 'pronto' | 'sem_mapeamento_insumo' | 'sem_cadastro_insumo' | 'pendente_insumo';
 
 export interface MapeamentoVerificacao {
   skuPedido: string;
@@ -9,6 +12,8 @@ export interface MapeamentoVerificacao {
   quantidadeKit?: number;
   skuCadastradoNoEstoque?: boolean; // 🛡️ NOVO: Se o SKU existe na tabela produtos
   statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
+  statusInsumo?: StatusBaixaInsumo; // 🔧 NOVO: Status dos insumos
+  detalhesInsumo?: string; // 🔧 NOVO: Detalhes sobre o status dos insumos
 }
 
 export class MapeamentoService {
@@ -79,7 +84,10 @@ export class MapeamentoService {
         }
       }
 
-      // Retorna resultado para todos os SKUs com statusBaixa calculado
+      // 🔧 VALIDAÇÃO DE INSUMOS: Validar insumos para todos os SKUs de estoque
+      const validacoesInsumos = await InsumosValidationService.validarInsumosPedidos(skusParaVerificar);
+
+      // Retorna resultado para todos os SKUs com statusBaixa calculado e validação de insumos
       return skusPedido.map(sku => {
         const mapeamento = mapeamentosMap.get(sku);
         const temMapeamento = !!mapeamento;
@@ -109,6 +117,9 @@ export class MapeamentoService {
           }
         }
 
+        // 🔧 Buscar validação de insumos
+        const validacaoInsumo = skuEstoque ? validacoesInsumos.get(skuEstoque) : undefined;
+
         return {
           skuPedido: sku,
           temMapeamento,
@@ -116,7 +127,9 @@ export class MapeamentoService {
           skuKit: mapeamento?.skuKit,
           quantidadeKit: mapeamento?.quantidadeKit,
           skuCadastradoNoEstoque,
-          statusBaixa
+          statusBaixa,
+          statusInsumo: validacaoInsumo?.status,
+          detalhesInsumo: validacaoInsumo?.detalhes
         };
       });
 

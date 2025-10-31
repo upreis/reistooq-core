@@ -76,6 +76,8 @@ interface PedidosTableSectionProps {
   onPageChange: (page: number) => void;
   isPedidoProcessado: (order: any) => boolean;
   className?: string;
+  renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
+  renderStatusInsumos?: (pedidoId: string) => React.ReactNode;
 }
 
 export const PedidosTableSection = memo<PedidosTableSectionProps>(({
@@ -95,7 +97,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   totalPages,
   onPageChange,
   isPedidoProcessado,
-  className
+  className,
+  renderStatusBaixa,
+  renderStatusInsumos
 }) => {
   // Debug dos dados quando orders mudam
   useEffect(() => {
@@ -747,8 +751,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                               >
                                 {texto}
                               </Badge>
-                            );
+                             );
                         })();
+                     case 'status_insumos':
+                       // Renderizar status dos insumos usando callback personalizado
+                       return renderStatusInsumos ? renderStatusInsumos(order.id) : <span className="text-xs text-muted-foreground">—</span>;
                      case 'date_created':
                        return <span>{formatDate(order.date_created || order.unified?.date_created || order.created_at) || '-'}</span>;
                      case 'pack_id':
