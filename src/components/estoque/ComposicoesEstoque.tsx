@@ -643,153 +643,144 @@ export function ComposicoesEstoque() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header moderno melhorado - oculto no mobile */}
-      <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="space-y-4">
-          </div>
-          
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            {/* Modo de seleção */}
-            {!isSelectMode ? (
-              <>
+    <div className="space-y-6">
+      {/* Botões de ação - igual ao InsumosPage */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {!isSelectMode ? (
+          <>
+            <Button
+              onClick={async () => {
+                // Criar um produto de composição básico primeiro
+                try {
+                  const novoProduto = await createProdutoAsync({
+                    sku_interno: `COMP-${Date.now()}`,
+                    nome: "Nova Composição",
+                    preco_venda: 0,
+                    quantidade_atual: 0,
+                    estoque_minimo: 0,
+                    status: 'ativo',
+                    ativo: true
+                  });
+                  
+                  if (novoProduto) {
+                    setProdutoSelecionado(novoProduto);
+                    setModalOpen(true);
+                  }
+                } catch (error) {
+                  console.error('Erro ao criar composição:', error);
+                }
+              }}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Nova Composição
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImportProdutosModalOpen(true)}
+              className="gap-2"
+            >
+              <Import className="w-4 h-4" />
+              Importar do Estoque
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setImportModalOpen(true)}
+              className="gap-2"
+            >
+              <Upload className="w-4 h-4" />
+              Importar Excel
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleDownloadComposicoes}
+              className="gap-2"
+            >
+              <Download className="w-4 h-4" />
+              Baixar Dados
+            </Button>
+            <Button
+              variant="outline"
+              onClick={toggleSelectMode}
+              className="gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Selecionar
+            </Button>
+          </>
+        ) : (
+          <>
+            <Badge variant="secondary" className="text-sm px-3 py-1.5">
+              {selectedCount} selecionado(s)
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => selectAll(produtosFinaisFiltrados)}
+              className="gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Selecionar Todos
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleBulkStatusChange(true)}
+              disabled={selectedCount === 0}
+              className="gap-2 border-green-500 text-green-600 hover:bg-green-50"
+            >
+              <Package className="w-4 h-4" />
+              Ativar ({selectedCount})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleBulkStatusChange(false)}
+              disabled={selectedCount === 0}
+              className="gap-2 border-orange-500 text-orange-600 hover:bg-orange-50"
+            >
+              <X className="w-4 h-4" />
+              Desativar ({selectedCount})
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
                 <Button
-                  onClick={async () => {
-                    // Criar um produto de composição básico primeiro
-                    try {
-                      const novoProduto = await createProdutoAsync({
-                        sku_interno: `COMP-${Date.now()}`,
-                        nome: "Nova Composição",
-                        preco_venda: 0,
-                        quantidade_atual: 0,
-                        estoque_minimo: 0,
-                        status: 'ativo',
-                        ativo: true
-                      });
-                      
-                      if (novoProduto) {
-                        setProdutoSelecionado(novoProduto);
-                        setModalOpen(true);
-                      }
-                    } catch (error) {
-                      console.error('Erro ao criar composição:', error);
-                    }
-                  }}
-                  className="gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  Nova Composição
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setImportProdutosModalOpen(true)}
-                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                >
-                  <Import className="w-4 h-4" />
-                  Importar do Estoque
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setImportModalOpen(true)}
-                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                >
-                  <Upload className="w-4 h-4" />
-                  Importar Excel
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadComposicoes}
-                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                >
-                  <Download className="w-4 h-4" />
-                  Baixar Dados
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={toggleSelectMode}
-                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Selecionar
-                </Button>
-              </>
-            ) : (
-              <>
-                <Badge variant="secondary" className="text-sm px-3 py-1.5">
-                  {selectedCount} selecionado(s)
-                </Badge>
-                <Button
-                  variant="outline"
+                  variant="destructive"
                   size="sm"
-                  onClick={() => selectAll(produtosFinaisFiltrados)}
-                  className="gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Selecionar Todos
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusChange(true)}
                   disabled={selectedCount === 0}
-                  className="gap-2 border-green-500 text-green-600 hover:bg-green-50"
-                >
-                  <Package className="w-4 h-4" />
-                  Ativar ({selectedCount})
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleBulkStatusChange(false)}
-                  disabled={selectedCount === 0}
-                  className="gap-2 border-orange-500 text-orange-600 hover:bg-orange-50"
-                >
-                  <X className="w-4 h-4" />
-                  Desativar ({selectedCount})
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={selectedCount === 0}
-                      className="gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Excluir ({selectedCount})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir {selectedCount} composiç{selectedCount === 1 ? 'ão' : 'ões'}? 
-                        Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSelectMode}
                   className="gap-2"
                 >
-                  <X className="w-4 h-4" />
-                  Cancelar
+                  <Trash2 className="w-4 h-4" />
+                  Excluir ({selectedCount})
                 </Button>
-              </>
-            )}
-          </div>
-        </div>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Tem certeza que deseja excluir {selectedCount} composiç{selectedCount === 1 ? 'ão' : 'ões'}? 
+                    Esta ação não pode ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Excluir
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSelectMode}
+              className="gap-2"
+            >
+              <X className="w-4 h-4" />
+              Cancelar
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Layout principal com sidebar e conteúdo */}
