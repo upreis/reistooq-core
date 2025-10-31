@@ -35,9 +35,10 @@ export class InsumosValidationService {
     try {
       // 1. Buscar composição do produto (insumos necessários)
       const { data: composicao, error: composicaoError } = await supabase
-        .from('produto_componentes')
-        .select('sku_componente, quantidade')
-        .eq('sku_produto', skuProduto);
+        .from('composicoes_insumos')
+        .select('sku_insumo, quantidade')
+        .eq('sku_produto', skuProduto)
+        .eq('ativo', true);
 
       if (composicaoError) {
         console.error('Erro ao buscar composição:', composicaoError);
@@ -57,7 +58,7 @@ export class InsumosValidationService {
       }
 
       // 2. Verificar se todos os insumos estão cadastrados no estoque
-      const skusInsumos = composicao.map(c => c.sku_componente);
+      const skusInsumos = composicao.map(c => c.sku_insumo);
       
       const { data: insumos, error: insumosError } = await supabase
         .from('produtos')
@@ -92,9 +93,9 @@ export class InsumosValidationService {
 
       // 4. Verificar se todos os insumos têm quantidade suficiente (pelo menos 1 unidade)
       const insumosDetalhados = composicao.map(c => ({
-        sku: c.sku_componente,
+        sku: c.sku_insumo,
         quantidade: c.quantidade || 1,
-        quantidadeDisponivel: insumosMap.get(c.sku_componente) || 0
+        quantidadeDisponivel: insumosMap.get(c.sku_insumo) || 0
       }));
 
       const insumosSemEstoque = insumosDetalhados.filter(i => i.quantidadeDisponivel <= 0);

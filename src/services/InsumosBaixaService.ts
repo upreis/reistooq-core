@@ -33,9 +33,10 @@ export class InsumosBaixaService {
 
       // 1. Buscar composições de todos os produtos
       const { data: composicoes, error: composicoesError } = await supabase
-        .from('produto_componentes')
-        .select('sku_produto, sku_componente, quantidade')
-        .in('sku_produto', skusProdutos);
+        .from('composicoes_insumos')
+        .select('sku_produto, sku_insumo, quantidade')
+        .in('sku_produto', skusProdutos)
+        .eq('ativo', true);
 
       if (composicoesError) {
         console.error('Erro ao buscar composições:', composicoesError);
@@ -59,10 +60,10 @@ export class InsumosBaixaService {
       
       composicoes.forEach(comp => {
         const quantidadeNecessaria = comp.quantidade || 1; // Quantidade de insumo por unidade do produto
-        const quantidadeAtual = insumosMap.get(comp.sku_componente) || 0;
+        const quantidadeAtual = insumosMap.get(comp.sku_insumo) || 0;
         
         // Somar quantidade (1 produto = quantidade definida na composição)
-        insumosMap.set(comp.sku_componente, quantidadeAtual + quantidadeNecessaria);
+        insumosMap.set(comp.sku_insumo, quantidadeAtual + quantidadeNecessaria);
       });
 
       const insumosBaixar: InsumoParaBaixa[] = Array.from(insumosMap.entries()).map(([sku, quantidade]) => ({
@@ -119,9 +120,10 @@ export class InsumosBaixaService {
   static async produtoPossuiInsumos(skuProduto: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
-        .from('produto_componentes')
+        .from('composicoes_insumos')
         .select('id')
         .eq('sku_produto', skuProduto)
+        .eq('ativo', true)
         .limit(1);
 
       if (error) {
