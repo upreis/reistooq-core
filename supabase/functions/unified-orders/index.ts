@@ -976,17 +976,9 @@ Deno.serve(async (req) => {
         return fail("APP_ENCRYPTION_KEY not configured", 500);
       }
 
-      try {
-        const mlConfig = await getMlConfig(serviceClient, integration_account_id);
-        if (!mlConfig) {
-          return fail("ML secrets not configured", 500);
-        }
-      } catch (e) {
-        console.error(`[unified-orders:${cid}] ❌ CRITICO: Erro ao verificar ML secrets:`, e instanceof Error ? e.message : String(e));
-        return fail("ML configuration error", 500);
-      }
-
-      return fail("no_tokens", 401);
+      // Se não há tokens após todas as tentativas de decriptação, significa que os tokens não foram salvos corretamente
+      console.error(`[unified-orders:${cid}] ❌ CRITICO: Tokens não encontrados após decriptação. Reconecte a integração ML.`);
+      return fail("ML tokens not found. Please reconnect your Mercado Livre integration.", 401);
     }
 
     // ✅ 6. VERIFICAÇÃO DE EXPIRAÇÃO (Sistema Blindado)
