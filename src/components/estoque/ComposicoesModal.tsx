@@ -150,21 +150,6 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
         comp.quantidade > 0
       );
 
-      // 🛡️ VALIDAÇÃO CRÍTICA: Não permitir componente com o mesmo SKU do produto (composição circular)
-      const componentesCirculares = composicoesValidas.filter(comp => 
-        comp.sku_componente.trim().toUpperCase() === produtoSku.trim().toUpperCase()
-      );
-
-      if (componentesCirculares.length > 0) {
-        toast({
-          title: "Composição circular detectada",
-          description: `O produto ${produtoSku} não pode ter ele mesmo como componente. Remova os componentes com o mesmo SKU.`,
-          variant: "destructive"
-        });
-        setSaving(false);
-        return;
-      }
-
       // 🛡️ VALIDAÇÃO: Não permitir componentes duplicados
       const skusComponentes = composicoesValidas.map(c => c.sku_componente.trim().toUpperCase());
       const skusDuplicados = skusComponentes.filter((sku, index) => skusComponentes.indexOf(sku) !== index);
