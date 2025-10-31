@@ -220,26 +220,22 @@ export function InsumosComposicoesTable({ onEdit, onDelete }: InsumosComposicoes
                       )}
                     </Button>
                     
-                    {produto.insumos.map((insumo) => (
-                      <div key={insumo.id} className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onEdit(insumo)}
-                          className="gap-2"
-                        >
-                          <Pencil className="h-4 w-4" />
-                          Editar
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onDelete(insumo)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    ))}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onEdit(produto.insumos[0])}
+                      className="gap-2"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Editar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onDelete(produto.insumos[0])}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
