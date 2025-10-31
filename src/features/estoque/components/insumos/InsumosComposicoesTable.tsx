@@ -109,7 +109,7 @@ export function InsumosComposicoesTable({ onEdit, onDelete }: InsumosComposicoes
           </p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {produtosFiltrados.map((produto) => {
             const isExpanded = expandedCards.has(produto.sku_produto);
             const totalInsumosProduto = produto.insumos.length;
