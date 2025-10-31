@@ -20,7 +20,7 @@ import type { ComposicaoInsumoEnriquecida } from '@/features/estoque/types/insum
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export default function InsumosPage() {
+export default function InsumosPage({ hideHeader = false }: { hideHeader?: boolean }) {
   const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes();
   
   const [formOpen, setFormOpen] = useState(false);
@@ -112,99 +112,101 @@ export default function InsumosPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header moderno melhorado - oculto no mobile */}
-      <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>🏠</span>
-              <span>/</span>
-              <span>Estoque</span>
-              <span>/</span>
-              <span className="text-primary font-medium">Insumos</span>
+      {/* Header moderno melhorado - oculto no mobile ou quando hideHeader */}
+      {!hideHeader && (
+        <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+          <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span>🏠</span>
+                <span>/</span>
+                <span>Estoque</span>
+                <span>/</span>
+                <span className="text-primary font-medium">Insumos</span>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Composições de Insumos</h1>
+                <p className="text-muted-foreground max-w-2xl">
+                  Gerencie insumos debitados <strong>1 vez por pedido</strong> (etiquetas, embalagens, etc.)
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Composições de Insumos</h1>
-              <p className="text-muted-foreground max-w-2xl">
-                Gerencie insumos debitados <strong>1 vez por pedido</strong> (etiquetas, embalagens, etc.)
-              </p>
+            
+            <div className="flex items-center gap-3 flex-wrap justify-end">
+              {/* Modo de seleção */}
+              {!isSelectMode ? (
+                <>
+                  <Button onClick={handleCreate} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Novo Insumo
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={toggleSelectMode}
+                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Selecionar
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                    {selectedCount} selecionado(s)
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => selectAll(insumosEnriquecidos)}
+                    className="gap-2"
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Selecionar Todos
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={selectedCount === 0}
+                        className="gap-2"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Excluir ({selectedCount})
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza que deseja excluir {selectedCount} insumo{selectedCount === 1 ? '' : 's'}? 
+                          Esta ação não pode ser desfeita.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                          Excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={toggleSelectMode}
+                    className="gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancelar
+                  </Button>
+                </>
+              )}
             </div>
-          </div>
-          
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            {/* Modo de seleção */}
-            {!isSelectMode ? (
-              <>
-                <Button onClick={handleCreate} className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  Novo Insumo
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={toggleSelectMode}
-                  className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Selecionar
-                </Button>
-              </>
-            ) : (
-              <>
-                <Badge variant="secondary" className="text-sm px-3 py-1.5">
-                  {selectedCount} selecionado(s)
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => selectAll(insumosEnriquecidos)}
-                  className="gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Selecionar Todos
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={selectedCount === 0}
-                      className="gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Excluir ({selectedCount})
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tem certeza que deseja excluir {selectedCount} insumo{selectedCount === 1 ? '' : 's'}? 
-                        Esta ação não pode ser desfeita.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                        Excluir
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={toggleSelectMode}
-                  className="gap-2"
-                >
-                  <X className="w-4 h-4" />
-                  Cancelar
-                </Button>
-              </>
-            )}
           </div>
         </div>
-      </div>
+      )}
 
       {/* Layout principal */}
       <div className="flex-1 min-w-0 space-y-6">
