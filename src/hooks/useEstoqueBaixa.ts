@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { validarFluxoCompleto, type PedidoEnriquecido } from '@/core/integracao';
 import { MonitorIntegracao, medirTempoExecucao } from '@/core/integracao/MonitorIntegracao';
 import { buildIdUnico } from '@/utils/idUnico';
-import { InsumosBaixaService } from '@/services/InsumosBaixaService';
+import { processarBaixaInsumos } from '@/services/InsumosBaixaService';
 interface ProcessarBaixaParams {
   pedidos: Pedido[];  // Voltar para Pedido[] pois já vem enriquecido do SimplePedidosPage
   contextoDaUI?: {
@@ -320,24 +320,21 @@ export function useProcessarBaixaEstoque() {
         console.log('✅ Baixa de estoque bem-sucedida, iniciando baixa de insumos...');
         
         // 🔧 BAIXA DE INSUMOS - Processar insumos dos produtos
-        console.log('🔧🔧🔧 INICIANDO PROCESSO DE BAIXA DE INSUMOS 🔧🔧🔧');
+        console.log('🔧 Iniciando baixa de insumos...');
         try {
           const skusUnicos = [...new Set(baixas.map(b => b.sku))];
           console.log('🔍 SKUs únicos para baixa de insumos:', skusUnicos);
-          console.log('🔍 Verificando InsumosBaixaService:', InsumosBaixaService);
-          console.log('🔍 Verificando método processarBaixaInsumos:', InsumosBaixaService.processarBaixaInsumos);
           
-          const resultadoInsumos = await InsumosBaixaService.processarBaixaInsumos(skusUnicos);
+          const resultadoInsumos = await processarBaixaInsumos(skusUnicos);
           console.log('📊 Resultado da baixa de insumos:', resultadoInsumos);
           
           if (!resultadoInsumos.success) {
             console.warn('⚠️ Aviso na baixa de insumos:', resultadoInsumos.message);
           } else {
-            console.log('✅✅✅ BAIXA DE INSUMOS CONCLUÍDA:', resultadoInsumos.message);
+            console.log('✅ Baixa de insumos concluída:', resultadoInsumos.message);
           }
         } catch (insumoError) {
-          console.error('❌ ERRO AO PROCESSAR INSUMOS:', insumoError);
-          console.error('Stack trace:', insumoError instanceof Error ? insumoError.stack : 'N/A');
+          console.error('❌ Erro ao processar insumos:', insumoError);
         }
         
         console.log('📸 Iniciando processo de snapshots...');

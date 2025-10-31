@@ -6,21 +6,15 @@ export interface InsumoParaBaixa {
 }
 
 /**
- * Serviço para baixa de insumos no estoque
- * Responsável por deduzir insumos baseado nos produtos vendidos
+ * Processa baixa de insumos para múltiplos SKUs de produtos
+ * @param skusProdutos - Array de SKUs de produtos únicos (sem repetição)
+ * @returns Resultado da operação de baixa
  */
-export class InsumosBaixaService {
-  
-  /**
-   * Processa baixa de insumos para múltiplos SKUs de produtos
-   * @param skusProdutos - Array de SKUs de produtos únicos (sem repetição)
-   * @returns Resultado da operação de baixa
-   */
-  static async processarBaixaInsumos(skusProdutos: string[]): Promise<{
-    success: boolean;
-    message: string;
-    insumosBaixados?: InsumoParaBaixa[];
-  }> {
+export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
+  success: boolean;
+  message: string;
+  insumosBaixados?: InsumoParaBaixa[];
+}> {
     if (!skusProdutos || skusProdutos.length === 0) {
       return {
         success: false,
@@ -112,29 +106,29 @@ export class InsumosBaixaService {
     }
   }
 
-  /**
-   * Verifica se um produto possui insumos mapeados
-   * @param skuProduto - SKU do produto
-   * @returns true se possui insumos, false caso contrário
-   */
-  static async produtoPossuiInsumos(skuProduto: string): Promise<boolean> {
-    try {
-      const { data, error } = await supabase
-        .from('composicoes_insumos')
-        .select('id')
-        .eq('sku_produto', skuProduto)
-        .eq('ativo', true)
-        .limit(1);
 
-      if (error) {
-        console.error('Erro ao verificar insumos:', error);
-        return false;
-      }
+/**
+ * Verifica se um produto possui insumos mapeados
+ * @param skuProduto - SKU do produto
+ * @returns true se possui insumos, false caso contrário
+ */
+export async function produtoPossuiInsumos(skuProduto: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .from('composicoes_insumos')
+      .select('id')
+      .eq('sku_produto', skuProduto)
+      .eq('ativo', true)
+      .limit(1);
 
-      return (data?.length || 0) > 0;
-    } catch (error) {
-      console.error('Erro inesperado ao verificar insumos:', error);
+    if (error) {
+      console.error('Erro ao verificar insumos:', error);
       return false;
     }
+
+    return (data?.length || 0) > 0;
+  } catch (error) {
+    console.error('Erro inesperado ao verificar insumos:', error);
+    return false;
   }
 }
