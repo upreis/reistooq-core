@@ -63,6 +63,11 @@ export function InsumosComposicoesTable({ onEdit, onDelete }: InsumosComposicoes
     });
   }, [produtosComInsumos, busca]);
 
+  // Calcular total de insumos ANTES de qualquer return condicional
+  const totalInsumos = useMemo(() => {
+    return produtosFiltrados.reduce((total, produto) => total + produto.insumos.length, 0);
+  }, [produtosFiltrados]);
+
   const toggleCardExpansion = (skuProduto: string) => {
     const newExpanded = new Set(expandedCards);
     if (newExpanded.has(skuProduto)) {
@@ -81,9 +86,6 @@ export function InsumosComposicoesTable({ onEdit, onDelete }: InsumosComposicoes
     );
   }
 
-  const totalInsumos = useMemo(() => {
-    return produtosFiltrados.reduce((total, produto) => total + produto.insumos.length, 0);
-  }, [produtosFiltrados]);
 
   return (
     <div className="space-y-4">
