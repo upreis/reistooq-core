@@ -209,7 +209,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
-                          disabled={!!insumo || loading}
+                          disabled={loading}
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -275,7 +275,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                             <Select
                               value={componente.sku_insumo}
                               onValueChange={(value) => atualizarComponente(index, 'sku_insumo', value)}
-                              disabled={!!insumo || loading}
+                              disabled={loading}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Buscar SKU..." />
