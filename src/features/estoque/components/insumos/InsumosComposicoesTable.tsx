@@ -3,7 +3,7 @@
  * Exibe insumos agrupados por produto em cards
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Package, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, Boxes, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +13,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useInsumosComposicoes } from '../../hooks/useInsumosComposicoes';
 import type { ComposicaoInsumoEnriquecida } from '../../types/insumos.types';
 import { cn } from '@/lib/utils';
+import { formatMoney } from '@/lib/format';
+import { supabase } from '@/integrations/supabase/client';
 
 // Tipo para agrupar insumos por produto
 interface ProdutoComInsumos {
@@ -42,8 +44,40 @@ export function InsumosComposicoesTable({
 }: InsumosComposicoesTableProps) {
   const { insumosEnriquecidos, isLoading } = useInsumosComposicoes();
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
+  const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
 
-  // Agrupar insumos por produto
+  // Carregar custos dos produtos (insumos)
+  useEffect(() => {
+    const carregarCustos = async () => {
+      if (!insumosEnriquecidos || insumosEnriquecidos.length === 0) return;
+      
+      try {
+        const skusUnicos = Array.from(new Set(
+          insumosEnriquecidos.map(i => i.sku_insumo)
+        ));
+
+        if (skusUnicos.length === 0) return;
+
+        const { data: produtosCusto } = await supabase
+          .from('produtos')
+          .select('sku_interno, preco_custo')
+          .in('sku_interno', skusUnicos);
+
+        const custosMap: Record<string, number> = {};
+        produtosCusto?.forEach(p => {
+          custosMap[p.sku_interno] = p.preco_custo || 0;
+        });
+
+        setCustosProdutos(custosMap);
+      } catch (error) {
+        console.error('Erro ao carregar custos:', error);
+      }
+    };
+
+    carregarCustos();
+  }, [insumosEnriquecidos]);
+
+  // Agrupar insumos por produto e adicionar custo unitário
   const produtosComInsumos = useMemo(() => {
     const grupos: Record<string, ProdutoComInsumos> = {};
     
@@ -55,11 +89,16 @@ export function InsumosComposicoesTable({
           insumos: []
         };
       }
-      grupos[insumo.sku_produto].insumos.push(insumo);
+      // Adicionar custo unitário ao insumo
+      const insumoComCusto = {
+        ...insumo,
+        custo_unitario: custosProdutos[insumo.sku_insumo] || 0
+      } as any;
+      grupos[insumo.sku_produto].insumos.push(insumoComCusto);
     });
     
     return Object.values(grupos);
-  }, [insumosEnriquecidos]);
+  }, [insumosEnriquecidos, custosProdutos]);
 
   // Filtrar produtos
   const produtosFiltrados = useMemo(() => {
@@ -168,14 +207,31 @@ export function InsumosComposicoesTable({
                       </div>
                     </div>
 
-                    {/* Lista de componentes sempre visível */}
+                     {/* Lista de componentes sempre visível */}
                     <div className="space-y-3">
                       <div className="bg-muted/30 rounded-lg border p-4 space-y-3">
+                        {/* Informações principais */}
+                        <div className="grid grid-cols-2 gap-4 pb-3 border-b">
+                          <div className="space-y-1 min-w-0">
+                            <span className="text-xs text-muted-foreground">Custo Total</span>
+                            <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
+                              {formatMoney(produto.insumos.reduce((total, insumo) => total + ((insumo as any).custo_unitario || 0) * insumo.quantidade, 0))}
+                            </div>
+                          </div>
+                          <div className="space-y-1 min-w-0">
+                            <span className="text-xs text-muted-foreground">Pode Produzir</span>
+                            <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
+                              {Math.min(...produto.insumos.map(insumo => Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade)))} unid.
+                            </div>
+                          </div>
+                        </div>
+                        
                         <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
                         
                         {/* Cabeçalho das colunas */}
-                        <div className="grid grid-cols-[1fr_auto_auto] gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
+                        <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
                           <div className="truncate">SKU</div>
+                          <div className="text-right">Custo Uni</div>
                           <div className="text-right">Estoque</div>
                           <div className="text-right">Qtd</div>
                         </div>
@@ -183,14 +239,18 @@ export function InsumosComposicoesTable({
                         <div className="space-y-1">
                           {produto.insumos.map((insumo) => {
                             const estoqueOK = (insumo.estoque_disponivel || 0) > 0;
+                            const custoUnitario = (insumo as any).custo_unitario || 0;
                             
                             return (
                               <div key={insumo.id} className="relative">
-                                <div className="grid grid-cols-[1fr_auto_auto] gap-2 items-center text-xs rounded px-2 py-1 min-w-0">
+                                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-xs rounded px-2 py-1 min-w-0">
                                   <div className="flex items-center gap-1 min-w-0">
                                     <Badge variant="outline" className="font-mono text-[9px] px-1 py-0.5 truncate max-w-full">
                                       {insumo.sku_insumo}
                                     </Badge>
+                                  </div>
+                                  <div className="text-right text-[10px] flex-shrink-0">
+                                    {formatMoney(custoUnitario)}
                                   </div>
                                   <div className="text-right flex-shrink-0">
                                     <Badge 
@@ -265,9 +325,9 @@ export function InsumosComposicoesTable({
                                       </Badge>
                                     </div>
                                     
-                                    <div className="grid grid-cols-2 gap-3 text-xs">
+                                    <div className="grid grid-cols-4 gap-3 text-xs">
                                       <div className="text-center space-y-1">
-                                        <div className="text-muted-foreground whitespace-nowrap">Quantidade</div>
+                                        <div className="text-muted-foreground whitespace-nowrap">Necessário</div>
                                         <div className="font-semibold">{insumo.quantidade}x</div>
                                       </div>
                                       <div className="text-center space-y-1">
@@ -277,6 +337,18 @@ export function InsumosComposicoesTable({
                                           estoqueOK ? "text-green-600" : "text-destructive"
                                         )}>
                                           {insumo.estoque_disponivel || 0}
+                                        </div>
+                                      </div>
+                                      <div className="text-center space-y-1">
+                                        <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
+                                        <div className="font-semibold text-[var(--brand-yellow)]">
+                                          {Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade)}
+                                        </div>
+                                      </div>
+                                      <div className="text-center space-y-1">
+                                        <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
+                                        <div className="font-semibold">
+                                          {formatMoney(((insumo as any).custo_unitario || 0) * insumo.quantidade)}
                                         </div>
                                       </div>
                                     </div>
