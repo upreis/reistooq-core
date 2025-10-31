@@ -61,17 +61,44 @@ export function MovimentacoesHistorico() {
   const [origemFiltro, setOrigemFiltro] = useState("all");
   const [observacoesModalOpen, setObservacoesModalOpen] = useState(false);
   const [selectedMovimentacao, setSelectedMovimentacao] = useState<MovimentacaoRow | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const itemsPerPage = 50;
 
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
         
+        // Primeiro, contar o total de registros
+        let countQuery = supabase
+          .from('movimentacoes_estoque')
+          .select('*', { count: 'exact', head: true });
+
+        if (tipoFiltro !== "all") {
+          countQuery = countQuery.eq('tipo_movimentacao', tipoFiltro);
+        }
+
+        if (origemFiltro !== "all") {
+          countQuery = countQuery.eq('origem_movimentacao', origemFiltro);
+        }
+
+        if (searchTerm) {
+          countQuery = countQuery.or(`sku_produto.ilike.%${searchTerm}%,nome_produto.ilike.%${searchTerm}%`);
+        }
+
+        const { count } = await countQuery;
+        setTotalCount(count || 0);
+
+        // Calcular offset
+        const offset = (currentPage - 1) * itemsPerPage;
+
+        // Buscar dados paginados
         let query = supabase
           .from('movimentacoes_estoque')
           .select('*')
           .order('created_at', { ascending: false })
-          .limit(100);
+          .range(offset, offset + itemsPerPage - 1);
 
         if (tipoFiltro !== "all") {
           query = query.eq('tipo_movimentacao', tipoFiltro);
@@ -104,7 +131,7 @@ export function MovimentacoesHistorico() {
     }
 
     fetchData();
-  }, [tipoFiltro, origemFiltro, searchTerm]);
+  }, [tipoFiltro, origemFiltro, searchTerm, currentPage, itemsPerPage]);
 
   const handleOpenObservacoes = (movimentacao: MovimentacaoRow) => {
     setSelectedMovimentacao(movimentacao);
@@ -112,12 +139,28 @@ export function MovimentacoesHistorico() {
   };
 
   const handleSaveObservacoes = async () => {
-    // Recarregar dados após salvar
-    const { data } = await supabase
+    // Recarregar dados após salvar - usar offset correto
+    const offset = (currentPage - 1) * itemsPerPage;
+    
+    let query = supabase
       .from('movimentacoes_estoque')
       .select('*')
       .order('created_at', { ascending: false })
-      .limit(100);
+      .range(offset, offset + itemsPerPage - 1);
+
+    if (tipoFiltro !== "all") {
+      query = query.eq('tipo_movimentacao', tipoFiltro);
+    }
+
+    if (origemFiltro !== "all") {
+      query = query.eq('origem_movimentacao', origemFiltro);
+    }
+
+    if (searchTerm) {
+      query = query.or(`sku_produto.ilike.%${searchTerm}%,nome_produto.ilike.%${searchTerm}%`);
+    }
+
+    const { data } = await query;
     
     if (data) {
       setMovimentacoes(data as unknown as MovimentacaoRow[]);
@@ -301,9 +344,37 @@ export function MovimentacoesHistorico() {
           </Table>
         </div>
 
-        {movimentacoes.length > 0 && (
-          <div className="text-sm text-muted-foreground text-center">
-            Mostrando {movimentacoes.length} movimentações mais recentes
+        {totalCount > 0 && (
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, totalCount)} de {totalCount} movimentações
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Anterior
+              </Button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  Página {currentPage} de {Math.ceil(totalCount / itemsPerPage)}
+                </span>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(p => p + 1)}
+                disabled={currentPage >= Math.ceil(totalCount / itemsPerPage)}
+              >
+                Próxima
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

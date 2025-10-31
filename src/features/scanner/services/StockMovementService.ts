@@ -286,9 +286,33 @@ class StockMovementService {
    */
   async executeMovement(movement: Omit<StockMovement, 'id' | 'created_at'>): Promise<StockMovement> {
     try {
+      // Obter informações do produto
+      const product = await this.getProduct(movement.produto_id);
+      
+      // Obter informações do usuário
+      const { data: { user } } = await supabase.auth.getUser();
+      const { data: profile } = user?.id ? await supabase
+        .from('profiles')
+        .select('nome_completo, organizacao_id')
+        .eq('id', user.id)
+        .single() : { data: null };
+
+      // Enriquecer movimento com informações completas
+      const enrichedMovement = {
+        ...movement,
+        sku_produto: product?.sku_interno || '',
+        nome_produto: product?.nome || '',
+        origem_movimentacao: 'ajuste_manual',
+        pagina_origem: '/estoque',
+        usuario_id: user?.id || null,
+        usuario_nome: profile?.nome_completo || null,
+        usuario_email: user?.email || null,
+        organization_id: profile?.organizacao_id || null,
+      };
+
       const { data, error } = await supabase
         .from('movimentacoes_estoque')
-        .insert([movement])
+        .insert([enrichedMovement])
         .select()
         .single();
 
