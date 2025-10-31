@@ -11,7 +11,7 @@ export interface MapeamentoVerificacao {
   skuKit?: string;          // sku_simples (SKU Unitário)
   quantidadeKit?: number;
   skuCadastradoNoEstoque?: boolean; // 🛡️ NOVO: Se o SKU existe na tabela produtos
-  statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
+  statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'sem_composicao';
   statusInsumo?: StatusBaixaInsumo; // 🔧 NOVO: Status dos insumos
   detalhesInsumo?: string; // 🔧 NOVO: Detalhes sobre o status dos insumos
 }
@@ -91,13 +91,30 @@ export class MapeamentoService {
         ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
         : new Map();
 
+      // 🔍 Verificar quais SKUs têm composição cadastrada
+      const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
+      let composicoesMap = new Map<string, boolean>();
+      
+      if (skusParaVerificarComposicao.length > 0) {
+        const { data: composicoesExistentes, error: composicaoError } = await supabase
+          .from('produto_componentes')
+          .select('sku_produto')
+          .in('sku_produto', skusParaVerificarComposicao);
+
+        if (!composicaoError && composicoesExistentes) {
+          composicoesExistentes.forEach(c => {
+            composicoesMap.set(c.sku_produto, true);
+          });
+        }
+      }
+
       // Retorna resultado para todos os SKUs com statusBaixa calculado e validação de insumos
       return skusPedido.map(sku => {
         const mapeamento = mapeamentosMap.get(sku);
         const temMapeamento = !!mapeamento;
         const skuEstoque = mapeamento?.skuEstoque;
         
-        let statusBaixa: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
+        let statusBaixa: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'sem_composicao';
         let skuCadastradoNoEstoque = false;
 
         if (!temMapeamento || !skuEstoque) {
@@ -115,8 +132,14 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // Tem mapeamento, SKU existe e tem estoque
-            statusBaixa = 'pronto_baixar';
+            // 🔍 NOVO: Verificar se tem composição cadastrada
+            const temComposicao = composicoesMap.get(skuEstoque);
+            
+            if (!temComposicao) {
+              statusBaixa = 'sem_composicao';
+            } else {
+              statusBaixa = 'pronto_baixar';
+            }
             skuCadastradoNoEstoque = true;
           }
         }

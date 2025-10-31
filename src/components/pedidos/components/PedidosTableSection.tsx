@@ -689,36 +689,42 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            let texto = "Indefinido";
                            let isClickable = false;
 
-                           // 🛡️ PRIORIDADE 1: SKU não cadastrado no estoque (ERRO CRÍTICO)
-                           if (statusBaixa === 'sku_nao_cadastrado') {
-                             variant = "destructive";
-                             texto = "SKU não cadastrado no estoque";
-                             isClickable = false;
-                           }
-                           // 🛡️ PRIORIDADE 2: Sem estoque
-                           else if (statusBaixa === 'sem_estoque') {
-                             variant = "destructive";
-                             texto = "Sem Estoque";
-                             isClickable = false;
-                           }
-                           // ✅ PRIORIDADE 3: Pronto para baixar (tem mapeamento e SKU existe)
-                           else if (statusBaixa === 'pronto_baixar') {
-                             variant = "success";
-                             texto = "Pronto p/ Baixar";
-                             isClickable = false;
-                           }
-                           // ⚠️ PRIORIDADE 4: Sem mapear
-                           else if (statusBaixa === 'sem_mapear' || !mapping || !mapping.temMapeamento) {
-                             variant = "warning";
-                             texto = "Sem Mapear";
-                             isClickable = true;
-                           }
-                           // ⚠️ Fallback: Mapeamento incompleto
-                           else {
-                             variant = "warning";
-                             texto = "Mapear Incompleto";
-                             isClickable = true;
-                           }
+                            // 🛡️ PRIORIDADE 1: SKU não cadastrado no estoque (ERRO CRÍTICO)
+                            if (statusBaixa === 'sku_nao_cadastrado') {
+                              variant = "destructive";
+                              texto = "SKU não cadastrado no estoque";
+                              isClickable = false;
+                            }
+                            // 🛡️ PRIORIDADE 2: Sem composição cadastrada
+                            else if (statusBaixa === 'sem_composicao') {
+                              variant = "warning";
+                              texto = "Sem Composição";
+                              isClickable = false;
+                            }
+                            // 🛡️ PRIORIDADE 3: Sem estoque
+                            else if (statusBaixa === 'sem_estoque') {
+                              variant = "destructive";
+                              texto = "Sem Estoque";
+                              isClickable = false;
+                            }
+                            // ✅ PRIORIDADE 4: Pronto para baixar (tem mapeamento e SKU existe e tem composição)
+                            else if (statusBaixa === 'pronto_baixar') {
+                              variant = "success";
+                              texto = "Pronto p/ Baixar";
+                              isClickable = false;
+                            }
+                            // ⚠️ PRIORIDADE 5: Sem mapear
+                            else if (statusBaixa === 'sem_mapear' || !mapping || !mapping.temMapeamento) {
+                              variant = "warning";
+                              texto = "Sem Mapear";
+                              isClickable = true;
+                            }
+                            // ⚠️ Fallback: Mapeamento incompleto
+                            else {
+                              variant = "warning";
+                              texto = "Mapear Incompleto";
+                              isClickable = true;
+                            }
 
                             return (
                               <Badge 

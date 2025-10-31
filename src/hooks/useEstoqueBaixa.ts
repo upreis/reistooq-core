@@ -233,8 +233,9 @@ export function useProcessarBaixaEstoque() {
           }
           
           if (!composicao || composicao.length === 0) {
-            console.log(`⚠️ SKU ${skuMapeado} não tem composição definida, pulando...`);
-            continue;
+            const erroMsg = `❌ ERRO CRÍTICO: SKU ${skuMapeado} passou na validação mas não tem composição cadastrada!`;
+            console.error(erroMsg);
+            throw new Error(erroMsg);
           }
           
           console.log(`📦 Composição encontrada para ${skuMapeado}:`, composicao);
@@ -255,6 +256,32 @@ export function useProcessarBaixaEstoque() {
         }
         
         console.log('📋 Componentes para baixa:', baixasComponentes);
+
+        // 🛡️ VALIDAÇÃO CRÍTICA: Verificar se TODOS os SKUs têm composição cadastrada
+        console.log('🔍 Validando se todos os SKUs têm composição cadastrada...');
+        const skusParaValidarComposicao = baixas.map(b => b.sku);
+        
+        const { data: composicoesExistentes, error: composicaoValidacaoError } = await supabase
+          .from('produto_componentes')
+          .select('sku_produto')
+          .in('sku_produto', skusParaValidarComposicao);
+        
+        if (composicaoValidacaoError) {
+          console.error('❌ Erro ao validar composições:', composicaoValidacaoError);
+          throw new Error('Erro ao verificar composições dos produtos');
+        }
+        
+        const skusComComposicao = new Set(composicoesExistentes?.map(c => c.sku_produto) || []);
+        const skusSemComposicao = skusParaValidarComposicao.filter(sku => !skusComComposicao.has(sku));
+        
+        if (skusSemComposicao.length > 0) {
+          const erroMsg = `❌ Os seguintes SKUs não têm composição cadastrada: ${skusSemComposicao.join(', ')}.\n\n` +
+                          `Por favor, cadastre as composições em /estoque/composicoes antes de fazer a baixa.`;
+          console.error(erroMsg);
+          throw new Error(erroMsg);
+        }
+        
+        console.log('✅ Todos os SKUs possuem composição cadastrada');
 
         // 🛡️ BAIXA DE ESTOQUE DOS COMPONENTES COM MONITORAMENTO
         const resultadoBaixa = await medirTempoExecucao(

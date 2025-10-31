@@ -21,7 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Package, CheckCircle, AlertTriangle, Clock, Zap, Database } from 'lucide-react';
+import { Package, CheckCircle, AlertTriangle, Clock, Zap, Database, AlertCircle } from 'lucide-react';
 
 interface BaixaEstoqueModalProps {
   pedidos: Pedido[];
@@ -34,6 +34,8 @@ interface BaixaEstoqueModalProps {
     integrationAccountId?: string;
   };
 }
+
+type StatusBaixa = 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'sem_composicao';
 
 export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoqueModalProps) {
   const [open, setOpen] = useState(false);
@@ -61,16 +63,18 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       const skuKit = mapping?.skuKit || (pedido as any).sku_kit;
       const temMapeamento = !!skuKit;
       const quantidade = Number((pedido as any).total_itens) || 0;
-      let statusBaixaCalc = mapping?.statusBaixa as string | undefined;
+      let statusBaixaCalc = mapping?.statusBaixa as StatusBaixa | undefined;
       if (!statusBaixaCalc) statusBaixaCalc = temMapeamento ? 'pronto_baixar' : 'sem_mapear';
       const temEstoque = (statusBaixaCalc === 'pronto_baixar' && quantidade > 0) || (temMapeamento && quantidade > 0 && !mapping?.statusBaixa);
       
-      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque
+      // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque E se tem composição
       let problema = null;
       if (!temMapeamento) {
         problema = 'Sem mapeamento';
       } else if (statusBaixaCalc === 'sku_nao_cadastrado') {
         problema = 'SKU não cadastrado no estoque';
+      } else if (statusBaixaCalc === 'sem_composicao') {
+        problema = 'Sem composição cadastrada';
       } else if (statusBaixaCalc === 'sem_estoque') {
         problema = 'Sem estoque (quantidade = 0)';
       } else if (!temEstoque) {
@@ -122,11 +126,12 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
   const handleProcessar = async () => {
     console.log('🚀 Iniciando processamento OTIMIZADO de baixa de estoque');
     
-    // 🛡️ CRÍTICO: Filtrar apenas pedidos prontos (com mapeamento, cadastro E estoque disponível)
+    // 🛡️ CRÍTICO: Filtrar apenas pedidos prontos (com mapeamento, cadastro, composição E estoque disponível)
     const pedidosProntos = pedidosAnalise.filter(p => 
       p.temEstoque && 
       p.temMapeamento && 
-      p.statusBaixa === 'pronto_baixar' // Só processar se statusBaixa === 'pronto_baixar'
+      p.statusBaixa === 'pronto_baixar' && // Só processar se statusBaixa === 'pronto_baixar'
+      p.statusBaixa !== 'sem_composicao'   // Bloquear pedidos sem composição
     );
     
     if (pedidosProntos.length === 0) {
@@ -171,6 +176,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       case 'sem_estoque': return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case 'sem_mapear': return <Clock className="h-4 w-4 text-warning" />;
       case 'sku_nao_cadastrado': return <Database className="h-4 w-4 text-orange-500" />;
+      case 'sem_composicao': return <AlertCircle className="h-4 w-4 text-orange-600" />;
       default: return <AlertTriangle className="h-4 w-4 text-muted-foreground" />;
     }
   };
@@ -181,6 +187,7 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       case 'sem_estoque': return <Badge variant="destructive">Sem Estoque</Badge>;
       case 'sem_mapear': return <Badge variant="secondary">Sem Mapeamento</Badge>;
       case 'sku_nao_cadastrado': return <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-500/20">SKU sem cadastro no Estoque</Badge>;
+      case 'sem_composicao': return <Badge variant="outline" className="bg-orange-600/10 text-orange-600 border-orange-600/20">Sem Composição</Badge>;
       default: return <Badge variant="outline">Indefinido</Badge>;
     }
   };

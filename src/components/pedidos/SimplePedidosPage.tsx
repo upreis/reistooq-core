@@ -299,7 +299,7 @@ function SimplePedidosPage({ className }: Props) {
   );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado'>(() => {
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao'>(() => {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
 
@@ -336,6 +336,8 @@ function SimplePedidosPage({ className }: Props) {
           return mapping?.statusBaixa === 'sem_estoque';
         case 'sku_nao_cadastrado':
           return mapping?.statusBaixa === 'sku_nao_cadastrado';
+        case 'sem_composicao':
+          return mapping?.statusBaixa === 'sem_composicao';
         case 'shipped':
           return statuses.some((s: string) => s.includes('shipped') || s.includes('ready_to_ship'));
         case 'delivered':
