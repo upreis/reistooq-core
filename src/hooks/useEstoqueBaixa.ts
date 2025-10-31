@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { validarFluxoCompleto, type PedidoEnriquecido } from '@/core/integracao';
 import { MonitorIntegracao, medirTempoExecucao } from '@/core/integracao/MonitorIntegracao';
 import { buildIdUnico } from '@/utils/idUnico';
+import { InsumosBaixaService } from '@/services/InsumosBaixaService';
 interface ProcessarBaixaParams {
   pedidos: Pedido[];  // Voltar para Pedido[] pois já vem enriquecido do SimplePedidosPage
   contextoDaUI?: {
@@ -315,6 +316,18 @@ export function useProcessarBaixaEstoque() {
         }
         
         console.log('✅ Baixa de estoque bem-sucedida, iniciando snapshots...');
+        
+        // 🔧 BAIXA DE INSUMOS - Processar insumos dos produtos
+        console.log('🔧 Processando baixa de insumos...');
+        const skusUnicos = [...new Set(baixas.map(b => b.sku))];
+        const resultadoInsumos = await InsumosBaixaService.processarBaixaInsumos(skusUnicos);
+        
+        if (!resultadoInsumos.success) {
+          console.warn('⚠️ Aviso na baixa de insumos:', resultadoInsumos.message);
+          // Não falha a operação, apenas loga o aviso
+        } else {
+          console.log('✅ Baixa de insumos concluída:', resultadoInsumos.message);
+        }
         
         // 🛡️ HISTÓRICO COM MONITORAMENTO - SEMPRE TENTAR SALVAR
         await medirTempoExecucao(
