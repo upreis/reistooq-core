@@ -26,9 +26,14 @@ export default function ComposicoesUnificadasPage() {
             </p>
           </div>
           <div className="text-right">
-            <h2 className="text-2xl font-bold text-foreground mb-2">Composições de Produtos</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">
+              {activeTab === "produtos" ? "Composições de Produtos" : "Composições de Insumos"}
+            </h2>
             <p className="text-muted-foreground max-w-xl">
-              Gerencie as composições dos seus produtos, defina componentes e monitore custos
+              {activeTab === "produtos" 
+                ? "Gerencie as composições dos seus produtos, defina componentes e monitore custos"
+                : "Gerencie as composições dos seus Insumos, defina componentes e monitore custos"
+              }
             </p>
           </div>
         </div>
