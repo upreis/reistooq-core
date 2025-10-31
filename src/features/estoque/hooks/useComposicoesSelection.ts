@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
-import { ProdutoComposicao } from '@/hooks/useProdutosComposicoes';
 
-export function useComposicoesSelection() {
+type SelectableItem = { id: string };
+
+export function useComposicoesSelection<T extends SelectableItem>() {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [isSelectMode, setIsSelectMode] = useState(false);
 
@@ -24,7 +25,7 @@ export function useComposicoesSelection() {
     });
   }, []);
 
-  const selectAll = useCallback((items: ProdutoComposicao[]) => {
+  const selectAll = useCallback((items: T[]) => {
     setSelectedItems(new Set(items.map(item => item.id)));
   }, []);
 
@@ -36,7 +37,7 @@ export function useComposicoesSelection() {
     return selectedItems.has(itemId);
   }, [selectedItems]);
 
-  const getSelectedItems = useCallback((items: ProdutoComposicao[]) => {
+  const getSelectedItems = useCallback((items: T[]) => {
     return items.filter(item => selectedItems.has(item.id));
   }, [selectedItems]);
 
