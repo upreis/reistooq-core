@@ -71,27 +71,37 @@ export default function InsumosPage() {
   };
 
   const handleDeleteSelected = async () => {
-    const selectedInsumos = getSelectedItems(insumosEnriquecidos || []);
+    // Agrupar insumos por SKU de produto selecionado
+    const insumosParaDeletar: ComposicaoInsumoEnriquecida[] = [];
+    
+    // selectedItems contém os SKUs dos produtos selecionados
+    selectedItems.forEach(skuProduto => {
+      const insumosDesteParaTodos = (insumosEnriquecidos || []).filter(
+        insumo => insumo.sku_produto === skuProduto
+      );
+      insumosParaDeletar.push(...insumosDesteParaTodos);
+    });
+    
     console.log('🗑️ DEBUG - Deletando insumos:', {
       selectedCount,
       selectedItems: Array.from(selectedItems),
-      selectedInsumos,
-      insumosEnriquecidos
+      insumosParaDeletar,
+      totalInsumos: insumosParaDeletar.length
     });
     
-    if (selectedInsumos.length === 0) {
+    if (insumosParaDeletar.length === 0) {
       toast.error('Nenhum insumo selecionado');
       return;
     }
 
     try {
-      for (const insumo of selectedInsumos) {
-        console.log('🗑️ Deletando insumo:', insumo.id);
+      for (const insumo of insumosParaDeletar) {
+        console.log('🗑️ Deletando insumo:', insumo.id, insumo.sku_produto, insumo.sku_insumo);
         await deleteInsumo(insumo.id);
       }
       clearSelection();
       toggleSelectMode();
-      toast.success(`${selectedInsumos.length} insumo(s) excluído(s) com sucesso`);
+      toast.success(`${insumosParaDeletar.length} insumo(s) de ${selectedCount} produto(s) excluído(s) com sucesso`);
     } catch (error: any) {
       console.error('❌ Erro ao excluir insumos:', error);
       toast.error(error.message || 'Erro ao excluir insumos selecionados');
