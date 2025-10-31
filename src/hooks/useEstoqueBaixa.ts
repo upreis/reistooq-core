@@ -318,15 +318,27 @@ export function useProcessarBaixaEstoque() {
         console.log('✅ Baixa de estoque bem-sucedida, iniciando snapshots...');
         
         // 🔧 BAIXA DE INSUMOS - Processar insumos dos produtos
-        console.log('🔧 Processando baixa de insumos...');
-        const skusUnicos = [...new Set(baixas.map(b => b.sku))];
-        const resultadoInsumos = await InsumosBaixaService.processarBaixaInsumos(skusUnicos);
-        
-        if (!resultadoInsumos.success) {
-          console.warn('⚠️ Aviso na baixa de insumos:', resultadoInsumos.message);
-          // Não falha a operação, apenas loga o aviso
-        } else {
-          console.log('✅ Baixa de insumos concluída:', resultadoInsumos.message);
+        try {
+          console.log('🔧 Processando baixa de insumos...');
+          console.log('🔍 DEBUG InsumosBaixaService:', typeof InsumosBaixaService, InsumosBaixaService);
+          console.log('🔍 DEBUG processarBaixaInsumos:', typeof InsumosBaixaService.processarBaixaInsumos);
+          
+          const skusUnicos = [...new Set(baixas.map(b => b.sku))];
+          console.log('🔍 SKUs únicos para baixa de insumos:', skusUnicos);
+          
+          // Importar dinamicamente para evitar problemas de build
+          const { InsumosBaixaService: InsumoService } = await import('@/services/InsumosBaixaService');
+          const resultadoInsumos = await InsumoService.processarBaixaInsumos(skusUnicos);
+          
+          if (!resultadoInsumos.success) {
+            console.warn('⚠️ Aviso na baixa de insumos:', resultadoInsumos.message);
+            // Não falha a operação, apenas loga o aviso
+          } else {
+            console.log('✅ Baixa de insumos concluída:', resultadoInsumos.message);
+          }
+        } catch (insumoError) {
+          console.error('❌ Erro ao processar insumos:', insumoError);
+          // Não falha a operação principal se insumos falharem
         }
         
         // 🛡️ HISTÓRICO COM MONITORAMENTO - SEMPRE TENTAR SALVAR
