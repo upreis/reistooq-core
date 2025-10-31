@@ -84,8 +84,12 @@ export class MapeamentoService {
         }
       }
 
-      // 🔧 VALIDAÇÃO DE INSUMOS: Validar insumos para todos os SKUs de estoque
-      const validacoesInsumos = await InsumosValidationService.validarInsumosPedidos(skusParaVerificar);
+      // 🔧 VALIDAÇÃO DE INSUMOS: Validar insumos para SKUs de estoque (produtos finais)
+      // Só validar SKUs que realmente existem (não null/undefined)
+      const skusEstoqueValidos = skusParaVerificar.filter(Boolean);
+      const validacoesInsumos = skusEstoqueValidos.length > 0 
+        ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
+        : new Map();
 
       // Retorna resultado para todos os SKUs com statusBaixa calculado e validação de insumos
       return skusPedido.map(sku => {
