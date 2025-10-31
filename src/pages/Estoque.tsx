@@ -28,6 +28,7 @@ const EstoqueContent = () => {
           <Routes>
             <Route index element={<ControleEstoquePage />} />
             <Route path="composicoes" element={<ComposicoesUnificadasPage />} />
+            <Route path="insumos" element={<ComposicoesUnificadasPage />} />
             <Route path="historico" element={<HistoricoMovimentacoesPage />} />
           </Routes>
         </div>
