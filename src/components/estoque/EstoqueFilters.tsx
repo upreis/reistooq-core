@@ -134,7 +134,7 @@ export function EstoqueFilters({
           </>
         ) : (
           <>
-            {/* Layout Desktop - mantém o original */}
+            {/* Layout Desktop - reordenado: busca, categoria, status, tipo, filtros avançados */}
             <div className="relative flex-1 min-w-[300px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <Input 
@@ -155,168 +155,164 @@ export function EstoqueFilters({
                 </Button>
               )}
             </div>
+
+            {/* Filtro de categoria */}
+            {useHierarchicalCategories && onHierarchicalFiltersChange ? (
+              <div className="min-w-[200px]">
+                <HierarchicalCategoryFilter
+                  selectedFilters={hierarchicalFilters}
+                  onFilterChange={onHierarchicalFiltersChange}
+                  className="space-y-2"
+                />
+              </div>
+            ) : (
+              <Select value={selectedCategory} onValueChange={onCategoryChange}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas categorias</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Filtro de status */}
+            <Select value={selectedStatus} onValueChange={onStatusChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                {statusOptions.map((option) => {
+                  const IconComponent = option.icon;
+                  return (
+                    <SelectItem key={option.value} value={option.value}>
+                      <div className="flex items-center">
+                        <IconComponent className="w-4 h-4 mr-2" />
+                        {option.label}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+
+            {/* Filtro de tipo de produto (Pai/Filho) */}
+            {onProductTypeChange && (
+              <Select value={selectedProductType} onValueChange={onProductTypeChange}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Tipo de Produto" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="all">
+                    <div className="flex items-center">
+                      <Package className="w-4 h-4 mr-2" />
+                      Todos os Produtos
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="parent">
+                    <div className="flex items-center">
+                      <Package className="w-4 h-4 mr-2" />
+                      Apenas Produtos Pai
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="child">
+                    <div className="flex items-center">
+                      <Package className="w-4 h-4 mr-2" />
+                      Apenas Produtos Filho
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="standalone">
+                    <div className="flex items-center">
+                      <Package className="w-4 h-4 mr-2" />
+                      Produtos Sem Vínculo
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+
+            {/* Filtros avançados */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Filter className="w-4 h-4" />
+                  Filtros Avançados
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-1">
+                      •
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Faixa de Preço (Custo)</h4>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        placeholder="Mín"
+                        value={priceRange.min}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
+                        type="number"
+                        step="0.01"
+                      />
+                      <span className="text-muted-foreground">até</span>
+                      <Input
+                        placeholder="Máx"
+                        value={priceRange.max}
+                        onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
+                        type="number"
+                        step="0.01"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Faixa de Estoque</h4>
+                    <div className="flex items-center space-x-2">
+                      <Input
+                        placeholder="Mín"
+                        value={stockRange.min}
+                        onChange={(e) => setStockRange(prev => ({ ...prev, min: e.target.value }))}
+                        type="number"
+                      />
+                      <span className="text-muted-foreground">até</span>
+                      <Input
+                        placeholder="Máx"
+                        value={stockRange.max}
+                        onChange={(e) => setStockRange(prev => ({ ...prev, max: e.target.value }))}
+                        type="number"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <Button variant="outline" size="sm" onClick={onClearFilters}>
+                      Limpar Filtros
+                    </Button>
+                    <Button size="sm" onClick={onSearch}>
+                      Aplicar
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            {/* Limpar filtros */}
+            {hasActiveFilters && (
+              <Button variant="outline" onClick={onClearFilters} className="gap-2">
+                <X className="w-4 h-4" />
+                Limpar
+              </Button>
+            )}
           </>
         )}
       </div>
-
-      {/* Filtros desktop - só mostra no desktop */}
-      {!isMobile && (
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Filtro de categoria */}
-          {useHierarchicalCategories && onHierarchicalFiltersChange ? (
-            <div className="min-w-[300px]">
-              <HierarchicalCategoryFilter
-                selectedFilters={hierarchicalFilters}
-                onFilterChange={onHierarchicalFiltersChange}
-                className="space-y-2"
-              />
-            </div>
-          ) : (
-            <Select value={selectedCategory} onValueChange={onCategoryChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas categorias</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Filtro de status */}
-          <Select value={selectedStatus} onValueChange={onStatusChange}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent className="bg-background z-50">
-              {statusOptions.map((option) => {
-                const IconComponent = option.icon;
-                return (
-                  <SelectItem key={option.value} value={option.value}>
-                    <div className="flex items-center">
-                      <IconComponent className="w-4 h-4 mr-2" />
-                      {option.label}
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-
-          {/* Filtro de tipo de produto (Pai/Filho) */}
-          {onProductTypeChange && (
-            <Select value={selectedProductType} onValueChange={onProductTypeChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Tipo de Produto" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50">
-                <SelectItem value="all">
-                  <div className="flex items-center">
-                    <Package className="w-4 h-4 mr-2" />
-                    Todos os Produtos
-                  </div>
-                </SelectItem>
-                <SelectItem value="parent">
-                  <div className="flex items-center">
-                    <Package className="w-4 h-4 mr-2" />
-                    Apenas Produtos Pai
-                  </div>
-                </SelectItem>
-                <SelectItem value="child">
-                  <div className="flex items-center">
-                    <Package className="w-4 h-4 mr-2" />
-                    Apenas Produtos Filho
-                  </div>
-                </SelectItem>
-                <SelectItem value="standalone">
-                  <div className="flex items-center">
-                    <Package className="w-4 h-4 mr-2" />
-                    Produtos Sem Vínculo
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          )}
-
-          {/* Filtros avançados */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Filter className="w-4 h-4" />
-                Filtros Avançados
-                {hasActiveFilters && (
-                  <Badge variant="secondary" className="ml-1">
-                    •
-                  </Badge>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Faixa de Preço (Custo)</h4>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Mín"
-                      value={priceRange.min}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, min: e.target.value }))}
-                      type="number"
-                      step="0.01"
-                    />
-                    <span className="text-muted-foreground">até</span>
-                    <Input
-                      placeholder="Máx"
-                      value={priceRange.max}
-                      onChange={(e) => setPriceRange(prev => ({ ...prev, max: e.target.value }))}
-                      type="number"
-                      step="0.01"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Faixa de Estoque</h4>
-                  <div className="flex items-center space-x-2">
-                    <Input
-                      placeholder="Mín"
-                      value={stockRange.min}
-                      onChange={(e) => setStockRange(prev => ({ ...prev, min: e.target.value }))}
-                      type="number"
-                    />
-                    <span className="text-muted-foreground">até</span>
-                    <Input
-                      placeholder="Máx"
-                      value={stockRange.max}
-                      onChange={(e) => setStockRange(prev => ({ ...prev, max: e.target.value }))}
-                      type="number"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-between">
-                  <Button variant="outline" size="sm" onClick={onClearFilters}>
-                    Limpar Filtros
-                  </Button>
-                  <Button size="sm" onClick={onSearch}>
-                    Aplicar
-                  </Button>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          {/* Limpar filtros */}
-          {hasActiveFilters && (
-            <Button variant="outline" onClick={onClearFilters} className="gap-2">
-              <X className="w-4 h-4" />
-              Limpar
-            </Button>
-          )}
-        </div>
-      )}
 
       {/* Filtros ativos */}
       {hasActiveFilters && (
