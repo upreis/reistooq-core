@@ -58,13 +58,8 @@ export default function InsumosPage() {
   };
 
   const handleFormSubmit = async (data: any) => {
-    if (insumoSelecionado) {
-      await updateInsumo({ id: insumoSelecionado.id, data });
-    } else {
-      await createInsumo(data);
-    }
-    setFormOpen(false);
-    setInsumoSelecionado(null);
+    // O InsumoForm sempre cria novos registros (ele deleta os antigos se estiver editando)
+    await createInsumo(data);
   };
 
   const handleConfirmDelete = async () => {

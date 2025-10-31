@@ -196,8 +196,13 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
   };
 
   const salvarComposicoes = async () => {
+    console.log('🔧 DEBUG - Iniciando salvamento de composições');
+    console.log('📦 Produto SKU:', produtoSku);
+    console.log('📋 Composições no formulário:', formComposicoes);
+    
     // Validar produto
     if (!produtoSku.trim()) {
+      console.error('❌ SKU do produto vazio');
       toast.error('Selecione um produto');
       return;
     }
@@ -207,7 +212,10 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
       comp.sku_insumo.trim() && comp.quantidade > 0
     );
 
+    console.log('✅ Composições válidas:', composicoesValidas);
+
     if (composicoesValidas.length === 0) {
+      console.error('❌ Nenhuma composição válida');
       toast.error('Adicione pelo menos um componente válido');
       return;
     }
@@ -216,29 +224,45 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
     try {
       // Se estiver editando, deletar insumos existentes primeiro
       if (insumo) {
+        console.log('🗑️ Deletando insumos existentes para:', produtoSku);
         const { error: deleteError } = await supabase
           .from('composicoes_insumos')
           .delete()
           .eq('sku_produto', produtoSku.trim());
 
-        if (deleteError) throw deleteError;
+        if (deleteError) {
+          console.error('❌ Erro ao deletar insumos existentes:', deleteError);
+          throw deleteError;
+        }
+        console.log('✅ Insumos existentes deletados');
       }
 
-      // Salvar cada componente
-      for (const comp of composicoesValidas) {
-        await onSubmit({
+      // Salvar cada componente válido
+      console.log('💾 Salvando componentes...');
+      const promises = composicoesValidas.map((comp, index) => {
+        console.log(`📦 Salvando componente ${index + 1}:`, comp);
+        return onSubmit({
           sku_produto: produtoSku.trim(),
           sku_insumo: comp.sku_insumo.trim(),
           quantidade: comp.quantidade,
           observacoes: comp.observacoes || null
         });
-      }
+      });
 
+      await Promise.all(promises);
+
+      console.log('✅ Todos os componentes salvos com sucesso');
       toast.success(`${composicoesValidas.length} insumo(s) salvo(s) com sucesso`);
       onClose();
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      toast.error('Erro ao salvar composições');
+    } catch (error: any) {
+      console.error('❌ Erro ao salvar composições:', error);
+      console.error('❌ Detalhes do erro:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+      toast.error(error.message || 'Erro ao salvar composições');
     } finally {
       setSaving(false);
     }
