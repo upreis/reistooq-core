@@ -13,14 +13,18 @@ const STORAGE_KEY = 'pedidos-column-preferences';
 const getInitialState = (): ColumnState => {
   const defaultColumns = getDefaultVisibleColumns();
   
+  // 🔧 CORREÇÃO: Garantir que columnOrder segue a ordem do COLUMN_DEFINITIONS
+  const columnOrder = COLUMN_DEFINITIONS.map(col => col.key);
+  
   console.log('🔧 [INITIAL STATE] Configurando estado inicial das colunas:', {
     defaultColumns: defaultColumns.map(col => col.key),
-    totalDefinitions: COLUMN_DEFINITIONS.length
+    totalDefinitions: COLUMN_DEFINITIONS.length,
+    columnOrder: columnOrder
   });
   
   return {
     visibleColumns: new Set(defaultColumns.map(col => col.key)),
-    columnOrder: COLUMN_DEFINITIONS.map(col => col.key),
+    columnOrder: columnOrder,
     activeProfile: 'standard',
     customProfiles: []
   };
@@ -169,10 +173,13 @@ export const resetColumnCache = () => {
     localStorage.removeItem('pedidos:lastSearch'); // Limpar também o cache da última pesquisa
     console.log('🔄 Cache de colunas limpo completamente');
     
-    // Forçar recarga da página para aplicar as mudanças
-    window.location.reload();
+    // NÃO recarregar a página automaticamente - deixar o React atualizar
+    // window.location.reload();
+    
+    return true;
   } catch (error) {
     console.warn('❌ Erro ao limpar cache de colunas:', error);
+    return false;
   }
 };
 
@@ -197,14 +204,24 @@ export const useColumnManager = (): UseColumnManagerReturn => {
       return initial;
     }
     
-    return {
+    // 🔧 CRÍTICO: Sempre usar columnOrder do COLUMN_DEFINITIONS (fonte única da verdade)
+    const finalState: ColumnState = {
       ...initial,
       ...stored,
-      // Garantir que visibleColumns seja sempre um Set
+      // Forçar ordem das definições (não do cache)
+      columnOrder: initial.columnOrder,
+      // Garantir que visibleColumns seja sempre um Set<string>
       visibleColumns: stored.visibleColumns instanceof Set 
-        ? stored.visibleColumns 
-        : new Set(stored.visibleColumns ? Array.from(stored.visibleColumns) : Array.from(initial.visibleColumns))
+        ? new Set<string>(Array.from(stored.visibleColumns).filter((k): k is string => typeof k === 'string'))
+        : new Set<string>(stored.visibleColumns ? Array.from(stored.visibleColumns as any).filter((k: any): k is string => typeof k === 'string') : Array.from(initial.visibleColumns))
     };
+    
+    console.log('✅ Estado final das colunas:', {
+      visible: Array.from(finalState.visibleColumns),
+      order: finalState.columnOrder.slice(0, 20) // Mostrar primeiras 20
+    });
+    
+    return finalState;
   });
  
   // Reconciliar novas colunas adicionadas após preferências salvas
