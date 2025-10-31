@@ -52,24 +52,30 @@ export function useComposicoesEstoque() {
 
       if (composicoesError) throw composicoesError;
 
-      // Buscar os SKUs únicos dos componentes
+      // Buscar os SKUs únicos dos componentes (normalizar para uppercase e trim)
       const skusComponentes = Array.from(new Set(
-        composicoesData?.map(comp => comp.sku_componente) || []
-      ));
+        composicoesData?.map(comp => comp.sku_componente?.trim().toUpperCase()) || []
+      )).filter(Boolean);
+
+      console.log('🔍 SKUs componentes para buscar:', skusComponentes);
 
       // Buscar informações dos produtos componentes
       const { data: produtosData, error: produtosError } = await supabase
         .from('produtos')
-        .select('sku_interno, nome, quantidade_atual')
-        .in('sku_interno', skusComponentes);
+        .select('sku_interno, nome, quantidade_atual');
 
       if (produtosError) throw produtosError;
 
-      // Criar mapa de produtos para lookup rápido
+      console.log('📦 Produtos encontrados no estoque:', produtosData?.length);
+
+      // Criar mapa de produtos para lookup rápido (normalizar chave)
       const produtosMap = new Map();
       produtosData?.forEach(produto => {
-        produtosMap.set(produto.sku_interno, produto);
+        const skuNormalizado = produto.sku_interno?.trim().toUpperCase();
+        produtosMap.set(skuNormalizado, produto);
       });
+
+      console.log('🗺️ Mapa de produtos criado:', produtosMap.size, 'produtos');
 
       // Agrupar por SKU do produto
       const groupedComposicoes: Record<string, ProdutoComponente[]> = {};
@@ -78,8 +84,13 @@ export function useComposicoesEstoque() {
           groupedComposicoes[composicao.sku_produto] = [];
         }
         
-        // Buscar informações do produto componente
-        const produtoComponente = produtosMap.get(composicao.sku_componente);
+        // Buscar informações do produto componente (normalizar para comparação)
+        const skuComponenteNormalizado = composicao.sku_componente?.trim().toUpperCase();
+        const produtoComponente = produtosMap.get(skuComponenteNormalizado);
+        
+        if (!produtoComponente) {
+          console.warn(`⚠️ Componente não encontrado no estoque: ${composicao.sku_componente}`);
+        }
         
         // Adicionar informações do estoque do componente
         const componenteComEstoque: ProdutoComponente = {
