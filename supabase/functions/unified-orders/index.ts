@@ -844,21 +844,17 @@ Deno.serve(async (req) => {
         if (decryptError) {
           console.error(`[unified-orders:${cid}] ❌ Erro descriptografia simples:`, decryptError);
         } else if (decryptedData) {
-          try {
-            const parsedPayload = JSON.parse(decryptedData);
-            accessToken = parsedPayload.access_token || '';
-            refreshToken = parsedPayload.refresh_token || '';
-            expiresAt = parsedPayload.expires_at || '';
-            console.log(`[unified-orders:${cid}] ✅ Descriptografia simples bem-sucedida - tokens extraídos:`, {
-              hasAccessToken: !!accessToken,
-              hasRefreshToken: !!refreshToken,
-              hasExpiresAt: !!expiresAt,
-              accessTokenLength: accessToken.length,
-              refreshTokenLength: refreshToken.length
-            });
-          } catch (parseErr) {
-            console.error(`[unified-orders:${cid}] ❌ Erro parsing JSON após decrypt_simple:`, parseErr);
-          }
+          // decrypt_simple returns jsonb, no need to JSON.parse
+          accessToken = decryptedData.access_token || '';
+          refreshToken = decryptedData.refresh_token || '';
+          expiresAt = decryptedData.expires_at || '';
+          console.log(`[unified-orders:${cid}] ✅ Descriptografia simples bem-sucedida - tokens extraídos:`, {
+            hasAccessToken: !!accessToken,
+            hasRefreshToken: !!refreshToken,
+            hasExpiresAt: !!expiresAt,
+            accessTokenLength: accessToken.length,
+            refreshTokenLength: refreshToken.length
+          });
         }
       } catch (err) {
         console.error(`[unified-orders:${cid}] ❌ ERRO: Falha descriptografia simples`, err);
