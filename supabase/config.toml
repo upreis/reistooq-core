@@ -35,7 +35,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.unified-orders]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ml-token-refresh-cron]
 verify_jwt = false
@@ -71,7 +71,7 @@ verify_jwt = false
 
 
 [functions.ml-test-connection]
-verify_jwt = false
+verify_jwt = true
 
 # DEPRECATED: Use devolucoes-avancadas-sync instead
 [functions.ml-devolucoes-sync]
