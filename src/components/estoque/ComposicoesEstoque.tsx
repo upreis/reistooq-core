@@ -117,22 +117,34 @@ export function ComposicoesEstoque() {
 
   const limparComposicoesOrfas = async () => {
     try {
-      // Buscar composições órfãs (que não têm produto pai em produtos_composicoes)
-      const { data: orfas, error: orfasError } = await supabase
+      // 1. Buscar todos os SKUs de produtos_composicoes
+      const { data: produtosComposicoes, error: prodError } = await supabase
+        .from('produtos_composicoes')
+        .select('sku_interno');
+
+      if (prodError) throw prodError;
+
+      const skusValidos = new Set(produtosComposicoes?.map(p => p.sku_interno) || []);
+      console.log(`✅ SKUs válidos em produtos_composicoes: ${skusValidos.size}`);
+
+      // 2. Buscar todos os componentes
+      const { data: componentes, error: compError } = await supabase
         .from('produto_componentes')
-        .select('sku_produto, sku_componente')
-        .not('sku_produto', 'in', `(SELECT sku_interno FROM produtos_composicoes)`);
+        .select('sku_produto, sku_componente');
 
-      if (orfasError) throw orfasError;
+      if (compError) throw compError;
 
-      if (!orfas || orfas.length === 0) {
-        toast.success('Não há composições órfãs para limpar');
+      // 3. Identificar órfãos (componentes cujo sku_produto NÃO existe em produtos_composicoes)
+      const orfas = componentes?.filter(c => !skusValidos.has(c.sku_produto)) || [];
+
+      if (orfas.length === 0) {
+        toast.success('✅ Não há composições órfãs para limpar');
         return;
       }
 
-      console.log(`🗑️ Encontradas ${orfas.length} composições órfãs`);
+      console.log(`🗑️ Encontradas ${orfas.length} composições órfãs:`, orfas);
 
-      // Deletar composições órfãs
+      // 4. Deletar composições órfãs
       const skusProdutosOrfaos = [...new Set(orfas.map(o => o.sku_produto))];
       
       const { error: deleteError } = await supabase
@@ -142,13 +154,13 @@ export function ComposicoesEstoque() {
 
       if (deleteError) throw deleteError;
 
-      toast.success(`${orfas.length} composições órfãs removidas com sucesso`);
+      toast.success(`🗑️ ${orfas.length} composição(ões) órfã(s) removida(s) com sucesso!`);
       
       // Recarregar dados
       loadComposicoes();
       sincronizarComponentes();
     } catch (error) {
-      console.error('Erro ao limpar composições órfãs:', error);
+      console.error('❌ Erro ao limpar composições órfãs:', error);
       toast.error('Erro ao limpar composições órfãs');
     }
   };
