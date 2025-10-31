@@ -115,6 +115,44 @@ export function ComposicoesEstoque() {
     sincronizarComponentes(); // Sincroniza componentes em uso
   };
 
+  const limparComposicoesOrfas = async () => {
+    try {
+      // Buscar composições órfãs (que não têm produto pai em produtos_composicoes)
+      const { data: orfas, error: orfasError } = await supabase
+        .from('produto_componentes')
+        .select('sku_produto, sku_componente')
+        .not('sku_produto', 'in', `(SELECT sku_interno FROM produtos_composicoes)`);
+
+      if (orfasError) throw orfasError;
+
+      if (!orfas || orfas.length === 0) {
+        toast.success('Não há composições órfãs para limpar');
+        return;
+      }
+
+      console.log(`🗑️ Encontradas ${orfas.length} composições órfãs`);
+
+      // Deletar composições órfãs
+      const skusProdutosOrfaos = [...new Set(orfas.map(o => o.sku_produto))];
+      
+      const { error: deleteError } = await supabase
+        .from('produto_componentes')
+        .delete()
+        .in('sku_produto', skusProdutosOrfaos);
+
+      if (deleteError) throw deleteError;
+
+      toast.success(`${orfas.length} composições órfãs removidas com sucesso`);
+      
+      // Recarregar dados
+      loadComposicoes();
+      sincronizarComponentes();
+    } catch (error) {
+      console.error('Erro ao limpar composições órfãs:', error);
+      toast.error('Erro ao limpar composições órfãs');
+    }
+  };
+
   const toggleCardExpansion = (productId: string) => {
     const newExpanded = new Set(expandedCards);
     if (newExpanded.has(productId)) {
@@ -699,6 +737,21 @@ export function ComposicoesEstoque() {
               <Download className="w-4 h-4" />
               Baixar Dados
             </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  onClick={limparComposicoesOrfas}
+                  className="gap-2 border-amber-500/50 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Limpar Órfãs
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Remove composições de produtos que não existem mais</p>
+              </TooltipContent>
+            </Tooltip>
             <Button
               variant="outline"
               onClick={toggleSelectMode}
