@@ -95,16 +95,22 @@ export class MapeamentoService {
       const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
       let composicoesMap = new Map<string, boolean>();
       
+      console.log('🔍 [AUDITORIA] Verificando composições para SKUs:', skusParaVerificarComposicao);
+      
       if (skusParaVerificarComposicao.length > 0) {
         const { data: composicoesExistentes, error: composicaoError } = await supabase
           .from('produto_componentes')
           .select('sku_produto')
           .in('sku_produto', skusParaVerificarComposicao);
 
+        console.log('🔍 [AUDITORIA] Composições encontradas no DB:', composicoesExistentes);
+        console.log('🔍 [AUDITORIA] Erro ao buscar composições:', composicaoError);
+
         if (!composicaoError && composicoesExistentes) {
           composicoesExistentes.forEach(c => {
             composicoesMap.set(c.sku_produto, true);
           });
+          console.log('🔍 [AUDITORIA] Map de composições criado:', Array.from(composicoesMap.entries()));
         }
       }
 
@@ -135,10 +141,14 @@ export class MapeamentoService {
             // 🔍 NOVO: Verificar se tem composição cadastrada
             const temComposicao = composicoesMap.get(skuEstoque);
             
+            console.log(`🔍 [AUDITORIA] SKU: ${skuEstoque} | Tem composição: ${temComposicao}`);
+            
             if (!temComposicao) {
               statusBaixa = 'sem_composicao';
+              console.log(`✅ [AUDITORIA] SKU ${skuEstoque} marcado como SEM_COMPOSICAO`);
             } else {
               statusBaixa = 'pronto_baixar';
+              console.log(`✅ [AUDITORIA] SKU ${skuEstoque} marcado como PRONTO_BAIXAR`);
             }
             skuCadastradoNoEstoque = true;
           }
