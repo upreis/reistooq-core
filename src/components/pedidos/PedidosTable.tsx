@@ -41,7 +41,6 @@ interface PedidosTableProps {
   visibleColumns: ColumnConfig[];
   debugInfo?: any;
   renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
-  renderStatusInsumo?: (pedidoId: string) => React.ReactNode;
 }
 
 function getSituacaoVariant(situacao: string): "default" | "secondary" | "destructive" | "outline" {
@@ -83,8 +82,7 @@ export function PedidosTable({
   mapeamentosVerificacao = new Map(),
   visibleColumns,
   debugInfo,
-  renderStatusBaixa,
-  renderStatusInsumo
+  renderStatusBaixa
 }: PedidosTableProps) {
   const [page, setPage] = useState(currentPage);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -245,7 +243,6 @@ export function PedidosTable({
                   visibleColumns={visibleColumnConfigs}
                   rowId={rowId}
                   renderStatusBaixa={renderStatusBaixa}
-                  renderStatusInsumo={renderStatusInsumo}
                 />
               );
             })}

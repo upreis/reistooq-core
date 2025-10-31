@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { validarFluxoCompleto, type PedidoEnriquecido } from '@/core/integracao';
 import { MonitorIntegracao, medirTempoExecucao } from '@/core/integracao/MonitorIntegracao';
 import { buildIdUnico } from '@/utils/idUnico';
-import { InsumosBaixaService } from '@/services/InsumosBaixaService';
 interface ProcessarBaixaParams {
   pedidos: Pedido[];  // Voltar para Pedido[] pois já vem enriquecido do SimplePedidosPage
   contextoDaUI?: {
@@ -193,28 +192,7 @@ export function useProcessarBaixaEstoque() {
         
         console.log('✅ Todos os SKUs estão cadastrados e possuem estoque disponível');
         
-        // 🆕 BAIXA DE INSUMOS (1x por produto único do pedido)
-        console.log('🔧 Iniciando baixa de insumos...');
-        try {
-          const resultadoInsumos = await InsumosBaixaService.baixarInsumosPedidos(
-            pedidos.map(p => ({
-              sku_kit: p.sku_kit,
-              skus_produtos_unicos: [p.sku_kit].filter(Boolean) as string[]
-            }))
-          );
-
-          if (!resultadoInsumos.success) {
-            console.warn('⚠️ Falha ao baixar insumos:', resultadoInsumos.erros);
-            // Não bloqueia a operação, apenas registra
-          } else {
-            console.log('✅ Insumos baixados com sucesso:', resultadoInsumos);
-          }
-        } catch (erroInsumos) {
-          console.error('❌ Erro ao baixar insumos:', erroInsumos);
-          // Não bloqueia a operação principal
-        }
-        
-        // 🔍 ETAPA: Buscar composições e preparar baixa dos componentes
+        // 🔍 ETAPA NOVA: Buscar composições e preparar baixa dos componentes
         console.log('🔍 Buscando composições dos produtos...');
         const baixasComponentes: Array<{ sku: string; quantidade: number }> = [];
         

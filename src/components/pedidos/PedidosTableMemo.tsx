@@ -18,7 +18,6 @@ interface PedidosTableMemoProps {
   visibleColumns: ColumnConfig[];
   debugInfo?: any;
   renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
-  renderStatusInsumo?: (pedidoId: string) => React.ReactNode;
 }
 
 // P2.1: Comparação memoizada para otimizar renders
@@ -50,8 +49,7 @@ export const PedidosTableMemo = memo<PedidosTableMemoProps>(({
   mapeamentosVerificacao,
   visibleColumns,
   debugInfo,
-  renderStatusBaixa,
-  renderStatusInsumo
+  renderStatusBaixa
 }) => {
   // P2.1: Memoizar props computadas pesadas
   const memoizedVisibleColumns = useMemo(() => 
@@ -78,7 +76,6 @@ export const PedidosTableMemo = memo<PedidosTableMemoProps>(({
       visibleColumns={memoizedVisibleColumns}
       debugInfo={debugInfo}
       renderStatusBaixa={renderStatusBaixa}
-      renderStatusInsumo={renderStatusInsumo}
     />
   );
 }, areEqual);

@@ -299,7 +299,7 @@ function SimplePedidosPage({ className }: Props) {
   );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'pronto' | 'pendente_insumo' | 'sem_mapeamento_insumo' | 'sem_cadastro_insumo'>(() => {
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado'>(() => {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
 
@@ -608,7 +608,6 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
     { key: 'total_itens', label: 'Total de Itens', default: true, category: 'mapping' },
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
-    { key: 'status_insumo', label: 'Status Insumos', default: true, category: 'mapping' },
     
     // Status
     { key: 'situacao', label: 'Status do Pagamento', default: true, category: 'shipping' },
@@ -705,55 +704,6 @@ function SimplePedidosPage({ className }: Props) {
         <span className="text-xs font-medium">Sem mapear</span>
       </div>
     );
-  };
-
-  // 🆕 NOVA FUNÇÃO: Renderizar status de insumos
-  const renderStatusInsumo = (pedidoId: string) => {
-    const mapping = mappingData.get(pedidoId);
-    
-    if (!mapping || !mapping.statusInsumo) {
-      return <span className="text-xs text-muted-foreground">—</span>;
-    }
-
-    const statusInsumo = mapping.statusInsumo;
-
-    if (statusInsumo === 'sem_mapeamento_insumo') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-gray-400" />
-          <span className="text-xs text-gray-600">Sem insumos</span>
-        </div>
-      );
-    }
-
-    if (statusInsumo === 'sem_cadastro_insumo') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-          <span className="text-xs text-orange-600 font-medium">❌ Não cadastrado</span>
-        </div>
-      );
-    }
-
-    if (statusInsumo === 'pendente_insumo') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs text-red-600 font-medium">❌ Sem estoque</span>
-        </div>
-      );
-    }
-
-    if (statusInsumo === 'pronto') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-success" />
-          <span className="text-xs text-success font-medium">✓ OK</span>
-        </div>
-      );
-    }
-
-    return <span className="text-xs text-muted-foreground">—</span>;
   };
 
   // 🛡️ FUNÇÃO SIMPLIFICADA - usa sistema centralizado
@@ -1222,8 +1172,6 @@ useEffect(() => {
           actions.setPage(page);
         }}
         isPedidoProcessado={isPedidoProcessado}
-        renderStatusBaixa={renderStatusBaixa}
-        renderStatusInsumo={renderStatusInsumo}
       />
 
 

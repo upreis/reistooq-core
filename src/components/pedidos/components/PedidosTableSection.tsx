@@ -75,8 +75,6 @@ interface PedidosTableSectionProps {
   totalPages: number;
   onPageChange: (page: number) => void;
   isPedidoProcessado: (order: any) => boolean;
-  renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
-  renderStatusInsumo?: (pedidoId: string) => React.ReactNode;
   className?: string;
 }
 
@@ -97,8 +95,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   totalPages,
   onPageChange,
   isPedidoProcessado,
-  renderStatusBaixa,
-  renderStatusInsumo,
   className
 }) => {
   // Debug dos dados quando orders mudam
@@ -670,10 +666,89 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          const qtdCalc = Number(mapping?.quantidadeKit ?? mapping?.quantidade ?? order.qtd_kit ?? order.quantidade_kit ?? 1);
                          return <span>{quantidadeItens * (Number.isFinite(qtdCalc) ? qtdCalc : 1)}</span>;
                        }
-                        case 'status_baixa':
-                          return renderStatusBaixa ? renderStatusBaixa(idUnico) : <span className="text-xs text-muted-foreground">—</span>;
-                        case 'status_insumo':
-                          return renderStatusInsumo ? renderStatusInsumo(idUnico) : <span className="text-xs text-muted-foreground">—</span>;
+                      case 'status_baixa':
+                        return (() => {
+                          // 🔍 PRIMEIRO: Verificar se já foi baixado (histórico)
+                          const baixado = isPedidoProcessado(order);
+                           if (baixado) {
+                             return (
+                               <Badge variant="default" className="text-xs text-center">
+                                 Baixado
+                               </Badge>
+                             );
+                           }
+                           
+                           // 🛡️ SEGUNDO: Usar statusBaixa do mapping (sistema centralizado)
+                           const statusBaixa = mapping?.statusBaixa;
+                           
+                           let variant: "success" | "destructive" | "warning" | "outline" = "outline";
+                           let texto = "Indefinido";
+                           let isClickable = false;
+
+                           // 🛡️ PRIORIDADE 1: SKU não cadastrado no estoque (ERRO CRÍTICO)
+                           if (statusBaixa === 'sku_nao_cadastrado') {
+                             variant = "destructive";
+                             texto = "SKU não cadastrado no estoque";
+                             isClickable = false;
+                           }
+                           // 🛡️ PRIORIDADE 2: Sem estoque
+                           else if (statusBaixa === 'sem_estoque') {
+                             variant = "destructive";
+                             texto = "Sem Estoque";
+                             isClickable = false;
+                           }
+                           // ✅ PRIORIDADE 3: Pronto para baixar (tem mapeamento e SKU existe)
+                           else if (statusBaixa === 'pronto_baixar') {
+                             variant = "success";
+                             texto = "Pronto p/ Baixar";
+                             isClickable = false;
+                           }
+                           // ⚠️ PRIORIDADE 4: Sem mapear
+                           else if (statusBaixa === 'sem_mapear' || !mapping || !mapping.temMapeamento) {
+                             variant = "warning";
+                             texto = "Sem Mapear";
+                             isClickable = true;
+                           }
+                           // ⚠️ Fallback: Mapeamento incompleto
+                           else {
+                             variant = "warning";
+                             texto = "Mapear Incompleto";
+                             isClickable = true;
+                           }
+
+                            return (
+                              <Badge 
+                                variant={variant} 
+                                className={`text-xs text-center ${
+                                  isClickable
+                                    ? "cursor-pointer hover:opacity-80 transition-opacity hover:shadow-md border-2 border-dashed border-amber-400" 
+                                    : ""
+                                }`}
+                                title={
+                                  isClickable
+                                    ? "Clique para criar mapeamento"
+                                    : undefined
+                                }
+                                onClick={() => {
+                                  if (isClickable) {
+                                    console.log('🔗 Abrindo modal de mapeamento para pedido (status_baixa):', {
+                                      order,
+                                      order_items: order.order_items,
+                                      skus_produtos: order.skus_produtos,
+                                      titulo_anuncio: order.titulo_anuncio
+                                    });
+                                    
+                                    // Disparar evento para abrir modal de mapeamento
+                                    window.dispatchEvent(new CustomEvent('openMapeamentoModal', {
+                                      detail: { pedido: order }
+                                    }));
+                                  }
+                                }}
+                              >
+                                {texto}
+                              </Badge>
+                            );
+                        })();
                      case 'date_created':
                        return <span>{formatDate(order.date_created || order.unified?.date_created || order.created_at) || '-'}</span>;
                      case 'pack_id':

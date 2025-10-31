@@ -19,7 +19,6 @@ interface PedidosTableRowProps {
   visibleColumns: ColumnConfig[];
   rowId: string;
   renderStatusBaixa?: (pedidoId: string) => React.ReactNode;
-  renderStatusInsumo?: (pedidoId: string) => React.ReactNode;
 }
 
 function TruncatedCell({ content, maxLength = 50 }: { content?: string | null; maxLength?: number }) {
@@ -55,8 +54,7 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
   temMapeamento,
   visibleColumns,
   rowId,
-  renderStatusBaixa,
-  renderStatusInsumo
+  renderStatusBaixa
 }) => {
   return (
     <TableRow
@@ -150,9 +148,8 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                   </a>
                 ) : <span>-</span>;
               case 'status_baixa':
+                // Renderizar status da baixa usando callback personalizado
                 return renderStatusBaixa ? renderStatusBaixa(rowId) : <span className="text-xs text-muted-foreground">—</span>;
-              case 'status_insumo':
-                return renderStatusInsumo ? renderStatusInsumo(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               default:
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
             }
