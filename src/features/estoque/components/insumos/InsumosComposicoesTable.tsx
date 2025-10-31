@@ -311,50 +311,73 @@ export function InsumosComposicoesTable({
                           <div className="bg-card border rounded-lg p-4">
                             <div className="text-xs font-medium text-muted-foreground mb-3">Análise detalhada por insumo:</div>
                             <div className="space-y-3">
-                              {produto.insumos.map((insumo) => {
-                                const estoqueOK = (insumo.estoque_disponivel || 0) > 0;
+                              {(() => {
+                                // Identificar componente limitante
+                                let componenteLimitante = null;
+                                let menorPodeFazer = Infinity;
                                 
-                                return (
-                                  <div key={insumo.id} className="border rounded-md p-3 space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <div className="text-sm font-medium truncate pr-2">
-                                        {insumo.nome_insumo}
+                                produto.insumos.forEach(insumo => {
+                                  const podeFazer = Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade);
+                                  if (podeFazer < menorPodeFazer) {
+                                    menorPodeFazer = podeFazer;
+                                    componenteLimitante = insumo.id;
+                                  }
+                                });
+
+                                return produto.insumos.map((insumo) => {
+                                  const estoqueOK = (insumo.estoque_disponivel || 0) > 0;
+                                  const isLimitante = insumo.id === componenteLimitante;
+                                  
+                                  return (
+                                    <div key={insumo.id} className={cn(
+                                      "border rounded-md p-3 space-y-2 relative",
+                                      isLimitante && "border-red-500 bg-red-50/50"
+                                    )}>
+                                      {isLimitante && (
+                                        <Badge variant="destructive" className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5">
+                                          LIMITANTE
+                                        </Badge>
+                                      )}
+                                      <div className="flex items-center justify-between">
+                                        <div className="text-sm font-medium truncate pr-2">
+                                          {insumo.nome_insumo}
+                                        </div>
+                                        <Badge variant="outline" className="font-mono text-[10px] truncate flex-shrink-0">
+                                          {insumo.sku_insumo}
+                                        </Badge>
                                       </div>
-                                      <Badge variant="outline" className="font-mono text-[10px] truncate flex-shrink-0">
-                                        {insumo.sku_insumo}
-                                      </Badge>
+                                      
+                                      <div className="grid grid-cols-4 gap-3 text-xs">
+                                        <div className="text-center space-y-1">
+                                          <div className="text-muted-foreground whitespace-nowrap">Necessário</div>
+                                          <div className="font-semibold">{insumo.quantidade}x</div>
+                                        </div>
+                                        <div className="text-center space-y-1">
+                                          <div className="text-muted-foreground whitespace-nowrap">Estoque</div>
+                                          <div className={cn(
+                                            "font-semibold",
+                                            estoqueOK ? "text-green-600" : "text-destructive"
+                                          )}>
+                                            {insumo.estoque_disponivel || 0}
+                                          </div>
+                                        </div>
+                                        <div className="text-center space-y-1">
+                                          <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
+                                          <div className="font-semibold text-[var(--brand-yellow)]">
+                                            {Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade)}
+                                          </div>
+                                        </div>
+                                        <div className="text-center space-y-1">
+                                          <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
+                                          <div className="font-semibold">
+                                            {formatMoney(((insumo as any).custo_unitario || 0) * insumo.quantidade)}
+                                          </div>
+                                        </div>
+                                      </div>
                                     </div>
-                                    
-                                    <div className="grid grid-cols-4 gap-3 text-xs">
-                                      <div className="text-center space-y-1">
-                                        <div className="text-muted-foreground whitespace-nowrap">Necessário</div>
-                                        <div className="font-semibold">{insumo.quantidade}x</div>
-                                      </div>
-                                      <div className="text-center space-y-1">
-                                        <div className="text-muted-foreground whitespace-nowrap">Estoque</div>
-                                        <div className={cn(
-                                          "font-semibold",
-                                          estoqueOK ? "text-green-600" : "text-destructive"
-                                        )}>
-                                          {insumo.estoque_disponivel || 0}
-                                        </div>
-                                      </div>
-                                      <div className="text-center space-y-1">
-                                        <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
-                                        <div className="font-semibold text-[var(--brand-yellow)]">
-                                          {Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade)}
-                                        </div>
-                                      </div>
-                                      <div className="text-center space-y-1">
-                                        <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
-                                        <div className="font-semibold">
-                                          {formatMoney(((insumo as any).custo_unitario || 0) * insumo.quantidade)}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                });
+                              })()}
                             </div>
                           </div>
                         </div>
