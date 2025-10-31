@@ -237,39 +237,58 @@ export function InsumosComposicoesTable({
                         </div>
                         
                         <div className="space-y-1">
-                          {produto.insumos.map((insumo) => {
-                            const estoqueOK = (insumo.estoque_disponivel || 0) > 0;
-                            const custoUnitario = (insumo as any).custo_unitario || 0;
+                          {(() => {
+                            // Identificar componente limitante para destacar na lista
+                            let componenteLimitante = null;
+                            let menorPodeFazer = Infinity;
                             
-                            return (
-                              <div key={insumo.id} className="relative">
-                                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-xs rounded px-2 py-1 min-w-0">
-                                  <div className="flex items-center gap-1 min-w-0">
-                                    <Badge variant="outline" className="font-mono text-[9px] px-1 py-0.5 truncate max-w-full">
-                                      {insumo.sku_insumo}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-right text-[10px] flex-shrink-0">
-                                    {formatMoney(custoUnitario)}
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <Badge 
-                                      variant={estoqueOK ? 'default' : 'destructive'}
-                                      className={cn(
-                                        "text-[9px] px-1 py-0.5",
-                                        estoqueOK && 'bg-green-500 hover:bg-green-600'
-                                      )}
-                                    >
-                                      {insumo.estoque_disponivel || 0}
-                                    </Badge>
-                                  </div>
-                                  <div className="text-right text-muted-foreground text-[10px] flex-shrink-0">
-                                    {insumo.quantidade}x
+                            produto.insumos.forEach(insumo => {
+                              const podeFazer = Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade);
+                              if (podeFazer < menorPodeFazer) {
+                                menorPodeFazer = podeFazer;
+                                componenteLimitante = insumo.id;
+                              }
+                            });
+
+                            return produto.insumos.map((insumo) => {
+                              const estoqueOK = (insumo.estoque_disponivel || 0) > 0;
+                              const custoUnitario = (insumo as any).custo_unitario || 0;
+                              const isLimitante = insumo.id === componenteLimitante;
+                              
+                              return (
+                                <div key={insumo.id} className="relative">
+                                  <div className={`grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center text-xs rounded px-2 py-1 min-w-0 ${
+                                    isLimitante 
+                                      ? 'bg-destructive/10 border border-destructive/30' 
+                                      : ''
+                                  }`}>
+                                    <div className="flex items-center gap-1 min-w-0">
+                                      <Badge variant="outline" className="font-mono text-[9px] px-1 py-0.5 truncate max-w-full">
+                                        {insumo.sku_insumo}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-right text-[10px] flex-shrink-0">
+                                      {formatMoney(custoUnitario)}
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                      <Badge 
+                                        variant={estoqueOK ? 'default' : 'destructive'}
+                                        className={cn(
+                                          "text-[9px] px-1 py-0.5",
+                                          estoqueOK && 'bg-green-500 hover:bg-green-600'
+                                        )}
+                                      >
+                                        {insumo.estoque_disponivel || 0}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-right text-muted-foreground text-[10px] flex-shrink-0">
+                                      {insumo.quantidade}x
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            });
+                          })()}
                         </div>
                       </div>
 
