@@ -139,7 +139,31 @@ export default function InsumosPage({ hideHeader = false }: { hideHeader?: boole
                 <>
                   <Button onClick={handleCreate} className="gap-2">
                     <Plus className="w-4 h-4" />
-                    Novo Insumo
+                    Nova Composição
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => toast.info('Importar do Estoque - Em breve')}
+                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                  >
+                    <Import className="w-4 h-4" />
+                    Importar do Estoque
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => toast.info('Importar Excel - Em breve')}
+                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                  >
+                    <Upload className="w-4 h-4" />
+                    Importar Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => toast.info('Baixar Dados - Em breve')}
+                    className="gap-2 bg-background/60 backdrop-blur-sm border-border/60"
+                  >
+                    <Download className="w-4 h-4" />
+                    Baixar Dados
                   </Button>
                   <Button
                     variant="outline"
