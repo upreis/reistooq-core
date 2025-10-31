@@ -71,7 +71,8 @@ import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
-
+import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
+import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
 
 import { FEATURES } from '@/config/features';
 import { ProviderSelector } from './components/ProviderSelector';
@@ -709,7 +710,11 @@ function SimplePedidosPage({ className }: Props) {
     );
   };
 
-  // 🔧 Renderizar Status de Insumos
+  // 🔧 Estado para modal de cadastro rápido
+  const [cadastroRapidoOpen, setCadastroRapidoOpen] = useState(false);
+  const [skuParaCadastro, setSkuParaCadastro] = useState('');
+
+  // 🔧 Renderizar Status de Insumos com Tooltip e Cadastro Rápido
   const renderStatusInsumos = (pedidoId: string) => {
     const mapping = mappingData.get(pedidoId);
     
@@ -724,40 +729,16 @@ function SimplePedidosPage({ className }: Props) {
       return <span className="text-xs text-muted-foreground">—</span>;
     }
 
-    const statusInsumo = mapping.statusInsumo;
-
-    switch (statusInsumo) {
-      case 'pronto':
-        return (
-          <div className="flex items-center gap-1 text-green-600">
-            <CheckCircle className="h-4 w-4" />
-            <span className="text-xs font-medium">🟢 Pronto</span>
-          </div>
-        );
-      case 'sem_mapeamento_insumo':
-        return (
-          <div className="flex items-center gap-1 text-yellow-600">
-            <AlertTriangle className="h-4 w-4" />
-            <span className="text-xs font-medium">⚠️ Sem Mapeamento</span>
-          </div>
-        );
-      case 'sem_cadastro_insumo':
-        return (
-          <div className="flex items-center gap-1 text-destructive">
-            <AlertCircle className="h-4 w-4" />
-            <span className="text-xs font-medium">❌ Sem Cadastro</span>
-          </div>
-        );
-      case 'pendente_insumo':
-        return (
-          <div className="flex items-center gap-1 text-orange-600">
-            <Clock className="h-4 w-4" />
-            <span className="text-xs font-medium">🔴 Sem Estoque</span>
-          </div>
-        );
-      default:
-        return <span className="text-xs text-muted-foreground">—</span>;
-    }
+    return (
+      <StatusInsumoWithTooltip
+        statusInsumo={mapping.statusInsumo}
+        detalhesInsumo={mapping.detalhesInsumo}
+        onCadastrarClick={(sku) => {
+          setSkuParaCadastro(sku);
+          setCadastroRapidoOpen(true);
+        }}
+      />
+    );
   };
 
   // 🛡️ FUNÇÃO SIMPLIFICADA - usa sistema centralizado
@@ -1257,6 +1238,22 @@ useEffect(() => {
         onLoadFilters={actions.loadSavedFilters}
         hasActiveFilters={filtersManager.hasActiveFilters}
         columnManager={columnManager}
+      />
+
+      {/* 🆕 Modal de Cadastro Rápido de Insumo */}
+      <CadastroInsumoRapidoModal
+        isOpen={cadastroRapidoOpen}
+        onClose={() => {
+          setCadastroRapidoOpen(false);
+          setSkuParaCadastro('');
+        }}
+        skuInsumo={skuParaCadastro}
+        onSuccess={() => {
+          // Recarregar mapeamentos após cadastrar
+          if (orders && orders.length > 0) {
+            mappingActions.processOrdersMappings(orders);
+          }
+        }}
       />
             </ErrorBoundary>
         </div>

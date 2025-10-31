@@ -5,6 +5,7 @@ export interface ValidacaoInsumoResult {
   sku: string;
   status: StatusBaixaInsumo;
   detalhes?: string;
+  skusFaltando?: string[]; // 🆕 Lista de SKUs que estão faltando
   insumosNecessarios?: Array<{
     sku: string;
     quantidade: number;
@@ -87,7 +88,8 @@ export class InsumosValidationService {
         return {
           sku: skuProduto,
           status: 'sem_cadastro_insumo',
-          detalhes: `Insumos não cadastrados: ${insumosNaoCadastrados.join(', ')}`
+          detalhes: `Insumos não cadastrados: ${insumosNaoCadastrados.join(', ')}`,
+          skusFaltando: insumosNaoCadastrados // 🆕 Retorna lista de SKUs faltando
         };
       }
 

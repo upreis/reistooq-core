@@ -13,7 +13,10 @@ export interface MapeamentoVerificacao {
   skuCadastradoNoEstoque?: boolean; // 🛡️ NOVO: Se o SKU existe na tabela produtos
   statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'sem_composicao';
   statusInsumo?: StatusBaixaInsumo; // 🔧 NOVO: Status dos insumos
-  detalhesInsumo?: string; // 🔧 NOVO: Detalhes sobre o status dos insumos
+  detalhesInsumo?: {
+    skusFaltando?: string[];
+    detalhes?: string;
+  };
 }
 
 export class MapeamentoService {
@@ -183,7 +186,10 @@ export class MapeamentoService {
           skuCadastradoNoEstoque,
           statusBaixa,
           statusInsumo: validacaoInsumo?.status,
-          detalhesInsumo: validacaoInsumo?.detalhes
+          detalhesInsumo: {
+            skusFaltando: validacaoInsumo?.skusFaltando,
+            detalhes: validacaoInsumo?.detalhes
+          }
         };
       });
 
