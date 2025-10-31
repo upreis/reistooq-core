@@ -88,25 +88,22 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
 
   // Preencher form se estiver editando
   useEffect(() => {
-    if (insumo) {
-      const componenteData = {
-        sku_insumo: insumo.sku_insumo,
-        quantidade: insumo.quantidade,
-        observacoes: insumo.observacoes || ''
-      };
-      setComponentes([componenteData]);
+    if (insumo && open) {
+      // Se está editando, carrega o produto mas permite adicionar novos componentes
       form.reset({
         sku_produto: insumo.sku_produto,
-        componentes: [componenteData]
+        componentes: [{ sku_insumo: '', quantidade: 1, observacoes: '' }]
       });
-    } else {
       setComponentes([{ sku_insumo: '', quantidade: 1, observacoes: '' }]);
+    } else if (open) {
+      // Se está criando novo
       form.reset({
         sku_produto: '',
         componentes: [{ sku_insumo: '', quantidade: 1, observacoes: '' }]
       });
+      setComponentes([{ sku_insumo: '', quantidade: 1, observacoes: '' }]);
     }
-  }, [insumo, form]);
+  }, [insumo, open, form]);
 
   const loadData = async () => {
     setLoading(true);
@@ -180,10 +177,13 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="h-5 w-5" />
-            {insumo ? 'Editar Composições' : 'Editar Composições'} - {insumo ? 'Nova Composição' : 'Nova Composição'}
+            {insumo ? 'Adicionar Insumos' : 'Nova Composição de Insumos'}
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            Insumos são debitados 1 vez por pedido, independente da quantidade.
+          <DialogDescription>
+            {insumo 
+              ? `Adicione novos insumos para o produto ${insumo.sku_produto}. Insumos são debitados 1x por pedido.`
+              : 'Crie uma nova composição de insumos. Insumos são debitados 1x por pedido.'
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -199,7 +199,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* SKU do Produto */}
+                   {/* SKU do Produto */}
                   <FormField
                     control={form.control}
                     name="sku_produto"
@@ -209,7 +209,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
-                          disabled={loading}
+                          disabled={loading || !!insumo}
                         >
                           <FormControl>
                             <SelectTrigger className="w-full">
@@ -225,6 +225,11 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                           </SelectContent>
                         </Select>
                         <FormMessage />
+                        {insumo && (
+                          <FormDescription className="text-xs text-muted-foreground">
+                            Produto bloqueado em modo de edição
+                          </FormDescription>
+                        )}
                       </FormItem>
                     )}
                   />
@@ -378,7 +383,7 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
                 className="gap-2"
               >
                 <Save className="h-4 w-4" />
-                {insumo ? 'Salvar Composições' : 'Salvar Composições'}
+                {insumo ? 'Adicionar Insumos' : 'Criar Composição'}
               </Button>
             </div>
           </form>
