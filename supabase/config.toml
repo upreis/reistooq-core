@@ -69,7 +69,6 @@ verify_jwt = true
 [functions.ml-webhook]
 verify_jwt = false
 
-
 [functions.ml-test-connection]
 verify_jwt = true
 
@@ -101,5 +100,3 @@ schedule = "0 */4 * * *"  # 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
 
 [functions.ml-claims-fetch]
 verify_jwt = true
-
-
