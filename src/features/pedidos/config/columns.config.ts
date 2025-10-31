@@ -300,6 +300,16 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Status da baixa de estoque',
     width: 120
   },
+  {
+    key: 'status_insumos',
+    label: 'Status Insumos',
+    category: 'mapping',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Status de validação dos insumos (matéria-prima)',
+    width: 140
+  },
 
   // ====== ENVIO/SHIPPING (da imagem 3) ======
   {
