@@ -80,11 +80,14 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
       }));
 
       console.log('📋 Array final de insumos para baixa:', insumosBaixar);
+      console.log('📋 JSON stringified:', JSON.stringify(insumosBaixar, null, 2));
 
       // 3. Executar baixa via RPC function
+      console.log('🚀 Chamando RPC baixar_estoque_direto com:', { p_baixas: insumosBaixar });
       const { data: resultado, error: baixaError } = await supabase.rpc('baixar_estoque_direto', {
         p_baixas: insumosBaixar as any
       });
+      console.log('📥 Resposta do RPC:', { resultado, baixaError });
 
       if (baixaError) {
         console.error('❌ Erro na baixa de insumos:', baixaError);
