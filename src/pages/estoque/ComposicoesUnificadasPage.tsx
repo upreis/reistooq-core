@@ -40,7 +40,7 @@ export default function ComposicoesUnificadasPage() {
         </TabsList>
 
         <TabsContent value="produtos" className="mt-6">
-          <ComposicoesEstoque />
+          <ComposicoesEstoque hideHeader />
         </TabsContent>
 
         <TabsContent value="insumos" className="mt-6">

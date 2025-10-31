@@ -36,7 +36,7 @@ const sortOptions = [
   { id: "category", name: "Por Categoria", sortBy: "categoria", sortOrder: "asc" },
 ];
 
-export function ComposicoesEstoque() {
+export function ComposicoesEstoque({ hideHeader = false }: { hideHeader?: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoComposicao | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
@@ -644,25 +644,26 @@ export function ComposicoesEstoque() {
 
   return (
     <div className="space-y-8">
-      {/* Header moderno melhorado - oculto no mobile */}
-      <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-              <span>🏠</span>
-              <span>/</span>
-              <span>Estoque</span>
-              <span>/</span>
-              <span className="text-primary font-medium">Composições</span>
+      {/* Header moderno melhorado - oculto no mobile ou quando hideHeader */}
+      {!hideHeader && (
+        <div className="hidden md:block relative overflow-hidden bg-gradient-to-r from-primary/2 via-primary/4 to-primary/2 border border-border/30 rounded-xl p-8">
+          <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+          <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span>🏠</span>
+                <span>/</span>
+                <span>Estoque</span>
+                <span>/</span>
+                <span className="text-primary font-medium">Composições</span>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground mb-2">Composições de Produtos</h1>
+                <p className="text-muted-foreground max-w-2xl">
+                  Gerencie as composições dos seus produtos, defina componentes e monitore custos
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Composições de Produtos</h1>
-              <p className="text-muted-foreground max-w-2xl">
-                Gerencie as composições dos seus produtos, defina componentes e monitore custos
-              </p>
-            </div>
-          </div>
           
           <div className="flex items-center gap-3 flex-wrap justify-end">
             {/* Modo de seleção */}
@@ -802,8 +803,9 @@ export function ComposicoesEstoque() {
               </>
             )}
           </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Layout principal com sidebar e conteúdo */}
       <div className="flex gap-6 relative">
