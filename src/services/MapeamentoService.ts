@@ -91,26 +91,27 @@ export class MapeamentoService {
         ? await InsumosValidationService.validarInsumosPedidos(skusEstoqueValidos)
         : new Map();
 
-      // 🔍 Verificar quais SKUs têm composição cadastrada
+      // 🔍 CORREÇÃO CRÍTICA: Verificar composições em produtos_composicoes
       const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
       let composicoesMap = new Map<string, boolean>();
       
-      console.log('🔍 [AUDITORIA] Verificando composições para SKUs:', skusParaVerificarComposicao);
+      console.log('🔍 [FLUXO CORRETO] Verificando composições em produtos_composicoes para SKUs:', skusParaVerificarComposicao);
       
       if (skusParaVerificarComposicao.length > 0) {
         const { data: composicoesExistentes, error: composicaoError } = await supabase
-          .from('produto_componentes')
-          .select('sku_produto')
-          .in('sku_produto', skusParaVerificarComposicao);
+          .from('produtos_composicoes')
+          .select('sku_interno')
+          .in('sku_interno', skusParaVerificarComposicao)
+          .eq('ativo', true);
 
-        console.log('🔍 [AUDITORIA] Composições encontradas no DB:', composicoesExistentes);
-        console.log('🔍 [AUDITORIA] Erro ao buscar composições:', composicaoError);
+        console.log('🔍 [FLUXO CORRETO] Composições encontradas em produtos_composicoes:', composicoesExistentes);
+        console.log('🔍 [FLUXO CORRETO] Erro ao buscar composições:', composicaoError);
 
         if (!composicaoError && composicoesExistentes) {
           composicoesExistentes.forEach(c => {
-            composicoesMap.set(c.sku_produto, true);
+            composicoesMap.set(c.sku_interno, true);
           });
-          console.log('🔍 [AUDITORIA] Map de composições criado:', Array.from(composicoesMap.entries()));
+          console.log('🔍 [FLUXO CORRETO] Map de composições criado:', Array.from(composicoesMap.entries()));
         }
       }
 
@@ -138,17 +139,18 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // 🔍 NOVO: Verificar se tem composição cadastrada
+            // 🔍 FLUXO CORRETO: Verificar se tem composição em produtos_composicoes
             const temComposicao = composicoesMap.get(skuEstoque);
             
-            console.log(`🔍 [AUDITORIA] SKU: ${skuEstoque} | Tem composição: ${temComposicao}`);
+            console.log(`🔍 [FLUXO CORRETO] SKU: ${skuEstoque} | Cadastrado em produtos_composicoes: ${temComposicao}`);
             
             if (!temComposicao) {
-              statusBaixa = 'sem_composicao';
-              console.log(`✅ [AUDITORIA] SKU ${skuEstoque} marcado como SEM_COMPOSICAO`);
+              // Não está em produtos_composicoes = Sem Mapear
+              statusBaixa = 'sem_mapear';
+              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} NÃO está em produtos_composicoes -> SEM_MAPEAR`);
             } else {
               statusBaixa = 'pronto_baixar';
-              console.log(`✅ [AUDITORIA] SKU ${skuEstoque} marcado como PRONTO_BAIXAR`);
+              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} está em produtos_composicoes -> PRONTO_BAIXAR`);
             }
             skuCadastradoNoEstoque = true;
           }
