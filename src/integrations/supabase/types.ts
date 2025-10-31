@@ -5879,7 +5879,7 @@ export type Database = {
         Returns: string[]
       }
       debug_historico_visibilidade: { Args: never; Returns: Json }
-      decrypt_simple: { Args: { encrypted_data: string }; Returns: string }
+      decrypt_simple: { Args: { encrypted_text: string }; Returns: Json }
       delete_invitation_safe: {
         Args: { p_invitation_id: string }
         Returns: Json
