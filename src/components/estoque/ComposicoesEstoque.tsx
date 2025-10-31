@@ -630,28 +630,22 @@ export function ComposicoesEstoque() {
                                 </Badge>
                               </div>
                               
-                              <div className="grid grid-cols-3 gap-3 text-xs items-center">
+                              <div className="grid grid-cols-4 gap-3 text-xs">
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground whitespace-nowrap text-[10px]">Custo Uni</div>
-                                  <div className="font-semibold text-[10px]">{formatMoney(custoTotalItem / comp.quantidade)}</div>
+                                  <div className="text-muted-foreground whitespace-nowrap">Necessário</div>
+                                  <div className="font-semibold">{comp.quantidade}</div>
                                 </div>
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground whitespace-nowrap text-[10px]">Estoque</div>
-                                  <div className="flex justify-center">
-                                    <Badge 
-                                      variant={estoqueComponente > 0 ? 'default' : 'destructive'}
-                                      className={cn(
-                                        "text-[9px] px-1.5 py-0.5 font-semibold",
-                                        estoqueComponente > 0 && 'bg-green-500 hover:bg-green-600'
-                                      )}
-                                    >
-                                      {estoqueComponente}
-                                    </Badge>
-                                  </div>
+                                  <div className="text-muted-foreground whitespace-nowrap">Estoque</div>
+                                  <div className="font-semibold">{estoqueComponente}</div>
                                 </div>
                                 <div className="text-center space-y-1">
-                                  <div className="text-muted-foreground whitespace-nowrap text-[10px]">Qtd</div>
-                                  <div className="font-semibold text-[10px]">{comp.quantidade}x</div>
+                                  <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
+                                  <div className="font-semibold">{possiveisUnidades}</div>
+                                </div>
+                                <div className="text-center space-y-1">
+                                  <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
+                                  <div className="font-semibold">{formatMoney(custoTotalItem)}</div>
                                 </div>
                               </div>
                               
