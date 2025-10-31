@@ -329,14 +329,15 @@ export function InsumosComposicoesTable({
                                   const isLimitante = insumo.id === componenteLimitante;
                                   
                                   return (
-                                    <div key={insumo.id} className={cn(
-                                      "border rounded-md p-3 space-y-2 relative",
-                                      isLimitante && "border-red-500 bg-red-50/50"
-                                    )}>
+                                    <div key={insumo.id} className={`border rounded-md p-3 space-y-2 ${
+                                      isLimitante 
+                                        ? 'border-destructive/30 bg-destructive/5' 
+                                        : 'border-border'
+                                    } relative`}>
                                       {isLimitante && (
-                                        <Badge variant="destructive" className="absolute top-2 right-2 text-[9px] px-1.5 py-0.5">
+                                        <div className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-[10px] px-2 py-0.5 rounded-md font-medium">
                                           LIMITANTE
-                                        </Badge>
+                                        </div>
                                       )}
                                       <div className="flex items-center justify-between">
                                         <div className="text-sm font-medium truncate pr-2">
