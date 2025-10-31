@@ -145,6 +145,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Composições',
             path: '/estoque/composicoes',
             icon: 'Layers'
+          },
+          {
+            id: 'historico',
+            label: 'Histórico',
+            path: '/estoque/historico',
+            icon: 'Clock'
           }
         ]
       },
