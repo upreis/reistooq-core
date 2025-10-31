@@ -18,11 +18,19 @@ export default function ComposicoesUnificadasPage() {
           <span>/</span>
           <span className="text-primary font-medium">Composições</span>
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Composições</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Gerencie composições de produtos e insumos por pedido
-          </p>
+        <div className="flex items-start justify-between gap-8">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Composições</h1>
+            <p className="text-muted-foreground max-w-2xl">
+              Gerencie composições de produtos e insumos por pedido
+            </p>
+          </div>
+          <div className="text-right">
+            <h2 className="text-2xl font-bold text-foreground mb-2">Composições de Produtos</h2>
+            <p className="text-muted-foreground max-w-xl">
+              Gerencie as composições dos seus produtos, defina componentes e monitore custos
+            </p>
+          </div>
         </div>
       </div>
 
