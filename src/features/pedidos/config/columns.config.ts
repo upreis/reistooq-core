@@ -298,7 +298,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Status da baixa de estoque',
-    width: 120
+    width: 130
   },
   {
     key: 'status_insumos',
@@ -308,7 +308,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Status de validação dos insumos (matéria-prima)',
-    width: 140
+    width: 130
   },
 
   // ====== ENVIO/SHIPPING (da imagem 3) ======
