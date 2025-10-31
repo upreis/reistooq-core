@@ -608,6 +608,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'qtd_kit', label: 'Quantidade KIT', default: false, category: 'mapping' },
     { key: 'total_itens', label: 'Total de Itens', default: true, category: 'mapping' },
     { key: 'status_baixa', label: 'Status da Baixa', default: true, category: 'mapping' },
+    { key: 'status_insumo', label: 'Status Insumos', default: true, category: 'mapping' },
     
     // Status
     { key: 'situacao', label: 'Status do Pagamento', default: true, category: 'shipping' },
@@ -688,35 +689,7 @@ function SimplePedidosPage({ className }: Props) {
     }
 
     // ✅ Pronto para baixar (tem mapeamento e não tem problemas)
-    // Novos status de insumos
-    if (statusBaixa === 'sem_mapeamento_insumo') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-          <span className="text-xs text-yellow-600 font-medium">Sem insumos mapeados</span>
-        </div>
-      );
-    }
-
-    if (statusBaixa === 'sem_cadastro_insumo') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
-          <span className="text-xs text-orange-600 font-medium">Insumos sem cadastro</span>
-        </div>
-      );
-    }
-
-    if (statusBaixa === 'pendente_insumo') {
-      return (
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs text-red-600 font-medium">Insumos sem estoque</span>
-        </div>
-      );
-    }
-
-    if (statusBaixa === 'pronto' || statusBaixa === 'pronto_baixar') {
+    if (statusBaixa === 'pronto_baixar') {
       return (
         <div className="flex items-center gap-1 text-green-600">
           <CheckCircle2 className="h-4 w-4" />
@@ -732,6 +705,55 @@ function SimplePedidosPage({ className }: Props) {
         <span className="text-xs font-medium">Sem mapear</span>
       </div>
     );
+  };
+
+  // 🆕 NOVA FUNÇÃO: Renderizar status de insumos
+  const renderStatusInsumo = (pedidoId: string) => {
+    const mapping = mappingData.get(pedidoId);
+    
+    if (!mapping || !mapping.statusInsumo) {
+      return <span className="text-xs text-muted-foreground">—</span>;
+    }
+
+    const statusInsumo = mapping.statusInsumo;
+
+    if (statusInsumo === 'sem_mapeamento_insumo') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-gray-400" />
+          <span className="text-xs text-gray-600">Sem insumos</span>
+        </div>
+      );
+    }
+
+    if (statusInsumo === 'sem_cadastro_insumo') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
+          <span className="text-xs text-orange-600 font-medium">❌ Não cadastrado</span>
+        </div>
+      );
+    }
+
+    if (statusInsumo === 'pendente_insumo') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-xs text-red-600 font-medium">❌ Sem estoque</span>
+        </div>
+      );
+    }
+
+    if (statusInsumo === 'pronto') {
+      return (
+        <div className="flex items-center gap-2">
+          <div className="h-2 w-2 rounded-full bg-success" />
+          <span className="text-xs text-success font-medium">✓ OK</span>
+        </div>
+      );
+    }
+
+    return <span className="text-xs text-muted-foreground">—</span>;
   };
 
   // 🛡️ FUNÇÃO SIMPLIFICADA - usa sistema centralizado
@@ -1200,6 +1222,8 @@ useEffect(() => {
           actions.setPage(page);
         }}
         isPedidoProcessado={isPedidoProcessado}
+        renderStatusBaixa={renderStatusBaixa}
+        renderStatusInsumo={renderStatusInsumo}
       />
 
 

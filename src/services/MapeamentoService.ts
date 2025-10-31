@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Pedido } from '@/types/pedido';
+import { InsumosValidationService, type StatusBaixaInsumo } from './InsumosValidationService';
 
 export interface MapeamentoVerificacao {
   skuPedido: string;
@@ -8,7 +9,10 @@ export interface MapeamentoVerificacao {
   skuKit?: string;          // sku_simples (SKU Unitário)
   quantidadeKit?: number;
   skuCadastradoNoEstoque?: boolean; // 🛡️ NOVO: Se o SKU existe na tabela produtos
-  statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado' | 'pronto' | 'pendente_insumo' | 'sem_mapeamento_insumo' | 'sem_cadastro_insumo';
+  statusBaixa?: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
+  // 🆕 Status de insumos separado
+  statusInsumo?: StatusBaixaInsumo;
+  detalhesInsumo?: string;
 }
 
 export class MapeamentoService {
@@ -79,7 +83,20 @@ export class MapeamentoService {
         }
       }
 
-      // Retorna resultado para todos os SKUs com statusBaixa calculado
+      // 🆕 VALIDAÇÃO DE INSUMOS: Para todos SKUs mapeados
+      const insumosValidationMap = new Map<string, any>();
+      if (skusParaVerificar.length > 0) {
+        try {
+          const validacoes = await InsumosValidationService.validarInsumosPedidos(skusParaVerificar);
+          validacoes.forEach((val, sku) => {
+            insumosValidationMap.set(sku, val);
+          });
+        } catch (error) {
+          console.error('❌ Erro ao validar insumos:', error);
+        }
+      }
+
+      // Retorna resultado para todos os SKUs com statusBaixa e statusInsumo calculados
       return skusPedido.map(sku => {
         const mapeamento = mapeamentosMap.get(sku);
         const temMapeamento = !!mapeamento;
@@ -87,6 +104,8 @@ export class MapeamentoService {
         
         let statusBaixa: 'pronto_baixar' | 'sem_estoque' | 'sem_mapear' | 'sku_nao_cadastrado' | 'pedido_baixado';
         let skuCadastradoNoEstoque = false;
+        let statusInsumo: StatusBaixaInsumo | undefined;
+        let detalhesInsumo: string | undefined;
 
         if (!temMapeamento || !skuEstoque) {
           // Sem mapeamento ou sem SKU de estoque definido
@@ -107,6 +126,13 @@ export class MapeamentoService {
             statusBaixa = 'pronto_baixar';
             skuCadastradoNoEstoque = true;
           }
+
+          // 🆕 Validar insumos se o produto está OK
+          const validacaoInsumo = insumosValidationMap.get(skuEstoque);
+          if (validacaoInsumo) {
+            statusInsumo = validacaoInsumo.statusBaixa;
+            detalhesInsumo = validacaoInsumo.detalhes;
+          }
         }
 
         return {
@@ -116,7 +142,9 @@ export class MapeamentoService {
           skuKit: mapeamento?.skuKit,
           quantidadeKit: mapeamento?.quantidadeKit,
           skuCadastradoNoEstoque,
-          statusBaixa
+          statusBaixa,
+          statusInsumo,
+          detalhesInsumo
         };
       });
 
