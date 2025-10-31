@@ -75,7 +75,7 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
       console.log('🗺️ Map de insumos agrupados:', Object.fromEntries(insumosMap));
 
       const insumosBaixar: InsumoParaBaixa[] = Array.from(insumosMap.entries()).map(([sku, quantidade]) => ({
-        sku: sku.trim().toUpperCase(),
+        sku: sku.trim(), // Mantém o SKU como está na composição, sem forçar uppercase
         quantidade
       }));
 
