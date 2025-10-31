@@ -4,7 +4,7 @@
  */
 
 import { useState, useMemo, useEffect } from 'react';
-import { Package, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, Boxes, Edit } from 'lucide-react';
+import { Package, Pencil, Trash2, AlertCircle, ChevronDown, ChevronUp, Layers, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -193,40 +193,40 @@ export function InsumosComposicoesTable({
 
                   <section className="space-y-4">
                     {/* Resumo da composição */}
-                    <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center justify-between p-3 bg-blue-500/10 rounded-lg border border-blue-500/20">
                       <div className="flex items-center gap-3">
-                        <div className="p-1.5 rounded-md bg-primary/10">
-                          <Boxes className="h-4 w-4 text-primary" />
+                        <div className="p-1.5 rounded-md bg-blue-500/20">
+                          <Layers className="h-4 w-4 text-blue-600" />
                         </div>
                         <div>
-                          <span className="text-sm font-medium text-foreground">Composição</span>
+                          <span className="text-sm font-medium text-foreground">Insumos por Pedido</span>
                           <p className="text-xs text-muted-foreground">
-                            {totalInsumosProduto} {totalInsumosProduto === 1 ? 'insumo' : 'insumos'}
+                            {totalInsumosProduto} {totalInsumosProduto === 1 ? 'item' : 'itens'}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                     {/* Lista de componentes sempre visível */}
+                    {/* Lista de componentes sempre visível */}
                     <div className="space-y-3">
-                      <div className="bg-muted/30 rounded-lg border p-4 space-y-3">
+                      <div className="bg-blue-500/5 rounded-lg border border-blue-500/20 p-4 space-y-3">
                         {/* Informações principais */}
-                        <div className="grid grid-cols-2 gap-4 pb-3 border-b">
+                        <div className="grid grid-cols-2 gap-4 pb-3 border-b border-blue-500/20">
                           <div className="space-y-1 min-w-0">
                             <span className="text-xs text-muted-foreground">Custo Total</span>
-                            <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
+                            <div className="text-sm font-semibold text-blue-600 break-words">
                               {formatMoney(produto.insumos.reduce((total, insumo) => total + ((insumo as any).custo_unitario || 0) * insumo.quantidade, 0))}
                             </div>
                           </div>
                           <div className="space-y-1 min-w-0">
                             <span className="text-xs text-muted-foreground">Pode Produzir</span>
-                            <div className="text-sm font-semibold text-[var(--brand-yellow)] break-words">
+                            <div className="text-sm font-semibold text-blue-600 break-words">
                               {Math.min(...produto.insumos.map(insumo => Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade)))} unid.
                             </div>
                           </div>
                         </div>
                         
-                        <div className="text-xs font-medium text-muted-foreground">Componentes necessários:</div>
+                        <div className="text-xs font-medium text-blue-700">Insumos necessários (1x por pedido):</div>
                         
                         {/* Cabeçalho das colunas */}
                         <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 text-[10px] font-medium text-muted-foreground border-b pb-1">
@@ -383,13 +383,13 @@ export function InsumosComposicoesTable({
                                         </div>
                                         <div className="text-center space-y-1">
                                           <div className="text-muted-foreground whitespace-nowrap">P/ Fazer</div>
-                                          <div className="font-semibold text-[var(--brand-yellow)]">
+                                          <div className="font-semibold text-blue-600">
                                             {Math.floor((insumo.estoque_disponivel || 0) / insumo.quantidade)}
                                           </div>
                                         </div>
                                         <div className="text-center space-y-1">
                                           <div className="text-muted-foreground whitespace-nowrap">Custo Total</div>
-                                          <div className="font-semibold">
+                                          <div className="font-semibold text-blue-600">
                                             {formatMoney(((insumo as any).custo_unitario || 0) * insumo.quantidade)}
                                           </div>
                                         </div>
@@ -414,11 +414,11 @@ export function InsumosComposicoesTable({
       {/* Info */}
       {produtosFiltrados.length > 0 && (
         <div className="flex items-start gap-2 p-4 border rounded-lg bg-blue-500/10 border-blue-500/20">
-          <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+          <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
           <div className="text-sm text-foreground">
-            <strong>ℹ️ Insumos por pedido:</strong> Cada insumo é debitado{' '}
-            <strong>1 vez por pedido</strong>, independente da quantidade de produtos.
-            Exemplo: 3 produtos = 1 etiqueta, 1 embalagem.
+            <strong>💡 Insumos debitados por pedido:</strong> Cada insumo é consumido{' '}
+            <strong>apenas 1 vez por pedido</strong>, independente da quantidade de produtos.
+            Exemplo: 1 pedido com 3 produtos = 1 etiqueta + 1 embalagem.
           </div>
         </div>
       )}
