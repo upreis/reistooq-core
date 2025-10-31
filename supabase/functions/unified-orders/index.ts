@@ -844,7 +844,7 @@ Deno.serve(async (req) => {
         if (decryptError) {
           console.error(`[unified-orders:${cid}] ❌ Erro descriptografia simples:`, decryptError);
         } else if (decryptedData) {
-          // decrypt_simple returns jsonb, no need to JSON.parse
+          // decrypt_simple returns jsonb object directly (not string)
           accessToken = decryptedData.access_token || '';
           refreshToken = decryptedData.refresh_token || '';
           expiresAt = decryptedData.expires_at || '';
