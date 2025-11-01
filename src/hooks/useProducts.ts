@@ -86,13 +86,73 @@ export const useProducts = () => {
     limit?: number;
     offset?: number;
     ativo?: boolean | 'all';
+    local_id?: string;
   }) => {
+    console.log('🔍 Buscando produtos no banco...', filters);
+
+    // Se filtro por local_id, buscar de estoque_por_local
+    if (filters?.local_id) {
+      let query = supabase
+        .from('estoque_por_local')
+        .select(`
+          quantidade,
+          local_id,
+          produtos (*)
+        `)
+        .eq('local_id', filters.local_id)
+        .order('created_at', { ascending: false });
+
+      // Aplicar filtros nos produtos relacionados
+      const { data: estoqueData, error } = await query;
+      
+      if (error) {
+        console.error('Error fetching products from estoque_por_local:', error);
+        throw error;
+      }
+
+      // Mapear dados para formato Product com quantidade do local
+      const productsWithLocalStock = (estoqueData || [])
+        .filter(item => item.produtos) // Filtrar itens sem produto
+        .map(item => {
+          const produto = item.produtos as any;
+          return {
+            ...produto,
+            quantidade_atual: item.quantidade // Substituir quantidade pelo estoque do local
+          } as Product;
+        })
+        .filter(p => {
+          // Aplicar filtros de ativo/inativo
+          if (filters?.ativo === true && !p.ativo) return false;
+          if (filters?.ativo === false && p.ativo) return false;
+          
+          // Aplicar filtro de busca
+          if (filters?.search) {
+            const searchLower = filters.search.toLowerCase();
+            return (
+              p.nome?.toLowerCase().includes(searchLower) ||
+              p.sku_interno?.toLowerCase().includes(searchLower) ||
+              p.codigo_barras?.toLowerCase().includes(searchLower)
+            );
+          }
+          
+          // Aplicar filtro de categoria
+          if (filters?.categoria && p.categoria !== filters.categoria) return false;
+          
+          // Aplicar filtro de status
+          if (filters?.status && p.status !== filters.status) return false;
+          
+          return true;
+        });
+
+      console.log(`✅ Produtos encontrados no local: ${productsWithLocalStock.length}`);
+      return productsWithLocalStock;
+    }
+
+    // Caso contrário, buscar normalmente da tabela produtos
     let query = supabase
       .from('produtos')
       .select('*')
-      .order('created_at', { ascending: false });
-
-    console.log('🔍 Buscando produtos no banco...', filters);
+      .order('created_at', { ascending: false});
 
     // Filtro de ativo/inativo: apenas aplicar se especificado
     if (filters?.ativo === true) {

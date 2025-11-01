@@ -9,6 +9,7 @@ import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntellige
 import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
+import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
 import { CreateChildProductModal } from "@/components/estoque/CreateChildProductModal";
@@ -86,6 +87,7 @@ export default function ControleEstoquePage() {
   
   const { getProducts, getCategories, deleteProduct, updateProduct } = useProducts();
   const { toast } = useToast();
+  const { localAtivo } = useLocalEstoqueAtivo();
 
   // Hook para filtros inteligentes
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
@@ -106,10 +108,11 @@ export default function ControleEstoquePage() {
       
       console.log('🔍 Carregando produtos com filtro ativo:', ativoFilter);
       
-      // Buscar produtos do banco
+      // Buscar produtos do banco com filtro de local ativo
       const allProducts = await getProducts({
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         ativo: ativoFilter,
+        local_id: localAtivo?.id
       });
 
       setProducts(allProducts);
@@ -122,7 +125,7 @@ export default function ControleEstoquePage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedStatus, getProducts, toast]);
+  }, [selectedCategory, selectedStatus, localAtivo?.id, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
