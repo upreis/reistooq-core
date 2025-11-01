@@ -309,6 +309,43 @@ export const useProducts = () => {
       throw error;
     }
 
+    // 🆕 Criar registros de estoque em todos os locais ativos
+    try {
+      const { data: locaisAtivos } = await supabase
+        .from('locais_estoque')
+        .select('id')
+        .eq('organization_id', orgId)
+        .eq('ativo', true);
+
+      if (locaisAtivos && locaisAtivos.length > 0) {
+        // Obter o local ativo atual do localStorage
+        const localAtivoAtual = localStorage.getItem('reistoq_local_estoque_ativo');
+        const localAtivoId = localAtivoAtual ? JSON.parse(localAtivoAtual).id : null;
+
+        const estoquesParaCriar = locaisAtivos.map(local => ({
+          produto_id: data.id,
+          local_id: local.id,
+          // Quantidade inicial vai para o local ativo, outros ficam em 0
+          quantidade: (local.id === localAtivoId) ? (product.quantidade_atual || 0) : 0,
+          organization_id: orgId
+        }));
+
+        const { error: estoqueError } = await supabase
+          .from('estoque_por_local')
+          .insert(estoquesParaCriar);
+
+        if (estoqueError) {
+          console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
+          // Não falha a criação do produto, apenas registra o erro
+        } else {
+          console.log(`✅ Produto criado em ${locaisAtivos.length} locais de estoque`);
+        }
+      }
+    } catch (estoqueError) {
+      console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
+      // Não falha a criação do produto
+    }
+
     return data as unknown as Product;
   }, [getCurrentOrgId]);
 
