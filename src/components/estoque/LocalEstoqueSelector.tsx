@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { MapPin, Loader2 } from 'lucide-react';
 import { LocalEstoque } from '@/features/estoque/types/locais.types';
 import { useLocalEstoqueAtivo } from '@/hooks/useLocalEstoqueAtivo';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 const TIPO_ICONS: Record<string, string> = {
   principal: '🏢',
@@ -82,23 +83,25 @@ export function LocalEstoqueSelector() {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <MapPin className="h-4 w-4 text-muted-foreground" />
-      <Select value={localAtivo?.id || ''} onValueChange={handleLocalChange}>
-        <SelectTrigger className="w-[250px]">
-          <SelectValue placeholder="Selecione um local" />
-        </SelectTrigger>
-        <SelectContent>
-          {locais.map((local) => (
-            <SelectItem key={local.id} value={local.id}>
-              <div className="flex items-center gap-2">
-                <span>{TIPO_ICONS[local.tipo] || '📍'}</span>
-                <span>{local.nome}</span>
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex items-center gap-2 flex-wrap">
+      {locais.map((local) => {
+        const isActive = localAtivo?.id === local.id;
+        return (
+          <Button
+            key={local.id}
+            variant={isActive ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleLocalChange(local.id)}
+            className={cn(
+              "flex items-center gap-2 transition-all",
+              isActive && "shadow-md"
+            )}
+          >
+            <span>{TIPO_ICONS[local.tipo] || '📍'}</span>
+            <span>{local.nome}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 }
