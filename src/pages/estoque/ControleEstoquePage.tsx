@@ -132,7 +132,7 @@ export default function ControleEstoquePage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedStatus, localAtivo, getProducts, toast]);
+  }, [selectedCategory, selectedStatus, localAtivo?.id, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -147,6 +147,14 @@ export default function ControleEstoquePage() {
     loadProducts();
     loadCategories();
   }, [loadProducts, loadCategories]);
+
+  // Efeito específico para recarregar quando o local muda
+  useEffect(() => {
+    if (localAtivo?.id) {
+      console.log('🔄 Local mudou, recarregando produtos para:', localAtivo.nome, localAtivo.id);
+      loadProducts();
+    }
+  }, [localAtivo?.id]);
 
   const handleSearch = () => {
     setCurrentPage(1);
