@@ -172,9 +172,9 @@ export function EstoqueTable({
         const isChild = product.sku_pai;
         
         return (
-          <div className="flex items-center gap-2 whitespace-nowrap">
+          <div className="flex items-center gap-2 max-w-[280px] overflow-hidden">
             {isParent && (
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">
                   PAI
                 </Badge>
@@ -182,7 +182,7 @@ export function EstoqueTable({
               </div>
             )}
             {isChild && (
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-300 border-blue-500/20">
                   FILHO
                 </Badge>
@@ -192,7 +192,7 @@ export function EstoqueTable({
                 </div>
               </div>
             )}
-            <div className="font-mono text-[11px] font-semibold whitespace-nowrap">{value}</div>
+            <div className="font-mono text-[11px] font-semibold truncate">{value}</div>
           </div>
         );
       }
