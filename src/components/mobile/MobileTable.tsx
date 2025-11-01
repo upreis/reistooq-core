@@ -35,7 +35,8 @@ interface MobileTableProps {
   sortOrder?: 'asc' | 'desc';
   onSort?: (field: string) => void;
   onRowClick?: (item: any) => void;
-  rowClassName?: string; // Nova prop para classes customizadas
+  rowClassName?: string; // Nova prop para classes customizadas (deprecated)
+  getRowClassName?: (item: any, index: number) => string; // Função para determinar classes dinamicamente
 }
 
 export default function MobileTable({
@@ -53,6 +54,7 @@ export default function MobileTable({
   onSort,
   onRowClick,
   rowClassName,
+  getRowClassName,
 }: MobileTableProps) {
   const isMobile = useIsMobile();
 
@@ -144,6 +146,13 @@ export default function MobileTable({
             {data.map((item, index) => {
               const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
               
+              // Determinar o className da linha
+              const computedRowClassName = getRowClassName 
+                ? getRowClassName(item, index)
+                : rowClassName || (index % 2 === 0 
+                  ? "border-gray-700 bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
+                  : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]");
+              
               return (
                 <div
                   key={item[keyField]}
@@ -151,9 +160,7 @@ export default function MobileTable({
                     "grid gap-2 py-2 px-4 rounded-md border-2 transition-colors",
                     isSelected 
                       ? "bg-primary/10 border-primary/20" 
-                      : rowClassName || (index % 2 === 0 
-                        ? "border-gray-700 bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
-                        : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]"),
+                      : computedRowClassName,
                     onRowClick && "cursor-pointer"
                   )}
                   style={{ gridTemplateColumns: fullGridTemplate }}

@@ -59,6 +59,8 @@ interface EstoqueTableProps {
   sortOrder: 'asc' | 'desc';
   onSort: (field: string) => void;
   rowClassName?: string; // Nova prop para classes customizadas
+  parentSkus?: Set<string>; // SKUs dos produtos PAI para estilo diferenciado
+  parentAggregatedData?: Map<string, { custoTotal: number; vendaTotal: number }>; // Dados agregados dos produtos PAI
 }
 
 export function EstoqueTable({
@@ -73,6 +75,8 @@ export function EstoqueTable({
   sortOrder,
   onSort,
   rowClassName,
+  parentSkus,
+  parentAggregatedData,
 }: EstoqueTableProps) {
   const [movementModalOpen, setMovementModalOpen] = useState(false);
   const [selectedProductForMovement, setSelectedProductForMovement] = useState<Product | null>(null);
@@ -193,22 +197,46 @@ export function EstoqueTable({
       label: "Preço Custo",
       sortable: true,
       width: "100px",
-      render: (value: number) => (
-        <span className="text-[11px]">
-          {formatPrice(value)}
-        </span>
-      )
+      render: (value: number, product: Product) => {
+        // Se é produto PAI e tem dados agregados, mostrar Custo Total
+        if (parentSkus?.has(product.sku_interno) && parentAggregatedData?.has(product.sku_interno)) {
+          const data = parentAggregatedData.get(product.sku_interno)!;
+          return (
+            <div className="text-[11px]">
+              <div className="text-muted-foreground text-[10px]">Custo Total:</div>
+              <div className="font-semibold">{formatPrice(data.custoTotal)}</div>
+            </div>
+          );
+        }
+        return (
+          <span className="text-[11px]">
+            {formatPrice(value)}
+          </span>
+        );
+      }
     },
     {
       key: "preco_venda",
       label: "Preço Venda",
       sortable: true,
       width: "100px",
-      render: (value: number) => (
-        <span className="text-[11px]">
-          {formatPrice(value)}
-        </span>
-      )
+      render: (value: number, product: Product) => {
+        // Se é produto PAI e tem dados agregados, mostrar Venda Total
+        if (parentSkus?.has(product.sku_interno) && parentAggregatedData?.has(product.sku_interno)) {
+          const data = parentAggregatedData.get(product.sku_interno)!;
+          return (
+            <div className="text-[11px]">
+              <div className="text-muted-foreground text-[10px]">Venda Total:</div>
+              <div className="font-semibold">{formatPrice(data.vendaTotal)}</div>
+            </div>
+          );
+        }
+        return (
+          <span className="text-[11px]">
+            {formatPrice(value)}
+          </span>
+        );
+      }
     },
     {
       key: "estoque_minimo",
@@ -486,6 +514,24 @@ export function EstoqueTable({
     );
   }
 
+  // Função para determinar o estilo da linha baseado no produto
+  const getRowClassName = (product: Product, index: number) => {
+    // Se é um produto PAI, aplicar gradiente especial
+    if (parentSkus?.has(product.sku_interno)) {
+      return "border-gray-700 bg-gradient-to-r from-[hsl(213_48%_15%)] to-[hsl(213_48%_18%)] hover:from-[hsl(213_48%_17%)] hover:to-[hsl(213_48%_20%)]";
+    }
+    
+    // Se foi passado um rowClassName customizado, usar ele
+    if (rowClassName) {
+      return rowClassName;
+    }
+    
+    // Estilo padrão alternado
+    return index % 2 === 0 
+      ? "border-gray-700 bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
+      : "border-gray-700 bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]";
+  };
+
   return (
     <>
       <MobileTable
@@ -504,7 +550,7 @@ export function EstoqueTable({
           setSelectedProductForDetails(product);
           setDetailsModalOpen(true);
         }}
-        rowClassName={rowClassName}
+        getRowClassName={getRowClassName}
       />
 
       {/* Movement Modal */}
