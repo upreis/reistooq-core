@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const STORAGE_KEY = 'reistoq_local_estoque_ativo';
 
