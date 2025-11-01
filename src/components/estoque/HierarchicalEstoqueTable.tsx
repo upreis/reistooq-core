@@ -46,6 +46,71 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
     setExpandedGroups(newExpanded);
   };
 
+  // 🚀 OTIMIZAÇÃO: Memoizar produtos organizados - FORA do if para respeitar regras dos hooks
+  const { organizedProducts, parentAggregatedData } = useMemo(() => {
+    if (showHierarchy) {
+      // Se está em modo hierárquico, retornar vazios (não será usado)
+      return { organizedProducts: [], parentAggregatedData: new Map() };
+    }
+
+    const organized: Product[] = [];
+    const processedSkus = new Set<string>();
+    const aggregatedData = new Map<string, { custoTotal: number; vendaTotal: number }>();
+    
+    // Primeiro, adicionar todos os produtos PAI
+    groups.forEach(group => {
+      if (group.parentProduct?.eh_produto_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
+        if (group.children.length > 0) {
+          const avgPrecoCusto = group.children.reduce((sum, child) => sum + (child.preco_custo || 0), 0) / group.children.length;
+          const avgPrecoVenda = group.children.reduce((sum, child) => sum + (child.preco_venda || 0), 0) / group.children.length;
+          const valorTotalCusto = avgPrecoCusto * group.totalStock;
+          const valorTotalVenda = avgPrecoVenda * group.totalStock;
+          
+          aggregatedData.set(group.parentProduct.sku_interno, {
+            custoTotal: valorTotalCusto,
+            vendaTotal: valorTotalVenda
+          });
+          
+          const parentProductWithTotal = {
+            ...group.parentProduct,
+            quantidade_atual: group.totalStock
+          };
+          
+          organized.push(parentProductWithTotal);
+        } else {
+          organized.push(group.parentProduct);
+        }
+        
+        processedSkus.add(group.parentProduct.sku_interno);
+        
+        group.children.forEach(child => {
+          if (!processedSkus.has(child.sku_interno)) {
+            organized.push(child);
+            processedSkus.add(child.sku_interno);
+          }
+        });
+      }
+    });
+    
+    // Produtos independentes
+    groups.forEach(group => {
+      if (group.parentProduct && !group.parentProduct.eh_produto_pai && !group.parentProduct.sku_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
+        organized.push(group.parentProduct);
+        processedSkus.add(group.parentProduct.sku_interno);
+      }
+    });
+    
+    // Produtos órfãos
+    groups.forEach(group => {
+      if (group.parentProduct && !processedSkus.has(group.parentProduct.sku_interno)) {
+        organized.push(group.parentProduct);
+        processedSkus.add(group.parentProduct.sku_interno);
+      }
+    });
+    
+    return { organizedProducts: organized, parentAggregatedData: aggregatedData };
+  }, [groups, showHierarchy]);
+
   const expandAll = () => {
     setExpandedGroups(new Set(groups.map(g => g.parentSku)));
   };
@@ -61,70 +126,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
     return { variant: "default" as const, label: "Normal" };
   };
 
+  // 🎯 Modo tabela tradicional
   if (!showHierarchy) {
-    // 🚀 OTIMIZAÇÃO: Memoizar produtos organizados e dados agregados
-    const { organizedProducts, parentAggregatedData } = useMemo(() => {
-      const organized: Product[] = [];
-      const processedSkus = new Set<string>();
-      const aggregatedData = new Map<string, { custoTotal: number; vendaTotal: number }>();
-      
-      // Primeiro, adicionar todos os produtos PAI
-      groups.forEach(group => {
-        if (group.parentProduct?.eh_produto_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
-          // Calcular totais para o produto PAI baseado nos filhos
-          if (group.children.length > 0) {
-            const avgPrecoCusto = group.children.reduce((sum, child) => sum + (child.preco_custo || 0), 0) / group.children.length;
-            const avgPrecoVenda = group.children.reduce((sum, child) => sum + (child.preco_venda || 0), 0) / group.children.length;
-            const valorTotalCusto = avgPrecoCusto * group.totalStock;
-            const valorTotalVenda = avgPrecoVenda * group.totalStock;
-            
-            aggregatedData.set(group.parentProduct.sku_interno, {
-              custoTotal: valorTotalCusto,
-              vendaTotal: valorTotalVenda
-            });
-            
-            // Criar uma cópia do produto PAI com a quantidade atualizada
-            const parentProductWithTotal = {
-              ...group.parentProduct,
-              quantidade_atual: group.totalStock
-            };
-            
-            organized.push(parentProductWithTotal);
-          } else {
-            organized.push(group.parentProduct);
-          }
-          
-          processedSkus.add(group.parentProduct.sku_interno);
-          
-          // Logo após o PAI, adicionar seus filhos
-          group.children.forEach(child => {
-            if (!processedSkus.has(child.sku_interno)) {
-              organized.push(child);
-              processedSkus.add(child.sku_interno);
-            }
-          });
-        }
-      });
-      
-      // Depois, adicionar produtos independentes (não são PAI nem têm PAI)
-      groups.forEach(group => {
-        if (group.parentProduct && !group.parentProduct.eh_produto_pai && !group.parentProduct.sku_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
-          organized.push(group.parentProduct);
-          processedSkus.add(group.parentProduct.sku_interno);
-        }
-      });
-      
-      // Por fim, adicionar produtos órfãos (têm sku_pai mas o pai não existe)
-      groups.forEach(group => {
-        if (group.parentProduct && !processedSkus.has(group.parentProduct.sku_interno)) {
-          organized.push(group.parentProduct);
-          processedSkus.add(group.parentProduct.sku_interno);
-        }
-      });
-      
-      return { organizedProducts: organized, parentAggregatedData: aggregatedData };
-    }, [groups]);
-    
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -149,6 +152,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
       </div>
     );
   }
+
+  // 🎯 Modo hierárquico
 
   return (
     <div className="space-y-4">
