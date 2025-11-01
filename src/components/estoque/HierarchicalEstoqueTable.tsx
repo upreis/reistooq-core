@@ -211,20 +211,21 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         
                         {/* Badge identificador: SKU Pai, SKU Filho ou SKU Órfão */}
                         {(() => {
+                          const hasParentSku = !!group.parentProduct?.sku_pai;
+                          const parentExists = hasParentSku && props.products.some(p => p.sku_interno === group.parentProduct?.sku_pai);
                           const isOrphanChild = group.parentSku.split('-').length > 2 && 
-                                               !group.parentProduct?.sku_pai && 
                                                !group.parentProduct?.eh_produto_pai;
                           
-                          if (group.parentProduct?.sku_pai) {
-                            return (
-                              <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
-                                SKU Filho
-                              </Badge>
-                            );
-                          } else if (group.parentProduct?.eh_produto_pai) {
+                          if (group.parentProduct?.eh_produto_pai) {
                             return (
                               <Badge variant="default" className="text-xs bg-primary/20 text-primary">
                                 SKU Pai
+                              </Badge>
+                            );
+                          } else if (hasParentSku && parentExists) {
+                            return (
+                              <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
+                                SKU Filho
                               </Badge>
                             );
                           } else if (isOrphanChild) {
