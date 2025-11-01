@@ -91,9 +91,18 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
             custoTotal: valorTotalCusto,
             vendaTotal: valorTotalVenda
           });
+          
+          // Criar uma cópia do produto PAI com a quantidade atualizada
+          const parentProductWithTotal = {
+            ...group.parentProduct,
+            quantidade_atual: group.totalStock
+          };
+          
+          organizedProducts.push(parentProductWithTotal);
+        } else {
+          organizedProducts.push(group.parentProduct);
         }
         
-        organizedProducts.push(group.parentProduct);
         processedSkus.add(group.parentProduct.sku_interno);
         
         // Logo após o PAI, adicionar seus filhos
