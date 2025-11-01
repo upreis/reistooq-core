@@ -171,28 +171,62 @@ export function EstoqueTable({
         const isParent = parentSkus?.has(product.sku_interno);
         const isChild = product.sku_pai;
         
+        // Verificar se é órfão
+        const hasParentSku = !!product.sku_pai;
+        const isChildFormat = product.sku_interno.split('-').length > 2;
+        const isOrphan = hasParentSku && isChild && !isParent;
+        
+        // Obter status do estoque
+        const stockStatus = getStockStatus(product);
+        
         return (
-          <div className="flex items-center gap-2">
-            {isParent && (
-              <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">
-                  PAI
-                </Badge>
-                <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-              </div>
-            )}
-            {isChild && (
-              <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-300 border-blue-500/20">
-                  FILHO
-                </Badge>
-                <div className="flex items-center gap-0.5">
-                  <div className="w-3 h-[1px] bg-blue-500/50" />
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              {isParent && (
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">
+                    PAI
+                  </Badge>
+                  <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
                 </div>
-              </div>
-            )}
-            <div className="font-mono text-[11px] font-semibold">{value}</div>
+              )}
+              {isChild && (
+                <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-300 border-blue-500/20">
+                    FILHO
+                  </Badge>
+                  <div className="flex items-center gap-0.5">
+                    <div className="w-3 h-[1px] bg-blue-500/50" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+                  </div>
+                </div>
+              )}
+              <div className="font-mono text-[11px] font-semibold">{value}</div>
+            </div>
+            
+            {/* Avisos abaixo do SKU */}
+            <div className="flex flex-wrap gap-1 ml-0">
+              {isOrphan && (
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
+                  ⚠️ Órfão
+                </Badge>
+              )}
+              {product.quantidade_atual === 0 && (
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 border-red-500/30">
+                  Sem estoque
+                </Badge>
+              )}
+              {product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                  Estoque baixo
+                </Badge>
+              )}
+              {product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5 && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                  Crítico
+                </Badge>
+              )}
+            </div>
           </div>
         );
       }
