@@ -268,13 +268,33 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     </div>
                     
                     {/* Mostrar estoque APENAS se tiver filhos (agrupador) */}
-                    {hasChildren && (
-                      <div className="text-right">
-                        <div className="text-sm font-semibold">
-                          Estoque Total: {group.totalStock}
+                    {hasChildren && (() => {
+                      // Calcular preços médios dos filhos
+                      const avgPrecoCusto = group.children.length > 0
+                        ? group.children.reduce((sum, child) => sum + (child.preco_custo || 0), 0) / group.children.length
+                        : 0;
+                      const avgPrecoVenda = group.children.length > 0
+                        ? group.children.reduce((sum, child) => sum + (child.preco_venda || 0), 0) / group.children.length
+                        : 0;
+                      
+                      // Calcular valores totais
+                      const valorTotalCusto = avgPrecoCusto * group.totalStock;
+                      const valorTotalVenda = avgPrecoVenda * group.totalStock;
+                      
+                      return (
+                        <div className="text-right space-y-1">
+                          <div className="text-sm font-semibold">
+                            Estoque Total: {group.totalStock}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Custo Total: R$ {valorTotalCusto.toFixed(2)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Venda Total: R$ {valorTotalVenda.toFixed(2)}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 </div>
 
