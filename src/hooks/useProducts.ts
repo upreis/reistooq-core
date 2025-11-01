@@ -88,7 +88,8 @@ export const useProducts = () => {
     ativo?: boolean | 'all';
     local_id?: string;
   }) => {
-    console.log('🔍 Buscando produtos no banco...', filters);
+    console.log('🔍 Buscando produtos no banco... Filtros:', filters);
+    console.log('🏢 Local ID recebido:', filters?.local_id);
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
@@ -104,6 +105,8 @@ export const useProducts = () => {
 
       // Aplicar filtros nos produtos relacionados
       const { data: estoqueData, error } = await query;
+      
+      console.log('📦 Dados brutos de estoque_por_local:', estoqueData?.slice(0, 3));
       
       if (error) {
         console.error('Error fetching products from estoque_por_local:', error);
@@ -144,7 +147,11 @@ export const useProducts = () => {
           return true;
         });
 
-      console.log(`✅ Produtos encontrados no local: ${productsWithLocalStock.length}`);
+      console.log(`✅ Produtos encontrados no local ${filters.local_id}: ${productsWithLocalStock.length}`);
+      console.log('📊 Primeiros 3 produtos com estoque:', productsWithLocalStock.slice(0, 3).map(p => ({ 
+        sku: p.sku_interno, 
+        quantidade: p.quantidade_atual 
+      })));
       return productsWithLocalStock;
     }
 

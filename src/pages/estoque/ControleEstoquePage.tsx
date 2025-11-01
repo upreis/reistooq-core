@@ -104,7 +104,12 @@ export default function ControleEstoquePage() {
       }
       // Se for "all" ou outros status, não filtra por ativo (undefined)
       
-      console.log('🔍 Carregando produtos com filtro ativo:', ativoFilter);
+      console.log('🔍 Carregando produtos com filtros:', { 
+        categoria: selectedCategory, 
+        ativo: ativoFilter,
+        local_id: localAtivo?.id,
+        local_nome: localAtivo?.nome
+      });
       
       // Buscar produtos do banco com filtro de local ativo
       const allProducts = await getProducts({
