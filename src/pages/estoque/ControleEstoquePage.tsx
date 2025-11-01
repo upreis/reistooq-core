@@ -597,8 +597,11 @@ export default function ControleEstoquePage() {
     <div className="space-y-6">
       {/* Seletor de Local de Estoque - Apenas nesta página */}
       <div className="flex items-center justify-between gap-4 pb-4 border-b">
-        <LocalEstoqueSelector />
-        <GerenciarLocaisModal onSuccess={loadProducts} />
+        <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+        <GerenciarLocaisModal onSuccess={() => {
+          // Force LocalEstoqueSelector to reload by remounting
+          loadProducts();
+        }} />
       </div>
 
       {/* Notificações do Estoque */}

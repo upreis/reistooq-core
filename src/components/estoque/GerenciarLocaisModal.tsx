@@ -111,6 +111,9 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
         description: `${nome} foi criado com ${produtos?.length || 0} produtos (quantidades zeradas).`
       });
 
+      // Disparar evento para recarregar lista de locais
+      window.dispatchEvent(new Event('reload-locais-estoque'));
+
       setOpen(false);
       onSuccess?.();
     } catch (error) {

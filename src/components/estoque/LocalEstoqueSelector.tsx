@@ -59,6 +59,17 @@ export function LocalEstoqueSelector() {
     carregarLocais();
   }, []);
 
+  // Escutar evento global para recarregar locais
+  useEffect(() => {
+    const handleReload = () => {
+      console.log('🔄 Recarregando locais...');
+      carregarLocais();
+    };
+    
+    window.addEventListener('reload-locais-estoque', handleReload);
+    return () => window.removeEventListener('reload-locais-estoque', handleReload);
+  }, []);
+
   const handleLocalChange = (localId: string) => {
     const local = locais.find(l => l.id === localId);
     if (local) {
