@@ -18,6 +18,11 @@ const EstoqueContent = () => {
     </div>
   );
 
+  const handleLocalSuccess = () => {
+    // Forçar recarga da página para atualizar os locais
+    window.location.reload();
+  };
+
   return (
     <MobileAppShell 
       title="Gestão de Estoque" 
@@ -26,7 +31,7 @@ const EstoqueContent = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4 pb-4 border-b">
           <LocalEstoqueSelector />
-          <GerenciarLocaisModal />
+          <GerenciarLocaisModal onSuccess={handleLocalSuccess} />
         </div>
 
         <EstoqueNav />
