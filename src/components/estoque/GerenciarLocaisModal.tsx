@@ -144,6 +144,9 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
             <MapPin className="h-5 w-5" />
             Criar Novo Local de Estoque
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Crie um novo local de estoque com produtos iniciando em quantidade zero
+          </p>
         </DialogHeader>
         
         <div className="space-y-4 py-4">

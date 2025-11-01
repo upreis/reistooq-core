@@ -74,11 +74,17 @@ export function useEstoqueSettings() {
 
   const saveSettings = (newConfig: EstoqueSettingsConfig) => {
     try {
-      localStorage.setItem('estoque_settings', JSON.stringify(newConfig));
+      const serialized = JSON.stringify(newConfig);
+      localStorage.setItem('estoque_settings', serialized);
       setConfig(newConfig);
       return true;
     } catch (error) {
       console.error('Error saving estoque settings:', error);
+      // Se falhar por quota exceeded ou outro erro, manter config em memória
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        console.warn('LocalStorage quota exceeded, usando apenas memória');
+      }
+      setConfig(newConfig); // Manter em memória mesmo se não salvar
       return false;
     }
   };

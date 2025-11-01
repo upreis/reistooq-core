@@ -117,7 +117,7 @@ export const useProducts = () => {
       const productsWithLocalStock = (estoqueData || [])
         .filter(item => item.produtos) // Filtrar itens sem produto
         .map(item => {
-          const produto = item.produtos as any;
+          const produto = item.produtos as unknown as Product;
           return {
             ...produto,
             quantidade_atual: item.quantidade // Substituir quantidade pelo estoque do local
