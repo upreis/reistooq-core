@@ -29,12 +29,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Upload, X, Package as PackageIcon, Ruler, Weight, FileText } from "lucide-react";
+import { Upload, X, Package as PackageIcon, Ruler, Weight, FileText, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
 import { supabase } from "@/integrations/supabase/client";
 import { useCatalogCategories } from "@/features/products/hooks/useCatalogCategories";
+import { calculateParentProductData, isParentProduct } from "@/utils/parentProductCalculations";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const productSchema = z.object({
   sku_interno: z.string().min(1, "SKU interno é obrigatório"),
@@ -86,10 +88,47 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
   const [ajusteModalOpen, setAjusteModalOpen] = useState(false);
   const [pendingFormData, setPendingFormData] = useState<ProductFormData | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isParent, setIsParent] = useState(false);
   const { toast } = useToast();
-  const { createProduct, updateProduct } = useProducts();
+  const { createProduct, updateProduct, getProducts } = useProducts();
   const { unidades, loading: loadingUnidades, getUnidadeBasePorTipo } = useUnidadesMedida();
   const { categories, loading: catalogLoading, error: catalogError, getCategoriasPrincipais, getCategorias, refreshCategories } = useCatalogCategories();
+
+  // Carregar todos os produtos quando o modal abrir para calcular dados de produtos pai
+  useEffect(() => {
+    if (open && product) {
+      const loadAllProducts = async () => {
+        try {
+          const products = await getProducts();
+          setAllProducts(products);
+          
+          // Verificar se é produto pai
+          const isPai = isParentProduct(product, products);
+          setIsParent(isPai);
+          
+          // Se for produto pai, calcular e preencher os valores automaticamente
+          if (isPai) {
+            const calculatedData = calculateParentProductData(product.sku_interno, products);
+            form.setValue('quantidade_atual', calculatedData.quantidade_atual);
+            form.setValue('preco_custo', calculatedData.preco_custo);
+            form.setValue('preco_venda', calculatedData.preco_venda);
+            form.setValue('estoque_minimo', calculatedData.estoque_minimo);
+            form.setValue('estoque_maximo', calculatedData.estoque_maximo);
+            
+            // Se houver imagem calculada e não tiver imagem própria, usar a calculada
+            if (calculatedData.url_imagem && !product.url_imagem) {
+              setImagePreview(calculatedData.url_imagem);
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao carregar produtos:', error);
+        }
+      };
+      
+      loadAllProducts();
+    }
+  }, [open, product, getProducts]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -430,6 +469,17 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Alerta para produtos PAI */}
+            {isParent && (
+              <Alert className="bg-blue-500/10 border-blue-500/20">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription className="text-sm">
+                  <strong>Produto PAI:</strong> Os campos de preço, estoque mínimo/máximo e quantidade são calculados automaticamente a partir dos produtos filho e não podem ser editados diretamente.
+                  {allProducts && ` (${calculateParentProductData(product?.sku_interno || '', allProducts).childrenCount} filho${calculateParentProductData(product?.sku_interno || '', allProducts).childrenCount !== 1 ? 's' : ''})`}
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* SKU Interno */}
               <FormField
@@ -548,13 +598,15 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 name="quantidade_atual"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantidade Atual</FormLabel>
+                    <FormLabel>Quantidade Atual {isParent && '(Calculado - Soma)'}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="0"
                         placeholder=""
                         {...field}
+                        disabled={isParent}
+                        className={isParent ? 'bg-muted cursor-not-allowed' : ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
@@ -569,13 +621,15 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 name="estoque_minimo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estoque Mínimo</FormLabel>
+                    <FormLabel>Estoque Mínimo {isParent && '(Calculado - Média)'}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="0"
                         placeholder=""
                         {...field}
+                        disabled={isParent}
+                        className={isParent ? 'bg-muted cursor-not-allowed' : ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
@@ -590,13 +644,15 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 name="estoque_maximo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Estoque Máximo</FormLabel>
+                    <FormLabel>Estoque Máximo {isParent && '(Calculado - Média)'}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         min="0"
                         placeholder=""
                         {...field}
+                        disabled={isParent}
+                        className={isParent ? 'bg-muted cursor-not-allowed' : ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
@@ -611,7 +667,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 name="preco_custo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço de Custo</FormLabel>
+                    <FormLabel>Preço de Custo {isParent && '(Calculado - Média)'}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -619,6 +675,8 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                         step="0.01"
                         placeholder=""
                         {...field}
+                        disabled={isParent}
+                        className={isParent ? 'bg-muted cursor-not-allowed' : ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
@@ -633,7 +691,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 name="preco_venda"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preço de Venda</FormLabel>
+                    <FormLabel>Preço de Venda {isParent && '(Calculado - Média)'}</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -641,6 +699,8 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                         step="0.01"
                         placeholder=""
                         {...field}
+                        disabled={isParent}
+                        className={isParent ? 'bg-muted cursor-not-allowed' : ''}
                         onChange={(e) => field.onChange(e.target.value === "" ? "" : Number(e.target.value))}
                       />
                     </FormControl>
