@@ -1,0 +1,166 @@
+/**
+ * 🏷️ BADGES DE STATUS DE ESTOQUE
+ * Componentes de badges para produtos PAI, FILHO, ÓRFÃO e status de estoque
+ */
+
+import { Badge } from "@/components/ui/badge";
+import { Product } from "@/hooks/useProducts";
+
+export interface StockBadgeData {
+  type: string;
+  label: string;
+  className: string;
+}
+
+/**
+ * Determina o badge de status de estoque de um produto
+ */
+export const getStockBadge = (product: Product): StockBadgeData | null => {
+  // Sem estoque (prioridade máxima)
+  if (product.quantidade_atual === 0) {
+    return {
+      type: 'sem_estoque',
+      label: 'Sem estoque',
+      className: 'bg-red-500/20 text-red-400 border-red-500/30'
+    };
+  }
+  
+  // Crítico (quantidade <= estoque mínimo)
+  if (product.quantidade_atual <= product.estoque_minimo) {
+    return {
+      type: 'critico',
+      label: 'Crítico',
+      className: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+    };
+  }
+  
+  // Estoque baixo (quantidade > mínimo mas <= mínimo * 1.5)
+  if (product.quantidade_atual <= product.estoque_minimo * 1.5) {
+    return {
+      type: 'baixo',
+      label: 'Estoque baixo',
+      className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+    };
+  }
+  
+  // Estoque alto (quantidade >= máximo)
+  if (product.quantidade_atual >= product.estoque_maximo) {
+    return {
+      type: 'alto',
+      label: 'Estoque alto',
+      className: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+    };
+  }
+  
+  // Normal (entre mínimo * 1.5 e máximo)
+  return {
+    type: 'normal',
+    label: 'Normal',
+    className: 'bg-green-500/20 text-green-400 border-green-500/30'
+  };
+};
+
+interface ProductTypeBadgesProps {
+  isParent: boolean;
+  isChild: boolean;
+}
+
+/**
+ * Badges de tipo de produto (PAI/FILHO)
+ */
+export function ProductTypeBadges({ isParent, isChild }: ProductTypeBadgesProps) {
+  if (isParent) {
+    return (
+      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">
+          PAI
+        </Badge>
+        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+      </div>
+    );
+  }
+  
+  if (isChild) {
+    return (
+      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-300 border-blue-500/20">
+          FILHO
+        </Badge>
+        <div className="flex items-center gap-0.5">
+          <div className="w-3 h-[1px] bg-blue-500/50" />
+          <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+        </div>
+      </div>
+    );
+  }
+  
+  return null;
+}
+
+interface StatusBadgesProps {
+  product: Product;
+  isParent: boolean;
+  isOrphan: boolean;
+}
+
+/**
+ * Badges de status (Órfão, Status de Estoque)
+ */
+export function StatusBadges({ product, isParent, isOrphan }: StatusBadgesProps) {
+  const stockBadge = !isParent ? getStockBadge(product) : null;
+  
+  return (
+    <div className="flex flex-wrap gap-1 ml-0">
+      {isOrphan && (
+        <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
+          ⚠️ Órfão
+        </Badge>
+      )}
+      
+      {stockBadge && (
+        <Badge 
+          variant="outline" 
+          className={`text-[9px] px-1.5 py-0.5 ${stockBadge.className}`}
+        >
+          {stockBadge.label}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
+interface ActiveStatusBadgeProps {
+  isActive: boolean;
+}
+
+/**
+ * Badge de status ativo/inativo
+ */
+export function ActiveStatusBadge({ isActive }: ActiveStatusBadgeProps) {
+  return (
+    <Badge 
+      variant={isActive ? "default" : "secondary"} 
+      className="text-[10px] px-2 py-0.5"
+    >
+      {isActive ? "Ativo" : "Inativo"}
+    </Badge>
+  );
+}
+
+interface OnDemandBadgeProps {
+  isOnDemand: boolean;
+}
+
+/**
+ * Badge de sob encomenda
+ */
+export function OnDemandBadge({ isOnDemand }: OnDemandBadgeProps) {
+  return (
+    <Badge 
+      variant={isOnDemand ? "default" : "outline"} 
+      className="text-[10px] px-2 py-0.5"
+    >
+      {isOnDemand ? "Sim" : "Não"}
+    </Badge>
+  );
+}
