@@ -172,9 +172,10 @@ export function EstoqueTable({
         const isChild = product.sku_pai;
         
         // Verificar se é órfão - só é órfão se tem sku_pai MAS o pai não existe
+        // E só verificamos isso se parentSkus foi fornecido (modo tabela)
         const hasParentSku = !!product.sku_pai;
-        const parentExists = hasParentSku && parentSkus?.has(product.sku_pai);
-        const isOrphan = hasParentSku && !parentExists;
+        const parentExists = hasParentSku && parentSkus ? parentSkus.has(product.sku_pai) : true;
+        const isOrphan = parentSkus && hasParentSku && !parentExists;
         
         return (
           <div className="flex flex-col gap-1.5">
