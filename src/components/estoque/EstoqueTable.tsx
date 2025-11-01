@@ -542,9 +542,9 @@ export function EstoqueTable({
 
   // Função para determinar o estilo da linha baseado no produto
   const getRowClassName = (product: Product, index: number) => {
-    // Se é um produto PAI, aplicar gradiente especial
+    // Se é um produto PAI, aplicar cor de seleção permanente (dourado/amarelo)
     if (parentSkus?.has(product.sku_interno)) {
-      return "border-gray-700 bg-gradient-to-r from-[hsl(213_48%_15%)] to-[hsl(213_48%_18%)] hover:from-[hsl(213_48%_17%)] hover:to-[hsl(213_48%_20%)]";
+      return "border-yellow-700/50 bg-yellow-900/20 hover:bg-yellow-900/30";
     }
     
     // Se foi passado um rowClassName customizado, usar ele
