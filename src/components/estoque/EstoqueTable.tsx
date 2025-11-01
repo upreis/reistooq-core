@@ -202,44 +202,39 @@ export function EstoqueTable({
               <div className="font-mono text-[11px] font-semibold">{value}</div>
             </div>
             
-            {/* Avisos abaixo do SKU - só mostrar se aplicável */}
-            {(isOrphan || product.quantidade_atual === 0 || 
-              (product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo) ||
-              (product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5) ||
-              (product.quantidade_atual > product.estoque_minimo * 1.5 && product.quantidade_atual < product.estoque_maximo)) && (
-              <div className="flex flex-wrap gap-1 ml-0">
-                {isOrphan && (
-                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
-                    ⚠️ Órfão
-                  </Badge>
-                )}
-                {product.quantidade_atual === 0 && (
-                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 border-red-500/30">
-                    Sem estoque
-                  </Badge>
-                )}
-                {product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo && (
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                    Estoque baixo
-                  </Badge>
-                )}
-                {product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5 && (
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30">
-                    Crítico
-                  </Badge>
-                )}
-                {product.quantidade_atual > product.estoque_minimo * 1.5 && product.quantidade_atual < product.estoque_maximo && (
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 border-green-500/30">
-                    Normal
-                  </Badge>
-                )}
-                {product.quantidade_atual >= product.estoque_maximo && (
-                  <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 border-blue-500/30">
-                    Estoque alto
-                  </Badge>
-                )}
-              </div>
-            )}
+            {/* Avisos abaixo do SKU */}
+            <div className="flex flex-wrap gap-1 ml-0">
+              {isOrphan && (
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
+                  ⚠️ Órfão
+                </Badge>
+              )}
+              {product.quantidade_atual === 0 && (
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 border-red-500/30">
+                  Sem estoque
+                </Badge>
+              )}
+              {product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                  Estoque baixo
+                </Badge>
+              )}
+              {product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5 && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                  Crítico
+                </Badge>
+              )}
+              {product.quantidade_atual > product.estoque_minimo * 1.5 && product.quantidade_atual < product.estoque_maximo && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 border-green-500/30">
+                  Normal
+                </Badge>
+              )}
+              {product.quantidade_atual >= product.estoque_maximo && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 border-blue-500/30">
+                  Estoque alto
+                </Badge>
+              )}
+            </div>
           </div>
         );
       }
