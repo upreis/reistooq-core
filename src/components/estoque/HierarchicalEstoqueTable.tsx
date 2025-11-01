@@ -222,7 +222,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 open={isExpanded}
                 onOpenChange={() => hasChildren && toggleGroup(group.parentSku)}
               >
-                <div className={`flex items-center p-4 ${parentRowClass}`}>
+                <div className={`flex items-center p-2.5 ${parentRowClass}`}>
                   {/* Checkbox de seleção do produto pai - APENAS SE NÃO TIVER FILHOS */}
                   {group.parentProduct && !hasChildren && (
                     <div className="mr-3" onClick={(e) => e.stopPropagation()}>
