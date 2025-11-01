@@ -12,6 +12,7 @@ interface MobileTableColumn {
   primary?: boolean; // Show in card header
   render?: (value: any, item: any) => React.ReactNode;
   sortable?: boolean;
+  width?: string; // Adicionado: suporte para largura customizada
 }
 
 interface MobileTableAction {
@@ -86,10 +87,15 @@ export default function MobileTable({
   if (!isMobile) {
     // Definir larguras específicas para cada tipo de coluna
     const getColumnWidth = (column: MobileTableColumn) => {
+      // Se a coluna tem uma largura definida nas props, usar ela
+      if ((column as any).width) {
+        return (column as any).width;
+      }
+      
       switch (column.key) {
         case 'nome': return '200px';
         case 'codigo_barras': return '110px';
-        case 'sku_interno': return '90px';
+        case 'sku_interno': return '380px';
         case 'categoria_principal': return '130px';
         case 'categoria_nivel2': return '110px';
         case 'subcategoria': return '110px';
