@@ -78,12 +78,22 @@ export function useEstoqueActions(products: Product[], loadProducts: () => void)
           e.includes('COMPONENTE_EM_USO') || e.includes('composições')
         );
         
+        const isPurchaseOrderError = erros.some(e => 
+          e.includes('pedidos_compra_itens') || e.includes('pedidos_compra')
+        );
+        
         if (isComponentInUseError) {
           setDeleteErrors({
             failedProducts: failedProductNames.split(', '),
             errorMessage: erros[0]
           });
           setDeleteConfirmOpen(true);
+        } else if (isPurchaseOrderError) {
+          toast({
+            title: "Produto vinculado a pedidos de compra",
+            description: `Não é possível excluir ${failedProductNames}. Este(s) produto(s) está(ão) vinculado(s) a pedidos de compra existentes. Remova as referências antes de excluir.`,
+            variant: "destructive",
+          });
         } else {
           toast({
             title: "Exclusão parcial",
@@ -130,11 +140,24 @@ export function useEstoqueActions(products: Product[], loadProducts: () => void)
       }, 300);
     } catch (error) {
       console.error('❌ Erro ao excluir produto:', error);
-      toast({
-        title: "Erro ao excluir",
-        description: error instanceof Error ? error.message : "Não foi possível excluir o produto.",
-        variant: "destructive",
-      });
+      
+      const errorMessage = error instanceof Error ? error.message : '';
+      const isPurchaseOrderError = errorMessage.includes('pedidos_compra_itens') || 
+                                    errorMessage.includes('pedidos_compra');
+      
+      if (isPurchaseOrderError) {
+        toast({
+          title: "Produto vinculado a pedidos de compra",
+          description: "Não é possível excluir este produto. Ele está vinculado a pedidos de compra existentes. Remova as referências antes de excluir.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro ao excluir",
+          description: error instanceof Error ? error.message : "Não foi possível excluir o produto.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
