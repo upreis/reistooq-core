@@ -1,6 +1,5 @@
-import { useState } from 'react';
-
-const STORAGE_KEY = 'reistoq_local_estoque_ativo';
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface LocalEstoque {
   id: string;
@@ -8,25 +7,27 @@ interface LocalEstoque {
   tipo: string;
 }
 
-export function useLocalEstoqueAtivo() {
-  const [localAtivo, setLocalAtivoState] = useState<LocalEstoque | null>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  });
-
-  const setLocalAtivo = (local: LocalEstoque) => {
-    setLocalAtivoState(local);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(local));
-  };
-
-  const clearLocal = () => {
-    setLocalAtivoState(null);
-    localStorage.removeItem(STORAGE_KEY);
-  };
-
-  return {
-    localAtivo,
-    setLocalAtivo,
-    clearLocal
-  };
+interface LocalEstoqueStore {
+  localAtivo: LocalEstoque | null;
+  setLocalAtivo: (local: LocalEstoque) => void;
+  clearLocal: () => void;
 }
+
+export const useLocalEstoqueAtivo = create<LocalEstoqueStore>()(
+  persist(
+    (set) => ({
+      localAtivo: null,
+      setLocalAtivo: (local) => {
+        console.log('🏢 [Zustand] Definindo local ativo:', local.nome, local.id);
+        set({ localAtivo: local });
+      },
+      clearLocal: () => {
+        console.log('🏢 [Zustand] Limpando local ativo');
+        set({ localAtivo: null });
+      },
+    }),
+    {
+      name: 'reistoq_local_estoque_ativo',
+    }
+  )
+);

@@ -93,7 +93,14 @@ export default function ControleEstoquePage() {
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
 
   const loadProducts = useCallback(async () => {
-    console.log('🔄 loadProducts chamado. Local ativo:', localAtivo);
+    if (!localAtivo?.id) {
+      console.log('⚠️ Nenhum local ativo selecionado');
+      setProducts([]);
+      setLoading(false);
+      return;
+    }
+
+    console.log('🔄 loadProducts chamado. Local ativo:', localAtivo.nome, localAtivo.id);
     try {
       setLoading(true);
       
@@ -105,34 +112,35 @@ export default function ControleEstoquePage() {
       } else if (selectedStatus === "inactive_only") {
         ativoFilter = false;
       }
-      // Se for "all" ou outros status, não filtra por ativo (undefined)
       
       console.log('🔍 Carregando produtos com filtros:', { 
         categoria: selectedCategory, 
         ativo: ativoFilter,
-        local_id: localAtivo?.id,
-        local_nome: localAtivo?.nome
+        local_id: localAtivo.id,
+        local_nome: localAtivo.nome
       });
       
       // Buscar produtos do banco com filtro de local ativo
       const allProducts = await getProducts({
         categoria: selectedCategory === "all" ? undefined : selectedCategory,
         ativo: ativoFilter,
-        local_id: localAtivo?.id
+        local_id: localAtivo.id
       });
 
-      console.log(`✅ Produtos carregados: ${allProducts.length}`);
+      console.log(`✅ Produtos carregados para ${localAtivo.nome}: ${allProducts.length}`);
       setProducts(allProducts);
     } catch (error) {
+      console.error('❌ Erro ao carregar produtos:', error);
       toast({
         title: "Erro ao carregar produtos",
         description: "Não foi possível carregar o estoque.",
         variant: "destructive",
       });
+      setProducts([]);
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedStatus, localAtivo?.id, getProducts, toast]);
+  }, [selectedCategory, selectedStatus, localAtivo?.id, localAtivo?.nome, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
@@ -147,14 +155,6 @@ export default function ControleEstoquePage() {
     loadProducts();
     loadCategories();
   }, [loadProducts, loadCategories]);
-
-  // Efeito específico para recarregar quando o local muda
-  useEffect(() => {
-    if (localAtivo?.id) {
-      console.log('🔄 Local mudou, recarregando produtos para:', localAtivo.nome, localAtivo.id);
-      loadProducts();
-    }
-  }, [localAtivo?.id]);
 
   const handleSearch = () => {
     setCurrentPage(1);
