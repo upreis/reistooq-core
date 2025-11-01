@@ -5,6 +5,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/hooks/useProducts";
+import { Package, Layers, AlertTriangle } from "lucide-react";
 
 export interface StockBadgeData {
   type: string;
@@ -66,29 +67,35 @@ interface ProductTypeBadgesProps {
 }
 
 /**
- * Badges de tipo de produto (PAI/FILHO)
+ * Badges de tipo de produto (PAI/FILHO) com indentação visual
  */
 export function ProductTypeBadges({ isParent, isChild }: ProductTypeBadgesProps) {
   if (isParent) {
     return (
-      <div className="flex flex-col items-center gap-1 flex-shrink-0">
-        <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/10 text-blue-400 border-blue-500/30">
-          PAI
-        </Badge>
-        <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="w-1 h-8 bg-primary rounded-full flex-shrink-0" />
+        <div className="flex items-center gap-1.5">
+          <Package className="w-3.5 h-3.5 text-primary" />
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 font-semibold">
+            PAI
+          </Badge>
+        </div>
       </div>
     );
   }
   
   if (isChild) {
     return (
-      <div className="flex flex-col items-center gap-1 flex-shrink-0">
-        <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-300 border-blue-500/20">
-          FILHO
-        </Badge>
-        <div className="flex items-center gap-0.5">
-          <div className="w-3 h-[1px] bg-blue-500/50" />
-          <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+      <div className="flex items-center gap-2 flex-shrink-0 ml-6">
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-[2px] bg-blue-500/50" />
+          <div className="w-1 h-6 bg-blue-500/70 rounded-full flex-shrink-0" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Layers className="w-3 h-3 text-blue-400" />
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 bg-blue-500/5 text-blue-300 border-blue-500/20">
+            FILHO
+          </Badge>
         </div>
       </div>
     );
@@ -112,9 +119,12 @@ export function StatusBadges({ product, isParent, isOrphan }: StatusBadgesProps)
   return (
     <div className="flex flex-wrap gap-1 ml-0">
       {isOrphan && (
-        <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
-          ⚠️ Órfão
-        </Badge>
+        <div className="flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3 text-orange-400" />
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30 font-semibold">
+            ⚠️ Órfão
+          </Badge>
+        </div>
       )}
       
       {stockBadge && (

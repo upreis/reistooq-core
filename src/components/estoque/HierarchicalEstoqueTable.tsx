@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box } from "lucide-react";
-import { ChevronRight, ChevronDown, Package, Users } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle } from "lucide-react";
+import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -199,8 +199,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           const hasChildren = group.children.length > 0;
           const status = getGroupStatus(group);
           
-          // Linha do produto pai sempre com gradiente/destaque
-          const parentRowClass = "bg-gradient-to-r from-[hsl(213_48%_15%)] to-[hsl(213_48%_18%)] hover:from-[hsl(213_48%_17%)] hover:to-[hsl(213_48%_20%)]";
+          // 🎨 Linha do produto pai - destaque com gradiente e borda
+          const parentRowClass = "border-l-4 border-l-primary bg-gradient-to-r from-primary/10 to-primary/5 hover:from-primary/15 hover:to-primary/10";
 
           return (
             <div key={group.parentSku} className="border-2 border-gray-700 rounded-lg bg-muted/30">
@@ -279,7 +279,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           {group.parentSku}
                         </span>
                         
-                        {/* Badge identificador: SKU Pai, SKU Filho ou SKU Órfão */}
+                        {/* Badge identificador com ícones visuais */}
                         {(() => {
                           const hasParentSku = !!group.parentProduct?.sku_pai;
                           const parentExists = hasParentSku && props.products.some(p => p.sku_interno === group.parentProduct?.sku_pai);
@@ -288,31 +288,40 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           
                           if (isPai) {
                             return (
-                              <Badge variant="default" className="text-xs bg-primary/20 text-primary">
-                                SKU Pai
-                              </Badge>
+                              <div className="flex items-center gap-1.5">
+                                <Package className="w-4 h-4 text-primary" />
+                                <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                                  SKU Pai
+                                </Badge>
+                              </div>
                             );
                           } else if (isChildFormat) {
-                            // Se tem formato de filho, sempre mostra a tag Filho
                             const hasValidParent = hasParentSku && parentExists;
                             
                             if (hasValidParent) {
-                              // Filho com pai válido
                               return (
-                                <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
-                                  SKU Filho
-                                </Badge>
-                              );
-                            } else {
-                              // Filho órfão - mostra ambas as tags
-                              return (
-                                <div className="flex gap-1">
+                                <div className="flex items-center gap-1.5">
+                                  <Layers className="w-4 h-4 text-blue-400" />
                                   <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
                                     SKU Filho
                                   </Badge>
-                                  <Badge variant="warning" className="text-xs">
-                                    ⚠️ Órfão
-                                  </Badge>
+                                </div>
+                              );
+                            } else {
+                              return (
+                                <div className="flex gap-1.5">
+                                  <div className="flex items-center gap-1">
+                                    <Layers className="w-4 h-4 text-blue-400" />
+                                    <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
+                                      SKU Filho
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <AlertTriangle className="w-4 h-4 text-orange-400" />
+                                    <Badge variant="outline" className="text-xs bg-orange-500/20 text-orange-400 border-orange-500/30">
+                                      ⚠️ Órfão
+                                    </Badge>
+                                  </div>
                                 </div>
                               );
                             }
@@ -368,19 +377,20 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   </div>
                 </div>
 
-                {/* SKUs Filhos - NÃO incluir o produto pai na lista */}
+                {/* SKUs Filhos - com indentação visual clara */}
                 {hasChildren && (
                   <CollapsibleContent>
-                    <div className="border-t bg-muted/20">
-                      <div className="p-2">
-                        <div className="text-xs text-muted-foreground mb-2 pl-6">
-                          Variações do {group.parentSku}:
+                    <div className="border-t border-l-4 border-l-blue-500/50 bg-blue-500/5">
+                      <div className="p-2 pl-8">
+                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                          <Layers className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Variações do {group.parentSku}:</span>
                         </div>
-                        <div className="pl-6">
+                        <div className="ml-4 border-l-2 border-blue-500/30 pl-4">
                           <EstoqueTable
                             {...props}
                             products={group.children}
-                            rowClassName="!bg-primary/10 !border-primary/20"
+                            rowClassName="!border-l-4 !border-l-blue-500 !bg-blue-500/10 hover:!bg-blue-500/15"
                             parentSkus={parentSkusSet}
                           />
                         </div>

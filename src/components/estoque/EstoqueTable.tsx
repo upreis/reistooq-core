@@ -112,11 +112,21 @@ export function EstoqueTable({
     );
   }
 
-  // Função para determinar o estilo da linha baseado no produto
+  // 🎨 Função para determinar o estilo da linha baseado no produto
   const getRowClassName = (product: Product, index: number) => {
-    // Se é um produto PAI, aplicar cor de seleção permanente (dourado/amarelo)
+    // Produto PAI - destaque dourado com borda esquerda forte
     if (parentSkus?.has(product.sku_interno)) {
-      return "border-yellow-700/50 bg-yellow-900/20 hover:bg-yellow-900/30";
+      return "border-l-4 border-l-primary bg-primary/5 hover:bg-primary/10";
+    }
+    
+    // Produto FILHO - indentação visual com borda azul
+    if (product.sku_pai && parentSkus?.has(product.sku_pai)) {
+      return "border-l-4 border-l-blue-500 bg-blue-500/5 hover:bg-blue-500/10";
+    }
+    
+    // Produto ÓRFÃO - destaque laranja de alerta
+    if (product.sku_pai && parentSkus && !parentSkus.has(product.sku_pai)) {
+      return "border-l-4 border-l-orange-500 bg-orange-500/5 hover:bg-orange-500/10";
     }
     
     // Se foi passado um rowClassName customizado, usar ele
