@@ -411,7 +411,7 @@ export const useProducts = () => {
       }
 
       console.log('✅ Produto órfão corrigido e atualizado');
-      return fallbackData as unknown as Product;
+      data = fallbackData;
     }
 
     if (error) {
@@ -423,6 +423,54 @@ export const useProducts = () => {
       }
       
       throw error;
+    }
+
+    // 🆕 Se a quantidade foi atualizada, atualizar também no estoque_por_local do local ativo
+    if (filteredUpdates.quantidade_atual !== undefined) {
+      const localAtivoAtual = localStorage.getItem('reistoq_local_estoque_ativo');
+      
+      if (localAtivoAtual) {
+        const localAtivo = JSON.parse(localAtivoAtual);
+        
+        // Verificar se já existe um registro para este produto neste local
+        const { data: existingEstoque } = await supabase
+          .from('estoque_por_local')
+          .select('id')
+          .eq('produto_id', id)
+          .eq('local_id', localAtivo.id)
+          .maybeSingle();
+
+        if (existingEstoque) {
+          // Atualizar o registro existente
+          const { error: estoqueError } = await supabase
+            .from('estoque_por_local')
+            .update({ quantidade: filteredUpdates.quantidade_atual })
+            .eq('produto_id', id)
+            .eq('local_id', localAtivo.id);
+
+          if (estoqueError) {
+            console.error('⚠️ Erro ao atualizar estoque_por_local:', estoqueError);
+          } else {
+            console.log(`✅ Estoque atualizado no local ${localAtivo.nome}: ${filteredUpdates.quantidade_atual}`);
+          }
+        } else {
+          // Criar novo registro
+          const { error: estoqueError } = await supabase
+            .from('estoque_por_local')
+            .insert({
+              produto_id: id,
+              local_id: localAtivo.id,
+              quantidade: filteredUpdates.quantidade_atual,
+              organization_id: orgId
+            });
+
+          if (estoqueError) {
+            console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
+          } else {
+            console.log(`✅ Estoque criado no local ${localAtivo.nome}: ${filteredUpdates.quantidade_atual}`);
+          }
+        }
+      }
     }
 
     return data as unknown as Product;
