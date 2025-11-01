@@ -282,7 +282,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       const valorTotalVenda = avgPrecoVenda * group.totalStock;
                       
                       return (
-                        <div className="text-right space-y-1">
+                        <div className="text-right">
                           <div className="text-sm font-semibold">
                             Estoque Total: {group.totalStock}
                           </div>
