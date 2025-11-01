@@ -62,6 +62,7 @@ export function LocalEstoqueSelector() {
   const handleLocalChange = (localId: string) => {
     const local = locais.find(l => l.id === localId);
     if (local) {
+      console.log('🏢 Alterando local ativo para:', local.nome, local.id);
       setLocalAtivo({
         id: local.id,
         nome: local.nome,

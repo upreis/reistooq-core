@@ -93,6 +93,7 @@ export default function ControleEstoquePage() {
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
 
   const loadProducts = useCallback(async () => {
+    console.log('🔄 loadProducts chamado. Local ativo:', localAtivo);
     try {
       setLoading(true);
       
@@ -120,6 +121,7 @@ export default function ControleEstoquePage() {
         local_id: localAtivo?.id
       });
 
+      console.log(`✅ Produtos carregados: ${allProducts.length}`);
       setProducts(allProducts);
     } catch (error) {
       toast({
@@ -130,7 +132,7 @@ export default function ControleEstoquePage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedCategory, selectedStatus, localAtivo?.id, getProducts, toast]);
+  }, [selectedCategory, selectedStatus, localAtivo, getProducts, toast]);
 
   const loadCategories = useCallback(async () => {
     try {
