@@ -213,27 +213,39 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         {(() => {
                           const hasParentSku = !!group.parentProduct?.sku_pai;
                           const parentExists = hasParentSku && props.products.some(p => p.sku_interno === group.parentProduct?.sku_pai);
-                          const isOrphanChild = group.parentSku.split('-').length > 2 && 
-                                               !group.parentProduct?.eh_produto_pai;
+                          const isChildFormat = group.parentSku.split('-').length > 2;
+                          const isPai = group.parentProduct?.eh_produto_pai;
                           
-                          if (group.parentProduct?.eh_produto_pai) {
+                          if (isPai) {
                             return (
                               <Badge variant="default" className="text-xs bg-primary/20 text-primary">
                                 SKU Pai
                               </Badge>
                             );
-                          } else if (hasParentSku && parentExists) {
-                            return (
-                              <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
-                                SKU Filho
-                              </Badge>
-                            );
-                          } else if (isOrphanChild) {
-                            return (
-                              <Badge variant="warning" className="text-xs">
-                                ⚠️ SKU Órfão
-                              </Badge>
-                            );
+                          } else if (isChildFormat) {
+                            // Se tem formato de filho, sempre mostra a tag Filho
+                            const hasValidParent = hasParentSku && parentExists;
+                            
+                            if (hasValidParent) {
+                              // Filho com pai válido
+                              return (
+                                <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
+                                  SKU Filho
+                                </Badge>
+                              );
+                            } else {
+                              // Filho órfão - mostra ambas as tags
+                              return (
+                                <div className="flex gap-1">
+                                  <Badge variant="secondary" className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-900 dark:text-blue-200">
+                                    SKU Filho
+                                  </Badge>
+                                  <Badge variant="warning" className="text-xs">
+                                    ⚠️ Órfão
+                                  </Badge>
+                                </div>
+                              );
+                            }
                           }
                           return null;
                         })()}
