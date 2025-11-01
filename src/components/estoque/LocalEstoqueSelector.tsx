@@ -26,16 +26,22 @@ export function LocalEstoqueSelector() {
         .from('locais_estoque')
         .select('*')
         .eq('ativo', true)
-        .order('tipo', { ascending: true })
         .order('nome', { ascending: true });
 
       if (error) throw error;
 
-      setLocais((data || []) as LocalEstoque[]);
+      // Ordenar para colocar o principal sempre primeiro
+      const locaisOrdenados = (data || []).sort((a, b) => {
+        if (a.tipo === 'principal') return -1;
+        if (b.tipo === 'principal') return 1;
+        return 0;
+      });
+
+      setLocais(locaisOrdenados as LocalEstoque[]);
 
       // Se não tem local ativo, seleciona o principal automaticamente
-      if (!localAtivo && data && data.length > 0) {
-        const principal = data.find(l => l.tipo === 'principal') || data[0];
+      if (!localAtivo && locaisOrdenados && locaisOrdenados.length > 0) {
+        const principal = locaisOrdenados.find(l => l.tipo === 'principal') || locaisOrdenados[0];
         setLocalAtivo({
           id: principal.id,
           nome: principal.nome,
