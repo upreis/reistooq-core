@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { FolderOpen, Box } from "lucide-react";
 import { ChevronRight, ChevronDown, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,22 +27,14 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showHierarchy, setShowHierarchy] = useState(true);
 
-  const groups = groupProductsBySku(props.products);
+  // 🚀 OTIMIZAÇÃO: Memoizar agrupamento de produtos
+  const groups = useMemo(() => groupProductsBySku(props.products), [props.products]);
   
-  console.log('🔍 DEBUG HierarchicalEstoqueTable:', {
-    totalProducts: props.products.length,
-    totalGroups: groups.length,
-    groups: groups.map(g => ({
-      parentSku: g.parentSku,
-      hasParentProduct: !!g.parentProduct,
-      childrenCount: g.children.length,
-      parentProductData: g.parentProduct ? {
-        sku_interno: g.parentProduct.sku_interno,
-        sku_pai: g.parentProduct.sku_pai,
-        eh_produto_pai: g.parentProduct.eh_produto_pai
-      } : null
-    }))
-  });
+  // 🚀 OTIMIZAÇÃO: Memoizar Set de SKUs PAI
+  const parentSkusSet = useMemo(() => 
+    new Set(props.products.filter(p => p.eh_produto_pai === true).map(p => p.sku_interno)),
+    [props.products]
+  );
   
   const toggleGroup = (parentSku: string) => {
     const newExpanded = new Set(expandedGroups);
@@ -70,73 +62,68 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   };
 
   if (!showHierarchy) {
-    // Modo tabela - organizar produtos PAI acima dos filhos
-    const organizedProducts: Product[] = [];
-    const processedSkus = new Set<string>();
-    
-    // Criar um Map para armazenar dados agregados dos produtos PAI
-    const parentAggregatedData = new Map<string, { custoTotal: number; vendaTotal: number }>();
-    
-    // Primeiro, adicionar todos os produtos PAI
-    groups.forEach(group => {
-      if (group.parentProduct?.eh_produto_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
-        // Calcular totais para o produto PAI baseado nos filhos
-        if (group.children.length > 0) {
-          const avgPrecoCusto = group.children.reduce((sum, child) => sum + (child.preco_custo || 0), 0) / group.children.length;
-          const avgPrecoVenda = group.children.reduce((sum, child) => sum + (child.preco_venda || 0), 0) / group.children.length;
-          const valorTotalCusto = avgPrecoCusto * group.totalStock;
-          const valorTotalVenda = avgPrecoVenda * group.totalStock;
-          
-          parentAggregatedData.set(group.parentProduct.sku_interno, {
-            custoTotal: valorTotalCusto,
-            vendaTotal: valorTotalVenda
-          });
-          
-          // Criar uma cópia do produto PAI com a quantidade atualizada
-          const parentProductWithTotal = {
-            ...group.parentProduct,
-            quantidade_atual: group.totalStock
-          };
-          
-          organizedProducts.push(parentProductWithTotal);
-        } else {
-          organizedProducts.push(group.parentProduct);
-        }
-        
-        processedSkus.add(group.parentProduct.sku_interno);
-        
-        // Logo após o PAI, adicionar seus filhos
-        group.children.forEach(child => {
-          if (!processedSkus.has(child.sku_interno)) {
-            organizedProducts.push(child);
-            processedSkus.add(child.sku_interno);
+    // 🚀 OTIMIZAÇÃO: Memoizar produtos organizados e dados agregados
+    const { organizedProducts, parentAggregatedData } = useMemo(() => {
+      const organized: Product[] = [];
+      const processedSkus = new Set<string>();
+      const aggregatedData = new Map<string, { custoTotal: number; vendaTotal: number }>();
+      
+      // Primeiro, adicionar todos os produtos PAI
+      groups.forEach(group => {
+        if (group.parentProduct?.eh_produto_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
+          // Calcular totais para o produto PAI baseado nos filhos
+          if (group.children.length > 0) {
+            const avgPrecoCusto = group.children.reduce((sum, child) => sum + (child.preco_custo || 0), 0) / group.children.length;
+            const avgPrecoVenda = group.children.reduce((sum, child) => sum + (child.preco_venda || 0), 0) / group.children.length;
+            const valorTotalCusto = avgPrecoCusto * group.totalStock;
+            const valorTotalVenda = avgPrecoVenda * group.totalStock;
+            
+            aggregatedData.set(group.parentProduct.sku_interno, {
+              custoTotal: valorTotalCusto,
+              vendaTotal: valorTotalVenda
+            });
+            
+            // Criar uma cópia do produto PAI com a quantidade atualizada
+            const parentProductWithTotal = {
+              ...group.parentProduct,
+              quantidade_atual: group.totalStock
+            };
+            
+            organized.push(parentProductWithTotal);
+          } else {
+            organized.push(group.parentProduct);
           }
-        });
-      }
-    });
-    
-    // Depois, adicionar produtos independentes (não são PAI nem têm PAI)
-    groups.forEach(group => {
-      if (group.parentProduct && !group.parentProduct.eh_produto_pai && !group.parentProduct.sku_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
-        organizedProducts.push(group.parentProduct);
-        processedSkus.add(group.parentProduct.sku_interno);
-      }
-    });
-    
-    // Por fim, adicionar produtos órfãos (têm sku_pai mas o pai não existe)
-    groups.forEach(group => {
-      if (group.parentProduct && !processedSkus.has(group.parentProduct.sku_interno)) {
-        organizedProducts.push(group.parentProduct);
-        processedSkus.add(group.parentProduct.sku_interno);
-      }
-    });
-    
-    // Criar um Set com os SKUs dos produtos PAI para estilo diferenciado
-    const parentSkus = new Set(
-      props.products
-        .filter(p => p.eh_produto_pai === true)
-        .map(p => p.sku_interno)
-    );
+          
+          processedSkus.add(group.parentProduct.sku_interno);
+          
+          // Logo após o PAI, adicionar seus filhos
+          group.children.forEach(child => {
+            if (!processedSkus.has(child.sku_interno)) {
+              organized.push(child);
+              processedSkus.add(child.sku_interno);
+            }
+          });
+        }
+      });
+      
+      // Depois, adicionar produtos independentes (não são PAI nem têm PAI)
+      groups.forEach(group => {
+        if (group.parentProduct && !group.parentProduct.eh_produto_pai && !group.parentProduct.sku_pai && !processedSkus.has(group.parentProduct.sku_interno)) {
+          organized.push(group.parentProduct);
+          processedSkus.add(group.parentProduct.sku_interno);
+        }
+      });
+      
+      // Por fim, adicionar produtos órfãos (têm sku_pai mas o pai não existe)
+      groups.forEach(group => {
+        if (group.parentProduct && !processedSkus.has(group.parentProduct.sku_interno)) {
+          organized.push(group.parentProduct);
+          processedSkus.add(group.parentProduct.sku_interno);
+        }
+      });
+      
+      return { organizedProducts: organized, parentAggregatedData: aggregatedData };
+    }, [groups]);
     
     return (
       <div className="space-y-4">
@@ -156,7 +143,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
         <EstoqueTable 
           {...props} 
           products={organizedProducts}
-          parentSkus={parentSkus}
+          parentSkus={parentSkusSet}
           parentAggregatedData={parentAggregatedData}
         />
       </div>
@@ -394,7 +381,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                             {...props}
                             products={group.children}
                             rowClassName="!bg-primary/10 !border-primary/20"
-                            parentSkus={new Set(props.products.filter(p => p.eh_produto_pai === true).map(p => p.sku_interno))}
+                            parentSkus={parentSkusSet}
                           />
                         </div>
                       </div>

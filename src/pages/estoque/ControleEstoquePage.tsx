@@ -16,8 +16,6 @@ import { EstoquePagination } from "./components/EstoquePagination";
 import { EstoqueModals } from "./components/EstoqueModals";
 
 export default function ControleEstoquePage() {
-  console.log('🔍 DEBUG: ControleEstoquePage renderizando');
-  
   // Modal states
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [parentProductModalOpen, setParentProductModalOpen] = useState(false);
@@ -71,13 +69,6 @@ export default function ControleEstoquePage() {
     totalPages,
     handleSelectAll
   } = useEstoquePagination(products);
-
-  console.log('🔍 DEBUG: Estados:', {
-    parentProductModalOpen,
-    childProductModalOpen,
-    linkChildModalOpen,
-    selectedProductsCount: selectedProducts.length
-  });
 
   // Handlers
   const handleSearch = () => {
