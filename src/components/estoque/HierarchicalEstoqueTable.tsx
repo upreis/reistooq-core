@@ -29,6 +29,21 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
 
   const groups = groupProductsBySku(props.products);
   
+  console.log('🔍 DEBUG HierarchicalEstoqueTable:', {
+    totalProducts: props.products.length,
+    totalGroups: groups.length,
+    groups: groups.map(g => ({
+      parentSku: g.parentSku,
+      hasParentProduct: !!g.parentProduct,
+      childrenCount: g.children.length,
+      parentProductData: g.parentProduct ? {
+        sku_interno: g.parentProduct.sku_interno,
+        sku_pai: g.parentProduct.sku_pai,
+        eh_produto_pai: g.parentProduct.eh_produto_pai
+      } : null
+    }))
+  });
+  
   const toggleGroup = (parentSku: string) => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(parentSku)) {
