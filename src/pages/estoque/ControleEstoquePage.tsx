@@ -6,6 +6,8 @@ import { EstoqueTable } from "@/components/estoque/EstoqueTable";
 import { HierarchicalEstoqueTable } from "@/components/estoque/HierarchicalEstoqueTable";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
+import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
+import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
@@ -612,6 +614,12 @@ export default function ControleEstoquePage() {
           setLinkChildModalOpen(true);
         }}
       />
+
+      {/* Seletor de Local e Gerenciamento */}
+      <div className="flex items-center justify-between gap-4 flex-wrap p-4 bg-card/50 border border-border rounded-lg shadow-sm">
+        <LocalEstoqueSelector />
+        <GerenciarLocaisModal onSuccess={loadProducts} />
+      </div>
 
       {/* Botões de ação principais */}
       <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">

@@ -1488,6 +1488,51 @@ export type Database = {
         }
         Relationships: []
       }
+      estoque_por_local: {
+        Row: {
+          created_at: string
+          id: string
+          local_id: string
+          organization_id: string
+          produto_id: string
+          quantidade: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          local_id: string
+          organization_id: string
+          produto_id: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          local_id?: string
+          organization_id?: string
+          produto_id?: string
+          quantidade?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_por_local_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estoque_por_local_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fila_processamento_claims: {
         Row: {
           atualizado_em: string | null
@@ -2410,6 +2455,42 @@ export type Database = {
           },
         ]
       }
+      locais_estoque: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          endereco: string | null
+          id: string
+          nome: string
+          organization_id: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          endereco?: string | null
+          id?: string
+          nome: string
+          organization_id: string
+          tipo?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          endereco?: string | null
+          id?: string
+          nome?: string
+          organization_id?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       logistic_events: {
         Row: {
           created_at: string | null
@@ -2922,6 +3003,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          local_id: string | null
           metadados: Json | null
           motivo: string | null
           nome_produto: string | null
@@ -2945,6 +3027,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          local_id?: string | null
           metadados?: Json | null
           motivo?: string | null
           nome_produto?: string | null
@@ -2968,6 +3051,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          local_id?: string | null
           metadados?: Json | null
           motivo?: string | null
           nome_produto?: string | null
@@ -2989,6 +3073,13 @@ export type Database = {
           usuario_nome?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "movimentacoes_estoque_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "movimentacoes_estoque_produto_id_fkey"
             columns: ["produto_id"]
@@ -5878,6 +5969,10 @@ export type Database = {
         Args: { p_pedido_data: Json }
         Returns: string[]
       }
+      criar_local_padrao_org: {
+        Args: { p_organization_id: string }
+        Returns: string
+      }
       debug_historico_visibilidade: { Args: never; Returns: Json }
       decrypt_simple: { Args: { encrypted_data: string }; Returns: Json }
       delete_invitation_safe: {
@@ -6562,6 +6657,7 @@ export type Database = {
       mask_name: { Args: { full_name: string }; Returns: string }
       mask_phone: { Args: { phone: string }; Returns: string }
       mask_phone_secure: { Args: { phone_input: string }; Returns: string }
+      migrar_estoque_para_locais: { Args: never; Returns: Json }
       migrate_existing_orders_to_unified: { Args: never; Returns: Json }
       processar_recebimento_pedido_compra: {
         Args: { p_itens: Json; p_pedido_id: string }
