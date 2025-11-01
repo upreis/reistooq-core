@@ -93,6 +93,7 @@ export const useProducts = () => {
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
+      // Buscar produtos com estoque no local
       let query = supabase
         .from('estoque_por_local')
         .select(`
@@ -103,7 +104,6 @@ export const useProducts = () => {
         .eq('local_id', filters.local_id)
         .order('created_at', { ascending: false });
 
-      // Aplicar filtros nos produtos relacionados
       const { data: estoqueData, error } = await query;
       
       console.log('📦 Dados brutos de estoque_por_local:', estoqueData?.slice(0, 3));
@@ -113,16 +113,39 @@ export const useProducts = () => {
         throw error;
       }
 
+      // Buscar produtos PAI que não têm estoque local ainda
+      const { data: parentProductsData, error: parentError } = await supabase
+        .from('produtos')
+        .select('*')
+        .eq('eh_produto_pai', true);
+      
+      if (parentError) {
+        console.error('Error fetching parent products:', parentError);
+      }
+
+      console.log('👨‍👦 Produtos PAI encontrados:', parentProductsData?.length || 0);
+
       // Mapear dados para formato Product com quantidade do local
       const productsWithLocalStock = (estoqueData || [])
-        .filter(item => item.produtos) // Filtrar itens sem produto
+        .filter(item => item.produtos)
         .map(item => {
           const produto = item.produtos as unknown as Product;
           return {
             ...produto,
-            quantidade_atual: item.quantidade // Substituir quantidade pelo estoque do local
+            quantidade_atual: item.quantidade
           } as Product;
-        })
+        });
+
+      // Adicionar produtos PAI que não estão em estoque_por_local
+      const existingSkus = new Set(productsWithLocalStock.map(p => p.sku_interno));
+      const parentProductsToAdd = (parentProductsData || [])
+        .filter(p => !existingSkus.has(p.sku_interno))
+        .map(p => ({
+          ...p as unknown as Product,
+          quantidade_atual: 0 // Produtos PAI sem estoque local têm quantidade 0
+        }));
+
+      const allProducts = [...productsWithLocalStock, ...parentProductsToAdd]
         .filter(p => {
           // Aplicar filtros de ativo/inativo
           if (filters?.ativo === true && !p.ativo) return false;
@@ -147,12 +170,11 @@ export const useProducts = () => {
           return true;
         });
 
-      console.log(`✅ Produtos encontrados no local ${filters.local_id}: ${productsWithLocalStock.length}`);
-      console.log('📊 Primeiros 3 produtos com estoque:', productsWithLocalStock.slice(0, 3).map(p => ({ 
-        sku: p.sku_interno, 
-        quantidade: p.quantidade_atual 
-      })));
-      return productsWithLocalStock;
+      console.log(`✅ Total de produtos (com e sem estoque local): ${allProducts.length}`);
+      console.log(`📦 Com estoque local: ${productsWithLocalStock.length}`);
+      console.log(`👨‍👦 Produtos PAI sem estoque: ${parentProductsToAdd.length}`);
+      
+      return allProducts;
     }
 
     // Caso contrário, buscar normalmente da tabela produtos
