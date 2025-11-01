@@ -6,8 +6,6 @@ import ControleEstoquePage from "./estoque/ControleEstoquePage";
 import ComposicoesUnificadasPage from "./estoque/ComposicoesUnificadasPage";
 import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
-import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
-import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
 
 const EstoqueContent = () => {
   const breadcrumb = (
@@ -18,22 +16,12 @@ const EstoqueContent = () => {
     </div>
   );
 
-  const handleLocalSuccess = () => {
-    // Forçar recarga da página para atualizar os locais
-    window.location.reload();
-  };
-
   return (
     <MobileAppShell 
       title="Gestão de Estoque" 
       breadcrumb={breadcrumb}
     >
       <div className="space-y-6">
-        <div className="flex items-center justify-between gap-4 pb-4 border-b">
-          <LocalEstoqueSelector />
-          <GerenciarLocaisModal onSuccess={handleLocalSuccess} />
-        </div>
-
         <EstoqueNav />
         
         <div className="mt-6">

@@ -8,6 +8,8 @@ import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { EstoqueIntelligentFilters } from "@/components/estoque/EstoqueIntelligentFilters";
 import { useEstoqueFilters } from "@/features/estoque/hooks/useEstoqueFilters";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
+import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
+import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
 import { CreateChildProductModal } from "@/components/estoque/CreateChildProductModal";
@@ -581,9 +583,14 @@ export default function ControleEstoquePage() {
   };
 
   
-  
   return (
     <div className="space-y-6">
+      {/* Seletor de Local de Estoque - Apenas nesta página */}
+      <div className="flex items-center justify-between gap-4 pb-4 border-b">
+        <LocalEstoqueSelector />
+        <GerenciarLocaisModal onSuccess={loadProducts} />
+      </div>
+
       {/* Notificações do Estoque */}
       <EstoqueNotifications 
         products={products}
