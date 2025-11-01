@@ -167,9 +167,25 @@ export function EstoqueTable({
       label: "SKU Interno",
       sortable: true,
       width: "130px",
-      render: (value: string, product: Product) => (
-        <div className="font-mono text-[11px] font-semibold">{value}</div>
-      )
+      render: (value: string, product: Product) => {
+        const isParent = parentSkus?.has(product.sku_interno);
+        const isChild = product.sku_pai;
+        
+        return (
+          <div className="flex items-center gap-2">
+            {isParent && (
+              <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
+            )}
+            {isChild && (
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="w-3 h-[1px] bg-blue-500/50" />
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500/70" />
+              </div>
+            )}
+            <div className="font-mono text-[11px] font-semibold">{value}</div>
+          </div>
+        );
+      }
     },
     {
       key: "nome",
