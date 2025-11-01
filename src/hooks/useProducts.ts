@@ -113,17 +113,17 @@ export const useProducts = () => {
         throw error;
       }
 
-      // Buscar produtos PAI que não têm estoque local ainda
-      const { data: parentProductsData, error: parentError } = await supabase
+      // Buscar TODOS os produtos para incluir os que não têm estoque local ainda
+      const { data: allProductsData, error: allProductsError } = await supabase
         .from('produtos')
         .select('*')
-        .eq('eh_produto_pai', true);
+        .order('created_at', { ascending: false });
       
-      if (parentError) {
-        console.error('Error fetching parent products:', parentError);
+      if (allProductsError) {
+        console.error('Error fetching all products:', allProductsError);
       }
 
-      console.log('👨‍👦 Produtos PAI encontrados:', parentProductsData?.length || 0);
+      console.log('📦 Total de produtos no banco:', allProductsData?.length || 0);
 
       // Mapear dados para formato Product com quantidade do local
       const productsWithLocalStock = (estoqueData || [])
@@ -136,16 +136,16 @@ export const useProducts = () => {
           } as Product;
         });
 
-      // Adicionar produtos PAI que não estão em estoque_por_local
-      const existingSkus = new Set(productsWithLocalStock.map(p => p.sku_interno));
-      const parentProductsToAdd = (parentProductsData || [])
-        .filter(p => !existingSkus.has(p.sku_interno))
+      // Adicionar produtos que não estão em estoque_por_local
+      const existingProductIds = new Set(productsWithLocalStock.map(p => p.id));
+      const productsWithoutLocalStock = (allProductsData || [])
+        .filter(p => !existingProductIds.has(p.id))
         .map(p => ({
           ...p as unknown as Product,
-          quantidade_atual: 0 // Produtos PAI sem estoque local têm quantidade 0
+          quantidade_atual: 0 // Produtos sem estoque local têm quantidade 0
         }));
 
-      const allProducts = [...productsWithLocalStock, ...parentProductsToAdd]
+      const allProducts = [...productsWithLocalStock, ...productsWithoutLocalStock]
         .filter(p => {
           // Aplicar filtros de ativo/inativo
           if (filters?.ativo === true && !p.ativo) return false;
@@ -172,7 +172,7 @@ export const useProducts = () => {
 
       console.log(`✅ Total de produtos (com e sem estoque local): ${allProducts.length}`);
       console.log(`📦 Com estoque local: ${productsWithLocalStock.length}`);
-      console.log(`👨‍👦 Produtos PAI sem estoque: ${parentProductsToAdd.length}`);
+      console.log(`📦 Sem estoque local: ${productsWithoutLocalStock.length}`);
       
       return allProducts;
     }
