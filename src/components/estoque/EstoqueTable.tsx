@@ -166,7 +166,7 @@ export function EstoqueTable({
       key: "sku_interno",
       label: "SKU Interno",
       sortable: true,
-      width: "380px",
+      width: "250px",
       render: (value: string, product: Product) => {
         const isParent = parentSkus?.has(product.sku_interno);
         const isChild = product.sku_pai;

@@ -95,7 +95,7 @@ export default function MobileTable({
       switch (column.key) {
         case 'nome': return '200px';
         case 'codigo_barras': return '110px';
-        case 'sku_interno': return '380px';
+        case 'sku_interno': return '250px';
         case 'categoria_principal': return '130px';
         case 'categoria_nivel2': return '110px';
         case 'subcategoria': return '110px';
