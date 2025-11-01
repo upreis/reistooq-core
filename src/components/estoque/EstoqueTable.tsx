@@ -89,36 +89,51 @@ export function EstoqueTable({
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [selectedProductForDetails, setSelectedProductForDetails] = useState<Product | null>(null);
 
-  const getStockStatus = (product: Product) => {
+  // 🎯 FUNÇÃO ÚNICA PARA DETERMINAR STATUS DE ESTOQUE
+  // Retorna um único badge - evita múltiplos badges conflitantes
+  const getStockBadge = (product: Product): { type: string; label: string; className: string } | null => {
+    // Sem estoque (prioridade máxima)
     if (product.quantidade_atual === 0) {
       return {
-        label: "Sem estoque",
-        variant: "destructive" as const,
-        color: "bg-red-500",
-        icon: AlertTriangle
-      };
-    } else if (product.quantidade_atual <= product.estoque_minimo) {
-      return {
-        label: "Estoque baixo",
-        variant: "secondary" as const,
-        color: "bg-yellow-500",
-        icon: AlertTriangle
-      };
-    } else if (product.quantidade_atual >= product.estoque_maximo) {
-      return {
-        label: "Estoque alto",
-        variant: "outline" as const,
-        color: "bg-blue-500",
-        icon: Package
-      };
-    } else {
-      return {
-        label: "Em estoque",
-        variant: "default" as const,
-        color: "bg-green-500",
-        icon: Package
+        type: 'sem_estoque',
+        label: 'Sem estoque',
+        className: 'bg-red-500/20 text-red-400 border-red-500/30'
       };
     }
+    
+    // Crítico (quantidade <= estoque mínimo)
+    if (product.quantidade_atual <= product.estoque_minimo) {
+      return {
+        type: 'critico',
+        label: 'Crítico',
+        className: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
+      };
+    }
+    
+    // Estoque baixo (quantidade > mínimo mas <= mínimo * 1.5)
+    if (product.quantidade_atual <= product.estoque_minimo * 1.5) {
+      return {
+        type: 'baixo',
+        label: 'Estoque baixo',
+        className: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+      };
+    }
+    
+    // Estoque alto (quantidade >= máximo)
+    if (product.quantidade_atual >= product.estoque_maximo) {
+      return {
+        type: 'alto',
+        label: 'Estoque alto',
+        className: 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+      };
+    }
+    
+    // Normal (entre mínimo * 1.5 e máximo)
+    return {
+      type: 'normal',
+      label: 'Normal',
+      className: 'bg-green-500/20 text-green-400 border-green-500/30'
+    };
   };
 
   const formatPrice = (price: number | null) => {
@@ -172,10 +187,12 @@ export function EstoqueTable({
         const isChild = product.sku_pai;
         
         // Verificar se é órfão - só é órfão se tem sku_pai MAS o pai não existe
-        // E só verificamos isso se parentSkus foi fornecido (modo tabela)
         const hasParentSku = !!product.sku_pai;
         const parentExists = hasParentSku && parentSkus ? parentSkus.has(product.sku_pai) : true;
         const isOrphan = parentSkus && hasParentSku && !parentExists;
+        
+        // 🎯 Obter badge de estoque APENAS se NÃO for produto PAI
+        const stockBadge = !isParent ? getStockBadge(product) : null;
         
         return (
           <div className="flex flex-col gap-1.5">
@@ -202,36 +219,21 @@ export function EstoqueTable({
               <div className="font-mono text-[11px] font-semibold">{value}</div>
             </div>
             
-            {/* Avisos abaixo do SKU */}
+            {/* Avisos abaixo do SKU - ÓRFÃO sempre mostra, STATUS apenas se NÃO for PAI */}
             <div className="flex flex-wrap gap-1 ml-0">
               {isOrphan && (
                 <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
                   ⚠️ Órfão
                 </Badge>
               )}
-              {product.quantidade_atual === 0 && (
-                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 border-red-500/30">
-                  Sem estoque
-                </Badge>
-              )}
-              {product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                  Estoque baixo
-                </Badge>
-              )}
-              {product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5 && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30">
-                  Crítico
-                </Badge>
-              )}
-              {product.quantidade_atual > product.estoque_minimo * 1.5 && product.quantidade_atual < product.estoque_maximo && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-green-500/20 text-green-400 border-green-500/30">
-                  Normal
-                </Badge>
-              )}
-              {product.quantidade_atual >= product.estoque_maximo && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-blue-500/20 text-blue-400 border-blue-500/30">
-                  Estoque alto
+              
+              {/* 🎯 BADGE DE STATUS: Apenas UM badge, apenas se NÃO for PAI */}
+              {stockBadge && (
+                <Badge 
+                  variant="outline" 
+                  className={`text-[9px] px-1.5 py-0.5 ${stockBadge.className}`}
+                >
+                  {stockBadge.label}
                 </Badge>
               )}
             </div>
