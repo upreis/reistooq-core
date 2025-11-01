@@ -167,27 +167,9 @@ export function EstoqueTable({
       label: "SKU Interno",
       sortable: true,
       width: "130px",
-      render: (value: string, product: Product) => {
-        const isPai = parentSkus?.has(product.sku_interno);
-        const isFilho = product.sku_pai && !isPai;
-        
-        return (
-          <div className="flex items-center gap-2">
-            {isPai && (
-              <div className="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" />
-            )}
-            {isFilho && (
-              <div className="flex items-center gap-1 flex-shrink-0">
-                <div className="w-3 h-px bg-blue-400/50" />
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/70" />
-              </div>
-            )}
-            <div className={`font-mono text-[11px] ${isPai ? 'font-bold text-blue-300' : isFilho ? 'text-blue-200/80' : 'font-semibold'}`}>
-              {value}
-            </div>
-          </div>
-        );
-      }
+      render: (value: string, product: Product) => (
+        <div className="font-mono text-[11px] font-semibold">{value}</div>
+      )
     },
     {
       key: "nome",
@@ -534,9 +516,9 @@ export function EstoqueTable({
 
   // Função para determinar o estilo da linha baseado no produto
   const getRowClassName = (product: Product, index: number) => {
-    // Se é um produto PAI, aplicar fundo azul escuro
+    // Se é um produto PAI, aplicar gradiente especial
     if (parentSkus?.has(product.sku_interno)) {
-      return "border-blue-700/50 bg-gradient-to-r from-blue-950/80 to-blue-900/60 hover:from-blue-950/90 hover:to-blue-900/70";
+      return "border-gray-700 bg-gradient-to-r from-[hsl(213_48%_15%)] to-[hsl(213_48%_18%)] hover:from-[hsl(213_48%_17%)] hover:to-[hsl(213_48%_20%)]";
     }
     
     // Se foi passado um rowClassName customizado, usar ele
