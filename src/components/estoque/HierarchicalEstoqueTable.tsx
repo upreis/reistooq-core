@@ -125,21 +125,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           const hasChildren = group.children.length > 0;
           const status = getGroupStatus(group);
           
-          // Alternar cores dos cards
-          const cardBgClass = index % 2 === 0 ? "bg-muted/30" : "bg-background";
-          // Alternar cores das linhas de produto com maior contraste
-          const rowBgClass = index % 2 === 0 
-            ? "bg-[hsl(213_48%_10%)] hover:bg-[hsl(213_48%_12%)]" 
-            : "bg-[hsl(213_48%_18%)] hover:bg-[hsl(213_48%_20%)]";
+          // Linha do produto pai sempre com gradiente/destaque
+          const parentRowClass = "bg-gradient-to-r from-[hsl(213_48%_15%)] to-[hsl(213_48%_18%)] hover:from-[hsl(213_48%_17%)] hover:to-[hsl(213_48%_20%)]";
 
           return (
-            <div key={group.parentSku} className={`border-2 border-gray-700 rounded-lg ${cardBgClass}`}>
-              {/* Linha do SKU Pai */}
+            <div key={group.parentSku} className="border-2 border-gray-700 rounded-lg bg-muted/30">
+              {/* Linha do SKU Pai - sempre primeiro */}
               <Collapsible
                 open={isExpanded}
                 onOpenChange={() => hasChildren && toggleGroup(group.parentSku)}
               >
-                <div className={`flex items-center p-4 ${rowBgClass}`}>
+                <div className={`flex items-center p-4 ${parentRowClass}`}>
                   {/* Checkbox de seleção do produto pai - APENAS SE NÃO TIVER FILHOS */}
                   {group.parentProduct && !hasChildren && (
                     <div className="mr-3" onClick={(e) => e.stopPropagation()}>
@@ -282,15 +278,15 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       const valorTotalVenda = avgPrecoVenda * group.totalStock;
                       
                       return (
-                        <div className="text-right">
+                        <div className="text-right flex gap-6">
+                          <div className="text-xs text-muted-foreground">
+                            Custo Total: <span className="font-semibold text-foreground">R$ {valorTotalCusto.toFixed(2)}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Venda Total: <span className="font-semibold text-foreground">R$ {valorTotalVenda.toFixed(2)}</span>
+                          </div>
                           <div className="text-sm font-semibold">
                             Estoque Total: {group.totalStock}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Custo Total: R$ {valorTotalCusto.toFixed(2)}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Venda Total: R$ {valorTotalVenda.toFixed(2)}
                           </div>
                         </div>
                       );
