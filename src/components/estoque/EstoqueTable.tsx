@@ -167,17 +167,14 @@ export function EstoqueTable({
       label: "SKU Interno",
       sortable: true,
       width: "250px",
-      render: (value: string, product: Product) => {
+      render: (value: string, product: Product, allProducts?: Product[]) => {
         const isParent = parentSkus?.has(product.sku_interno);
         const isChild = product.sku_pai;
         
-        // Verificar se é órfão
+        // Verificar se é órfão - só é órfão se tem sku_pai MAS o pai não existe
         const hasParentSku = !!product.sku_pai;
-        const isChildFormat = product.sku_interno.split('-').length > 2;
-        const isOrphan = hasParentSku && isChild && !isParent;
-        
-        // Obter status do estoque
-        const stockStatus = getStockStatus(product);
+        const parentExists = hasParentSku && parentSkus?.has(product.sku_pai);
+        const isOrphan = hasParentSku && !parentExists;
         
         return (
           <div className="flex flex-col gap-1.5">
@@ -204,29 +201,33 @@ export function EstoqueTable({
               <div className="font-mono text-[11px] font-semibold">{value}</div>
             </div>
             
-            {/* Avisos abaixo do SKU */}
-            <div className="flex flex-wrap gap-1 ml-0">
-              {isOrphan && (
-                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
-                  ⚠️ Órfão
-                </Badge>
-              )}
-              {product.quantidade_atual === 0 && (
-                <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 border-red-500/30">
-                  Sem estoque
-                </Badge>
-              )}
-              {product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
-                  Estoque baixo
-                </Badge>
-              )}
-              {product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5 && (
-                <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30">
-                  Crítico
-                </Badge>
-              )}
-            </div>
+            {/* Avisos abaixo do SKU - só mostrar se aplicável */}
+            {(isOrphan || product.quantidade_atual === 0 || 
+              (product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo) ||
+              (product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5)) && (
+              <div className="flex flex-wrap gap-1 ml-0">
+                {isOrphan && (
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5">
+                    ⚠️ Órfão
+                  </Badge>
+                )}
+                {product.quantidade_atual === 0 && (
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0.5 bg-red-500/20 text-red-400 border-red-500/30">
+                    Sem estoque
+                  </Badge>
+                )}
+                {product.quantidade_atual > 0 && product.quantidade_atual <= product.estoque_minimo && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                    Estoque baixo
+                  </Badge>
+                )}
+                {product.quantidade_atual > product.estoque_minimo && product.quantidade_atual <= product.estoque_minimo * 1.5 && (
+                  <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 bg-orange-500/20 text-orange-400 border-orange-500/30">
+                    Crítico
+                  </Badge>
+                )}
+              </div>
+            )}
           </div>
         );
       }
