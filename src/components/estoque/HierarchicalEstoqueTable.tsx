@@ -394,6 +394,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                             {...props}
                             products={group.children}
                             rowClassName="!bg-primary/10 !border-primary/20"
+                            parentSkus={new Set(props.products.filter(p => p.eh_produto_pai === true).map(p => p.sku_interno))}
                           />
                         </div>
                       </div>
