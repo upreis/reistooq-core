@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Package, RefreshCcw, AlertCircle } from "lucide-react";
+import { Package, RefreshCcw, AlertCircle, ShoppingBag } from "lucide-react";
 
 const subNavItems = [
   {
@@ -17,6 +17,11 @@ const subNavItems = [
     path: "/reclamacoes",
     label: "Reclamações",
     icon: AlertCircle,
+  },
+  {
+    path: "/vendas-online",
+    label: "Vendas Online",
+    icon: ShoppingBag,
   },
 ];
 
