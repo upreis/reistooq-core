@@ -3,9 +3,10 @@
  * Busca devoluções da API do Mercado Livre
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 import { corsHeaders } from '../_shared/cors.ts';
 import { getErrorMessage } from '../_shared/error-handler.ts';
+import { getMlConfig } from '../_shared/client.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
 interface RequestBody {
   accountIds: string[];
@@ -53,24 +54,16 @@ Deno.serve(async (req) => {
     let totalReturns = 0;
 
     for (const accountId of accountIds) {
-      // Obter access_token da conta
-      const { data: secretData, error: secretError } = await supabase.rpc(
-        'get_ml_config',
-        { account_id: accountId }
-      );
-
-      if (secretError || !secretData) {
-        console.error(`❌ Erro ao obter config ML para conta ${accountId}:`, secretError);
-        continue;
-      }
-
-      const accessToken = secretData.access_token;
-      const sellerId = secretData.seller_id;
-
-      if (!accessToken || !sellerId) {
+      // Obter access_token usando a função compartilhada
+      const mlConfig = await getMlConfig(supabase, accountId);
+      
+      if (!mlConfig || !mlConfig.access_token || !mlConfig.seller_id) {
         console.error(`❌ Dados incompletos para conta ${accountId}`);
         continue;
       }
+
+      const accessToken = mlConfig.access_token;
+      const sellerId = mlConfig.seller_id;
 
       // Construir URL da API de Returns
       let apiUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/search?seller_id=${sellerId}&offset=${offset}&limit=${limit}`;
