@@ -3,10 +3,8 @@
  * Busca devoluções da API do Mercado Livre
  */
 
-import { corsHeaders } from '../_shared/cors.ts';
+import { corsHeaders, makeServiceClient, getMlConfig } from '../_shared/client.ts';
 import { getErrorMessage } from '../_shared/error-handler.ts';
-import { getMlConfig } from '../_shared/client.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
 interface RequestBody {
   accountIds: string[];
@@ -29,9 +27,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = makeServiceClient();
 
     // Parse request body
     const body: RequestBody = await req.json();
@@ -57,13 +53,18 @@ Deno.serve(async (req) => {
       // Obter access_token usando a função compartilhada
       const mlConfig = await getMlConfig(supabase, accountId);
       
-      if (!mlConfig || !mlConfig.access_token || !mlConfig.seller_id) {
-        console.error(`❌ Dados incompletos para conta ${accountId}`);
+      if (!mlConfig || !mlConfig.access_token) {
+        console.error(`❌ Token ML não encontrado para conta ${accountId}`);
         continue;
       }
 
       const accessToken = mlConfig.access_token;
-      const sellerId = mlConfig.seller_id;
+      const sellerId = mlConfig.account_identifier;
+
+      if (!sellerId) {
+        console.error(`❌ seller_id não encontrado para conta ${accountId}`);
+        continue;
+      }
 
       // Construir URL da API de Returns
       let apiUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/search?seller_id=${sellerId}&offset=${offset}&limit=${limit}`;
