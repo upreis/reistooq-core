@@ -8,7 +8,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useDevolucaoStore } from '../store/useDevolucaoStore';
 
 export const DevolucaoPaginationControls = () => {
-  const { pagination, setPage } = useDevolucaoStore();
+  const pagination = useDevolucaoStore(state => state.pagination);
+  const setPage = useDevolucaoStore(state => state.setPage);
   
   const totalPages = Math.ceil(pagination.total / pagination.itemsPerPage);
   const canGoPrev = pagination.currentPage > 1;

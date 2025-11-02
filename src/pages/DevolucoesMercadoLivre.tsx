@@ -17,7 +17,9 @@ import { OMSNav } from '@/features/oms/components/OMSNav';
 
 export default function DevolucoesMercadoLivre() {
   const { refresh } = useDevolucaoData();
-  const { devolucoes, pagination, isLoading } = useDevolucaoStore();
+  const devolucoes = useDevolucaoStore(state => state.devolucoes);
+  const pagination = useDevolucaoStore(state => state.pagination);
+  const isLoading = useDevolucaoStore(state => state.isLoading);
   
   // Calcular estatísticas
   const stats = {

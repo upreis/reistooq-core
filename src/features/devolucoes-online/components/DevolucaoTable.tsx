@@ -11,7 +11,9 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const DevolucaoTable = () => {
-  const { devolucoes, isLoading, error } = useDevolucaoStore();
+  const devolucoes = useDevolucaoStore(state => state.devolucoes);
+  const isLoading = useDevolucaoStore(state => state.isLoading);
+  const error = useDevolucaoStore(state => state.error);
 
   if (error) {
     return (

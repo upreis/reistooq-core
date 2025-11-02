@@ -42,7 +42,12 @@ const fetchDevolucoes = async (params: FetchDevolucaoParams): Promise<DevolucaoR
 };
 
 export const useDevolucaoData = () => {
-  const { filters, pagination, setDevolucoes, setPagination, setLoading, setError } = useDevolucaoStore();
+  const filters = useDevolucaoStore(state => state.filters);
+  const pagination = useDevolucaoStore(state => state.pagination);
+  const setDevolucoes = useDevolucaoStore(state => state.setDevolucoes);
+  const setPagination = useDevolucaoStore(state => state.setPagination);
+  const setLoading = useDevolucaoStore(state => state.setLoading);
+  const setError = useDevolucaoStore(state => state.setError);
 
   // Construir key para SWR
   const accountId = filters.integrationAccountId;
@@ -77,6 +82,7 @@ export const useDevolucaoData = () => {
   // Atualizar store quando dados mudarem
   useEffect(() => {
     if (data) {
+      console.log('📦 Devoluções recebidas:', data.returns?.length || 0, 'Total:', data.total);
       setDevolucoes(data.returns);
       setPagination({ total: data.total });
       setError(null);
