@@ -163,8 +163,6 @@ export const VendasTable = ({
               <TableHead className="min-w-[120px]">Custo Frete Listado</TableHead>
               <TableHead className="min-w-[150px]">Dimensões Pacote</TableHead>
               
-              {/* PAGAMENTO EXTRA */}
-              <TableHead className="min-w-[120px]">Taxa ML (Pgto)</TableHead>
               
               {/* OUTROS */}
               <TableHead className="min-w-[100px]">Tags</TableHead>
@@ -352,13 +350,6 @@ export const VendasTable = ({
                   <TableCell className="text-xs">
                     {shipping?.dimensions 
                       ? `${shipping.dimensions.width}x${shipping.dimensions.length}x${shipping.dimensions.height} cm (${shipping.dimensions.weight}g)`
-                      : '-'}
-                  </TableCell>
-                  
-                  {/* PAGAMENTO EXTRA */}
-                  <TableCell>
-                    {payment?.marketplace_fee 
-                      ? formatCurrency(payment.marketplace_fee) 
                       : '-'}
                   </TableCell>
                   
