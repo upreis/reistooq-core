@@ -55,6 +55,8 @@ serve(async (req) => {
         integration_account_id,
         provider,
         simple_tokens: encryptedPayload,
+        expires_at: payload.expires_at || null,
+        use_simple: true,
         organization_id: accountData.organization_id,
         updated_at: new Date().toISOString()
       }, {
