@@ -268,11 +268,77 @@ async function createNote(params: Record<string, any>) {
   
   console.log(`[create_note] Criando nota no pack ${packId}`);
   
-  // TODO: FASE 4
-  return new Response(
-    JSON.stringify({ success: false, message: 'FASE 4: Não implementado' }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    // 1️⃣ Obter access token
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      body: {
+        integration_account_id: integrationAccountId,
+        provider: 'mercadolivre'
+      }
+    });
+    
+    if (tokenError || !tokenData?.access_token) {
+      console.error('[create_note] Erro ao obter token:', tokenError);
+      return new Response(
+        JSON.stringify({ error: 'Falha ao obter token de acesso' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const accessToken = tokenData.access_token;
+    
+    // 2️⃣ Criar nota via ML API
+    const mlApiUrl = `https://api.mercadolibre.com/packs/${packId}/sellers_note`;
+    
+    const mlResponse = await fetch(mlApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ note })
+    });
+    
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error('[create_note] Erro ML API:', mlResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Erro na API ML: ${mlResponse.status}`,
+          details: errorText
+        }),
+        { status: mlResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const result = await mlResponse.json();
+    console.log('[create_note] ✅ Nota criada com sucesso');
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        data: result
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('[create_note] Erro:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        error: 'Erro ao criar nota',
+        details: error.message
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 /**
@@ -297,9 +363,84 @@ async function createFeedback(params: Record<string, any>) {
   
   console.log(`[create_feedback] Criando feedback para order ${orderId}`);
   
-  // TODO: FASE 4
-  return new Response(
-    JSON.stringify({ success: false, message: 'FASE 4: Não implementado' }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    // 1️⃣ Obter access token
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      body: {
+        integration_account_id: integrationAccountId,
+        provider: 'mercadolivre'
+      }
+    });
+    
+    if (tokenError || !tokenData?.access_token) {
+      console.error('[create_feedback] Erro ao obter token:', tokenError);
+      return new Response(
+        JSON.stringify({ error: 'Falha ao obter token de acesso' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const accessToken = tokenData.access_token;
+    
+    // 2️⃣ Criar feedback via ML API
+    const mlApiUrl = `https://api.mercadolibre.com/orders/${orderId}/feedback`;
+    
+    const feedbackBody: Record<string, any> = {
+      fulfilled,
+      rating
+    };
+    
+    if (message && message.trim()) {
+      feedbackBody.message = message.trim();
+    }
+    
+    const mlResponse = await fetch(mlApiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(feedbackBody)
+    });
+    
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error('[create_feedback] Erro ML API:', mlResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Erro na API ML: ${mlResponse.status}`,
+          details: errorText
+        }),
+        { status: mlResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const result = await mlResponse.json();
+    console.log('[create_feedback] ✅ Feedback criado com sucesso');
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        data: result
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('[create_feedback] Erro:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        error: 'Erro ao criar feedback',
+        details: error.message
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 }

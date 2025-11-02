@@ -3,14 +3,20 @@
  * Tabela principal de vendas do Mercado Livre
  */
 
+import { useState } from 'react';
 import { useVendasStore } from '../store/vendasStore';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, User, Calendar, DollarSign } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, User, Calendar, DollarSign, MessageSquare, Star } from 'lucide-react';
 import { getOrderStatusLabel, getOrderStatusColor } from '../utils/statusMapping';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { VendasNoteDialog } from './VendasNoteDialog';
+import { VendasFeedbackDialog } from './VendasFeedbackDialog';
+import { useVendasFilters } from '../hooks/useVendasFilters';
+import { useVendasData } from '../hooks/useVendasData';
 
 const getBadgeVariant = (color: string) => {
   const variantMap: Record<string, any> = {
@@ -26,6 +32,11 @@ const getBadgeVariant = (color: string) => {
 
 export const VendasOnlineTable = () => {
   const { orders, isLoading, pagination } = useVendasStore();
+  const { filters } = useVendasFilters();
+  const { refresh } = useVendasData();
+  
+  const [noteDialog, setNoteDialog] = useState<{ open: boolean; packId: string } | null>(null);
+  const [feedbackDialog, setFeedbackDialog] = useState<{ open: boolean; orderId: string } | null>(null);
 
   if (isLoading) {
     return (
@@ -135,6 +146,29 @@ export const VendasOnlineTable = () => {
                 </div>
               </div>
 
+              {/* Ações */}
+              <div className="flex gap-2 pt-2 border-t">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFeedbackDialog({ open: true, orderId: order.id.toString() })}
+                >
+                  <Star className="h-3 w-3 mr-1" />
+                  Feedback
+                </Button>
+                
+                {order.pack_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setNoteDialog({ open: true, packId: order.pack_id.toString() })}
+                  >
+                    <MessageSquare className="h-3 w-3 mr-1" />
+                    Nota no Pack
+                  </Button>
+                )}
+              </div>
+
               {/* Shipping Info */}
               {order.shipping && (
                 <div className="pt-2 border-t">
@@ -147,6 +181,27 @@ export const VendasOnlineTable = () => {
           </Card>
         ))}
       </div>
+
+      {/* Dialogs */}
+      {noteDialog && (
+        <VendasNoteDialog
+          open={noteDialog.open}
+          onOpenChange={(open) => !open && setNoteDialog(null)}
+          packId={noteDialog.packId}
+          integrationAccountId={filters.integrationAccountId}
+          onSuccess={() => refresh()}
+        />
+      )}
+      
+      {feedbackDialog && (
+        <VendasFeedbackDialog
+          open={feedbackDialog.open}
+          onOpenChange={(open) => !open && setFeedbackDialog(null)}
+          orderId={feedbackDialog.orderId}
+          integrationAccountId={filters.integrationAccountId}
+          onSuccess={() => refresh()}
+        />
+      )}
     </div>
   );
 };
