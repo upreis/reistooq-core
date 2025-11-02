@@ -207,9 +207,15 @@ export const VendasTable = ({
                   {/* VALORES */}
                   <TableCell className="font-semibold">{formatCurrency(order.total_amount || 0)}</TableCell>
                   <TableCell>{formatCurrency(order.paid_amount || 0)}</TableCell>
-                  <TableCell>{formatCurrency(shipping?.costs?.receiver?.cost || order.shipping_cost || 0)}</TableCell>
-                  <TableCell>{formatCurrency(order.coupon_amount || 0)}</TableCell>
-                  <TableCell>{formatCurrency(payment?.marketplace_fee || order.marketplace_fee || 0)}</TableCell>
+                  <TableCell>{formatCurrency(payment?.shipping_cost || shipping?.lead_time?.cost || 0)}</TableCell>
+                  <TableCell>{formatCurrency(order.coupon?.amount || order.coupon_amount || 0)}</TableCell>
+                  <TableCell>
+                    {formatCurrency(
+                      order.order_items?.reduce((sum: number, item: any) => 
+                        sum + (item.sale_fee || 0), 0
+                      ) || 0
+                    )}
+                  </TableCell>
                   
                   {/* COMPRADOR */}
                   <TableCell className="font-mono text-xs">{buyer?.id || '-'}</TableCell>

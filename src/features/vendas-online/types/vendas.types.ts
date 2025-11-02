@@ -52,9 +52,13 @@ export interface MLOrder {
   total_amount: number;
   paid_amount: number;
   currency_id: string;
-  shipping_cost: number;
-  coupon_amount: number;
-  marketplace_fee: number;
+  shipping_cost?: number;
+  coupon_amount?: number;
+  coupon?: {
+    id: number | null;
+    amount: number;
+  };
+  marketplace_fee?: number;
   
   // Payments
   payments: MLPayment[];
