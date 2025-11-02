@@ -19,6 +19,7 @@ import { MaintenanceMode } from '@/components/MaintenanceMode';
 import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
+import VendasOnline from "./pages/VendasOnline";
 import Scanner from "./pages/Scanner";
 import MLOrdersCompletas from "./pages/MLOrdersCompletas";
 import Reclamacoes from "./pages/Reclamacoes";
@@ -150,6 +151,11 @@ function App() {
                      <Route path="/pedidos" element={
                        <PermissionRoute requiredPermissions={['orders:read']}>
                          <OMS />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/vendas-online" element={
+                       <PermissionRoute requiredPermissions={['orders:read']}>
+                         <VendasOnline />
                        </PermissionRoute>
                      } />
                     <Route path="/ml-orders-completas" element={
