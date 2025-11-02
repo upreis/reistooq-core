@@ -107,7 +107,6 @@ export const VendasTable = ({
               {/* DATAS */}
               <TableHead className="min-w-[150px]">Data Criação</TableHead>
               <TableHead className="min-w-[150px]">Data Fechamento</TableHead>
-              <TableHead className="min-w-[150px]">Data Aprovação</TableHead>
               <TableHead className="min-w-[150px]">Última Atualização</TableHead>
               <TableHead className="min-w-[150px]">Validade</TableHead>
               
@@ -121,9 +120,6 @@ export const VendasTable = ({
               {/* COMPRADOR */}
               <TableHead className="min-w-[100px]">ID Comprador</TableHead>
               <TableHead className="min-w-[150px]">Nome Comprador</TableHead>
-              <TableHead className="min-w-[150px]">Email Comprador</TableHead>
-              <TableHead className="min-w-[120px]">Telefone</TableHead>
-              <TableHead className="min-w-[150px]">CPF/CNPJ</TableHead>
               
               {/* PRODUTO */}
               <TableHead className="min-w-[100px]">ID Item</TableHead>
@@ -169,12 +165,10 @@ export const VendasTable = ({
               
               {/* PAGAMENTO EXTRA */}
               <TableHead className="min-w-[120px]">Taxa ML (Pgto)</TableHead>
-              <TableHead className="min-w-[150px]">Razão Pagamento</TableHead>
               
               {/* OUTROS */}
               <TableHead className="min-w-[100px]">Tags</TableHead>
               <TableHead className="min-w-[150px]">Tipo Pedido</TableHead>
-              <TableHead className="min-w-[100px]">Moeda</TableHead>
               <TableHead className="min-w-[80px]">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -207,7 +201,6 @@ export const VendasTable = ({
                   {/* DATAS */}
                   <TableCell className="text-xs">{formatDateTime(order.date_created)}</TableCell>
                   <TableCell className="text-xs">{order.date_closed ? formatDateTime(order.date_closed) : '-'}</TableCell>
-                  <TableCell className="text-xs">{order.date_approved ? formatDateTime(order.date_approved) : '-'}</TableCell>
                   <TableCell className="text-xs">{order.last_updated ? formatDateTime(order.last_updated) : '-'}</TableCell>
                   <TableCell className="text-xs">{order.expiration_date ? formatDateTime(order.expiration_date) : '-'}</TableCell>
                   
@@ -221,9 +214,6 @@ export const VendasTable = ({
                   {/* COMPRADOR */}
                   <TableCell className="font-mono text-xs">{buyer?.id || '-'}</TableCell>
                   <TableCell>{buyer?.nickname || buyer?.first_name || '-'}</TableCell>
-                  <TableCell className="text-xs">{buyer?.email || '-'}</TableCell>
-                  <TableCell className="text-xs">{buyer?.phone?.number || '-'}</TableCell>
-                  <TableCell className="font-mono text-xs">{buyer?.billing_info?.doc_number || '-'}</TableCell>
                   
                   {/* PRODUTO */}
                   <TableCell className="font-mono text-xs">{firstItem?.item?.id || '-'}</TableCell>
@@ -361,9 +351,6 @@ export const VendasTable = ({
                       ? formatCurrency(payment.marketplace_fee) 
                       : '-'}
                   </TableCell>
-                  <TableCell className="text-xs">
-                    {payment?.reason || '-'}
-                  </TableCell>
                   
                   {/* OUTROS */}
                   <TableCell className="text-xs">
@@ -378,7 +365,6 @@ export const VendasTable = ({
                     ) : '-'}
                   </TableCell>
                   <TableCell className="text-xs">{order.order_request?.return ? 'Devolução' : 'Normal'}</TableCell>
-                  <TableCell>{order.currency_id || '-'}</TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"
