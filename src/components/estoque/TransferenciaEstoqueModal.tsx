@@ -50,6 +50,7 @@ export function TransferenciaEstoqueModal({
   const [locaisDestino, setLocaisDestino] = useState<LocalEstoque[]>([]);
   const [localDestinoId, setLocalDestinoId] = useState<string>('');
   const [transferencias, setTransferencias] = useState<TransferenciaItem[]>([]);
+  const [idEnvio, setIdEnvio] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [carregandoLocais, setCarregandoLocais] = useState(false);
   const { toast } = useToast();
@@ -277,6 +278,10 @@ export function TransferenciaEstoqueModal({
   };
 
   const localDestino = locaisDestino.find(l => l.id === localDestinoId);
+  
+  // Calcular resumo de quantidades
+  const totalItens = transferencias.filter(t => t.quantidadeTransferir > 0).length;
+  const totalQuantidade = transferencias.reduce((sum, t) => sum + t.quantidadeTransferir, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -312,6 +317,18 @@ export function TransferenciaEstoqueModal({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Campo de ID do Envio */}
+          <div className="space-y-2">
+            <Label htmlFor="id-envio">ID do Envio (opcional)</Label>
+            <Input
+              id="id-envio"
+              type="text"
+              value={idEnvio}
+              onChange={(e) => setIdEnvio(e.target.value)}
+              placeholder="Ex: ENV-2024-001"
+            />
           </div>
 
           {/* Lista de produtos para transferir */}
@@ -361,6 +378,28 @@ export function TransferenciaEstoqueModal({
             <Alert>
               <AlertDescription>
                 Nenhum produto selecionado para transferência.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Resumo da transferência */}
+          {totalItens > 0 && (
+            <Alert className="bg-primary/10 border-primary/20">
+              <AlertDescription>
+                <div className="space-y-1">
+                  <p className="font-semibold">Resumo da Transferência:</p>
+                  <p className="text-sm">
+                    • <strong>{totalItens}</strong> {totalItens === 1 ? 'item' : 'itens'} a transferir
+                  </p>
+                  <p className="text-sm">
+                    • <strong>{totalQuantidade}</strong> {totalQuantidade === 1 ? 'unidade' : 'unidades'} no total
+                  </p>
+                  {idEnvio && (
+                    <p className="text-sm">
+                      • ID do Envio: <strong>{idEnvio}</strong>
+                    </p>
+                  )}
+                </div>
               </AlertDescription>
             </Alert>
           )}
