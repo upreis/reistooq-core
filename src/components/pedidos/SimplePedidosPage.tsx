@@ -59,7 +59,6 @@ import { StatusFilters } from '@/features/orders/types/orders-status.types';
 import { useColumnManager, resetColumnCache } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
 import { PedidosTableSection } from './components/PedidosTableSection';
-import { PedidosDashboardSection } from './components/PedidosDashboardSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
 import { PedidosModalsSection } from './components/PedidosModalsSection';
@@ -959,14 +958,6 @@ useEffect(() => {
 
       <div className="flex-1 overflow-auto m-0">
         <div className="space-y-6">
-            {/* 📊 DASHBOARD INTELIGENTE */}
-            <ErrorBoundary name="PedidosDashboardSection">
-              <PedidosDashboardSection 
-                orders={orders || []}
-                loading={loading}
-              />
-            </ErrorBoundary>
-
       {/* 🛡️ HEADER BLINDADO */}
       <PedidosHeaderSection
         fonte={state.fonte}
