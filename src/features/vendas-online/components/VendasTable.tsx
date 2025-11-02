@@ -19,8 +19,7 @@ import {
 import { MLOrder } from '../types/vendas.types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { getOrderStatusLabel, getShippingStatusLabel } from '../utils/statusMapping';
-import { mapMLShippingSubstatus, getSubstatusDescription } from '@/utils/mlStatusMapping';
+import { getOrderStatusLabel, getShippingStatusLabel, getShippingSubstatusLabel, getShippingSubstatusDescription } from '../utils/statusMapping';
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -242,10 +241,10 @@ export const VendasTable = ({
                   <TableCell className="text-xs">
                     {shipping?.substatus ? (
                       <div className="space-y-1">
-                        <div className="font-medium">{mapMLShippingSubstatus(shipping.substatus)}</div>
-                        {getSubstatusDescription(shipping.substatus) && (
+                        <div className="font-medium">{getShippingSubstatusLabel(shipping.substatus)}</div>
+                        {getShippingSubstatusDescription(shipping.substatus) && (
                           <div className="text-muted-foreground text-xs">
-                            {getSubstatusDescription(shipping.substatus)}
+                            {getShippingSubstatusDescription(shipping.substatus)}
                           </div>
                         )}
                       </div>
