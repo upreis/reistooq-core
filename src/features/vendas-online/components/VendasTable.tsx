@@ -207,9 +207,9 @@ export const VendasTable = ({
                   {/* VALORES */}
                   <TableCell className="font-semibold">{formatCurrency(order.total_amount || 0)}</TableCell>
                   <TableCell>{formatCurrency(order.paid_amount || 0)}</TableCell>
-                  <TableCell>{formatCurrency(order.shipping_cost || 0)}</TableCell>
+                  <TableCell>{formatCurrency(shipping?.costs?.receiver?.cost || order.shipping_cost || 0)}</TableCell>
                   <TableCell>{formatCurrency(order.coupon_amount || 0)}</TableCell>
-                  <TableCell>{formatCurrency(order.marketplace_fee || 0)}</TableCell>
+                  <TableCell>{formatCurrency(payment?.marketplace_fee || order.marketplace_fee || 0)}</TableCell>
                   
                   {/* COMPRADOR */}
                   <TableCell className="font-mono text-xs">{buyer?.id || '-'}</TableCell>
@@ -316,11 +316,13 @@ export const VendasTable = ({
                   
                   {/* FULFILLMENT & MEDIAÇÕES */}
                   <TableCell>
-                    {order.fulfilled ? (
-                      <Badge variant="default">Sim</Badge>
-                    ) : (
-                      <Badge variant="outline">Não</Badge>
-                    )}
+                    {order.fulfilled !== null && order.fulfilled !== undefined ? (
+                      order.fulfilled ? (
+                        <Badge variant="default">Sim</Badge>
+                      ) : (
+                        <Badge variant="outline">Não</Badge>
+                      )
+                    ) : '-'}
                   </TableCell>
                   <TableCell className="text-xs">
                     {order.mediations && order.mediations.length > 0 
@@ -337,12 +339,14 @@ export const VendasTable = ({
                   
                   {/* SHIPPING EXTRA */}
                   <TableCell>
-                    {shipping?.shipping_option?.list_cost 
-                      ? formatCurrency(shipping.shipping_option.list_cost) 
+                    {shipping?.lead_time?.list_cost 
+                      ? formatCurrency(shipping.lead_time.list_cost) 
                       : '-'}
                   </TableCell>
                   <TableCell className="text-xs">
-                    {shipping?.shipping_option?.dimensions || '-'}
+                    {shipping?.dimensions 
+                      ? `${shipping.dimensions.width}x${shipping.dimensions.length}x${shipping.dimensions.height} cm (${shipping.dimensions.weight}g)`
+                      : '-'}
                   </TableCell>
                   
                   {/* PAGAMENTO EXTRA */}

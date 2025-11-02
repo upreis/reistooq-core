@@ -120,10 +120,23 @@ export interface MLOrder {
       estimated_delivery_final?: {
         date?: string;
       };
+      list_cost?: number;
+      cost?: number;
     };
     shipping_option?: {
       list_cost?: number;
       dimensions?: string;
+    };
+    dimensions?: {
+      width?: number;
+      length?: number;
+      height?: number;
+      weight?: number;
+    };
+    costs?: {
+      receiver?: {
+        cost?: number;
+      };
     };
     status_history?: MLStatusHistory[];
   };
