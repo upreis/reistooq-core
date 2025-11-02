@@ -1,0 +1,152 @@
+/**
+ * 📋 VENDAS ONLINE TABLE
+ * Tabela principal de vendas do Mercado Livre
+ */
+
+import { useVendasStore } from '../store/vendasStore';
+import { Badge } from '@/components/ui/badge';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Package, User, Calendar, DollarSign } from 'lucide-react';
+import { getOrderStatusLabel, getOrderStatusColor } from '../utils/statusMapping';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+const getBadgeVariant = (color: string) => {
+  const variantMap: Record<string, any> = {
+    blue: 'default',
+    green: 'default',
+    yellow: 'secondary',
+    red: 'destructive',
+    gray: 'outline',
+    purple: 'default'
+  };
+  return variantMap[color] || 'default';
+};
+
+export const VendasOnlineTable = () => {
+  const { orders, isLoading, pagination } = useVendasStore();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[...Array(5)].map((_, i) => (
+          <Card key={i} className="p-4">
+            <Skeleton className="h-24 w-full" />
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
+    return (
+      <Card className="p-12 text-center">
+        <Package className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+        <h3 className="text-lg font-semibold mb-2">Nenhuma venda encontrada</h3>
+        <p className="text-muted-foreground">
+          Selecione uma conta do Mercado Livre para visualizar as vendas.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header com total */}
+      <div className="flex justify-between items-center">
+        <p className="text-sm text-muted-foreground">
+          Mostrando <strong>{orders.length}</strong> de <strong>{pagination.total}</strong> vendas
+        </p>
+      </div>
+
+      {/* Lista de Orders */}
+      <div className="grid gap-4">
+        {orders.map((order) => (
+          <Card key={order.id} className="p-4 hover:shadow-md transition-shadow">
+            <div className="space-y-3">
+              {/* Header da Order */}
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold">Pedido #{order.id}</h3>
+                    <Badge variant={getBadgeVariant(getOrderStatusColor(order.status))}>
+                      {getOrderStatusLabel(order.status)}
+                    </Badge>
+                    {order.pack_id && (
+                      <Badge variant="outline">Pack #{order.pack_id}</Badge>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(order.date_created), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <div className="flex items-center gap-1 text-lg font-bold text-primary">
+                    <DollarSign className="h-4 w-4" />
+                    {order.total_amount.toLocaleString('pt-BR', { 
+                      style: 'currency', 
+                      currency: order.currency_id 
+                    })}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {order.payments.length} pagamento(s)
+                  </p>
+                </div>
+              </div>
+
+              {/* Comprador */}
+              <div className="flex items-center gap-2 text-sm">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium">{order.buyer.nickname}</span>
+                {order.buyer.email && (
+                  <span className="text-muted-foreground">• {order.buyer.email}</span>
+                )}
+              </div>
+
+              {/* Itens */}
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Itens ({order.order_items.length})
+                </p>
+                <div className="grid gap-2">
+                  {order.order_items.map((item, idx) => (
+                    <div key={idx} className="flex justify-between items-center text-sm bg-muted/30 p-2 rounded">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.item.title}</p>
+                        {item.item.seller_sku && (
+                          <p className="text-xs text-muted-foreground">SKU: {item.item.seller_sku}</p>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold">
+                          {item.quantity}x {item.unit_price.toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: item.currency_id
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Shipping Info */}
+              {order.shipping && (
+                <div className="pt-2 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    Envio ID: <span className="font-mono">{order.shipping.id}</span>
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+};
