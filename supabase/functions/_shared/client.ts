@@ -77,22 +77,25 @@ export function getErrorMessage(error: unknown): string {
 
 export async function getMlConfig(supabase: any, accountId: string) {
   try {
-    const { data, error } = await supabase.rpc('get_ml_config', {
-      account_id: accountId
-    });
+    const { data, error } = await supabase
+      .from('integration_accounts')
+      .select('account_identifier, public_auth')
+      .eq('id', accountId)
+      .eq('provider', 'mercadolivre')
+      .single();
 
     if (error) {
       console.error('❌ Erro ao obter config ML para conta', accountId, ':', error);
       return null;
     }
 
-    if (!data || !data.access_token) {
+    if (!data || !data.public_auth?.access_token) {
       console.error('❌ Token ML não encontrado para conta', accountId);
       return null;
     }
 
     return {
-      access_token: data.access_token,
+      access_token: data.public_auth.access_token,
       account_identifier: data.account_identifier
     };
   } catch (error) {
