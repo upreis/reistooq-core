@@ -188,9 +188,11 @@ export const VendasTable = ({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs">
-                    {typeof order.status_detail === 'object' 
-                      ? order.status_detail?.description || '-' 
-                      : order.status_detail || '-'}
+                    {order.status_detail 
+                      ? (typeof order.status_detail === 'object' 
+                          ? order.status_detail?.description || order.status_detail?.code || '-'
+                          : order.status_detail)
+                      : '-'}
                   </TableCell>
                   
                   {/* DATAS */}
