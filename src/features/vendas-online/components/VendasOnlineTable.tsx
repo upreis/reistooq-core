@@ -237,7 +237,6 @@ export const VendasOnlineTable = () => {
           open={packDialog.open}
           onOpenChange={(open) => !open && setPackDialog(null)}
           packId={packDialog.packId}
-          integrationAccountId={filters.integrationAccountId}
         />
       )}
       
