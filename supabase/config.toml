@@ -102,7 +102,4 @@ schedule = "0 */4 * * *"  # 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
 [functions.ml-claims-fetch]
 verify_jwt = true
 
-[functions.ml-fix-tokens]
-verify_jwt = true
-
 

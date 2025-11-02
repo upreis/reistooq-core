@@ -58,22 +58,15 @@ Deno.serve(async (req) => {
 
     const supabase = makeClient(req.headers.get("Authorization"));
 
-    // ✅ 1. SISTEMA BLINDADO: Buscar secrets via função segura (com headers corretos)
-    const { data: secretData, error: secretsError } = await supabase.functions.invoke(
-      'integrations-get-secret',
-      {
-        body: {
-          integration_account_id,
-          provider: 'mercadolivre'
-        },
-        headers: {
-          'x-internal-call': 'true',
-          'x-internal-token': INTERNAL_TOKEN
-        }
-      }
-    );
+    // ✅ 1. BUSCAR SECRETS DIRETAMENTE DO BANCO (sem integrations-get-secret)
+    const { data: secretRow, error: secretsError } = await supabase
+      .from('integration_secrets')
+      .select('simple_tokens, use_simple')
+      .eq('integration_account_id', integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .single();
 
-    if (secretsError || !secretData?.secret) {
+    if (secretsError || !secretRow) {
       console.error('[ML Token Refresh] Erro ao buscar secrets:', secretsError);
       return new Response(JSON.stringify({ 
         success: false, 
@@ -85,13 +78,25 @@ Deno.serve(async (req) => {
       });
     }
 
-    const secrets = secretData.secret;
+    // Decriptar simple_tokens
+    let refreshToken: string | null = null;
+    let accessToken: string | null = null;
 
-    // Tokens já decriptados automaticamente pela função
-    let refreshToken = secrets.refresh_token as string | null;
-    let accessToken = secrets.access_token as string | null;
-
-    console.log('[ML Token Refresh] ✅ Tokens obtidos automaticamente via função segura');
+    if (secretRow.simple_tokens && secretRow.use_simple) {
+      try {
+        const simpleTokensStr = secretRow.simple_tokens as string;
+        if (simpleTokensStr.startsWith('SALT2024::')) {
+          const base64Payload = simpleTokensStr.replace('SALT2024::', '');
+          const jsonStr = atob(base64Payload);
+          const tokenData = JSON.parse(jsonStr);
+          refreshToken = tokenData.refresh_token;
+          accessToken = tokenData.access_token;
+          console.log('[ML Token Refresh] ✅ Tokens decriptados do simple_tokens');
+        }
+      } catch (err) {
+        console.error('[ML Token Refresh] Erro ao decriptar simple_tokens:', err);
+      }
+    }
 
     // ✅ 4. VALIDAÇÃO DE SECRETS OBRIGATÓRIA (Sistema Blindado)
     if (!refreshToken) {
