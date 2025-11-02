@@ -140,10 +140,8 @@ export default function ControleEstoquePage() {
   };
 
   return (
-    <div className="space-y-6 -m-3 p-3">
-      <div className="sticky top-0 z-20 bg-background pb-4 -mx-3 px-3">
-        <EstoqueHeader onLocalChange={loadProducts} />
-      </div>
+    <div className="space-y-6">
+      <EstoqueHeader onLocalChange={loadProducts} />
 
       <EstoqueNotifications 
         products={products}
