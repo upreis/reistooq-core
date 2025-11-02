@@ -26,21 +26,18 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
 
   console.log('[useVendasData] Buscando orders do ML:', params);
 
-  // Usar unified-orders como a página /pedidos faz
+  // ✅ Usar unified-orders como a página /pedidos faz
   const { data, error } = await supabase.functions.invoke('unified-orders', {
     body: {
-      provider: 'mercadolivre',
-      integration_account_ids: [params.integrationAccountId],
-      filters: {
-        search: params.search || '',
-        status_filter: params.status || [],
-        date_from: params.dateFrom,
-        date_to: params.dateTo
-      },
-      pagination: {
-        offset: params.offset,
-        limit: params.limit
-      }
+      integration_account_id: params.integrationAccountId, // ✅ SINGULAR, não array!
+      status: params.status,
+      search: params.search,
+      date_from: params.dateFrom,
+      date_to: params.dateTo,
+      offset: params.offset,
+      limit: params.limit,
+      enrich: true,
+      include_shipping: true
     }
   });
 
@@ -49,11 +46,11 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
     throw error;
   }
 
-  console.log('[useVendasData] Orders recebidas:', data?.orders?.length || 0);
+  console.log('[useVendasData] Resposta unified-orders:', data?.results?.length || 0);
 
-  // Adaptar resposta do unified-orders para nosso formato
-  const orders = data?.orders || [];
-  const total = data?.total || 0;
+  // ✅ Adaptar resposta do unified-orders (retorna results, não orders)
+  const orders = data?.results || [];
+  const total = data?.paging?.total || 0;
   
   // Extrair packs e shippings dos orders
   const packs: Record<string, any> = {};
