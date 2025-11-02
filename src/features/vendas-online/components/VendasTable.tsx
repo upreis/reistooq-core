@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { MLOrder } from '../types/vendas.types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -143,6 +148,7 @@ export const VendasTable = ({
               <TableHead className="min-w-[200px]">Código Rastreio</TableHead>
               <TableHead className="min-w-[150px]">Transportadora</TableHead>
               <TableHead className="min-w-[150px]">Previsão Entrega</TableHead>
+              <TableHead className="min-w-[120px]">Histórico Status</TableHead>
               
               {/* ENDEREÇO */}
               <TableHead className="min-w-[150px]">Cidade</TableHead>
@@ -272,6 +278,40 @@ export const VendasTable = ({
                     {shipping?.lead_time?.estimated_delivery_time?.date 
                       ? formatDateTime(shipping.lead_time.estimated_delivery_time.date) 
                       : '-'}
+                  </TableCell>
+                  <TableCell>
+                    {shipping?.status_history && shipping.status_history.length > 0 ? (
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <History className="h-4 w-4 mr-1" />
+                            {shipping.status_history.length} eventos
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-96" align="start">
+                          <div className="space-y-3">
+                            <h4 className="font-semibold text-sm">Histórico de Status</h4>
+                            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                              {shipping.status_history.map((history: any, idx: number) => (
+                                <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
+                                  <div className="text-xs font-medium">
+                                    {getShippingStatusLabel(history.status)}
+                                  </div>
+                                  {history.description && (
+                                    <div className="text-xs text-muted-foreground">
+                                      {history.description}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-muted-foreground mt-1">
+                                    {formatDateTime(history.date_time)}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    ) : '-'}
                   </TableCell>
                   
                   {/* ENDEREÇO */}

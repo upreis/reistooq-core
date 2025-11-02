@@ -96,7 +96,28 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
             if (shippingResp.ok) {
               const shippingData = await shippingResp.json();
 
-              // 2.a Endpoints adicionais: custos e SLA (executar em paralelo)
+              // 2.a Buscar status_history do shipment
+              let statusHistory = null;
+              try {
+                const historyResp = await fetch(
+                  `https://api.mercadolibre.com/shipments/${order.shipping.id}/history`,
+                  {
+                    headers: {
+                      Authorization: `Bearer ${accessToken}`,
+                      'x-format-new': 'true'
+                    }
+                  }
+                );
+
+                if (historyResp.ok) {
+                  statusHistory = await historyResp.json();
+                  console.log(`[unified-orders:${cid}] ✅ status_history obtido para shipment ${order.shipping.id}`);
+                }
+              } catch (histErr) {
+                console.warn(`[unified-orders:${cid}] Aviso ao buscar status_history do shipment ${order.shipping.id}:`, histErr);
+              }
+
+              // 2.b Endpoints adicionais: custos e SLA (executar em paralelo)
               try {
                 const [costsResp, slaResp] = await Promise.all([
                   fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/costs`, {
@@ -129,6 +150,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
               enrichedOrder.shipping = {
                 ...enrichedOrder.shipping,
                 ...shippingData,
+                status_history: statusHistory,
                 detailed_shipping: shippingData,
                 shipping_enriched: true
               };

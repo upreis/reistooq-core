@@ -125,6 +125,7 @@ export interface MLOrder {
       list_cost?: number;
       dimensions?: string;
     };
+    status_history?: MLStatusHistory[];
   };
   
   // Tags
