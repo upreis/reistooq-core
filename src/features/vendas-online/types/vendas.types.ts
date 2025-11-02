@@ -1,28 +1,47 @@
 /**
  * 🏷️ TYPES - VENDAS ONLINE
- * Baseado nas APIs oficiais do Mercado Livre
+ * Baseado nas APIs oficiais do Mercado Livre - TODAS AS PROPRIEDADES DISPONÍVEIS
  */
 
 // ============= ORDERS =============
 export interface MLOrder {
+  // IDs
   id: number;
+  pack_id: number | null;
+  
+  // Status
   status: string;
-  status_detail: string | null;
+  status_detail: {
+    code: string | null;
+    description: string | null;
+  } | string | null;
+  
+  // Datas
   date_created: string;
   date_closed: string | null;
+  date_approved: string | null;
   last_updated: string;
-  
-  // Pack
-  pack_id: number | null;
+  expiration_date: string | null;
   
   // Buyer
   buyer: {
     id: number;
     nickname: string;
+    first_name?: string;
+    last_name?: string;
     email?: string;
     phone?: {
       area_code: string;
       number: string;
+      extension?: string;
+    };
+    alternative_phone?: {
+      area_code: string;
+      number: string;
+    };
+    billing_info?: {
+      doc_type: string;
+      doc_number: string;
     };
   };
   
@@ -33,14 +52,68 @@ export interface MLOrder {
   total_amount: number;
   paid_amount: number;
   currency_id: string;
+  shipping_cost: number;
+  coupon_amount: number;
+  marketplace_fee: number;
   
   // Payments
   payments: MLPayment[];
   
-  // Shipping
+  // Shipping - EXTENDIDO
   shipping?: {
     id: number;
     status?: string;
+    substatus?: string;
+    tracking_number?: string | null;
+    tracking_method?: string | null;
+    date_created?: string;
+    last_updated?: string;
+    destination?: {
+      receiver_id?: number;
+      receiver_name?: string;
+      receiver_phone?: string;
+      shipping_address?: {
+        address_line?: string;
+        street_name?: string;
+        street_number?: string;
+        zip_code?: string;
+        city?: {
+          id?: string;
+          name?: string;
+        };
+        state?: {
+          id?: string;
+          name?: string;
+        };
+        country?: {
+          id?: string;
+          name?: string;
+        };
+        neighborhood?: {
+          id?: string | null;
+          name?: string | null;
+        };
+        comment?: string | null;
+        delivery_preference?: string;
+      };
+    };
+    lead_time?: {
+      shipping_method?: {
+        id?: number;
+        name?: string;
+        type?: string;
+      };
+      estimated_delivery_time?: {
+        date?: string;
+        type?: string;
+      };
+      estimated_delivery_limit?: {
+        date?: string;
+      };
+      estimated_delivery_final?: {
+        date?: string;
+      };
+    };
   };
   
   // Tags
@@ -50,7 +123,29 @@ export interface MLOrder {
   context?: {
     channel: string;
     site: string;
+    flow?: string;
   };
+  
+  // Feedback
+  feedback?: {
+    buyer: any | null;
+    seller: any | null;
+  };
+  
+  // Taxes
+  taxes?: {
+    amount: number | null;
+    currency_id: string | null;
+  };
+  
+  // Request
+  order_request?: {
+    return: any | null;
+    change: any | null;
+  };
+  
+  // Fulfilled
+  fulfilled: boolean | null;
 }
 
 export interface MLOrderItem {
@@ -64,22 +159,62 @@ export interface MLOrderItem {
       value_name: string;
     }>;
     seller_sku?: string;
+    seller_custom_field?: string;
+    category_id?: string;
+    condition?: string;
+    warranty?: string;
+    thumbnail?: string;
+    picture_url?: string;
   };
   quantity: number;
+  requested_quantity?: {
+    value: number;
+    measure: string;
+  };
   unit_price: number;
   full_unit_price: number;
   currency_id: string;
+  manufacturing_days?: number | null;
+  sale_fee?: number;
 }
 
 export interface MLPayment {
   id: number;
+  order_id?: number;
+  payer_id?: number;
   transaction_amount: number;
   currency_id: string;
   status: string;
+  status_code?: string | null;
   status_detail: string | null;
   payment_method_id: string;
+  payment_type: string;
+  installments: number;
+  installment_amount?: number | null;
   date_created: string;
+  date_approved?: string | null;
   date_last_modified: string;
+  transaction_amount_refunded?: number;
+  coupon_amount?: number;
+  marketplace_fee?: number;
+  shipping_cost?: number;
+  total_paid_amount?: number;
+  overpaid_amount?: number;
+  card_id?: number | null;
+  issuer_id?: string;
+  authorization_code?: string | null;
+  transaction_order_id?: string | null;
+  activation_uri?: string | null;
+  operation_type?: string;
+  available_actions?: string[];
+  atm_transfer_reference?: {
+    transaction_id: string | null;
+    company_id: string | null;
+  };
+  collector?: {
+    id: number;
+  };
+  reason?: string;
 }
 
 // ============= PACKS =============
