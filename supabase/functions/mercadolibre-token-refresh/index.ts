@@ -6,11 +6,11 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
-function makeClient(authHeader: string | null) {
-  const url = Deno.env.get("SUPABASE_URL")!;
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  return createClient(url, key, {
-    global: authHeader ? { headers: { Authorization: authHeader } } : undefined,
+function makeServiceClient() {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(SUPABASE_URL, SERVICE_KEY, { 
+    auth: { persistSession: false, autoRefreshToken: false } 
   });
 }
 
@@ -56,10 +56,10 @@ Deno.serve(async (req) => {
 
     console.log(`[ML Token Refresh] Iniciando refresh para account: ${integration_account_id}`);
 
-    const supabase = makeClient(req.headers.get("Authorization"));
+    const serviceClient = makeServiceClient();
 
-    // ✅ 1. BUSCAR SECRETS DIRETAMENTE DO BANCO (sem integrations-get-secret)
-    const { data: secretRow, error: secretsError } = await supabase
+    // ✅ 1. BUSCAR SECRETS DIRETAMENTE DO BANCO usando SERVICE CLIENT
+    const { data: secretRow, error: secretsError } = await serviceClient
       .from('integration_secrets')
       .select('simple_tokens, use_simple')
       .eq('integration_account_id', integration_account_id)
@@ -198,7 +198,7 @@ Deno.serve(async (req) => {
     console.log('[ML Token Refresh] ✅ Refresh bem-sucedido, atualizando tokens...');
 
     // ✅ 6. Atualizar tokens no banco usando função SQL segura
-    const { data: updateResult, error: updateError } = await supabase.rpc(
+    const { data: updateResult, error: updateError } = await serviceClient.rpc(
       'refresh_ml_token',
       {
         p_account_id: integration_account_id,
