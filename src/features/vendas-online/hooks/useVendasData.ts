@@ -30,11 +30,11 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
     body: {
       action: 'fetch_orders',
       params: {
-        integration_account_id: params.integrationAccountId,
+        integrationAccountId: params.integrationAccountId,
         search: params.search || '',
         status: params.status || [],
-        date_from: params.dateFrom,
-        date_to: params.dateTo,
+        dateFrom: params.dateFrom,
+        dateTo: params.dateTo,
         offset: params.offset,
         limit: params.limit
       }
