@@ -19,6 +19,8 @@ import {
 import { MLOrder } from '../types/vendas.types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getOrderStatusLabel, getShippingStatusLabel } from '../utils/statusMapping';
+import { mapMLShippingSubstatus, getSubstatusDescription } from '@/utils/mlStatusMapping';
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -173,7 +175,7 @@ export const VendasTable = ({
                   {/* STATUS */}
                   <TableCell>
                     <Badge variant={getStatusVariant(order.status)}>
-                      {order.status}
+                      {getOrderStatusLabel(order.status)}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-xs">
@@ -231,11 +233,24 @@ export const VendasTable = ({
                   {/* ENVIO */}
                   <TableCell className="font-mono text-xs">{shipping?.id || '-'}</TableCell>
                   <TableCell>
-                    {shipping?.status && (
-                      <Badge variant="outline">{shipping.status}</Badge>
-                    )}
+                    {shipping?.status ? (
+                      <Badge variant={getStatusVariant(shipping.status)}>
+                        {getShippingStatusLabel(shipping.status)}
+                      </Badge>
+                    ) : '-'}
                   </TableCell>
-                  <TableCell className="text-xs">{shipping?.substatus || '-'}</TableCell>
+                  <TableCell className="text-xs">
+                    {shipping?.substatus ? (
+                      <div className="space-y-1">
+                        <div className="font-medium">{mapMLShippingSubstatus(shipping.substatus)}</div>
+                        {getSubstatusDescription(shipping.substatus) && (
+                          <div className="text-muted-foreground text-xs">
+                            {getSubstatusDescription(shipping.substatus)}
+                          </div>
+                        )}
+                      </div>
+                    ) : '-'}
+                  </TableCell>
                   <TableCell className="text-xs">{shipping?.lead_time?.shipping_method?.name || '-'}</TableCell>
                   <TableCell className="font-mono text-xs">{shipping?.tracking_number || '-'}</TableCell>
                   <TableCell className="text-xs">{shipping?.tracking_method || '-'}</TableCell>
