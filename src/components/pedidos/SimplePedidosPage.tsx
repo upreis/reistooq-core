@@ -74,7 +74,6 @@ import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
 import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
 
 import { FEATURES } from '@/config/features';
-import { ProviderSelector } from './components/ProviderSelector';
 
 type Order = {
   id: string;
@@ -1008,17 +1007,6 @@ useEffect(() => {
           actions.refetch();
         }}
       />
-
-
-      {/* ✅ FASE 3: Seletor de Provider (Shopee + ML) */}
-      {FEATURES.SHOPEE && accounts.length > 0 && (
-        <ProviderSelector
-          selectedProvider={selectedProvider}
-          onProviderChange={setSelectedProvider}
-          accounts={accounts}
-          loading={loading}
-        />
-      )}
 
       {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
         {/* F4.3: PedidosFiltersUnified com Error Boundary */}
