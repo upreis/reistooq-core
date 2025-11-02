@@ -93,6 +93,10 @@ export function TransferenciaEstoqueModal({
         const produto = allProducts.find(p => p.id === id);
         if (!produto) return null;
 
+        // Filtrar apenas produtos filhos (não produtos pai)
+        // Produtos pai têm eh_produto_pai = true, filhos têm sku_pai preenchido
+        if (produto.eh_produto_pai === true) return null;
+
         return {
           produtoId: produto.id,
           sku: produto.sku_interno,
