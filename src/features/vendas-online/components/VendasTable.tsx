@@ -156,9 +156,6 @@ export const VendasTable = ({
               <TableHead className="min-w-[120px]">Fulfillment</TableHead>
               <TableHead className="min-w-[120px]">Mediações</TableHead>
               
-              {/* DADOS FISCAIS */}
-              <TableHead className="min-w-[120px]">Impostos</TableHead>
-              
               {/* SHIPPING EXTRA */}
               <TableHead className="min-w-[120px]">Custo Frete Listado</TableHead>
               <TableHead className="min-w-[150px]">Dimensões Pacote</TableHead>
@@ -334,16 +331,9 @@ export const VendasTable = ({
                       : '-'}
                   </TableCell>
                   
-                  {/* DADOS FISCAIS */}
-                  <TableCell>
-                    {order.taxes?.amount 
-                      ? formatCurrency(order.taxes.amount) 
-                      : '-'}
-                  </TableCell>
-                  
                   {/* SHIPPING EXTRA */}
                   <TableCell>
-                    {shipping?.lead_time?.list_cost 
+                    {shipping?.lead_time?.list_cost
                       ? formatCurrency(shipping.lead_time.list_cost) 
                       : '-'}
                   </TableCell>
