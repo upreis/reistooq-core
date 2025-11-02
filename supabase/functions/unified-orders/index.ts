@@ -838,7 +838,7 @@ Deno.serve(async (req) => {
           errorMsg: decryptError?.message,
           hasData: !!decryptedData,
           dataType: typeof decryptedData,
-          dataLength: decryptedData ? decryptedData.length : 0
+          dataLength: decryptedData ? JSON.stringify(decryptedData).length : 0
         });
 
         if (decryptError) {
@@ -857,8 +857,14 @@ Deno.serve(async (req) => {
           });
         }
       } catch (err) {
-        console.error(`[unified-orders:${cid}] ❌ ERRO: Falha descriptografia simples`, err);
+        console.error(`[unified-orders:${cid}] ❌ ERRO: Falha descriptografia simples -`, err instanceof Error ? err.message : String(err));
       }
+    } else {
+      console.log(`[unified-orders:${cid}] ⚠️ Não usando descriptografia simples:`, {
+        hasSecretRow: !!secretRow,
+        useSimple: secretRow?.use_simple,
+        hasSimpleTokens: !!secretRow?.simple_tokens
+      });
     }
     
     // ✅ 4. SISTEMA BLINDADO: 4 Fallbacks sequenciais de decriptação
@@ -965,24 +971,20 @@ Deno.serve(async (req) => {
       // Validação crítica de secrets antes de prosseguir
       const keyFingerprint = (await sha256hex(CRYPTO_KEY)).slice(0, 12);
       console.error(`[unified-orders:${cid}] 🔒 NO_TOKENS detectado - keyFp: ${keyFingerprint}`);
+      console.error(`[unified-orders:${cid}] ⚠️ Detalhes da conta ML:`, {
+        accountId: integration_account_id,
+        hasSecretRow: !!secretRow,
+        hasSimpleTokens: !!secretRow?.simple_tokens,
+        hasSecretEnc: !!secretRow?.secret_enc,
+        useSimple: secretRow?.use_simple
+      });
       
-      // Verificar se secrets estão configurados (sistema blindado exige)
-      if (!CRYPTO_KEY || CRYPTO_KEY.length < 32) {
-        console.error(`[unified-orders:${cid}] ❌ CRITICO: APP_ENCRYPTION_KEY ausente ou inválido`);
-        return fail("APP_ENCRYPTION_KEY not configured", 500);
-      }
-
-      try {
-        const mlConfig = await getMlConfig(serviceClient, integration_account_id);
-        if (!mlConfig) {
-          return fail("ML secrets not configured", 500);
-        }
-      } catch (e) {
-        console.error(`[unified-orders:${cid}] ❌ CRITICO: Erro ao verificar ML secrets:`, e instanceof Error ? e.message : String(e));
-        return fail("ML configuration error", 500);
-      }
-
-      return fail("no_tokens", 401);
+      // 🆕 SOLUÇÃO: Retornar erro informativo que orienta o usuário a reconectar
+      return fail(
+        `Os tokens de acesso ao Mercado Livre expiraram ou estão corrompidos para a conta ${accountData.name || integration_account_id}. ` +
+        `Por favor, vá em Integrações e reconecte esta conta.`,
+        401
+      );
     }
 
     // ✅ 6. VERIFICAÇÃO DE EXPIRAÇÃO (Sistema Blindado)
