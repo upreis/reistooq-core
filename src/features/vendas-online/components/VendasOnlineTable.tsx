@@ -9,12 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Package, User, Calendar, DollarSign, MessageSquare, Star } from 'lucide-react';
+import { Package, User, Calendar, DollarSign, MessageSquare, Star, Info, Truck } from 'lucide-react';
 import { getOrderStatusLabel, getOrderStatusColor } from '../utils/statusMapping';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { VendasNoteDialog } from './VendasNoteDialog';
 import { VendasFeedbackDialog } from './VendasFeedbackDialog';
+import { VendasPackDialog } from './VendasPackDialog';
+import { VendasShippingDialog } from './VendasShippingDialog';
 import { useVendasFilters } from '../hooks/useVendasFilters';
 import { useVendasData } from '../hooks/useVendasData';
 
@@ -37,6 +39,8 @@ export const VendasOnlineTable = () => {
   
   const [noteDialog, setNoteDialog] = useState<{ open: boolean; packId: string } | null>(null);
   const [feedbackDialog, setFeedbackDialog] = useState<{ open: boolean; orderId: string } | null>(null);
+  const [packDialog, setPackDialog] = useState<{ open: boolean; packId: string } | null>(null);
+  const [shippingDialog, setShippingDialog] = useState<{ open: boolean; shippingId: string; currentStatus?: string } | null>(null);
 
   if (isLoading) {
     return (
@@ -158,13 +162,38 @@ export const VendasOnlineTable = () => {
                 </Button>
                 
                 {order.pack_id && (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setPackDialog({ open: true, packId: order.pack_id.toString() })}
+                    >
+                      <Info className="h-3 w-3 mr-1" />
+                      Ver Pack
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setNoteDialog({ open: true, packId: order.pack_id.toString() })}
+                    >
+                      <MessageSquare className="h-3 w-3 mr-1" />
+                      Nota
+                    </Button>
+                  </>
+                )}
+                
+                {order.shipping?.id && (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setNoteDialog({ open: true, packId: order.pack_id.toString() })}
+                    onClick={() => setShippingDialog({ 
+                      open: true, 
+                      shippingId: order.shipping.id.toString(),
+                      currentStatus: order.shipping.status
+                    })}
                   >
-                    <MessageSquare className="h-3 w-3 mr-1" />
-                    Nota no Pack
+                    <Truck className="h-3 w-3 mr-1" />
+                    Envio
                   </Button>
                 )}
               </div>
@@ -198,6 +227,26 @@ export const VendasOnlineTable = () => {
           open={feedbackDialog.open}
           onOpenChange={(open) => !open && setFeedbackDialog(null)}
           orderId={feedbackDialog.orderId}
+          integrationAccountId={filters.integrationAccountId}
+          onSuccess={() => refresh()}
+        />
+      )}
+      
+      {packDialog && (
+        <VendasPackDialog
+          open={packDialog.open}
+          onOpenChange={(open) => !open && setPackDialog(null)}
+          packId={packDialog.packId}
+          integrationAccountId={filters.integrationAccountId}
+        />
+      )}
+      
+      {shippingDialog && (
+        <VendasShippingDialog
+          open={shippingDialog.open}
+          onOpenChange={(open) => !open && setShippingDialog(null)}
+          shippingId={shippingDialog.shippingId}
+          currentStatus={shippingDialog.currentStatus}
           integrationAccountId={filters.integrationAccountId}
           onSuccess={() => refresh()}
         />

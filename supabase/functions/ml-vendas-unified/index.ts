@@ -228,11 +228,78 @@ async function fetchPack(params: Record<string, any>, req: Request) {
   
   console.log(`[fetch_pack] Buscando pack ${packId}`);
   
-  // TODO: FASE 3
-  return new Response(
-    JSON.stringify({ pack: null }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    // 1️⃣ Obter access token
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization') || '';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader }
+      },
+      auth: {
+        persistSession: false
+      }
+    });
+    
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      headers: {
+        Authorization: authHeader
+      },
+      body: {
+        integration_account_id: integrationAccountId,
+        provider: 'mercadolivre'
+      }
+    });
+    
+    if (tokenError || !tokenData?.access_token) {
+      console.error('[fetch_pack] Erro ao obter token:', tokenError);
+      return new Response(
+        JSON.stringify({ error: 'Falha ao obter token de acesso' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const accessToken = tokenData.access_token;
+    
+    // 2️⃣ Buscar pack via ML API
+    const mlApiUrl = `https://api.mercadolibre.com/packs/${packId}`;
+    
+    const mlResponse = await fetch(mlApiUrl, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error('[fetch_pack] Erro ML API:', mlResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: `Erro na API ML: ${mlResponse.status}` }),
+        { status: mlResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const pack = await mlResponse.json();
+    console.log('[fetch_pack] ✅ Pack recebido');
+    
+    return new Response(
+      JSON.stringify({ pack }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('[fetch_pack] Erro:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Erro ao buscar pack',
+        details: error.message
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 /**
@@ -250,11 +317,88 @@ async function updateShipping(params: Record<string, any>, req: Request) {
   
   console.log(`[update_shipping] Atualizando shipping ${shippingId} para ${newStatus}`);
   
-  // TODO: FASE 3
-  return new Response(
-    JSON.stringify({ success: false, message: 'FASE 3: Não implementado' }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    // 1️⃣ Obter access token
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization') || '';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader }
+      },
+      auth: {
+        persistSession: false
+      }
+    });
+    
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      headers: {
+        Authorization: authHeader
+      },
+      body: {
+        integration_account_id: integrationAccountId,
+        provider: 'mercadolivre'
+      }
+    });
+    
+    if (tokenError || !tokenData?.access_token) {
+      console.error('[update_shipping] Erro ao obter token:', tokenError);
+      return new Response(
+        JSON.stringify({ error: 'Falha ao obter token de acesso' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const accessToken = tokenData.access_token;
+    
+    // 2️⃣ Atualizar shipping via ML API
+    const mlApiUrl = `https://api.mercadolibre.com/shipments/${shippingId}`;
+    
+    const mlResponse = await fetch(mlApiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ status: newStatus })
+    });
+    
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error('[update_shipping] Erro ML API:', mlResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Erro na API ML: ${mlResponse.status}`,
+          details: errorText
+        }),
+        { status: mlResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const result = await mlResponse.json();
+    console.log('[update_shipping] ✅ Shipping atualizado');
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        data: result
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('[update_shipping] Erro:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false,
+        error: 'Erro ao atualizar shipping',
+        details: error.message
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 /**

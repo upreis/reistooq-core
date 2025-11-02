@@ -40,6 +40,7 @@ export interface MLOrder {
   // Shipping
   shipping?: {
     id: number;
+    status?: string;
   };
   
   // Tags
