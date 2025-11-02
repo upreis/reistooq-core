@@ -59,6 +59,13 @@ export interface MLOrder {
   // Payments
   payments: MLPayment[];
   
+  // Fulfillment
+  fulfilled: boolean | null;
+  mediations?: MLMediation[];
+  
+  // Status History
+  status_history?: MLStatusHistory[];
+  
   // Shipping - EXTENDIDO
   shipping?: {
     id: number;
@@ -114,6 +121,10 @@ export interface MLOrder {
         date?: string;
       };
     };
+    shipping_option?: {
+      list_cost?: number;
+      dimensions?: string;
+    };
   };
   
   // Tags
@@ -143,9 +154,6 @@ export interface MLOrder {
     return: any | null;
     change: any | null;
   };
-  
-  // Fulfilled
-  fulfilled: boolean | null;
 }
 
 export interface MLOrderItem {
@@ -215,6 +223,22 @@ export interface MLPayment {
     id: number;
   };
   reason?: string;
+}
+
+// ============= MEDIATIONS =============
+export interface MLMediation {
+  id: number;
+  status: string;
+  date_created: string;
+  last_updated: string;
+  reason?: string;
+}
+
+// ============= STATUS HISTORY =============
+export interface MLStatusHistory {
+  status: string;
+  date_time: string;
+  description?: string;
 }
 
 // ============= PACKS =============

@@ -150,6 +150,21 @@ export const VendasTable = ({
               <TableHead className="min-w-[100px]">CEP</TableHead>
               <TableHead className="min-w-[250px]">Endereço</TableHead>
               
+              {/* FULFILLMENT & MEDIAÇÕES */}
+              <TableHead className="min-w-[120px]">Fulfillment</TableHead>
+              <TableHead className="min-w-[120px]">Mediações</TableHead>
+              
+              {/* DADOS FISCAIS */}
+              <TableHead className="min-w-[120px]">Impostos</TableHead>
+              
+              {/* SHIPPING EXTRA */}
+              <TableHead className="min-w-[120px]">Custo Frete Listado</TableHead>
+              <TableHead className="min-w-[150px]">Dimensões Pacote</TableHead>
+              
+              {/* PAGAMENTO EXTRA */}
+              <TableHead className="min-w-[120px]">Taxa ML (Pgto)</TableHead>
+              <TableHead className="min-w-[150px]">Razão Pagamento</TableHead>
+              
               {/* OUTROS */}
               <TableHead className="min-w-[100px]">Tags</TableHead>
               <TableHead className="min-w-[150px]">Tipo Pedido</TableHead>
@@ -269,9 +284,58 @@ export const VendasTable = ({
                     </div>
                   </TableCell>
                   
+                  {/* FULFILLMENT & MEDIAÇÕES */}
+                  <TableCell>
+                    {order.fulfilled ? (
+                      <Badge variant="default">Sim</Badge>
+                    ) : (
+                      <Badge variant="outline">Não</Badge>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {order.mediations && order.mediations.length > 0 
+                      ? `${order.mediations.length} mediação(ões)` 
+                      : '-'}
+                  </TableCell>
+                  
+                  {/* DADOS FISCAIS */}
+                  <TableCell>
+                    {order.taxes?.amount 
+                      ? formatCurrency(order.taxes.amount) 
+                      : '-'}
+                  </TableCell>
+                  
+                  {/* SHIPPING EXTRA */}
+                  <TableCell>
+                    {shipping?.shipping_option?.list_cost 
+                      ? formatCurrency(shipping.shipping_option.list_cost) 
+                      : '-'}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {shipping?.shipping_option?.dimensions || '-'}
+                  </TableCell>
+                  
+                  {/* PAGAMENTO EXTRA */}
+                  <TableCell>
+                    {payment?.marketplace_fee 
+                      ? formatCurrency(payment.marketplace_fee) 
+                      : '-'}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {payment?.reason || '-'}
+                  </TableCell>
+                  
                   {/* OUTROS */}
                   <TableCell className="text-xs">
-                    {order.tags && order.tags.length > 0 ? order.tags.join(', ') : '-'}
+                    {order.tags && order.tags.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {order.tags.map((tag, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : '-'}
                   </TableCell>
                   <TableCell className="text-xs">{order.order_request?.return ? 'Devolução' : 'Normal'}</TableCell>
                   <TableCell>{order.currency_id || '-'}</TableCell>
