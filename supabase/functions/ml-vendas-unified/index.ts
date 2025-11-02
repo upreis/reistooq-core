@@ -27,22 +27,22 @@ serve(async (req) => {
     
     console.log(`[ml-vendas-unified] Action: ${action}`, params);
     
-    // Router de ações
+    // Router de ações - passar req para todas as funções
     switch (action) {
       case 'fetch_orders':
-        return await fetchOrders(params);
+        return await fetchOrders(params, req);
       
       case 'fetch_pack':
-        return await fetchPack(params);
+        return await fetchPack(params, req);
       
       case 'update_shipping':
-        return await updateShipping(params);
+        return await updateShipping(params, req);
       
       case 'create_note':
-        return await createNote(params);
+        return await createNote(params, req);
       
       case 'create_feedback':
-        return await createFeedback(params);
+        return await createFeedback(params, req);
       
       default:
         return new Response(
@@ -65,7 +65,7 @@ serve(async (req) => {
 /**
  * Buscar orders do Mercado Livre
  */
-async function fetchOrders(params: Record<string, any>) {
+async function fetchOrders(params: Record<string, any>, req: Request) {
   const { 
     integrationAccountId,
     search = '',
@@ -89,8 +89,13 @@ async function fetchOrders(params: Record<string, any>) {
     // 1️⃣ Obter access token
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization') || '';
     
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
     
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
       body: {
@@ -205,7 +210,7 @@ async function fetchOrders(params: Record<string, any>) {
 /**
  * Buscar detalhes de um pack
  */
-async function fetchPack(params: Record<string, any>) {
+async function fetchPack(params: Record<string, any>, req: Request) {
   const { packId, integrationAccountId } = params;
   
   if (!packId || !integrationAccountId) {
@@ -227,7 +232,7 @@ async function fetchPack(params: Record<string, any>) {
 /**
  * Atualizar status de envio
  */
-async function updateShipping(params: Record<string, any>) {
+async function updateShipping(params: Record<string, any>, req: Request) {
   const { shippingId, integrationAccountId, newStatus } = params;
   
   if (!shippingId || !integrationAccountId) {
@@ -249,7 +254,7 @@ async function updateShipping(params: Record<string, any>) {
 /**
  * Criar nota informativa no pack
  */
-async function createNote(params: Record<string, any>) {
+async function createNote(params: Record<string, any>, req: Request) {
   const { packId, integrationAccountId, note } = params;
   
   if (!packId || !integrationAccountId || !note) {
@@ -272,8 +277,13 @@ async function createNote(params: Record<string, any>) {
     // 1️⃣ Obter access token
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization') || '';
     
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
     
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
       body: {
@@ -344,7 +354,7 @@ async function createNote(params: Record<string, any>) {
 /**
  * Criar feedback para uma venda
  */
-async function createFeedback(params: Record<string, any>) {
+async function createFeedback(params: Record<string, any>, req: Request) {
   const { orderId, integrationAccountId, fulfilled, rating, message } = params;
   
   if (!orderId || !integrationAccountId || typeof fulfilled !== 'boolean' || !rating) {
@@ -367,8 +377,13 @@ async function createFeedback(params: Record<string, any>) {
     // 1️⃣ Obter access token
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const authHeader = req.headers.get('Authorization') || '';
     
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: {
+        headers: { Authorization: authHeader }
+      }
+    });
     
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
       body: {
