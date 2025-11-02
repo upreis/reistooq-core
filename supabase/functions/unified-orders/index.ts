@@ -819,46 +819,42 @@ Deno.serve(async (req) => {
     let refreshToken = '';
     let expiresAt = '';
     
-    // ✅ 3. Primeiro: tentar nova estrutura simples
+    // ✅ 3. Primeiro: tentar nova estrutura simples com descriptografia direta
     if (secretRow?.use_simple && secretRow?.simple_tokens) {
       try {
-        const isSimpleStr = typeof secretRow.simple_tokens === 'string';
-        const simpleTokensLength = isSimpleStr ? (secretRow.simple_tokens as string).length : 0;
-        const simpleTokensPreview = isSimpleStr ? (secretRow.simple_tokens as string).substring(0, 50) + '...' : 'not-string';
-        console.log(`[unified-orders:${cid}] 🔓 Tentando criptografia simples - dados:`, {
-          simpleTokensType: typeof secretRow.simple_tokens,
-          simpleTokensLength,
-          simpleTokensPreview
-        });
+        const simpleTokensStr = secretRow.simple_tokens as string;
+        console.log(`[unified-orders:${cid}] 🔓 Descriptografia direta - tamanho:`, simpleTokensStr.length);
         
-        const { data: decryptedData, error: decryptError } = await serviceClient
-          .rpc('decrypt_simple', { encrypted_data: secretRow.simple_tokens });
-
-        console.log(`[unified-orders:${cid}] 🔓 Resultado decrypt_simple:`, {
-          hasError: !!decryptError,
-          errorMsg: decryptError?.message,
-          hasData: !!decryptedData,
-          dataType: typeof decryptedData,
-          dataLength: decryptedData ? JSON.stringify(decryptedData).length : 0
-        });
-
-        if (decryptError) {
-          console.error(`[unified-orders:${cid}] ❌ Erro descriptografia simples:`, decryptError);
-        } else if (decryptedData) {
-          // decrypt_simple returns jsonb object directly (not string)
-          accessToken = decryptedData.access_token || '';
-          refreshToken = decryptedData.refresh_token || '';
-          expiresAt = decryptedData.expires_at || '';
-          console.log(`[unified-orders:${cid}] ✅ Descriptografia simples bem-sucedida - tokens extraídos:`, {
-            hasAccessToken: !!accessToken,
-            hasRefreshToken: !!refreshToken,
-            hasExpiresAt: !!expiresAt,
-            accessTokenLength: accessToken.length,
-            refreshTokenLength: refreshToken.length
-          });
+        // Remover prefixo SALT2024:: e descriptografar base64
+        if (simpleTokensStr.startsWith('SALT2024::')) {
+          const base64Data = simpleTokensStr.replace('SALT2024::', '');
+          console.log(`[unified-orders:${cid}] 🔓 Base64 extraído, tamanho: ${base64Data.length}`);
+          
+          try {
+            // Decodificar base64 para JSON
+            const jsonStr = atob(base64Data);
+            console.log(`[unified-orders:${cid}] 🔓 JSON decodificado: ${jsonStr.substring(0, 100)}...`);
+            
+            const tokensData = JSON.parse(jsonStr);
+            accessToken = tokensData.access_token || '';
+            refreshToken = tokensData.refresh_token || '';
+            expiresAt = tokensData.expires_at || '';
+            
+            console.log(`[unified-orders:${cid}] ✅ Descriptografia direta bem-sucedida:`, {
+              hasAccessToken: !!accessToken,
+              hasRefreshToken: !!refreshToken,
+              hasExpiresAt: !!expiresAt,
+              accessTokenLength: accessToken.length,
+              refreshTokenLength: refreshToken.length
+            });
+          } catch (parseError) {
+            console.error(`[unified-orders:${cid}] ❌ Erro ao parsear JSON:`, parseError);
+          }
+        } else {
+          console.warn(`[unified-orders:${cid}] ⚠️ simple_tokens sem prefixo SALT2024::`);
         }
       } catch (err) {
-        console.error(`[unified-orders:${cid}] ❌ ERRO: Falha descriptografia simples -`, err instanceof Error ? err.message : String(err));
+        console.error(`[unified-orders:${cid}] ❌ Erro descriptografia direta:`, err instanceof Error ? err.message : String(err));
       }
     } else {
       console.log(`[unified-orders:${cid}] ⚠️ Não usando descriptografia simples:`, {
