@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useVendasFilters } from '../hooks/useVendasFilters';
-import { useDebounce } from '@/hooks/useDebounce';
-import { useEffect, useState } from 'react';
 
 export const VendasFiltersBar = () => {
   const { 
@@ -19,18 +17,11 @@ export const VendasFiltersBar = () => {
     hasActiveFilters 
   } = useVendasFilters();
   
-  const [searchInput, setSearchInput] = useState(filters.search);
-  const debouncedSearch = useDebounce(searchInput, 200);
-  
-  // Sync debounced search with store
-  useEffect(() => {
-    setSearch(debouncedSearch);
-  }, [debouncedSearch, setSearch]);
-  
   const handleClearFilters = () => {
-    setSearchInput('');
+    setSearch('');
     resetFilters();
   };
+  
   
   return (
     <div className="space-y-4">
@@ -40,8 +31,8 @@ export const VendasFiltersBar = () => {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por ID, comprador, produto..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={filters.search}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
           />
         </div>
