@@ -195,6 +195,7 @@ export function CreateChildProductModal({
     setIsCreating(true);
     try {
       const categoriaCompleta = updateCategoriaCompleta(selectedCategoriaPrincipal, selectedCategoria);
+      const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
 
       for (const variation of variations) {
         let imageUrl = variation.url_imagem;
@@ -217,7 +218,7 @@ export function CreateChildProductModal({
           preco_venda: variation.preco_venda || 0,
           localizacao: variation.localizacao || '',
           codigo_barras: variation.barcode || '',
-          unidade_medida_id: variation.unidade_medida_id || null,
+          unidade_medida_id: variation.unidade_medida_id || unidadePadrao?.id || '',
           categoria: categoriaCompleta || null,
           descricao: variation.descricao || null,
           status: 'ativo',
