@@ -831,15 +831,8 @@ Deno.serve(async (req) => {
           simpleTokensPreview
         });
         
-        // Remover prefixo SALT2024:: se existir
-        let encryptedData = secretRow.simple_tokens;
-        if (typeof encryptedData === 'string' && encryptedData.startsWith('SALT2024::')) {
-          encryptedData = encryptedData.replace('SALT2024::', '');
-          console.log(`[unified-orders:${cid}] 🔓 Removido prefixo SALT2024::, novo tamanho: ${encryptedData.length}`);
-        }
-        
         const { data: decryptedData, error: decryptError } = await serviceClient
-          .rpc('decrypt_simple', { encrypted_data: encryptedData });
+          .rpc('decrypt_simple', { encrypted_data: secretRow.simple_tokens });
 
         console.log(`[unified-orders:${cid}] 🔓 Resultado decrypt_simple:`, {
           hasError: !!decryptError,
