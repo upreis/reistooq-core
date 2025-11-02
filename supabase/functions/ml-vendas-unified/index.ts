@@ -94,10 +94,16 @@ async function fetchOrders(params: Record<string, any>, req: Request) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: {
         headers: { Authorization: authHeader }
+      },
+      auth: {
+        persistSession: false
       }
     });
     
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      headers: {
+        Authorization: authHeader
+      },
       body: {
         integration_account_id: integrationAccountId,
         provider: 'mercadolivre'
@@ -282,10 +288,16 @@ async function createNote(params: Record<string, any>, req: Request) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: {
         headers: { Authorization: authHeader }
+      },
+      auth: {
+        persistSession: false
       }
     });
     
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      headers: {
+        Authorization: authHeader
+      },
       body: {
         integration_account_id: integrationAccountId,
         provider: 'mercadolivre'
@@ -382,10 +394,16 @@ async function createFeedback(params: Record<string, any>, req: Request) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: {
         headers: { Authorization: authHeader }
+      },
+      auth: {
+        persistSession: false
       }
     });
     
     const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      headers: {
+        Authorization: authHeader
+      },
       body: {
         integration_account_id: integrationAccountId,
         provider: 'mercadolivre'
