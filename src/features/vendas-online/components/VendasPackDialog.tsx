@@ -38,13 +38,12 @@ export const VendasPackDialog = ({
   const fetchPackDetails = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('ml-vendas-unified', {
+      // Usar ml-api-direct como a página /pedidos faz
+      const { data, error } = await supabase.functions.invoke('ml-api-direct', {
         body: {
-          action: 'fetch_pack',
-          params: {
-            packId,
-            integrationAccountId
-          }
+          action: 'get_pack',
+          integration_account_id: integrationAccountId,
+          pack_id: packId
         }
       });
 

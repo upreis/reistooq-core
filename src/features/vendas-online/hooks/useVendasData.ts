@@ -26,15 +26,18 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
 
   console.log('[useVendasData] Buscando orders do ML:', params);
 
-  const { data, error } = await supabase.functions.invoke('ml-vendas-unified', {
+  // Usar unified-orders como a página /pedidos faz
+  const { data, error } = await supabase.functions.invoke('unified-orders', {
     body: {
-      action: 'fetch_orders',
-      params: {
-        integrationAccountId: params.integrationAccountId,
+      provider: 'mercadolivre',
+      integration_account_ids: [params.integrationAccountId],
+      filters: {
         search: params.search || '',
-        status: params.status || [],
-        dateFrom: params.dateFrom,
-        dateTo: params.dateTo,
+        status_filter: params.status || [],
+        date_from: params.dateFrom,
+        date_to: params.dateTo
+      },
+      pagination: {
         offset: params.offset,
         limit: params.limit
       }
@@ -48,11 +51,35 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
 
   console.log('[useVendasData] Orders recebidas:', data?.orders?.length || 0);
 
+  // Adaptar resposta do unified-orders para nosso formato
+  const orders = data?.orders || [];
+  const total = data?.total || 0;
+  
+  // Extrair packs e shippings dos orders
+  const packs: Record<string, any> = {};
+  const shippings: Record<string, any> = {};
+  
+  orders.forEach((order: any) => {
+    if (order.pack_id && !packs[order.pack_id]) {
+      packs[order.pack_id] = {
+        id: order.pack_id,
+        orders: []
+      };
+    }
+    if (order.pack_id) {
+      packs[order.pack_id].orders.push(order.id);
+    }
+    
+    if (order.shipping?.id && !shippings[order.shipping.id]) {
+      shippings[order.shipping.id] = order.shipping;
+    }
+  });
+
   return {
-    orders: (data?.orders || []) as MLOrder[],
-    total: data?.total || 0,
-    packs: data?.packs || {},
-    shippings: data?.shippings || {}
+    orders: orders as MLOrder[],
+    total,
+    packs,
+    shippings
   };
 };
 
