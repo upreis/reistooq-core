@@ -14,6 +14,7 @@ import { EstoqueHeader } from "./components/EstoqueHeader";
 import { EstoqueActionButtons } from "./components/EstoqueActionButtons";
 import { EstoquePagination } from "./components/EstoquePagination";
 import { EstoqueModals } from "./components/EstoqueModals";
+import { TransferenciaEstoqueModal } from "@/components/estoque/TransferenciaEstoqueModal";
 
 export default function ControleEstoquePage() {
   // Modal states
@@ -22,6 +23,7 @@ export default function ControleEstoquePage() {
   const [childProductModalOpen, setChildProductModalOpen] = useState(false);
   const [linkChildModalOpen, setLinkChildModalOpen] = useState(false);
   const [bulkPriceModalOpen, setBulkPriceModalOpen] = useState(false);
+  const [transferenciaModalOpen, setTransferenciaModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
 
@@ -36,7 +38,8 @@ export default function ControleEstoquePage() {
     selectedStatus: dataSelectedStatus,
     setSelectedCategory,
     setSelectedStatus: setDataSelectedStatus,
-    loadProducts
+    loadProducts,
+    localAtivo
   } = useEstoqueData();
 
   const {
@@ -141,7 +144,11 @@ export default function ControleEstoquePage() {
 
   return (
     <div className="space-y-6">
-      <EstoqueHeader onLocalChange={loadProducts} />
+      <EstoqueHeader 
+        onLocalChange={loadProducts} 
+        onTransferClick={() => setTransferenciaModalOpen(true)}
+        selectedProductsCount={selectedProducts.length}
+      />
 
       <EstoqueNotifications 
         products={products}
@@ -261,6 +268,20 @@ export default function ControleEstoquePage() {
         setDeleteConfirmOpen={setDeleteConfirmOpen}
         deleteErrors={deleteErrors}
         setDeleteErrors={setDeleteErrors}
+      />
+
+      <TransferenciaEstoqueModal
+        open={transferenciaModalOpen}
+        onOpenChange={setTransferenciaModalOpen}
+        selectedProducts={selectedProducts}
+        allProducts={products}
+        localOrigemId={localAtivo?.id || ''}
+        localOrigemNome={localAtivo?.nome || ''}
+        onSuccess={() => {
+          setTransferenciaModalOpen(false);
+          setSelectedProducts([]);
+          loadProducts();
+        }}
       />
     </div>
   );
