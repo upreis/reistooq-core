@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import VendasOnline from "./pages/VendasOnline";
+import DevolucoesMercadoLivre from "./pages/DevolucoesMercadoLivre";
 import Scanner from "./pages/Scanner";
 import MLOrdersCompletas from "./pages/MLOrdersCompletas";
 import Reclamacoes from "./pages/Reclamacoes";
@@ -156,6 +157,11 @@ function App() {
                      <Route path="/vendas-online" element={
                        <PermissionRoute requiredPermissions={['orders:read']}>
                          <VendasOnline />
+                       </PermissionRoute>
+                     } />
+                     <Route path="/devolucoes-ml" element={
+                       <PermissionRoute requiredPermissions={['orders:read']}>
+                         <DevolucoesMercadoLivre />
                        </PermissionRoute>
                      } />
                     <Route path="/ml-orders-completas" element={
