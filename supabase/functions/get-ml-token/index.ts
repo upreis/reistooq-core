@@ -62,15 +62,19 @@ Deno.serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
-    
-    const { data: hasPermission } = await userClient.rpc('has_permission', { 
+    // Verificar permissões (aceitar read ou manage)
+    const { data: hasReadPermission } = await userClient.rpc('has_permission', { 
       permission_key: 'integrations:read' 
     });
     
-    if (!hasPermission) {
+    const { data: hasManagePermission } = await userClient.rpc('has_permission', { 
+      permission_key: 'integrations:manage' 
+    });
+    
+    if (!hasReadPermission && !hasManagePermission) {
       return new Response(JSON.stringify({ 
         success: false, 
-        error: 'Insufficient permissions' 
+        error: 'Insufficient permissions (requires integrations:read or integrations:manage)' 
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
