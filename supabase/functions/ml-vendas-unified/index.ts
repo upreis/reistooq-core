@@ -4,6 +4,7 @@
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -84,22 +85,121 @@ async function fetchOrders(params: Record<string, any>) {
   
   console.log(`[fetch_orders] Buscando orders para account ${integrationAccountId}`);
   
-  // TODO: Implementar na FASE 2
-  // 1. Buscar token ML via TokenManager
-  // 2. Fazer request para ML API /orders/search
-  // 3. Enriquecer com dados de packs
-  // 4. Aplicar cache
-  
-  return new Response(
-    JSON.stringify({ 
-      orders: [],
-      total: 0,
-      packs: {},
-      shippings: {},
-      message: 'FASE 1: Base estrutural OK. FASE 2: Integração ML API'
-    }),
-    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
+  try {
+    // 1️⃣ Obter access token
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    
+    const { data: tokenData, error: tokenError } = await supabase.functions.invoke('get-ml-token', {
+      body: {
+        integration_account_id: integrationAccountId,
+        provider: 'mercadolivre'
+      }
+    });
+    
+    if (tokenError || !tokenData?.access_token) {
+      console.error('[fetch_orders] Erro ao obter token:', tokenError);
+      return new Response(
+        JSON.stringify({ error: 'Falha ao obter token de acesso' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const accessToken = tokenData.access_token;
+    console.log('[fetch_orders] ✅ Token obtido');
+    
+    // 2️⃣ Construir URL da API ML
+    const mlApiUrl = new URL('https://api.mercadolibre.com/orders/search');
+    mlApiUrl.searchParams.set('seller', tokenData.account_identifier || '');
+    mlApiUrl.searchParams.set('offset', offset.toString());
+    mlApiUrl.searchParams.set('limit', limit.toString());
+    mlApiUrl.searchParams.set('sort', 'date_desc');
+    
+    // Aplicar filtros
+    if (search) {
+      mlApiUrl.searchParams.set('q', search);
+    }
+    
+    if (status && status.length > 0) {
+      mlApiUrl.searchParams.set('order.status', status.join(','));
+    }
+    
+    if (dateFrom) {
+      mlApiUrl.searchParams.set('order.date_created.from', new Date(dateFrom).toISOString());
+    }
+    
+    if (dateTo) {
+      mlApiUrl.searchParams.set('order.date_created.to', new Date(dateTo).toISOString());
+    }
+    
+    console.log('[fetch_orders] URL ML:', mlApiUrl.toString());
+    
+    // 3️⃣ Fazer request para ML API
+    const mlResponse = await fetch(mlApiUrl.toString(), {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!mlResponse.ok) {
+      const errorText = await mlResponse.text();
+      console.error('[fetch_orders] Erro ML API:', mlResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: `Erro na API ML: ${mlResponse.status}` }),
+        { status: mlResponse.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    const mlData = await mlResponse.json();
+    console.log(`[fetch_orders] ✅ ${mlData.results?.length || 0} orders recebidas`);
+    
+    // 4️⃣ Enriquecer com packs e shippings
+    const orders = mlData.results || [];
+    const packs: Record<string, any> = {};
+    const shippings: Record<string, any> = {};
+    
+    // Agrupar orders por pack_id
+    for (const order of orders) {
+      if (order.pack_id && !packs[order.pack_id]) {
+        packs[order.pack_id] = {
+          id: order.pack_id,
+          orders: []
+        };
+      }
+      
+      if (order.pack_id) {
+        packs[order.pack_id].orders.push(order.id);
+      }
+      
+      // Adicionar shipping info
+      if (order.shipping?.id && !shippings[order.shipping.id]) {
+        shippings[order.shipping.id] = order.shipping;
+      }
+    }
+    
+    return new Response(
+      JSON.stringify({ 
+        orders,
+        total: mlData.paging?.total || 0,
+        packs,
+        shippings
+      }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
+  } catch (error) {
+    console.error('[fetch_orders] Erro:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Erro ao buscar orders',
+        details: error.message
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 /**
