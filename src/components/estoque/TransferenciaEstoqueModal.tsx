@@ -249,11 +249,8 @@ export function TransferenciaEstoqueModal({
           local_id: localDestinoId
         }]);
 
-        // 6. Atualizar quantidade_atual na tabela produtos
-        await supabase
-          .from('produtos')
-          .update({ quantidade_atual: novaQuantidadeOrigem })
-          .eq('id', item.produtoId);
+        // 6. Produto atualizado com sucesso via estoque_por_local
+        console.log(`✅ Transferência concluída: ${item.nome}`);
       }
 
       toast({
