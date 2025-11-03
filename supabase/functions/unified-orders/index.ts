@@ -433,7 +433,21 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
 
     // Valores de frete e receitas
     const fretePagoCliente = shipping.cost || 0;
-    const receitaFlex = shipping.seller_cost_benefit || 0;
+    
+    // ✅ RECEITA FLEX (Bônus) conforme PDF do Mercado Livre
+    // Receita Flex = quando net_cost é NEGATIVO (vendedor RECEBE do ML)
+    // Fórmula: net_cost = shipping_cost - discount
+    let receitaFlex = 0;
+    const costBenefit = shipping.seller_cost_benefit;
+    if (costBenefit && typeof costBenefit === 'object') {
+      const netCost = costBenefit.net_cost || 0;
+      // Se net_cost < 0, vendedor RECEBE (receita flex)
+      if (netCost < 0) {
+        receitaFlex = Math.abs(netCost);
+        console.log(`✅ [RECEITA FLEX] Pedido ${order.id}: net_cost=${netCost} → Receita Flex=R$${receitaFlex.toFixed(2)}`);
+      }
+    }
+    
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // Informações de endereço mais detalhadas

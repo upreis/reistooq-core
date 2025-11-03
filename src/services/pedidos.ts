@@ -316,8 +316,10 @@ function getFretePagoCliente(order: any): number {
 }
 
 function getReceitaFlex(order: any): number {
-  // APENAS bônus/compensação que o VENDEDOR recebe no Flex
+  // ✅ RECEITA FLEX (Bônus) conforme PDF do Mercado Livre
+  // Receita Flex = quando net_cost é NEGATIVO (vendedor RECEBE do ML)
   const logisticType = String(
+    order?.shipping?.logistic_type || 
     order?.shipping?.logistic?.type || 
     order?.logistic_type || 
     ''
@@ -326,11 +328,22 @@ function getReceitaFlex(order: any): number {
   // Só no Flex/self_service
   if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
   
-  // 1) Bônus direto
+  // ✅ PRIORIDADE 1: Calcular via seller_cost_benefit.net_cost conforme PDF
+  const costBenefit = order?.shipping?.seller_cost_benefit;
+  if (costBenefit && typeof costBenefit === 'object') {
+    const netCost = costBenefit.net_cost || 0;
+    // Se net_cost < 0, vendedor RECEBE (receita flex)
+    // Fórmula: net_cost = shipping_cost - discount
+    if (netCost < 0) {
+      return Math.abs(netCost);
+    }
+  }
+  
+  // Fallback 2: Bônus direto (legado)
   const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || 0);
   if (bonus > 0) return bonus;
   
-  // 2) Compensação via costs.senders
+  // Fallback 3: Compensação via costs.senders (legado)
   const costs = order?.shipping?.costs;
   if (costs?.senders && Array.isArray(costs.senders)) {
     const compensation = costs.senders.reduce((acc: number, s: any) => {
