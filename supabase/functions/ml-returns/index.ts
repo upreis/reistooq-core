@@ -143,21 +143,65 @@ Deno.serve(async (req) => {
         const claimsData = await claimsResponse.json();
         console.log(`✅ ML retornou ${claimsData.data?.length || 0} claims`);
 
-        // Processar TODOS os claims retornados
+        // Processar claims retornados
         if (claimsData.data && Array.isArray(claimsData.data)) {
           console.log(`📦 Processando ${claimsData.data.length} claims...`);
           
-          // Log da estrutura do primeiro claim para debug
-          if (claimsData.data.length > 0) {
-            console.log('🔍 Estrutura do primeiro claim:', JSON.stringify(claimsData.data[0], null, 2).substring(0, 500));
+          // Filtrar claims que são do tipo "return" OU possuem campo "return" preenchido
+          const claimsComDevolucoes = claimsData.data.filter((claim: any) => {
+            // Tipo 1: claim é do tipo "return"
+            if (claim.type === 'return') return true;
+            
+            // Tipo 2: claim possui campo "return" preenchido
+            if (claim.return && claim.return !== null) return true;
+            
+            // Tipo 3: claim possui related_entities com tipo "return"
+            if (claim.related_entities?.some((e: any) => e.type === 'return')) return true;
+            
+            return false;
+          });
+
+          console.log(`📦 ${claimsComDevolucoes.length}/${claimsData.data.length} claims são devoluções`);
+          
+          // Log da estrutura do primeiro claim com devolução para debug
+          if (claimsComDevolucoes.length > 0) {
+            console.log('🔍 Primeiro claim com devolução:', JSON.stringify(claimsComDevolucoes[0], null, 2).substring(0, 1000));
           }
 
-          // Para cada claim, tentar buscar devoluções associadas
-          for (const claim of claimsData.data) {
+          // Processar cada claim com devolução
+          for (const claim of claimsComDevolucoes) {
             try {
-              // Tentar buscar devoluções do claim independente do tipo
+              // Se o claim já possui o objeto "return", usar diretamente
+              if (claim.return && claim.return !== null) {
+                console.log(`✅ Claim ${claim.id} já possui objeto return interno`);
+                
+                allReturns.push({
+                  id: claim.return.id || claim.id,
+                  claim_id: claim.id,
+                  order_id: claim.resource_id,
+                  status: claim.return.status || { id: claim.status, description: claim.status },
+                  status_money: claim.return.status_money || { id: '-', description: '-' },
+                  subtype: claim.return.subtype || { id: claim.type, description: claim.type },
+                  shipment_status: claim.return.shipment?.status || claim.return.shipment_status || '-',
+                  tracking_number: claim.return.shipment?.tracking_number || claim.return.tracking_number || null,
+                  date_created: claim.return.date_created || claim.date_created,
+                  date_closed: claim.return.date_closed || (claim.status === 'closed' ? claim.last_updated : null),
+                  refund_at: claim.return.refund_at || null,
+                  resource_id: claim.resource_id,
+                  resource: claim.resource,
+                  reason_id: claim.reason_id,
+                  order: claim.return.order || null,
+                  claim_status: claim.status,
+                  claim_stage: claim.stage,
+                  claim_type: claim.type,
+                  last_updated: claim.return.last_updated || claim.last_updated,
+                });
+                continue;
+              }
+              
+              // Caso contrário, buscar detalhes da devolução via API
               const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
-              console.log(`🔍 Buscando returns do claim ${claim.id}...`);
+              console.log(`🔍 Buscando returns do claim ${claim.id} via API...`);
               
               const returnResponse = await fetch(returnUrl, {
                 headers: {
@@ -173,12 +217,7 @@ Deno.serve(async (req) => {
                 if (returnData && (Array.isArray(returnData) ? returnData.length > 0 : returnData.id)) {
                   const returns = Array.isArray(returnData) ? returnData : [returnData];
                   
-                  console.log(`✅ Claim ${claim.id} possui ${returns.length} devolução(ões)`);
-                  
-                  // Log da estrutura do primeiro return para debug
-                  if (returns.length > 0) {
-                    console.log(`📦 Estrutura do return ${claim.id}:`, JSON.stringify(returns[0], null, 2).substring(0, 800));
-                  }
+                  console.log(`✅ Claim ${claim.id} possui ${returns.length} devolução(ões) via API`);
                   
                   returns.forEach((ret: any) => {
                     allReturns.push({
