@@ -3,7 +3,7 @@
  * Busca devoluções da API do Mercado Livre
  */
 
-import { corsHeaders, makeServiceClient, getMlConfig } from '../_shared/client.ts';
+import { corsHeaders, makeServiceClient } from '../_shared/client.ts';
 import { getErrorMessage } from '../_shared/error-handler.ts';
 
 interface RequestBody {
@@ -59,16 +59,56 @@ Deno.serve(async (req) => {
     let totalReturns = 0;
 
     for (const accountId of accountIds) {
-      // Obter access_token usando a função compartilhada COM authHeader (mesma forma que unified-orders)
-      const mlConfig = await getMlConfig(accountId, authHeader);
+      // Buscar tokens DIRETO do banco como unified-orders faz (usando SERVICE CLIENT)
+      const { data: secretRow, error: secretError } = await supabase
+        .from('integration_secrets')
+        .select('simple_tokens, use_simple, access_token')
+        .eq('integration_account_id', accountId)
+        .eq('provider', 'mercadolivre')
+        .maybeSingle();
+
+      if (secretError || !secretRow) {
+        console.error(`❌ Erro ao buscar secret para conta ${accountId}:`, secretError?.message);
+        continue;
+      }
+
+      let accessToken = '';
       
-      if (!mlConfig || !mlConfig.access_token) {
+      // Tentar descriptografia simples primeiro (como unified-orders faz)
+      if (secretRow.use_simple && secretRow.simple_tokens) {
+        try {
+          const simpleTokensStr = secretRow.simple_tokens as string;
+          if (simpleTokensStr.startsWith('SALT2024::')) {
+            const base64Data = simpleTokensStr.replace('SALT2024::', '');
+            const jsonStr = atob(base64Data);
+            const tokensData = JSON.parse(jsonStr);
+            accessToken = tokensData.access_token || '';
+            console.log(`✅ Token obtido via descriptografia simples para conta ${accountId}`);
+          }
+        } catch (err) {
+          console.error(`❌ Erro descriptografia simples:`, err);
+        }
+      }
+      
+      // Fallback para access_token legado
+      if (!accessToken && secretRow.access_token) {
+        accessToken = secretRow.access_token;
+        console.log(`✅ Token obtido via campo legado para conta ${accountId}`);
+      }
+
+      if (!accessToken) {
         console.error(`❌ Token ML não encontrado para conta ${accountId}`);
         continue;
       }
 
-      const accessToken = mlConfig.access_token;
-      const sellerId = mlConfig.account_identifier;
+      // Buscar seller_id da tabela integration_accounts
+      const { data: accountData } = await supabase
+        .from('integration_accounts')
+        .select('account_identifier')
+        .eq('id', accountId)
+        .single();
+
+      const sellerId = accountData?.account_identifier;
 
       if (!sellerId) {
         console.error(`❌ seller_id não encontrado para conta ${accountId}`);
