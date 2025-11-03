@@ -175,16 +175,32 @@ Deno.serve(async (req) => {
                   
                   console.log(`✅ Claim ${claim.id} possui ${returns.length} devolução(ões)`);
                   
+                  // Log da estrutura do primeiro return para debug
+                  if (returns.length > 0) {
+                    console.log(`📦 Estrutura do return ${claim.id}:`, JSON.stringify(returns[0], null, 2).substring(0, 800));
+                  }
+                  
                   returns.forEach((ret: any) => {
                     allReturns.push({
-                      ...ret,
+                      id: ret.id || claim.id,
                       claim_id: claim.id,
                       order_id: claim.resource_id,
+                      status: ret.status || { id: claim.status, description: claim.status },
+                      status_money: ret.status_money || { id: '-', description: '-' },
+                      subtype: ret.subtype || { id: claim.type, description: claim.type },
+                      shipment_status: ret.shipment?.status || ret.shipment_status || '-',
+                      tracking_number: ret.shipment?.tracking_number || ret.tracking_number || null,
+                      date_created: ret.date_created || claim.date_created,
+                      date_closed: ret.date_closed || null,
+                      refund_at: ret.refund_at || null,
+                      resource_id: claim.resource_id,
+                      resource: claim.resource,
+                      reason_id: claim.reason_id,
+                      order: ret.order || null,
                       claim_status: claim.status,
                       claim_stage: claim.stage,
                       claim_type: claim.type,
-                      date_created: claim.date_created || ret.date_created,
-                      last_updated: claim.last_updated || ret.last_updated,
+                      last_updated: ret.last_updated || claim.last_updated,
                     });
                   });
                 }
