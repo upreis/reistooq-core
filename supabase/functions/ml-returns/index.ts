@@ -115,11 +115,13 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Construir URL da API de Returns
-      let apiUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/search?seller_id=${sellerId}&offset=${offset}&limit=${limit}`;
+      // Construir URL da API de Claims (que contém returns)
+      // Endpoint correto segundo documentação: /post-purchase/v1/claims/search
+      let apiUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?seller_id=${sellerId}&offset=${offset}&limit=${limit}`;
 
       // Adicionar filtros
       if (filters.status && filters.status.length > 0) {
+        // Status válidos: opened, closed, under_review
         apiUrl += `&status=${filters.status.join(',')}`;
       }
 
@@ -152,11 +154,43 @@ Deno.serve(async (req) => {
       }
 
       const mlData = await mlResponse.json();
-      console.log(`✅ ML retornou ${mlData.results?.length || 0} devoluções`);
+      console.log(`✅ ML retornou ${mlData.data?.length || 0} claims/devoluções`);
 
-      if (mlData.results) {
-        allReturns.push(...mlData.results);
-        totalReturns = mlData.paging?.total || mlData.results.length;
+      // Filtrar apenas claims que têm devoluções (return)
+      if (mlData.data) {
+        for (const claim of mlData.data) {
+          // Verificar se claim tem devolução associada
+          if (claim.related_entities?.some((e: any) => e.type === 'return')) {
+            // Buscar detalhes da devolução
+            try {
+              const returnResp = await fetch(
+                `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
+                {
+                  headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                  },
+                }
+              );
+
+              if (returnResp.ok) {
+                const returnData = await returnResp.json();
+                allReturns.push({
+                  ...returnData,
+                  claim_id: claim.id,
+                  order_id: claim.resource_id,
+                  status: claim.status,
+                  stage: claim.stage,
+                  type: claim.type,
+                  date_created: claim.date_created,
+                });
+              }
+            } catch (error) {
+              console.error(`❌ Erro ao buscar detalhes da devolução do claim ${claim.id}:`, error);
+            }
+          }
+        }
+        totalReturns = mlData.paging?.total || mlData.data.length;
       }
     }
 
