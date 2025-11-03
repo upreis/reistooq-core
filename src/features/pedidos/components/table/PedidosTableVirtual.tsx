@@ -181,14 +181,11 @@ export function PedidosTableVirtual({
           </span>
         );
       
+      case 'titulo_anuncio':
+        // Never truncate product title - show full text
+        return <span className="text-sm">{value || '—'}</span>;
+      
       default:
-        if (typeof value === 'string' && value.length > 30) {
-          return (
-            <span className="truncate max-w-[200px] block" title={value}>
-              {value}
-            </span>
-          );
-        }
         return <span className="text-sm">{value || '—'}</span>;
     }
   };
