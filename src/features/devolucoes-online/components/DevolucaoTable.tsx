@@ -122,6 +122,20 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
     return benefited ? labels[benefited] || benefited : '-';
   };
 
+  const formatEstimatedDelivery = (dev: MLReturn) => {
+    if (!dev.estimated_delivery_date) return '-';
+    
+    try {
+      const date = format(new Date(dev.estimated_delivery_date), 'dd/MM/yyyy', { locale: ptBR });
+      const timeFrame = dev.estimated_delivery_from && dev.estimated_delivery_to
+        ? ` (${dev.estimated_delivery_from}-${dev.estimated_delivery_to} dias)`
+        : '';
+      return `${date}${timeFrame}`;
+    } catch {
+      return dev.estimated_delivery_date;
+    }
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -156,6 +170,9 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
             <TableHead className="font-semibold">Destino Produto</TableHead>
             <TableHead className="font-semibold">Beneficiado</TableHead>
             <TableHead className="font-semibold">Status Review</TableHead>
+            <TableHead className="font-semibold">Data Estimada</TableHead>
+            <TableHead className="font-semibold">Prazo</TableHead>
+            <TableHead className="font-semibold">Atraso?</TableHead>
             <TableHead className="font-semibold">MPT</TableHead>
             <TableHead className="font-semibold">Reviews</TableHead>
             <TableHead className="font-semibold">Reembolso Após</TableHead>
@@ -268,6 +285,21 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
                 </TableCell>
                 <TableCell className="text-xs">
                   {dev.seller_status || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {formatEstimatedDelivery(dev)}
+                </TableCell>
+                <TableCell className="text-xs text-center">
+                  {dev.estimated_delivery_from && dev.estimated_delivery_to 
+                    ? `${dev.estimated_delivery_from}-${dev.estimated_delivery_to} dias` 
+                    : '-'}
+                </TableCell>
+                <TableCell>
+                  {dev.has_delay ? (
+                    <Badge variant="destructive" className="text-xs">Sim</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-xs">Não</Badge>
+                  )}
                 </TableCell>
                 <TableCell>
                   <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">

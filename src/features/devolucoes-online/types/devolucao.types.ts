@@ -49,6 +49,13 @@ export interface MLReturn {
   product_destination?: string | null;
   benefited?: string | null;
   seller_status?: string | null;
+  
+  // Dados de previsão de entrega (lead time)
+  estimated_delivery_date?: string | null;
+  estimated_delivery_from?: number | null;
+  estimated_delivery_to?: number | null;
+  estimated_delivery_limit?: string | null;
+  has_delay?: boolean;
 }
 
 export interface ReturnStatus {

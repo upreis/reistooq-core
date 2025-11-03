@@ -197,6 +197,27 @@ Deno.serve(async (req) => {
                   }
                 }
                 
+                // Buscar lead time (data estimada) se tiver shipment_id
+                let leadTimeData: any = null;
+                if (firstShipment?.shipment_id) {
+                  try {
+                    const leadTimeUrl = `https://api.mercadolibre.com/shipments/${firstShipment.shipment_id}/lead_time`;
+                    const leadTimeResponse = await fetch(leadTimeUrl, {
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'x-format-new': 'true',
+                      },
+                    });
+                    
+                    if (leadTimeResponse.ok) {
+                      leadTimeData = await leadTimeResponse.json();
+                      console.log(`✅ Lead time obtido para shipment ${firstShipment.shipment_id}`);
+                    }
+                  } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar lead time do shipment ${firstShipment.shipment_id}:`, error);
+                  }
+                }
+                
                 // Extrair dados da primeira review se existir
                 const firstReview = reviewData?.resource_reviews?.[0];
                 
@@ -248,6 +269,13 @@ Deno.serve(async (req) => {
                   product_destination: firstReview?.product_destination || null,
                   benefited: firstReview?.benefited || null,
                   seller_status: firstReview?.seller_status || null,
+                  
+                  // Dados de previsão de entrega (lead time)
+                  estimated_delivery_date: leadTimeData?.estimated_delivery_time?.date || null,
+                  estimated_delivery_from: leadTimeData?.estimated_delivery_time?.time_frame?.from || null,
+                  estimated_delivery_to: leadTimeData?.estimated_delivery_time?.time_frame?.to || null,
+                  estimated_delivery_limit: leadTimeData?.estimated_delivery_limit?.date || null,
+                  has_delay: leadTimeData?.delay && leadTimeData.delay.length > 0 ? true : false,
                   
                   // Arrays completos
                   orders: returnData.orders || [],
