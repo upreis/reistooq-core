@@ -33,108 +33,49 @@ import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
 // Helper function para extrair receita por envio - SOMENTE Flex
 /**
- * 🔍 AUDITORIA: Calcular Receita Flex (Bônus)
+ * ✅ CORREÇÃO FINAL: Calcular Receita Flex (Bônus)
  * 
- * ⚠️ ATENÇÃO: Após análise do PDF oficial do ML, descobrimos que:
- * - seller_cost_benefit.discount = desconto que ML dá AO VENDEDOR no custo de envio
- * - Isso NÃO é necessariamente a "Receita Flex" que o vendedor recebe
- * - É uma ECONOMIA DE CUSTO, não uma receita adicional
+ * DEFINIÇÃO CORRETA:
+ * "Receita Flex" = Valor que o CLIENTE PAGOU pelo frete
  * 
- * PORÉM, para Modalidade Própria (self_service):
- * - O vendedor pode ou NÃO receber subsidio do ML
- * - discount pode ser 0 ou null em muitos casos
- * - Precisamos verificar outros campos também
+ * Em vendas Flex/Modalidade Própria:
+ * - O cliente paga o frete (ex: R$ 18.99)
+ * - Esse valor é RECEITA ADICIONAL para o vendedor
+ * - Por isso se chama "Receita Flex (Bônus)"
+ * 
+ * ⚠️ NÃO confundir com seller_cost_benefit.discount!
+ * - discount = economia no custo (outra coisa)
+ * - Receita Flex = frete que cliente pagou (isso aqui!)
  */
 function getReceitaPorEnvio(order: any): number {
-  const logisticType = String(
-    order?.shipping?.logistic_type ||
-    order?.shipping?.logistic?.type || 
-    order?.unified?.shipping?.logistic?.type ||
-    order?.logistic_type || 
-    order?.unified?.logistic_type ||
-    ''
-  ).toLowerCase();
+  // A Receita Flex é o valor que o CLIENTE PAGOU pelo frete
+  // Isso vira receita adicional para o vendedor
   
-  // 🚨 LOG SEMPRE - ver qual é o logistic_type
-  console.log(`🔍 [getReceitaPorEnvio] Pedido ${order?.id || order?.numero}`, {
-    logisticType,
-    'shipping.logistic_type': order?.shipping?.logistic_type,
-    'unified.shipping.logistic_type': order?.unified?.shipping?.logistic_type
-  });
+  // 1. Tentar pegar o valor salvo primeiro
+  const receitaFlexSalva = Number(
+    order?.receita_flex ||
+    order?.unified?.receita_flex ||
+    order?.raw_data?.receita_flex ||
+    0
+  );
   
-  // 🔍 DEBUG COMPLETO para qualquer pedido Modalidade Própria
-  const isDebug = logisticType === 'self_service' || logisticType === 'flex';
-  
-  // 🚨 LOG FORÇADO para debug
-  if (isDebug) {
-    console.log('🚨🚨🚨 [PEDIDO FLEX/SELF_SERVICE ENCONTRADO] 🚨🚨🚨');
+  if (receitaFlexSalva > 0) {
+    return receitaFlexSalva;
   }
   
-  if (isDebug) {
-    console.log('🔍 [DEBUG RECEITA FLEX]', {
-      pedido_id: order?.id || order?.order_id || order?.numero,
-      nome_cliente: order?.nome_cliente || order?.buyer?.first_name,
-      logisticType,
-      
-      // Verificar todos os possíveis locais
-      'shipping.logistic_type': order?.shipping?.logistic_type,
-      'shipping.cost': order?.shipping?.cost,
-      'shipping.base_cost': order?.shipping?.base_cost,
-      'shipping.seller_cost_benefit': order?.shipping?.seller_cost_benefit,
-      
-      // Unified
-      'unified.shipping': order?.unified?.shipping,
-      'unified.receita_flex': order?.unified?.receita_flex,
-      'unified.frete_pago_cliente': order?.unified?.frete_pago_cliente,
-      
-      // Raw data
-      'raw_data.receita_flex': order?.raw_data?.receita_flex,
-      'order.receita_flex': order?.receita_flex
-    });
-  }
+  // 2. Calcular: Frete pago pelo cliente
+  const fretePagoCliente = Number(
+    order?.frete_pago_cliente ||
+    order?.unified?.frete_pago_cliente ||
+    order?.shipping?.cost ||
+    order?.shipping?.shipping_items?.[0]?.list_cost ||
+    order?.payments?.[0]?.shipping_cost ||
+    order?.shipping?.costs?.receiver?.cost ||
+    0
+  );
   
-  // Se NÃO for Flex ou self_service, retornar 0
-  if (logisticType !== 'self_service' && logisticType !== 'flex') {
-    return 0;
-  }
-  
-  // Tentar múltiplas fontes (ordem de prioridade)
-  const costBenefit = order?.shipping?.seller_cost_benefit || 
-                      order?.unified?.shipping?.seller_cost_benefit;
-  
-  // 1. Tentar discount do seller_cost_benefit
-  const discountValue = costBenefit?.discount;
-  
-  // 2. Tentar receita_flex salva
-  const receitaFlexSalva = order?.receita_flex || 
-                           order?.unified?.receita_flex ||
-                           order?.raw_data?.receita_flex;
-  
-  // 3. Calcular a diferença entre frete pago e custo (última tentativa)
-  const fretePago = order?.shipping?.cost || 
-                    order?.unified?.frete_pago_cliente || 
-                    0;
-  const custoEnvio = order?.shipping?.base_cost || 
-                     order?.unified?.custo_envio_seller ||
-                     costBenefit?.net_cost ||
-                     0;
-  const diferencaCalculada = fretePago > custoEnvio ? fretePago - custoEnvio : 0;
-  
-  const valorFinal = Number(discountValue || receitaFlexSalva || diferencaCalculada || 0);
-  
-  if (isDebug) {
-    console.log('🔍 [DEBUG RECEITA FLEX] Cálculo:', {
-      discountValue,
-      receitaFlexSalva,
-      fretePago,
-      custoEnvio,
-      diferencaCalculada,
-      valorFinal,
-      fonte: discountValue ? 'discount' : receitaFlexSalva ? 'salva' : diferencaCalculada ? 'calculada' : 'nenhuma'
-    });
-  }
-  
-  return valorFinal;
+  // A receita flex é simplesmente o frete que o cliente pagou
+  return fretePagoCliente;
 }
 import { buildIdUnico } from '@/utils/idUnico';
 
