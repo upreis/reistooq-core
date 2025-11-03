@@ -145,10 +145,19 @@ Deno.serve(async (req) => {
 
         // PASSO 2: Filtrar claims com devoluções
         if (claimsData.data && Array.isArray(claimsData.data)) {
-          // Verificar estrutura dos primeiros claims para debug
-          if (claimsData.data.length > 0) {
-            console.log(`📋 Exemplo de claim completo:`, JSON.stringify(claimsData.data[0], null, 2));
-          }
+          // DEBUG: Analisar TODOS os claims para ver related_entities
+          console.log(`🔍 ANALISANDO TODOS OS ${claimsData.data.length} CLAIMS:`);
+          claimsData.data.forEach((claim: any, index: number) => {
+            console.log(`\n📋 Claim ${index + 1}/${claimsData.data.length}:`, {
+              id: claim.id,
+              type: claim.type,
+              status: claim.status,
+              stage: claim.stage,
+              related_entities: claim.related_entities,
+              related_entities_tipo: typeof claim.related_entities,
+              related_entities_isArray: Array.isArray(claim.related_entities),
+            });
+          });
           
           // Filtrar claims que possuem "return" em related_entities
           const claimsComDevolucoes = claimsData.data.filter((claim: any) => {
@@ -159,7 +168,7 @@ Deno.serve(async (req) => {
             return temReturn;
           });
 
-          console.log(`📦 ${claimsComDevolucoes.length}/${claimsData.data.length} claims com devoluções identificadas`);
+          console.log(`\n📦 RESULTADO: ${claimsComDevolucoes.length}/${claimsData.data.length} claims com devoluções identificadas`);
 
           // PASSO 3: Para cada claim com devolução, buscar detalhes
           for (const claim of claimsComDevolucoes) {
