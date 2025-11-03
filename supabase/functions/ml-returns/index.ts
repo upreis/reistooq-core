@@ -27,6 +27,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Pegar Authorization header do request
+    const authHeader = req.headers.get('Authorization');
     const supabase = makeServiceClient();
 
     // Parse request body
@@ -50,8 +52,8 @@ Deno.serve(async (req) => {
     let totalReturns = 0;
 
     for (const accountId of accountIds) {
-      // Obter access_token usando a função compartilhada
-      const mlConfig = await getMlConfig(supabase, accountId);
+      // Obter access_token usando a função compartilhada COM authHeader
+      const mlConfig = await getMlConfig(supabase, accountId, authHeader);
       
       if (!mlConfig || !mlConfig.access_token) {
         console.error(`❌ Token ML não encontrado para conta ${accountId}`);

@@ -75,14 +75,15 @@ export function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-export async function getMlConfig(supabase: any, accountId: string) {
+export async function getMlConfig(supabase: any, accountId: string, authHeader?: string) {
   try {
     // Chamar a edge function get-ml-token para obter o token real
-    const { data, error } = await supabase.functions.invoke('get-ml-token', {
+    const { data, error} = await supabase.functions.invoke('get-ml-token', {
       body: {
         integration_account_id: accountId,
         provider: 'mercadolivre'
-      }
+      },
+      headers: authHeader ? { Authorization: authHeader } : {}
     });
 
     if (error) {
