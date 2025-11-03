@@ -358,7 +358,7 @@ export function PedidosTableVirtual({
                     >
                       <div className={cn(
                         (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'titulo_anuncio') 
-                          ? "line-clamp-2 text-sm leading-tight" 
+                          ? "line-clamp-2 text-sm leading-tight break-words whitespace-normal" 
                           : ""
                       )}>
                         {renderCell(column, row)}
