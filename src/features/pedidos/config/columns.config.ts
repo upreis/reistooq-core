@@ -324,7 +324,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'logistic_mode',
-    label: 'Logistic Mode (Principal)',
+    label: 'Tipo de Logística',
     category: 'shipping',
     priority: 'optional',
     visible: false,
@@ -344,7 +344,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'shipping_substatus',
-    label: 'SubStatus',
+    label: 'Substatus do Envio',
     category: 'shipping',
     priority: 'important',
     visible: true,
@@ -355,7 +355,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'shipping_mode',
-    label: 'Modo de Envio (Combinado)',
+    label: 'Frete vendedor/Comprador',
     category: 'shipping',
     priority: 'optional',
     visible: false,
@@ -481,7 +481,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'tags',
-    label: 'Tags',
+    label: 'Tags do Pedido',
     category: 'meta',
     priority: 'optional',
     visible: false,
