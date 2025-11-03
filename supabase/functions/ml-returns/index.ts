@@ -147,84 +147,20 @@ Deno.serve(async (req) => {
         if (claimsData.data && Array.isArray(claimsData.data)) {
           console.log(`📦 Processando ${claimsData.data.length} claims...`);
           
-          // Log COMPLETO da estrutura dos primeiros 3 claims para debug
-          if (claimsData.data.length > 0) {
-            console.log('🔍 === ESTRUTURA COMPLETA DOS PRIMEIROS 3 CLAIMS ===');
-            claimsData.data.slice(0, 3).forEach((claim: any, idx: number) => {
-              console.log(`\n📋 CLAIM ${idx + 1}:`, JSON.stringify(claim, null, 2));
-            });
-          }
-          
-          // Analisar todos os claims para entender a estrutura
-          claimsData.data.forEach((claim: any, idx: number) => {
-            const analysis = {
-              id: claim.id,
-              type: claim.type,
-              has_return_field: claim.return !== undefined && claim.return !== null,
-              has_related_entities: !!claim.related_entities,
-              related_entities_count: claim.related_entities?.length || 0,
-              related_entities_types: claim.related_entities?.map((e: any) => e.type) || [],
-            };
-            if (idx < 5) {
-              console.log(`📊 Análise claim ${claim.id}:`, JSON.stringify(analysis, null, 2));
-            }
-          });
-          
-          // Filtrar claims que são do tipo "return" OU possuem campo "return" preenchido
+          // Filtrar claims que possuem "return" em related_entities (segundo a documentação)
           const claimsComDevolucoes = claimsData.data.filter((claim: any) => {
-            // Tipo 1: claim é do tipo "return"
-            if (claim.type === 'return') return true;
-            
-            // Tipo 2: claim possui campo "return" preenchido
-            if (claim.return && claim.return !== null) return true;
-            
-            // Tipo 3: claim possui related_entities com tipo "return"
-            if (claim.related_entities?.some((e: any) => e.type === 'return')) return true;
-            
-            return false;
+            // related_entities é um array de strings como ["return", "reviews"]
+            return claim.related_entities?.includes('return');
           });
 
-          console.log(`📦 ${claimsComDevolucoes.length}/${claimsData.data.length} claims são devoluções`);
-          
-          // Log da estrutura do primeiro claim com devolução para debug
-          if (claimsComDevolucoes.length > 0) {
-            console.log('🔍 Primeiro claim com devolução:', JSON.stringify(claimsComDevolucoes[0], null, 2).substring(0, 1000));
-          }
+          console.log(`📦 ${claimsComDevolucoes.length}/${claimsData.data.length} claims possuem devoluções (related_entities)`);
 
           // Processar cada claim com devolução
           for (const claim of claimsComDevolucoes) {
             try {
-              // Se o claim já possui o objeto "return", usar diretamente
-              if (claim.return && claim.return !== null) {
-                console.log(`✅ Claim ${claim.id} já possui objeto return interno`);
-                
-                allReturns.push({
-                  id: claim.return.id || claim.id,
-                  claim_id: claim.id,
-                  order_id: claim.resource_id,
-                  status: claim.return.status || { id: claim.status, description: claim.status },
-                  status_money: claim.return.status_money || { id: '-', description: '-' },
-                  subtype: claim.return.subtype || { id: claim.type, description: claim.type },
-                  shipment_status: claim.return.shipment?.status || claim.return.shipment_status || '-',
-                  tracking_number: claim.return.shipment?.tracking_number || claim.return.tracking_number || null,
-                  date_created: claim.return.date_created || claim.date_created,
-                  date_closed: claim.return.date_closed || (claim.status === 'closed' ? claim.last_updated : null),
-                  refund_at: claim.return.refund_at || null,
-                  resource_id: claim.resource_id,
-                  resource: claim.resource,
-                  reason_id: claim.reason_id,
-                  order: claim.return.order || null,
-                  claim_status: claim.status,
-                  claim_stage: claim.stage,
-                  claim_type: claim.type,
-                  last_updated: claim.return.last_updated || claim.last_updated,
-                });
-                continue;
-              }
-              
-              // Caso contrário, buscar detalhes da devolução via API
+              // Buscar detalhes da devolução via API /v2/claims/$CLAIM_ID/returns
               const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
-              console.log(`🔍 Buscando returns do claim ${claim.id} via API...`);
+              console.log(`🔍 Buscando return do claim ${claim.id}...`);
               
               const returnResponse = await fetch(returnUrl, {
                 headers: {
@@ -236,42 +172,33 @@ Deno.serve(async (req) => {
               if (returnResponse.ok) {
                 const returnData = await returnResponse.json();
                 
-                // Verificar se há devoluções
-                if (returnData && (Array.isArray(returnData) ? returnData.length > 0 : returnData.id)) {
-                  const returns = Array.isArray(returnData) ? returnData : [returnData];
-                  
-                  console.log(`✅ Claim ${claim.id} possui ${returns.length} devolução(ões) via API`);
-                  
-                  returns.forEach((ret: any) => {
-                    allReturns.push({
-                      id: ret.id || claim.id,
-                      claim_id: claim.id,
-                      order_id: claim.resource_id,
-                      status: ret.status || { id: claim.status, description: claim.status },
-                      status_money: ret.status_money || { id: '-', description: '-' },
-                      subtype: ret.subtype || { id: claim.type, description: claim.type },
-                      shipment_status: ret.shipment?.status || ret.shipment_status || '-',
-                      tracking_number: ret.shipment?.tracking_number || ret.tracking_number || null,
-                      date_created: ret.date_created || claim.date_created,
-                      date_closed: ret.date_closed || null,
-                      refund_at: ret.refund_at || null,
-                      resource_id: claim.resource_id,
-                      resource: claim.resource,
-                      reason_id: claim.reason_id,
-                      order: ret.order || null,
-                      claim_status: claim.status,
-                      claim_stage: claim.stage,
-                      claim_type: claim.type,
-                      last_updated: ret.last_updated || claim.last_updated,
-                    });
-                  });
-                }
+                console.log(`✅ Return recebido para claim ${claim.id}:`, JSON.stringify(returnData).substring(0, 300));
+                
+                // Mapear os dados da devolução
+                allReturns.push({
+                  id: returnData.id,
+                  claim_id: claim.id.toString(),
+                  order_id: returnData.resource_id,
+                  status: { id: returnData.status, description: returnData.status },
+                  status_money: { id: returnData.status_money, description: returnData.status_money },
+                  subtype: { id: returnData.subtype, description: returnData.subtype },
+                  shipment_status: returnData.shipments?.[0]?.status || '-',
+                  tracking_number: returnData.shipments?.[0]?.tracking_number || null,
+                  date_created: returnData.date_created,
+                  date_closed: returnData.date_closed,
+                  refund_at: returnData.refund_at,
+                  resource_id: returnData.resource_id,
+                  resource: returnData.resource_type,
+                  reason_id: claim.reason_id,
+                  orders: returnData.orders || [],
+                  shipments: returnData.shipments || [],
+                  related_entities: returnData.related_entities || [],
+                  intermediate_check: returnData.intermediate_check,
+                  last_updated: returnData.last_updated,
+                });
               } else {
                 const errorText = await returnResponse.text();
-                // Não logar 404 (claim sem devolução é esperado)
-                if (returnResponse.status !== 404) {
-                  console.error(`❌ Erro ${returnResponse.status} ao buscar devolução do claim ${claim.id}:`, errorText.substring(0, 200));
-                }
+                console.warn(`⚠️ Erro ${returnResponse.status} ao buscar return do claim ${claim.id}:`, errorText.substring(0, 200));
               }
             } catch (error) {
               console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
