@@ -71,50 +71,64 @@ export default function DevolucoesMercadoLivre() {
   }), [state.devolucoes, state.total]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <OMSNav />
-      <MLOrdersNav />
-      
-      <div className="container mx-auto px-4 py-8 space-y-6">
-        {/* Header */}
-        <DevolucaoHeaderSection 
-          isRefreshing={state.isRefreshing}
-          onRefresh={actions.refetch}
-        />
+    <div className="h-screen flex flex-col">
+      <div className="flex-1 overflow-auto m-0">
+        <div className="space-y-6">
+          <OMSNav />
+          <MLOrdersNav />
+          
+          {/* Header */}
+          <div className="px-4 md:px-6">
+            <DevolucaoHeaderSection 
+              isRefreshing={state.isRefreshing}
+              onRefresh={actions.refetch}
+            />
+          </div>
 
-        {/* Stats Cards */}
-        <DevolucaoStatsCards stats={stats} />
+          {/* Stats Cards */}
+          <div className="px-4 md:px-6">
+            <DevolucaoStatsCards stats={stats} />
+          </div>
 
-        {/* Account Selector */}
-        <DevolucaoAccountSelector 
-          accounts={accounts}
-          selectedAccountId={state.integrationAccountId}
-          onAccountChange={actions.setIntegrationAccountId}
-          loading={!accounts.length}
-        />
+          {/* Account Selector */}
+          <div className="px-4 md:px-6">
+            <DevolucaoAccountSelector 
+              accounts={accounts}
+              selectedAccountId={state.integrationAccountId}
+              onAccountChange={actions.setIntegrationAccountId}
+              loading={!accounts.length}
+            />
+          </div>
 
-        {/* Filters */}
-        <DevolucaoFiltersBar 
-          filters={{
-            search: '',
-            status: [],
-            dateFrom: null,
-            dateTo: null,
-            integrationAccountId: state.integrationAccountId,
-          }}
-          onFiltersChange={(newFilters) => actions.setFilters(newFilters)}
-          onReset={actions.clearFilters}
-        />
+          {/* Filters */}
+          <div className="px-4 md:px-6">
+            <DevolucaoFiltersBar 
+              filters={{
+                search: '',
+                status: [],
+                dateFrom: null,
+                dateTo: null,
+                integrationAccountId: state.integrationAccountId,
+              }}
+              onFiltersChange={(newFilters) => actions.setFilters(newFilters)}
+              onReset={actions.clearFilters}
+            />
+          </div>
 
-        {/* Table */}
-        <DevolucaoTable 
-          devolucoes={state.devolucoes}
-          isLoading={state.loading}
-          error={state.error}
-        />
+          {/* Table */}
+          <div className="px-4 md:px-6">
+            <DevolucaoTable 
+              devolucoes={state.devolucoes}
+              isLoading={state.loading}
+              error={state.error}
+            />
+          </div>
 
-        {/* Pagination */}
-        <DevolucaoPaginationControls />
+          {/* Pagination */}
+          <div className="px-4 md:px-6 pb-6">
+            <DevolucaoPaginationControls />
+          </div>
+        </div>
       </div>
     </div>
   );
