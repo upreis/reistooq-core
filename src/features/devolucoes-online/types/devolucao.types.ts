@@ -19,6 +19,11 @@ export interface MLReturn {
   resource: string;
   reason_id: string;
   order: ReturnOrder | null;
+  orders: ReturnOrderItem[];
+  shipments: ReturnShipment[];
+  related_entities: any[];
+  intermediate_check: boolean;
+  last_updated: string;
 }
 
 export interface ReturnStatus {
@@ -38,8 +43,20 @@ export interface ReturnSubtype {
 
 export interface ReturnShipment {
   id: number;
+  shipment_id?: number;
   status: string;
   tracking_number: string | null;
+  type?: string;
+  destination?: any;
+}
+
+export interface ReturnOrderItem {
+  order_id: number;
+  item_id: string;
+  context_type: string;
+  total_quantity: string;
+  return_quantity: string;
+  variation_id: string | null;
 }
 
 export interface ReturnOrder {

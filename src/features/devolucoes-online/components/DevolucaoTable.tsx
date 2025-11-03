@@ -79,7 +79,9 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
             <TableHead className="font-semibold">Subtipo</TableHead>
             <TableHead className="font-semibold">Shipment Status</TableHead>
             <TableHead className="font-semibold">Tracking Number</TableHead>
+            <TableHead className="font-semibold">Qtd. Itens</TableHead>
             <TableHead className="font-semibold">Data Criação</TableHead>
+            <TableHead className="font-semibold">Última Atualização</TableHead>
             <TableHead className="font-semibold">Data Fechamento</TableHead>
             <TableHead className="font-semibold">Refund At</TableHead>
           </TableRow>
@@ -118,8 +120,16 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
               <TableCell className="text-xs font-mono">
                 {dev.tracking_number || '-'}
               </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="text-xs font-mono">
+                  {dev.orders?.length || 0}
+                </Badge>
+              </TableCell>
               <TableCell className="text-xs">
                 {formatDate(dev.date_created)}
+              </TableCell>
+              <TableCell className="text-xs">
+                {formatDate(dev.last_updated)}
               </TableCell>
               <TableCell className="text-xs">
                 {formatDate(dev.date_closed)}
