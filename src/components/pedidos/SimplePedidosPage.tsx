@@ -78,7 +78,6 @@ import { FEATURES } from '@/config/features';
 type Order = {
   id: string;
   numero: string;
-  nome_cliente: string;
   cpf_cnpj: string;
   data_pedido: string;
   data_prevista: string;
