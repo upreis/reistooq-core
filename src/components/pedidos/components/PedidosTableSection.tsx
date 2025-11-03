@@ -405,8 +405,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                0;
                        return <span>{formatMoney(custoEnvioDisplay)}</span>;
                      case 'coupon_amount':
-                       // ✅ PADRONIZADO: Desconto por cupom via getReceitaPorEnvio
-                       const couponAmount = getReceitaPorEnvio(order);
+                       // ✅ PADRONIZADO: Desconto por cupom
+                       const couponAmount = order.coupon_amount || order.unified?.coupon_amount || order.coupon?.amount || 0;
                        return <span>{formatMoney(couponAmount)}</span>;
                      case 'marketplace_fee':
                        {
