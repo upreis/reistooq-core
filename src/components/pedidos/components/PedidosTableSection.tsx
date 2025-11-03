@@ -31,27 +31,43 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// Helper function para extrair receita por envio
+// ✅ Helper function para extrair Receita Flex conforme PDF
+// Receita Flex (Bônus) = Quando net_cost é NEGATIVO (vendedor RECEBE do ML)
 function getReceitaPorEnvio(order: any): number {
+  // Se já temos receitaFlex salva, usar ela
+  if (order?.unified?.receitaFlex !== undefined && order?.unified?.receitaFlex !== null) {
+    return order.unified.receitaFlex;
+  }
+
   const logisticType = String(
-    order?.shipping?.logistic?.type || 
+    order?.shipping?.logistic_type || 
     order?.unified?.shipping?.logistic?.type ||
     order?.logistic_type || 
     order?.unified?.logistic_type ||
     ''
   ).toLowerCase();
   
-  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+  // Verificar se é Flex ou Self Service
+  if (logisticType !== 'self_service' && logisticType !== 'flex') {
+    return 0;
+  }
   
-  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
-  if (bonus > 0) return bonus;
+  // Buscar seller_cost_benefit
+  const costBenefit = order?.shipping?.seller_cost_benefit ||
+                     order?.unified?.shipping?.seller_cost_benefit;
   
-  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
-  if (costs?.senders && Array.isArray(costs.senders)) {
-    return costs.senders.reduce((acc: number, s: any) => {
-      const compensation = Number(s?.compensation || 0);
-      return acc + compensation;
-    }, 0);
+  if (!costBenefit) {
+    return 0;
+  }
+
+  const netCost = costBenefit.net_cost || 0;
+  
+  // ✅ RECEITA FLEX = quando net_cost é NEGATIVO (vendedor RECEBE)
+  // Fórmula do ML: net_cost = shipping_cost - discount
+  // Se net_cost < 0, significa que o discount foi MAIOR que o shipping_cost
+  // Exemplo: shipping_cost: 15.50, discount: 20.00 → net_cost: -4.50 (você RECEBE R$ 4,50)
+  if (netCost < 0) {
+    return Math.abs(netCost); // Retorna valor POSITIVO que você recebe
   }
   
   return 0;
