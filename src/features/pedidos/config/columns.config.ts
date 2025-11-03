@@ -361,7 +361,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Modo de envio combinado',
-    width: 170
+    width: 200
   },
   {
     key: 'codigo_rastreamento',
@@ -393,7 +393,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Rua do destinatário',
-    width: 160
+    width: 200
   },
   {
     key: 'endereco_numero',
@@ -413,7 +413,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Bairro do destinatário',
-    width: 140
+    width: 170
   },
   {
     key: 'endereco_cep',
