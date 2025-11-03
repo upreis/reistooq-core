@@ -79,6 +79,10 @@ export interface MLOrder {
     tracking_method?: string | null;
     date_created?: string;
     last_updated?: string;
+    logistic?: {
+      mode?: string;
+      type?: string;
+    };
     destination?: {
       receiver_id?: number;
       receiver_name?: string;
@@ -172,6 +176,10 @@ export interface MLOrder {
     return: any | null;
     change: any | null;
   };
+  
+  // Extra fields from unified-orders
+  logistic_type?: string;
+  shipping_substatus?: string;
 }
 
 export interface MLOrderItem {

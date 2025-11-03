@@ -25,6 +25,7 @@ import { MLOrder } from '../types/vendas.types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getOrderStatusLabel, getShippingStatusLabel, getShippingSubstatusLabel, getShippingSubstatusDescription } from '../utils/statusMapping';
+import { formatShippingStatus, formatLogisticType, formatSubstatus } from '@/utils/orderFormatters';
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -139,7 +140,8 @@ export const VendasTable = ({
               {/* ENVIO */}
               <TableHead className="min-w-[120px]">ID Envio</TableHead>
               <TableHead className="min-w-[120px]">Status Envio</TableHead>
-              <TableHead className="min-w-[120px]">Substatus Envio</TableHead>
+              <TableHead className="min-w-[120px]">Tipo Logístico</TableHead>
+              <TableHead className="min-w-[120px]">Substatus</TableHead>
               <TableHead className="min-w-[150px]">Método Envio</TableHead>
               <TableHead className="min-w-[200px]">Código Rastreio</TableHead>
               <TableHead className="min-w-[150px]">Transportadora</TableHead>
@@ -248,21 +250,23 @@ export const VendasTable = ({
                   <TableCell>
                     {shipping?.status ? (
                       <Badge variant={getStatusVariant(shipping.status)}>
-                        {getShippingStatusLabel(shipping.status)}
+                        {formatShippingStatus(shipping.status)}
                       </Badge>
                     ) : '-'}
                   </TableCell>
                   <TableCell className="text-xs">
-                    {shipping?.substatus ? (
-                      <div className="space-y-1">
-                        <div className="font-medium">{getShippingSubstatusLabel(shipping.substatus)}</div>
-                        {getShippingSubstatusDescription(shipping.substatus) && (
-                          <div className="text-muted-foreground text-xs">
-                            {getShippingSubstatusDescription(shipping.substatus)}
-                          </div>
-                        )}
-                      </div>
-                    ) : '-'}
+                    {formatLogisticType(
+                      shipping?.logistic?.type || 
+                      order.logistic_type || 
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    {formatSubstatus(
+                      shipping?.substatus || 
+                      order.shipping_substatus || 
+                      '-'
+                    )}
                   </TableCell>
                   <TableCell className="text-xs">{shipping?.lead_time?.shipping_method?.name || '-'}</TableCell>
                   <TableCell className="font-mono text-xs">{shipping?.tracking_number || '-'}</TableCell>
