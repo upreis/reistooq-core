@@ -164,36 +164,12 @@ function getValorLiquidoVendedor(order: any): number {
 }
 
 /**
- * Calcula receita por envio (Flex) - SOMENTE para pedidos Flex/self_service
+ * Calcula receita por envio (Flex)
  */
 function getReceitaPorEnvio(order: any): number {
-  // Verificar tipo logístico primeiro
-  const logisticType = order.shipping?.logistic_type || 
-                      order.shipping?.logistic?.type || 
-                      order.logistic_type || 
-                      '';
-  
-  const sellerCostBenefit = order.shipping?.seller_cost_benefit || 0;
-  const receiversCost = order.shipping?.costs?.receivers?.[0]?.cost || 0;
-  const receitaFlex = order.receita_flex || 0;
-  
-  // 🔍 DEBUG: Log para verificar valores
-  if (sellerCostBenefit > 20 || receiversCost > 20 || receitaFlex > 20) {
-    console.log('🔍 [RECEITA FLEX DEBUG] Pedido:', order.numero || order.id);
-    console.log('  Tipo Logístico:', logisticType);
-    console.log('  seller_cost_benefit:', sellerCostBenefit);
-    console.log('  receivers[0].cost:', receiversCost);
-    console.log('  receita_flex:', receitaFlex);
-    console.log('  shipping:', order.shipping);
-  }
-  
-  // Se NÃO for Flex ou self_service, retornar 0
-  if (logisticType !== 'flex' && logisticType !== 'self_service') {
-    return 0;
-  }
-  
-  // Se for Flex, buscar o valor correto
-  return sellerCostBenefit || receiversCost || receitaFlex || 0;
+  return order.shipping?.costs?.receivers?.[0]?.cost || 
+         order.shipping?.receiver_cost || 
+         order.receita_flex || 0;
 }
 
 /**

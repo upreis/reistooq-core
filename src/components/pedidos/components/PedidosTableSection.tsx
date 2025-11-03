@@ -31,51 +31,30 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// Helper function para extrair receita por envio - SOMENTE Flex
-/**
- * ✅ CORREÇÃO FINAL: Calcular Receita Flex (Bônus)
- * 
- * DEFINIÇÃO CORRETA:
- * "Receita Flex" = Valor que o CLIENTE PAGOU pelo frete
- * 
- * Em vendas Flex/Modalidade Própria:
- * - O cliente paga o frete (ex: R$ 18.99)
- * - Esse valor é RECEITA ADICIONAL para o vendedor
- * - Por isso se chama "Receita Flex (Bônus)"
- * 
- * ⚠️ NÃO confundir com seller_cost_benefit.discount!
- * - discount = economia no custo (outra coisa)
- * - Receita Flex = frete que cliente pagou (isso aqui!)
- */
+// Helper function para extrair receita por envio
 function getReceitaPorEnvio(order: any): number {
-  // A Receita Flex é o valor que o CLIENTE PAGOU pelo frete
-  // Isso vira receita adicional para o vendedor
+  const logisticType = String(
+    order?.shipping?.logistic?.type || 
+    order?.unified?.shipping?.logistic?.type ||
+    order?.logistic_type || 
+    order?.unified?.logistic_type ||
+    ''
+  ).toLowerCase();
   
-  // 1. Tentar pegar o valor salvo primeiro
-  const receitaFlexSalva = Number(
-    order?.receita_flex ||
-    order?.unified?.receita_flex ||
-    order?.raw_data?.receita_flex ||
-    0
-  );
+  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
   
-  if (receitaFlexSalva > 0) {
-    return receitaFlexSalva;
+  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
+  if (bonus > 0) return bonus;
+  
+  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
+  if (costs?.senders && Array.isArray(costs.senders)) {
+    return costs.senders.reduce((acc: number, s: any) => {
+      const compensation = Number(s?.compensation || 0);
+      return acc + compensation;
+    }, 0);
   }
   
-  // 2. Calcular: Frete pago pelo cliente
-  const fretePagoCliente = Number(
-    order?.frete_pago_cliente ||
-    order?.unified?.frete_pago_cliente ||
-    order?.shipping?.cost ||
-    order?.shipping?.shipping_items?.[0]?.list_cost ||
-    order?.payments?.[0]?.shipping_cost ||
-    order?.shipping?.costs?.receiver?.cost ||
-    0
-  );
-  
-  // A receita flex é simplesmente o frete que o cliente pagou
-  return fretePagoCliente;
+  return 0;
 }
 import { buildIdUnico } from '@/utils/idUnico';
 
@@ -405,9 +384,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.valor_frete || 0;
                        return <span>{formatMoney(fretePagoCliente)}</span>;
                      case 'receita_flex':
-                        // ✅ Usar SEMPRE getReceitaPorEnvio (calcula corretamente de seller_cost_benefit.discount)
-                        const receitaFlex = getReceitaPorEnvio(order);
-                        return <span>{formatMoney(receitaFlex)}</span>;
+                       const receitaFlex = order.receita_flex || 
+                                         order.unified?.receita_flex ||
+                                         getReceitaPorEnvio(order);
+                       return <span>{formatMoney(receitaFlex)}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
                     case 'coupon_amount':
@@ -430,8 +410,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                order.unified?.custo_envio_seller ||
                                                order.shipping?.costs?.senders?.[0]?.cost || 
                                                0;
-                        // ✅ Usar SEMPRE getReceitaPorEnvio (calcula corretamente de seller_cost_benefit.discount)
-                        const receitaFlex = getReceitaPorEnvio(order);
+                        const receitaFlex = order.receita_flex || 
+                                          order.unified?.receita_flex ||
+                                          order.shipping_cost_components?.shipping_method_cost || 
+                                          getReceitaPorEnvio(order) ||
+                                          0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
                                               order.fees?.[0]?.value || 
