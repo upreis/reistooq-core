@@ -164,10 +164,23 @@ function getValorLiquidoVendedor(order: any): number {
 }
 
 /**
- * Calcula receita por envio (Flex)
+ * Calcula receita por envio (Flex) - SOMENTE para pedidos Flex/self_service
  */
 function getReceitaPorEnvio(order: any): number {
-  return order.shipping?.costs?.receivers?.[0]?.cost || 
+  // Verificar tipo logístico primeiro
+  const logisticType = order.shipping?.logistic_type || 
+                      order.shipping?.logistic?.type || 
+                      order.logistic_type || 
+                      '';
+  
+  // Se NÃO for Flex ou self_service, retornar 0
+  if (logisticType !== 'flex' && logisticType !== 'self_service') {
+    return 0;
+  }
+  
+  // Se for Flex, buscar o valor correto
+  return order.shipping?.seller_cost_benefit ||
+         order.shipping?.costs?.receivers?.[0]?.cost || 
          order.shipping?.receiver_cost || 
          order.receita_flex || 0;
 }

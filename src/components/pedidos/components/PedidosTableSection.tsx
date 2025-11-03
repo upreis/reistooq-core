@@ -31,9 +31,10 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// Helper function para extrair receita por envio
+// Helper function para extrair receita por envio - SOMENTE Flex
 function getReceitaPorEnvio(order: any): number {
   const logisticType = String(
+    order?.shipping?.logistic_type ||
     order?.shipping?.logistic?.type || 
     order?.unified?.shipping?.logistic?.type ||
     order?.logistic_type || 
