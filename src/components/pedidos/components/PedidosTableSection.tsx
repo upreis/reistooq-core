@@ -372,94 +372,66 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                     order.raw?.order_items?.[0]?.item?.title ||
                                     order.unified?.order_items?.[0]?.item?.title;
                        return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '300px' }}>{titulo || '-'}</div>;
-                      case 'valor_total':
-                        // ✅ PADRONIZADO: Valor total do pedido
-                        const valorTotalDisplay = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
-                        return <span>{formatMoney(valorTotalDisplay)}</span>;
-                     case 'paid_amount':
-                       // ✅ PADRONIZADO: Valor pago
-                       const paidAmount = order.paid_amount || order.unified?.paid_amount || order.payments?.[0]?.transaction_amount || order.total_paid_amount || order.valor_total || 0;
-                       return <span>{formatMoney(paidAmount)}</span>;
-                      case 'frete_pago_cliente':
-                        // ✅ PADRONIZADO: Frete pago pelo cliente
-                        const fretePagoClienteDisplay = order.frete_pago_cliente || 
-                                               order.unified?.frete_pago_cliente ||
-                                               order.payments?.[0]?.shipping_cost || 
-                                               order.shipping?.shipping_items?.[0]?.list_cost ||
-                                               order.shipping?.costs?.receiver?.cost || 
-                                               order.valor_frete || 
-                                               0;
-                        return <span>{formatMoney(fretePagoClienteDisplay)}</span>;
-                      case 'receita_flex':
-                        // ✅ PADRONIZADO: Receita Flex (Bônus)
-                        const receitaFlexDisplay = order.receita_flex || 
-                                          order.unified?.receita_flex ||
-                                          (order as any).receita_flex_bonus ||
-                                          order.unified?.receita_flex_bonus ||
-                                          0;
-                        return <span>{formatMoney(receitaFlexDisplay)}</span>;
-                     case 'custo_envio_seller':
-                       // ✅ PADRONIZADO: Custo de envio seller
-                       const custoEnvioDisplay = order.custo_envio_seller || 
-                                               order.unified?.custo_envio_seller ||
-                                               order.shipping?.costs?.senders?.[0]?.cost || 
-                                               0;
-                       return <span>{formatMoney(custoEnvioDisplay)}</span>;
-                     case 'coupon_amount':
-                       // ✅ PADRONIZADO: Desconto por cupom
-                       const couponAmount = order.coupon_amount || order.unified?.coupon_amount || order.coupon?.amount || 0;
-                       return <span>{formatMoney(couponAmount)}</span>;
-                     case 'marketplace_fee':
-                       {
-                         // ✅ PADRONIZADO: Taxa do marketplace (comissão)
-                         const fee = order.order_items?.[0]?.sale_fee || 
-                                   order.raw?.order_items?.[0]?.sale_fee || 
-                                   order.marketplace_fee || 
-                                   order.unified?.marketplace_fee ||
-                                   order.fees?.[0]?.value || 
-                                   order.raw?.fees?.[0]?.value || 
-                                   0;
-                         return <span>{fee > 0 ? formatMoney(fee) : '-'}</span>;
-                       }
+                     case 'valor_total':
+                       return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
+                    case 'paid_amount':
+                      return <span>{formatMoney(order.paid_amount || order.unified?.paid_amount || order.payments?.[0]?.transaction_amount || order.total_paid_amount || order.valor_total || 0)}</span>;
+                     case 'frete_pago_cliente':
+                       const fretePagoCliente = order.frete_pago_cliente || 
+                                              order.unified?.frete_pago_cliente ||
+                                              order.payments?.[0]?.shipping_cost || 
+                                              order.shipping?.costs?.receiver?.cost || 
+                                              order.valor_frete || 0;
+                       return <span>{formatMoney(fretePagoCliente)}</span>;
+                     case 'receita_flex':
+                       const receitaFlex = order.receita_flex || 
+                                         order.unified?.receita_flex ||
+                                         getReceitaPorEnvio(order);
+                       return <span>{formatMoney(receitaFlex)}</span>;
+                    case 'custo_envio_seller':
+                      return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
+                    case 'coupon_amount':
+                      return <span>{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</span>;
+                    case 'marketplace_fee':
+                      {
+                        const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
+                        return <span>{fee > 0 ? formatMoney(fee) : '-'}</span>;
+                      }
                     case 'valor_liquido_vendedor':
                       {
-                        // ✅ FÓRMULA: Valor Líquido = Valor Total - (Frete Cliente + Custo Envio Seller) + Receita Flex - Taxa Marketplace
-                        
-                        // Usar MESMA LÓGICA das colunas individuais
+                        // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
                         const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
-                        
                         const fretePagoCliente = order.frete_pago_cliente || 
                                                order.unified?.frete_pago_cliente ||
-                                               order.payments?.[0]?.shipping_cost || 
                                                order.shipping?.shipping_items?.[0]?.list_cost || 
-                                               order.valor_frete || 
+                                               order.payments?.[0]?.shipping_cost ||
                                                0;
-                        
                         const custoEnvioSeller = order.custo_envio_seller || 
                                                order.unified?.custo_envio_seller ||
                                                order.shipping?.costs?.senders?.[0]?.cost || 
                                                0;
-                        
                         const receitaFlex = order.receita_flex || 
                                           order.unified?.receita_flex ||
+                                          order.shipping_cost_components?.shipping_method_cost || 
                                           getReceitaPorEnvio(order) ||
                                           0;
-                        
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
-                                              order.raw?.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
-                                              order.unified?.marketplace_fee ||
                                               order.fees?.[0]?.value || 
+                                              order.raw?.order_items?.[0]?.sale_fee ||
                                               order.raw?.fees?.[0]?.value ||
                                               0;
-                        
                         const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
                         
-                        // 🔍 DEBUG: Log detalhado (remover após confirmar funcionamento)
-                        if (Math.random() < 0.1) { // Log apenas 10% para performance
-                          console.log(`💰 [VALOR LÍQUIDO] ${order.id || order.numero}`);
-                          console.log(`  ${valorTotal.toFixed(2)} - (${fretePagoCliente.toFixed(2)} + ${custoEnvioSeller.toFixed(2)}) + ${receitaFlex.toFixed(2)} - ${taxaMarketplace.toFixed(2)} = ${valorLiquido.toFixed(2)}`);
-                        }
+                        // 🔍 DEBUG: Log detalhado com valores individuais
+                        console.log(`💰 [VALOR LÍQUIDO] Pedido ${order.id || order.numero}`);
+                        console.log(`  Valor Total: R$ ${valorTotal.toFixed(2)}`);
+                        console.log(`  - Frete Pago Cliente: R$ ${fretePagoCliente.toFixed(2)}`);
+                        console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)}`);
+                        console.log(`  + Receita Flex: R$ ${receitaFlex.toFixed(2)}`);
+                        console.log(`  - Taxa Marketplace: R$ ${taxaMarketplace.toFixed(2)}`);
+                        console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
+                        console.log(`  Armazenado: R$ ${(order.valor_liquido_vendedor || 0).toFixed(2)}`);
                         
                         return <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">{formatMoney(valorLiquido)}</span>;
                       }

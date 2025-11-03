@@ -164,18 +164,12 @@ function getValorLiquidoVendedor(order: any): number {
 }
 
 /**
- * Calcula receita Flex (bônus que o vendedor recebe)
+ * Calcula receita por envio (Flex)
  */
-function getReceitaFlex(order: any): number {
-  const logisticType = String(order?.shipping?.logistic?.type || '').toLowerCase();
-  
-  // Só para Flex/self_service
-  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
-  
-  // Busca o bônus
-  return order.shipping?.bonus_total || 
-         order.shipping?.bonus || 
-         0;
+function getReceitaPorEnvio(order: any): number {
+  return order.shipping?.costs?.receivers?.[0]?.cost || 
+         order.shipping?.receiver_cost || 
+         order.receita_flex || 0;
 }
 
 /**
@@ -272,7 +266,7 @@ export function fotografarPedidoCompleto(
                        order.payments?.[0]?.shipping_cost ||
                        order.shipping?.costs?.receiver?.cost ||
                        order.valor_frete || 0,
-    receita_flex_bonus: order.receita_flex || getReceitaFlex(order),
+    receita_flex_bonus: order.receita_flex || getReceitaPorEnvio(order),
     custo_envio_seller: order.custo_envio_seller ||
                        order.shipping?.costs?.senders?.[0]?.cost || 0,
     desconto_cupom: order.payments?.[0]?.coupon_amount ||
