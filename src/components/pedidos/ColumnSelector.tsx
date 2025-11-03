@@ -68,20 +68,17 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'endereco_numero', label: 'Número', visible: false, category: 'basic' },
   { key: 'endereco_bairro', label: 'Bairro', visible: false, category: 'basic' },
 
-  // Envio (ML)
-  { key: 'shipping_status', label: 'Status do Envio', visible: true, category: 'ml' },
-  { key: 'shipping_mode', label: 'Modo de Envio', visible: true, category: 'ml' },
-  { key: 'shipping_substatus', label: 'Sub-status Detalhado', visible: true, category: 'ml' },
-  { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: true, category: 'ml' },
-  { key: 'url_rastreamento', label: 'URL Rastreamento', visible: true, category: 'ml' },
-  
-  // Novas colunas de envio (da página vendas-online)
-  { key: 'historico_status', label: 'Histórico Status', visible: true, category: 'ml' },
-  { key: 'transportadora', label: 'Transportadora', visible: true, category: 'ml' },
-  { key: 'status_envio', label: 'Status Envio', visible: true, category: 'ml' },
-  { key: 'tipo_logistico', label: 'Tipo Logístico', visible: true, category: 'ml' },
-  { key: 'substatus', label: 'Substatus', visible: true, category: 'ml' },
-  { key: 'metodo_envio', label: 'Método Envio', visible: true, category: 'ml' },
+  // Envio (ML) - Colunas iguais à página vendas-online
+  { key: 'shipping_status', label: 'Status Envio', visible: false, category: 'ml' },
+  { key: 'logistic_type', label: 'Tipo Logístico', visible: false, category: 'ml' },
+  { key: 'shipping_substatus', label: 'Substatus', visible: false, category: 'ml' },
+  { key: 'shipping_method', label: 'Método Envio', visible: false, category: 'ml' },
+  { key: 'tracking_number', label: 'Rastreio', visible: false, category: 'ml' },
+  { key: 'tracking_method', label: 'Transportadora', visible: false, category: 'ml' },
+  { key: 'status_history', label: 'Histórico Status', visible: false, category: 'ml' },
+  { key: 'shipping_mode', label: 'Modo de Envio', visible: false, category: 'ml' },
+  { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: false, category: 'ml' },
+  { key: 'url_rastreamento', label: 'URL Rastreamento', visible: false, category: 'ml' },
   
   // Status Avançados (Novos) - Visíveis por padrão para melhor entendimento
   { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: true, category: 'ml' },

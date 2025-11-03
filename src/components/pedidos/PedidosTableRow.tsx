@@ -140,45 +140,52 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 );
               case 'obs':
                 return <TruncatedCell content={get(row.unified, 'obs')} />;
-              case 'codigo_rastreamento':
-                const codigoRastreamento = get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping.tracking_number');
-                return <TruncatedCell content={codigoRastreamento} maxLength={30} />;
-              case 'url_rastreamento':
-                const urlRastreamento = get(row.unified, 'url_rastreamento') ?? get(row.raw, 'shipping.tracking_url');
-                return urlRastreamento ? (
-                  <a 
-                    href={urlRastreamento} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline text-sm"
-                  >
-                    Rastrear
-                  </a>
-                ) : <span>-</span>;
-              case 'status_baixa':
-                // Renderizar status da baixa usando callback personalizado
-                return renderStatusBaixa ? renderStatusBaixa(rowId) : <span className="text-xs text-muted-foreground">—</span>;
-              case 'status_insumos':
-                // Renderizar status dos insumos usando callback personalizado
-                return renderStatusInsumos ? renderStatusInsumos(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
-              // Novas colunas de envio
-              case 'historico_status':
-                const statusHistory = get(row.raw, 'shipping.status_history') || get(row.raw, 'shipping_details.status_history');
-                if (statusHistory && Array.isArray(statusHistory) && statusHistory.length > 0) {
+              // Colunas de envio - Mesmas keys da página vendas-online
+              case 'shipping_status':
+                const shippingStatusValue = get(row.raw, 'shipping.status') || get(row.raw, 'shipping_details.status');
+                return shippingStatusValue ? (
+                  <Badge variant={getStatusBadgeVariant(shippingStatusValue)}>
+                    {formatShippingStatus(shippingStatusValue)}
+                  </Badge>
+                ) : '-';
+              
+              case 'logistic_type':
+                const logisticTypeValue = get(row.raw, 'shipping.logistic.type') || get(row.raw, 'logistic_type') || get(row.raw, 'shipping_details.logistic.type');
+                return <span className="text-xs">{formatLogisticType(logisticTypeValue)}</span>;
+              
+              case 'shipping_substatus':
+                const substatusValue = get(row.raw, 'shipping.substatus') || get(row.raw, 'shipping_substatus') || get(row.raw, 'shipping_details.substatus');
+                return <span className="text-xs">{formatSubstatus(substatusValue)}</span>;
+              
+              case 'shipping_method':
+                const shippingMethodValue = get(row.raw, 'shipping.lead_time.shipping_method.name') || get(row.raw, 'shipping_details.lead_time.shipping_method.name');
+                return <span className="text-xs">{shippingMethodValue || '-'}</span>;
+              
+              case 'tracking_number':
+                const trackingNumberValue = get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping.tracking_number');
+                return <TruncatedCell content={trackingNumberValue} maxLength={30} />;
+              
+              case 'tracking_method':
+                const trackingMethodValue = get(row.raw, 'shipping.tracking_method') || get(row.raw, 'shipping_details.tracking_method');
+                return <span className="text-xs">{trackingMethodValue || '-'}</span>;
+              
+              case 'status_history':
+                const statusHistoryValue = get(row.raw, 'shipping.status_history') || get(row.raw, 'shipping_details.status_history');
+                if (statusHistoryValue && Array.isArray(statusHistoryValue) && statusHistoryValue.length > 0) {
                   return (
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <History className="h-4 w-4 mr-1" />
-                          {statusHistory.length} eventos
+                          {statusHistoryValue.length} eventos
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-96" align="start">
                         <div className="space-y-3">
                           <h4 className="font-semibold text-sm">Histórico de Status</h4>
                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                            {statusHistory.map((history: any, idx: number) => (
+                            {statusHistoryValue.map((history: any, idx: number) => (
                               <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
                                 <div className="text-xs font-medium">
                                   {formatShippingStatus(history.status)}
@@ -201,29 +208,31 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 }
                 return '-';
               
-              case 'transportadora':
-                const transportadora = get(row.raw, 'shipping.tracking_method') || get(row.raw, 'shipping_details.tracking_method');
-                return <span className="text-xs">{transportadora || '-'}</span>;
+              // Colunas antigas mantidas para compatibilidade
+              case 'codigo_rastreamento':
+                const codigoRastreamento = get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping.tracking_number');
+                return <TruncatedCell content={codigoRastreamento} maxLength={30} />;
               
-              case 'status_envio':
-                const statusEnvio = get(row.raw, 'shipping.status') || get(row.raw, 'shipping_details.status');
-                return statusEnvio ? (
-                  <Badge variant={getStatusBadgeVariant(statusEnvio)}>
-                    {formatShippingStatus(statusEnvio)}
-                  </Badge>
-                ) : '-';
+              case 'url_rastreamento':
+                const urlRastreamento = get(row.unified, 'url_rastreamento') ?? get(row.raw, 'shipping.tracking_url');
+                return urlRastreamento ? (
+                  <a 
+                    href={urlRastreamento} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline text-sm"
+                  >
+                    Rastrear
+                  </a>
+                ) : <span>-</span>;
               
-              case 'tipo_logistico':
-                const tipoLogistico = get(row.raw, 'shipping.logistic.type') || get(row.raw, 'logistic_type') || get(row.raw, 'shipping_details.logistic.type');
-                return <span className="text-xs">{formatLogisticType(tipoLogistico)}</span>;
+              case 'status_baixa':
+                // Renderizar status da baixa usando callback personalizado
+                return renderStatusBaixa ? renderStatusBaixa(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
-              case 'substatus':
-                const substatus = get(row.raw, 'shipping.substatus') || get(row.raw, 'shipping_substatus') || get(row.raw, 'shipping_details.substatus');
-                return <span className="text-xs">{formatSubstatus(substatus)}</span>;
-              
-              case 'metodo_envio':
-                const metodoEnvio = get(row.raw, 'shipping.lead_time.shipping_method.name') || get(row.raw, 'shipping_details.lead_time.shipping_method.name');
-                return <span className="text-xs">{metodoEnvio || '-'}</span>;
+              case 'status_insumos':
+                // Renderizar status dos insumos usando callback personalizado
+                return renderStatusInsumos ? renderStatusInsumos(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
               default:
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
