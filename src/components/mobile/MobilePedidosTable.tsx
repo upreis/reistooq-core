@@ -146,10 +146,10 @@ export function MobilePedidosTable({
               </div>
 
               {/* Cliente */}
-              {(unified?.nome_cliente || raw?.customer_name) && (
+              {raw?.customer_name && (
                 <div>
                   <p className="text-sm font-medium text-foreground">
-                    {unified?.nome_cliente || raw?.customer_name}
+                    {raw?.customer_name}
                   </p>
                   {(unified?.cpf_cnpj || raw?.customer_email) && (
                     <p className="text-xs text-muted-foreground">
@@ -179,11 +179,11 @@ export function MobilePedidosTable({
                   </div>
                 )}
                 
-                {(raw?.shipping_method || unified?.codigo_rastreamento) && (
+                {unified?.codigo_rastreamento && (
                   <div>
-                    <span className="text-muted-foreground">Envio:</span>
+                    <span className="text-muted-foreground">Rastreamento:</span>
                     <p className="font-medium">
-                      {raw?.shipping_method || unified?.codigo_rastreamento || 'N/A'}
+                      {unified?.codigo_rastreamento}
                     </p>
                   </div>
                 )}

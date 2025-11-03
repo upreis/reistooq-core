@@ -579,7 +579,6 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'id', label: 'ID-Único', default: true, category: 'basic' },
     { key: 'empresa', label: 'Empresa', default: true, category: 'basic' },
     { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
-    { key: 'nome_cliente', label: 'Nome do Cliente', default: true, category: 'basic' },
     { key: 'nome_completo', label: 'Nome Completo', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
     { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
@@ -616,7 +615,6 @@ function SimplePedidosPage({ className }: Props) {
 
     // Metadados ML
     { key: 'date_created', label: 'Data Criação ML', default: false, category: 'meta' },
-    { key: 'pack_id', label: 'Pack ID', default: false, category: 'meta' },
     { key: 'pickup_id', label: 'Pickup ID', default: false, category: 'meta' },
     { key: 'tags', label: 'Tags', default: false, category: 'meta' },
 
@@ -624,11 +622,9 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: false, category: 'shipping' },
     { key: 'logistic_type', label: 'Tipo Logístico', default: false, category: 'shipping' },
-    { key: 'shipping_method_type', label: 'Tipo Método Envio', default: false, category: 'shipping' },
     
     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
     { key: 'shipping_mode', label: 'Modo de Envio (Combinado)', default: false, category: 'shipping' },
-    { key: 'shipping_method', label: 'Método de Envio (Combinado)', default: false, category: 'shipping' },
     
     // Endereço
     { key: 'endereco_rua', label: 'Rua', default: false, category: 'shipping' },
