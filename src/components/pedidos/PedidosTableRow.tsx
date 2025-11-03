@@ -194,6 +194,18 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'status_insumos':
                 return renderStatusInsumos ? renderStatusInsumos(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
+              case 'valor_liquido_vendedor':
+                {
+                  // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
+                  const valorTotal = get(row.unified, 'valor_total') || get(row.raw, 'total_amount') || 0;
+                  const fretePagoCliente = get(row.unified, 'frete_pago_cliente') || get(row.raw, 'shipping.shipping_items[0].list_cost') || 0;
+                  const custoEnvioSeller = get(row.unified, 'custo_envio_seller') || get(row.raw, 'shipping.costs.senders[0].cost') || 0;
+                  const receitaFlex = get(row.unified, 'receita_flex') || get(row.raw, 'shipping_cost_components.shipping_method_cost') || 0;
+                  const taxaMarketplace = get(row.raw, 'order_items[0].sale_fee') || get(row.unified, 'marketplace_fee') || get(row.raw, 'fees[0].value') || 0;
+                  const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
+                  return <span>{formatMoney(get(row.unified, 'valor_liquido_vendedor') || valorLiquido || 0)}</span>;
+                }
+              
               default:
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
             }

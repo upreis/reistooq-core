@@ -157,6 +157,22 @@ export function PedidosTableVirtual({
           </Badge>
         );
       
+      case 'valor_liquido_vendedor':
+        {
+          // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
+          const valorTotal = row.valor_total || row.unified?.valor_total || row.total_amount || 0;
+          const fretePagoCliente = row.frete_pago_cliente || row.shipping?.shipping_items?.[0]?.list_cost || 0;
+          const custoEnvioSeller = row.custo_envio_seller || row.shipping?.costs?.senders?.[0]?.cost || 0;
+          const receitaFlex = row.receita_flex || row.shipping_cost_components?.shipping_method_cost || 0;
+          const taxaMarketplace = row.order_items?.[0]?.sale_fee || row.marketplace_fee || row.fees?.[0]?.value || 0;
+          const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
+          return (
+            <span className="font-mono text-sm">
+              {formatMoney(row.valor_liquido_vendedor || valorLiquido || 0)}
+            </span>
+          );
+        }
+      
       case 'valor_total':
       case 'valor_frete':
       case 'valor_desconto':
