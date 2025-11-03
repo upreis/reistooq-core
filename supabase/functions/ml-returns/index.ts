@@ -147,6 +147,29 @@ Deno.serve(async (req) => {
         if (claimsData.data && Array.isArray(claimsData.data)) {
           console.log(`📦 Processando ${claimsData.data.length} claims...`);
           
+          // Log COMPLETO da estrutura dos primeiros 3 claims para debug
+          if (claimsData.data.length > 0) {
+            console.log('🔍 === ESTRUTURA COMPLETA DOS PRIMEIROS 3 CLAIMS ===');
+            claimsData.data.slice(0, 3).forEach((claim: any, idx: number) => {
+              console.log(`\n📋 CLAIM ${idx + 1}:`, JSON.stringify(claim, null, 2));
+            });
+          }
+          
+          // Analisar todos os claims para entender a estrutura
+          claimsData.data.forEach((claim: any, idx: number) => {
+            const analysis = {
+              id: claim.id,
+              type: claim.type,
+              has_return_field: claim.return !== undefined && claim.return !== null,
+              has_related_entities: !!claim.related_entities,
+              related_entities_count: claim.related_entities?.length || 0,
+              related_entities_types: claim.related_entities?.map((e: any) => e.type) || [],
+            };
+            if (idx < 5) {
+              console.log(`📊 Análise claim ${claim.id}:`, JSON.stringify(analysis, null, 2));
+            }
+          });
+          
           // Filtrar claims que são do tipo "return" OU possuem campo "return" preenchido
           const claimsComDevolucoes = claimsData.data.filter((claim: any) => {
             // Tipo 1: claim é do tipo "return"
