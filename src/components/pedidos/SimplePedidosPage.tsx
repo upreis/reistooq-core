@@ -449,39 +449,23 @@ function SimplePedidosPage({ className }: Props) {
     };
   }, []);
   
-  // ✅ SOLUÇÃO ALTERNATIVA: usar order_cost e special_discount
+  // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
   const getReceitaPorEnvio = (order: any): number => {
     // Se já vier calculado do backend, usar
     if (typeof order?.receita_por_envio === 'number') return order.receita_por_envio;
-    if (order?.unified?.receitaFlex !== undefined && order?.unified?.receitaFlex !== null) {
-      return order.unified.receitaFlex;
-    }
 
-    // Verificar tipo logístico
+    // Detectar o tipo logístico a partir de múltiplas fontes (como a tabela exibe)
     const rawType =
-      order?.shipping?.logistic_type ??
       order?.shipping?.logistic?.type ??
       order?.raw?.shipping?.logistic?.type ??
       order?.logistic_type ??
       order?.shipping_details?.logistic_type ??
-      order?.unified?.shipping?.logistic?.type ??
-      order?.unified?.logistic_type ??
+      order?.unified?.logistic?.type ??
       order?.logistic?.type;
 
     const logisticType = String(rawType || '').toLowerCase().replace(/\s+/g, '_');
-    
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
-    
-    // ✅ Usar order_cost e special_discount do SHIPMENT
-    const orderCost = Number(order?.shipping?.order_cost || 0);
-    const specialDiscount = Number(order?.shipping?.cost_components?.special_discount || 0);
-    const netCost = orderCost - specialDiscount;
-    
-    // Se net_cost < 0, vendedor RECEBE (receita flex)
-    if (netCost < 0) {
-      return Math.abs(netCost);
-    }
 
     // 0) Se o backend já calculou (shipping.bonus_total/bonus), priorizar
     const shippingBonus = Number(

@@ -31,50 +31,29 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// ✅ SOLUÇÃO ALTERNATIVA conforme PDF: usar order_cost e special_discount
-// Fórmula: net_cost = order_cost - special_discount
-// Se net_cost < 0 → vendedor RECEBE do ML (Receita Flex)
-function calcularReceitaFlexPorEnvio(order: any): number {
-  const pedidoId = order?.numero || order?.id || 'UNKNOWN';
-  
-  // Se já temos receitaFlex salva, usar ela
-  if (order?.unified?.receitaFlex !== undefined && order?.unified?.receitaFlex !== null) {
-    console.log(`✅ [RECEITA FLEX] Pedido ${pedidoId}: Usando valor SALVO = R$ ${order.unified.receitaFlex.toFixed(2)}`);
-    return order.unified.receitaFlex;
-  }
-
-  // Verificar tipo logístico
+// Helper function para extrair receita por envio
+function getReceitaPorEnvio(order: any): number {
   const logisticType = String(
-    order?.shipping?.logistic_type || 
+    order?.shipping?.logistic?.type || 
     order?.unified?.shipping?.logistic?.type ||
     order?.logistic_type || 
     order?.unified?.logistic_type ||
     ''
   ).toLowerCase();
   
-  // Só no Flex/self_service
-  if (logisticType !== 'self_service' && logisticType !== 'flex') {
-    console.log(`⚠️ [RECEITA FLEX] Pedido ${pedidoId}: NÃO é Flex (${logisticType}) → R$ 0.00`);
-    return 0;
+  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+  
+  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
+  if (bonus > 0) return bonus;
+  
+  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
+  if (costs?.senders && Array.isArray(costs.senders)) {
+    return costs.senders.reduce((acc: number, s: any) => {
+      const compensation = Number(s?.compensation || 0);
+      return acc + compensation;
+    }, 0);
   }
   
-  console.log(`✅ [RECEITA FLEX] Pedido ${pedidoId}: É FLEX (${logisticType})`);
-  
-  // ✅ Usar order_cost e special_discount do SHIPMENT
-  const orderCost = Number(order?.shipping?.order_cost || 0);
-  const specialDiscount = Number(order?.shipping?.cost_components?.special_discount || 0);
-  const netCost = orderCost - specialDiscount;
-  
-  console.log(`💰 [RECEITA FLEX] Pedido ${pedidoId}: order_cost=${orderCost}, special_discount=${specialDiscount} → net_cost=${netCost}`);
-  
-  // Se net_cost < 0, vendedor RECEBE
-  if (netCost < 0) {
-    const receita = Math.abs(netCost);
-    console.log(`✅ [RECEITA FLEX] Pedido ${pedidoId}: RECEBE R$${receita.toFixed(2)}`);
-    return receita;
-  }
-  
-  console.log(`⚠️ [RECEITA FLEX] Pedido ${pedidoId}: net_cost=${netCost} (não negativo, sem receita flex)`);
   return 0;
 }
 import { buildIdUnico } from '@/utils/idUnico';
@@ -169,7 +148,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
     }
   }, [orders, selectedOrders.size, setSelectedOrders]);
 
-  // ✅ REMOVIDA definição duplicada - usando calcularReceitaFlexPorEnvio do topo do arquivo
+  // Funções auxiliares memoizadas
+  const getReceitaPorEnvio = useCallback((order: any) => {
+    return order.shipping?.costs?.receiver?.cost || 0;
+  }, []);
 
   const getValorLiquidoVendedor = useCallback((order: any) => {
     const total = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
@@ -404,7 +386,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'receita_flex':
                        const receitaFlex = order.receita_flex || 
                                          order.unified?.receita_flex ||
-                                         calcularReceitaFlexPorEnvio(order);
+                                         getReceitaPorEnvio(order);
                        return <span>{formatMoney(receitaFlex)}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
@@ -430,7 +412,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                0;
                         const receitaFlex = order.receita_flex || 
                                           order.unified?.receita_flex ||
-                                          calcularReceitaFlexPorEnvio(order) ||
+                                          order.shipping_cost_components?.shipping_method_cost || 
+                                          getReceitaPorEnvio(order) ||
                                           0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
