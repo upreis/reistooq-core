@@ -399,14 +399,47 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       }
                     case 'valor_liquido_vendedor':
                       {
+                        // 🔍 DEBUG: Log completo do pedido para entender estrutura
+                        console.log('🔍 [valor_liquido_vendedor] Calculando para pedido:', order.id || order.numero, {
+                          order,
+                          valorTotal: order.valor_total || order.unified?.valor_total || order.total_amount,
+                          fretePagoCliente: order.frete_pago_cliente || order.shipping?.shipping_items?.[0]?.list_cost,
+                          custoEnvioSeller: order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost,
+                          receitaFlex: order.receita_flex || order.shipping_cost_components?.shipping_method_cost,
+                          taxaMarketplace: order.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value
+                        });
+                        
                         // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
                         const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
-                        const fretePagoCliente = order.frete_pago_cliente || order.shipping?.shipping_items?.[0]?.list_cost || 0;
-                        const custoEnvioSeller = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
-                        const receitaFlex = order.receita_flex || order.shipping_cost_components?.shipping_method_cost || 0;
-                        const taxaMarketplace = order.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || 0;
+                        const fretePagoCliente = order.frete_pago_cliente || 
+                                               order.unified?.frete_pago_cliente ||
+                                               order.shipping?.shipping_items?.[0]?.list_cost || 
+                                               order.payments?.[0]?.shipping_cost ||
+                                               0;
+                        const custoEnvioSeller = order.custo_envio_seller || 
+                                               order.unified?.custo_envio_seller ||
+                                               order.shipping?.costs?.senders?.[0]?.cost || 
+                                               0;
+                        const receitaFlex = order.receita_flex || 
+                                          order.unified?.receita_flex ||
+                                          order.shipping_cost_components?.shipping_method_cost || 
+                                          getReceitaPorEnvio(order) ||
+                                          0;
+                        const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
+                                              order.marketplace_fee || 
+                                              order.fees?.[0]?.value || 
+                                              order.raw?.order_items?.[0]?.sale_fee ||
+                                              order.raw?.fees?.[0]?.value ||
+                                              0;
                         const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
-                        return <span>{formatMoney(order.valor_liquido_vendedor || valorLiquido || 0)}</span>;
+                        
+                        console.log('💰 [valor_liquido_vendedor] Resultado:', {
+                          formula: `${valorTotal} - (${fretePagoCliente} + ${custoEnvioSeller}) + ${receitaFlex} - ${taxaMarketplace}`,
+                          valorLiquido,
+                          valorArmazenado: order.valor_liquido_vendedor
+                        });
+                        
+                        return <span className="font-mono text-sm font-semibold text-primary">{formatMoney(order.valor_liquido_vendedor || valorLiquido || 0)}</span>;
                       }
                      case 'payment_method':
                        return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || order.metodo_pagamento || '-')}</span>;
