@@ -353,13 +353,16 @@ export function PedidosTableVirtual({
                         (column.key === 'titulo_anuncio' || column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'tags' || column.key === 'id' || column.key === 'skus_produtos' || column.key === 'sku_estoque' || column.key === 'sku_kit') ? "items-start" : "items-center"
                       )}
                       style={(column.key === 'titulo_anuncio') ? { minWidth: '300px' } : 
-                             (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'tags' || column.key === 'id' || column.key === 'skus_produtos' || column.key === 'sku_estoque' || column.key === 'sku_kit') ? { minWidth: '200px' } : undefined}
+                             (column.key === 'id') ? { minWidth: '300px' } :
+                             (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'tags' || column.key === 'skus_produtos' || column.key === 'sku_estoque' || column.key === 'sku_kit') ? { minWidth: '200px' } : undefined}
                     >
                       <div className={cn(
                         "w-full",
                         column.key === 'titulo_anuncio' 
                           ? "text-sm leading-snug break-words whitespace-normal line-clamp-2"
-                          : (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'tags' || column.key === 'id' || column.key === 'skus_produtos' || column.key === 'sku_estoque' || column.key === 'sku_kit')
+                          : column.key === 'id'
+                            ? "text-xs leading-tight break-words whitespace-normal line-clamp-2"
+                          : (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'tags' || column.key === 'skus_produtos' || column.key === 'sku_estoque' || column.key === 'sku_kit')
                             ? "line-clamp-2 text-sm leading-tight break-words whitespace-normal"
                             : "truncate text-sm"
                       )}>
