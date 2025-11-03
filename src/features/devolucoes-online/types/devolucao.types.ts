@@ -36,6 +36,17 @@ export interface MLReturn {
   
   // ID do shipment
   shipment_id?: number | null;
+  
+  // Campos de previsão de entrega/devolução
+  estimated_delivery_time?: {
+    date?: string | null;
+    time_from?: string | null;
+    time_to?: string | null;
+  } | null;
+  estimated_delivery_final?: {
+    date?: string | null;
+  } | null;
+  delivery_promise?: string | null;
 }
 
 export interface ReturnStatus {
