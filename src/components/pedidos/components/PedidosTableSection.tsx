@@ -42,20 +42,18 @@ function getReceitaPorEnvio(order: any): number {
     ''
   ).toLowerCase();
   
-  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
-  
-  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
-  if (bonus > 0) return bonus;
-  
-  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
-  if (costs?.senders && Array.isArray(costs.senders)) {
-    return costs.senders.reduce((acc: number, s: any) => {
-      const compensation = Number(s?.compensation || 0);
-      return acc + compensation;
-    }, 0);
+  // Se NÃO for Flex ou self_service, retornar 0
+  if (logisticType !== 'self_service' && logisticType !== 'flex') {
+    return 0;
   }
   
-  return 0;
+  // Usar SOMENTE seller_cost_benefit (campo oficial da API ML)
+  return Number(
+    order?.shipping?.seller_cost_benefit || 
+    order?.unified?.shipping?.seller_cost_benefit || 
+    order?.receita_flex ||
+    0
+  );
 }
 import { buildIdUnico } from '@/utils/idUnico';
 
