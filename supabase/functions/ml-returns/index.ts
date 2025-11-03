@@ -176,44 +176,6 @@ Deno.serve(async (req) => {
                 const firstShipment = returnData.shipments?.[0];
                 const shippingAddress = firstShipment?.destination?.shipping_address;
                 
-                // Buscar informações de previsão do shipment se disponível
-                let estimatedDeliveryTime = null;
-                let estimatedDeliveryFinal = null;
-                let deliveryPromise = null;
-                
-                if (firstShipment?.shipment_id) {
-                  try {
-                    const shipmentUrl = `https://api.mercadolibre.com/shipments/${firstShipment.shipment_id}`;
-                    const shipmentResponse = await fetch(shipmentUrl, {
-                      headers: {
-                        'Authorization': `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                      },
-                    });
-                    
-                    if (shipmentResponse.ok) {
-                      const shipmentData = await shipmentResponse.json();
-                      
-                      // Log completo da primeira chamada para debug
-                      if (allReturns.length === 0) {
-                        console.log(`\n📦 ESTRUTURA SHIPMENT API:`, JSON.stringify(shipmentData, null, 2));
-                      }
-                      
-                      estimatedDeliveryTime = shipmentData.estimated_delivery_time || null;
-                      estimatedDeliveryFinal = shipmentData.estimated_delivery_final || null;
-                      deliveryPromise = shipmentData.delivery_promise || null;
-                      
-                      console.log(`✅ Previsão obtida para shipment ${firstShipment.shipment_id}:`, {
-                        estimated_delivery_time: estimatedDeliveryTime,
-                        estimated_delivery_final: estimatedDeliveryFinal,
-                        delivery_promise: deliveryPromise
-                      });
-                    }
-                  } catch (error) {
-                    console.warn(`⚠️ Erro ao buscar previsão do shipment ${firstShipment.shipment_id}:`, error);
-                  }
-                }
-                
                 allReturns.push({
                   // Campos principais
                   id: returnData.id,
@@ -246,11 +208,6 @@ Deno.serve(async (req) => {
                   destination_state: shippingAddress?.state?.name || null,
                   destination_zip: shippingAddress?.zip_code || null,
                   destination_neighborhood: shippingAddress?.neighborhood?.name || null,
-                  
-                  // Previsão de entrega/devolução
-                  estimated_delivery_time: estimatedDeliveryTime,
-                  estimated_delivery_final: estimatedDeliveryFinal,
-                  delivery_promise: deliveryPromise,
                   
                   // Arrays completos
                   orders: returnData.orders || [],

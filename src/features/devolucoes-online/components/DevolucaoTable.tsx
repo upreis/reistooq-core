@@ -56,26 +56,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
     }
   };
 
-  const formatDateOnly = (dateString: string | null) => {
-    if (!dateString) return '-';
-    try {
-      return format(new Date(dateString), 'dd/MM/yyyy', { locale: ptBR });
-    } catch {
-      return dateString;
-    }
-  };
-
-  const formatEstimatedDelivery = (estimatedTime: any) => {
-    if (!estimatedTime || !estimatedTime.date) return '-';
-    
-    const dateStr = formatDateOnly(estimatedTime.date);
-    const timeRange = estimatedTime.time_from && estimatedTime.time_to 
-      ? `${estimatedTime.time_from} - ${estimatedTime.time_to}`
-      : '';
-    
-    return timeRange ? `${dateStr} ${timeRange}` : dateStr;
-  };
-
   const getStatusColor = (statusId: string) => {
     const colors: Record<string, string> = {
       'pending': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
@@ -150,8 +130,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
             <TableHead className="font-semibold">Estado</TableHead>
             <TableHead className="font-semibold">CEP</TableHead>
             <TableHead className="font-semibold">Bairro</TableHead>
-            <TableHead className="font-semibold">Previsão Devolução</TableHead>
-            <TableHead className="font-semibold">Previsão Chegada</TableHead>
             <TableHead className="font-semibold">MPT</TableHead>
             <TableHead className="font-semibold">Reviews</TableHead>
             <TableHead className="font-semibold">Reembolso Após</TableHead>
@@ -243,12 +221,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
                 </TableCell>
                 <TableCell className="text-xs">
                   {dev.destination_neighborhood || '-'}
-                </TableCell>
-                <TableCell className="text-xs">
-                  {formatEstimatedDelivery(dev.estimated_delivery_time)}
-                </TableCell>
-                <TableCell className="text-xs">
-                  {dev.estimated_delivery_final?.date ? formatDateOnly(dev.estimated_delivery_final.date) : '-'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">
