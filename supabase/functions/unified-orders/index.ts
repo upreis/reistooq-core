@@ -438,6 +438,15 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const logisticType = String(shipping?.logistic?.type || '').toLowerCase();
     let receitaFlex = 0;
     if (logisticType === 'self_service' || logisticType === 'flex') {
+      // DEBUG: Ver todos os campos disponíveis
+      console.log(`🔍 [DEBUG Receita Flex] Pedido ${order.id}:`, {
+        bonus: shipping.bonus,
+        bonus_total: shipping.bonus_total,
+        seller_cost_benefit: shipping.seller_cost_benefit,
+        costs_senders: shipping.costs?.senders,
+        logistic_type: logisticType
+      });
+      
       // Primeiro tenta bonus_total, depois bonus
       receitaFlex = shipping.bonus_total || shipping.bonus || 0;
       
