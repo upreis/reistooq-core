@@ -103,7 +103,24 @@ const SHIPPING_SUBSTATUS_TRANSLATIONS: Record<string, string> = {
   'returning_to_hub': 'Retornando ao Centro',
   'returned_to_hub': 'Retornado ao Centro',
   'received_by_post_office': 'Recebido pelos Correios',
-  'claim': 'Reclamação'
+  'claim': 'Reclamação',
+  'pending': 'Pendente',
+  'handling': 'Preparando',
+  'shipped': 'Enviado',
+  'cancelled': 'Cancelado',
+  'returned': 'Devolvido',
+  'lost': 'Perdido',
+  'damaged': 'Danificado',
+  'waiting_for_pickup': 'Aguardando Retirada',
+  'picked_up': 'Coletado',
+  'in_transit': 'Em Trânsito',
+  'ready_for_pickup': 'Pronto para Retirada',
+  'delivery_failed': 'Falha na Entrega',
+  'delivery_attempted': 'Tentativa de Entrega',
+  'receiver_absent': 'Destinatário Ausente',
+  'address_issue': 'Problema no Endereço',
+  'package_damaged': 'Pacote Danificado',
+  'under_review': 'Em Análise'
 };
 
 // Mapeamento de traduções para modos de envio
@@ -192,7 +209,26 @@ const ML_TAGS_TRANSLATIONS: Record<string, string> = {
   'same_day_delivery': 'Entrega no Mesmo Dia',
   'same day delivery': 'Entrega no Mesmo Dia',
   'next_day_delivery': 'Entrega no Próximo Dia',
-  'next day delivery': 'Entrega no Próximo Dia'
+  'next day delivery': 'Entrega no Próximo Dia',
+  'invoiced': 'Faturado',
+  'printed': 'Impresso',
+  'partially_refunded': 'Parcialmente Reembolsado',
+  'partially refunded': 'Parcialmente Reembolsado',
+  'ready_to_print': 'Pronto para Imprimir',
+  'ready to print': 'Pronto para Imprimir',
+  'ready_to_ship': 'Pronto para Envio',
+  'ready to ship': 'Pronto para Envio',
+  'shipped': 'Enviado',
+  'cancelled': 'Cancelado',
+  'returned': 'Devolvido',
+  'pending': 'Pendente',
+  'processing': 'Processando',
+  'confirmed': 'Confirmado',
+  'delayed': 'Atrasado',
+  'on_hold': 'Em Espera',
+  'on hold': 'Em Espera',
+  'requires_attention': 'Requer Atenção',
+  'requires attention': 'Requer Atenção'
 };
 
 // Mapeamento de traduções gerais
