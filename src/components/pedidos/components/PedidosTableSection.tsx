@@ -31,31 +31,6 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// Helper function para extrair receita por envio
-function getReceitaPorEnvio(order: any): number {
-  const logisticType = String(
-    order?.shipping?.logistic?.type || 
-    order?.unified?.shipping?.logistic?.type ||
-    order?.logistic_type || 
-    order?.unified?.logistic_type ||
-    ''
-  ).toLowerCase();
-  
-  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
-  
-  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
-  if (bonus > 0) return bonus;
-  
-  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
-  if (costs?.senders && Array.isArray(costs.senders)) {
-    return costs.senders.reduce((acc: number, s: any) => {
-      const compensation = Number(s?.compensation || 0);
-      return acc + compensation;
-    }, 0);
-  }
-  
-  return 0;
-}
 import { buildIdUnico } from '@/utils/idUnico';
 
 interface PedidosTableSectionProps {
@@ -149,9 +124,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   }, [orders, selectedOrders.size, setSelectedOrders]);
 
   // Funções auxiliares memoizadas
-  const getReceitaPorEnvio = useCallback((order: any) => {
-    return order.shipping?.costs?.receiver?.cost || 0;
-  }, []);
 
   const getValorLiquidoVendedor = useCallback((order: any) => {
     const total = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
@@ -440,7 +412,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         
                         const receitaFlex = order.receita_flex || 
                                           order.unified?.receita_flex ||
-                                          getReceitaPorEnvio(order) ||
                                           0;
                         
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
