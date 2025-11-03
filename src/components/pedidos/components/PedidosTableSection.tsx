@@ -399,11 +399,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       }
                     case 'valor_liquido_vendedor':
                       {
-                        // Calcular valor líquido: valor total - taxa marketplace - custo envio
+                        // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
                         const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
+                        const fretePagoCliente = order.frete_pago_cliente || order.shipping?.shipping_items?.[0]?.list_cost || 0;
+                        const custoEnvioSeller = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
+                        const receitaFlex = order.receita_flex || order.shipping_cost_components?.shipping_method_cost || 0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || 0;
-                        const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
-                        const valorLiquido = valorTotal - taxaMarketplace - custoEnvio;
+                        const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
                         return <span>{formatMoney(order.valor_liquido_vendedor || valorLiquido || 0)}</span>;
                       }
                      case 'payment_method':
