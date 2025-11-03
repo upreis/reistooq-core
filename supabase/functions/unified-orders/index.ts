@@ -433,7 +433,26 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
 
     // Valores de frete e receitas
     const fretePagoCliente = shipping.cost || 0;
-    const receitaFlex = shipping.seller_cost_benefit || 0;
+    
+    // Receita Flex: bônus que o vendedor recebe (APENAS para Flex/self_service)
+    const logisticType = String(shipping?.logistic?.type || '').toLowerCase();
+    let receitaFlex = 0;
+    if (logisticType === 'self_service' || logisticType === 'flex') {
+      // Primeiro tenta bonus_total, depois bonus
+      receitaFlex = shipping.bonus_total || shipping.bonus || 0;
+      
+      // Se não encontrou, tenta compensação em costs.senders
+      if (!receitaFlex && shipping.costs?.senders) {
+        receitaFlex = shipping.costs.senders.reduce((acc: number, s: any) => {
+          const compensation = s?.compensation || 0;
+          const compensations = Array.isArray(s?.compensations) 
+            ? s.compensations.reduce((a: number, c: any) => a + (c?.amount || 0), 0)
+            : 0;
+          return acc + compensation + compensations;
+        }, 0);
+      }
+    }
+    
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // Informações de endereço mais detalhadas
