@@ -143,38 +143,15 @@ Deno.serve(async (req) => {
         const claimsData = await claimsResponse.json();
         console.log(`✅ ML retornou ${claimsData.data?.length || 0} claims totais`);
 
-        // PASSO 2: Filtrar claims com devoluções
+        // PASSO 2: Para CADA claim, tentar buscar devolução
+        // (já que related_entities vem undefined na API de busca)
         if (claimsData.data && Array.isArray(claimsData.data)) {
-          // DEBUG: Analisar TODOS os claims para ver related_entities
-          console.log(`🔍 ANALISANDO TODOS OS ${claimsData.data.length} CLAIMS:`);
-          claimsData.data.forEach((claim: any, index: number) => {
-            console.log(`\n📋 Claim ${index + 1}/${claimsData.data.length}:`, {
-              id: claim.id,
-              type: claim.type,
-              status: claim.status,
-              stage: claim.stage,
-              related_entities: claim.related_entities,
-              related_entities_tipo: typeof claim.related_entities,
-              related_entities_isArray: Array.isArray(claim.related_entities),
-            });
-          });
-          
-          // Filtrar claims que possuem "return" em related_entities
-          const claimsComDevolucoes = claimsData.data.filter((claim: any) => {
-            const temReturn = claim.related_entities?.includes('return');
-            if (temReturn) {
-              console.log(`✅ Claim ${claim.id} TEM devolução. Related entities:`, claim.related_entities);
-            }
-            return temReturn;
-          });
+          console.log(`📦 Verificando devoluções em ${claimsData.data.length} claims...`);
 
-          console.log(`\n📦 RESULTADO: ${claimsComDevolucoes.length}/${claimsData.data.length} claims com devoluções identificadas`);
-
-          // PASSO 3: Para cada claim com devolução, buscar detalhes
-          for (const claim of claimsComDevolucoes) {
+          // Processar cada claim para verificar se tem devolução
+          for (const claim of claimsData.data) {
             try {
               const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
-              console.log(`🔍 Buscando devolução do claim ${claim.id}...`);
               
               const returnResponse = await fetch(returnUrl, {
                 headers: {
@@ -183,12 +160,13 @@ Deno.serve(async (req) => {
                 },
               });
 
+              // Se retornou 200, o claim TEM devolução
               if (returnResponse.ok) {
                 const returnData = await returnResponse.json();
                 
-                console.log(`✅ Devolução encontrada! ID: ${returnData.id}, Status: ${returnData.status}, Subtype: ${returnData.subtype}`);
+                console.log(`✅ Claim ${claim.id} TEM devolução! ID: ${returnData.id}, Status: ${returnData.status}`);
                 
-                // Mapear os dados da devolução conforme documentação
+                // Mapear os dados da devolução
                 allReturns.push({
                   id: returnData.id,
                   claim_id: claim.id.toString(),
@@ -210,16 +188,21 @@ Deno.serve(async (req) => {
                   intermediate_check: returnData.intermediate_check,
                   last_updated: returnData.last_updated,
                 });
+              } else if (returnResponse.status === 404) {
+                // 404 = claim não tem devolução (normal)
+                // Não loga para não poluir
               } else {
+                // Outro erro
                 const errorText = await returnResponse.text();
-                console.warn(`⚠️ Erro ${returnResponse.status} ao buscar devolução do claim ${claim.id}:`, errorText.substring(0, 200));
+                console.warn(`⚠️ Erro ${returnResponse.status} ao verificar devolução do claim ${claim.id}:`, errorText.substring(0, 150));
               }
             } catch (error) {
-              console.error(`❌ Erro ao processar devolução do claim ${claim.id}:`, error);
+              console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
             }
           }
 
-          totalReturns = claimsData.paging?.total || claimsData.data.length;
+          console.log(`\n📦 TOTAL: ${allReturns.length} devoluções encontradas de ${claimsData.data.length} claims`);
+          totalReturns = allReturns.length;
         }
       } catch (error) {
         console.error(`❌ Erro ao processar conta ${accountId}:`, error);
