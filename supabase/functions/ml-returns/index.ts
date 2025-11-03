@@ -237,11 +237,11 @@ Deno.serve(async (req) => {
                   destination_street_name: shippingAddress?.street_name || null,
                   destination_street_number: shippingAddress?.street_number || null,
                   
-                  // Motivo da devolução
-                  reason_id: claim.reason_id || null,
+                  // Motivo da devolução (vem diretamente do returnData)
+                  reason_id: returnData.reason_id || null,
                   
-                  // Dados de revisão
-                  review_method: reviewData?.method || null,
+                  // Dados de revisão (quando related_entities inclui "reviews")
+                  review_method: firstReview?.method || null,
                   review_stage: firstReview?.stage || null,
                   review_status: firstReview?.status || null,
                   product_condition: firstReview?.product_condition || null,
