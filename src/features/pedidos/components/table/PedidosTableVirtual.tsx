@@ -182,8 +182,8 @@ export function PedidosTableVirtual({
         );
       
       case 'titulo_anuncio':
-        // Never truncate product title - show full text
-        return <span className="text-sm">{value || '—'}</span>;
+        // Show up to 2 lines with ellipsis
+        return <span className="text-sm line-clamp-2">{value || '—'}</span>;
       
       default:
         return <span className="text-sm">{value || '—'}</span>;
@@ -356,7 +356,7 @@ export function PedidosTableVirtual({
                       <div className={cn(
                         "w-full",
                         column.key === 'titulo_anuncio' 
-                          ? "text-sm leading-snug break-words whitespace-normal" 
+                          ? "text-sm leading-snug break-words whitespace-normal line-clamp-2"
                           : (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro')
                             ? "line-clamp-2 text-sm leading-tight break-words whitespace-normal"
                             : "truncate text-sm"
