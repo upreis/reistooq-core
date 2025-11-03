@@ -392,15 +392,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         return <span>{formatMoney(fretePagoClienteDisplay)}</span>;
                       case 'receita_flex':
                         // ✅ PADRONIZADO: Receita Flex (Bônus)
-                        console.log('[DEBUG receita_flex]', {
-                          pedidoId: order.id || order.numero,
-                          receita_flex_direct: order.receita_flex,
-                          receita_flex_unified: order.unified?.receita_flex,
-                          order_keys: Object.keys(order),
-                          unified_keys: order.unified ? Object.keys(order.unified) : null
-                        });
                         const receitaFlexDisplay = order.receita_flex || 
                                           order.unified?.receita_flex ||
+                                          getReceitaPorEnvio(order) ||
                                           0;
                         return <span>{formatMoney(receitaFlexDisplay)}</span>;
                      case 'custo_envio_seller':
@@ -447,6 +441,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         
                         const receitaFlex = order.receita_flex || 
                                           order.unified?.receita_flex ||
+                                          getReceitaPorEnvio(order) ||
                                           0;
                         
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
