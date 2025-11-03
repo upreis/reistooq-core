@@ -16,7 +16,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Identificador único do pedido',
-    width: 120,
+    width: 200,
     sortable: true
   },
   {
@@ -82,7 +82,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Lista de SKUs dos produtos',
-    width: 180
+    width: 200
   },
   {
     key: 'quantidade_itens',
@@ -246,7 +246,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'SKU correspondente no estoque',
-    width: 120
+    width: 200
   },
   {
     key: 'sku_kit',
@@ -256,7 +256,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'SKU do kit',
-    width: 100
+    width: 200
   },
   {
     key: 'qtd_kit',

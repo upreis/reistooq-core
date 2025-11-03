@@ -362,7 +362,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'last_updated':
                       return <span>{formatDate(order.last_updated || order.updated_at || order.date_last_updated || order.unified?.updated_at) || '-'}</span>;
                      case 'skus_produtos':
-                       return <div className="max-w-xs truncate" title={skus.join(', ')}>{skus.length ? skus.join(', ') : '-'}</div>;
+                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{skus.length ? skus.join(', ') : '-'}</div>;
                      case 'quantidade_itens':
                        return <span>{quantidadeItens}</span>;
                      case 'titulo_anuncio':
@@ -652,9 +652,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          )
                        );
                     case 'sku_estoque':
-                      return <span>{mapping?.skuEstoque || '-'}</span>;
+                      return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{mapping?.skuEstoque || '-'}</div>;
                     case 'sku_kit':
-                      return <span>{mapping?.skuKit || '-'}</span>;
+                      return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{mapping?.skuKit || '-'}</div>;
                      case 'qtd_kit':
                        {
                          const qtd = (typeof mapping?.quantidadeKit !== 'undefined' ? mapping?.quantidadeKit : (typeof mapping?.quantidade !== 'undefined' ? mapping?.quantidade : (order.qtd_kit ?? order.quantidade_kit)));
@@ -798,7 +798,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 
                     {/* Coluna fixa ID-Único */}
                     <td className="px-4 text-center">
-                      <span className="text-xs font-mono">{idUnico}</span>
+                      <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{idUnico}</div>
                     </td>
 
                     {/* Demais colunas dinâmicas */}
