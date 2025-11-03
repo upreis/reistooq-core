@@ -276,6 +276,9 @@ function mapMlToUi(mlOrders: any[]): Pedido[] {
       buyer_id: order.buyer_id || order.buyer?.id?.toString() || null,
       seller_id: order.seller_id || order.seller?.id?.toString() || null,
 
+      // ✅ CRÍTICO: Preservar dados brutos para acesso às informações detalhadas de shipping
+      raw: order,
+
       // ADIÇÃO: Campos de endereço detalhados
       preferencia_entrega: order.preferencia_entrega || '',
       endereco_completo: order.endereco_completo || '',
