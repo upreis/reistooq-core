@@ -440,6 +440,16 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       ? Number(costBenefit.discount || 0) 
       : 0;
     
+    // 🔍 DEBUG: Log para vendas self_service
+    if (shipping.logistic_type === 'self_service') {
+      console.log(`🔍 [SELF_SERVICE] Pedido ${order.id}`);
+      console.log(`  logistic_type: ${shipping.logistic_type}`);
+      console.log(`  seller_cost_benefit:`, JSON.stringify(costBenefit, null, 2));
+      console.log(`  receitaFlex calculada: ${receitaFlex}`);
+      console.log(`  shipping.cost: ${shipping.cost}`);
+      console.log(`  shipping.base_cost: ${shipping.base_cost}`);
+    }
+    
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // Informações de endereço mais detalhadas
