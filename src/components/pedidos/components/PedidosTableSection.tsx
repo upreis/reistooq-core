@@ -268,13 +268,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         </>
                       );
                      case 'numero':
-                       return <span className="font-mono text-sm">{order.numero || order.order_number || order.id?.toString() || order.pack_id || '-'}</span>;
+                       return <span className="font-mono text-sm">{order.numero || order.order_number || order.id?.toString() || '-'}</span>;
                     case 'empresa':
                       return <span>{order.empresa || order.integration_account_id || order.account_name || order.seller?.nickname || order.seller?.name || '-'}</span>;
-                    case 'nome_cliente':
-                      return <div className="max-w-xs truncate" title={order.nome_cliente || order.unified?.nome_cliente || order.buyer?.nickname}>
-                        {order.nome_cliente || order.unified?.nome_cliente || order.buyer?.nickname || '-'}
-                      </div>;
                     case 'nome_completo': {
                       const fullName = (
                         order.nome_completo ||
@@ -764,8 +760,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return renderStatusInsumos ? renderStatusInsumos(order.id) : <span className="text-xs text-muted-foreground">—</span>;
                      case 'date_created':
                        return <span>{formatDate(order.date_created || order.unified?.date_created || order.created_at) || '-'}</span>;
-                     case 'pack_id':
-                       return <span className="font-mono text-xs">{order.pack_id || order.unified?.pack_id || order.raw?.pack_id || '-'}</span>;
                      case 'pickup_id':
                        return <span className="font-mono text-xs">{order.pickup_id || order.shipping?.pickup_id || order.raw?.shipping?.pickup_id || order.raw?.pickup_id || order.unified?.pickup_id || '-'}</span>;
                      case 'manufacturing_ending_date':
