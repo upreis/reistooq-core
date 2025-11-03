@@ -399,16 +399,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       }
                     case 'valor_liquido_vendedor':
                       {
-                        // 🔍 DEBUG: Log completo do pedido para entender estrutura
-                        console.log('🔍 [valor_liquido_vendedor] Calculando para pedido:', order.id || order.numero, {
-                          order,
-                          valorTotal: order.valor_total || order.unified?.valor_total || order.total_amount,
-                          fretePagoCliente: order.frete_pago_cliente || order.shipping?.shipping_items?.[0]?.list_cost,
-                          custoEnvioSeller: order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost,
-                          receitaFlex: order.receita_flex || order.shipping_cost_components?.shipping_method_cost,
-                          taxaMarketplace: order.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value
-                        });
-                        
                         // Calcular valor líquido: Valor total - (Frete Pago Cliente + custo envio seller) + Receita Flex (Bônus) - Taxa Marketplace
                         const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
                         const fretePagoCliente = order.frete_pago_cliente || 
@@ -433,13 +423,17 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               0;
                         const valorLiquido = valorTotal - (fretePagoCliente + custoEnvioSeller) + receitaFlex - taxaMarketplace;
                         
-                        console.log('💰 [valor_liquido_vendedor] Resultado:', {
-                          formula: `${valorTotal} - (${fretePagoCliente} + ${custoEnvioSeller}) + ${receitaFlex} - ${taxaMarketplace}`,
-                          valorLiquido,
-                          valorArmazenado: order.valor_liquido_vendedor
-                        });
+                        // 🔍 DEBUG: Log detalhado com valores individuais
+                        console.log(`💰 [VALOR LÍQUIDO] Pedido ${order.id || order.numero}`);
+                        console.log(`  Valor Total: R$ ${valorTotal.toFixed(2)}`);
+                        console.log(`  - Frete Pago Cliente: R$ ${fretePagoCliente.toFixed(2)}`);
+                        console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)}`);
+                        console.log(`  + Receita Flex: R$ ${receitaFlex.toFixed(2)}`);
+                        console.log(`  - Taxa Marketplace: R$ ${taxaMarketplace.toFixed(2)}`);
+                        console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
+                        console.log(`  Armazenado: R$ ${(order.valor_liquido_vendedor || 0).toFixed(2)}`);
                         
-                        return <span className="font-mono text-sm font-semibold text-primary">{formatMoney(order.valor_liquido_vendedor || valorLiquido || 0)}</span>;
+                        return <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">{formatMoney(valorLiquido)}</span>;
                       }
                      case 'payment_method':
                        return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || order.metodo_pagamento || '-')}</span>;
