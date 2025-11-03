@@ -55,6 +55,13 @@ function getReceitaPorEnvio(order: any): number {
     ''
   ).toLowerCase();
   
+  // 🚨 LOG SEMPRE - ver qual é o logistic_type
+  console.log(`🔍 [getReceitaPorEnvio] Pedido ${order?.id || order?.numero}`, {
+    logisticType,
+    'shipping.logistic_type': order?.shipping?.logistic_type,
+    'unified.shipping.logistic_type': order?.unified?.shipping?.logistic_type
+  });
+  
   // 🔍 DEBUG COMPLETO para qualquer pedido Modalidade Própria
   const isDebug = logisticType === 'self_service' || logisticType === 'flex';
   
