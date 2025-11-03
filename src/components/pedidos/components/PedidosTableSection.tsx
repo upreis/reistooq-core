@@ -42,6 +42,19 @@ function getReceitaPorEnvio(order: any): number {
     ''
   ).toLowerCase();
   
+  // 🔍 DEBUG para Kauan
+  if (order?.nome_cliente?.includes('Kauan') || order?.buyer?.first_name?.includes('Kauan')) {
+    console.log('🔍 [DEBUG KAUAN] Dados completos:', {
+      nome: order?.nome_cliente || order?.buyer?.first_name,
+      logisticType,
+      'shipping.logistic_type': order?.shipping?.logistic_type,
+      'shipping.seller_cost_benefit': order?.shipping?.seller_cost_benefit,
+      'unified.shipping.seller_cost_benefit': order?.unified?.shipping?.seller_cost_benefit,
+      'order.receita_flex': order?.receita_flex,
+      'unified.receita_flex': order?.unified?.receita_flex
+    });
+  }
+  
   // Se NÃO for Flex ou self_service, retornar 0
   if (logisticType !== 'self_service' && logisticType !== 'flex') {
     return 0;
@@ -50,7 +63,18 @@ function getReceitaPorEnvio(order: any): number {
   // ✅ CORRETO: seller_cost_benefit.discount = desconto que ML dá ao vendedor (RECEITA FLEX)
   const costBenefit = order?.shipping?.seller_cost_benefit || order?.unified?.shipping?.seller_cost_benefit;
   
-  return Number(costBenefit?.discount || order?.receita_flex || 0);
+  const valor = Number(costBenefit?.discount || order?.receita_flex || order?.unified?.receita_flex || 0);
+  
+  // 🔍 DEBUG para Kauan
+  if (order?.nome_cliente?.includes('Kauan') || order?.buyer?.first_name?.includes('Kauan')) {
+    console.log('🔍 [DEBUG KAUAN] Valor calculado:', {
+      costBenefit,
+      'costBenefit.discount': costBenefit?.discount,
+      valorFinal: valor
+    });
+  }
+  
+  return valor;
 }
 import { buildIdUnico } from '@/utils/idUnico';
 
