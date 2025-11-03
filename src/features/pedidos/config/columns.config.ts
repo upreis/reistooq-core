@@ -16,7 +16,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Identificador único do pedido',
-    width: 300,
+    width: 250,
     sortable: true
   },
   {

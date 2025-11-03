@@ -798,7 +798,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 
                     {/* Coluna fixa ID-Único */}
                     <td className="px-4 text-center">
-                      <div className="break-words whitespace-normal text-xs leading-tight line-clamp-2" style={{ minWidth: '300px' }}>{idUnico}</div>
+                      <div className="break-words whitespace-normal text-xs leading-tight line-clamp-2" style={{ minWidth: '250px' }}>{idUnico}</div>
                     </td>
 
                     {/* Demais colunas dinâmicas */}
