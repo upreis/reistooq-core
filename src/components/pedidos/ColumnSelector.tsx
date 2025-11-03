@@ -66,7 +66,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'endereco_numero', label: 'Número', visible: false, category: 'basic' },
   { key: 'endereco_bairro', label: 'Bairro', visible: false, category: 'basic' },
 
-  // Envio (ML) - Colunas iguais à página vendas-online
+  // Envio (ML)
   { key: 'shipping_status', label: 'Status Envio', visible: false, category: 'ml' },
   { key: 'logistic_type', label: 'Tipo Logístico', visible: false, category: 'ml' },
   { key: 'shipping_substatus', label: 'Substatus', visible: false, category: 'ml' },
@@ -75,7 +75,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: false, category: 'ml' },
   { key: 'url_rastreamento', label: 'URL Rastreamento', visible: false, category: 'ml' },
   
-  // Status Avançados (Novos) - Visíveis por padrão para melhor entendimento
+  // Status Avançados
   { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: true, category: 'ml' },
   { key: 'shipping_status_advanced', label: 'Status de Envio (Avançado)', visible: true, category: 'ml' },
   { key: 'shipping_substatus_advanced', label: 'Substatus de Envio (Avançado)', visible: true, category: 'ml' },
