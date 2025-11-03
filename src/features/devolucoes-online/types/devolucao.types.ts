@@ -19,7 +19,7 @@ export interface MLReturn {
   refund_at: string | null;
   resource_id: number;
   resource_type: string;
-  reason_id: string;
+  reason_id?: string | null;
   order: ReturnOrder | null;
   orders: ReturnOrderItem[];
   shipments: ReturnShipment[];
@@ -33,9 +33,22 @@ export interface MLReturn {
   destination_state?: string | null;
   destination_zip?: string | null;
   destination_neighborhood?: string | null;
+  destination_country?: string | null;
+  destination_comment?: string | null;
+  destination_street_name?: string | null;
+  destination_street_number?: string | null;
   
   // ID do shipment
   shipment_id?: number | null;
+  
+  // Dados de revisão/review
+  review_method?: string | null;
+  review_stage?: string | null;
+  review_status?: string | null;
+  product_condition?: string | null;
+  product_destination?: string | null;
+  benefited?: string | null;
+  seller_status?: string | null;
 }
 
 export interface ReturnStatus {

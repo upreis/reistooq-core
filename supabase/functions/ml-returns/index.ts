@@ -176,6 +176,30 @@ Deno.serve(async (req) => {
                 const firstShipment = returnData.shipments?.[0];
                 const shippingAddress = firstShipment?.destination?.shipping_address;
                 
+                // Buscar dados de review se disponível
+                let reviewData: any = null;
+                if (returnData.related_entities?.includes('reviews')) {
+                  try {
+                    const reviewUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns/reviews`;
+                    const reviewResponse = await fetch(reviewUrl, {
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    if (reviewResponse.ok) {
+                      reviewData = await reviewResponse.json();
+                      console.log(`✅ Review obtida para claim ${claim.id}`);
+                    }
+                  } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar review do claim ${claim.id}:`, error);
+                  }
+                }
+                
+                // Extrair dados da primeira review se existir
+                const firstReview = reviewData?.resource_reviews?.[0];
+                
                 allReturns.push({
                   // Campos principais
                   id: returnData.id,
@@ -208,6 +232,22 @@ Deno.serve(async (req) => {
                   destination_state: shippingAddress?.state?.name || null,
                   destination_zip: shippingAddress?.zip_code || null,
                   destination_neighborhood: shippingAddress?.neighborhood?.name || null,
+                  destination_country: shippingAddress?.country?.name || null,
+                  destination_comment: shippingAddress?.comment || null,
+                  destination_street_name: shippingAddress?.street_name || null,
+                  destination_street_number: shippingAddress?.street_number || null,
+                  
+                  // Motivo da devolução
+                  reason_id: claim.reason_id || null,
+                  
+                  // Dados de revisão
+                  review_method: reviewData?.method || null,
+                  review_stage: firstReview?.stage || null,
+                  review_status: firstReview?.status || null,
+                  product_condition: firstReview?.product_condition || null,
+                  product_destination: firstReview?.product_destination || null,
+                  benefited: firstReview?.benefited || null,
+                  seller_status: firstReview?.seller_status || null,
                   
                   // Arrays completos
                   orders: returnData.orders || [],
@@ -216,7 +256,6 @@ Deno.serve(async (req) => {
                   
                   // Outros
                   intermediate_check: returnData.intermediate_check,
-                  reason_id: claim.reason_id,
                   
                   // Order info (legacy)
                   order: null,

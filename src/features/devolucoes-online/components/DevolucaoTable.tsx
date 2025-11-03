@@ -103,6 +103,25 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
     return refundAt ? labels[refundAt] || refundAt : '-';
   };
 
+  const getProductConditionLabel = (condition: string | null) => {
+    const labels: Record<string, string> = {
+      'saleable': '✅ Vendável',
+      'discard': '🗑️ Descarte',
+      'unsaleable': '❌ Não vendável',
+      'missing': '❓ Faltante',
+    };
+    return condition ? labels[condition] || condition : '-';
+  };
+
+  const getBenefitedLabel = (benefited: string | null) => {
+    const labels: Record<string, string> = {
+      'both': 'Ambos',
+      'buyer': 'Comprador',
+      'seller': 'Vendedor',
+    };
+    return benefited ? labels[benefited] || benefited : '-';
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
@@ -130,6 +149,13 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
             <TableHead className="font-semibold">Estado</TableHead>
             <TableHead className="font-semibold">CEP</TableHead>
             <TableHead className="font-semibold">Bairro</TableHead>
+            <TableHead className="font-semibold">País</TableHead>
+            <TableHead className="font-semibold">Complemento</TableHead>
+            <TableHead className="font-semibold">Motivo</TableHead>
+            <TableHead className="font-semibold">Condição Produto</TableHead>
+            <TableHead className="font-semibold">Destino Produto</TableHead>
+            <TableHead className="font-semibold">Beneficiado</TableHead>
+            <TableHead className="font-semibold">Status Review</TableHead>
             <TableHead className="font-semibold">MPT</TableHead>
             <TableHead className="font-semibold">Reviews</TableHead>
             <TableHead className="font-semibold">Reembolso Após</TableHead>
@@ -221,6 +247,27 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
                 </TableCell>
                 <TableCell className="text-xs">
                   {dev.destination_neighborhood || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.destination_country || '-'}
+                </TableCell>
+                <TableCell className="text-xs max-w-[150px] truncate" title={dev.destination_comment || '-'}>
+                  {dev.destination_comment || '-'}
+                </TableCell>
+                <TableCell className="text-xs font-mono">
+                  {dev.reason_id || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {getProductConditionLabel(dev.product_condition)}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.product_destination || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {getBenefitedLabel(dev.benefited)}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.seller_status || '-'}
                 </TableCell>
                 <TableCell>
                   <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">
