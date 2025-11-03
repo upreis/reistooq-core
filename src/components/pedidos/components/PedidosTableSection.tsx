@@ -391,10 +391,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                0;
                         return <span>{formatMoney(fretePagoClienteDisplay)}</span>;
                       case 'receita_flex':
-                        // ✅ PADRONIZADO: Receita Flex (Bônus)
+                        // ✅ PADRONIZADO: Receita Flex (Bônus) - apenas dos campos corretos
                         const receitaFlexDisplay = order.receita_flex || 
                                           order.unified?.receita_flex ||
-                                          getReceitaPorEnvio(order) ||
                                           0;
                         return <span>{formatMoney(receitaFlexDisplay)}</span>;
                      case 'custo_envio_seller':
