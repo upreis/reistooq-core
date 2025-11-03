@@ -141,51 +141,61 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'obs':
                 return <TruncatedCell content={get(row.unified, 'obs')} />;
               
-              // Colunas de envio - Mesmas keys da página vendas-online
+              // Colunas de envio - Mesmo mapeamento da página vendas-online
               case 'shipping_status':
-                const shippingStatusValue = get(row.raw, 'shipping.status') || get(row.raw, 'shipping_details.status');
-                return shippingStatusValue ? (
-                  <Badge variant={getStatusBadgeVariant(shippingStatusValue)}>
-                    {formatShippingStatus(shippingStatusValue)}
+                const shipping = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
+                return shipping?.status ? (
+                  <Badge variant={getStatusBadgeVariant(shipping.status)}>
+                    {formatShippingStatus(shipping.status)}
                   </Badge>
                 ) : '-';
               
               case 'logistic_type':
-                const logisticTypeValue = get(row.raw, 'shipping.logistic.type') || get(row.raw, 'logistic_type') || get(row.raw, 'shipping_details.logistic.type');
-                return <span className="text-xs">{formatLogisticType(logisticTypeValue)}</span>;
+                const shippingData = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
+                const order = row.raw || row.unified;
+                return <span className="text-xs">{formatLogisticType(
+                  shippingData?.logistic?.type || 
+                  order?.logistic_type || 
+                  '-'
+                )}</span>;
               
               case 'shipping_substatus':
-                const substatusValue = get(row.raw, 'shipping.substatus') || get(row.raw, 'shipping_substatus') || get(row.raw, 'shipping_details.substatus');
-                return <span className="text-xs">{formatSubstatus(substatusValue)}</span>;
+                const shippingForSubstatus = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
+                const orderForSubstatus = row.raw || row.unified;
+                return <span className="text-xs">{formatSubstatus(
+                  shippingForSubstatus?.substatus || 
+                  orderForSubstatus?.shipping_substatus || 
+                  '-'
+                )}</span>;
               
               case 'shipping_method':
-                const shippingMethodValue = get(row.raw, 'shipping.lead_time.shipping_method.name') || get(row.raw, 'shipping_details.lead_time.shipping_method.name');
-                return <span className="text-xs">{shippingMethodValue || '-'}</span>;
+                const shippingForMethod = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
+                return <span className="text-xs">{shippingForMethod?.lead_time?.shipping_method?.name || '-'}</span>;
               
               case 'tracking_number':
                 const trackingNumberValue = get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping.tracking_number');
                 return <TruncatedCell content={trackingNumberValue} maxLength={30} />;
               
               case 'tracking_method':
-                const trackingMethodValue = get(row.raw, 'shipping.tracking_method') || get(row.raw, 'shipping_details.tracking_method');
-                return <span className="text-xs">{trackingMethodValue || '-'}</span>;
+                const shippingForTracking = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
+                return <span className="text-xs">{shippingForTracking?.tracking_method || '-'}</span>;
               
               case 'status_history':
-                const statusHistoryValue = get(row.raw, 'shipping.status_history') || get(row.raw, 'shipping_details.status_history');
-                if (statusHistoryValue && Array.isArray(statusHistoryValue) && statusHistoryValue.length > 0) {
+                const shippingForHistory = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
+                if (shippingForHistory?.status_history && Array.isArray(shippingForHistory.status_history) && shippingForHistory.status_history.length > 0) {
                   return (
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="ghost" size="sm">
                           <History className="h-4 w-4 mr-1" />
-                          {statusHistoryValue.length} eventos
+                          {shippingForHistory.status_history.length} eventos
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-96" align="start">
                         <div className="space-y-3">
                           <h4 className="font-semibold text-sm">Histórico de Status</h4>
                           <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                            {statusHistoryValue.map((history: any, idx: number) => (
+                            {shippingForHistory.status_history.map((history: any, idx: number) => (
                               <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
                                 <div className="text-xs font-medium">
                                   {formatShippingStatus(history.status)}
@@ -227,11 +237,9 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 ) : <span>-</span>;
               
               case 'status_baixa':
-                // Renderizar status da baixa usando callback personalizado
                 return renderStatusBaixa ? renderStatusBaixa(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
               case 'status_insumos':
-                // Renderizar status dos insumos usando callback personalizado
                 return renderStatusInsumos ? renderStatusInsumos(rowId) : <span className="text-xs text-muted-foreground">—</span>;
               
               default:
