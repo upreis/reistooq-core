@@ -394,7 +394,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         // ✅ PADRONIZADO: Receita Flex (Bônus)
                         const receitaFlexDisplay = order.receita_flex || 
                                           order.unified?.receita_flex ||
-                                          getReceitaPorEnvio(order) ||
                                           0;
                         return <span>{formatMoney(receitaFlexDisplay)}</span>;
                      case 'custo_envio_seller':
@@ -441,7 +440,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         
                         const receitaFlex = order.receita_flex || 
                                           order.unified?.receita_flex ||
-                                          getReceitaPorEnvio(order) ||
                                           0;
                         
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
