@@ -75,21 +75,29 @@ export function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-export async function getMlConfig(supabase: any, accountId: string, authHeader?: string) {
+export async function getMlConfig(accountId: string, authHeader: string) {
   try {
-    // Chamar a edge function get-ml-token para obter o token real
-    const { data, error} = await supabase.functions.invoke('get-ml-token', {
-      body: {
+    // Chamar a edge function get-ml-token diretamente via HTTP como unified-orders faz
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const response = await fetch(`${supabaseUrl}/functions/v1/get-ml-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader,
+      },
+      body: JSON.stringify({
         integration_account_id: accountId,
         provider: 'mercadolivre'
-      },
-      headers: authHeader ? { Authorization: authHeader } : {}
+      })
     });
 
-    if (error) {
-      console.error('❌ Erro ao obter token ML:', error);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Erro ao obter token ML:', response.status, errorText);
       return null;
     }
+
+    const data = await response.json();
 
     if (!data?.success || !data?.access_token) {
       console.error('❌ Token ML não encontrado nos dados:', data);
