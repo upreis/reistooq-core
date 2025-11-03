@@ -413,7 +413,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Bairro do destinatário',
-    width: 170
+    width: 200
   },
   {
     key: 'endereco_cep',
@@ -487,7 +487,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Tags do ML',
-    width: 120
+    width: 200
   },
 
 

@@ -469,7 +469,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'substatus_detail':
                        return <span className="text-xs">{translateShippingSubstatus(order.substatus_detail || order.substatus || order.shipping?.substatus || order.raw?.shipping?.substatus || order.shipping?.status_detail || order.status_detail || '-')}</span>;
                      case 'shipping_mode':
-                       return <span className="text-xs">{translateShippingMode(order.shipping_mode || order.modo_envio_combinado || order.shipping?.mode || order.raw?.shipping?.mode || '-')}</span>;
+                       const shippingModeText = translateShippingMode(order.shipping_mode || order.modo_envio_combinado || order.shipping?.mode || order.raw?.shipping?.mode || '-');
+                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{shippingModeText}</div>;
                      case 'shipping_method':
                        return <span className="text-xs">{translateShippingMethod(order.shipping_method || order.metodo_envio_combinado || order.shipping?.shipping_method?.name || order.raw?.shipping?.shipping_method?.name || order.shipping?.method?.name || '-')}</span>;
                      case 'cidade':
@@ -514,8 +515,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          '-'
                        }</span>;
                     case 'endereco_rua':
-                      return <span>{
-                        order.endereco_rua ||
+                      const ruaText = order.endereco_rua ||
                         order.rua ||
                         order.shipping?.destination?.shipping_address?.street_name ||
                         order.shipping?.destination?.shipping_address?.address_line ||
@@ -527,8 +527,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         order.raw?.shipping?.receiver_address?.address_line ||
                         order.raw?.shipping?.destination?.receiver_address?.street_name ||
                         order.raw?.shipping?.destination?.receiver_address?.address_line ||
-                        '-'
-                      }</span>;
+                        '-';
+                      return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{ruaText}</div>;
                     case 'endereco_numero':
                       return <span>{
                         order.endereco_numero ||
@@ -541,8 +541,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         '-'
                       }</span>;
                     case 'endereco_bairro':
-                      return <span>{
-                        order.endereco_bairro ||
+                      const bairroText = order.endereco_bairro ||
                         order.bairro ||
                         order.shipping?.destination?.shipping_address?.neighborhood?.name ||
                         order.shipping?.destination?.shipping_address?.neighborhood ||
@@ -554,8 +553,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         order.raw?.shipping?.receiver_address?.neighborhood ||
                         order.raw?.shipping?.destination?.receiver_address?.neighborhood?.name ||
                         order.raw?.shipping?.destination?.receiver_address?.neighborhood ||
-                        '-'
-                      }</span>;
+                        '-';
+                      return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{bairroText}</div>;
                     case 'endereco_cep':
                       return <span>{
                         order.endereco_cep ||
@@ -770,7 +769,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        {
                          const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
                          const translatedTags = translateMLTags(tags);
-                         return <div className="max-w-xs truncate" title={translatedTags}>{translatedTags || '-'}</div>;
+                         return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{translatedTags || '-'}</div>;
                        }
                     default:
                        return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
