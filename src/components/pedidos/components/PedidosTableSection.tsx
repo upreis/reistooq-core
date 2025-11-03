@@ -391,22 +391,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                0;
                         return <span>{formatMoney(fretePagoClienteDisplay)}</span>;
                       case 'receita_flex':
-                        // Receita Flex (Bônus): order.receita_flex → order.unified?.receita_flex → 0
+                        // ✅ PADRONIZADO: Receita Flex (Bônus)
                         const receitaFlexDisplay = order.receita_flex || 
                                           order.unified?.receita_flex ||
                                           0;
                         return <span>{formatMoney(receitaFlexDisplay)}</span>;
-                      case 'custo_envio_seller':
-                        // Custo de envio seller
-                        const custoEnvioDisplay = order.custo_envio_seller || 
-                                                order.unified?.custo_envio_seller ||
-                                                order.shipping?.costs?.senders?.[0]?.cost || 
-                                                0;
-                        return <span>{formatMoney(custoEnvioDisplay)}</span>;
-                      case 'coupon_amount':
-                        // Desconto Cupom: getReceitaPorEnvio(order) → 0
-                        const couponAmount = getReceitaPorEnvio(order) || 0;
-                        return <span>{formatMoney(couponAmount)}</span>;
+                     case 'custo_envio_seller':
+                       // ✅ PADRONIZADO: Custo de envio seller
+                       const custoEnvioDisplay = order.custo_envio_seller || 
+                                               order.unified?.custo_envio_seller ||
+                                               order.shipping?.costs?.senders?.[0]?.cost || 
+                                               0;
+                       return <span>{formatMoney(custoEnvioDisplay)}</span>;
+                     case 'coupon_amount':
+                       // ✅ PADRONIZADO: Desconto por cupom
+                       const couponAmount = order.coupon_amount || order.unified?.coupon_amount || order.coupon?.amount || 0;
+                       return <span>{formatMoney(couponAmount)}</span>;
                      case 'marketplace_fee':
                        {
                          // ✅ PADRONIZADO: Taxa do marketplace (comissão)
