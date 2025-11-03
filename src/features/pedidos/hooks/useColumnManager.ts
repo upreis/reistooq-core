@@ -196,33 +196,30 @@ export const useColumnManager = (): UseColumnManagerReturn => {
       totalDefinitions: COLUMN_DEFINITIONS.length
     });
     
-    // Verificar se o cache está inconsistente
-    const storedCount = stored.visibleColumns ? stored.visibleColumns.size : 0;
-    const initialCount = initial.visibleColumns.size;
-    
-    if (storedCount === 0 || storedCount < initialCount / 2) {
-      console.warn('🔧 [COLUMNS RESET] Cache inconsistente detectado, forçando reset para padrão');
-      return initial;
+    // 🔧 Se tem preferências salvas, usar elas (priorizar escolha do usuário)
+    if (stored.visibleColumns && stored.visibleColumns.size > 0) {
+      const finalState: ColumnState = {
+        ...initial,
+        ...stored,
+        // Sempre usar columnOrder do COLUMN_DEFINITIONS (fonte única da verdade)
+        columnOrder: initial.columnOrder,
+        // Garantir que visibleColumns seja sempre um Set<string>
+        visibleColumns: stored.visibleColumns instanceof Set 
+          ? new Set<string>(Array.from(stored.visibleColumns).filter((k): k is string => typeof k === 'string'))
+          : new Set<string>(Array.from(stored.visibleColumns as any).filter((k: any): k is string => typeof k === 'string'))
+      };
+      
+      console.log('✅ Usando preferências do usuário:', {
+        visible: Array.from(finalState.visibleColumns),
+        total: finalState.visibleColumns.size
+      });
+      
+      return finalState;
     }
     
-    // 🔧 CRÍTICO: Sempre usar columnOrder do COLUMN_DEFINITIONS (fonte única da verdade)
-    const finalState: ColumnState = {
-      ...initial,
-      ...stored,
-      // Forçar ordem das definições (não do cache)
-      columnOrder: initial.columnOrder,
-      // Garantir que visibleColumns seja sempre um Set<string>
-      visibleColumns: stored.visibleColumns instanceof Set 
-        ? new Set<string>(Array.from(stored.visibleColumns).filter((k): k is string => typeof k === 'string'))
-        : new Set<string>(stored.visibleColumns ? Array.from(stored.visibleColumns as any).filter((k: any): k is string => typeof k === 'string') : Array.from(initial.visibleColumns))
-    };
-    
-    console.log('✅ Estado final das colunas:', {
-      visible: Array.from(finalState.visibleColumns),
-      order: finalState.columnOrder.slice(0, 20) // Mostrar primeiras 20
-    });
-    
-    return finalState;
+    // Se não tem preferências salvas, usar padrão
+    console.log('✅ Usando configuração padrão (primeira vez)');
+    return initial;
   });
  
   // Reconciliar novas colunas adicionadas após preferências salvas
