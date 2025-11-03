@@ -182,6 +182,8 @@ Deno.serve(async (req) => {
                   subtype: { id: returnData.subtype, description: returnData.subtype },
                   shipment_status: returnData.shipments?.[0]?.status || '-',
                   tracking_number: returnData.shipments?.[0]?.tracking_number || null,
+                  shipment_destination: returnData.shipments?.[0]?.destination?.name || null,
+                  shipment_type: returnData.shipments?.[0]?.type || null,
                   date_created: returnData.date_created,
                   date_closed: returnData.date_closed,
                   refund_at: returnData.refund_at,

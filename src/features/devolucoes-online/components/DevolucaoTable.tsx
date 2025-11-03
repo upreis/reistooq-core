@@ -59,11 +59,30 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
   const getStatusColor = (statusId: string) => {
     const colors: Record<string, string> = {
       'pending': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-      'approved': 'bg-green-500/10 text-green-500 border-green-500/20',
-      'rejected': 'bg-red-500/10 text-red-500 border-red-500/20',
+      'label_generated': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+      'shipped': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
+      'delivered': 'bg-green-500/10 text-green-500 border-green-500/20',
       'cancelled': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
+      'expired': 'bg-red-500/10 text-red-500 border-red-500/20',
+      'not_delivered': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
     };
     return colors[statusId] || 'bg-gray-500/10 text-gray-500 border-gray-500/20';
+  };
+
+  const getDestinationLabel = (destination: string | null) => {
+    const labels: Record<string, string> = {
+      'seller_address': 'Vendedor',
+      'warehouse': 'MELI',
+    };
+    return destination ? labels[destination] || destination : '-';
+  };
+
+  const getShipmentTypeLabel = (type: string | null) => {
+    const labels: Record<string, string> = {
+      'return': 'Devolução',
+      'return_from_triage': 'Revisão',
+    };
+    return type ? labels[type] || type : '-';
   };
 
   return (
@@ -74,16 +93,19 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
             <TableHead className="font-semibold">ID</TableHead>
             <TableHead className="font-semibold">Claim ID</TableHead>
             <TableHead className="font-semibold">Order ID</TableHead>
-            <TableHead className="font-semibold">Status Devolução</TableHead>
-            <TableHead className="font-semibold">Status Dinheiro</TableHead>
+            <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold">Status $</TableHead>
             <TableHead className="font-semibold">Subtipo</TableHead>
-            <TableHead className="font-semibold">Shipment Status</TableHead>
-            <TableHead className="font-semibold">Tracking Number</TableHead>
-            <TableHead className="font-semibold">Qtd. Itens</TableHead>
-            <TableHead className="font-semibold">Data Criação</TableHead>
-            <TableHead className="font-semibold">Última Atualização</TableHead>
-            <TableHead className="font-semibold">Data Fechamento</TableHead>
-            <TableHead className="font-semibold">Refund At</TableHead>
+            <TableHead className="font-semibold">Destino</TableHead>
+            <TableHead className="font-semibold">Tipo Envio</TableHead>
+            <TableHead className="font-semibold">Status Envio</TableHead>
+            <TableHead className="font-semibold">Rastreio</TableHead>
+            <TableHead className="font-semibold">Qtd</TableHead>
+            <TableHead className="font-semibold">MPT</TableHead>
+            <TableHead className="font-semibold">Criação</TableHead>
+            <TableHead className="font-semibold">Atualização</TableHead>
+            <TableHead className="font-semibold">Fechamento</TableHead>
+            <TableHead className="font-semibold">Reembolso</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -114,6 +136,16 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
               <TableCell className="text-xs">
                 {dev.subtype?.description || dev.subtype?.id || '-'}
               </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="text-xs">
+                  {getDestinationLabel(dev.shipment_destination)}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant="secondary" className="text-xs">
+                  {getShipmentTypeLabel(dev.shipment_type)}
+                </Badge>
+              </TableCell>
               <TableCell className="text-xs">
                 {dev.shipment_status || '-'}
               </TableCell>
@@ -122,7 +154,12 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
               </TableCell>
               <TableCell>
                 <Badge variant="outline" className="text-xs font-mono">
-                  {dev.orders?.length || 0}
+                  {dev.orders?.reduce((sum, order) => sum + parseFloat(order.return_quantity || '0'), 0) || 0}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">
+                  {dev.intermediate_check ? 'Sim' : 'Não'}
                 </Badge>
               </TableCell>
               <TableCell className="text-xs">
@@ -135,7 +172,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
                 {formatDate(dev.date_closed)}
               </TableCell>
               <TableCell className="text-xs">
-                {formatDate(dev.refund_at)}
+                {dev.refund_at || '-'}
               </TableCell>
             </TableRow>
           ))}
