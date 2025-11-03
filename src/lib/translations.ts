@@ -27,6 +27,7 @@ const PAYMENT_METHOD_TRANSLATIONS: Record<string, string> = {
   'bank_transfer': 'Transferência Bancária',
   'ticket': 'Boleto',
   'account_money': 'Dinheiro da Conta',
+  'account money': 'Dinheiro da Conta',
   'pix': 'PIX',
   'cash': 'Dinheiro',
   'cryptocurrency': 'Criptomoeda',
@@ -120,7 +121,15 @@ const SHIPPING_SUBSTATUS_TRANSLATIONS: Record<string, string> = {
   'receiver_absent': 'Destinatário Ausente',
   'address_issue': 'Problema no Endereço',
   'package_damaged': 'Pacote Danificado',
-  'under_review': 'Em Análise'
+  'under_review': 'Em Análise',
+  'waiting_for_withdrawal': 'Aguardando Retirada',
+  'waiting for withdrawal': 'Aguardando Retirada',
+  'in_warehouse': 'No Depósito',
+  'in warehouse': 'No Depósito',
+  'ready_to_pack': 'Pronto para Embalar',
+  'ready to pack': 'Pronto para Embalar',
+  'in_packing_list': 'Na Lista de Embalagem',
+  'in packing list': 'Na Lista de Embalagem'
 };
 
 // Mapeamento de traduções para modos de envio
@@ -228,7 +237,14 @@ const ML_TAGS_TRANSLATIONS: Record<string, string> = {
   'on_hold': 'Em Espera',
   'on hold': 'Em Espera',
   'requires_attention': 'Requer Atenção',
-  'requires attention': 'Requer Atenção'
+  'requires attention': 'Requer Atenção',
+  'order_has_discount': 'Pedido com Desconto',
+  'order has discount': 'Pedido com Desconto',
+  'one_shot': 'Pedido Único',
+  'one shot': 'Pedido Único',
+  'pedido_pack': 'Pedido Pack',
+  'pedido pack': 'Pedido Pack',
+  'catalog': 'Catálogo'
 };
 
 // Mapeamento de traduções gerais
