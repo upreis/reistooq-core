@@ -353,11 +353,11 @@ export function PedidosTableVirtual({
                       className={cn(
                         "p-3 border-r border-[var(--table-border)] last:border-r-0 flex items-center overflow-hidden",
                         // Allow text wrapping for specific columns
-                        (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro') && "items-start"
+                        (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'titulo_anuncio') && "items-start"
                       )}
                     >
                       <div className={cn(
-                        (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro') 
+                        (column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro' || column.key === 'titulo_anuncio') 
                           ? "line-clamp-2 text-sm leading-tight" 
                           : ""
                       )}>
