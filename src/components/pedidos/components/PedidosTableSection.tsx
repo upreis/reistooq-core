@@ -56,9 +56,12 @@ function getReceitaPorEnvio(order: any): number {
   ).toLowerCase();
   
   // 🔍 DEBUG COMPLETO para qualquer pedido Modalidade Própria
-  const isDebug = logisticType === 'self_service' || 
-                  order?.nome_cliente?.includes('Kauan') || 
-                  order?.buyer?.first_name?.includes('Kauan');
+  const isDebug = logisticType === 'self_service' || logisticType === 'flex';
+  
+  // 🚨 LOG FORÇADO para debug
+  if (isDebug) {
+    console.log('🚨🚨🚨 [PEDIDO FLEX/SELF_SERVICE ENCONTRADO] 🚨🚨🚨');
+  }
   
   if (isDebug) {
     console.log('🔍 [DEBUG RECEITA FLEX]', {
