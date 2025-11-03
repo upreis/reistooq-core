@@ -433,20 +433,14 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
 
     // Valores de frete e receitas
     const fretePagoCliente = shipping.cost || 0;
-    const receitaFlex = shipping.seller_cost_benefit || 0;
-    const custoEnvioSeller = shipping.base_cost || 0;
     
-    // 🔍 DEBUG: Log valores quando receita_flex > 20
-    if (receitaFlex > 20) {
-      console.log(`🔍 [RECEITA FLEX > 20] Pedido ${order.id}`);
-      console.log(`  logistic_type: ${shipping.logistic_type}`);
-      console.log(`  seller_cost_benefit: ${shipping.seller_cost_benefit}`);
-      console.log(`  shipping.bonus: ${shipping.bonus}`);
-      console.log(`  shipping.bonus_total: ${shipping.bonus_total}`);
-      console.log(`  shipping.cost: ${shipping.cost}`);
-      console.log(`  shipping.base_cost: ${shipping.base_cost}`);
-      console.log(`  shipping:`, JSON.stringify(shipping, null, 2));
-    }
+    // ✅ CORRETO: seller_cost_benefit.discount = desconto que ML dá ao vendedor (RECEITA FLEX)
+    const costBenefit = shipping.seller_cost_benefit;
+    const receitaFlex = (costBenefit && typeof costBenefit === 'object') 
+      ? Number(costBenefit.discount || 0) 
+      : 0;
+    
+    const custoEnvioSeller = shipping.base_cost || 0;
     
     // Informações de endereço mais detalhadas
     const address = detailedShipping.receiver_address || shipping.receiver_address || {};

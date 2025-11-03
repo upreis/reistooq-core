@@ -47,13 +47,10 @@ function getReceitaPorEnvio(order: any): number {
     return 0;
   }
   
-  // Usar SOMENTE seller_cost_benefit (campo oficial da API ML)
-  return Number(
-    order?.shipping?.seller_cost_benefit || 
-    order?.unified?.shipping?.seller_cost_benefit || 
-    order?.receita_flex ||
-    0
-  );
+  // ✅ CORRETO: seller_cost_benefit.discount = desconto que ML dá ao vendedor (RECEITA FLEX)
+  const costBenefit = order?.shipping?.seller_cost_benefit || order?.unified?.shipping?.seller_cost_benefit;
+  
+  return Number(costBenefit?.discount || order?.receita_flex || 0);
 }
 import { buildIdUnico } from '@/utils/idUnico';
 
