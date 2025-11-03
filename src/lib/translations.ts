@@ -28,6 +28,8 @@ const PAYMENT_METHOD_TRANSLATIONS: Record<string, string> = {
   'ticket': 'Boleto',
   'account_money': 'Dinheiro da Conta',
   'account money': 'Dinheiro da Conta',
+  'consumer_credits': 'Créditos do Consumidor',
+  'consumer credits': 'Créditos do Consumidor',
   'pix': 'PIX',
   'cash': 'Dinheiro',
   'cryptocurrency': 'Criptomoeda',
