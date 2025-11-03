@@ -526,7 +526,8 @@ export function usePedidosHybrid({
         status: 'paid',
         limit: pageSize,
         offset: (page - 1) * pageSize,
-        include_shipping: true, // 👈 pede UF/Cidade/CEP/Tracking
+        enrich: true, // ✅ Busca dados completos (Transportadora, Método Envio, etc)
+        include_shipping: true, // ✅ Inclui Histórico Status e dados detalhados de envio
       });
 
       const mappedOrders = mapMlToUi(Array.isArray(results) ? results : []);
