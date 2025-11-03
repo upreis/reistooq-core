@@ -103,7 +103,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Título do produto/anúncio',
-    width: 200
+    width: 300
   },
 
   // ====== FINANCEIRAS (da imagem 2) ======
@@ -413,7 +413,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Bairro do destinatário',
-    width: 200
+    width: 170
   },
   {
     key: 'endereco_cep',
@@ -487,7 +487,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Tags do ML',
-    width: 200
+    width: 120
   },
 
 
