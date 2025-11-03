@@ -95,6 +95,8 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
             if (shippingResp.ok) {
               const shippingData = await shippingResp.json();
+              
+              console.log(`[unified-orders:${cid}] 📦 Shipment ${order.shipping.id} - logistic_type: ${shippingData.logistic_type}, order_cost: ${shippingData.order_cost}, special_discount: ${shippingData.cost_components?.special_discount}`);
 
               // 2.a Buscar status_history do shipment
               let statusHistory = null;
@@ -431,9 +433,32 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       pack_id: order.pack_id
     });
 
-    // Valores de frete e receitas
+    // ===== CÁLCULO RECEITA FLEX (BÔNUS) =====
+    // Conforme PDF: usar order_cost e special_discount do shipment
+    // Se (order_cost - special_discount) < 0 → Vendedor RECEBE esse valor
+    const detailedShipping = shipping.detailed_shipping || shipping;
+    const orderCost = detailedShipping.order_cost || 0;
+    const specialDiscount = detailedShipping.cost_components?.special_discount || 0;
+    const flexNetCost = orderCost - specialDiscount;
+    const logisticType = detailedShipping.logistic_type || detailedShipping.logistic?.type || null;
+    
+    // Receita Flex: valor que o vendedor RECEBE (quando net_cost < 0)
+    // Apenas para envios Flex (self_service)
+    const receitaFlex = (logisticType === 'self_service' && flexNetCost < 0) 
+      ? Math.abs(flexNetCost) 
+      : 0;
+    
+    console.log(`[unified-orders:${cid}] 💰 RECEITA FLEX - Pedido ${order.id}:`, {
+      logisticType,
+      orderCost,
+      specialDiscount,
+      flexNetCost,
+      receitaFlex,
+      isFlex: logisticType === 'self_service'
+    });
+    
+    // Valores de frete
     const fretePagoCliente = shipping.cost || 0;
-    const receitaFlex = shipping.seller_cost_benefit || 0;
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // Informações de endereço mais detalhadas
@@ -587,7 +612,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
-      receita_flex: receitaFlex,
+      receita_flex: receitaFlex, // Valor recebido por entregas Flex (quando net_cost < 0)
+      flex_order_cost: orderCost, // Custo total do envio Flex
+      flex_special_discount: specialDiscount, // Desconto especial ML em envios Flex
+      flex_net_cost: flexNetCost, // Custo líquido Flex (+ paga / - recebe)
       desconto_cupom: order.coupon?.amount || 0,
       taxa_marketplace: order.marketplace_fee || 0,
       custo_envio_seller: custoEnvioSeller,
