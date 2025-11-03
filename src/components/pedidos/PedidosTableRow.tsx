@@ -108,8 +108,6 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                     {show(get(row.unified, 'id_unico') ?? get(row.raw, 'id_unico') ?? get(row.unified, 'id') ?? get(row.raw, 'id'))}
                   </div>
                 );
-              case 'nome_cliente':
-                return show(get(row.unified, 'nome_cliente') ?? get(row.raw, 'buyer.nickname'));
               case 'nome_completo':
                 return show(get(row.unified, 'nome_destinatario') ?? get(row.raw, 'shipping.destination.receiver_name') ?? '—');
               case 'cpf_cnpj':
@@ -168,55 +166,9 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                   '-'
                 )}</span>;
               
-              case 'shipping_method':
-                const shippingForMethod = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
-                return <span className="text-xs">{shippingForMethod?.lead_time?.shipping_method?.name || '-'}</span>;
-              
               case 'tracking_number':
                 const trackingNumberValue = get(row.unified, 'codigo_rastreamento') ?? get(row.raw, 'shipping.tracking_number');
                 return <TruncatedCell content={trackingNumberValue} maxLength={30} />;
-              
-              case 'tracking_method':
-                const shippingForTracking = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
-                return <span className="text-xs">{shippingForTracking?.tracking_method || '-'}</span>;
-              
-              case 'status_history':
-                const shippingForHistory = get(row.raw, 'shipping') || get(row.raw, 'shipping_details');
-                if (shippingForHistory?.status_history && Array.isArray(shippingForHistory.status_history) && shippingForHistory.status_history.length > 0) {
-                  return (
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <History className="h-4 w-4 mr-1" />
-                          {shippingForHistory.status_history.length} eventos
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-96" align="start">
-                        <div className="space-y-3">
-                          <h4 className="font-semibold text-sm">Histórico de Status</h4>
-                          <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                            {shippingForHistory.status_history.map((history: any, idx: number) => (
-                              <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
-                                <div className="text-xs font-medium">
-                                  {formatShippingStatus(history.status)}
-                                </div>
-                                {history.description && (
-                                  <div className="text-xs text-muted-foreground">
-                                    {history.description}
-                                  </div>
-                                )}
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {history.date_time ? format(new Date(history.date_time), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  );
-                }
-                return '-';
               
               // Colunas antigas mantidas para compatibilidade
               case 'codigo_rastreamento':
