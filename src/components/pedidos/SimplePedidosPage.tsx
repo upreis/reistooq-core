@@ -449,8 +449,7 @@ function SimplePedidosPage({ className }: Props) {
     };
   }, []);
   
-  // ✅ Helpers financeiros: Receita Flex conforme PDF do Mercado Livre
-  // Receita Flex (Bônus) = Quando net_cost é NEGATIVO (vendedor RECEBE do ML)
+  // ✅ SOLUÇÃO ALTERNATIVA: usar order_cost e special_discount
   const getReceitaPorEnvio = (order: any): number => {
     // Se já vier calculado do backend, usar
     if (typeof order?.receita_por_envio === 'number') return order.receita_por_envio;
@@ -474,17 +473,14 @@ function SimplePedidosPage({ className }: Props) {
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
     
-    // ✅ PRIORIDADE 1: Buscar seller_cost_benefit (conforme PDF)
-    const costBenefit = order?.shipping?.seller_cost_benefit ||
-                       order?.unified?.shipping?.seller_cost_benefit;
+    // ✅ Usar order_cost e special_discount do SHIPMENT
+    const orderCost = Number(order?.shipping?.order_cost || 0);
+    const specialDiscount = Number(order?.shipping?.cost_components?.special_discount || 0);
+    const netCost = orderCost - specialDiscount;
     
-    if (costBenefit) {
-      const netCost = costBenefit.net_cost || 0;
-      
-      // Se net_cost é NEGATIVO, vendedor RECEBE do ML
-      if (netCost < 0) {
-        return Math.abs(netCost);
-      }
+    // Se net_cost < 0, vendedor RECEBE (receita flex)
+    if (netCost < 0) {
+      return Math.abs(netCost);
     }
 
     // 0) Se o backend já calculou (shipping.bonus_total/bonus), priorizar

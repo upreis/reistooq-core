@@ -328,15 +328,14 @@ function getReceitaFlex(order: any): number {
   // Só no Flex/self_service
   if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
   
-  // ✅ PRIORIDADE 1: Calcular via seller_cost_benefit.net_cost conforme PDF
-  const costBenefit = order?.shipping?.seller_cost_benefit;
-  if (costBenefit && typeof costBenefit === 'object') {
-    const netCost = costBenefit.net_cost || 0;
-    // Se net_cost < 0, vendedor RECEBE (receita flex)
-    // Fórmula: net_cost = shipping_cost - discount
-    if (netCost < 0) {
-      return Math.abs(netCost);
-    }
+  // ✅ SOLUÇÃO ALTERNATIVA conforme PDF: usar order_cost e special_discount
+  const orderCost = Number(order?.shipping?.order_cost || 0);
+  const specialDiscount = Number(order?.shipping?.cost_components?.special_discount || 0);
+  const netCost = orderCost - specialDiscount;
+  
+  // Se net_cost < 0, vendedor RECEBE (receita flex)
+  if (netCost < 0) {
+    return Math.abs(netCost);
   }
   
   // Fallback 2: Bônus direto (legado)
