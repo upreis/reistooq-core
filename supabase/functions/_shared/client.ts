@@ -77,25 +77,26 @@ export function getErrorMessage(error: unknown): string {
 
 export async function getMlConfig(supabase: any, accountId: string) {
   try {
-    const { data, error } = await supabase
-      .from('integration_accounts')
-      .select('account_identifier, public_auth')
-      .eq('id', accountId)
-      .eq('provider', 'mercadolivre')
-      .single();
+    // Chamar a edge function get-ml-token para obter o token real
+    const { data, error } = await supabase.functions.invoke('get-ml-token', {
+      body: {
+        integration_account_id: accountId,
+        provider: 'mercadolivre'
+      }
+    });
 
     if (error) {
-      console.error('❌ Erro ao obter config ML para conta', accountId, ':', error);
+      console.error('❌ Erro ao obter token ML:', error);
       return null;
     }
 
-    if (!data || !data.public_auth?.access_token) {
-      console.error('❌ Token ML não encontrado para conta', accountId);
+    if (!data?.success || !data?.access_token) {
+      console.error('❌ Token ML não encontrado nos dados:', data);
       return null;
     }
 
     return {
-      access_token: data.public_auth.access_token,
+      access_token: data.access_token,
       account_identifier: data.account_identifier
     };
   } catch (error) {
