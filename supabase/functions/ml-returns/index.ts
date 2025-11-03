@@ -27,8 +27,15 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Pegar Authorization header do request
+    // Usar Authorization header para criar client com permissões do usuário
     const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authorization header é obrigatório' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     const supabase = makeServiceClient();
 
     // Parse request body
