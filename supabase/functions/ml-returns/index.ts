@@ -193,10 +193,21 @@ Deno.serve(async (req) => {
                     
                     if (shipmentResponse.ok) {
                       const shipmentData = await shipmentResponse.json();
+                      
+                      // Log completo da primeira chamada para debug
+                      if (allReturns.length === 0) {
+                        console.log(`\n📦 ESTRUTURA SHIPMENT API:`, JSON.stringify(shipmentData, null, 2));
+                      }
+                      
                       estimatedDeliveryTime = shipmentData.estimated_delivery_time || null;
                       estimatedDeliveryFinal = shipmentData.estimated_delivery_final || null;
                       deliveryPromise = shipmentData.delivery_promise || null;
-                      console.log(`✅ Previsão obtida para shipment ${firstShipment.shipment_id}`);
+                      
+                      console.log(`✅ Previsão obtida para shipment ${firstShipment.shipment_id}:`, {
+                        estimated_delivery_time: estimatedDeliveryTime,
+                        estimated_delivery_final: estimatedDeliveryFinal,
+                        delivery_promise: deliveryPromise
+                      });
                     }
                   } catch (error) {
                     console.warn(`⚠️ Erro ao buscar previsão do shipment ${firstShipment.shipment_id}:`, error);
