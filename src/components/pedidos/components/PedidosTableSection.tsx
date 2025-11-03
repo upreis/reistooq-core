@@ -32,6 +32,19 @@ import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
 // Helper function para extrair receita por envio - SOMENTE Flex
+/**
+ * 🔍 AUDITORIA: Calcular Receita Flex (Bônus)
+ * 
+ * ⚠️ ATENÇÃO: Após análise do PDF oficial do ML, descobrimos que:
+ * - seller_cost_benefit.discount = desconto que ML dá AO VENDEDOR no custo de envio
+ * - Isso NÃO é necessariamente a "Receita Flex" que o vendedor recebe
+ * - É uma ECONOMIA DE CUSTO, não uma receita adicional
+ * 
+ * PORÉM, para Modalidade Própria (self_service):
+ * - O vendedor pode ou NÃO receber subsidio do ML
+ * - discount pode ser 0 ou null em muitos casos
+ * - Precisamos verificar outros campos também
+ */
 function getReceitaPorEnvio(order: any): number {
   const logisticType = String(
     order?.shipping?.logistic_type ||
@@ -42,16 +55,31 @@ function getReceitaPorEnvio(order: any): number {
     ''
   ).toLowerCase();
   
-  // 🔍 DEBUG para Kauan
-  if (order?.nome_cliente?.includes('Kauan') || order?.buyer?.first_name?.includes('Kauan')) {
-    console.log('🔍 [DEBUG KAUAN] Dados completos:', {
-      nome: order?.nome_cliente || order?.buyer?.first_name,
+  // 🔍 DEBUG COMPLETO para qualquer pedido Modalidade Própria
+  const isDebug = logisticType === 'self_service' || 
+                  order?.nome_cliente?.includes('Kauan') || 
+                  order?.buyer?.first_name?.includes('Kauan');
+  
+  if (isDebug) {
+    console.log('🔍 [DEBUG RECEITA FLEX]', {
+      pedido_id: order?.id || order?.order_id || order?.numero,
+      nome_cliente: order?.nome_cliente || order?.buyer?.first_name,
       logisticType,
+      
+      // Verificar todos os possíveis locais
       'shipping.logistic_type': order?.shipping?.logistic_type,
+      'shipping.cost': order?.shipping?.cost,
+      'shipping.base_cost': order?.shipping?.base_cost,
       'shipping.seller_cost_benefit': order?.shipping?.seller_cost_benefit,
-      'unified.shipping.seller_cost_benefit': order?.unified?.shipping?.seller_cost_benefit,
-      'order.receita_flex': order?.receita_flex,
-      'unified.receita_flex': order?.unified?.receita_flex
+      
+      // Unified
+      'unified.shipping': order?.unified?.shipping,
+      'unified.receita_flex': order?.unified?.receita_flex,
+      'unified.frete_pago_cliente': order?.unified?.frete_pago_cliente,
+      
+      // Raw data
+      'raw_data.receita_flex': order?.raw_data?.receita_flex,
+      'order.receita_flex': order?.receita_flex
     });
   }
   
@@ -60,21 +88,43 @@ function getReceitaPorEnvio(order: any): number {
     return 0;
   }
   
-  // ✅ CORRETO: seller_cost_benefit.discount = desconto que ML dá ao vendedor (RECEITA FLEX)
-  const costBenefit = order?.shipping?.seller_cost_benefit || order?.unified?.shipping?.seller_cost_benefit;
+  // Tentar múltiplas fontes (ordem de prioridade)
+  const costBenefit = order?.shipping?.seller_cost_benefit || 
+                      order?.unified?.shipping?.seller_cost_benefit;
   
-  const valor = Number(costBenefit?.discount || order?.receita_flex || order?.unified?.receita_flex || 0);
+  // 1. Tentar discount do seller_cost_benefit
+  const discountValue = costBenefit?.discount;
   
-  // 🔍 DEBUG para Kauan
-  if (order?.nome_cliente?.includes('Kauan') || order?.buyer?.first_name?.includes('Kauan')) {
-    console.log('🔍 [DEBUG KAUAN] Valor calculado:', {
-      costBenefit,
-      'costBenefit.discount': costBenefit?.discount,
-      valorFinal: valor
+  // 2. Tentar receita_flex salva
+  const receitaFlexSalva = order?.receita_flex || 
+                           order?.unified?.receita_flex ||
+                           order?.raw_data?.receita_flex;
+  
+  // 3. Calcular a diferença entre frete pago e custo (última tentativa)
+  const fretePago = order?.shipping?.cost || 
+                    order?.unified?.frete_pago_cliente || 
+                    0;
+  const custoEnvio = order?.shipping?.base_cost || 
+                     order?.unified?.custo_envio_seller ||
+                     costBenefit?.net_cost ||
+                     0;
+  const diferencaCalculada = fretePago > custoEnvio ? fretePago - custoEnvio : 0;
+  
+  const valorFinal = Number(discountValue || receitaFlexSalva || diferencaCalculada || 0);
+  
+  if (isDebug) {
+    console.log('🔍 [DEBUG RECEITA FLEX] Cálculo:', {
+      discountValue,
+      receitaFlexSalva,
+      fretePago,
+      custoEnvio,
+      diferencaCalculada,
+      valorFinal,
+      fonte: discountValue ? 'discount' : receitaFlexSalva ? 'salva' : diferencaCalculada ? 'calculada' : 'nenhuma'
     });
   }
   
-  return valor;
+  return valorFinal;
 }
 import { buildIdUnico } from '@/utils/idUnico';
 
