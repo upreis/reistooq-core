@@ -394,16 +394,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         return <span className={flexPaymentValue > 0 ? 'text-green-600 font-semibold' : ''}>
                           {flexPaymentValue > 0 ? `+${formatMoney(flexPaymentValue)}` : formatMoney(0)}
                         </span>;
-                      case 'flex_net_cost':
-                        const flexNetCost = order.flex_net_cost || 
-                                           order.unified?.flex_net_cost || 0;
-                        return <span className={flexNetCost < 0 ? 'text-green-600' : flexNetCost > 0 ? 'text-red-600' : ''}>
-                          {formatMoney(flexNetCost)}
-                        </span>;
-                      case 'flex_shipping_cost':
-                        return <span>{formatMoney(order.flex_shipping_cost || order.unified?.flex_shipping_cost || 0)}</span>;
-                      case 'flex_shipping_discount':
-                        return <span>{formatMoney(order.flex_shipping_discount || order.unified?.flex_shipping_discount || 0)}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
                     case 'coupon_amount':

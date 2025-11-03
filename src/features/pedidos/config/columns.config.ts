@@ -163,39 +163,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'flex_net_cost',
-    label: 'Flex - Custo Líquido',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo líquido Flex (order_cost - special_discount)',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'flex_shipping_cost',
-    label: 'Flex - Custo Envio',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo original do envio Flex',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'flex_shipping_discount',
-    label: 'Flex - Desconto Especial',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Desconto especial aplicado ao envio Flex',
-    width: 150,
-    sortable: true
-  },
-  {
     key: 'coupon_amount',
     label: 'Desconto Cupom',
     category: 'financial',
