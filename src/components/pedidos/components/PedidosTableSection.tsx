@@ -392,6 +392,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         return <span>{formatMoney(fretePagoClienteDisplay)}</span>;
                       case 'receita_flex':
                         // ✅ PADRONIZADO: Receita Flex (Bônus)
+                        console.log('[DEBUG receita_flex]', {
+                          pedidoId: order.id || order.numero,
+                          receita_flex_direct: order.receita_flex,
+                          receita_flex_unified: order.unified?.receita_flex,
+                          order_keys: Object.keys(order),
+                          unified_keys: order.unified ? Object.keys(order.unified) : null
+                        });
                         const receitaFlexDisplay = order.receita_flex || 
                                           order.unified?.receita_flex ||
                                           0;
