@@ -143,19 +143,22 @@ Deno.serve(async (req) => {
         const claimsData = await claimsResponse.json();
         console.log(`✅ ML retornou ${claimsData.data?.length || 0} claims`);
 
-        // Filtrar apenas claims que têm devoluções
+        // Processar TODOS os claims retornados
         if (claimsData.data && Array.isArray(claimsData.data)) {
-          const claimsComDevolucoes = claimsData.data.filter((claim: any) => {
-            const hasReturn = claim.related_entities?.some((e: any) => e.type === 'return');
-            return hasReturn;
-          });
+          console.log(`📦 Processando ${claimsData.data.length} claims...`);
+          
+          // Log da estrutura do primeiro claim para debug
+          if (claimsData.data.length > 0) {
+            console.log('🔍 Estrutura do primeiro claim:', JSON.stringify(claimsData.data[0], null, 2).substring(0, 500));
+          }
 
-          console.log(`📦 ${claimsComDevolucoes.length}/${claimsData.data.length} claims têm devoluções`);
-
-          // Para cada claim com devolução, buscar detalhes da devolução
-          for (const claim of claimsComDevolucoes) {
+          // Para cada claim, tentar buscar devoluções associadas
+          for (const claim of claimsData.data) {
             try {
+              // Tentar buscar devoluções do claim independente do tipo
               const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
+              console.log(`🔍 Buscando returns do claim ${claim.id}...`);
+              
               const returnResponse = await fetch(returnUrl, {
                 headers: {
                   'Authorization': `Bearer ${accessToken}`,
@@ -165,23 +168,39 @@ Deno.serve(async (req) => {
 
               if (returnResponse.ok) {
                 const returnData = await returnResponse.json();
-                allReturns.push({
-                  ...returnData,
-                  claim_id: claim.id,
-                  order_id: claim.resource_id,
-                  claim_status: claim.status,
-                  claim_stage: claim.stage,
-                  claim_type: claim.type,
-                  date_created: claim.date_created,
-                  last_updated: claim.last_updated,
-                });
+                
+                // Verificar se há devoluções
+                if (returnData && (Array.isArray(returnData) ? returnData.length > 0 : returnData.id)) {
+                  const returns = Array.isArray(returnData) ? returnData : [returnData];
+                  
+                  console.log(`✅ Claim ${claim.id} possui ${returns.length} devolução(ões)`);
+                  
+                  returns.forEach((ret: any) => {
+                    allReturns.push({
+                      ...ret,
+                      claim_id: claim.id,
+                      order_id: claim.resource_id,
+                      claim_status: claim.status,
+                      claim_stage: claim.stage,
+                      claim_type: claim.type,
+                      date_created: claim.date_created || ret.date_created,
+                      last_updated: claim.last_updated || ret.last_updated,
+                    });
+                  });
+                }
               } else {
-                console.error(`❌ Erro ao buscar detalhes da devolução do claim ${claim.id}`);
+                const errorText = await returnResponse.text();
+                // Não logar 404 (claim sem devolução é esperado)
+                if (returnResponse.status !== 404) {
+                  console.error(`❌ Erro ${returnResponse.status} ao buscar devolução do claim ${claim.id}:`, errorText.substring(0, 200));
+                }
               }
             } catch (error) {
               console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
             }
           }
+
+          console.log(`📦 Total de devoluções encontradas: ${allReturns.length}`);
 
           totalReturns = claimsData.paging?.total || claimsData.data.length;
         }
