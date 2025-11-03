@@ -523,7 +523,7 @@ export function usePedidosHybrid({
     try {
       const { results } = await fetchUnifiedOrders({
         integration_account_id: integrationAccountId,
-        status: 'paid',
+        status: status || undefined, // ✅ Usar o filtro de status passado ou buscar todos
         limit: pageSize,
         offset: (page - 1) * pageSize,
         enrich: true, // ✅ Busca dados completos (Transportadora, Método Envio, etc)
