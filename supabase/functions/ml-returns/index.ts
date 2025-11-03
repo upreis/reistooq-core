@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
                   console.log(`\n🔑 CAMPOS DISPONÍVEIS:`, Object.keys(returnData));
                 }
                 
-                console.log(`✅ Claim ${claim.id} TEM devolução! ID: ${returnData.id}, Status: ${returnData.status}`);
+                console.log(`✅ Claim ${claim.id} TEM devolução! ID: ${returnData.id}, Status: ${returnData.status}, reason_id: ${claim.reason_id || 'NULL'}`);
                 
                 // Mapear TODOS os dados da devolução conforme documentação
                 const firstShipment = returnData.shipments?.[0];
@@ -280,8 +280,10 @@ Deno.serve(async (req) => {
                   
                   // Dados de previsão de entrega (lead time)
                   estimated_delivery_date: leadTimeData?.estimated_delivery_time?.date || null,
-                  estimated_delivery_from: leadTimeData?.estimated_delivery_time?.time_frame?.from || null,
-                  estimated_delivery_to: leadTimeData?.estimated_delivery_time?.time_frame?.to || null,
+                  estimated_delivery_from: leadTimeData?.estimated_delivery_time?.shipping || leadTimeData?.estimated_delivery_time?.time_frame?.from || null,
+                  estimated_delivery_to: leadTimeData?.estimated_delivery_time?.handling ? 
+                    (leadTimeData.estimated_delivery_time.shipping || 0) + (leadTimeData.estimated_delivery_time.handling || 0) :
+                    leadTimeData?.estimated_delivery_time?.time_frame?.to || null,
                   estimated_delivery_limit: leadTimeData?.estimated_delivery_limit?.date || null,
                   has_delay: leadTimeData?.delay && leadTimeData.delay.length > 0 ? true : false,
                   
