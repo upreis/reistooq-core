@@ -280,9 +280,23 @@ export function translateShippingSubstatus(substatus: string): string {
 
 /**
  * Função para traduzir modo de envio
+ * Traduz também termos específicos como Gross, Receiver, Sender
  */
 export function translateShippingMode(mode: string): string {
   if (!mode) return '-';
+  
+  // 🌐 Traduzir termos específicos do modo de envio combinado
+  let translated = mode
+    .replace(/\bGross:\s*/gi, 'Bruto: ')
+    .replace(/\bReceiver:\s*/gi, 'Destinatário: ')
+    .replace(/\bSender:\s*/gi, 'Remetente: ');
+  
+  // Se a string foi modificada (tinha Gross, Receiver ou Sender), retornar traduzida
+  if (translated !== mode) {
+    return translated;
+  }
+  
+  // Caso contrário, usar tradução normal de modos de envio
   const normalized = normalizeText(mode);
   return SHIPPING_MODE_TRANSLATIONS[normalized] || 
          SHIPPING_MODE_TRANSLATIONS[mode.toLowerCase()] || 
