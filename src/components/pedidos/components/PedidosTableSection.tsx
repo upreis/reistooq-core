@@ -380,10 +380,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.valor_frete || 0;
                        return <span>{formatMoney(fretePagoCliente)}</span>;
                      case 'receita_flex':
-                       const receitaFlex = order.receita_flex || 
-                                         order.unified?.receita_flex ||
-                                         getReceitaPorEnvio(order);
-                       return <span>{formatMoney(receitaFlex)}</span>;
+                        // ✅ Usar SEMPRE getReceitaPorEnvio (calcula corretamente de seller_cost_benefit.discount)
+                        const receitaFlex = getReceitaPorEnvio(order);
+                        return <span>{formatMoney(receitaFlex)}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
                     case 'coupon_amount':
@@ -406,11 +405,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                order.unified?.custo_envio_seller ||
                                                order.shipping?.costs?.senders?.[0]?.cost || 
                                                0;
-                        const receitaFlex = order.receita_flex || 
-                                          order.unified?.receita_flex ||
-                                          order.shipping_cost_components?.shipping_method_cost || 
-                                          getReceitaPorEnvio(order) ||
-                                          0;
+                        // ✅ Usar SEMPRE getReceitaPorEnvio (calcula corretamente de seller_cost_benefit.discount)
+                        const receitaFlex = getReceitaPorEnvio(order);
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
                                               order.fees?.[0]?.value || 
