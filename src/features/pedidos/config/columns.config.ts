@@ -103,7 +103,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Título do produto/anúncio',
-    width: 300
+    width: 900
   },
 
   // ====== FINANCEIRAS (da imagem 2) ======
