@@ -190,11 +190,15 @@ Deno.serve(async (req) => {
                     
                     if (reviewResponse.ok) {
                       reviewData = await reviewResponse.json();
-                      console.log(`✅ Review obtida para claim ${claim.id}`);
+                      console.log(`✅ Review obtida para claim ${claim.id}:`, JSON.stringify(reviewData, null, 2));
+                    } else {
+                      console.warn(`⚠️ Review não encontrada (${reviewResponse.status}) para claim ${claim.id}`);
                     }
                   } catch (error) {
                     console.warn(`⚠️ Erro ao buscar review do claim ${claim.id}:`, error);
                   }
+                } else {
+                  console.log(`ℹ️ Claim ${claim.id} não tem reviews (related_entities: ${returnData.related_entities})`);
                 }
                 
                 // Buscar lead time (data estimada) se tiver shipment_id
@@ -211,11 +215,15 @@ Deno.serve(async (req) => {
                     
                     if (leadTimeResponse.ok) {
                       leadTimeData = await leadTimeResponse.json();
-                      console.log(`✅ Lead time obtido para shipment ${firstShipment.shipment_id}`);
+                      console.log(`✅ Lead time obtido para shipment ${firstShipment.shipment_id}:`, JSON.stringify(leadTimeData, null, 2));
+                    } else {
+                      console.warn(`⚠️ Lead time não disponível (${leadTimeResponse.status}) para shipment ${firstShipment.shipment_id}`);
                     }
                   } catch (error) {
                     console.warn(`⚠️ Erro ao buscar lead time do shipment ${firstShipment.shipment_id}:`, error);
                   }
+                } else {
+                  console.log(`ℹ️ Return ${returnData.id} não tem shipment_id válido`);
                 }
                 
                 // Extrair dados da primeira review se existir
@@ -254,12 +262,12 @@ Deno.serve(async (req) => {
                   destination_zip: shippingAddress?.zip_code || null,
                   destination_neighborhood: shippingAddress?.neighborhood?.name || null,
                   destination_country: shippingAddress?.country?.name || null,
-                  destination_comment: shippingAddress?.comment || null,
+                  destination_comment: shippingAddress?.comment || null, // ✅ Corrigido
                   destination_street_name: shippingAddress?.street_name || null,
                   destination_street_number: shippingAddress?.street_number || null,
                   
-                  // Motivo da devolução (vem diretamente do returnData)
-                  reason_id: returnData.reason_id || null,
+                  // Motivo da devolução - NÃO vem na API de returns, precisa buscar do claim
+                  reason_id: claim.reason_id || null, // ✅ Vem do claim, não do return
                   
                   // Dados de revisão (quando related_entities inclui "reviews")
                   review_method: firstReview?.method || null,
