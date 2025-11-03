@@ -436,6 +436,12 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const receitaFlex = shipping.seller_cost_benefit || 0;
     const custoEnvioSeller = shipping.base_cost || 0;
     
+    // 🆕 NOVOS CAMPOS FLEX (conforme PDF - sem mexer nos existentes)
+    const flexOrderCost = detailedShipping?.order_cost || 0;
+    const flexSpecialDiscount = detailedShipping?.cost_components?.special_discount || 0;
+    const flexNetCost = flexOrderCost - flexSpecialDiscount;
+    const flexLogisticType = detailedShipping?.logistic_type || shipping?.logistic_type || null;
+    
     // Informações de endereço mais detalhadas
     const address = detailedShipping.receiver_address || shipping.receiver_address || {};
     
@@ -591,6 +597,14 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       desconto_cupom: order.coupon?.amount || 0,
       taxa_marketplace: order.marketplace_fee || 0,
       custo_envio_seller: custoEnvioSeller,
+      
+      // 🆕 FLEX: Valor Recebido por Entrega Flex (conforme PDF)
+      flex_shipping_cost: flexOrderCost,
+      flex_shipping_discount: flexSpecialDiscount,
+      flex_net_cost: flexNetCost,
+      flex_seller_receives_payment: flexNetCost < 0,
+      flex_payment_value: flexNetCost < 0 ? Math.abs(flexNetCost) : 0,
+      flex_logistic_type: flexLogisticType,
       
       // Informações de pagamento
       metodo_pagamento: firstPayment.payment_method_id || null,
