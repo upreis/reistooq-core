@@ -41,16 +41,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'nome_cliente',
-    label: 'Nome do Cliente',
-    category: 'basic',
-    priority: 'essential',
-    visible: true,
-    default: true,
-    description: 'Nome do comprador',
-    width: 150
-  },
-  {
     key: 'nome_completo',
     label: 'Nome Completo',
     category: 'basic',
@@ -374,36 +364,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 170
   },
   {
-    key: 'shipping_method',
-    label: 'Método Envio',
-    category: 'shipping',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Método de envio',
-    width: 150
-  },
-  {
-    key: 'tracking_method',
-    label: 'Transportadora',
-    category: 'shipping',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Transportadora responsável pelo envio',
-    width: 130
-  },
-  {
-    key: 'status_history',
-    label: 'Histórico Status',
-    category: 'shipping',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Histórico de eventos do status do envio',
-    width: 150
-  },
-  {
     key: 'codigo_rastreamento',
     label: 'Código Rastreamento',
     category: 'shipping',
@@ -530,27 +490,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
 
-  // ====== PACK INFORMATION ======
-  {
-    key: 'pack_status',
-    label: 'Pack Status',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pack',
-    width: 120
-  },
-  {
-    key: 'pack_status_detail',
-    label: 'Pack Status Detail',
-    category: 'ml',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'Detalhes do status do pack',
-    width: 140
-  },
 
 
 ];
