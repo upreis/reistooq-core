@@ -449,23 +449,43 @@ function SimplePedidosPage({ className }: Props) {
     };
   }, []);
   
-  // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
+  // ✅ Helpers financeiros: Receita Flex conforme PDF do Mercado Livre
+  // Receita Flex (Bônus) = Quando net_cost é NEGATIVO (vendedor RECEBE do ML)
   const getReceitaPorEnvio = (order: any): number => {
     // Se já vier calculado do backend, usar
     if (typeof order?.receita_por_envio === 'number') return order.receita_por_envio;
+    if (order?.unified?.receitaFlex !== undefined && order?.unified?.receitaFlex !== null) {
+      return order.unified.receitaFlex;
+    }
 
-    // Detectar o tipo logístico a partir de múltiplas fontes (como a tabela exibe)
+    // Verificar tipo logístico
     const rawType =
+      order?.shipping?.logistic_type ??
       order?.shipping?.logistic?.type ??
       order?.raw?.shipping?.logistic?.type ??
       order?.logistic_type ??
       order?.shipping_details?.logistic_type ??
-      order?.unified?.logistic?.type ??
+      order?.unified?.shipping?.logistic?.type ??
+      order?.unified?.logistic_type ??
       order?.logistic?.type;
 
     const logisticType = String(rawType || '').toLowerCase().replace(/\s+/g, '_');
+    
     // Receita com envio só existe no Flex (self_service)
     if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+    
+    // ✅ PRIORIDADE 1: Buscar seller_cost_benefit (conforme PDF)
+    const costBenefit = order?.shipping?.seller_cost_benefit ||
+                       order?.unified?.shipping?.seller_cost_benefit;
+    
+    if (costBenefit) {
+      const netCost = costBenefit.net_cost || 0;
+      
+      // Se net_cost é NEGATIVO, vendedor RECEBE do ML
+      if (netCost < 0) {
+        return Math.abs(netCost);
+      }
+    }
 
     // 0) Se o backend já calculou (shipping.bonus_total/bonus), priorizar
     const shippingBonus = Number(

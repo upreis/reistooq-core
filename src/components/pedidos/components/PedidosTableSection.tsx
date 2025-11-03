@@ -31,14 +31,18 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// ✅ Helper function para extrair Receita Flex conforme PDF
+// ✅ Helper function para extrair Receita Flex conforme PDF do Mercado Livre
 // Receita Flex (Bônus) = Quando net_cost é NEGATIVO (vendedor RECEBE do ML)
-function getReceitaPorEnvio(order: any): number {
+function calcularReceitaFlexPorEnvio(order: any): number {
+  const pedidoId = order?.numero || order?.id || 'UNKNOWN';
+  
   // Se já temos receitaFlex salva, usar ela
   if (order?.unified?.receitaFlex !== undefined && order?.unified?.receitaFlex !== null) {
+    console.log(`✅ [RECEITA FLEX AUDIT] Pedido ${pedidoId}: Usando valor SALVO = R$ ${order.unified.receitaFlex.toFixed(2)}`);
     return order.unified.receitaFlex;
   }
 
+  // Verificar tipo logístico
   const logisticType = String(
     order?.shipping?.logistic_type || 
     order?.unified?.shipping?.logistic?.type ||
@@ -47,8 +51,14 @@ function getReceitaPorEnvio(order: any): number {
     ''
   ).toLowerCase();
   
+  console.log(`🔍 [RECEITA FLEX AUDIT] Pedido ${pedidoId}:`, {
+    logisticType,
+    isFlex: logisticType === 'self_service' || logisticType === 'flex'
+  });
+  
   // Verificar se é Flex ou Self Service
   if (logisticType !== 'self_service' && logisticType !== 'flex') {
+    console.log(`⚠️ [RECEITA FLEX AUDIT] Pedido ${pedidoId}: NÃO é Flex/Self-Service → Receita Flex = R$ 0.00`);
     return 0;
   }
   
@@ -57,19 +67,32 @@ function getReceitaPorEnvio(order: any): number {
                      order?.unified?.shipping?.seller_cost_benefit;
   
   if (!costBenefit) {
+    console.log(`⚠️ [RECEITA FLEX AUDIT] Pedido ${pedidoId}: SEM seller_cost_benefit → Receita Flex = R$ 0.00`);
     return 0;
   }
 
+  const shippingCost = costBenefit.shipping_cost || 0;
+  const discount = costBenefit.discount || 0;
   const netCost = costBenefit.net_cost || 0;
+  
+  console.log(`💰 [RECEITA FLEX AUDIT] Pedido ${pedidoId}:`, {
+    shipping_cost: shippingCost,
+    discount: discount,
+    net_cost: netCost,
+    formula: `${shippingCost} - ${discount} = ${netCost}`
+  });
   
   // ✅ RECEITA FLEX = quando net_cost é NEGATIVO (vendedor RECEBE)
   // Fórmula do ML: net_cost = shipping_cost - discount
   // Se net_cost < 0, significa que o discount foi MAIOR que o shipping_cost
   // Exemplo: shipping_cost: 15.50, discount: 20.00 → net_cost: -4.50 (você RECEBE R$ 4,50)
   if (netCost < 0) {
-    return Math.abs(netCost); // Retorna valor POSITIVO que você recebe
+    const receitaFlex = Math.abs(netCost);
+    console.log(`✅ [RECEITA FLEX AUDIT] Pedido ${pedidoId}: net_cost NEGATIVO → Vendedor RECEBE = R$ ${receitaFlex.toFixed(2)}`);
+    return receitaFlex;
   }
   
+  console.log(`⚠️ [RECEITA FLEX AUDIT] Pedido ${pedidoId}: net_cost POSITIVO/ZERO → Vendedor PAGA/NEUTRO = R$ 0.00`);
   return 0;
 }
 import { buildIdUnico } from '@/utils/idUnico';
@@ -164,10 +187,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
     }
   }, [orders, selectedOrders.size, setSelectedOrders]);
 
-  // Funções auxiliares memoizadas
-  const getReceitaPorEnvio = useCallback((order: any) => {
-    return order.shipping?.costs?.receiver?.cost || 0;
-  }, []);
+  // ✅ REMOVIDA definição duplicada - usando calcularReceitaFlexPorEnvio do topo do arquivo
 
   const getValorLiquidoVendedor = useCallback((order: any) => {
     const total = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
@@ -402,7 +422,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'receita_flex':
                        const receitaFlex = order.receita_flex || 
                                          order.unified?.receita_flex ||
-                                         getReceitaPorEnvio(order);
+                                         calcularReceitaFlexPorEnvio(order);
                        return <span>{formatMoney(receitaFlex)}</span>;
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
@@ -428,8 +448,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                0;
                         const receitaFlex = order.receita_flex || 
                                           order.unified?.receita_flex ||
-                                          order.shipping_cost_components?.shipping_method_cost || 
-                                          getReceitaPorEnvio(order) ||
+                                          calcularReceitaFlexPorEnvio(order) ||
                                           0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
