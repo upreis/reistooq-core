@@ -152,6 +152,50 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
+    key: 'flex_payment_value',
+    label: 'Flex - Valor Recebido',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Valor recebido por entrega Flex (quando negativo)',
+    width: 140,
+    sortable: true
+  },
+  {
+    key: 'flex_net_cost',
+    label: 'Flex - Custo Líquido',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo líquido Flex (order_cost - special_discount)',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'flex_shipping_cost',
+    label: 'Flex - Custo Envio',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo original do envio Flex',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'flex_shipping_discount',
+    label: 'Flex - Desconto Especial',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Desconto especial aplicado ao envio Flex',
+    width: 150,
+    sortable: true
+  },
+  {
     key: 'coupon_amount',
     label: 'Desconto Cupom',
     category: 'financial',
@@ -519,8 +563,8 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     columns: [
       'id', 'numero', 'nome_cliente', 'data_pedido',
       'valor_total', 'paid_amount', 'frete_pago_cliente', 'receita_flex',
-      'valor_liquido_vendedor', 'marketplace_fee', 'payment_method',
-      'payment_status', 'payment_type', 'coupon_amount'
+      'flex_payment_value', 'valor_liquido_vendedor', 'marketplace_fee', 
+      'payment_method', 'payment_status', 'payment_type', 'coupon_amount'
     ]
   },
   {
