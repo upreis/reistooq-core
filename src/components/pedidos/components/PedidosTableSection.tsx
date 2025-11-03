@@ -371,7 +371,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                     order.unified?.titulo_anuncio ||
                                     order.raw?.order_items?.[0]?.item?.title ||
                                     order.unified?.order_items?.[0]?.item?.title;
-                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '900px' }}>{titulo || '-'}</div>;
+                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '300px' }}>{titulo || '-'}</div>;
                      case 'valor_total':
                        return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
                     case 'paid_amount':

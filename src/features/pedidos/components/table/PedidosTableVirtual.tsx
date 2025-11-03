@@ -352,7 +352,7 @@ export function PedidosTableVirtual({
                         // Allow text wrapping for specific columns
                         (column.key === 'titulo_anuncio' || column.key === 'shipping_mode' || column.key === 'endereco_rua' || column.key === 'endereco_bairro') ? "items-start" : "items-center"
                       )}
-                      style={column.key === 'titulo_anuncio' ? { minWidth: '900px' } : undefined}
+                      style={column.key === 'titulo_anuncio' ? { minWidth: '300px' } : undefined}
                     >
                       <div className={cn(
                         "w-full",
