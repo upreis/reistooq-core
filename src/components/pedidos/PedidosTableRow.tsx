@@ -10,6 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { ColumnConfig } from './ColumnSelector';
 import { get, show } from '@/services/orders';
+import { formatShippingStatus, formatLogisticType, formatSubstatus } from '@/utils/orderFormatters';
+import { History } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface PedidosTableRowProps {
   row: Row;
@@ -155,6 +161,70 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'status_insumos':
                 // Renderizar status dos insumos usando callback personalizado
                 return renderStatusInsumos ? renderStatusInsumos(rowId) : <span className="text-xs text-muted-foreground">—</span>;
+              
+              // Novas colunas de envio
+              case 'historico_status':
+                const statusHistory = get(row.raw, 'shipping.status_history') || get(row.raw, 'shipping_details.status_history');
+                if (statusHistory && Array.isArray(statusHistory) && statusHistory.length > 0) {
+                  return (
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <History className="h-4 w-4 mr-1" />
+                          {statusHistory.length} eventos
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-96" align="start">
+                        <div className="space-y-3">
+                          <h4 className="font-semibold text-sm">Histórico de Status</h4>
+                          <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                            {statusHistory.map((history: any, idx: number) => (
+                              <div key={idx} className="border-l-2 border-primary pl-3 pb-2">
+                                <div className="text-xs font-medium">
+                                  {formatShippingStatus(history.status)}
+                                </div>
+                                {history.description && (
+                                  <div className="text-xs text-muted-foreground">
+                                    {history.description}
+                                  </div>
+                                )}
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {history.date_time ? format(new Date(history.date_time), "dd/MM/yyyy HH:mm", { locale: ptBR }) : '-'}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  );
+                }
+                return '-';
+              
+              case 'transportadora':
+                const transportadora = get(row.raw, 'shipping.tracking_method') || get(row.raw, 'shipping_details.tracking_method');
+                return <span className="text-xs">{transportadora || '-'}</span>;
+              
+              case 'status_envio':
+                const statusEnvio = get(row.raw, 'shipping.status') || get(row.raw, 'shipping_details.status');
+                return statusEnvio ? (
+                  <Badge variant={getStatusBadgeVariant(statusEnvio)}>
+                    {formatShippingStatus(statusEnvio)}
+                  </Badge>
+                ) : '-';
+              
+              case 'tipo_logistico':
+                const tipoLogistico = get(row.raw, 'shipping.logistic.type') || get(row.raw, 'logistic_type') || get(row.raw, 'shipping_details.logistic.type');
+                return <span className="text-xs">{formatLogisticType(tipoLogistico)}</span>;
+              
+              case 'substatus':
+                const substatus = get(row.raw, 'shipping.substatus') || get(row.raw, 'shipping_substatus') || get(row.raw, 'shipping_details.substatus');
+                return <span className="text-xs">{formatSubstatus(substatus)}</span>;
+              
+              case 'metodo_envio':
+                const metodoEnvio = get(row.raw, 'shipping.lead_time.shipping_method.name') || get(row.raw, 'shipping_details.lead_time.shipping_method.name');
+                return <span className="text-xs">{metodoEnvio || '-'}</span>;
+              
               default:
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
             }

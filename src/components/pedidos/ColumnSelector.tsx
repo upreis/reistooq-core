@@ -75,6 +75,14 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: true, category: 'ml' },
   { key: 'url_rastreamento', label: 'URL Rastreamento', visible: true, category: 'ml' },
   
+  // Novas colunas de envio (da página vendas-online)
+  { key: 'historico_status', label: 'Histórico Status', visible: true, category: 'ml' },
+  { key: 'transportadora', label: 'Transportadora', visible: true, category: 'ml' },
+  { key: 'status_envio', label: 'Status Envio', visible: true, category: 'ml' },
+  { key: 'tipo_logistico', label: 'Tipo Logístico', visible: true, category: 'ml' },
+  { key: 'substatus', label: 'Substatus', visible: true, category: 'ml' },
+  { key: 'metodo_envio', label: 'Método Envio', visible: true, category: 'ml' },
+  
   // Status Avançados (Novos) - Visíveis por padrão para melhor entendimento
   { key: 'order_status_advanced', label: 'Status do Pedido (Avançado)', visible: true, category: 'ml' },
   { key: 'shipping_status_advanced', label: 'Status de Envio (Avançado)', visible: true, category: 'ml' },
