@@ -1,121 +1,121 @@
 /**
- * 🔄 DEVOLUÇÕES ML - Página Principal
- * Gerenciamento completo de devoluções do Mercado Livre
+ * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA PRINCIPAL REFATORADA
+ * Arquitetura robusta com manager centralizado, cache e persistência
  */
 
-import { DevolucaoFiltersBar } from '@/features/devolucoes-online/components/DevolucaoFiltersBar';
-import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
-import { DevolucaoPaginationControls } from '@/features/devolucoes-online/components/DevolucaoPaginationControls';
-import { DevolucaoAccountSelector } from '@/features/devolucoes-online/components/DevolucaoAccountSelector';
-import { useDevolucaoData } from '@/features/devolucoes-online/hooks/useDevolucaoData';
-import { useDevolucaoStore } from '@/features/devolucoes-online/store/useDevolucaoStore';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Undo2, AlertCircle, CheckCircle, DollarSign, RefreshCw } from 'lucide-react';
-import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { useEffect, useMemo, useState } from 'react';
 import { OMSNav } from '@/features/oms/components/OMSNav';
+import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { useDevolucaoManager } from '@/features/devolucoes-online/hooks/useDevolucaoManager';
+import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/usePersistentDevolucaoState';
+import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
+import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
+import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
+import { DevolucaoFiltersBar } from '@/features/devolucoes-online/components/DevolucaoFiltersBar';
+import { DevolucaoAccountSelector } from '@/features/devolucoes-online/components/DevolucaoAccountSelector';
+import { DevolucaoPaginationControls } from '@/features/devolucoes-online/components/DevolucaoPaginationControls';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function DevolucoesMercadoLivre() {
-  const { refresh } = useDevolucaoData();
-  const devolucoes = useDevolucaoStore(state => state.devolucoes);
-  const pagination = useDevolucaoStore(state => state.pagination);
-  const isLoading = useDevolucaoStore(state => state.isLoading);
+  // Manager centralizado
+  const devolucaoManager = useDevolucaoManager();
+  const { state, actions, totalPages, availableMlAccounts } = devolucaoManager;
   
-  // Calcular estatísticas
-  const stats = {
-    total: pagination.total,
-    pending: devolucoes.filter(d => d.status?.id === 'pending').length,
-    approved: devolucoes.filter(d => d.status?.id === 'approved').length,
-    refunded: devolucoes.filter(d => d.status_money?.id === 'refunded').length,
-  };
+  // Persistência de estado
+  const persistentState = usePersistentDevolucaoState();
+  
+  // Carregar contas ML com nome
+  const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
+  
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const { data } = await supabase
+        .from('integration_accounts')
+        .select('id, name')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true)
+        .order('updated_at', { ascending: false });
+      
+      setAccounts(data || []);
+    };
+    fetchAccounts();
+  }, []);
+
+  // Restaurar estado persistido
+  useEffect(() => {
+    if (persistentState.isStateLoaded && persistentState.hasValidPersistedState()) {
+      const persisted = persistentState.persistedState!;
+      console.log('🔄 Restaurando estado:', persisted.devolucoes.length, 'devoluções');
+      
+      actions.restorePersistedData(persisted.devolucoes, persisted.total, persisted.currentPage);
+      
+      if (persisted.integrationAccountId) {
+        actions.setIntegrationAccountId(persisted.integrationAccountId);
+      }
+    }
+  }, [persistentState.isStateLoaded]);
+
+  // Salvar dados ao mudar (com debounce automático no manager)
+  useEffect(() => {
+    if (state.devolucoes.length > 0 && !state.loading) {
+      persistentState.saveOrdersData(state.devolucoes, state.total, state.currentPage);
+    }
+  }, [state.devolucoes, state.total, state.currentPage, state.loading]);
+
+  // Calcular estatísticas (memoizado)
+  const stats = useMemo(() => ({
+    total: state.total,
+    pending: state.devolucoes.filter(d => d.status?.id === 'pending').length,
+    approved: state.devolucoes.filter(d => d.status?.id === 'approved').length,
+    refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
+  }), [state.devolucoes, state.total]);
 
   return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* Navegação Principal */}
+    <div className="min-h-screen bg-background">
       <OMSNav />
-      
-      {/* Sub-navegação */}
       <MLOrdersNav />
       
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Devoluções ML</h1>
-          <p className="text-muted-foreground">
-            Gerencie todas as devoluções do Mercado Livre em um só lugar
-          </p>
-        </div>
-        
-        <Button onClick={() => refresh()} disabled={isLoading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </Button>
+      <div className="container mx-auto px-4 py-8 space-y-6">
+        {/* Header */}
+        <DevolucaoHeaderSection 
+          isRefreshing={state.isRefreshing}
+          onRefresh={actions.refetch}
+        />
+
+        {/* Stats Cards */}
+        <DevolucaoStatsCards stats={stats} />
+
+        {/* Account Selector */}
+        <DevolucaoAccountSelector 
+          accounts={accounts}
+          selectedAccountId={state.integrationAccountId}
+          onAccountChange={actions.setIntegrationAccountId}
+          loading={!accounts.length}
+        />
+
+        {/* Filters */}
+        <DevolucaoFiltersBar 
+          filters={{
+            search: '',
+            status: [],
+            dateFrom: null,
+            dateTo: null,
+            integrationAccountId: state.integrationAccountId,
+          }}
+          onFiltersChange={(newFilters) => actions.setFilters(newFilters)}
+          onReset={actions.clearFilters}
+        />
+
+        {/* Table */}
+        <DevolucaoTable 
+          devolucoes={state.devolucoes}
+          isLoading={state.loading}
+          error={state.error}
+        />
+
+        {/* Pagination */}
+        <DevolucaoPaginationControls />
       </div>
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Undo2 className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Devoluções</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-500/10 rounded-lg">
-              <AlertCircle className="h-5 w-5 text-yellow-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pendentes</p>
-              <p className="text-2xl font-bold">{stats.pending}</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-500/10 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Aprovadas</p>
-              <p className="text-2xl font-bold">{stats.approved}</p>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-500/10 rounded-lg">
-              <DollarSign className="h-5 w-5 text-blue-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Reembolsadas</p>
-              <p className="text-2xl font-bold">{stats.refunded}</p>
-            </div>
-          </div>
-        </Card>
-      </div>
-      
-      {/* Account Selector */}
-      <div className="flex items-center gap-4">
-        <DevolucaoAccountSelector />
-      </div>
-      
-      {/* Filters */}
-      <DevolucaoFiltersBar />
-      
-      {/* Table */}
-      <DevolucaoTable />
-      
-      {/* Pagination */}
-      <DevolucaoPaginationControls />
     </div>
   );
 }

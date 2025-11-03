@@ -59,20 +59,27 @@ export const useDevolucaoData = () => {
 
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
-    () =>
-      fetchDevolucoes({
+    () => {
+      const formatDate = (date: Date | string | null) => {
+        if (!date) return undefined;
+        if (date instanceof Date) return date.toISOString().split('T')[0];
+        return date;
+      };
+      
+      return fetchDevolucoes({
         accountIds: [accountId],
         filters: {
           search: filters.search || undefined,
           status: filters.status.length > 0 ? filters.status : undefined,
-          dateFrom: filters.dateFrom || undefined,
-          dateTo: filters.dateTo || undefined,
+          dateFrom: formatDate(filters.dateFrom),
+          dateTo: formatDate(filters.dateTo),
         },
         pagination: {
           offset,
           limit: pagination.itemsPerPage,
         },
-      }),
+      });
+    },
     {
       revalidateOnFocus: false,
       dedupingInterval: 30000, // 30 segundos

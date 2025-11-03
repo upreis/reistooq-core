@@ -1,19 +1,23 @@
 /**
- * 📊 DEVOLUÇÃO TABLE
- * Tabela de devoluções do Mercado Livre
+ * 📊 DEVOLUÇÃO TABLE - OTIMIZADA
+ * Tabela de devoluções com memoização
  */
 
+import { memo } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useDevolucaoStore } from '../store/useDevolucaoStore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { MLReturn } from '../types/devolucao.types';
 
-export const DevolucaoTable = () => {
-  const devolucoes = useDevolucaoStore(state => state.devolucoes);
-  const isLoading = useDevolucaoStore(state => state.isLoading);
-  const error = useDevolucaoStore(state => state.error);
+interface DevolucaoTableProps {
+  devolucoes: MLReturn[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoTableProps) => {
 
   if (error) {
     return (
@@ -129,4 +133,6 @@ export const DevolucaoTable = () => {
       </Table>
     </div>
   );
-};
+});
+
+DevolucaoTable.displayName = 'DevolucaoTable';

@@ -53,8 +53,8 @@ export interface ReturnOrder {
 export interface DevolucaoFilters {
   search: string;
   status: string[];
-  dateFrom: string | null;
-  dateTo: string | null;
+  dateFrom: Date | string | null;
+  dateTo: Date | string | null;
   integrationAccountId: string;
 }
 

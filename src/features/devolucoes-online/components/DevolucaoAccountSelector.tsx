@@ -1,52 +1,24 @@
 /**
  * 🏢 ACCOUNT SELECTOR - DEVOLUÇÕES
- * Seletor de contas ML para Devoluções
+ * Seletor de contas ML otimizado
  */
 
-import { useEffect, useState } from 'react';
+import { memo } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDevolucaoStore } from '../store/useDevolucaoStore';
-import { supabase } from '@/integrations/supabase/client';
 
-interface MLAccount {
-  id: string;
-  name: string;
-  account_identifier: string;
+interface DevolucaoAccountSelectorProps {
+  accounts: Array<{ id: string; name: string }>;
+  selectedAccountId: string;
+  onAccountChange: (accountId: string) => void;
+  loading?: boolean;
 }
 
-export const DevolucaoAccountSelector = () => {
-  const [accounts, setAccounts] = useState<MLAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-  const filters = useDevolucaoStore(state => state.filters);
-  const updateFilters = useDevolucaoStore(state => state.updateFilters);
-
-  useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('integration_accounts')
-          .select('id, name, account_identifier')
-          .eq('provider', 'mercadolivre')
-          .eq('is_active', true)
-          .order('updated_at', { ascending: false });
-
-        if (error) throw error;
-
-        setAccounts(data || []);
-        
-        // Auto-selecionar primeira conta se houver
-        if (data && data.length > 0 && !filters.integrationAccountId) {
-          updateFilters({ integrationAccountId: data[0].id });
-        }
-      } catch (error) {
-        console.error('Erro ao buscar contas ML:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAccounts();
-  }, []);
+export const DevolucaoAccountSelector = memo(({ 
+  accounts, 
+  selectedAccountId, 
+  onAccountChange,
+  loading = false 
+}: DevolucaoAccountSelectorProps) => {
 
   if (loading) {
     return <div className="h-10 w-64 bg-muted animate-pulse rounded" />;
@@ -61,10 +33,7 @@ export const DevolucaoAccountSelector = () => {
   }
 
   return (
-    <Select
-      value={filters.integrationAccountId}
-      onValueChange={(value) => updateFilters({ integrationAccountId: value })}
-    >
+    <Select value={selectedAccountId} onValueChange={onAccountChange}>
       <SelectTrigger className="w-64">
         <SelectValue placeholder="Selecione uma conta ML" />
       </SelectTrigger>
@@ -77,4 +46,6 @@ export const DevolucaoAccountSelector = () => {
       </SelectContent>
     </Select>
   );
-};
+});
+
+DevolucaoAccountSelector.displayName = 'DevolucaoAccountSelector';
