@@ -35,7 +35,8 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
   // 🚨 COLUNAS REMOVIDAS - filtrar estas do cache
   const removedColumns = new Set([
     'marketplace_fee_detail', 'payment_issuer', 'refund_data', 'installments', 'installment_amount',
-    'product_categories', 'product_attributes', 'product_variations', 'product_warranty', 'manufacturing_days'
+    'product_categories', 'product_attributes', 'product_variations', 'product_warranty', 'manufacturing_days',
+    'nome_cliente', 'shipping_method', 'tracking_method', 'status_history', 'pack_status', 'pack_status_detail'
   ]);
   
   const validColumnKeys = new Set(COLUMN_DEFINITIONS.map(col => col.key));
