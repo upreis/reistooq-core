@@ -443,6 +443,16 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const specialDiscount = shipping.cost_components?.special_discount || 0;
     const netCost = orderCost - specialDiscount;
     
+    // ✅ LOG DEBUG OBRIGATÓRIO para todos os pedidos
+    console.log(`🔍 [RECEITA FLEX DEBUG] Pedido ${order.id}:`, {
+      logistic_type: shipping.logistic_type,
+      order_cost: orderCost,
+      special_discount: specialDiscount,
+      net_cost: netCost,
+      tem_cost_components: !!shipping.cost_components,
+      cost_components_keys: shipping.cost_components ? Object.keys(shipping.cost_components) : []
+    });
+    
     if (netCost < 0) {
       receitaFlex = Math.abs(netCost);
       console.log(`✅ [RECEITA FLEX] Pedido ${order.id}: order_cost=${orderCost}, special_discount=${specialDiscount} → net_cost=${netCost} → Receita Flex=R$${receitaFlex.toFixed(2)}`);
