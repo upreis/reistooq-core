@@ -375,13 +375,33 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'shipping_method',
-    label: 'Método de Envio (Combinado)',
+    label: 'Método Envio',
     category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Método de envio combinado',
-    width: 180
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Método de envio',
+    width: 150
+  },
+  {
+    key: 'tracking_method',
+    label: 'Transportadora',
+    category: 'shipping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Transportadora responsável pelo envio',
+    width: 130
+  },
+  {
+    key: 'status_history',
+    label: 'Histórico Status',
+    category: 'shipping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Histórico de eventos do status do envio',
+    width: 150
   },
   {
     key: 'codigo_rastreamento',
