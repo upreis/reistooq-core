@@ -5,7 +5,7 @@
 
 export interface MLReturn {
   id: number;
-  claim_id: string;
+  claim_id: number;
   order_id: number;
   status: ReturnStatus;
   status_money: StatusMoney;
@@ -17,15 +17,25 @@ export interface MLReturn {
   date_created: string;
   date_closed: string | null;
   refund_at: string | null;
-  resource_id: string;
-  resource: string;
+  resource_id: number;
+  resource_type: string;
   reason_id: string;
   order: ReturnOrder | null;
   orders: ReturnOrderItem[];
   shipments: ReturnShipment[];
-  related_entities: any[];
+  related_entities: string[];
   intermediate_check: boolean;
   last_updated: string;
+  
+  // Campos do endereço de destino
+  destination_address?: string | null;
+  destination_city?: string | null;
+  destination_state?: string | null;
+  destination_zip?: string | null;
+  destination_neighborhood?: string | null;
+  
+  // ID do shipment
+  shipment_id?: number | null;
 }
 
 export interface ReturnStatus {
@@ -49,16 +59,50 @@ export interface ReturnShipment {
   status: string;
   tracking_number: string | null;
   type?: string;
-  destination?: any;
+  destination?: ShipmentDestination;
+}
+
+export interface ShipmentDestination {
+  name: string;
+  shipping_address?: ShippingAddress;
+}
+
+export interface ShippingAddress {
+  address_id: number;
+  address_line: string;
+  street_name: string;
+  street_number: string;
+  comment: string;
+  zip_code: string;
+  city: {
+    id: string;
+    name: string;
+  };
+  state: {
+    id: string;
+    name: string;
+  };
+  country: {
+    id: string;
+    name: string;
+  };
+  neighborhood: {
+    id: string | null;
+    name: string | null;
+  };
+  municipality: {
+    id: string | null;
+    name: string | null;
+  };
 }
 
 export interface ReturnOrderItem {
   order_id: number;
   item_id: string;
-  context_type: string;
+  context_type: string; // 'total', 'partial', 'incomplete'
   total_quantity: string;
   return_quantity: string;
-  variation_id: string | null;
+  variation_id: number | null;
 }
 
 export interface ReturnOrder {

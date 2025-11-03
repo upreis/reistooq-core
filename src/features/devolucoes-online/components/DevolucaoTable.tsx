@@ -85,97 +85,168 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
     return type ? labels[type] || type : '-';
   };
 
+  const getContextTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'total': 'Total',
+      'partial': 'Parcial',
+      'incomplete': 'Incompleto',
+    };
+    return labels[type] || type;
+  };
+
+  const getRefundAtLabel = (refundAt: string | null) => {
+    const labels: Record<string, string> = {
+      'delivered': 'Após entrega',
+      'shipped': 'Após envio',
+      'n/a': 'N/A',
+    };
+    return refundAt ? labels[refundAt] || refundAt : '-';
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold">ID</TableHead>
+            <TableHead className="font-semibold">ID Devolução</TableHead>
             <TableHead className="font-semibold">Claim ID</TableHead>
             <TableHead className="font-semibold">Order ID</TableHead>
+            <TableHead className="font-semibold">Item ID</TableHead>
+            <TableHead className="font-semibold">Variação ID</TableHead>
             <TableHead className="font-semibold">Status</TableHead>
             <TableHead className="font-semibold">Status $</TableHead>
             <TableHead className="font-semibold">Subtipo</TableHead>
-            <TableHead className="font-semibold">Destino</TableHead>
-            <TableHead className="font-semibold">Tipo Envio</TableHead>
+            <TableHead className="font-semibold">Tipo Recurso</TableHead>
+            <TableHead className="font-semibold">Contexto</TableHead>
+            <TableHead className="font-semibold">Qtd Total</TableHead>
+            <TableHead className="font-semibold">Qtd Devolver</TableHead>
+            <TableHead className="font-semibold">Shipment ID</TableHead>
             <TableHead className="font-semibold">Status Envio</TableHead>
+            <TableHead className="font-semibold">Tipo Envio</TableHead>
+            <TableHead className="font-semibold">Destino</TableHead>
             <TableHead className="font-semibold">Rastreio</TableHead>
-            <TableHead className="font-semibold">Qtd</TableHead>
+            <TableHead className="font-semibold">Endereço</TableHead>
+            <TableHead className="font-semibold">Cidade</TableHead>
+            <TableHead className="font-semibold">Estado</TableHead>
+            <TableHead className="font-semibold">CEP</TableHead>
+            <TableHead className="font-semibold">Bairro</TableHead>
             <TableHead className="font-semibold">MPT</TableHead>
+            <TableHead className="font-semibold">Reviews</TableHead>
+            <TableHead className="font-semibold">Reembolso Após</TableHead>
             <TableHead className="font-semibold">Criação</TableHead>
             <TableHead className="font-semibold">Atualização</TableHead>
             <TableHead className="font-semibold">Fechamento</TableHead>
-            <TableHead className="font-semibold">Reembolso</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {devolucoes.map((dev) => (
-            <TableRow key={dev.id} className="hover:bg-muted/50 transition-colors">
-              <TableCell className="font-medium text-xs">
-                {dev.id}
-              </TableCell>
-              <TableCell className="text-xs">
-                {dev.claim_id || '-'}
-              </TableCell>
-              <TableCell className="text-xs">
-                {dev.order_id || '-'}
-              </TableCell>
-              <TableCell>
-                <Badge 
-                  variant="outline" 
-                  className={`text-xs ${getStatusColor(dev.status?.id || '')}`}
-                >
-                  {dev.status?.description || dev.status?.id || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="text-xs">
-                  {dev.status_money?.description || dev.status_money?.id || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-xs">
-                {dev.subtype?.description || dev.subtype?.id || '-'}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="text-xs">
-                  {getDestinationLabel(dev.shipment_destination)}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant="secondary" className="text-xs">
-                  {getShipmentTypeLabel(dev.shipment_type)}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-xs">
-                {dev.shipment_status || '-'}
-              </TableCell>
-              <TableCell className="text-xs font-mono">
-                {dev.tracking_number || '-'}
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline" className="text-xs font-mono">
-                  {dev.orders?.reduce((sum, order) => sum + parseFloat(order.return_quantity || '0'), 0) || 0}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">
-                  {dev.intermediate_check ? 'Sim' : 'Não'}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-xs">
-                {formatDate(dev.date_created)}
-              </TableCell>
-              <TableCell className="text-xs">
-                {formatDate(dev.last_updated)}
-              </TableCell>
-              <TableCell className="text-xs">
-                {formatDate(dev.date_closed)}
-              </TableCell>
-              <TableCell className="text-xs">
-                {dev.refund_at || '-'}
-              </TableCell>
-            </TableRow>
-          ))}
+          {devolucoes.map((dev) => {
+            const firstOrder = dev.orders?.[0];
+            return (
+              <TableRow key={dev.id} className="hover:bg-muted/50 transition-colors">
+                <TableCell className="font-medium text-xs">
+                  {dev.id}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.claim_id || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.order_id || '-'}
+                </TableCell>
+                <TableCell className="text-xs font-mono">
+                  {firstOrder?.item_id || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {firstOrder?.variation_id || '-'}
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs ${getStatusColor(dev.status?.id || '')}`}
+                  >
+                    {dev.status?.description || dev.status?.id || '-'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {dev.status_money?.description || dev.status_money?.id || '-'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.subtype?.description || dev.subtype?.id || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.resource_type || '-'}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {firstOrder ? getContextTypeLabel(firstOrder.context_type) : '-'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs text-center">
+                  {firstOrder?.total_quantity || '-'}
+                </TableCell>
+                <TableCell className="text-xs text-center font-semibold">
+                  {firstOrder?.return_quantity || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.shipment_id || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.shipment_status || '-'}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="secondary" className="text-xs">
+                    {getShipmentTypeLabel(dev.shipment_type)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="text-xs">
+                    {getDestinationLabel(dev.shipment_destination)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs font-mono">
+                  {dev.tracking_number || '-'}
+                </TableCell>
+                <TableCell className="text-xs max-w-[200px] truncate" title={dev.destination_address || '-'}>
+                  {dev.destination_address || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.destination_city || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.destination_state || '-'}
+                </TableCell>
+                <TableCell className="text-xs font-mono">
+                  {dev.destination_zip || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.destination_neighborhood || '-'}
+                </TableCell>
+                <TableCell>
+                  <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">
+                    {dev.intermediate_check ? 'Sim' : 'Não'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={dev.related_entities?.includes('reviews') ? "default" : "outline"} className="text-xs">
+                    {dev.related_entities?.includes('reviews') ? 'Sim' : 'Não'}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-xs">
+                  {getRefundAtLabel(dev.refund_at)}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {formatDate(dev.date_created)}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {formatDate(dev.last_updated)}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {formatDate(dev.date_closed)}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

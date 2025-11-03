@@ -172,29 +172,55 @@ Deno.serve(async (req) => {
                 
                 console.log(`✅ Claim ${claim.id} TEM devolução! ID: ${returnData.id}, Status: ${returnData.status}`);
                 
-                // Mapear os dados da devolução
+                // Mapear TODOS os dados da devolução conforme documentação
+                const firstShipment = returnData.shipments?.[0];
+                const shippingAddress = firstShipment?.destination?.shipping_address;
+                
                 allReturns.push({
+                  // Campos principais
                   id: returnData.id,
-                  claim_id: claim.id.toString(),
+                  claim_id: returnData.claim_id,
                   order_id: returnData.resource_id,
                   status: { id: returnData.status, description: returnData.status },
                   status_money: { id: returnData.status_money, description: returnData.status_money },
                   subtype: { id: returnData.subtype, description: returnData.subtype },
-                  shipment_status: returnData.shipments?.[0]?.status || '-',
-                  tracking_number: returnData.shipments?.[0]?.tracking_number || null,
-                  shipment_destination: returnData.shipments?.[0]?.destination?.name || null,
-                  shipment_type: returnData.shipments?.[0]?.type || null,
+                  
+                  // Dados do primeiro shipment
+                  shipment_id: firstShipment?.shipment_id || null,
+                  shipment_status: firstShipment?.status || '-',
+                  tracking_number: firstShipment?.tracking_number || null,
+                  shipment_destination: firstShipment?.destination?.name || null,
+                  shipment_type: firstShipment?.type || null,
+                  
+                  // Datas
                   date_created: returnData.date_created,
                   date_closed: returnData.date_closed,
+                  last_updated: returnData.last_updated,
                   refund_at: returnData.refund_at,
+                  
+                  // Recursos
                   resource_id: returnData.resource_id,
-                  resource: returnData.resource_type,
-                  reason_id: claim.reason_id,
+                  resource_type: returnData.resource_type,
+                  
+                  // Endereço de destino
+                  destination_address: shippingAddress?.address_line || null,
+                  destination_city: shippingAddress?.city?.name || null,
+                  destination_state: shippingAddress?.state?.name || null,
+                  destination_zip: shippingAddress?.zip_code || null,
+                  destination_neighborhood: shippingAddress?.neighborhood?.name || null,
+                  
+                  // Arrays completos
                   orders: returnData.orders || [],
                   shipments: returnData.shipments || [],
                   related_entities: returnData.related_entities || [],
+                  
+                  // Outros
                   intermediate_check: returnData.intermediate_check,
-                  last_updated: returnData.last_updated,
+                  reason_id: claim.reason_id,
+                  
+                  // Order info (legacy)
+                  order: null,
+                  resource: returnData.resource_type,
                 });
               } else if (returnResponse.status === 404) {
                 // 404 = claim não tem devolução (normal)
