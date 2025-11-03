@@ -164,6 +164,12 @@ Deno.serve(async (req) => {
               if (returnResponse.ok) {
                 const returnData = await returnResponse.json();
                 
+                // LOG COMPLETO para análise (apenas primeira devolução para não poluir)
+                if (allReturns.length === 0) {
+                  console.log(`\n📋 ESTRUTURA COMPLETA DA API /returns:`, JSON.stringify(returnData, null, 2));
+                  console.log(`\n🔑 CAMPOS DISPONÍVEIS:`, Object.keys(returnData));
+                }
+                
                 console.log(`✅ Claim ${claim.id} TEM devolução! ID: ${returnData.id}, Status: ${returnData.status}`);
                 
                 // Mapear os dados da devolução
