@@ -82,10 +82,16 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
       </TableCell>
       
       {/* Render each visible column */}
-      {visibleColumns.map((col) => (
-        <TableCell key={col.key}>
-          {(() => {
-            switch (col.key) {
+      {visibleColumns.map((col) => {
+        // 🔍 Debug: Log todas as colunas sendo renderizadas
+        if (col.key === 'conditions') {
+          console.log('🔍 [COLUNA ENCONTRADA] Renderizando coluna:', col.key, col);
+        }
+        
+        return (
+          <TableCell key={col.key}>
+            {(() => {
+              switch (col.key) {
               case 'numero':
                 const numero = get(row.unified, 'numero') ?? String(get(row.raw, 'id'));
                 return (
@@ -286,8 +292,9 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
             }
           })()}
-        </TableCell>
-      ))}
+          </TableCell>
+        );
+      })}
     </TableRow>
   );
 }, areEqual);
