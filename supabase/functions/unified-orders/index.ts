@@ -536,11 +536,12 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              detailedShipping?.logistic_type || 
                              null;
     
-    // RECEITA FLEX = special_discount quando logistic_type = 'self_service' (Envios Flex)
-    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
+    // RECEITA FLEX:
+    // - Se logistic_type = 'self_service' (Envios Flex) → special_discount
+    // - Caso contrário → 0
     const receitaFlexCalculada = flexLogisticType === 'self_service' 
       ? flexSpecialDiscount 
-      : flexOrderCost;
+      : 0;
     
     // 🔍 DEBUG FLEX: Log detalhado dos valores calculados
     if (flexOrderCost > 0 || flexSpecialDiscount > 0) {
