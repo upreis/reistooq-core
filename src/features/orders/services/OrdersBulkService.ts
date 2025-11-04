@@ -183,14 +183,7 @@ export class OrdersBulkService {
 
     if (error) throw error;
 
-    const orders = data.map(order => ({
-      ...order,
-      priority: 'normal' as const,
-      tags: (order as any).tags || [],
-      last_status_change: order.updated_at,
-      estimated_delivery: order.data_prevista,
-      profit_margin: 0
-    })) as OrderAdvanced[];
+    const orders = data as OrderAdvanced[];
     
     // Filter eligible orders
     return orders.filter(order => 
