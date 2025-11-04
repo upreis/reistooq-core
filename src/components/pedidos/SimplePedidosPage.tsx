@@ -586,21 +586,11 @@ function SimplePedidosPage({ className }: Props) {
     // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
-    { key: 'frete_pago_cliente', label: 'Frete Pago Cliente', default: true, category: 'financial' },
-    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: true, category: 'financial' },
-    { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
-    { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
-    
-    // 💰 FLEX: Campos Detalhados de Custos
-    { key: 'flex_order_cost', label: 'Flex: Custo Bruto', default: false, category: 'financial' },
-    { key: 'flex_special_discount', label: 'Flex: Desconto Loyal', default: false, category: 'financial' },
-    { key: 'flex_net_cost', label: 'Flex: Custo Líquido', default: false, category: 'financial' },
     
     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
-    { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
 
     // Mapeamento  
     { key: 'cpf_cnpj', label: 'CPF/CNPJ', default: true, category: 'mapping' },
@@ -622,7 +612,6 @@ function SimplePedidosPage({ className }: Props) {
     // Envio (combinado)
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: false, category: 'shipping' },
-    { key: 'logistic_type', label: 'Tipo Logístico', default: false, category: 'shipping' },
     
     // Reputação do Vendedor
     { key: 'power_seller_status', label: 'Medalha', default: false, category: 'shipping' },

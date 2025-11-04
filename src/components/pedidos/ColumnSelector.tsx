@@ -35,12 +35,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'valor_desconto', label: 'Valor Desconto', visible: true, category: 'financial' },
   { key: 'paid_amount', label: 'Valor Pago', visible: false, category: 'financial' },
   { key: 'currency_id', label: 'Moeda', visible: false, category: 'financial' },
-  { key: 'coupon_amount', label: 'Desconto Cupom', visible: false, category: 'financial' },
-  
-  // Colunas Flex (Mercado Livre)
-  { key: 'flex_order_cost', label: 'Flex: Custo Pedido', visible: false, category: 'financial' },
-  { key: 'flex_special_discount', label: 'Flex: Desconto Especial', visible: false, category: 'financial' },
-  { key: 'flex_net_cost', label: 'Flex: Custo Líquido', visible: false, category: 'financial' },
   
   // Colunas de mapeamento
   { key: 'sku_estoque', label: 'SKU Estoque', visible: true, category: 'mapping' },
@@ -73,7 +67,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
 
   // Envio (ML)
   { key: 'shipping_status', label: 'Status Envio', visible: false, category: 'ml' },
-  { key: 'logistic_type', label: 'Tipo Logístico', visible: false, category: 'ml' },
   { key: 'shipping_substatus', label: 'Substatus', visible: false, category: 'ml' },
   { key: 'tracking_number', label: 'Rastreio', visible: false, category: 'ml' },
   { key: 'shipping_mode', label: 'Modo de Envio', visible: false, category: 'ml' },
