@@ -577,7 +577,7 @@ function SimplePedidosPage({ className }: Props) {
     // Básicas
     { key: 'id', label: 'ID-Único', default: true, category: 'basic' },
     { key: 'empresa', label: 'Empresa', default: true, category: 'basic' },
-    { key: 'numero', label: 'Número do Pedido', default: true, category: 'basic' },
+    { key: 'numero', label: 'ID do Pedido (ML)', default: true, category: 'basic' },
     { key: 'nome_completo', label: 'Nome Completo', default: true, category: 'basic' },
     { key: 'data_pedido', label: 'Data do Pedido', default: true, category: 'basic' },
     { key: 'last_updated', label: 'Última Atualização', default: false, category: 'basic' },
@@ -634,7 +634,7 @@ function SimplePedidosPage({ className }: Props) {
     
     // Endereço
     { key: 'endereco_rua', label: 'Rua', default: false, category: 'shipping' },
-    { key: 'endereco_numero', label: 'Número', default: false, category: 'shipping' },
+    { key: 'endereco_numero', label: 'Número (Endereço)', default: false, category: 'shipping' },
     { key: 'endereco_bairro', label: 'Bairro', default: false, category: 'shipping' },
     { key: 'endereco_cep', label: 'CEP', default: false, category: 'shipping' },
     { key: 'endereco_cidade', label: 'Cidade', default: false, category: 'shipping' },

@@ -918,43 +918,22 @@ export function usePedidosManager(initialAccountId?: string) {
       // Buscar correspondente nos dados RAW para preservar informações completas
       const rawData = rawList.find((r: any) => r.id === o.id) || rawList[index] || {};
       
-      // Fallback profundo: procurar CPF/CNPJ em qualquer lugar do objeto
-      const extractDeep = (root: any): string | null => {
-        const seen = new Set<any>();
-        const queue: any[] = [root];
-        const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
-        let steps = 0;
-        while (queue.length && steps < 800) {
-          const node = queue.shift();
-          steps++;
-          if (!node || seen.has(node)) continue;
-          seen.add(node);
-          if (typeof node === 'string' || typeof node === 'number') {
-            const digits = String(node).replace(/\D/g, '');
-            if (digits.length === 11 || digits.length === 14) return digits;
-          } else if (Array.isArray(node)) {
-            for (const child of node) queue.push(child);
-          } else if (typeof node === 'object') {
-            const entries = Object.entries(node);
-            const prioritized = entries.filter(([k]) => keyPriority.test(k));
-            const others = entries.filter(([k]) => !keyPriority.test(k));
-            for (const [, v] of [...prioritized, ...others]) queue.push(v);
-          }
-        }
-        return null;
+      // ✅ CORREÇÃO: Usar função extractCpfCnpj otimizada do extractors.ts
+      // Remove busca profunda que pode retornar valor duplicado
+      const extractCpfCnpjLocal = (order: any): string => {
+        // Buscar de múltiplas fontes prioritárias
+        const rawDoc = order.cpf_cnpj || 
+                       order.unified?.cpf_cnpj || 
+                       order.documento_cliente ||
+                       order.cliente_documento ||
+                       order.buyer?.identification?.number ||
+                       order.payments?.[0]?.payer?.identification?.number ||
+                       order.unified?.payments?.[0]?.payer?.identification?.number;
+        
+        return rawDoc ? rawDoc.toString().trim() : '';
       };
 
-      const direct =
-        o.cpf_cnpj ??
-        o.unified?.cpf_cnpj ??
-        o.documento_cliente ??
-        o.cliente_documento ??
-        o.buyer?.identification?.number ??
-        rawData.buyer?.identification?.number ??
-        o.payments?.[0]?.payer?.identification?.number ??
-        o.unified?.payments?.[0]?.payer?.identification?.number ??
-        rawData.payments?.[0]?.payer?.identification?.number ??
-        null;
+      const cpfCnpjValue = extractCpfCnpjLocal(o) || extractCpfCnpjLocal(rawData);
 
       return {
         ...o,
@@ -965,7 +944,7 @@ export function usePedidosManager(initialAccountId?: string) {
         shipping: o.shipping || rawData.shipping,
         order_items: o.order_items || rawData.order_items,
         tags: o.tags || rawData.tags,
-        cpf_cnpj: direct ?? extractDeep(o) ?? extractDeep(rawData),
+        cpf_cnpj: cpfCnpjValue,
         // 🔧 Flatten para colunas "Tipo Método Envio" e "Tipo Entrega"
         shipping_method_type:
           o.shipping_method_type ||
