@@ -2,6 +2,7 @@ import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } fro
 import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
+import { mapShipmentCostsData } from "../ml-api-direct/mappers/costs-mapper.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
@@ -137,16 +138,6 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
                 if (costsResp?.ok) {
                   const costsData = await costsResp.json();
-                  
-                  // 🔍 DEBUG: Ver estrutura completa dos custos retornados pela API
-                  if (String(order.id) === '2000013656902262') {
-                    console.log(`[unified-orders:${cid}] 🔍 COSTS API RESPONSE - Pedido ${order.id}:`);
-                    console.log(`[unified-orders:${cid}]   costsData =`, costsData);
-                    console.log(`[unified-orders:${cid}]   costsData.order_cost =`, costsData?.order_cost);
-                    console.log(`[unified-orders:${cid}]   costsData.cost_components =`, costsData?.cost_components);
-                    console.log(`[unified-orders:${cid}]   costsData.cost_components?.special_discount =`, costsData?.cost_components?.special_discount);
-                  }
-                  
                   (shippingData as any).costs = costsData;
                   console.log(`[unified-orders:${cid}] ➕ costs anexado ao shipment ${order.shipping.id}`);
                 }
@@ -687,18 +678,19 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
-      receita_flex: receitaFlexCalculada, // ← USAR O VALOR CALCULADO (flexOrderCost)
-      // Desconto Cupom: Apenas desconto especial Flex (special_discount)
-      desconto_cupom: (flexLogisticType === 'self_service' && flexSpecialDiscount > 0) 
-        ? flexSpecialDiscount 
-        : 0,
+      receita_flex: receitaFlexCalculada, // ← Valor que o seller RECEBE do ML
+      
+      // Desconto Cupom: NÃO usar special_discount (é desconto do comprador, não cupom do seller)
+      // Se houver cupons reais, virão de outro campo do order
+      desconto_cupom: 0, // TODO: Mapear de order.coupon se existir
+      
       taxa_marketplace: order.marketplace_fee || 0,
       custo_envio_seller: custoEnvioSeller,
       
-      // 🆕 FLEX: Campos de análise
-      flex_order_cost: flexOrderCost,
-      flex_special_discount: flexSpecialDiscount,
-      flex_net_cost: flexNetCost,
+      // 🆕 FLEX: Campos de análise detalhada
+      flex_order_cost: flexOrderCost,              // = gross_amount (bruto)
+      flex_special_discount: flexSpecialDiscount,  // = desconto loyal do COMPRADOR
+      flex_net_cost: flexNetCost,                  // = order_cost - special_discount
       flex_logistic_type: flexLogisticType,
       
       // Informações de pagamento
@@ -754,7 +746,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
         pack_data: packData,
         context: context,
         feedback: feedback
-      }
+      },
+      
+      // 💰 DADOS COSTS MAPEADOS (salvos em JSONB)
+      dados_costs: costs ? mapShipmentCostsData(costs) : null
     };
   });
 }
