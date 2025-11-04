@@ -499,12 +499,18 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            pedidoId: order.id || order.numero,
                            direct: order.power_seller_status,
                            unified: order.unified?.power_seller_status,
-                           raw: order.raw?.seller_reputation?.power_seller_status,
-                           sellerReputation: order.raw?.seller_reputation
+                           raw: order.raw?.power_seller_status,
+                           sellerReputation: order.raw?.seller_reputation || order.raw?.sellerReputation
                          });
                          
-                         const medalha = order.power_seller_status || order.unified?.power_seller_status || order.raw?.seller_reputation?.power_seller_status;
-                         if (!medalha) return <span className="text-xs text-muted-foreground">—</span>;
+                         // Buscar em todos os locais possíveis
+                         const medalha = order.power_seller_status || 
+                                        order.unified?.power_seller_status || 
+                                        order.raw?.power_seller_status ||
+                                        order.raw?.seller_reputation?.power_seller_status ||
+                                        order.raw?.sellerReputation?.power_seller_status;
+                         
+                         if (!medalha) return <span className="text-xs text-muted-foreground">Sem Medalha</span>;
                          
                          // Mapeamento de medalhas MercadoLíder
                          const medalhaMap: Record<string, { icon: string; color: string }> = {
@@ -514,7 +520,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          };
                          
                          const medalhaInfo = medalhaMap[medalha.toLowerCase()];
-                         if (!medalhaInfo) return <span className="text-xs text-muted-foreground">—</span>;
+                         if (!medalhaInfo) return <span className="text-xs text-muted-foreground">Sem Medalha</span>;
                          
                          return (
                            <Badge variant="outline" className={medalhaInfo.color}>
