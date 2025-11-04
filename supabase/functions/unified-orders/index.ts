@@ -457,6 +457,24 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     const costs = shipping?.costs || detailedShipping?.costs;
     
+    // 🔍 DEBUG CRÍTICO: Investigar de onde vem R$ 31,80
+    const shipmentId = shipping?.id || detailedShipping?.id;
+    const grossAmountRaw = costs?.gross_amount;
+    
+    console.log(`[unified-orders:${cid}] 🚨 DEBUG GROSS_AMOUNT - Pedido ${order.id}:`, {
+      shipment_id: shipmentId,
+      gross_amount_raw: grossAmountRaw,
+      costs_structure: {
+        gross_amount: costs?.gross_amount,
+        receiver_cost: costs?.receiver?.cost,
+        senders_cost: costs?.senders?.[0]?.cost,
+        has_multiple_senders: costs?.senders?.length > 1
+      },
+      shipping_id: shipping?.id,
+      detailedShipping_id: detailedShipping?.id,
+      has_multiple_shipments: order.shipping?.length > 1
+    });
+    
     // order_cost = gross_amount (valor bruto do envio)
     const flexOrderCost = costs?.gross_amount || 0;
     
