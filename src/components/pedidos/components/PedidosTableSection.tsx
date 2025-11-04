@@ -384,8 +384,31 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
                             const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
                             
+                            // 🔍 DEBUG COMPLETO
+                            console.log('🔍 [RECEITA FLEX DEBUG]', {
+                              orderId: order.id || order.numero,
+                              flexOrderCostBase,
+                              valorTotal,
+                              valorTotalPassa: valorTotal >= 79.00,
+                              condition: {
+                                raw: order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition,
+                                parsed: String(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '').toLowerCase(),
+                                passa: String(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '').toLowerCase() === 'new'
+                              },
+                              reputation: {
+                                raw: order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id,
+                                parsed: String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase(),
+                                passa: String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase().includes('green')
+                              },
+                              medalha: {
+                                value: order.power_seller_status || order.unified?.power_seller_status || order.raw?.power_seller_status || order.raw?.seller_reputation?.power_seller_status || order.raw?.sellerReputation?.power_seller_status || order.seller_reputation?.power_seller_status || order.unified?.seller_reputation?.power_seller_status || null,
+                                passa: !!(order.power_seller_status || order.unified?.power_seller_status || order.raw?.power_seller_status || order.raw?.seller_reputation?.power_seller_status || order.raw?.sellerReputation?.power_seller_status || order.seller_reputation?.power_seller_status || order.unified?.seller_reputation?.power_seller_status)
+                              }
+                            });
+                            
                             // Se Valor Total < 79.00 → usar cálculo normal (100%)
                             if (valorTotal < 79.00) {
+                              console.log('❌ Valor total < 79.00, usando 100%');
                               return <span>{formatMoney(flexOrderCostBase)}</span>;
                             }
                             
@@ -407,9 +430,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             // Se TODAS as condições forem atendidas → aplicar 10%
                             // Senão → usar cálculo normal (100%)
                             if (condition === 'new' && reputation.includes('green') && medalha) {
+                              console.log('✅ Todas condições OK! Aplicando 10%');
                               return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
                             }
                             
+                            console.log('❌ Alguma condição falhou, usando 100%');
                             return <span>{formatMoney(flexOrderCostBase)}</span>;
                           }
                       case 'flex_payment_value':
