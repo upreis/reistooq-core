@@ -457,25 +457,28 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     const costs = shipping?.costs || detailedShipping?.costs;
     
-    // order_cost = gross_amount (valor bruto do envio)
-    const flexOrderCost = costs?.gross_amount || 0;
-    
-    // special_discount = promoted_amount do desconto loyal
-    const loyalDiscount = costs?.receiver?.discounts?.find((d: any) => d.type === 'loyal');
-    const flexSpecialDiscount = loyalDiscount?.promoted_amount || 0;
-    
-    const flexNetCost = flexOrderCost - flexSpecialDiscount;
-    
-    // RECEITA FLEX = order_cost quando logistic_type = 'self_service'
-    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
-    const receitaFlexCalculada = flexOrderCost;
-    
     // Procurar logistic_type em todas as possíveis localizações
     const flexLogisticType = shipping?.logistic?.type || 
                              detailedShipping?.logistic?.type || 
                              shipping?.logistic_type || 
                              detailedShipping?.logistic_type || 
                              null;
+    
+    // 🔒 VALORES FLEX: Só aparecem se logistic_type = 'self_service'
+    const isSelfService = flexLogisticType === 'self_service';
+    
+    // order_cost = gross_amount (valor bruto do envio)
+    const flexOrderCost = isSelfService ? (costs?.gross_amount || 0) : 0;
+    
+    // special_discount = promoted_amount do desconto loyal
+    const loyalDiscount = costs?.receiver?.discounts?.find((d: any) => d.type === 'loyal');
+    const flexSpecialDiscount = isSelfService ? (loyalDiscount?.promoted_amount || 0) : 0;
+    
+    const flexNetCost = isSelfService ? (flexOrderCost - flexSpecialDiscount) : 0;
+    
+    // RECEITA FLEX = order_cost quando logistic_type = 'self_service'
+    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
+    const receitaFlexCalculada = flexOrderCost;
     
     // 🔍 DEBUG: Valores calculados dos campos Flex
     if (String(order.id) === '2000013656902262') {
