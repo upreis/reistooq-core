@@ -462,10 +462,11 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     // special_discount = SOMA de TODOS os promoted_amount do receiver
     // (incluindo loyal, ratio e outros tipos de desconto)
-    const flexSpecialDiscount = costs?.receiver?.discounts?.reduce(
-      (sum: number, d: any) => sum + (d.promoted_amount || 0),
-      0
-    ) || 0;
+    // ✅ VALIDAÇÃO: Garantir que discounts é um array antes de usar reduce
+    const receiverDiscounts = costs?.receiver?.discounts;
+    const flexSpecialDiscount = Array.isArray(receiverDiscounts)
+      ? receiverDiscounts.reduce((sum: number, d: any) => sum + (Number(d.promoted_amount) || 0), 0)
+      : 0;
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
@@ -479,6 +480,22 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              shipping?.logistic_type || 
                              detailedShipping?.logistic_type || 
                              null;
+    
+    // 🔍 DEBUG FLEX: Log detalhado dos valores calculados
+    if (flexOrderCost > 0 || flexSpecialDiscount > 0) {
+      console.log(`[unified-orders:${cid}] 💰 FLEX AUDIT - Pedido ${order.id}:`, {
+        costs_exists: !!costs,
+        receiver_exists: !!costs?.receiver,
+        discounts_is_array: Array.isArray(receiverDiscounts),
+        discounts_count: receiverDiscounts?.length || 0,
+        gross_amount: costs?.gross_amount,
+        flexOrderCost,
+        flexSpecialDiscount,
+        flexNetCost,
+        receitaFlexCalculada,
+        flexLogisticType
+      });
+    }
     
     // 🔍 DEBUG: Valores calculados dos campos Flex
     if (String(order.id) === '2000013656902262') {
