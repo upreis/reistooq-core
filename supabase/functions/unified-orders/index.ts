@@ -460,9 +460,12 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     // order_cost = gross_amount (valor bruto do envio)
     const flexOrderCost = costs?.gross_amount || 0;
     
-    // special_discount = promoted_amount do desconto loyal
-    const loyalDiscount = costs?.receiver?.discounts?.find((d: any) => d.type === 'loyal');
-    const flexSpecialDiscount = loyalDiscount?.promoted_amount || 0;
+    // special_discount = SOMA de TODOS os promoted_amount do receiver
+    // (incluindo loyal, ratio e outros tipos de desconto)
+    const flexSpecialDiscount = costs?.receiver?.discounts?.reduce(
+      (sum: number, d: any) => sum + (d.promoted_amount || 0),
+      0
+    ) || 0;
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
