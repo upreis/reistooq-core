@@ -465,6 +465,13 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              detailedShipping?.logistic_type || 
                              null;
     
+    // 🔍 DEBUG PROFUNDO: Estrutura do objeto costs
+    if (order.id === '2000013656902262') {
+      console.log(`[unified-orders:${cid}] 🔍 ESTRUTURA COSTS - Pedido ${order.id}:`);
+      console.log(`  shipping.costs =`, JSON.stringify(shipping?.costs, null, 2));
+      console.log(`  detailedShipping.costs =`, JSON.stringify(detailedShipping?.costs, null, 2));
+    }
+    
     // Debug TIPO LOGÍSTICO de TODOS os pedidos - EXPANDIDO
     console.log(`[unified-orders:${cid}] 📦 TIPO LOGÍSTICO Pedido ${order.id}:`, {
       // Valor final usado
