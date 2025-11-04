@@ -2,7 +2,58 @@ import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } fro
 import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
-import { mapShipmentCostsData } from "../ml-api-direct/mappers/costs-mapper.ts";
+
+// ============= COSTS MAPPER (inline) =============
+// Função copiada para dentro da edge function (não pode importar de outras pastas)
+function mapShipmentCostsData(costsData: any) {
+  if (!costsData) return null;
+
+  const receiverDiscounts = costsData.receiver?.discounts || [];
+  const senderCharges = costsData.senders?.[0]?.charges || {};
+  
+  // ✅ VALIDAÇÃO: Garantir que receiverDiscounts é array e somar com segurança
+  const totalReceiverDiscounts = Array.isArray(receiverDiscounts)
+    ? receiverDiscounts.reduce(
+        (sum: number, d: any) => sum + (Number(d.promoted_amount) || 0),
+        0
+      )
+    : 0;
+
+  return {
+    // Custo bruto de envio
+    gross_amount: costsData.gross_amount || 0,
+    
+    // Custos e descontos do comprador
+    receiver: {
+      cost: costsData.receiver?.cost || 0,
+      discounts: receiverDiscounts,
+      total_discount_amount: totalReceiverDiscounts,
+      // Manter campos individuais para compatibilidade
+      loyal_discount_amount: receiverDiscounts.find((d: any) => d.type === 'loyal')?.promoted_amount || 0,
+      loyal_discount_rate: receiverDiscounts.find((d: any) => d.type === 'loyal')?.rate || 0
+    },
+    
+    // Custos e cobranças do vendedor
+    sender: {
+      cost: costsData.senders?.[0]?.cost || 0,
+      charge_flex: senderCharges.charge_flex || 0,
+      charges: senderCharges
+    },
+    
+    // Campos calculados para Flex
+    // order_cost = gross_amount (custo que o seller recebe do ML por fazer entrega Flex)
+    order_cost: costsData.gross_amount || 0,
+    
+    // special_discount = SOMA de TODOS os promoted_amount dos descontos do receiver
+    special_discount: totalReceiverDiscounts,
+    
+    // net_cost = order_cost - special_discount
+    net_cost: (costsData.gross_amount || 0) - totalReceiverDiscounts,
+    
+    // Full raw data
+    raw_data: costsData
+  };
+}
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
