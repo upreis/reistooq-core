@@ -144,9 +144,26 @@ function SimplePedidosPage({ className }: Props) {
           Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
         );
         
-        if (!hasAdvancedColumns) {
+        // 🚫 FORÇAR REMOÇÃO DE COLUNAS OCULTAS DO CACHE
+        const colunasOcultas = [
+          'receita_flex', 
+          'frete_pago_cliente', 
+          'custo_envio_seller', 
+          'flex_order_cost', 
+          'flex_special_discount', 
+          'flex_net_cost', 
+          'payment_type',
+          'flex_payment_value',
+          'coupon_amount'
+        ];
+        
+        const temColunasOcultas = colunasOcultas.some(col =>
+          Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
+        );
+        
+        if (!hasAdvancedColumns || temColunasOcultas) {
           localStorage.removeItem('pedidos-column-preferences');
-          console.log('🔄 [F4.1] Cache de colunas atualizado para incluir colunas avançadas');
+          console.log('🔄 [CACHE] Cache de colunas atualizado - colunas ocultas removidas');
         }
       }
       
