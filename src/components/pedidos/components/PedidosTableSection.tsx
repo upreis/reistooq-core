@@ -376,74 +376,29 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            
                            // Nova lógica: APENAS para Envios Flex, se atender todas as condições, aplicar 10%
                            if (receitaFlex > 0 && logisticType === 'self_service') {
-                             const condition = String(order?.condition || order?.unified?.condition || '').toLowerCase();
+                             // Buscar condition exatamente como a coluna 'conditions' faz
+                             const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
+                             const condition = String(conditionRaw).toLowerCase();
+                             
+                             // Reputação já está correto
                              const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
-                             const medalha = order?.seller_reputation?.power_seller_status || order?.unified?.seller_reputation?.power_seller_status || null;
-                             const valorTotal = order?.total_amount || order?.unified?.total_amount || 0;
                              
-                             // Auditoria completa de cada condição
-                             const auditoria = {
-                               orderId: order.id,
-                               receitaFlexOriginal: receitaFlex,
-                               // Condição 1: Tipo Logístico
-                               tipoLogistico: {
-                                 valor: logisticType,
-                                 esperado: 'self_service',
-                                 passou: logisticType === 'self_service'
-                               },
-                               // Condição 2: Condição do Produto
-                               condicao: {
-                                 valor: condition,
-                                 rawValue: order?.condition || order?.unified?.condition,
-                                 esperado: 'new',
-                                 passou: condition === 'new'
-                               },
-                               // Condição 3: Reputação
-                               reputacao: {
-                                 valor: reputation,
-                                 rawValue: order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id,
-                                 esperado: 'contém green',
-                                 passou: reputation.includes('green')
-                               },
-                               // Condição 4: Medalha
-                               medalha: {
-                                 valor: medalha,
-                                 rawValue: medalha,
-                                 esperado: 'não nulo e ≠ "Sem Medalha"',
-                                 passou: medalha && medalha !== 'Sem Medalha'
-                               },
-                               // Condição 5: Valor Total
-                               valorTotal: {
-                                 valor: valorTotal,
-                                 rawValue: order?.total_amount || order?.unified?.total_amount,
-                                 esperado: '> 79.00',
-                                 passou: valorTotal > 79.00
-                               },
-                               // Resultado final
-                               todasCondicoesPasaram: false
-                             };
+                             // Buscar medalha exatamente como a coluna 'power_seller_status' faz
+                             const medalha = order.power_seller_status || 
+                                            order.unified?.power_seller_status || 
+                                            order.raw?.power_seller_status ||
+                                            order.raw?.seller_reputation?.power_seller_status ||
+                                            order.raw?.sellerReputation?.power_seller_status ||
+                                            order.seller_reputation?.power_seller_status ||
+                                            order.unified?.seller_reputation?.power_seller_status ||
+                                            null;
                              
-                             auditoria.todasCondicoesPasaram = 
-                               auditoria.tipoLogistico.passou &&
-                               auditoria.condicao.passou &&
-                               auditoria.reputacao.passou &&
-                               auditoria.medalha.passou &&
-                               auditoria.valorTotal.passou;
-                             
-                             console.log('🔍 [AUDITORIA RECEITA FLEX 10%]', auditoria);
+                             // Buscar valor total exatamente como a coluna 'valor_total' faz
+                             const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
                              
                              // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha≠null E ValorTotal>79
                              if (condition === 'new' && reputation.includes('green') && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
-                               const receitaFlexOriginal = receitaFlex;
                                receitaFlex = receitaFlex * 0.1; // Aplicar 10%
-                               console.log('✅ [RECEITA FLEX 10%] Desconto aplicado!', {
-                                 orderId: order.id,
-                                 original: receitaFlexOriginal,
-                                 novo: receitaFlex,
-                                 percentualAplicado: '10%'
-                               });
-                             } else {
-                               console.log('❌ [RECEITA FLEX 10%] Condições NÃO atendidas - mantendo valor original');
                              }
                            }
                            
