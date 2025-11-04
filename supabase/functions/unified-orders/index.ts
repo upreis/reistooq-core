@@ -496,18 +496,24 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const shipmentId = shipping?.id || detailedShipping?.id;
     const grossAmountRaw = costs?.gross_amount;
     
+    // Verificar se há duplicação por múltiplos items/shipments
+    const orderItemsCount = order.order_items?.length || 0;
+    const allShipmentsCount = order.shipping?.length || 0;
+    
     console.log(`[unified-orders:${cid}] 🚨 DEBUG GROSS_AMOUNT - Pedido ${order.id}:`, {
+      cliente: shipping?.destination?.receiver_name || detailedShipping?.destination?.receiver_name,
       shipment_id: shipmentId,
       gross_amount_raw: grossAmountRaw,
+      order_items_count: orderItemsCount,
+      all_shipments_count: allShipmentsCount,
+      receiver_discounts: costs?.receiver?.discounts,
       costs_structure: {
         gross_amount: costs?.gross_amount,
         receiver_cost: costs?.receiver?.cost,
         senders_cost: costs?.senders?.[0]?.cost,
         has_multiple_senders: costs?.senders?.length > 1
       },
-      shipping_id: shipping?.id,
-      detailedShipping_id: detailedShipping?.id,
-      has_multiple_shipments: order.shipping?.length > 1
+      is_exact_double: grossAmountRaw === (costs?.receiver?.discounts?.[0]?.promoted_amount || 0) * 2
     });
     
     // order_cost = gross_amount (valor bruto do envio)
