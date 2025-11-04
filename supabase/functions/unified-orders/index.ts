@@ -494,6 +494,14 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     // 🔒 VALORES FLEX: Só aparecem se logistic_type = 'self_service'
     const isSelfService = flexLogisticType === 'self_service';
     
+    // 🔍 DEBUG: Verificar filtro self_service
+    console.log(`[unified-orders:${cid}] 🔐 Pedido ${order.id}:`, {
+      flexLogisticType,
+      isSelfService,
+      hasCosts: !!costs,
+      grossAmount: costs?.gross_amount
+    });
+    
     // order_cost = gross_amount (valor bruto do envio)
     const flexOrderCost = isSelfService ? (costs?.gross_amount || 0) : 0;
     
