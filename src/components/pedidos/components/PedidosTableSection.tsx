@@ -537,27 +537,30 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          const levelId = order.level_id || order.unified?.level_id || order.raw?.seller_reputation?.level_id;
                          if (!levelId) return <span className="text-xs text-muted-foreground">—</span>;
                          
-                         // Mapeamento conforme documentação do ML
-                         const reputationMap: Record<string, { text: string; bgColor: string; textColor: string }> = {
-                           '5_green': { text: 'Excelente', bgColor: '#00a650', textColor: '#fff' },
-                           '4_light_green': { text: 'Muito Boa', bgColor: '#aad400', textColor: '#333' },
-                           '3_yellow': { text: 'Boa', bgColor: '#fff159', textColor: '#333' },
-                           '2_orange': { text: 'Regular', bgColor: '#f7942d', textColor: '#fff' },
-                           '1_red': { text: 'Ruim', bgColor: '#f25346', textColor: '#fff' }
+                         // Extrair a cor do level_id (formato: "5_green")
+                         const parts = String(levelId).split('_');
+                         const cor = parts.length > 1 ? parts[1] : levelId;
+                         
+                         // Mapeamento de cores
+                         const colorMap: Record<string, { bgColor: string; textColor: string }> = {
+                           'green': { bgColor: '#00a650', textColor: '#fff' },
+                           'light_green': { bgColor: '#aad400', textColor: '#333' },
+                           'yellow': { bgColor: '#fff159', textColor: '#333' },
+                           'orange': { bgColor: '#f7942d', textColor: '#fff' },
+                           'red': { bgColor: '#f25346', textColor: '#fff' }
                          };
                          
-                         const reputation = reputationMap[levelId];
-                         if (!reputation) return <span className="text-xs text-muted-foreground">Sem Reputação</span>;
+                         const colorInfo = colorMap[cor] || { bgColor: '#e0e0e0', textColor: '#666' };
                          
                          return (
                            <span 
-                             className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                             className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize"
                              style={{ 
-                               backgroundColor: reputation.bgColor, 
-                               color: reputation.textColor 
+                               backgroundColor: colorInfo.bgColor, 
+                               color: colorInfo.textColor 
                              }}
                            >
-                             {reputation.text}
+                             {cor}
                            </span>
                          );
                        }
