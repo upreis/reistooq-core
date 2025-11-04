@@ -529,16 +529,18 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
-    // RECEITA FLEX = order_cost quando logistic_type = 'self_service'
-    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
-    const receitaFlexCalculada = flexOrderCost;
-    
     // Procurar logistic_type em todas as possíveis localizações
     const flexLogisticType = shipping?.logistic?.type || 
                              detailedShipping?.logistic?.type || 
                              shipping?.logistic_type || 
                              detailedShipping?.logistic_type || 
                              null;
+    
+    // RECEITA FLEX = special_discount quando logistic_type = 'self_service' (Envios Flex)
+    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
+    const receitaFlexCalculada = flexLogisticType === 'self_service' 
+      ? flexSpecialDiscount 
+      : flexOrderCost;
     
     // 🔍 DEBUG FLEX: Log detalhado dos valores calculados
     if (flexOrderCost > 0 || flexSpecialDiscount > 0) {
@@ -551,8 +553,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
         flexOrderCost,
         flexSpecialDiscount,
         flexNetCost,
-        receitaFlexCalculada,
-        flexLogisticType
+        flexLogisticType,
+        is_self_service: flexLogisticType === 'self_service',
+        receitaFlexCalculada_NOVA: receitaFlexCalculada,
+        logic_applied: flexLogisticType === 'self_service' ? 'SPECIAL_DISCOUNT' : 'ORDER_COST'
       });
     }
     
