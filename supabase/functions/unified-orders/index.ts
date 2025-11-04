@@ -416,7 +416,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const feedback = order.feedback || {};
     
     // 🔍 DEBUG PROFUNDO: Log IMEDIATO da estrutura costs (ANTES de qualquer processamento)
-    if (order.id === '2000013656902262') {
+    if (String(order.id) === '2000013656902262') {
       console.log(`[unified-orders:${cid}] 🔍 === ESTRUTURA COSTS RAW - Pedido ${order.id} ===`);
       console.log(`[unified-orders:${cid}]   shipping existe:`, !!shipping);
       console.log(`[unified-orders:${cid}]   shipping.costs existe:`, !!shipping?.costs);
@@ -478,7 +478,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              null;
     
     // 🔍 DEBUG PROFUNDO: Estrutura do objeto costs
-    if (order.id === '2000013656902262') {
+    if (String(order.id) === '2000013656902262') {
       console.log(`[unified-orders:${cid}] 🔍 ESTRUTURA COSTS - Pedido ${order.id}:`);
       console.log(`  shipping.costs =`, JSON.stringify(shipping?.costs, null, 2));
       console.log(`  detailedShipping.costs =`, JSON.stringify(detailedShipping?.costs, null, 2));
