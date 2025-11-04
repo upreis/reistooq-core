@@ -384,10 +384,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.valor_frete || 0;
                        return <span>{formatMoney(fretePagoCliente)}</span>;
                      case 'receita_flex':
-                        const receitaFlex = order.receita_flex || 
-                                          order.unified?.receita_flex ||
-                                          getReceitaPorEnvio(order);
-                        return <span>{formatMoney(receitaFlex)}</span>;
+                        {
+                          // Pegar o tipo logístico da ordem
+                          const logisticType = String(
+                            order?.shipping?.logistic?.type || 
+                            order?.unified?.shipping?.logistic?.type ||
+                            order?.logistic_type || 
+                            order?.unified?.logistic_type ||
+                            order?.flex_logistic_type ||
+                            ''
+                          ).toLowerCase();
+                          
+                          // Se for 'self_service' (Envios Flex), pegar o flex_special_discount
+                          // Caso contrário, retornar 0
+                          const receitaFlex = logisticType === 'self_service'
+                            ? (order.flex_special_discount || order.unified?.flex_special_discount || 0)
+                            : 0;
+                          
+                          return <span>{formatMoney(receitaFlex)}</span>;
+                        }
                       case 'flex_payment_value':
                         const flexPaymentValue = order.flex_payment_value || 
                                                 order.unified?.flex_payment_value || 0;
