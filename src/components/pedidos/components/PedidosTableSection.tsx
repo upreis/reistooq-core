@@ -207,9 +207,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     className={cn(
                       "px-4 h-12 text-sm text-muted-foreground font-medium text-left",
                       // Colunas SKU com largura ajustada ao conteúdo
-                      (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
+                      (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
+                      // Tipo Logístico sem quebra de linha
+                      def.key === 'logistic_type' && "whitespace-nowrap"
                     )}
-                    style={(def as any).width ? { minWidth: `${(def as any).width}px` } : undefined}
+                    style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                   >
                     {def.label}
                   </th>
@@ -1010,9 +1012,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         className={cn(
                           "px-4 text-center",
                           // Colunas SKU com largura ajustada ao conteúdo
-                          (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
+                          (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
+                          // Tipo Logístico sem quebra de linha
+                          def.key === 'logistic_type' && "whitespace-nowrap"
                         )}
-                        style={(def as any).width ? { minWidth: `${(def as any).width}px` } : undefined}
+                        style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                       >
                         <span className="text-xs">{renderCell(def.key)}</span>
                       </td>

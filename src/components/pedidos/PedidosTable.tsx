@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonTable } from '@/components/ui/skeleton-table';
 import { PedidosTableRow } from './PedidosTableRow';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -226,8 +227,11 @@ export function PedidosTable({
               {visibleColumnConfigs.map((col) => (
                 <TableHead 
                   key={col.key} 
-                  className="whitespace-nowrap"
-                  style={(col as any).width ? { minWidth: `${(col as any).width}px` } : undefined}
+                  className={cn(
+                    "whitespace-nowrap",
+                    col.key === 'logistic_type' && "whitespace-nowrap"
+                  )}
+                  style={(col as any).width ? { minWidth: `${(col as any).width}px`, width: `${(col as any).width}px` } : undefined}
                 >
                   {col.label}
                 </TableHead>
