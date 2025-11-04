@@ -481,8 +481,8 @@ function SimplePedidosPage({ className }: Props) {
       const medalha = order?.seller_reputation?.power_seller_status || order?.unified?.seller_reputation?.power_seller_status || null;
       const valorTotal = order?.total_amount || order?.unified?.total_amount || 0;
       
-      // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação=Verde E Medalha≠null E ValorTotal>79
-      if (condition === 'new' && reputation === 'green' && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
+      // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha≠null E ValorTotal>79
+      if (condition === 'new' && reputation.includes('green') && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
         receitaFlex = receitaFlex * 0.1; // Aplicar 10%
       }
     }

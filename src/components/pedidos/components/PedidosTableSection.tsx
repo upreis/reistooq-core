@@ -381,9 +381,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                              const medalha = order?.seller_reputation?.power_seller_status || order?.unified?.seller_reputation?.power_seller_status || null;
                              const valorTotal = order?.total_amount || order?.unified?.total_amount || 0;
                              
-                             // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação=Verde E Medalha≠null E ValorTotal>79
-                             if (condition === 'new' && reputation === 'green' && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
+                             // Debug log
+                             console.log('🔍 [RECEITA FLEX 10%] Verificando condições:', {
+                               orderId: order.id,
+                               condition,
+                               reputation,
+                               medalha,
+                               valorTotal,
+                               receitaFlexOriginal: receitaFlex
+                             });
+                             
+                             // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha≠null E ValorTotal>79
+                             if (condition === 'new' && reputation.includes('green') && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
+                               const receitaFlexOriginal = receitaFlex;
                                receitaFlex = receitaFlex * 0.1; // Aplicar 10%
+                               console.log('✅ [RECEITA FLEX 10%] Desconto aplicado!', {
+                                 orderId: order.id,
+                                 original: receitaFlexOriginal,
+                                 novo: receitaFlex
+                               });
                              }
                            }
                            
