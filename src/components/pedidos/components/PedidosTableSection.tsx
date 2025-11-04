@@ -381,15 +381,56 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                              const medalha = order?.seller_reputation?.power_seller_status || order?.unified?.seller_reputation?.power_seller_status || null;
                              const valorTotal = order?.total_amount || order?.unified?.total_amount || 0;
                              
-                             // Debug log
-                             console.log('🔍 [RECEITA FLEX 10%] Verificando condições:', {
+                             // Auditoria completa de cada condição
+                             const auditoria = {
                                orderId: order.id,
-                               condition,
-                               reputation,
-                               medalha,
-                               valorTotal,
-                               receitaFlexOriginal: receitaFlex
-                             });
+                               receitaFlexOriginal: receitaFlex,
+                               // Condição 1: Tipo Logístico
+                               tipoLogistico: {
+                                 valor: logisticType,
+                                 esperado: 'self_service',
+                                 passou: logisticType === 'self_service'
+                               },
+                               // Condição 2: Condição do Produto
+                               condicao: {
+                                 valor: condition,
+                                 rawValue: order?.condition || order?.unified?.condition,
+                                 esperado: 'new',
+                                 passou: condition === 'new'
+                               },
+                               // Condição 3: Reputação
+                               reputacao: {
+                                 valor: reputation,
+                                 rawValue: order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id,
+                                 esperado: 'contém green',
+                                 passou: reputation.includes('green')
+                               },
+                               // Condição 4: Medalha
+                               medalha: {
+                                 valor: medalha,
+                                 rawValue: medalha,
+                                 esperado: 'não nulo e ≠ "Sem Medalha"',
+                                 passou: medalha && medalha !== 'Sem Medalha'
+                               },
+                               // Condição 5: Valor Total
+                               valorTotal: {
+                                 valor: valorTotal,
+                                 rawValue: order?.total_amount || order?.unified?.total_amount,
+                                 esperado: '> 79.00',
+                                 passou: valorTotal > 79.00
+                               },
+                               // Resultado final
+                               todasCondicoesPasaram: false
+                             };
+                             
+                             auditoria.todasCondicoesPasaram = 
+                               auditoria.tipoLogistico.passou &&
+                               auditoria.condicao.passou &&
+                               auditoria.reputacao.passou &&
+                               auditoria.medalha.passou &&
+                               auditoria.valorTotal.passou;
+                             
+                             console.log('🔍 [AUDITORIA RECEITA FLEX 10%]', auditoria);
                              
                              // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha≠null E ValorTotal>79
                              if (condition === 'new' && reputation.includes('green') && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
@@ -398,8 +439,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                console.log('✅ [RECEITA FLEX 10%] Desconto aplicado!', {
                                  orderId: order.id,
                                  original: receitaFlexOriginal,
-                                 novo: receitaFlex
+                                 novo: receitaFlex,
+                                 percentualAplicado: '10%'
                                });
+                             } else {
+                               console.log('❌ [RECEITA FLEX 10%] Condições NÃO atendidas - mantendo valor original');
                              }
                            }
                            
