@@ -163,12 +163,12 @@ const SHIPPING_METHOD_TYPE_TRANSLATIONS: Record<string, string> = {
 
 // Mapeamento de traduções para tipos logísticos
 const LOGISTIC_TYPE_TRANSLATIONS: Record<string, string> = {
-  'drop_off': 'Retirada',
+  'drop_off': 'Correio ou Ponto de Entrega',
+  'xd_drop_off': 'Ponto de Coleta',
   'self_service': 'Envios Flex',
   'cross_docking': 'Cross Docking',
   'fulfillment': 'Full',
   'flex': 'Flex',
-  'xd_drop_off': 'XD Retirada',
   'carrier': 'Transportadora'
 };
 

@@ -46,7 +46,8 @@ const SUBSTATUS_MAP: Record<string, string> = {
 
 // ✅ TIPOS LOGÍSTICOS: Mapeamento
 const LOGISTIC_TYPE_MAP: Record<string, string> = {
-  'drop_off': 'Drop Off',
+  'drop_off': 'Correio ou Ponto de Entrega',
+  'xd_drop_off': 'Ponto de Coleta',
   'custom': 'Personalizado', 
   'self_service': 'Envios Flex',
   'flex': 'Flex',
