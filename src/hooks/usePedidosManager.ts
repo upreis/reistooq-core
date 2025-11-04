@@ -918,22 +918,28 @@ export function usePedidosManager(initialAccountId?: string) {
       // Buscar correspondente nos dados RAW para preservar informações completas
       const rawData = rawList.find((r: any) => r.id === o.id) || rawList[index] || {};
       
-      // ✅ CORREÇÃO: Usar função extractCpfCnpj otimizada do extractors.ts
-      // Remove busca profunda que pode retornar valor duplicado
+      // ✅ CORREÇÃO: Extração direta com prioridade correta incluindo raw
       const extractCpfCnpjLocal = (order: any): string => {
-        // Buscar de múltiplas fontes prioritárias
+        // Buscar de múltiplas fontes prioritárias (incluindo raw)
         const rawDoc = order.cpf_cnpj || 
                        order.unified?.cpf_cnpj || 
                        order.documento_cliente ||
                        order.cliente_documento ||
                        order.buyer?.identification?.number ||
+                       order.raw?.buyer?.identification?.number ||
                        order.payments?.[0]?.payer?.identification?.number ||
-                       order.unified?.payments?.[0]?.payer?.identification?.number;
+                       order.unified?.payments?.[0]?.payer?.identification?.number ||
+                       order.raw?.payments?.[0]?.payer?.identification?.number;
         
         return rawDoc ? rawDoc.toString().trim() : '';
       };
 
       const cpfCnpjValue = extractCpfCnpjLocal(o) || extractCpfCnpjLocal(rawData);
+      
+      // 🔍 DEBUG: Log temporário para verificar extração
+      if (cpfCnpjValue) {
+        console.log(`[CPF/CNPJ] Pedido ${o.id || rawData.id}: ${cpfCnpjValue.substring(0, 8)}...`);
+      }
 
       return {
         ...o,
