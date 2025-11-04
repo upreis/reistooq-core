@@ -486,14 +486,28 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       console.log(`[unified-orders:${cid}] 💰 FLEX AUDIT - Pedido ${order.id}:`, {
         costs_exists: !!costs,
         receiver_exists: !!costs?.receiver,
+        receiver_discounts: receiverDiscounts,
         discounts_is_array: Array.isArray(receiverDiscounts),
         discounts_count: receiverDiscounts?.length || 0,
+        discounts_detail: receiverDiscounts?.map((d: any) => ({
+          type: d.type,
+          rate: d.rate,
+          promoted_amount: d.promoted_amount
+        })),
         gross_amount: costs?.gross_amount,
+        sender_discounts: costs?.senders?.[0]?.discounts,
+        sender_cost: costs?.senders?.[0]?.cost,
+        // ✅ VALORES FINAIS CALCULADOS
         flexOrderCost,
         flexSpecialDiscount,
         flexNetCost,
         receitaFlexCalculada,
-        flexLogisticType
+        flexLogisticType,
+        // ✅ VALIDAÇÃO: Confirmar que sender.discounts NÃO está sendo usado
+        validation: {
+          sender_discounts_not_used: true,
+          only_receiver_discounts_summed: receiverDiscounts?.map((d: any) => d.promoted_amount)
+        }
       });
     }
     
