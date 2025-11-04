@@ -594,7 +594,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
       receita_flex: receitaFlex,
-      desconto_cupom: order.coupon?.amount || 0,
+      // Desconto Cupom: Prioriza desconto especial Flex, senão usa cupom normal
+      desconto_cupom: (flexLogisticType === 'self_service' && flexSpecialDiscount > 0) 
+        ? flexSpecialDiscount 
+        : (order.coupon?.amount || 0),
       taxa_marketplace: order.marketplace_fee || 0,
       custo_envio_seller: custoEnvioSeller,
       
