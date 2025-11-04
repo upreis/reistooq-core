@@ -399,37 +399,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
                     
-                    // 💰 FLEX: Campos Detalhados
-                    case 'flex_order_cost':
-                      {
-                        // 🔧 HELPER: Processar flex_order_cost com divisão por 2
-                        const getFlexOrderCostProcessed = (order: any): number => {
-                          let flexCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
-                          if (flexCost <= 0) return 0;
-                          
-                          // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
-                          // Caso contrário → divide por 2
-                          const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-                          if (!valoresFixos.includes(flexCost)) {
-                            flexCost = flexCost / 2;
-                          }
-                          return flexCost;
-                        };
-                        
-                        const flexOrderCost = getFlexOrderCostProcessed(order);
-                        return <span className="text-blue-600 font-medium">{formatMoney(flexOrderCost)}</span>;
-                      }
-                    case 'flex_special_discount':
-                      {
-                        const flexDiscount = order.flex_special_discount || order.unified?.flex_special_discount || 0;
-                        return <span className="text-orange-600 font-medium">{formatMoney(flexDiscount)}</span>;
-                      }
-                    case 'flex_net_cost':
-                      {
-                        const flexNetCost = order.flex_net_cost || order.unified?.flex_net_cost || 0;
-                        return <span className="text-green-600 font-semibold">{formatMoney(flexNetCost)}</span>;
-                      }
-                    
                     case 'marketplace_fee':
                       {
                         const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
