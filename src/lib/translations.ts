@@ -138,7 +138,7 @@ const SHIPPING_SUBSTATUS_TRANSLATIONS: Record<string, string> = {
 const SHIPPING_MODE_TRANSLATIONS: Record<string, string> = {
   'me1': 'Mercado Envios 1',
   'me2': 'Mercado Envios 2',
-  'self_service': 'Modalidade Própria',
+  'self_service': 'Envios Flex',
   'custom': 'Personalizado',
   'not_specified': 'Não Especificado',
   'fulfillment': 'Full'
@@ -158,13 +158,13 @@ const SHIPPING_METHOD_TYPE_TRANSLATIONS: Record<string, string> = {
   'fulfillment': 'Full',
   'me1': 'Mercado Envios 1',
   'me2': 'Mercado Envios 2',
-  'self_service': 'Modalidade Própria'
+  'self_service': 'Envios Flex'
 };
 
 // Mapeamento de traduções para tipos logísticos
 const LOGISTIC_TYPE_TRANSLATIONS: Record<string, string> = {
   'drop_off': 'Retirada',
-  'self_service': 'Modalidade Própria',
+  'self_service': 'Envios Flex',
   'cross_docking': 'Cross Docking',
   'fulfillment': 'Full',
   'flex': 'Flex',

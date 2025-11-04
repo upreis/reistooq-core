@@ -48,7 +48,7 @@ const SUBSTATUS_MAP: Record<string, string> = {
 const LOGISTIC_TYPE_MAP: Record<string, string> = {
   'drop_off': 'Drop Off',
   'custom': 'Personalizado', 
-  'self_service': 'Auto Atendimento',
+  'self_service': 'Envios Flex',
   'flex': 'Flex',
   'fulfillment': 'Fulfillment',
   'cross_docking': 'Cross Docking',
@@ -98,8 +98,8 @@ export function formatLogisticType(type: string | null | undefined): string {
     .replace(/[\u0300-\u036f]/g, '') // Remove acentos
     .replace(/\s+/g, '_'); // Substitui espaços por underscores
   
-  // Caso especial: self service = Flex
-  if (normalized === 'self_service') return 'Flex';
+  // Caso especial: self service = Envios Flex
+  if (normalized === 'self_service') return 'Envios Flex';
   
   return LOGISTIC_TYPE_MAP[normalized] || formatPt(type);
 }
