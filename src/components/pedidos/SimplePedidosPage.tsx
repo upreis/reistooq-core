@@ -137,7 +137,7 @@ function SimplePedidosPage({ className }: Props) {
       }
       
       // 🔄 VERSÃO DO CACHE - Forçar limpeza quando há mudanças no sistema de colunas
-      const COLUMN_CACHE_VERSION = 2; // Incrementar quando houver mudanças nas colunas padrão
+      const COLUMN_CACHE_VERSION = 3; // Incrementado: remoção completa de 4 colunas
       const columnCache = validateAndGet('pedidos-column-preferences', null);
       
       if (columnCache && typeof columnCache === 'object') {
@@ -589,7 +589,6 @@ function SimplePedidosPage({ className }: Props) {
     
     // 💰 FLEX & CUSTOS (Ocultos por padrão)
     { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: false, category: 'financial' },
-    { key: 'frete_pago_cliente', label: 'Frete Vendedor/Comprador', default: false, category: 'financial' },
     { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
     { key: 'flex_order_cost', label: 'Flex: Custo Pedido', default: false, category: 'financial' },
     { key: 'flex_special_discount', label: 'Flex: Desconto Especial', default: false, category: 'financial' },
@@ -599,7 +598,6 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
-    { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
 
     // Mapeamento  
     { key: 'cpf_cnpj', label: 'CPF/CNPJ', default: true, category: 'mapping' },

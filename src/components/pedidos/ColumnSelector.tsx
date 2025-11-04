@@ -38,14 +38,10 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   
   // 💰 FLEX & CUSTOS (Ocultos por padrão)
   { key: 'receita_flex', label: 'Receita Flex (Bônus)', visible: false, category: 'financial' },
-  { key: 'frete_pago_cliente', label: 'Frete Vendedor/Comprador', visible: false, category: 'financial' },
   { key: 'custo_envio_seller', label: 'Custo Envio Seller', visible: false, category: 'financial' },
   { key: 'flex_order_cost', label: 'Flex: Custo Pedido', visible: false, category: 'financial' },
   { key: 'flex_special_discount', label: 'Flex: Desconto Especial', visible: false, category: 'financial' },
   { key: 'flex_net_cost', label: 'Flex: Custo Líquido', visible: false, category: 'financial' },
-  { key: 'payment_type', label: 'Tipo Pagamento', visible: false, category: 'financial' },
-  { key: 'flex_payment_value', label: 'Flex - Valor Recebido', visible: false, category: 'financial' },
-  { key: 'coupon_amount', label: 'Desconto Cupom', visible: false, category: 'financial' },
   
   // Colunas de mapeamento
   { key: 'sku_estoque', label: 'SKU Estoque', visible: true, category: 'mapping' },
