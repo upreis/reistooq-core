@@ -213,7 +213,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       // Tags com quebra permitida
                       def.key === 'tags' && "break-words"
                     )}
-                    style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
+                    style={
+                      def.key === 'tags' 
+                        ? { minWidth: '150px', width: '150px', maxWidth: '150px' }
+                        : (def as any).width 
+                          ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } 
+                          : undefined
+                    }
                   >
                     {def.label}
                   </th>
