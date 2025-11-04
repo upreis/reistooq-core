@@ -366,10 +366,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             ''
                           ).toLowerCase();
                           
-                          // Se for 'self_service' (Envios Flex), pegar o flex_special_discount
+                          // Se for 'self_service' (Envios Flex), pegar o flex_order_cost
                           // Caso contrário, retornar 0
                           const receitaFlex = logisticType === 'self_service'
-                            ? (order.flex_special_discount || order.unified?.flex_special_discount || 0)
+                            ? (order.flex_order_cost || order.unified?.flex_order_cost || 0)
                             : 0;
                           
                           return <span>{formatMoney(receitaFlex)}</span>;
@@ -432,7 +432,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         ).toLowerCase();
                         
                         const receitaFlex = logisticTypeForCalc === 'self_service'
-                          ? (order.flex_special_discount || order.unified?.flex_special_discount || 0)
+                          ? (order.flex_order_cost || order.unified?.flex_order_cost || 0)
                           : 0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 

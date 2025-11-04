@@ -467,10 +467,10 @@ function SimplePedidosPage({ className }: Props) {
 
     const logisticType = String(rawType || '').toLowerCase();
     
-    // Se for 'self_service' (Envios Flex), retornar flex_special_discount
+    // Se for 'self_service' (Envios Flex), retornar flex_order_cost
     // Caso contrário, retornar 0
     if (logisticType === 'self_service') {
-      return order?.flex_special_discount || order?.unified?.flex_special_discount || 0;
+      return order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
     }
     
     return 0;
