@@ -356,61 +356,52 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.shipping?.costs?.receiver?.cost || 
                                               order.valor_frete || 0;
                        return <span>{formatMoney(fretePagoCliente)}</span>;
-                       case 'receita_flex':
-                          {
-                            // Pegar o tipo logístico da ordem
-                            const logisticType = String(
-                              order?.shipping?.logistic?.type || 
-                              order?.unified?.shipping?.logistic?.type ||
-                              order?.logistic_type || 
-                              order?.unified?.logistic_type ||
-                              order?.flex_logistic_type ||
-                              ''
-                            ).toLowerCase();
-                            
-                            // Se não for 'self_service' (Envios Flex), retornar 0
-                            if (logisticType !== 'self_service') {
-                              return <span>{formatMoney(0)}</span>;
-                            }
-                            
-                            // Pegar o valor base do flex_order_cost
-                            const flexOrderCostBase = order.flex_order_cost || order.unified?.flex_order_cost || 0;
-                            
-                            // Se não houver valor, retornar 0
-                            if (flexOrderCostBase <= 0) {
-                              return <span>{formatMoney(0)}</span>;
-                            }
-                            
-                            // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
-                            const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
-                            
-                            // 🔍 DEBUG COMPLETO
-                            console.log('🔍 [RECEITA FLEX DEBUG]', {
-                              orderId: order.id || order.numero,
-                              flexOrderCostBase,
-                              valorTotal,
-                              valorTotalPassa: valorTotal >= 79.00,
-                              condition: {
-                                raw: order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition,
-                                parsed: String(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '').toLowerCase(),
-                                passa: String(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '').toLowerCase() === 'new'
-                              },
-                              reputation: {
-                                raw: order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id,
-                                parsed: String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase(),
-                                passa: String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase().includes('green')
-                              },
-                              medalha: {
-                                value: order.power_seller_status || order.unified?.power_seller_status || order.raw?.power_seller_status || order.raw?.seller_reputation?.power_seller_status || order.raw?.sellerReputation?.power_seller_status || order.seller_reputation?.power_seller_status || order.unified?.seller_reputation?.power_seller_status || null,
-                                passa: !!(order.power_seller_status || order.unified?.power_seller_status || order.raw?.power_seller_status || order.raw?.seller_reputation?.power_seller_status || order.raw?.sellerReputation?.power_seller_status || order.seller_reputation?.power_seller_status || order.unified?.seller_reputation?.power_seller_status)
-                              }
-                            });
-                            
-                            // Se Valor Total < 79.00 → usar cálculo normal (100%)
-                            if (valorTotal < 79.00) {
-                              console.log('❌ Valor total < 79.00, usando 100%');
-                              return <span>{formatMoney(flexOrderCostBase)}</span>;
-                            }
+                        case 'receita_flex':
+                           {
+                             // 🔧 HELPER: Processar flex_order_cost com divisão por 2
+                             const getFlexOrderCostProcessed = (order: any): number => {
+                               let flexCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                               if (flexCost <= 0) return 0;
+                               
+                               // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
+                               // Caso contrário → divide por 2
+                               const valoresFixos = [8.90, 13.90, 15.90, 15.99];
+                               if (!valoresFixos.includes(flexCost)) {
+                                 flexCost = flexCost / 2;
+                               }
+                               return flexCost;
+                             };
+                             
+                             // Pegar o tipo logístico da ordem
+                             const logisticType = String(
+                               order?.shipping?.logistic?.type || 
+                               order?.unified?.shipping?.logistic?.type ||
+                               order?.logistic_type || 
+                               order?.unified?.logistic_type ||
+                               order?.flex_logistic_type ||
+                               ''
+                             ).toLowerCase();
+                             
+                             // Se não for 'self_service' (Envios Flex), retornar 0
+                             if (logisticType !== 'self_service') {
+                               return <span>{formatMoney(0)}</span>;
+                             }
+                             
+                             // ✅ USAR VALOR PROCESSADO (com divisão por 2 já aplicada)
+                             const flexOrderCostBase = getFlexOrderCostProcessed(order);
+                             
+                             // Se não houver valor, retornar 0
+                             if (flexOrderCostBase <= 0) {
+                               return <span>{formatMoney(0)}</span>;
+                             }
+                             
+                             // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
+                             const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
+                             
+                             // Se Valor Total < 79.00 → usar cálculo normal (100%)
+                             if (valorTotal < 79.00) {
+                               return <span>{formatMoney(flexOrderCostBase)}</span>;
+                             }
                             
                             // Se Valor Total >= 79.00 → verificar todas as outras condições
                             const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
@@ -426,34 +417,23 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                  '';
                             const reputation = String(reputationRaw).toLowerCase();
                             
-                            const medalha = order.power_seller_status || 
-                                           order.unified?.power_seller_status || 
-                                           order.raw?.power_seller_status ||
-                                           order.raw?.seller_reputation?.power_seller_status ||
-                                           order.raw?.sellerReputation?.power_seller_status ||
-                                           order.seller_reputation?.power_seller_status ||
-                                           order.unified?.seller_reputation?.power_seller_status ||
-                                           null;
-                            
-                            // 🔍 DEBUG: Mostrar valores encontrados
-                            console.log('🔍 [VALORES ENCONTRADOS]', {
-                              orderId: order.id || order.numero,
-                              condition,
-                              reputation,
-                              medalha,
-                              todasOK: condition === 'new' && reputation.includes('green') && medalha
-                            });
-                            
-                            // Se TODAS as condições forem atendidas → aplicar 10%
-                            // Senão → usar cálculo normal (100%)
-                            if (condition === 'new' && reputation.includes('green') && medalha) {
-                              console.log('✅ Todas condições OK! Aplicando 10%');
-                              return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
-                            }
-                            
-                            console.log('❌ Alguma condição falhou, usando 100%');
-                            return <span>{formatMoney(flexOrderCostBase)}</span>;
-                          }
+                             const medalha = order.power_seller_status || 
+                                            order.unified?.power_seller_status || 
+                                            order.raw?.power_seller_status ||
+                                            order.raw?.seller_reputation?.power_seller_status ||
+                                            order.raw?.sellerReputation?.power_seller_status ||
+                                            order.seller_reputation?.power_seller_status ||
+                                            order.unified?.seller_reputation?.power_seller_status ||
+                                            null;
+                             
+                             // Se TODAS as condições forem atendidas → aplicar 10%
+                             // Senão → usar cálculo normal (100%)
+                             if (condition === 'new' && reputation.includes('green') && medalha) {
+                               return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
+                             }
+                             
+                             return <span>{formatMoney(flexOrderCostBase)}</span>;
+                           }
                       case 'flex_payment_value':
                         const flexPaymentValue = order.flex_payment_value || 
                                                 order.unified?.flex_payment_value || 0;
@@ -468,15 +448,21 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     // 💰 FLEX: Campos Detalhados
                     case 'flex_order_cost':
                       {
-                        let flexOrderCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                        // 🔧 HELPER: Processar flex_order_cost com divisão por 2
+                        const getFlexOrderCostProcessed = (order: any): number => {
+                          let flexCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                          if (flexCost <= 0) return 0;
+                          
+                          // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
+                          // Caso contrário → divide por 2
+                          const valoresFixos = [8.90, 13.90, 15.90, 15.99];
+                          if (!valoresFixos.includes(flexCost)) {
+                            flexCost = flexCost / 2;
+                          }
+                          return flexCost;
+                        };
                         
-                        // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
-                        // Caso contrário → divide por 2
-                        const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-                        if (flexOrderCost > 0 && !valoresFixos.includes(flexOrderCost)) {
-                          flexOrderCost = flexOrderCost / 2;
-                        }
-                        
+                        const flexOrderCost = getFlexOrderCostProcessed(order);
                         return <span className="text-blue-600 font-medium">{formatMoney(flexOrderCost)}</span>;
                       }
                     case 'flex_special_discount':

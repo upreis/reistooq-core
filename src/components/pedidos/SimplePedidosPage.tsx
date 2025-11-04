@@ -455,6 +455,20 @@ function SimplePedidosPage({ className }: Props) {
   
   // Helpers financeiros: receita_por_envio (Flex) - REGRA SIMPLES
   const getReceitaPorEnvio = (order: any): number => {
+    // 🔧 HELPER: Processar flex_order_cost com divisão por 2
+    const getFlexOrderCostProcessed = (order: any): number => {
+      let flexCost = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+      if (flexCost <= 0) return 0;
+      
+      // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
+      // Caso contrário → divide por 2
+      const valoresFixos = [8.90, 13.90, 15.90, 15.99];
+      if (!valoresFixos.includes(flexCost)) {
+        flexCost = flexCost / 2;
+      }
+      return flexCost;
+    };
+    
     // Detectar o tipo logístico
     const rawType =
       order?.shipping?.logistic?.type ??
@@ -472,8 +486,8 @@ function SimplePedidosPage({ className }: Props) {
       return 0;
     }
     
-    // Pegar o valor base do flex_order_cost
-    const flexOrderCostBase = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+    // ✅ USAR VALOR PROCESSADO (com divisão por 2 já aplicada)
+    const flexOrderCostBase = getFlexOrderCostProcessed(order);
     
     // Se não houver valor, retornar 0
     if (flexOrderCostBase <= 0) {
