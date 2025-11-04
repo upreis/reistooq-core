@@ -414,6 +414,18 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const packData = order.pack_data || {};
     const context = order.context || {};
     const feedback = order.feedback || {};
+    
+    // 🔍 DEBUG PROFUNDO: Log IMEDIATO da estrutura costs (ANTES de qualquer processamento)
+    if (order.id === '2000013656902262') {
+      console.log(`[unified-orders:${cid}] 🔍 === ESTRUTURA COSTS RAW - Pedido ${order.id} ===`);
+      console.log(`[unified-orders:${cid}]   shipping existe:`, !!shipping);
+      console.log(`[unified-orders:${cid}]   shipping.costs existe:`, !!shipping?.costs);
+      console.log(`[unified-orders:${cid}]   shipping.costs =`, JSON.stringify(shipping?.costs, null, 2));
+      console.log(`[unified-orders:${cid}]   detailedShipping existe:`, !!detailedShipping);
+      console.log(`[unified-orders:${cid}]   detailedShipping.costs existe:`, !!detailedShipping?.costs);
+      console.log(`[unified-orders:${cid}]   detailedShipping.costs =`, JSON.stringify(detailedShipping?.costs, null, 2));
+      console.log(`[unified-orders:${cid}] 🔍 === FIM ESTRUTURA COSTS RAW ===`);
+    }
 
     // Cálculos de quantidades e valores
     const totalQuantity = orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
