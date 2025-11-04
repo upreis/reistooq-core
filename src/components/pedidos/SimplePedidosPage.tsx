@@ -587,10 +587,19 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
     { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
     
+    // 💰 FLEX & CUSTOS (Ocultos por padrão)
+    { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: false, category: 'financial' },
+    { key: 'frete_pago_cliente', label: 'Frete Vendedor/Comprador', default: false, category: 'financial' },
+    { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
+    { key: 'flex_order_cost', label: 'Flex: Custo Pedido', default: false, category: 'financial' },
+    { key: 'flex_special_discount', label: 'Flex: Desconto Especial', default: false, category: 'financial' },
+    { key: 'flex_net_cost', label: 'Flex: Custo Líquido', default: false, category: 'financial' },
+    
     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },
+    { key: 'payment_type', label: 'Tipo Pagamento', default: false, category: 'financial' },
 
     // Mapeamento  
     { key: 'cpf_cnpj', label: 'CPF/CNPJ', default: true, category: 'mapping' },
