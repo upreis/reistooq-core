@@ -28,7 +28,9 @@ import {
   translateMLTags,
   formatText 
 } from '@/lib/translations';
-import { translateCondition } from '@/utils/pedidos-translations';
+import { 
+  translateCondition 
+} from '@/utils/pedidos-translations';
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { buildIdUnico } from '@/utils/idUnico';
