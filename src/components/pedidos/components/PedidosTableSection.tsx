@@ -494,6 +494,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      
                      case 'power_seller_status':
                        {
+                         // Debug: Verificar onde os dados estão
+                         console.log('🔍 [MEDALHA] Buscando em:', {
+                           pedidoId: order.id || order.numero,
+                           direct: order.power_seller_status,
+                           unified: order.unified?.power_seller_status,
+                           raw: order.raw?.seller_reputation?.power_seller_status,
+                           sellerReputation: order.raw?.seller_reputation
+                         });
+                         
                          const medalha = order.power_seller_status || order.unified?.power_seller_status || order.raw?.seller_reputation?.power_seller_status;
                          if (!medalha) return <span className="text-xs text-muted-foreground">—</span>;
                          
@@ -516,6 +525,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      
                      case 'level_id':
                        {
+                         // Debug: Verificar onde os dados estão
+                         console.log('🔍 [REPUTAÇÃO] Buscando em:', {
+                           pedidoId: order.id || order.numero,
+                           direct: order.level_id,
+                           unified: order.unified?.level_id,
+                           raw: order.raw?.seller_reputation?.level_id,
+                           sellerReputation: order.raw?.seller_reputation
+                         });
+                         
                          const levelId = order.level_id || order.unified?.level_id || order.raw?.seller_reputation?.level_id;
                          if (!levelId) return <span className="text-xs text-muted-foreground">—</span>;
                          
