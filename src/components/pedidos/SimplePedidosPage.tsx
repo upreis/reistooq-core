@@ -492,7 +492,15 @@ function SimplePedidosPage({ className }: Props) {
     const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
     const condition = String(conditionRaw).toLowerCase();
     
-    const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
+    // ✅ CORRIGIDO: Buscar reputation em TODOS os lugares possíveis
+    const reputationRaw = order.level_id || 
+                         order.seller_reputation?.level_id || 
+                         order.unified?.seller_reputation?.level_id ||
+                         order.sellerReputation?.level_id ||
+                         order.raw?.seller_reputation?.level_id ||
+                         order.raw?.sellerReputation?.level_id ||
+                         '';
+    const reputation = String(reputationRaw).toLowerCase();
     
     const medalha = order.power_seller_status || 
                    order.unified?.power_seller_status || 

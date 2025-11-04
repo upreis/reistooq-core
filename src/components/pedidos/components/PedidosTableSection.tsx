@@ -416,7 +416,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
                             const condition = String(conditionRaw).toLowerCase();
                             
-                            const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
+                            // ✅ CORRIGIDO: Buscar reputation em TODOS os lugares possíveis
+                            const reputationRaw = order.level_id || 
+                                                 order.seller_reputation?.level_id || 
+                                                 order.unified?.seller_reputation?.level_id ||
+                                                 order.sellerReputation?.level_id ||
+                                                 order.raw?.seller_reputation?.level_id ||
+                                                 order.raw?.sellerReputation?.level_id ||
+                                                 '';
+                            const reputation = String(reputationRaw).toLowerCase();
                             
                             const medalha = order.power_seller_status || 
                                            order.unified?.power_seller_status || 
@@ -426,6 +434,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                            order.seller_reputation?.power_seller_status ||
                                            order.unified?.seller_reputation?.power_seller_status ||
                                            null;
+                            
+                            // 🔍 DEBUG: Mostrar valores encontrados
+                            console.log('🔍 [VALORES ENCONTRADOS]', {
+                              orderId: order.id || order.numero,
+                              condition,
+                              reputation,
+                              medalha,
+                              todasOK: condition === 'new' && reputation.includes('green') && medalha
+                            });
                             
                             // Se TODAS as condições forem atendidas → aplicar 10%
                             // Senão → usar cálculo normal (100%)
