@@ -467,43 +467,49 @@ function SimplePedidosPage({ className }: Props) {
 
     const logisticType = String(rawType || '').toLowerCase();
     
-    // Se for 'self_service' (Envios Flex), retornar flex_order_cost
-    // Caso contrário, retornar 0
-    let receitaFlex = 0;
-    if (logisticType === 'self_service') {
-      receitaFlex = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+    // Se não for 'self_service' (Envios Flex), retornar 0
+    if (logisticType !== 'self_service') {
+      return 0;
     }
     
-    // Nova lógica: APENAS para Envios Flex, se atender todas as condições, aplicar 10%
-    if (receitaFlex > 0 && logisticType === 'self_service') {
-      // Buscar condition exatamente como a coluna 'conditions' faz
-      const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
-      const condition = String(conditionRaw).toLowerCase();
-      
-      // Reputação já está correto
-      const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
-      
-      // Buscar medalha exatamente como a coluna 'power_seller_status' faz
-      const medalha = order.power_seller_status || 
-                     order.unified?.power_seller_status || 
-                     order.raw?.power_seller_status ||
-                     order.raw?.seller_reputation?.power_seller_status ||
-                     order.raw?.sellerReputation?.power_seller_status ||
-                     order.seller_reputation?.power_seller_status ||
-                     order.unified?.seller_reputation?.power_seller_status ||
-                     null;
-      
-      // Buscar valor total exatamente como a coluna 'valor_total' faz
-      const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
-      
-      // ✅ CORRIGIDO: medalha será null quando não existir, não a string "Sem Medalha"
-      // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha existe E ValorTotal>79
-      if (condition === 'new' && reputation.includes('green') && medalha && valorTotal > 79.00) {
-        receitaFlex = receitaFlex * 0.1; // Aplicar 10%
-      }
+    // Pegar o valor base do flex_order_cost
+    const flexOrderCostBase = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+    
+    // Se não houver valor, retornar 0
+    if (flexOrderCostBase <= 0) {
+      return 0;
     }
     
-    return receitaFlex;
+    // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
+    const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
+    
+    // Se Valor Total < 79.00 → usar cálculo normal (100%)
+    if (valorTotal < 79.00) {
+      return flexOrderCostBase;
+    }
+    
+    // Se Valor Total >= 79.00 → verificar todas as outras condições
+    const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
+    const condition = String(conditionRaw).toLowerCase();
+    
+    const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
+    
+    const medalha = order.power_seller_status || 
+                   order.unified?.power_seller_status || 
+                   order.raw?.power_seller_status ||
+                   order.raw?.seller_reputation?.power_seller_status ||
+                   order.raw?.sellerReputation?.power_seller_status ||
+                   order.seller_reputation?.power_seller_status ||
+                   order.unified?.seller_reputation?.power_seller_status ||
+                   null;
+    
+    // Se TODAS as condições forem atendidas → aplicar 10%
+    // Senão → usar cálculo normal (100%)
+    if (condition === 'new' && reputation.includes('green') && medalha) {
+      return flexOrderCostBase * 0.1;
+    }
+    
+    return flexOrderCostBase;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
