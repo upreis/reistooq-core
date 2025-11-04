@@ -469,11 +469,25 @@ function SimplePedidosPage({ className }: Props) {
     
     // Se for 'self_service' (Envios Flex), retornar flex_order_cost
     // Caso contrário, retornar 0
+    let receitaFlex = 0;
     if (logisticType === 'self_service') {
-      return order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+      receitaFlex = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
     }
     
-    return 0;
+    // Nova lógica: Se atender todas as condições, aplicar 10%
+    if (receitaFlex > 0) {
+      const condition = String(order?.condition || order?.unified?.condition || '').toLowerCase();
+      const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
+      const medalha = order?.seller_reputation?.power_seller_status || order?.unified?.seller_reputation?.power_seller_status || null;
+      const valorTotal = order?.total_amount || order?.unified?.total_amount || 0;
+      
+      // Se Condição=Novo E Reputação=Verde E Medalha≠null E ValorTotal>79
+      if (condition === 'new' && reputation === 'green' && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
+        receitaFlex = receitaFlex * 0.1; // Aplicar 10%
+      }
+    }
+    
+    return receitaFlex;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {

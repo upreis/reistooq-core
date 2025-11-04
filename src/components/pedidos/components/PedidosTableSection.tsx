@@ -354,26 +354,39 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.shipping?.costs?.receiver?.cost || 
                                               order.valor_frete || 0;
                        return <span>{formatMoney(fretePagoCliente)}</span>;
-                     case 'receita_flex':
-                        {
-                          // Pegar o tipo logístico da ordem
-                          const logisticType = String(
-                            order?.shipping?.logistic?.type || 
-                            order?.unified?.shipping?.logistic?.type ||
-                            order?.logistic_type || 
-                            order?.unified?.logistic_type ||
-                            order?.flex_logistic_type ||
-                            ''
-                          ).toLowerCase();
-                          
-                          // Se for 'self_service' (Envios Flex), pegar o flex_order_cost
-                          // Caso contrário, retornar 0
-                          const receitaFlex = logisticType === 'self_service'
-                            ? (order.flex_order_cost || order.unified?.flex_order_cost || 0)
-                            : 0;
-                          
-                          return <span>{formatMoney(receitaFlex)}</span>;
-                        }
+                      case 'receita_flex':
+                         {
+                           // Pegar o tipo logístico da ordem
+                           const logisticType = String(
+                             order?.shipping?.logistic?.type || 
+                             order?.unified?.shipping?.logistic?.type ||
+                             order?.logistic_type || 
+                             order?.unified?.logistic_type ||
+                             order?.flex_logistic_type ||
+                             ''
+                           ).toLowerCase();
+                           
+                           // Se for 'self_service' (Envios Flex), pegar o flex_order_cost
+                           // Caso contrário, retornar 0
+                           let receitaFlex = logisticType === 'self_service'
+                             ? (order.flex_order_cost || order.unified?.flex_order_cost || 0)
+                             : 0;
+                           
+                           // Nova lógica: Se atender todas as condições, aplicar 10%
+                           if (receitaFlex > 0) {
+                             const condition = String(order?.condition || order?.unified?.condition || '').toLowerCase();
+                             const reputation = String(order?.seller_reputation?.level_id || order?.unified?.seller_reputation?.level_id || '').toLowerCase();
+                             const medalha = order?.seller_reputation?.power_seller_status || order?.unified?.seller_reputation?.power_seller_status || null;
+                             const valorTotal = order?.total_amount || order?.unified?.total_amount || 0;
+                             
+                             // Se Condição=Novo E Reputação=Verde E Medalha≠null E ValorTotal>79
+                             if (condition === 'new' && reputation === 'green' && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
+                               receitaFlex = receitaFlex * 0.1; // Aplicar 10%
+                             }
+                           }
+                           
+                           return <span>{formatMoney(receitaFlex)}</span>;
+                         }
                       case 'flex_payment_value':
                         const flexPaymentValue = order.flex_payment_value || 
                                                 order.unified?.flex_payment_value || 0;
