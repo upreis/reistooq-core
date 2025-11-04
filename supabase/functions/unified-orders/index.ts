@@ -417,14 +417,14 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     // 🔍 DEBUG PROFUNDO: Log IMEDIATO da estrutura costs (ANTES de qualquer processamento)
     if (String(order.id) === '2000013656902262') {
-      console.log(`[unified-orders:${cid}] 🔍 === ESTRUTURA COSTS RAW - Pedido ${order.id} ===`);
-      console.log(`[unified-orders:${cid}]   shipping existe:`, !!shipping);
-      console.log(`[unified-orders:${cid}]   shipping.costs existe:`, !!shipping?.costs);
-      console.log(`[unified-orders:${cid}]   shipping.costs =`, JSON.stringify(shipping?.costs, null, 2));
-      console.log(`[unified-orders:${cid}]   detailedShipping existe:`, !!detailedShipping);
-      console.log(`[unified-orders:${cid}]   detailedShipping.costs existe:`, !!detailedShipping?.costs);
-      console.log(`[unified-orders:${cid}]   detailedShipping.costs =`, JSON.stringify(detailedShipping?.costs, null, 2));
-      console.log(`[unified-orders:${cid}] 🔍 === FIM ESTRUTURA COSTS RAW ===`);
+      console.log(`[unified-orders:${cid}] 🔍 PEDIDO ${order.id} - Análise shipping.costs:`);
+      console.log(`[unified-orders:${cid}]   Type of shipping.costs:`, typeof shipping?.costs);
+      console.log(`[unified-orders:${cid}]   shipping.costs keys:`, shipping?.costs ? Object.keys(shipping.costs) : 'N/A');
+      console.log(`[unified-orders:${cid}]   shipping.costs object:`, shipping?.costs);
+      console.log(`[unified-orders:${cid}] 🔍 PEDIDO ${order.id} - Análise detailedShipping.costs:`);
+      console.log(`[unified-orders:${cid}]   Type of detailedShipping.costs:`, typeof detailedShipping?.costs);
+      console.log(`[unified-orders:${cid}]   detailedShipping.costs keys:`, detailedShipping?.costs ? Object.keys(detailedShipping.costs) : 'N/A');
+      console.log(`[unified-orders:${cid}]   detailedShipping.costs object:`, detailedShipping?.costs);
     }
 
     // Cálculos de quantidades e valores
