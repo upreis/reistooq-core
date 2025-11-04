@@ -136,34 +136,17 @@ function SimplePedidosPage({ className }: Props) {
         console.log(`✅ [F4.1] ${cleaned} entradas corrompidas foram limpas`);
       }
       
-      // Limpar cache de colunas se necessário para incluir novas colunas
+      // 🔄 VERSÃO DO CACHE - Forçar limpeza quando há mudanças no sistema de colunas
+      const COLUMN_CACHE_VERSION = 2; // Incrementar quando houver mudanças nas colunas padrão
       const columnCache = validateAndGet('pedidos-column-preferences', null);
+      
       if (columnCache && typeof columnCache === 'object') {
-        const visibleColumns = columnCache.visibleColumns || {};
-        const hasAdvancedColumns = ['order_status_advanced', 'shipping_status_advanced'].some(col => 
-          Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
-        );
+        const cacheVersion = columnCache.version || 1;
         
-        // 🚫 FORÇAR REMOÇÃO DE COLUNAS OCULTAS DO CACHE
-        const colunasOcultas = [
-          'receita_flex', 
-          'frete_pago_cliente', 
-          'custo_envio_seller', 
-          'flex_order_cost', 
-          'flex_special_discount', 
-          'flex_net_cost', 
-          'payment_type',
-          'flex_payment_value',
-          'coupon_amount'
-        ];
-        
-        const temColunasOcultas = colunasOcultas.some(col =>
-          Array.isArray(visibleColumns) ? visibleColumns.includes(col) : visibleColumns[col]
-        );
-        
-        if (!hasAdvancedColumns || temColunasOcultas) {
+        // Se a versão do cache é diferente, limpar
+        if (cacheVersion !== COLUMN_CACHE_VERSION) {
           localStorage.removeItem('pedidos-column-preferences');
-          console.log('🔄 [CACHE] Cache de colunas atualizado - colunas ocultas removidas');
+          console.log(`🔄 [CACHE] Cache de colunas limpo - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
         }
       }
       

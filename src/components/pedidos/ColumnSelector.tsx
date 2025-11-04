@@ -44,6 +44,8 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'flex_special_discount', label: 'Flex: Desconto Especial', visible: false, category: 'financial' },
   { key: 'flex_net_cost', label: 'Flex: Custo Líquido', visible: false, category: 'financial' },
   { key: 'payment_type', label: 'Tipo Pagamento', visible: false, category: 'financial' },
+  { key: 'flex_payment_value', label: 'Flex - Valor Recebido', visible: false, category: 'financial' },
+  { key: 'coupon_amount', label: 'Desconto Cupom', visible: false, category: 'financial' },
   
   // Colunas de mapeamento
   { key: 'sku_estoque', label: 'SKU Estoque', visible: true, category: 'mapping' },
