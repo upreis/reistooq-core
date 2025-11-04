@@ -28,6 +28,7 @@ import {
   translateMLTags,
   formatText 
 } from '@/lib/translations';
+import { translateCondition } from '@/utils/pedidos-translations';
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { buildIdUnico } from '@/utils/idUnico';
@@ -459,6 +460,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{translatePaymentStatus(order.payment_status || order.payments?.[0]?.status || order.raw?.payments?.[0]?.status || order.status_pagamento || '-')}</span>;
                      case 'payment_type':
                        return <span className="text-xs">{translatePaymentType(order.payment_type || order.payments?.[0]?.payment_type || order.raw?.payments?.[0]?.payment_type_id || order.tipo_pagamento || '-')}</span>;
+                     case 'conditions':
+                       return <span className="text-xs">{translateCondition(order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || '-')}</span>;
                      case 'order_status':
                        return (
                          <StatusBadge 
