@@ -432,18 +432,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
                              }
                              
-                             return <span>{formatMoney(flexOrderCostBase)}</span>;
-                           }
-                      case 'flex_payment_value':
-                        const flexPaymentValue = order.flex_payment_value || 
-                                                order.unified?.flex_payment_value || 0;
-                        return <span className={flexPaymentValue > 0 ? 'text-green-600 font-semibold' : ''}>
-                          {flexPaymentValue > 0 ? `+${formatMoney(flexPaymentValue)}` : formatMoney(0)}
-                        </span>;
+                              return <span>{formatMoney(flexOrderCostBase)}</span>;
+                            }
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
-                    case 'coupon_amount':
-                      return <span>{formatMoney(order.coupon_amount || order.coupon?.amount || 0)}</span>;
                     
                     // 💰 FLEX: Campos Detalhados
                     case 'flex_order_cost':
