@@ -598,12 +598,8 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       taxa_marketplace: order.marketplace_fee || 0,
       custo_envio_seller: custoEnvioSeller,
       
-      // 🆕 FLEX: Valor Recebido por Entrega Flex (conforme PDF)
-      flex_shipping_cost: flexOrderCost,
-      flex_shipping_discount: flexSpecialDiscount,
-      flex_net_cost: flexNetCost,
-      flex_seller_receives_payment: flexNetCost < 0,
-      flex_payment_value: flexNetCost < 0 ? Math.abs(flexNetCost) : 0,
+      // 🆕 FLEX: Valor Recebido por Entrega Flex (seller_cost_benefit quando negativo)
+      flex_payment_value: receitaFlex < 0 ? Math.abs(receitaFlex) : 0,
       flex_logistic_type: flexLogisticType,
       
       // Informações de pagamento
