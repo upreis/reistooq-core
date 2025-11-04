@@ -196,7 +196,8 @@ export const useColumnManager = (): UseColumnManagerReturn => {
     console.log('🔧 [COLUMNS INIT] Inicializando sistema de colunas:', {
       initial: Array.from(initial.visibleColumns),
       stored: stored.visibleColumns ? Array.from(stored.visibleColumns) : 'none',
-      totalDefinitions: COLUMN_DEFINITIONS.length
+      totalDefinitions: COLUMN_DEFINITIONS.length,
+      definitionKeys: COLUMN_DEFINITIONS.map(d => d.key)
     });
     
     // 🔧 Se tem preferências salvas, usar elas (priorizar escolha do usuário)
@@ -214,14 +215,17 @@ export const useColumnManager = (): UseColumnManagerReturn => {
       
       console.log('✅ Usando preferências do usuário:', {
         visible: Array.from(finalState.visibleColumns),
-        total: finalState.visibleColumns.size
+        total: finalState.visibleColumns.size,
+        definitions: COLUMN_DEFINITIONS.length
       });
       
       return finalState;
     }
     
     // Se não tem preferências salvas, usar padrão
-    console.log('✅ Usando configuração padrão (primeira vez)');
+    console.log('✅ Usando configuração padrão (primeira vez):', {
+      definitions: COLUMN_DEFINITIONS.length
+    });
     return initial;
   });
  

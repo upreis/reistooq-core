@@ -127,6 +127,14 @@ export function ColumnManager(props: ColumnManagerProps) {
 
   const visibleCount = state.visibleColumns.size;
   const totalCount = definitions.length;
+  
+  // 🐛 DEBUG: Log para verificar contagem
+  console.log('📊 [COLUMN MANAGER] Contagem:', {
+    visible: visibleCount,
+    total: totalCount,
+    definitionKeys: definitions.map(d => d.key).slice(0, 10),
+    visibleKeys: Array.from(state.visibleColumns).slice(0, 10)
+  });
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>

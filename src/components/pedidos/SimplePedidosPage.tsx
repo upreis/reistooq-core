@@ -58,6 +58,7 @@ import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
 import { useColumnManager, resetColumnCache } from '@/features/pedidos/hooks/useColumnManager';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
+import '@/utils/clearColumnCache'; // Utilitário de limpeza de cache
 import { PedidosTableSection } from './components/PedidosTableSection';
 import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';

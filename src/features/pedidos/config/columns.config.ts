@@ -515,6 +515,14 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
 ];
 
+// 🔍 VALIDAÇÃO: Detectar chaves duplicadas
+const keys = COLUMN_DEFINITIONS.map(col => col.key);
+const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+if (duplicates.length > 0) {
+  console.error('🚨 COLUNAS DUPLICADAS DETECTADAS:', duplicates);
+}
+console.log('✅ Total de colunas definidas:', COLUMN_DEFINITIONS.length);
+
 // 🎯 PERFIS PRÉ-DEFINIDOS
 export const DEFAULT_PROFILES: ColumnProfile[] = [
   {
@@ -538,10 +546,10 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     name: 'Financeiro',
     description: 'Foco em informações financeiras e pagamentos',
     columns: [
-      'id', 'numero', 'nome_cliente', 'data_pedido',
-      'valor_total', 'paid_amount', 'frete_pago_cliente', 'receita_flex',
-      'flex_payment_value', 'valor_liquido_vendedor', 'marketplace_fee', 
-      'payment_method', 'payment_status', 'payment_type', 'coupon_amount'
+      'id', 'numero', 'nome_completo', 'data_pedido',
+      'valor_total', 'paid_amount', 'receita_flex',
+      'valor_liquido_vendedor', 'marketplace_fee', 
+      'payment_method', 'payment_status'
     ]
   },
   {
@@ -549,9 +557,9 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     name: 'Logística',
     description: 'Foco em envio e rastreamento',
     columns: [
-      'id', 'numero', 'nome_cliente', 'nome_completo', 'data_pedido',
+      'id', 'numero', 'nome_completo', 'data_pedido',
       'situacao', 'shipping_status', 'shipping_substatus', 'logistic_mode', 'logistic_type',
-      'delivery_type', 'substatus_detail'
+      'codigo_rastreamento', 'url_rastreamento'
     ]
   },
   {
