@@ -51,7 +51,9 @@ const LOGISTIC_TYPE_MAP: Record<string, string> = {
   'self_service': 'Auto Atendimento',
   'flex': 'Flex',
   'fulfillment': 'Fulfillment',
-  'cross_docking': 'Cross Docking'
+  'cross_docking': 'Cross Docking',
+  'modalidade_propria': 'Envios Flex',
+  'modalidade propria': 'Envios Flex'
 };
 
 // ✅ MÉTODOS DE PAGAMENTO: Mapeamento
