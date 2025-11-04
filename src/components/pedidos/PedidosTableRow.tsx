@@ -206,6 +206,26 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                   </Badge>
                 );
               
+              case 'conditions':
+                const conditions = get(row.unified, 'conditions') || get(row.raw, 'order_items[0].item.condition');
+                if (!conditions) return <span className="text-xs text-muted-foreground">—</span>;
+                
+                // Mapear condições para português
+                const condicaoMap: Record<string, string> = {
+                  'new': 'Novo',
+                  'used': 'Usado',
+                  'refurbished': 'Recondicionado',
+                  'not_specified': 'Não especificado'
+                };
+                
+                const condicaoTexto = condicaoMap[conditions.toLowerCase()] || conditions;
+                
+                return (
+                  <Badge variant="outline" className={conditions.toLowerCase() === 'new' ? 'bg-blue-50 text-blue-700' : ''}>
+                    {condicaoTexto}
+                  </Badge>
+                );
+              
               
               // Colunas antigas mantidas para compatibilidade
               case 'codigo_rastreamento':

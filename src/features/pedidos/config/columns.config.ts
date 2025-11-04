@@ -407,6 +407,16 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
+    key: 'conditions',
+    label: 'Condição',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Condição do produto (new, used, refurbished)',
+    width: 100
+  },
+  {
     key: 'shipping_substatus',
     label: 'Substatus do Envio',
     category: 'shipping',
