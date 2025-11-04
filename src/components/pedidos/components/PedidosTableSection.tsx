@@ -374,18 +374,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             }
                             
                             // Pegar o valor base do flex_order_cost
-                            let flexOrderCostBase = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                            const flexOrderCostBase = order.flex_order_cost || order.unified?.flex_order_cost || 0;
                             
                             // Se não houver valor, retornar 0
                             if (flexOrderCostBase <= 0) {
                               return <span>{formatMoney(0)}</span>;
-                            }
-                            
-                            // ✅ NOVO: Se for 8.90, 13.90 ou 15.90 → mantém valor
-                            // Caso contrário → divide por 2
-                            const valoresFixos = [8.90, 13.90, 15.90];
-                            if (!valoresFixos.includes(flexOrderCostBase)) {
-                              flexOrderCostBase = flexOrderCostBase / 2;
                             }
                             
                             // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
@@ -475,7 +468,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     // 💰 FLEX: Campos Detalhados
                     case 'flex_order_cost':
                       {
-                        const flexOrderCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                        let flexOrderCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                        
+                        // ✅ Se for 8.90, 13.90 ou 15.90 → mantém valor
+                        // Caso contrário → divide por 2
+                        const valoresFixos = [8.90, 13.90, 15.90];
+                        if (flexOrderCost > 0 && !valoresFixos.includes(flexOrderCost)) {
+                          flexOrderCost = flexOrderCost / 2;
+                        }
+                        
                         return <span className="text-blue-600 font-medium">{formatMoney(flexOrderCost)}</span>;
                       }
                     case 'flex_special_discount':
