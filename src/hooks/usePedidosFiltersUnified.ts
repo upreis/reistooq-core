@@ -52,7 +52,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
   
   // ✅ REMOVIDO: Debounce automático - agora tudo é manual
 
-  // ✅ NOVO: Carregar filtros salvos APENAS quando solicitado explicitamente
+  // ✅ CORREÇÃO: Carregar filtros salvos como JÁ APLICADOS
   useEffect(() => {
     if (loadSavedFilters) {
       try {
@@ -83,9 +83,11 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
             }
           }
           
-          // ✅ IMPORTANTE: Apenas carregar no draft, NÃO aplicar automaticamente
+          // ✅ CORREÇÃO CRÍTICA: Carregar como filtros já aplicados, não como pendentes
+          // Isso evita mostrar "filtros pendentes" ao entrar na página
           setDraftFilters(parsed);
-          console.log('📥 Filtros salvos carregados (com validação de datas):', parsed);
+          setAppliedFilters(parsed);
+          console.log('📥 Filtros salvos restaurados como aplicados:', parsed);
         }
       } catch (error) {
         console.warn('Erro ao carregar filtros salvos:', error);
