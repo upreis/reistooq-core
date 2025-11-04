@@ -207,17 +207,37 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 );
               
               case 'conditions':
+                console.group('🔍 [AUDITORIA CONDIÇÃO]');
+                console.log('row.unified:', row.unified);
+                console.log('row.raw:', row.raw);
+                
                 const conditionsRaw = get(row.unified, 'conditions') || get(row.raw, 'order_items[0].item.condition');
-                if (!conditionsRaw) return <span className="text-xs text-muted-foreground">—</span>;
+                console.log('conditionsRaw obtido:', conditionsRaw);
+                console.log('Tipo:', typeof conditionsRaw);
+                
+                if (!conditionsRaw) {
+                  console.log('❌ Campo conditions está vazio/null');
+                  console.groupEnd();
+                  return <span className="text-xs text-muted-foreground">—</span>;
+                }
                 
                 const conditionStr = String(conditionsRaw).toLowerCase();
+                console.log('conditionStr (lowercase):', conditionStr);
+                
                 let conditionText = '—';
                 
                 if (conditionStr.includes('new')) {
                   conditionText = 'Novo';
+                  console.log('✅ Detectou "new", retornando: Novo');
                 } else if (conditionStr.includes('used')) {
                   conditionText = 'Usado';
+                  console.log('✅ Detectou "used", retornando: Usado');
+                } else {
+                  console.log('⚠️ Não detectou nem new nem used');
                 }
+                
+                console.log('Texto final a ser exibido:', conditionText);
+                console.groupEnd();
                 
                 return (
                   <Badge variant="outline" className={conditionStr.includes('new') ? 'bg-blue-50 text-blue-700' : ''}>
