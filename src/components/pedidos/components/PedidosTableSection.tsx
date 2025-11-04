@@ -494,41 +494,53 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      
                      case 'power_seller_status':
                        {
-                         const medalha = order.power_seller_status || order.unified?.power_seller_status;
+                         const medalha = order.power_seller_status || order.unified?.power_seller_status || order.raw?.seller_reputation?.power_seller_status;
                          if (!medalha) return <span className="text-xs text-muted-foreground">—</span>;
                          
-                         const medalhaCores: Record<string, string> = {
-                           'platinum': 'bg-slate-100 text-slate-800 border-slate-300',
-                           'gold': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                           'silver': 'bg-gray-100 text-gray-800 border-gray-300'
+                         // Mapeamento de medalhas MercadoLíder
+                         const medalhaMap: Record<string, { icon: string; color: string }> = {
+                           'platinum': { icon: '🏆', color: 'bg-slate-100 text-slate-800 border-slate-300' },
+                           'gold': { icon: '🥇', color: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+                           'silver': { icon: '🥈', color: 'bg-gray-100 text-gray-800 border-gray-300' }
                          };
                          
+                         const medalhaInfo = medalhaMap[medalha.toLowerCase()];
+                         if (!medalhaInfo) return <span className="text-xs text-muted-foreground">—</span>;
+                         
                          return (
-                           <Badge variant="outline" className={medalhaCores[medalha.toLowerCase()] || 'bg-gray-100 text-gray-800'}>
-                             {medalha.charAt(0).toUpperCase() + medalha.slice(1)}
+                           <Badge variant="outline" className={medalhaInfo.color}>
+                             {medalhaInfo.icon} {medalha.charAt(0).toUpperCase() + medalha.slice(1)}
                            </Badge>
                          );
                        }
                      
                      case 'level_id':
                        {
-                         const reputacao = order.level_id || order.unified?.level_id;
-                         if (!reputacao) return <span className="text-xs text-muted-foreground">—</span>;
+                         const levelId = order.level_id || order.unified?.level_id || order.raw?.seller_reputation?.level_id;
+                         if (!levelId) return <span className="text-xs text-muted-foreground">—</span>;
                          
-                         // level_id formato: "5_green", "4_yellow", etc.
-                         const [nivel, cor] = String(reputacao).split('_');
-                         const corReputacao: Record<string, string> = {
-                           'green': 'bg-green-100 text-green-800 border-green-300',
-                           'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                           'orange': 'bg-orange-100 text-orange-800 border-orange-300',
-                           'red': 'bg-red-100 text-red-800 border-red-300',
-                           'gray': 'bg-gray-100 text-gray-800 border-gray-300'
+                         // Mapeamento conforme documentação do ML
+                         const reputationMap: Record<string, { text: string; bgColor: string; textColor: string }> = {
+                           '5_green': { text: 'Excelente', bgColor: '#00a650', textColor: '#fff' },
+                           '4_light_green': { text: 'Muito Boa', bgColor: '#aad400', textColor: '#333' },
+                           '3_yellow': { text: 'Boa', bgColor: '#fff159', textColor: '#333' },
+                           '2_orange': { text: 'Regular', bgColor: '#f7942d', textColor: '#fff' },
+                           '1_red': { text: 'Ruim', bgColor: '#f25346', textColor: '#fff' }
                          };
                          
+                         const reputation = reputationMap[levelId];
+                         if (!reputation) return <span className="text-xs text-muted-foreground">Sem Reputação</span>;
+                         
                          return (
-                           <Badge variant="outline" className={corReputacao[cor] || 'bg-gray-100 text-gray-800'}>
-                             {nivel && cor ? `${nivel} ${cor}` : reputacao}
-                           </Badge>
+                           <span 
+                             className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                             style={{ 
+                               backgroundColor: reputation.bgColor, 
+                               color: reputation.textColor 
+                             }}
+                           >
+                             {reputation.text}
+                           </span>
                          );
                        }
                      
