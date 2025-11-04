@@ -144,18 +144,15 @@ function SimplePedidosPage({ className }: Props) {
       if (columnCache && typeof columnCache === 'object') {
         const cacheVersion = columnCache.version || 1;
         
-        // Se a versão do cache é diferente, limpar TUDO
-        if (cacheVersion !== COLUMN_CACHE_VERSION) {
+        // Se a versão do cache é diferente, limpar apenas caches ANTIGOS
+        if (cacheVersion !== COLUMN_CACHE_VERSION && cacheVersion < COLUMN_CACHE_VERSION) {
+          // Limpar apenas versões antigas
           localStorage.removeItem('pedidos-column-preferences');
           localStorage.removeItem('pedidos-column-preferences-v4');
           localStorage.removeItem('pedidos-column-preferences-v5');
-          localStorage.removeItem('pedidos-column-preferences-v6');
           localStorage.removeItem('pedidos:lastSearch');
-          console.log(`🔄 [CACHE] Cache de colunas limpo completamente - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
-          
-          // Forçar reload da página para aplicar mudanças
-          console.log('🔄 [CACHE] Recarregando página em 100ms...');
-          setTimeout(() => window.location.reload(), 100);
+          console.log(`🔄 [CACHE] Cache de colunas limpo - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
+          console.log('🔄 Recarregue a página (F5) para aplicar as novas larguras');
         }
       }
       
