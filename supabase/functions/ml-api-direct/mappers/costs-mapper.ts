@@ -6,51 +6,45 @@
 export function mapShipmentCostsData(costsData: any) {
   if (!costsData) return null;
 
+  // Estrutura real da API /shipments/{id}/costs:
+  // {
+  //   receiver: { cost, discounts: [{ rate, type, promoted_amount }], ... },
+  //   gross_amount,
+  //   senders: [{ cost, charges: { charge_flex }, ... }]
+  // }
+
+  const receiverDiscounts = costsData.receiver?.discounts || [];
+  const loyalDiscount = receiverDiscounts.find((d: any) => d.type === 'loyal');
+  const senderCharges = costsData.senders?.[0]?.charges || {};
+
   return {
-    shipment_id: costsData.shipment_id || null,
+    // Custo bruto de envio
+    gross_amount: costsData.gross_amount || 0,
     
-    // Forward shipping costs
-    forward_shipping: {
-      amount: costsData.forward_shipping?.amount || 0,
-      currency: costsData.forward_shipping?.currency || 'BRL',
-      paid_by: costsData.forward_shipping?.paid_by || null,
-      method: costsData.forward_shipping?.method || null
+    // Custos e descontos do comprador
+    receiver: {
+      cost: costsData.receiver?.cost || 0,
+      discounts: receiverDiscounts,
+      loyal_discount_amount: loyalDiscount?.promoted_amount || 0,
+      loyal_discount_rate: loyalDiscount?.rate || 0
     },
     
-    // Return shipping costs
-    return_shipping: {
-      amount: costsData.return_shipping?.amount || 0,
-      currency: costsData.return_shipping?.currency || 'BRL',
-      paid_by: costsData.return_shipping?.paid_by || null,
-      method: costsData.return_shipping?.method || null
+    // Custos e cobranças do vendedor
+    sender: {
+      cost: costsData.senders?.[0]?.cost || 0,
+      charge_flex: senderCharges.charge_flex || 0,
+      charges: senderCharges
     },
     
-    // Restocking costs
-    restocking: {
-      amount: costsData.restocking?.amount || 0,
-      currency: costsData.restocking?.currency || 'BRL',
-      applied: costsData.restocking?.applied || false
-    },
+    // Campos calculados para Flex
+    // order_cost = gross_amount (custo que o seller recebe do ML por fazer entrega Flex)
+    order_cost: costsData.gross_amount || 0,
     
-    // Additional costs
-    additional_costs: costsData.additional_costs?.map((c: any) => ({
-      type: c.type || null,
-      amount: c.amount || 0,
-      currency: c.currency || 'BRL',
-      description: c.description || null
-    })) || [],
+    // special_discount = valor promocional do desconto loyal
+    special_discount: loyalDiscount?.promoted_amount || 0,
     
-    // Total costs summary
-    total_costs: {
-      amount: costsData.total_costs?.amount || 0,
-      currency: costsData.total_costs?.currency || 'BRL',
-      breakdown: costsData.total_costs?.breakdown || {}
-    },
-    
-    // Cost responsibility
-    seller_responsibility: costsData.seller_responsibility || 0,
-    buyer_responsibility: costsData.buyer_responsibility || 0,
-    ml_responsibility: costsData.ml_responsibility || 0,
+    // net_cost = order_cost - special_discount
+    net_cost: (costsData.gross_amount || 0) - (loyalDiscount?.promoted_amount || 0),
     
     // Full raw data
     raw_data: costsData
@@ -66,11 +60,11 @@ export function extractCostsFields(costsData: any) {
   const mapped = mapShipmentCostsData(costsData);
   
   return {
-    custo_envio_ida: mapped?.forward_shipping?.amount || null,
-    custo_envio_retorno: mapped?.return_shipping?.amount || null,
-    custo_total_logistica: mapped?.total_costs?.amount || null,
-    moeda_custo: mapped?.total_costs?.currency || 'BRL',
-    responsavel_custo: mapped?.forward_shipping?.paid_by || null,
+    custo_envio_ida: mapped?.gross_amount || null,
+    custo_envio_retorno: null, // Não disponível nesta estrutura
+    custo_total_logistica: mapped?.gross_amount || null,
+    moeda_custo: 'BRL',
+    responsavel_custo: mapped?.receiver?.cost === 0 ? 'buyer' : 'seller',
     
     // Salvar dados completos no JSONB
     dados_costs: mapped

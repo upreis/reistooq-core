@@ -460,19 +460,18 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const receitaFlex = shipping.seller_cost_benefit || 0;
     const custoEnvioSeller = shipping.base_cost || 0;
     
-    // 🆕 NOVOS CAMPOS FLEX (conforme PDF - sem mexer nos existentes)
-    // CRÍTICO: Os campos estão DENTRO de shipping.costs, não direto em shipping!
-    // shipping.costs = resultado do /shipments/{id}/costs
+    // 🆕 NOVOS CAMPOS FLEX (baseado na estrutura real da API)
+    // shipping.costs vem do /shipments/{id}/costs com estrutura:
+    // { receiver: { cost, discounts: [{ promoted_amount }] }, gross_amount, senders: [{ charges: { charge_flex } }] }
     
-    const flexOrderCost = shipping?.costs?.order_cost || 
-                          detailedShipping?.costs?.order_cost || 
-                          shipping?.order_cost ||
-                          detailedShipping?.order_cost || 0;
+    const costs = shipping?.costs || detailedShipping?.costs;
     
-    const flexSpecialDiscount = shipping?.costs?.cost_components?.special_discount || 
-                                detailedShipping?.costs?.cost_components?.special_discount ||
-                                shipping?.cost_components?.special_discount || 
-                                detailedShipping?.cost_components?.special_discount || 0;
+    // order_cost = gross_amount (valor bruto do envio)
+    const flexOrderCost = costs?.gross_amount || 0;
+    
+    // special_discount = promoted_amount do desconto loyal
+    const loyalDiscount = costs?.receiver?.discounts?.find((d: any) => d.type === 'loyal');
+    const flexSpecialDiscount = loyalDiscount?.promoted_amount || 0;
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
@@ -487,11 +486,13 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              detailedShipping?.logistic_type || 
                              null;
     
-    // 🔍 DEBUG PROFUNDO: Estrutura do objeto costs
+    // 🔍 DEBUG: Valores calculados dos campos Flex
     if (String(order.id) === '2000013656902262') {
-      console.log(`[unified-orders:${cid}] 🔍 ESTRUTURA COSTS - Pedido ${order.id}:`);
-      console.log(`  shipping.costs =`, JSON.stringify(shipping?.costs, null, 2));
-      console.log(`  detailedShipping.costs =`, JSON.stringify(detailedShipping?.costs, null, 2));
+      console.log(`[unified-orders:${cid}] 💰 VALORES FLEX CALCULADOS - Pedido ${order.id}:`);
+      console.log(`  flexOrderCost (gross_amount):`, flexOrderCost);
+      console.log(`  flexSpecialDiscount (loyal promoted_amount):`, flexSpecialDiscount);
+      console.log(`  flexNetCost (calculado):`, flexNetCost);
+      console.log(`  receitaFlexCalculada:`, receitaFlexCalculada);
     }
     
     // Debug TIPO LOGÍSTICO de TODOS os pedidos - EXPANDIDO
