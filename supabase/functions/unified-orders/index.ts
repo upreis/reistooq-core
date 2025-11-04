@@ -439,18 +439,56 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // 🆕 NOVOS CAMPOS FLEX (conforme PDF - sem mexer nos existentes)
-    const flexOrderCost = detailedShipping?.order_cost || 0;
-    const flexSpecialDiscount = detailedShipping?.cost_components?.special_discount || 0;
-    const flexNetCost = flexOrderCost - flexSpecialDiscount;
-    const flexLogisticType = detailedShipping?.logistic_type || shipping?.logistic_type || null;
+    // IMPORTANTE: detailedShipping pode ter 3 fontes:
+    // 1. shipping.detailed_shipping (do enriquecimento)
+    // 2. shipping direto (se não foi enriquecido)
+    // 3. order.shipping (fallback)
     
-    // Debug TIPO LOGÍSTICO de TODOS os pedidos
+    const flexOrderCost = detailedShipping?.order_cost || shipping?.order_cost || 0;
+    const flexSpecialDiscount = detailedShipping?.cost_components?.special_discount || 
+                                 shipping?.cost_components?.special_discount || 
+                                 shipping?.costs?.cost_components?.special_discount || 0;
+    const flexNetCost = flexOrderCost - flexSpecialDiscount;
+    
+    // Procurar logistic_type em todas as possíveis localizações
+    const flexLogisticType = detailedShipping?.logistic?.type || 
+                             shipping?.logistic?.type || 
+                             detailedShipping?.logistic_type || 
+                             shipping?.logistic_type || 
+                             null;
+    
+    // Debug TIPO LOGÍSTICO de TODOS os pedidos - EXPANDIDO
     console.log(`[unified-orders:${cid}] 📦 TIPO LOGÍSTICO Pedido ${order.id}:`, {
-      logistic_type: flexLogisticType,
-      shipping_logistic_type: shipping?.logistic_type,
-      detailed_logistic_type: detailedShipping?.logistic_type,
-      order_cost: flexOrderCost,
-      special_discount: flexSpecialDiscount
+      // Valor final usado
+      logistic_type_final: flexLogisticType,
+      
+      // Todas as possíveis fontes
+      sources: {
+        'detailedShipping.logistic.type': detailedShipping?.logistic?.type,
+        'shipping.logistic.type': shipping?.logistic?.type,
+        'detailedShipping.logistic_type': detailedShipping?.logistic_type,
+        'shipping.logistic_type': shipping?.logistic_type,
+      },
+      
+      // Custos
+      costs: {
+        order_cost: flexOrderCost,
+        special_discount: flexSpecialDiscount,
+        sources: {
+          'detailedShipping.order_cost': detailedShipping?.order_cost,
+          'shipping.order_cost': shipping?.order_cost,
+          'detailedShipping.cost_components.special_discount': detailedShipping?.cost_components?.special_discount,
+          'shipping.cost_components.special_discount': shipping?.cost_components?.special_discount,
+          'shipping.costs.cost_components.special_discount': shipping?.costs?.cost_components?.special_discount,
+        }
+      },
+      
+      // Flags de enriquecimento
+      enrichment: {
+        has_detailed_shipping: !!shipping?.detailed_shipping,
+        has_costs: !!shipping?.costs,
+        shipping_enriched: shipping?.shipping_enriched
+      }
     });
     
     // Informações de endereço mais detalhadas
