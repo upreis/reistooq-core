@@ -2,34 +2,7 @@ import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } fro
 import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
-
-// 💰 INLINE COSTS MAPPER (não pode importar de outras edge functions)
-function mapShipmentCostsData(costsData: any) {
-  if (!costsData) return null;
-
-  const receiverDiscounts = costsData.receiver?.discounts || [];
-  const loyalDiscount = receiverDiscounts.find((d: any) => d.type === 'loyal');
-  const senderCharges = costsData.senders?.[0]?.charges || {};
-
-  return {
-    gross_amount: costsData.gross_amount || 0,
-    receiver: {
-      cost: costsData.receiver?.cost || 0,
-      discounts: receiverDiscounts,
-      loyal_discount_amount: loyalDiscount?.promoted_amount || 0,
-      loyal_discount_rate: loyalDiscount?.rate || 0
-    },
-    sender: {
-      cost: costsData.senders?.[0]?.cost || 0,
-      charge_flex: senderCharges.charge_flex || 0,
-      charges: senderCharges
-    },
-    order_cost: costsData.gross_amount || 0,
-    special_discount: loyalDiscount?.promoted_amount || 0,
-    net_cost: (costsData.gross_amount || 0) - (loyalDiscount?.promoted_amount || 0),
-    raw_data: costsData
-  };
-}
+import { mapShipmentCostsData } from "../ml-api-direct/mappers/costs-mapper.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
@@ -484,6 +457,23 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     const costs = shipping?.costs || detailedShipping?.costs;
     
+    // order_cost = gross_amount (valor bruto do envio)
+    const flexOrderCost = costs?.gross_amount || 0;
+    
+    // special_discount = SOMA de TODOS os promoted_amount do receiver
+    // (incluindo loyal, ratio e outros tipos de desconto)
+    // ✅ VALIDAÇÃO: Garantir que discounts é um array antes de usar reduce
+    const receiverDiscounts = costs?.receiver?.discounts;
+    const flexSpecialDiscount = Array.isArray(receiverDiscounts)
+      ? receiverDiscounts.reduce((sum: number, d: any) => sum + (Number(d.promoted_amount) || 0), 0)
+      : 0;
+    
+    const flexNetCost = flexOrderCost - flexSpecialDiscount;
+    
+    // RECEITA FLEX = order_cost quando logistic_type = 'self_service'
+    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
+    const receitaFlexCalculada = flexOrderCost;
+    
     // Procurar logistic_type em todas as possíveis localizações
     const flexLogisticType = shipping?.logistic?.type || 
                              detailedShipping?.logistic?.type || 
@@ -491,29 +481,21 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              detailedShipping?.logistic_type || 
                              null;
     
-    // 🔒 VALORES FLEX: Só aparecem se logistic_type = 'self_service'
-    const isSelfService = flexLogisticType === 'self_service';
-    
-    // 🔍 DEBUG: Verificar filtro self_service
-    console.log(`[unified-orders:${cid}] 🔐 Pedido ${order.id}:`, {
-      flexLogisticType,
-      isSelfService,
-      hasCosts: !!costs,
-      grossAmount: costs?.gross_amount
-    });
-    
-    // order_cost = gross_amount (valor bruto do envio)
-    const flexOrderCost = isSelfService ? (costs?.gross_amount || 0) : 0;
-    
-    // special_discount = promoted_amount do desconto loyal
-    const loyalDiscount = costs?.receiver?.discounts?.find((d: any) => d.type === 'loyal');
-    const flexSpecialDiscount = isSelfService ? (loyalDiscount?.promoted_amount || 0) : 0;
-    
-    const flexNetCost = isSelfService ? (flexOrderCost - flexSpecialDiscount) : 0;
-    
-    // RECEITA FLEX = order_cost quando logistic_type = 'self_service'
-    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
-    const receitaFlexCalculada = flexOrderCost;
+    // 🔍 DEBUG FLEX: Log detalhado dos valores calculados
+    if (flexOrderCost > 0 || flexSpecialDiscount > 0) {
+      console.log(`[unified-orders:${cid}] 💰 FLEX AUDIT - Pedido ${order.id}:`, {
+        costs_exists: !!costs,
+        receiver_exists: !!costs?.receiver,
+        discounts_is_array: Array.isArray(receiverDiscounts),
+        discounts_count: receiverDiscounts?.length || 0,
+        gross_amount: costs?.gross_amount,
+        flexOrderCost,
+        flexSpecialDiscount,
+        flexNetCost,
+        receitaFlexCalculada,
+        flexLogisticType
+      });
+    }
     
     // 🔍 DEBUG: Valores calculados dos campos Flex
     if (String(order.id) === '2000013656902262') {

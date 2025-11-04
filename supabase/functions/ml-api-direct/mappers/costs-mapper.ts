@@ -14,8 +14,15 @@ export function mapShipmentCostsData(costsData: any) {
   // }
 
   const receiverDiscounts = costsData.receiver?.discounts || [];
-  const loyalDiscount = receiverDiscounts.find((d: any) => d.type === 'loyal');
   const senderCharges = costsData.senders?.[0]?.charges || {};
+  
+  // ✅ VALIDAÇÃO: Garantir que receiverDiscounts é array e somar com segurança
+  const totalReceiverDiscounts = Array.isArray(receiverDiscounts)
+    ? receiverDiscounts.reduce(
+        (sum: number, d: any) => sum + (Number(d.promoted_amount) || 0),
+        0
+      )
+    : 0;
 
   return {
     // Custo bruto de envio
@@ -25,8 +32,10 @@ export function mapShipmentCostsData(costsData: any) {
     receiver: {
       cost: costsData.receiver?.cost || 0,
       discounts: receiverDiscounts,
-      loyal_discount_amount: loyalDiscount?.promoted_amount || 0,
-      loyal_discount_rate: loyalDiscount?.rate || 0
+      total_discount_amount: totalReceiverDiscounts,
+      // Manter campos individuais para compatibilidade
+      loyal_discount_amount: receiverDiscounts.find((d: any) => d.type === 'loyal')?.promoted_amount || 0,
+      loyal_discount_rate: receiverDiscounts.find((d: any) => d.type === 'loyal')?.rate || 0
     },
     
     // Custos e cobranças do vendedor
@@ -40,11 +49,11 @@ export function mapShipmentCostsData(costsData: any) {
     // order_cost = gross_amount (custo que o seller recebe do ML por fazer entrega Flex)
     order_cost: costsData.gross_amount || 0,
     
-    // special_discount = valor promocional do desconto loyal
-    special_discount: loyalDiscount?.promoted_amount || 0,
+    // special_discount = SOMA de TODOS os promoted_amount dos descontos do receiver
+    special_discount: totalReceiverDiscounts,
     
     // net_cost = order_cost - special_discount
-    net_cost: (costsData.gross_amount || 0) - (loyalDiscount?.promoted_amount || 0),
+    net_cost: (costsData.gross_amount || 0) - totalReceiverDiscounts,
     
     // Full raw data
     raw_data: costsData

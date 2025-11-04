@@ -3501,6 +3501,10 @@ export type Database = {
           data_pedido: string
           data_prevista: string | null
           empresa: string | null
+          flex_logistic_type: string | null
+          flex_net_cost: number | null
+          flex_order_cost: number | null
+          flex_special_discount: number | null
           id: string
           integration_account_id: string | null
           nome_cliente: string
@@ -3509,6 +3513,7 @@ export type Database = {
           numero_venda: string | null
           obs: string | null
           obs_interna: string | null
+          receita_flex: number | null
           situacao: string
           uf: string | null
           updated_at: string
@@ -3525,6 +3530,10 @@ export type Database = {
           data_pedido: string
           data_prevista?: string | null
           empresa?: string | null
+          flex_logistic_type?: string | null
+          flex_net_cost?: number | null
+          flex_order_cost?: number | null
+          flex_special_discount?: number | null
           id?: string
           integration_account_id?: string | null
           nome_cliente: string
@@ -3533,6 +3542,7 @@ export type Database = {
           numero_venda?: string | null
           obs?: string | null
           obs_interna?: string | null
+          receita_flex?: number | null
           situacao: string
           uf?: string | null
           updated_at?: string
@@ -3549,6 +3559,10 @@ export type Database = {
           data_pedido?: string
           data_prevista?: string | null
           empresa?: string | null
+          flex_logistic_type?: string | null
+          flex_net_cost?: number | null
+          flex_order_cost?: number | null
+          flex_special_discount?: number | null
           id?: string
           integration_account_id?: string | null
           nome_cliente?: string
@@ -3557,6 +3571,7 @@ export type Database = {
           numero_venda?: string | null
           obs?: string | null
           obs_interna?: string | null
+          receita_flex?: number | null
           situacao?: string
           uf?: string | null
           updated_at?: string
