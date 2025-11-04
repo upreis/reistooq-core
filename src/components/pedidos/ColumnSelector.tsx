@@ -37,6 +37,11 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'currency_id', label: 'Moeda', visible: false, category: 'financial' },
   { key: 'coupon_amount', label: 'Desconto Cupom', visible: false, category: 'financial' },
   
+  // Colunas Flex (Mercado Livre)
+  { key: 'flex_order_cost', label: 'Flex: Custo Pedido', visible: false, category: 'financial' },
+  { key: 'flex_special_discount', label: 'Flex: Desconto Especial', visible: false, category: 'financial' },
+  { key: 'flex_net_cost', label: 'Flex: Custo Líquido', visible: false, category: 'financial' },
+  
   // Colunas de mapeamento
   { key: 'sku_estoque', label: 'SKU Estoque', visible: true, category: 'mapping' },
   { key: 'sku_kit', label: 'SKU Kit', visible: true, category: 'mapping' },
