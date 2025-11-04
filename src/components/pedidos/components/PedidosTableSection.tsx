@@ -965,12 +965,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{formatDate(order.manufacturing_ending_date || order.unified?.manufacturing_ending_date || order.raw?.manufacturing_ending_date) || '-'}</span>;
                      case 'comment':
                        return <div className="max-w-xs truncate" title={order.comment || order.unified?.comment || order.obs || order.raw?.comment}>{order.comment || order.unified?.comment || order.obs || order.raw?.comment || '-'}</div>;
-                     case 'tags':
-                        {
-                          const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
-                          const translatedTags = translateMLTags(tags);
-                          return <span className="text-sm">{translatedTags || '-'}</span>;
-                        }
+                      case 'tags':
+                         {
+                           const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
+                           const translatedTags = translateMLTags(tags);
+                           return <div className="text-sm break-words whitespace-normal leading-tight w-full overflow-hidden" style={{ maxWidth: '150px' }}>{translatedTags || '-'}</div>;
+                         }
                     default:
                        return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
