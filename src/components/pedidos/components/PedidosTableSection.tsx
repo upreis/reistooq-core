@@ -213,13 +213,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       // Tags com quebra permitida
                       def.key === 'tags' && "break-words"
                     )}
-                    style={
-                      def.key === 'tags' 
-                        ? { minWidth: '150px', width: '150px', maxWidth: '150px' }
-                        : (def as any).width 
-                          ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } 
-                          : undefined
-                    }
+                    style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                   >
                     {def.label}
                   </th>
@@ -360,7 +354,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                     order.unified?.titulo_anuncio ||
                                     order.raw?.order_items?.[0]?.item?.title ||
                                     order.unified?.order_items?.[0]?.item?.title;
-                       return <span>{titulo || '-'}</span>;
+                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '300px' }}>{titulo || '-'}</div>;
                      case 'valor_total':
                        return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
                     case 'paid_amount':
@@ -705,19 +699,24 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }</span>;
                      case 'uf':
                      case 'endereco_uf':
-                       return <span className="whitespace-nowrap">{
+                       return <span>{
                          order.uf || 
                          order.unified?.uf ||
                          order.endereco_uf || 
+                         order.shipping?.destination?.shipping_address?.state?.name ||
                          order.shipping?.destination?.shipping_address?.state?.id ||
-                         order.shipping?.receiver_address?.state?.id || 
-                         order.unified?.shipping?.receiver_address?.state?.id ||
-                         order.raw?.shipping?.receiver_address?.state?.id ||
-                         order.raw?.shipping?.destination?.receiver_address?.state?.id ||
                          order.shipping?.destination?.shipping_address?.state ||
+                         order.shipping?.receiver_address?.state?.id || 
+                         order.shipping?.receiver_address?.state?.name || 
                          order.shipping?.receiver_address?.state || 
+                         order.unified?.shipping?.receiver_address?.state?.id ||
+                         order.unified?.shipping?.receiver_address?.state?.name ||
                          order.unified?.shipping?.receiver_address?.state ||
+                         order.raw?.shipping?.receiver_address?.state?.id ||
+                         order.raw?.shipping?.receiver_address?.state?.name ||
                          order.raw?.shipping?.receiver_address?.state ||
+                         order.raw?.shipping?.destination?.receiver_address?.state?.id ||
+                         order.raw?.shipping?.destination?.receiver_address?.state?.name ||
                          order.raw?.shipping?.destination?.receiver_address?.state ||
                          '-'
                        }</span>;
@@ -738,12 +737,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{ruaText}</div>;
                     case 'endereco_numero':
                       return <span>{
+                        order.endereco_numero ||
+                        order.numero ||
                         order.shipping?.destination?.shipping_address?.street_number ||
                         order.shipping?.receiver_address?.street_number ||
-                        order.raw?.shipping?.destination?.receiver_address?.street_number ||
+                        order.unified?.shipping?.receiver_address?.street_number ||
                         order.raw?.shipping?.receiver_address?.street_number ||
-                        order.unified?.endereco_numero ||
-                        order.endereco_numero ||
+                        order.raw?.shipping?.destination?.receiver_address?.street_number ||
                         '-'
                       }</span>;
                     case 'endereco_bairro':
@@ -971,12 +971,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{formatDate(order.manufacturing_ending_date || order.unified?.manufacturing_ending_date || order.raw?.manufacturing_ending_date) || '-'}</span>;
                      case 'comment':
                        return <div className="max-w-xs truncate" title={order.comment || order.unified?.comment || order.obs || order.raw?.comment}>{order.comment || order.unified?.comment || order.obs || order.raw?.comment || '-'}</div>;
-                      case 'tags':
-                         {
-                           const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
-                           const translatedTags = translateMLTags(tags);
-                           return <div className="text-sm break-words whitespace-normal leading-tight w-full overflow-hidden" style={{ maxWidth: '150px' }}>{translatedTags || '-'}</div>;
-                         }
+                     case 'tags':
+                        {
+                          const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
+                          const translatedTags = translateMLTags(tags);
+                          return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '150px' }}>{translatedTags || '-'}</div>;
+                        }
                     default:
                        return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
@@ -1016,17 +1016,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                           // Colunas de envio sem quebra de linha
-                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
-                          // Tags com quebra permitida
-                          def.key === 'tags' && "break-words"
+                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap"
                         )}
-                        style={
-                          def.key === 'tags' 
-                            ? { minWidth: '150px', width: '150px', maxWidth: '150px' }
-                            : (def as any).width 
-                              ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } 
-                              : undefined
-                        }
+                        style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                       >
                         <span className="text-xs">{renderCell(def.key)}</span>
                       </td>

@@ -138,34 +138,19 @@ function SimplePedidosPage({ className }: Props) {
       }
       
       // 🔄 VERSÃO DO CACHE - Forçar limpeza quando há mudanças no sistema de colunas
-      const COLUMN_CACHE_VERSION = 7; // v7: Forçar atualização largura Tags
+      const COLUMN_CACHE_VERSION = 5; // v5: Remoção completa de 5 colunas financeiras/shipping
       const columnCache = validateAndGet('pedidos-column-preferences', null);
       
       if (columnCache && typeof columnCache === 'object') {
         const cacheVersion = columnCache.version || 1;
         
-        console.log('🔍 [CACHE CHECK] Versão atual:', cacheVersion, '| Versão necessária:', COLUMN_CACHE_VERSION);
-        
-        // Se a versão do cache é diferente, limpar apenas caches ANTIGOS
-        if (cacheVersion !== COLUMN_CACHE_VERSION && cacheVersion < COLUMN_CACHE_VERSION) {
-          // Limpar TODOS os caches antigos
-          const oldCaches = [
-            'pedidos-column-preferences',
-            'pedidos-column-preferences-v4',
-            'pedidos-column-preferences-v5',
-            'pedidos-column-preferences-v6',
-            'pedidos:lastSearch'
-          ];
-          
-          oldCaches.forEach(key => {
-            localStorage.removeItem(key);
-            console.log(`🧹 Removido: ${key}`);
-          });
-          
-          console.log(`🔄 [CACHE] Cache limpo - v${cacheVersion} → v${COLUMN_CACHE_VERSION}`);
-          console.log('⚠️ RECARREGUE A PÁGINA (F5) para aplicar as mudanças!');
-        } else {
-          console.log('✅ [CACHE] Cache está atualizado!');
+        // Se a versão do cache é diferente, limpar
+        if (cacheVersion !== COLUMN_CACHE_VERSION) {
+          localStorage.removeItem('pedidos-column-preferences');
+          localStorage.removeItem('pedidos-column-preferences-v4');
+          localStorage.removeItem('pedidos-column-preferences-v5');
+          localStorage.removeItem('pedidos:lastSearch');
+          console.log(`🔄 [CACHE] Cache de colunas limpo completamente - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
         }
       }
       
@@ -213,7 +198,7 @@ function SimplePedidosPage({ className }: Props) {
       persistentState.saveAppliedFilters(filters);
     },
     autoLoad: false,
-    loadSavedFilters: true // ✅ HABILITADO: Carregar filtros salvos ao entrar na página
+    loadSavedFilters: false
   });
 
   // Handlers para filtros avançados
@@ -234,20 +219,13 @@ function SimplePedidosPage({ className }: Props) {
   const pedidosManager = usePedidosManager();
   const { state, actions, totalPages } = pedidosManager;
   
-  
-  // ✅ CRÍTICO: Aplicar filtros restaurados automaticamente ao entrar na página
+  // ✅ CRÍTICO: Listener para mudanças de filtros aplicados 
   useEffect(() => {
-    // Quando filtros forem carregados do localStorage, aplicá-los automaticamente
-    const hasRestoredFilters = filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0;
-    
-    if (hasRestoredFilters) {
-      console.log('🔄 [FILTROS RESTAURADOS] Aplicando filtros salvos:', filtersManager.appliedFilters);
-      
-      // Aplicar os filtros ao manager de pedidos para disparar busca
-      actions.replaceFilters(filtersManager.appliedFilters);
+    // Quando appliedFilters mudar e não for vazio, force refetch
+    if (filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0) {
+      console.log('🔄 [FILTERS SYNC] Filtros aplicados mudaram, sincronizando...', filtersManager.appliedFilters);
     }
-  }, [filtersManager.appliedFilters, actions]);
-  
+  }, [filtersManager.appliedFilters]);
   
   // 🔧 P3.1: Sistema de colunas unificado com persistência automatica (memoizado)
   const columnManager = useColumnManager();

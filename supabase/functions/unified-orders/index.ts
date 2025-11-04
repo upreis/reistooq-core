@@ -3,32 +3,6 @@ import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
 
-// ✅ Helper para throttling de requisições
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// ✅ Helper para fazer requisições em lotes (evitar rate limit)
-async function fetchInBatches<T>(
-  items: T[],
-  batchSize: number,
-  delayMs: number,
-  fetchFn: (item: T) => Promise<any>
-): Promise<any[]> {
-  const results: any[] = [];
-  
-  for (let i = 0; i < items.length; i += batchSize) {
-    const batch = items.slice(i, i + batchSize);
-    const batchResults = await Promise.allSettled(batch.map(fetchFn));
-    results.push(...batchResults);
-    
-    // Delay entre lotes (exceto no último)
-    if (i + batchSize < items.length) {
-      await delay(delayMs);
-    }
-  }
-  
-  return results;
-}
-
 // ============= INLINE: mapShipmentCostsData =============
 // (não pode importar de outro folder em edge functions)
 function mapShipmentCostsData(costsData: any) {
@@ -115,50 +89,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
   // Cache para reputação por seller_id
   const sellerReputationCache = new Map<string, any>();
   
-  // ✅ PRÉ-BUSCAR reputações de todos os sellers ANTES do map (evita duplicações)
-  const uniqueSellerIds = [...new Set(orders.map(o => o.seller?.id).filter(Boolean))];
-  console.log(`[unified-orders:${cid}] 🏅 Buscando reputações para ${uniqueSellerIds.length} sellers únicos...`);
-  
-  // ✅ Buscar em lotes de 5 sellers por vez com delay de 500ms entre lotes
-  const reputationResults = await fetchInBatches(
-    uniqueSellerIds,
-    5, // 5 sellers por lote
-    500, // 500ms entre lotes
-    async (sellerId) => {
-      try {
-        const reputationResp = await fetch(
-          `https://api.mercadolibre.com/users/${sellerId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${accessToken}`
-            }
-          }
-        );
-        
-        if (reputationResp.ok) {
-          const userData = await reputationResp.json();
-          const sellerReputation = userData.seller_reputation || null;
-          sellerReputationCache.set(sellerId.toString(), sellerReputation);
-          console.log(`[unified-orders:${cid}] ✅ Reputação obtida para seller ${sellerId}`);
-          return { sellerId, reputation: sellerReputation };
-        } else {
-          sellerReputationCache.set(sellerId.toString(), null);
-          return { sellerId, reputation: null };
-        }
-      } catch (error) {
-        console.warn(`[unified-orders:${cid}] ⚠️ Erro ao buscar reputação do seller ${sellerId}:`, error);
-        sellerReputationCache.set(sellerId.toString(), null);
-        return { sellerId, reputation: null };
-      }
-    }
-  );
-  
-  const reputationSuccessCount = reputationResults.filter(r => r.status === 'fulfilled').length;
-  console.log(`[unified-orders:${cid}] 🏅 Reputações obtidas: ${reputationSuccessCount}/${uniqueSellerIds.length}`);
-  
-  // ✅ CORRIGIDO: Usar Promise.allSettled ao invés de Promise.all
-  // Isso permite que alguns pedidos falhem sem quebrar todos
-  const enrichmentResults = await Promise.allSettled(
+  const enrichedOrders = await Promise.all(
     orders.map(async (order) => {
       try {
         let enrichedOrder = { ...order };
@@ -188,11 +119,49 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           console.warn(`[unified-orders:${cid}] Erro ao buscar order ${order.id}:`, error);
         }
         
-        // ✅ 1.5 Aplicar reputação do seller (do cache pré-populado)
+        // 1.5 Buscar reputação do seller (com cache)
         const sellerId = enrichedOrder.seller?.id || order.seller?.id;
+        console.log(`[unified-orders:${cid}] 🏅 Seller ID encontrado:`, sellerId);
         
+        if (sellerId && !sellerReputationCache.has(sellerId.toString())) {
+          try {
+            console.log(`[unified-orders:${cid}] 🔍 Buscando reputação para seller ${sellerId}...`);
+            // ✅ FIX: Usar endpoint /users/{id} ao invés de /users/{id}/seller_reputation
+            const reputationResp = await fetch(
+              `https://api.mercadolibre.com/users/${sellerId}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`
+                }
+              }
+            );
+            
+            console.log(`[unified-orders:${cid}] 🏅 API User status:`, reputationResp.status);
+            
+            if (reputationResp.ok) {
+              const userData = await reputationResp.json();
+              // Extrair seller_reputation do objeto user
+              const sellerReputation = userData.seller_reputation || null;
+              sellerReputationCache.set(sellerId.toString(), sellerReputation);
+              console.log(`[unified-orders:${cid}] ✅ Reputação obtida para seller ${sellerId}:`, {
+                power_seller_status: sellerReputation?.power_seller_status,
+                level_id: sellerReputation?.level_id
+              });
+            } else {
+              const errorText = await reputationResp.text();
+              console.warn(`[unified-orders:${cid}] ⚠️ Erro na API de usuário:`, reputationResp.status, errorText);
+              sellerReputationCache.set(sellerId.toString(), null);
+            }
+          } catch (repError) {
+            console.warn(`[unified-orders:${cid}] ⚠️ Exceção ao buscar dados do seller ${sellerId}:`, repError);
+            sellerReputationCache.set(sellerId.toString(), null);
+          }
+        }
+        
+        // Adicionar reputação ao enrichedOrder
         if (sellerId) {
           const reputation = sellerReputationCache.get(sellerId.toString());
+          console.log(`[unified-orders:${cid}] 🏅 Aplicando reputação para seller ${sellerId}:`, reputation);
           if (reputation) {
             enrichedOrder.seller_reputation = reputation;
           }
@@ -462,21 +431,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
     })
   );
 
-  // ✅ Processar resultados do Promise.allSettled
-  // Retornar pedidos enriquecidos com sucesso, pedidos originais em caso de erro
-  const enrichedOrders = enrichmentResults.map((result, index) => {
-    if (result.status === 'fulfilled') {
-      return result.value;
-    } else {
-      console.warn(`[unified-orders:${cid}] ⚠️ Falha ao enriquecer pedido ${orders[index]?.id}:`, result.reason);
-      return orders[index]; // Retornar pedido original em caso de erro
-    }
-  });
-
-  const successCount = enrichmentResults.filter(r => r.status === 'fulfilled').length;
-  const failureCount = enrichmentResults.filter(r => r.status === 'rejected').length;
-  
-  console.log(`[unified-orders:${cid}] Enriquecimento completo: ${successCount} sucessos, ${failureCount} falhas`);
+  console.log(`[unified-orders:${cid}] Enriquecimento completo concluído`);
   return enrichedOrders;
 }
 

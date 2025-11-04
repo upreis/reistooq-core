@@ -465,7 +465,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Estado (UF) do destinatário',
-    width: 100
+    width: 70
   },
 
   // ====== METADADOS ML ======
@@ -508,7 +508,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Tags do ML',
-    width: 150
+    width: 200
   },
 
 

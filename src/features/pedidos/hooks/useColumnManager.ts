@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
 
-const STORAGE_KEY = 'pedidos-column-preferences-v7'; // ← v7: Forçar atualização largura Tags
+const STORAGE_KEY = 'pedidos-column-preferences-v5'; // ← Incrementado: remoção de 5 colunas
 
 // Estado inicial baseado nas configurações padrão
 const getInitialState = (): ColumnState => {

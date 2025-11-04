@@ -127,18 +127,7 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
               case 'nome_completo':
                 return show(get(row.unified, 'nome_destinatario') ?? get(row.raw, 'shipping.destination.receiver_name') ?? '—');
               case 'cpf_cnpj':
-                {
-                  // Buscar CPF/CNPJ de múltiplas fontes
-                  const rawDoc = get(row.unified, 'cpf_cnpj') || 
-                                get(row, 'cpf_cnpj') ||
-                                get(row, 'documento_cliente') ||
-                                get(row, 'cliente_documento') ||
-                                get(row.raw, 'buyer.identification.number') ||
-                                get(row.unified, 'buyer.identification.number') ||
-                                get(row.raw, 'buyer.billing_info.doc_number') ||
-                                '';
-                  return <span className="font-mono text-xs">{maskCpfCnpj(rawDoc)}</span>;
-                }
+                return maskCpfCnpj(get(row.unified, 'cpf_cnpj'));
               case 'data_pedido':
                 return formatDate(get(row.unified, 'data_pedido') ?? get(row.raw, 'date_created'));
               case 'valor_total':
