@@ -224,5 +224,6 @@ export const translateCondition = (condition: string): string => {
     'acceptable': 'Aceitável'
   };
   
-  return translations[condition.toLowerCase()] || condition;
+  const normalized = String(condition).toLowerCase().trim();
+  return translations[normalized] || condition;
 };
