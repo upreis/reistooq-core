@@ -439,13 +439,17 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // 🆕 NOVOS CAMPOS FLEX (conforme PDF - sem mexer nos existentes)
-    // CRÍTICO: order_cost e cost_components vêm do /shipments/{id}, NÃO do /costs!
-    // O /costs só retorna informações de faturamento, não os campos que precisamos
+    // CRÍTICO: Os campos estão DENTRO de shipping.costs, não direto em shipping!
+    // shipping.costs = resultado do /shipments/{id}/costs
     
-    const flexOrderCost = shipping?.order_cost || 
+    const flexOrderCost = shipping?.costs?.order_cost || 
+                          detailedShipping?.costs?.order_cost || 
+                          shipping?.order_cost ||
                           detailedShipping?.order_cost || 0;
     
-    const flexSpecialDiscount = shipping?.cost_components?.special_discount || 
+    const flexSpecialDiscount = shipping?.costs?.cost_components?.special_discount || 
+                                detailedShipping?.costs?.cost_components?.special_discount ||
+                                shipping?.cost_components?.special_discount || 
                                 detailedShipping?.cost_components?.special_discount || 0;
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
@@ -470,15 +474,19 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
         'detailedShipping.logistic_type': detailedShipping?.logistic_type,
       },
       
-      // Custos (NOVA ORDEM DE PRIORIDADE!)
+      // Custos (AGORA COM TODAS AS FONTES POSSÍVEIS!)
       costs: {
         order_cost: flexOrderCost,
         special_discount: flexSpecialDiscount,
         sources: {
-          'shipping.order_cost': shipping?.order_cost,                                           // ← PRIORIDADE 1
-          'detailedShipping.order_cost': detailedShipping?.order_cost,                          // ← PRIORIDADE 2
-          'shipping.cost_components.special_discount': shipping?.cost_components?.special_discount,           // ← PRIORIDADE 1
-          'detailedShipping.cost_components.special_discount': detailedShipping?.cost_components?.special_discount, // ← PRIORIDADE 2
+          'shipping.costs.order_cost': shipping?.costs?.order_cost,                                            // ← NOVO!
+          'detailedShipping.costs.order_cost': detailedShipping?.costs?.order_cost,                           // ← NOVO!
+          'shipping.order_cost': shipping?.order_cost,
+          'detailedShipping.order_cost': detailedShipping?.order_cost,
+          'shipping.costs.cost_components.special_discount': shipping?.costs?.cost_components?.special_discount,        // ← NOVO!
+          'detailedShipping.costs.cost_components.special_discount': detailedShipping?.costs?.cost_components?.special_discount, // ← NOVO!
+          'shipping.cost_components.special_discount': shipping?.cost_components?.special_discount,
+          'detailedShipping.cost_components.special_discount': detailedShipping?.cost_components?.special_discount,
         }
       },
       
