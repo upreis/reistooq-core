@@ -2,7 +2,34 @@ import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } fro
 import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
-import { mapShipmentCostsData } from "../ml-api-direct/mappers/costs-mapper.ts";
+
+// 💰 INLINE COSTS MAPPER (não pode importar de outras edge functions)
+function mapShipmentCostsData(costsData: any) {
+  if (!costsData) return null;
+
+  const receiverDiscounts = costsData.receiver?.discounts || [];
+  const loyalDiscount = receiverDiscounts.find((d: any) => d.type === 'loyal');
+  const senderCharges = costsData.senders?.[0]?.charges || {};
+
+  return {
+    gross_amount: costsData.gross_amount || 0,
+    receiver: {
+      cost: costsData.receiver?.cost || 0,
+      discounts: receiverDiscounts,
+      loyal_discount_amount: loyalDiscount?.promoted_amount || 0,
+      loyal_discount_rate: loyalDiscount?.rate || 0
+    },
+    sender: {
+      cost: costsData.senders?.[0]?.cost || 0,
+      charge_flex: senderCharges.charge_flex || 0,
+      charges: senderCharges
+    },
+    order_cost: costsData.gross_amount || 0,
+    special_discount: loyalDiscount?.promoted_amount || 0,
+    net_cost: (costsData.gross_amount || 0) - (loyalDiscount?.promoted_amount || 0),
+    raw_data: costsData
+  };
+}
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
