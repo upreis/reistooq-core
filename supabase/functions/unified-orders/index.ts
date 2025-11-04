@@ -439,22 +439,22 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const custoEnvioSeller = shipping.base_cost || 0;
     
     // 🆕 NOVOS CAMPOS FLEX (conforme PDF - sem mexer nos existentes)
-    // IMPORTANTE: detailedShipping pode ter 3 fontes:
-    // 1. shipping.detailed_shipping (do enriquecimento)
-    // 2. shipping direto (se não foi enriquecido)
-    // 3. order.shipping (fallback)
+    // CRÍTICO: order_cost e cost_components vêm do /shipments/{id}, NÃO do /costs!
+    // O /costs só retorna informações de faturamento, não os campos que precisamos
     
-    const flexOrderCost = detailedShipping?.order_cost || shipping?.order_cost || 0;
-    const flexSpecialDiscount = detailedShipping?.cost_components?.special_discount || 
-                                 shipping?.cost_components?.special_discount || 
-                                 shipping?.costs?.cost_components?.special_discount || 0;
+    const flexOrderCost = shipping?.order_cost || 
+                          detailedShipping?.order_cost || 0;
+    
+    const flexSpecialDiscount = shipping?.cost_components?.special_discount || 
+                                detailedShipping?.cost_components?.special_discount || 0;
+    
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
     // Procurar logistic_type em todas as possíveis localizações
-    const flexLogisticType = detailedShipping?.logistic?.type || 
-                             shipping?.logistic?.type || 
-                             detailedShipping?.logistic_type || 
+    const flexLogisticType = shipping?.logistic?.type || 
+                             detailedShipping?.logistic?.type || 
                              shipping?.logistic_type || 
+                             detailedShipping?.logistic_type || 
                              null;
     
     // Debug TIPO LOGÍSTICO de TODOS os pedidos - EXPANDIDO
@@ -462,24 +462,23 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       // Valor final usado
       logistic_type_final: flexLogisticType,
       
-      // Todas as possíveis fontes
+      // Todas as possíveis fontes (NOVA ORDEM DE PRIORIDADE!)
       sources: {
-        'detailedShipping.logistic.type': detailedShipping?.logistic?.type,
-        'shipping.logistic.type': shipping?.logistic?.type,
-        'detailedShipping.logistic_type': detailedShipping?.logistic_type,
+        'shipping.logistic.type': shipping?.logistic?.type,                  // ← PRIORIDADE 1
+        'detailedShipping.logistic.type': detailedShipping?.logistic?.type, // ← PRIORIDADE 2
         'shipping.logistic_type': shipping?.logistic_type,
+        'detailedShipping.logistic_type': detailedShipping?.logistic_type,
       },
       
-      // Custos
+      // Custos (NOVA ORDEM DE PRIORIDADE!)
       costs: {
         order_cost: flexOrderCost,
         special_discount: flexSpecialDiscount,
         sources: {
-          'detailedShipping.order_cost': detailedShipping?.order_cost,
-          'shipping.order_cost': shipping?.order_cost,
-          'detailedShipping.cost_components.special_discount': detailedShipping?.cost_components?.special_discount,
-          'shipping.cost_components.special_discount': shipping?.cost_components?.special_discount,
-          'shipping.costs.cost_components.special_discount': shipping?.costs?.cost_components?.special_discount,
+          'shipping.order_cost': shipping?.order_cost,                                           // ← PRIORIDADE 1
+          'detailedShipping.order_cost': detailedShipping?.order_cost,                          // ← PRIORIDADE 2
+          'shipping.cost_components.special_discount': shipping?.cost_components?.special_discount,           // ← PRIORIDADE 1
+          'detailedShipping.cost_components.special_discount': detailedShipping?.cost_components?.special_discount, // ← PRIORIDADE 2
         }
       },
       
@@ -487,7 +486,9 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       enrichment: {
         has_detailed_shipping: !!shipping?.detailed_shipping,
         has_costs: !!shipping?.costs,
-        shipping_enriched: shipping?.shipping_enriched
+        shipping_enriched: shipping?.shipping_enriched,
+        shipping_keys: Object.keys(shipping || {}),
+        detailedShipping_keys: Object.keys(detailedShipping || {})
       }
     });
     
