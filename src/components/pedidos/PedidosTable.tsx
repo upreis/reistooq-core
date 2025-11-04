@@ -229,7 +229,7 @@ export function PedidosTable({
                   key={col.key} 
                   className={cn(
                     "whitespace-nowrap",
-                    col.key === 'logistic_type' && "whitespace-nowrap"
+                    (col.key === 'logistic_type' || col.key === 'shipping_status') && "whitespace-nowrap"
                   )}
                   style={(col as any).width ? { minWidth: `${(col as any).width}px`, width: `${(col as any).width}px` } : undefined}
                 >

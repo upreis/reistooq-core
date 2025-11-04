@@ -208,8 +208,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       "px-4 h-12 text-sm text-muted-foreground font-medium text-left",
                       // Colunas SKU com largura ajustada ao conteúdo
                       (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
-                      // Tipo Logístico sem quebra de linha
-                      def.key === 'logistic_type' && "whitespace-nowrap"
+                      // Colunas de envio sem quebra de linha
+                      (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap"
                     )}
                     style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                   >
@@ -1013,8 +1013,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           "px-4 text-center",
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
-                          // Tipo Logístico sem quebra de linha
-                          def.key === 'logistic_type' && "whitespace-nowrap"
+                          // Colunas de envio sem quebra de linha
+                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap"
                         )}
                         style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                       >
