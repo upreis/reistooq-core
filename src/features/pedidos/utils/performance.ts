@@ -212,17 +212,22 @@ export function calculateVisibleRange(
 }
 
 /**
- * Lazy load de componentes pesados
+ * Lazy load de componentes pesados com preload
  */
 export function lazyWithPreload<T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>
 ) {
   const LazyComponent = React.lazy(importFn);
   
-  // Adiciona método preload
-  (LazyComponent as any).preload = importFn;
+  // Type-safe preload usando intersection type
+  type LazyComponentWithPreload = typeof LazyComponent & {
+    preload: () => Promise<{ default: T }>;
+  };
   
-  return LazyComponent;
+  const ComponentWithPreload = LazyComponent as LazyComponentWithPreload;
+  ComponentWithPreload.preload = importFn;
+  
+  return ComponentWithPreload;
 }
 
 // React import para lazy loading

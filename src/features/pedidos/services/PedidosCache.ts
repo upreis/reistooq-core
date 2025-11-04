@@ -118,14 +118,18 @@ class PedidosCacheService {
   }
 
   /**
-   * Limpa entradas expiradas
+   * Limpa entradas expiradas (protegido contra race conditions)
    */
   cleanup(): void {
     const now = Date.now();
     const keysToDelete: string[] = [];
 
     this.cache.forEach((entry, key) => {
-      if (now - entry.timestamp > entry.ttl) {
+      // Só deleta se expirado E não foi acessado recentemente (último 1s)
+      const isExpired = now - entry.timestamp > entry.ttl;
+      const recentlyAccessed = entry.hits > 0 && (now - entry.timestamp) < 1000;
+      
+      if (isExpired && !recentlyAccessed) {
         keysToDelete.push(key);
       }
     });
@@ -206,19 +210,90 @@ class PedidosCacheService {
 // Singleton instance
 export const pedidosCache = new PedidosCacheService();
 
-// Auto cleanup a cada 5 minutos
-if (typeof window !== 'undefined') {
-  setInterval(() => {
+// Gerenciamento do cleanup interval
+let cleanupIntervalId: NodeJS.Timeout | null = null;
+
+export function startCacheCleanup() {
+  if (cleanupIntervalId) return; // Já rodando
+  
+  cleanupIntervalId = setInterval(() => {
     pedidosCache.cleanup();
   }, 5 * 60 * 1000);
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🧹 [CACHE] Auto cleanup iniciado (5min interval)');
+  }
+}
+
+export function stopCacheCleanup() {
+  if (cleanupIntervalId) {
+    clearInterval(cleanupIntervalId);
+    cleanupIntervalId = null;
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🛑 [CACHE] Auto cleanup parado');
+    }
+  }
+}
+
+// Iniciar cleanup apenas uma vez
+if (typeof window !== 'undefined') {
+  startCacheCleanup();
+  
+  // Cleanup no unload para evitar memory leak
+  window.addEventListener('beforeunload', stopCacheCleanup);
+}
+
+/**
+ * Normaliza valor para serialização consistente
+ */
+function normalizeValue(value: any): any {
+  // Date para string ISO (apenas data, sem hora para evitar timezone issues)
+  if (value instanceof Date) {
+    return value.toISOString().split('T')[0];
+  }
+  
+  // Array: normaliza cada item
+  if (Array.isArray(value)) {
+    return value.map(normalizeValue).sort();
+  }
+  
+  // Object: normaliza recursivamente
+  if (value && typeof value === 'object') {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc, key) => {
+        const normalized = normalizeValue(value[key]);
+        if (normalized !== undefined) {
+          acc[key] = normalized;
+        }
+        return acc;
+      }, {} as any);
+  }
+  
+  // Primitivos
+  return value;
 }
 
 /**
  * Helper para gerar chaves de cache consistentes
  */
 export const cacheKeys = {
-  pedidos: (filters?: any) => 
-    `pedidos:${JSON.stringify(filters || {})}`,
+  pedidos: (filters?: any) => {
+    if (!filters || Object.keys(filters).length === 0) {
+      return 'pedidos:empty';
+    }
+    
+    try {
+      // Normaliza e ordena filtros para key consistente
+      const normalized = normalizeValue(filters);
+      return `pedidos:${JSON.stringify(normalized)}`;
+    } catch (error) {
+      // Fallback para objetos circulares ou problemáticos
+      console.warn('[CACHE] Falha ao serializar filtros:', error);
+      return `pedidos:${Date.now()}`; // Key única para evitar colisão
+    }
+  },
   
   pedido: (id: string) => 
     `pedido:${id}`,

@@ -43,16 +43,30 @@ interface UsePedidosOptimizedReturn {
 /**
  * Hook otimizado para gerenciar pedidos com cache multicamadas
  * 
- * IMPORTANTE: Este hook NÃO substitui usePedidosManager ainda.
- * Use gradualmente em componentes novos ou refatorados.
+ * ⚠️ IMPORTANTE: ESTE HOOK ESTÁ EM DESENVOLVIMENTO - NÃO USAR EM PRODUÇÃO!
+ * 
+ * Status atual:
+ * - ✅ Estrutura de cache implementada
+ * - ✅ React Query configurado
+ * - ✅ Stats e memoização prontos
+ * - ❌ Integração com API PENDENTE (retorna array vazio)
+ * 
+ * Este hook retorna SEMPRE um array vazio até ser integrado com a API real.
+ * Use apenas para testes de estrutura, NÃO para funcionalidade real.
+ * 
+ * Para uso em produção, continue usando `usePedidosManager` até migração completa.
  * 
  * @example
  * ```tsx
- * function MyComponent() {
- *   const { pedidos, isLoading, refresh } = usePedidosOptimized({
- *     filters: { status: 'pending' },
- *     staleTime: 5 * 60 * 1000 // 5 minutos
+ * // ⚠️ Apenas para testes estruturais!
+ * function MyTestComponent() {
+ *   const { pedidos, isLoading, cacheStats } = usePedidosOptimized({
+ *     filters: { situacao: 'pending' },
+ *     staleTime: 5 * 60 * 1000
  *   });
+ *   
+ *   // pedidos será [] até integração com API
+ *   console.log('Cache hit rate:', cacheStats.hitRate);
  * }
  * ```
  */
@@ -86,9 +100,24 @@ export function usePedidosOptimized(
       return cached;
     }
 
-    // TODO: Substituir por chamada real da API quando migrar
-    // Por ora, retorna array vazio para não quebrar
+    // ⚠️ IMPLEMENTAÇÃO PENDENTE
+    // TODO: Integrar com pedidosService ou API real quando migrar
+    // 
+    // Exemplo de como será quando integrado:
+    // ```typescript
+    // import { pedidosService } from '@/services/pedidosService';
+    // const data = await pedidosService.getPedidos(filters);
+    // ```
+    //
+    // Por ora, retorna array vazio para não quebrar builds
     const data: Pedido[] = [];
+    
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(
+        '⚠️ [usePedidosOptimized] Hook não integrado com API - retornando array vazio.\n' +
+        'Use usePedidosManager para funcionalidade real.'
+      );
+    }
     
     // Armazena no cache
     pedidosCache.set(cacheKey, data, staleTime);
