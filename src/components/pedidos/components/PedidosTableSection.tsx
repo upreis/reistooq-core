@@ -470,9 +470,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       {
                         let flexOrderCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
                         
-                        // ✅ Se for 8.90, 13.90 ou 15.90 → mantém valor
+                        // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
                         // Caso contrário → divide por 2
-                        const valoresFixos = [8.90, 13.90, 15.90];
+                        const valoresFixos = [8.90, 13.90, 15.90, 15.99];
                         if (flexOrderCost > 0 && !valoresFixos.includes(flexOrderCost)) {
                           flexOrderCost = flexOrderCost / 2;
                         }
