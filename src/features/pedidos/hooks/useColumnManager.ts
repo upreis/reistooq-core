@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
 
-const STORAGE_KEY = 'pedidos-column-preferences-v6'; // ← v6: Ajustes de largura UF e Tags
+const STORAGE_KEY = 'pedidos-column-preferences-v7'; // ← v7: Forçar atualização largura Tags
 
 // Estado inicial baseado nas configurações padrão
 const getInitialState = (): ColumnState => {

@@ -138,21 +138,34 @@ function SimplePedidosPage({ className }: Props) {
       }
       
       // 🔄 VERSÃO DO CACHE - Forçar limpeza quando há mudanças no sistema de colunas
-      const COLUMN_CACHE_VERSION = 6; // v6: Ajustes de largura (UF=100px, Tags=150px)
+      const COLUMN_CACHE_VERSION = 7; // v7: Forçar atualização largura Tags
       const columnCache = validateAndGet('pedidos-column-preferences', null);
       
       if (columnCache && typeof columnCache === 'object') {
         const cacheVersion = columnCache.version || 1;
         
+        console.log('🔍 [CACHE CHECK] Versão atual:', cacheVersion, '| Versão necessária:', COLUMN_CACHE_VERSION);
+        
         // Se a versão do cache é diferente, limpar apenas caches ANTIGOS
         if (cacheVersion !== COLUMN_CACHE_VERSION && cacheVersion < COLUMN_CACHE_VERSION) {
-          // Limpar apenas versões antigas
-          localStorage.removeItem('pedidos-column-preferences');
-          localStorage.removeItem('pedidos-column-preferences-v4');
-          localStorage.removeItem('pedidos-column-preferences-v5');
-          localStorage.removeItem('pedidos:lastSearch');
-          console.log(`🔄 [CACHE] Cache de colunas limpo - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
-          console.log('🔄 Recarregue a página (F5) para aplicar as novas larguras');
+          // Limpar TODOS os caches antigos
+          const oldCaches = [
+            'pedidos-column-preferences',
+            'pedidos-column-preferences-v4',
+            'pedidos-column-preferences-v5',
+            'pedidos-column-preferences-v6',
+            'pedidos:lastSearch'
+          ];
+          
+          oldCaches.forEach(key => {
+            localStorage.removeItem(key);
+            console.log(`🧹 Removido: ${key}`);
+          });
+          
+          console.log(`🔄 [CACHE] Cache limpo - v${cacheVersion} → v${COLUMN_CACHE_VERSION}`);
+          console.log('⚠️ RECARREGUE A PÁGINA (F5) para aplicar as mudanças!');
+        } else {
+          console.log('✅ [CACHE] Cache está atualizado!');
         }
       }
       
