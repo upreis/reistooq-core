@@ -568,7 +568,7 @@ function SimplePedidosPage({ className }: Props) {
   };
 
   // Configuração de colunas (reposta após ajuste)
-  type ColumnDef = { key: string; label: string; default: boolean; category?: string };
+  type ColumnDef = { key: string; label: string; default: boolean; category?: string; width?: number };
   const allColumns: ColumnDef[] = [
     // Básicas
     { key: 'id', label: 'ID-Único', default: true, category: 'basic' },
@@ -612,6 +612,7 @@ function SimplePedidosPage({ className }: Props) {
     // Envio (combinado)
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping' },
     { key: 'logistic_mode', label: 'Logistic Mode (Principal)', default: false, category: 'shipping' },
+    { key: 'logistic_type', label: 'Tipo Logístico', default: true, category: 'shipping', width: 100 },
     
     // Reputação do Vendedor
     { key: 'power_seller_status', label: 'Medalha', default: false, category: 'shipping' },

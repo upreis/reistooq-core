@@ -227,7 +227,7 @@ export function PedidosTable({
                 <TableHead 
                   key={col.key} 
                   className="whitespace-nowrap"
-                  style={col.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+                  style={(col as any).width ? { minWidth: `${(col as any).width}px` } : undefined}
                 >
                   {col.label}
                 </TableHead>

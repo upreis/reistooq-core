@@ -209,7 +209,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       // Colunas SKU com largura ajustada ao conteúdo
                       (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
                     )}
-                    style={def.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+                    style={(def as any).width ? { minWidth: `${(def as any).width}px` } : undefined}
                   >
                     {def.label}
                   </th>
@@ -1012,7 +1012,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
                         )}
-                        style={def.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+                        style={(def as any).width ? { minWidth: `${(def as any).width}px` } : undefined}
                       >
                         <span className="text-xs">{renderCell(def.key)}</span>
                       </td>
