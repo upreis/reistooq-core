@@ -5,7 +5,7 @@ import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 // F4.2: Sistema unificado de mapeamento de status - atualizado
 import { mapApiStatusToLabel, getStatusBadgeVariant } from '@/utils/statusMapping';
-import { translateShippingSubstatus } from '@/utils/pedidos-translations';
+import { translateShippingSubstatus, translateShippingStatus, translateShippingMethod, getShippingStatusColor, translateCondition } from '@/utils/pedidos-translations';
 import { Badge } from '@/components/ui/badge';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { ColumnConfig } from './ColumnSelector';
@@ -210,15 +210,7 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 const conditions = get(row.unified, 'conditions') || get(row.raw, 'order_items[0].item.condition');
                 if (!conditions) return <span className="text-xs text-muted-foreground">—</span>;
                 
-                // Mapear condições para português
-                const condicaoMap: Record<string, string> = {
-                  'new': 'Novo',
-                  'used': 'Usado',
-                  'refurbished': 'Recondicionado',
-                  'not_specified': 'Não especificado'
-                };
-                
-                const condicaoTexto = condicaoMap[conditions.toLowerCase()] || conditions;
+                const condicaoTexto = translateCondition(conditions);
                 
                 return (
                   <Badge variant="outline" className={conditions.toLowerCase() === 'new' ? 'bg-blue-50 text-blue-700' : ''}>

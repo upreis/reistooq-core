@@ -208,3 +208,21 @@ export const translateShippingMethod = (method: any): string => {
   
   return '-';
 };
+
+// Traduções de condição do produto
+export const translateCondition = (condition: string): string => {
+  if (!condition) return '-';
+  
+  const translations: Record<string, string> = {
+    'new': 'Novo',
+    'used': 'Usado',
+    'refurbished': 'Recondicionado',
+    'not_specified': 'Não Especificado',
+    'like_new': 'Como Novo',
+    'very_good': 'Muito Bom',
+    'good': 'Bom',
+    'acceptable': 'Aceitável'
+  };
+  
+  return translations[condition.toLowerCase()] || condition;
+};
