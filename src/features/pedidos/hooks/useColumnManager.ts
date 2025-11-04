@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
 
-const STORAGE_KEY = 'pedidos-column-preferences-v4'; // ← Incrementado para forçar reset
+const STORAGE_KEY = 'pedidos-column-preferences-v5'; // ← Incrementado: remoção de 5 colunas
 
 // Estado inicial baseado nas configurações padrão
 const getInitialState = (): ColumnState => {
@@ -38,7 +38,8 @@ const loadStoredPreferences = (): Partial<ColumnState> => {
   const removedColumns = new Set([
     'marketplace_fee_detail', 'payment_issuer', 'refund_data', 'installments', 'installment_amount',
     'product_categories', 'product_attributes', 'product_variations', 'product_warranty', 'manufacturing_days',
-    'nome_cliente', 'shipping_method', 'tracking_method', 'status_history', 'pack_status', 'pack_status_detail'
+    'nome_cliente', 'shipping_method', 'tracking_method', 'status_history', 'pack_status', 'pack_status_detail',
+    'frete_pago_cliente', 'flex_payment_value', 'coupon_amount', 'payment_type', 'shipping_mode'
   ]);
   
   const validColumnKeys = new Set(COLUMN_DEFINITIONS.map(col => col.key));

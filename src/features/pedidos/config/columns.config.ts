@@ -130,17 +130,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'frete_pago_cliente',
-    label: 'Frete Pago Cliente',
-    category: 'financial',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Valor do frete pago pelo cliente',
-    width: 120,
-    sortable: true
-  },
-  {
     key: 'receita_flex',
     label: 'Receita Flex (Bônus)',
     category: 'financial',
@@ -149,28 +138,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: true,
     description: 'Receita adicional do Mercado Envios Flex',
     width: 140,
-    sortable: true
-  },
-  {
-    key: 'flex_payment_value',
-    label: 'Flex - Valor Recebido',
-    category: 'financial',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Valor recebido por entrega Flex (quando negativo)',
-    width: 140,
-    sortable: true
-  },
-  {
-    key: 'coupon_amount',
-    label: 'Desconto Cupom',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Valor de desconto por cupom',
-    width: 120,
     sortable: true
   },
   {
@@ -213,16 +180,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Status do pagamento',
-    width: 120
-  },
-  {
-    key: 'payment_type',
-    label: 'Tipo Pagamento',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Tipo de pagamento',
     width: 120
   },
   {
@@ -426,16 +383,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Substatus detalhado do envio (printed, picked_up, out_for_delivery, etc.)',
     width: 160,
     filterable: true
-  },
-  {
-    key: 'shipping_mode',
-    label: 'Frete vendedor/Comprador',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Modo de envio combinado',
-    width: 200
   },
   {
     key: 'codigo_rastreamento',

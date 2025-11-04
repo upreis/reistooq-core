@@ -137,7 +137,7 @@ function SimplePedidosPage({ className }: Props) {
       }
       
       // 🔄 VERSÃO DO CACHE - Forçar limpeza quando há mudanças no sistema de colunas
-      const COLUMN_CACHE_VERSION = 3; // Incrementado: remoção completa de 4 colunas
+      const COLUMN_CACHE_VERSION = 5; // v5: Remoção completa de 5 colunas financeiras/shipping
       const columnCache = validateAndGet('pedidos-column-preferences', null);
       
       if (columnCache && typeof columnCache === 'object') {
@@ -146,7 +146,10 @@ function SimplePedidosPage({ className }: Props) {
         // Se a versão do cache é diferente, limpar
         if (cacheVersion !== COLUMN_CACHE_VERSION) {
           localStorage.removeItem('pedidos-column-preferences');
-          console.log(`🔄 [CACHE] Cache de colunas limpo - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
+          localStorage.removeItem('pedidos-column-preferences-v4');
+          localStorage.removeItem('pedidos-column-preferences-v5');
+          localStorage.removeItem('pedidos:lastSearch');
+          console.log(`🔄 [CACHE] Cache de colunas limpo completamente - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
         }
       }
       
