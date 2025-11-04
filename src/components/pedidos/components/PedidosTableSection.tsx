@@ -354,7 +354,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                     order.unified?.titulo_anuncio ||
                                     order.raw?.order_items?.[0]?.item?.title ||
                                     order.unified?.order_items?.[0]?.item?.title;
-                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '300px' }}>{titulo || '-'}</div>;
+                       return <span>{titulo || '-'}</span>;
                      case 'valor_total':
                        return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
                     case 'paid_amount':
@@ -737,13 +737,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{ruaText}</div>;
                     case 'endereco_numero':
                       return <span>{
-                        order.endereco_numero ||
-                        order.numero ||
                         order.shipping?.destination?.shipping_address?.street_number ||
                         order.shipping?.receiver_address?.street_number ||
-                        order.unified?.shipping?.receiver_address?.street_number ||
-                        order.raw?.shipping?.receiver_address?.street_number ||
                         order.raw?.shipping?.destination?.receiver_address?.street_number ||
+                        order.raw?.shipping?.receiver_address?.street_number ||
+                        order.unified?.endereco_numero ||
+                        order.endereco_numero ||
                         '-'
                       }</span>;
                     case 'endereco_bairro':
