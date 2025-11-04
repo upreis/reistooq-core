@@ -137,6 +137,16 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
                 if (costsResp?.ok) {
                   const costsData = await costsResp.json();
+                  
+                  // 🔍 DEBUG: Ver estrutura completa dos custos retornados pela API
+                  if (String(order.id) === '2000013656902262') {
+                    console.log(`[unified-orders:${cid}] 🔍 COSTS API RESPONSE - Pedido ${order.id}:`);
+                    console.log(`[unified-orders:${cid}]   costsData =`, costsData);
+                    console.log(`[unified-orders:${cid}]   costsData.order_cost =`, costsData?.order_cost);
+                    console.log(`[unified-orders:${cid}]   costsData.cost_components =`, costsData?.cost_components);
+                    console.log(`[unified-orders:${cid}]   costsData.cost_components?.special_discount =`, costsData?.cost_components?.special_discount);
+                  }
+                  
                   (shippingData as any).costs = costsData;
                   console.log(`[unified-orders:${cid}] ➕ costs anexado ao shipment ${order.shipping.id}`);
                 }
