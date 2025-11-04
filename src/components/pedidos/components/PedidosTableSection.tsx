@@ -539,28 +539,28 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          
                          // Extrair a cor do level_id (formato: "5_green")
                          const parts = String(levelId).split('_');
-                         const cor = parts.length > 1 ? parts[1] : levelId;
+                         const cor = parts.length > 1 ? parts.slice(1).join('_') : levelId;
                          
-                         // Mapeamento de cores
-                         const colorMap: Record<string, { bgColor: string; textColor: string }> = {
-                           'green': { bgColor: '#00a650', textColor: '#fff' },
-                           'light_green': { bgColor: '#aad400', textColor: '#333' },
-                           'yellow': { bgColor: '#fff159', textColor: '#333' },
-                           'orange': { bgColor: '#f7942d', textColor: '#fff' },
-                           'red': { bgColor: '#f25346', textColor: '#fff' }
+                         // Mapeamento de cores com tradução
+                         const colorMap: Record<string, { label: string; bgColor: string; textColor: string }> = {
+                           'green': { label: 'Verde', bgColor: '#00a650', textColor: '#fff' },
+                           'light_green': { label: 'Verde Claro', bgColor: '#aad400', textColor: '#333' },
+                           'yellow': { label: 'Amarelo', bgColor: '#fff159', textColor: '#333' },
+                           'orange': { label: 'Laranja', bgColor: '#f7942d', textColor: '#fff' },
+                           'red': { label: 'Vermelho', bgColor: '#f25346', textColor: '#fff' }
                          };
                          
-                         const colorInfo = colorMap[cor] || { bgColor: '#e0e0e0', textColor: '#666' };
+                         const colorInfo = colorMap[cor] || { label: cor, bgColor: '#e0e0e0', textColor: '#666' };
                          
                          return (
                            <span 
-                             className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize"
+                             className="inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
                              style={{ 
                                backgroundColor: colorInfo.bgColor, 
                                color: colorInfo.textColor 
                              }}
                            >
-                             {cor}
+                             {colorInfo.label}
                            </span>
                          );
                        }
