@@ -89,7 +89,10 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
         }
         
         return (
-          <TableCell key={col.key}>
+          <TableCell 
+            key={col.key}
+            style={col.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+          >
             {(() => {
               switch (col.key) {
               case 'numero':

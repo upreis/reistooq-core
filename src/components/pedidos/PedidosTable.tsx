@@ -224,7 +224,11 @@ export function PedidosTable({
                 />
               </TableHead>
               {visibleColumnConfigs.map((col) => (
-                <TableHead key={col.key} className="whitespace-nowrap">
+                <TableHead 
+                  key={col.key} 
+                  className="whitespace-nowrap"
+                  style={col.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+                >
                   {col.label}
                 </TableHead>
               ))}

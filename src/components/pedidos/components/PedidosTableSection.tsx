@@ -202,11 +202,17 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                 <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">ID-Único</th>
                 {/* Demais cabeçalhos conforme ordem/seleção */}
                 {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                  <th key={def.key} className={cn(
-                    "px-4 h-12 text-sm text-muted-foreground font-medium text-left",
-                    // Colunas SKU com largura ajustada ao conteúdo
-                    (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
-                  )}>{def.label}</th>
+                  <th 
+                    key={def.key} 
+                    className={cn(
+                      "px-4 h-12 text-sm text-muted-foreground font-medium text-left",
+                      // Colunas SKU com largura ajustada ao conteúdo
+                      (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
+                    )}
+                    style={def.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+                  >
+                    {def.label}
+                  </th>
                 ))}
               </tr>
             </thead>
@@ -999,11 +1005,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 
                     {/* Demais colunas dinâmicas */}
                     {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
-                      <td key={def.key} className={cn(
-                        "px-4 text-center",
-                        // Colunas SKU com largura ajustada ao conteúdo
-                        (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
-                      )}>
+                      <td 
+                        key={def.key} 
+                        className={cn(
+                          "px-4 text-center",
+                          // Colunas SKU com largura ajustada ao conteúdo
+                          (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap"
+                        )}
+                        style={def.key === 'logistic_type' ? { minWidth: '100px' } : undefined}
+                      >
                         <span className="text-xs">{renderCell(def.key)}</span>
                       </td>
                     ))}
