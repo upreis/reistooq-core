@@ -3507,12 +3507,14 @@ export type Database = {
           flex_special_discount: number | null
           id: string
           integration_account_id: string | null
+          level_id: string | null
           nome_cliente: string
           numero: string
           numero_ecommerce: string | null
           numero_venda: string | null
           obs: string | null
           obs_interna: string | null
+          power_seller_status: string | null
           receita_flex: number | null
           situacao: string
           uf: string | null
@@ -3536,12 +3538,14 @@ export type Database = {
           flex_special_discount?: number | null
           id?: string
           integration_account_id?: string | null
+          level_id?: string | null
           nome_cliente: string
           numero: string
           numero_ecommerce?: string | null
           numero_venda?: string | null
           obs?: string | null
           obs_interna?: string | null
+          power_seller_status?: string | null
           receita_flex?: number | null
           situacao: string
           uf?: string | null
@@ -3565,12 +3569,14 @@ export type Database = {
           flex_special_discount?: number | null
           id?: string
           integration_account_id?: string | null
+          level_id?: string | null
           nome_cliente?: string
           numero?: string
           numero_ecommerce?: string | null
           numero_venda?: string | null
           obs?: string | null
           obs_interna?: string | null
+          power_seller_status?: string | null
           receita_flex?: number | null
           situacao?: string
           uf?: string | null

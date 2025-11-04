@@ -121,8 +121,11 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         
         // 1.5 Buscar reputação do seller (com cache)
         const sellerId = enrichedOrder.seller?.id || order.seller?.id;
+        console.log(`[unified-orders:${cid}] 🏅 Seller ID encontrado:`, sellerId);
+        
         if (sellerId && !sellerReputationCache.has(sellerId.toString())) {
           try {
+            console.log(`[unified-orders:${cid}] 🔍 Buscando reputação para seller ${sellerId}...`);
             const reputationResp = await fetch(
               `https://api.mercadolibre.com/users/${sellerId}/seller_reputation`,
               {
@@ -132,13 +135,22 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
               }
             );
             
+            console.log(`[unified-orders:${cid}] 🏅 API Reputação status:`, reputationResp.status);
+            
             if (reputationResp.ok) {
               const reputationData = await reputationResp.json();
               sellerReputationCache.set(sellerId.toString(), reputationData);
-              console.log(`[unified-orders:${cid}] ✅ Reputação obtida para seller ${sellerId}`);
+              console.log(`[unified-orders:${cid}] ✅ Reputação obtida para seller ${sellerId}:`, {
+                power_seller_status: reputationData.power_seller_status,
+                level_id: reputationData.level_id
+              });
+            } else {
+              const errorText = await reputationResp.text();
+              console.warn(`[unified-orders:${cid}] ⚠️ Erro na API de reputação:`, reputationResp.status, errorText);
+              sellerReputationCache.set(sellerId.toString(), null);
             }
           } catch (repError) {
-            console.warn(`[unified-orders:${cid}] Aviso ao buscar reputação do seller ${sellerId}:`, repError);
+            console.warn(`[unified-orders:${cid}] ⚠️ Exceção ao buscar reputação do seller ${sellerId}:`, repError);
             sellerReputationCache.set(sellerId.toString(), null);
           }
         }
@@ -146,6 +158,7 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         // Adicionar reputação ao enrichedOrder
         if (sellerId) {
           const reputation = sellerReputationCache.get(sellerId.toString());
+          console.log(`[unified-orders:${cid}] 🏅 Aplicando reputação para seller ${sellerId}:`, reputation);
           if (reputation) {
             enrichedOrder.seller_reputation = reputation;
           }
@@ -828,6 +841,13 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       // 🆕 REPUTAÇÃO DO VENDEDOR
       power_seller_status: order.seller_reputation?.power_seller_status || null,
       level_id: order.seller_reputation?.level_id || null,
+      
+      // 🔍 DEBUG REPUTAÇÃO
+      seller_reputation_debug: order.seller_reputation ? {
+        has_data: true,
+        power_seller: order.seller_reputation.power_seller_status,
+        level: order.seller_reputation.level_id
+      } : { has_data: false },
       
       // "Combinados": reutilizamos as colunas para retornar custos (costs) e SLA conforme solicitado
       modo_envio_combinado: (detailedShipping?.costs
