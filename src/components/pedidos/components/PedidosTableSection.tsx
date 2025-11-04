@@ -699,24 +699,19 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        }</span>;
                      case 'uf':
                      case 'endereco_uf':
-                       return <span>{
+                       return <span className="whitespace-nowrap">{
                          order.uf || 
                          order.unified?.uf ||
                          order.endereco_uf || 
-                         order.shipping?.destination?.shipping_address?.state?.name ||
                          order.shipping?.destination?.shipping_address?.state?.id ||
-                         order.shipping?.destination?.shipping_address?.state ||
                          order.shipping?.receiver_address?.state?.id || 
-                         order.shipping?.receiver_address?.state?.name || 
-                         order.shipping?.receiver_address?.state || 
                          order.unified?.shipping?.receiver_address?.state?.id ||
-                         order.unified?.shipping?.receiver_address?.state?.name ||
-                         order.unified?.shipping?.receiver_address?.state ||
                          order.raw?.shipping?.receiver_address?.state?.id ||
-                         order.raw?.shipping?.receiver_address?.state?.name ||
-                         order.raw?.shipping?.receiver_address?.state ||
                          order.raw?.shipping?.destination?.receiver_address?.state?.id ||
-                         order.raw?.shipping?.destination?.receiver_address?.state?.name ||
+                         order.shipping?.destination?.shipping_address?.state ||
+                         order.shipping?.receiver_address?.state || 
+                         order.unified?.shipping?.receiver_address?.state ||
+                         order.raw?.shipping?.receiver_address?.state ||
                          order.raw?.shipping?.destination?.receiver_address?.state ||
                          '-'
                        }</span>;
