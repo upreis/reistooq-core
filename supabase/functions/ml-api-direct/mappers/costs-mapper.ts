@@ -16,13 +16,11 @@ export function mapShipmentCostsData(costsData: any) {
   const receiverDiscounts = costsData.receiver?.discounts || [];
   const senderCharges = costsData.senders?.[0]?.charges || {};
   
-  // ✅ VALIDAÇÃO: Garantir que receiverDiscounts é array e somar com segurança
-  const totalReceiverDiscounts = Array.isArray(receiverDiscounts)
-    ? receiverDiscounts.reduce(
-        (sum: number, d: any) => sum + (Number(d.promoted_amount) || 0),
-        0
-      )
-    : 0;
+  // ✅ CORREÇÃO: Somar TODOS os descontos, não apenas "loyal"
+  const totalReceiverDiscounts = receiverDiscounts.reduce(
+    (sum: number, d: any) => sum + (d.promoted_amount || 0),
+    0
+  );
 
   return {
     // Custo bruto de envio

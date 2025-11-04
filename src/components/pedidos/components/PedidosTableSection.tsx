@@ -31,27 +31,27 @@ import {
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
 
-// ✅ CORREÇÃO CRÍTICA: Receita Flex = gross_amount do costs
-// Essa é a receita que o seller RECEBE do ML por fazer entrega Flex
-function getReceitaFlexHelper(order: any): number {
-  // Prioridade 1: Valor já calculado pela edge function
-  if (order?.receita_flex) return Number(order.receita_flex);
-  if (order?.unified?.receita_flex) return Number(order.unified.receita_flex);
-  
-  // Prioridade 2: gross_amount do costs (valor bruto do envio Flex)
-  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
-  if (costs?.gross_amount) return Number(costs.gross_amount);
-  
-  // Prioridade 3: Fallback para compatibilidade
+// Helper function para extrair receita por envio
+function getReceitaPorEnvio(order: any): number {
   const logisticType = String(
     order?.shipping?.logistic?.type || 
     order?.unified?.shipping?.logistic?.type ||
+    order?.logistic_type || 
+    order?.unified?.logistic_type ||
     ''
   ).toLowerCase();
   
-  if (logisticType === 'self_service' || logisticType === 'flex') {
-    const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || 0);
-    if (bonus > 0) return bonus;
+  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
+  
+  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
+  if (bonus > 0) return bonus;
+  
+  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
+  if (costs?.senders && Array.isArray(costs.senders)) {
+    return costs.senders.reduce((acc: number, s: any) => {
+      const compensation = Number(s?.compensation || 0);
+      return acc + compensation;
+    }, 0);
   }
   
   return 0;
@@ -148,8 +148,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
     }
   }, [orders, selectedOrders.size, setSelectedOrders]);
 
-  // ❌ REMOVIDO: Função duplicada e incorreta
-  // A função global getReceitaFlexHelper() já faz o cálculo correto
+  // Funções auxiliares memoizadas
+  const getReceitaPorEnvio = useCallback((order: any) => {
+    return order.shipping?.costs?.receiver?.cost || 0;
+  }, []);
 
   const getValorLiquidoVendedor = useCallback((order: any) => {
     const total = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
@@ -381,9 +383,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                               order.shipping?.costs?.receiver?.cost || 
                                               order.valor_frete || 0;
                        return <span>{formatMoney(fretePagoCliente)}</span>;
-                      case 'receita_flex':
-                         const receitaFlex = getReceitaFlexHelper(order);
-                         return <span className="text-blue-600 font-medium">{formatMoney(receitaFlex)}</span>;
+                     case 'receita_flex':
+                        const receitaFlex = order.receita_flex || 
+                                          order.unified?.receita_flex ||
+                                          getReceitaPorEnvio(order);
+                        return <span>{formatMoney(receitaFlex)}</span>;
                       case 'flex_payment_value':
                         const flexPaymentValue = order.flex_payment_value || 
                                                 order.unified?.flex_payment_value || 0;
@@ -430,7 +434,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                order.unified?.custo_envio_seller ||
                                                order.shipping?.costs?.senders?.[0]?.cost || 
                                                0;
-                        const receitaFlex = getReceitaFlexHelper(order);
+                        const receitaFlex = order.receita_flex || 
+                                          order.unified?.receita_flex ||
+                                          order.shipping_cost_components?.shipping_method_cost || 
+                                          getReceitaPorEnvio(order) ||
+                                          0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
                                               order.fees?.[0]?.value || 

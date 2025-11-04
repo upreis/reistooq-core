@@ -2,58 +2,7 @@ import { makeServiceClient, makeClient, corsHeaders, ok, fail, getMlConfig } fro
 import { fetchShopeeOrders } from "./shopee-integration.ts";
 import { decryptAESGCM } from "../_shared/crypto.ts";
 import { CRYPTO_KEY, sha256hex } from "../_shared/config.ts";
-
-// ============= COSTS MAPPER (inline) =============
-// Função copiada para dentro da edge function (não pode importar de outras pastas)
-function mapShipmentCostsData(costsData: any) {
-  if (!costsData) return null;
-
-  const receiverDiscounts = costsData.receiver?.discounts || [];
-  const senderCharges = costsData.senders?.[0]?.charges || {};
-  
-  // ✅ VALIDAÇÃO: Garantir que receiverDiscounts é array e somar com segurança
-  const totalReceiverDiscounts = Array.isArray(receiverDiscounts)
-    ? receiverDiscounts.reduce(
-        (sum: number, d: any) => sum + (Number(d.promoted_amount) || 0),
-        0
-      )
-    : 0;
-
-  return {
-    // Custo bruto de envio
-    gross_amount: costsData.gross_amount || 0,
-    
-    // Custos e descontos do comprador
-    receiver: {
-      cost: costsData.receiver?.cost || 0,
-      discounts: receiverDiscounts,
-      total_discount_amount: totalReceiverDiscounts,
-      // Manter campos individuais para compatibilidade
-      loyal_discount_amount: receiverDiscounts.find((d: any) => d.type === 'loyal')?.promoted_amount || 0,
-      loyal_discount_rate: receiverDiscounts.find((d: any) => d.type === 'loyal')?.rate || 0
-    },
-    
-    // Custos e cobranças do vendedor
-    sender: {
-      cost: costsData.senders?.[0]?.cost || 0,
-      charge_flex: senderCharges.charge_flex || 0,
-      charges: senderCharges
-    },
-    
-    // Campos calculados para Flex
-    // order_cost = gross_amount (custo que o seller recebe do ML por fazer entrega Flex)
-    order_cost: costsData.gross_amount || 0,
-    
-    // special_discount = SOMA de TODOS os promoted_amount dos descontos do receiver
-    special_discount: totalReceiverDiscounts,
-    
-    // net_cost = order_cost - special_discount
-    net_cost: (costsData.gross_amount || 0) - totalReceiverDiscounts,
-    
-    // Full raw data
-    raw_data: costsData
-  };
-}
+import { mapShipmentCostsData } from "../ml-api-direct/mappers/costs-mapper.ts";
 
 // ============= SISTEMA BLINDADO ML TOKEN REFRESH =============
 
@@ -513,11 +462,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     // special_discount = SOMA de TODOS os promoted_amount do receiver
     // (incluindo loyal, ratio e outros tipos de desconto)
-    // ✅ VALIDAÇÃO: Garantir que discounts é um array antes de usar reduce
-    const receiverDiscounts = costs?.receiver?.discounts;
-    const flexSpecialDiscount = Array.isArray(receiverDiscounts)
-      ? receiverDiscounts.reduce((sum: number, d: any) => sum + (Number(d.promoted_amount) || 0), 0)
-      : 0;
+    const flexSpecialDiscount = costs?.receiver?.discounts?.reduce(
+      (sum: number, d: any) => sum + (d.promoted_amount || 0),
+      0
+    ) || 0;
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
@@ -531,36 +479,6 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
                              shipping?.logistic_type || 
                              detailedShipping?.logistic_type || 
                              null;
-    
-    // 🔍 DEBUG FLEX: Log detalhado dos valores calculados
-    if (flexOrderCost > 0 || flexSpecialDiscount > 0) {
-      console.log(`[unified-orders:${cid}] 💰 FLEX AUDIT - Pedido ${order.id}:`, {
-        costs_exists: !!costs,
-        receiver_exists: !!costs?.receiver,
-        receiver_discounts: receiverDiscounts,
-        discounts_is_array: Array.isArray(receiverDiscounts),
-        discounts_count: receiverDiscounts?.length || 0,
-        discounts_detail: receiverDiscounts?.map((d: any) => ({
-          type: d.type,
-          rate: d.rate,
-          promoted_amount: d.promoted_amount
-        })),
-        gross_amount: costs?.gross_amount,
-        sender_discounts: costs?.senders?.[0]?.discounts,
-        sender_cost: costs?.senders?.[0]?.cost,
-        // ✅ VALORES FINAIS CALCULADOS
-        flexOrderCost,
-        flexSpecialDiscount,
-        flexNetCost,
-        receitaFlexCalculada,
-        flexLogisticType,
-        // ✅ VALIDAÇÃO: Confirmar que sender.discounts NÃO está sendo usado
-        validation: {
-          sender_discounts_not_used: true,
-          only_receiver_discounts_summed: receiverDiscounts?.map((d: any) => d.promoted_amount)
-        }
-      });
-    }
     
     // 🔍 DEBUG: Valores calculados dos campos Flex
     if (String(order.id) === '2000013656902262') {
