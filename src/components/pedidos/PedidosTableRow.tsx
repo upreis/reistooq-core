@@ -207,15 +207,12 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 );
               
               case 'conditions':
-                const condition = get(row.unified, 'condition') || get(row.raw, 'order_items[0].item.condition');
-                if (!condition) return <span className="text-xs text-muted-foreground">—</span>;
-                
-                const textoTraduzido = translateCondition(condition);
-                console.log('🔄 Tradução Condição:', { original: condition, traduzido: textoTraduzido });
+                const conditions = get(row.unified, 'conditions') || get(row.raw, 'order_items[0].item.condition');
+                if (!conditions) return <span className="text-xs text-muted-foreground">—</span>;
                 
                 return (
-                  <Badge variant="outline" className={condition.toLowerCase() === 'new' ? 'bg-blue-50 text-blue-700' : ''}>
-                    {textoTraduzido}
+                  <Badge variant="outline" className={conditions.toLowerCase() === 'new' ? 'bg-blue-50 text-blue-700' : ''}>
+                    {translateCondition(conditions)}
                   </Badge>
                 );
               

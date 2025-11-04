@@ -211,7 +211,6 @@ export const translateShippingMethod = (method: any): string => {
 
 // Traduções de condição do produto
 export const translateCondition = (condition: string): string => {
-  console.log('🎯 translateCondition chamada:', condition);
   if (!condition) return '-';
   
   const translations: Record<string, string> = {
@@ -225,7 +224,5 @@ export const translateCondition = (condition: string): string => {
     'acceptable': 'Aceitável'
   };
   
-  const result = translations[condition.toLowerCase()] || condition;
-  console.log('🎯 translateCondition resultado:', result);
-  return result;
+  return translations[condition.toLowerCase()] || condition;
 };
