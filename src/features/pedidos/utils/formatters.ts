@@ -6,8 +6,11 @@
 
 // ============= STATUS =============
 
-export function formatOrderStatus(status: string): string {
+export function formatOrderStatus(status: string | number): string {
   if (!status) return '-';
+  
+  // ✅ FIX #7: Proteger contra tipos não-string
+  const statusStr = String(status);
   
   const statusMap: Record<string, string> = {
     'paid': 'Pago',
@@ -20,7 +23,7 @@ export function formatOrderStatus(status: string): string {
     'charged_back': 'Chargeback',
   };
   
-  return statusMap[status.toLowerCase()] || status;
+  return statusMap[statusStr.toLowerCase()] || statusStr;
 }
 
 export function formatShippingStatus(status: string): string {
@@ -184,7 +187,13 @@ export function formatMLTags(tags: string[]): string {
     'not_delivered': 'Não Entregue',
   };
   
-  return tags.map(tag => tagMap[tag.toLowerCase()] || tag).join(', ');
+  // ✅ FIX #4: Filtrar valores inválidos antes de mapear
+  const result = tags
+    .filter(tag => tag && typeof tag === 'string')
+    .map(tag => tagMap[tag.toLowerCase()] || tag)
+    .join(', ');
+  
+  return result || '-';
 }
 
 export function formatCondition(condition: string): string {

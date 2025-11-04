@@ -131,18 +131,19 @@ class PedidosLogger {
   
   /**
    * Performance (apenas em desenvolvimento)
+   * ✅ FIX #6: Retornar valor da função
    */
-  performance(label: string, fn: () => void) {
+  performance<T>(label: string, fn: () => T): T {
     if (!this.enabled) {
-      fn();
-      return;
+      return fn(); // ✅ Retorna resultado mesmo se desabilitado
     }
     
     const start = performance.now();
-    fn();
+    const result = fn(); // ✅ Captura resultado
     const end = performance.now();
     
     console.log(`⚡ [PERF] ${label}: ${(end - start).toFixed(2)}ms`);
+    return result; // ✅ Retorna resultado
   }
   
   /**

@@ -58,7 +58,7 @@ export function extractClientName(order: Order): string {
 }
 
 export function extractCpfCnpj(order: Order): string {
-  // Buscar de múltiplas fontes
+  // Buscar de múltiplas fontes prioritárias
   const rawDoc = order.cpf_cnpj || 
                  order.unified?.cpf_cnpj || 
                  order.documento_cliente ||
@@ -74,28 +74,32 @@ export function extractCpfCnpj(order: Order): string {
   
   let finalDoc = cleanDoc;
   
-  // Fallback: busca profunda por CPF/CNPJ (11 ou 14 dígitos)
+  // ✅ FIX #1: Busca otimizada com limite de 100 steps e timeout
   if (!finalDoc) {
     const seen = new Set<any>();
-    const queue: any[] = [order];
     const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
     let found: string | null = null;
     
-    const pushChildren = (obj: any) => {
-      try {
-        const entries = Object.entries(obj || {});
-        const prioritized = entries.filter(([k]) => keyPriority.test(k));
-        const others = entries.filter(([k]) => !keyPriority.test(k));
-        return [...prioritized, ...others];
-      } catch {
-        return [] as any[];
-      }
-    };
+    // ✅ Buscar apenas em caminhos conhecidos (não todo o objeto)
+    const searchPaths = [
+      order.buyer,
+      order.raw?.buyer,
+      order.unified?.buyer,
+      order.payments?.[0]?.payer,
+      order.raw?.payments?.[0]?.payer,
+      order.unified?.payments?.[0]?.payer,
+      order.shipping?.destination,
+      order.shipping?.receiver_address
+    ];
     
+    const queue: any[] = searchPaths.filter(Boolean);
     let steps = 0;
-    while (queue.length && steps < 800 && !found) {
+    const MAX_STEPS = 100; // ✅ Reduzido de 800 para 100
+    
+    while (queue.length && steps < MAX_STEPS && !found) {
       const node = queue.shift();
       steps++;
+      
       if (!node || seen.has(node)) continue;
       seen.add(node);
       
@@ -105,18 +109,28 @@ export function extractCpfCnpj(order: Order): string {
           found = digits; 
           break; 
         }
-      } else if (Array.isArray(node)) {
-        for (const child of node) queue.push(child);
-      } else if (typeof node === 'object') {
-        for (const [k, v] of pushChildren(node)) {
-          if (keyPriority.test(k) && (typeof v === 'string' || typeof v === 'number')) {
+      } else if (typeof node === 'object' && !Array.isArray(node)) {
+        // ✅ Processar apenas propriedades prioritárias primeiro
+        const entries = Object.entries(node);
+        const prioritized = entries.filter(([k]) => keyPriority.test(k));
+        
+        for (const [k, v] of prioritized) {
+          if (typeof v === 'string' || typeof v === 'number') {
             const digits = String(v).replace(/\D/g, '');
             if (digits.length === 11 || digits.length === 14) { 
               found = digits; 
               break; 
             }
           }
-          queue.push(v);
+        }
+        
+        // ✅ Só adiciona objetos aninhados se não encontrou ainda
+        if (!found && steps < MAX_STEPS - 10) {
+          for (const [k, v] of entries) {
+            if (v && typeof v === 'object') {
+              queue.push(v);
+            }
+          }
         }
       }
     }
@@ -133,7 +147,7 @@ export function extractAddress(order: Order) {
   const shipping = order.shipping || order.unified?.shipping || {};
   const destination = shipping.destination || shipping.receiver_address || {};
   
-  return {
+  const address = {
     street: destination.street_name || destination.address_line || '',
     number: destination.street_number || destination.number || '',
     neighborhood: destination.neighborhood || destination.district || '',
@@ -142,6 +156,11 @@ export function extractAddress(order: Order) {
     zipCode: destination.zip_code || destination.postal_code || '',
     complement: destination.complement || destination.comments || '',
   };
+  
+  // ✅ FIX #5: Adicionar flag de completude
+  const isComplete = !!(address.street && address.city && address.state);
+  
+  return { ...address, isComplete };
 }
 
 // ============= DATAS =============
@@ -197,8 +216,14 @@ export function extractProductTitle(order: Order): string {
 export function extractQuantity(order: Order): number {
   const orderItems = extractOrderItems(order);
   
-  return orderItems.reduce((acc: number, item: any) => 
-    acc + (item.quantity || item.quantidade || 1), 0) || 1;
+  // ✅ FIX #2: Se não há itens, retornar 1 (pedido padrão)
+  if (orderItems.length === 0) return 1;
+  
+  // ✅ FIX #2: Usar ?? em vez de || para tratar zeros corretamente
+  return orderItems.reduce((acc: number, item: any) => {
+    const qty = item.quantity ?? item.quantidade ?? 1;
+    return acc + qty;
+  }, 0);
 }
 
 // ============= FINANCEIRO =============

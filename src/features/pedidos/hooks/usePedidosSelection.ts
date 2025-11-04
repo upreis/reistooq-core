@@ -11,6 +11,11 @@ interface UsePedidosSelectionOptions {
   onSelectionChange?: (selectedIds: Set<string>) => void;
 }
 
+// ✅ FIX #3: Helper para extrair ID de forma robusta
+const getOrderId = (order: any): string | null => {
+  return order?.id || order?.numero || order?.unified?.id || null;
+};
+
 export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   const { orders = [], onSelectionChange } = options;
   
@@ -62,9 +67,10 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Seleciona todos os pedidos visíveis
+   * ✅ FIX #3: Usar helper getOrderId
    */
   const selectAll = useCallback(() => {
-    const allIds = orders.map(order => order.id).filter(Boolean);
+    const allIds = orders.map(getOrderId).filter(Boolean) as string[];
     const newSelection = new Set(allIds);
     setSelectedOrders(newSelection);
     onSelectionChange?.(newSelection);
@@ -80,10 +86,11 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Inverte a seleção (seleciona não selecionados e vice-versa)
+   * ✅ FIX #3: Usar helper getOrderId
    */
   const invertSelection = useCallback(() => {
     setSelectedOrders(prev => {
-      const allIds = orders.map(order => order.id).filter(Boolean);
+      const allIds = orders.map(getOrderId).filter(Boolean) as string[];
       const newSelection = new Set<string>();
       
       allIds.forEach(id => {
@@ -99,12 +106,13 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Seleciona apenas pedidos que atendem uma condição
+   * ✅ FIX #3: Usar helper getOrderId
    */
   const selectWhere = useCallback((predicate: (order: any) => boolean) => {
     const matchingIds = orders
       .filter(predicate)
-      .map(order => order.id)
-      .filter(Boolean);
+      .map(getOrderId)
+      .filter(Boolean) as string[];
     
     const newSelection = new Set(matchingIds);
     setSelectedOrders(newSelection);
@@ -125,11 +133,20 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Verifica se todos pedidos visíveis estão selecionados
+   * ✅ FIX #3 & #8: Usar helper getOrderId e otimizar performance
    */
   const isAllSelected = useMemo(() => {
     if (orders.length === 0) return false;
-    return orders.every(order => selectedOrders.has(order.id));
-  }, [orders, selectedOrders]);
+    
+    // ✅ FIX #8: Comparar tamanhos primeiro (O(1) - muito mais rápido)
+    if (selectedOrders.size !== orders.length) return false;
+    
+    // ✅ FIX #3 & #8: Só então verificar IDs com getOrderId
+    return orders.every(order => {
+      const id = getOrderId(order);
+      return id && selectedOrders.has(id);
+    });
+  }, [orders.length, selectedOrders.size, orders]); // ✅ Deps otimizadas
   
   /**
    * Verifica se alguns (mas não todos) pedidos estão selecionados
@@ -147,9 +164,13 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Objetos dos pedidos selecionados
+   * ✅ FIX #3: Usar helper getOrderId
    */
   const selectedOrderObjects = useMemo(() => {
-    return orders.filter(order => selectedOrders.has(order.id));
+    return orders.filter(order => {
+      const id = getOrderId(order);
+      return id && selectedOrders.has(id);
+    });
   }, [orders, selectedOrders]);
   
   /**
@@ -163,10 +184,13 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Seleciona apenas pedidos prontos para baixar
+   * ✅ FIX #3: Usar helper getOrderId
    */
   const selectReadyToProcess = useCallback((mappingData: Map<string, any>, isPedidoProcessado: (order: any) => boolean) => {
     selectWhere((order) => {
-      const id = order.id;
+      const id = getOrderId(order);
+      if (!id) return false;
+      
       const mapping = mappingData.get(id);
       const temMapeamentoCompleto = !!(mapping && (mapping.skuEstoque || mapping.skuKit));
       const baixado = isPedidoProcessado(order);
@@ -178,10 +202,14 @@ export function usePedidosSelection(options: UsePedidosSelectionOptions = {}) {
   
   /**
    * Seleciona apenas pedidos com problemas
+   * ✅ FIX #3: Usar helper getOrderId
    */
   const selectWithIssues = useCallback((mappingData: Map<string, any>) => {
     selectWhere((order) => {
-      const mapping = mappingData.get(order.id);
+      const id = getOrderId(order);
+      if (!id) return false;
+      
+      const mapping = mappingData.get(id);
       return mapping?.statusBaixa === 'sku_nao_cadastrado' || 
              mapping?.statusBaixa === 'sem_estoque' ||
              mapping?.statusBaixa === 'sem_composicao';
