@@ -594,6 +594,12 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: true, category: 'financial' },
     { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
     { key: 'coupon_amount', label: 'Desconto Cupom', default: false, category: 'financial' },
+    
+    // 💰 FLEX: Campos Detalhados de Custos
+    { key: 'flex_order_cost', label: 'Flex: Custo Bruto', default: false, category: 'financial' },
+    { key: 'flex_special_discount', label: 'Flex: Desconto Loyal', default: false, category: 'financial' },
+    { key: 'flex_net_cost', label: 'Flex: Custo Líquido', default: false, category: 'financial' },
+    
     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
