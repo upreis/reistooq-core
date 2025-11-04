@@ -918,6 +918,23 @@ export function usePedidosManager(initialAccountId?: string) {
       // Buscar correspondente nos dados RAW para preservar informações completas
       const rawData = rawList.find((r: any) => r.id === o.id) || rawList[index] || {};
       
+      // 🔍 DEBUG: Verificar estrutura de dados recebida
+      if (index === 0) {
+        console.log('🔍 [CPF/CNPJ DEBUG] Estrutura do primeiro pedido:', {
+          id: o.id || rawData.id,
+          has_cpf_cnpj: !!o.cpf_cnpj,
+          has_unified_cpf: !!o.unified?.cpf_cnpj,
+          has_buyer: !!o.buyer,
+          has_raw_buyer: !!rawData.buyer,
+          buyer_id_number: o.buyer?.identification?.number,
+          raw_buyer_id_number: rawData.buyer?.identification?.number,
+          payments_length: o.payments?.length || 0,
+          raw_payments_length: rawData.payments?.length || 0,
+          first_payment_payer: o.payments?.[0]?.payer?.identification?.number,
+          raw_first_payment_payer: rawData.payments?.[0]?.payer?.identification?.number
+        });
+      }
+      
       // ✅ CORREÇÃO: Extração direta com prioridade correta incluindo raw
       const extractCpfCnpjLocal = (order: any): string => {
         // Buscar de múltiplas fontes prioritárias (incluindo raw)
@@ -936,10 +953,8 @@ export function usePedidosManager(initialAccountId?: string) {
 
       const cpfCnpjValue = extractCpfCnpjLocal(o) || extractCpfCnpjLocal(rawData);
       
-      // 🔍 DEBUG: Log temporário para verificar extração
-      if (cpfCnpjValue) {
-        console.log(`[CPF/CNPJ] Pedido ${o.id || rawData.id}: ${cpfCnpjValue.substring(0, 8)}...`);
-      }
+      // 🔍 DEBUG: Log para TODOS os pedidos
+      console.log(`[CPF/CNPJ] Pedido ${o.id || rawData.id}: ${cpfCnpjValue || 'VAZIO'} (length: ${cpfCnpjValue?.length || 0})`);
 
       return {
         ...o,

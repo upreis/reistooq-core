@@ -112,22 +112,26 @@ export function usePersistentPedidosState() {
         cachedAt: 0
       };
 
+      // ✅ CORREÇÃO: Reduzir dados salvos para evitar QuotaExceededError
+      // Não salvar array completo de orders, apenas metadados essenciais
       const newState: PersistentPedidosState = {
         ...currentState,
         ...state,
+        // ⚠️ OTIMIZAÇÃO: Não salvar orders completos (muito pesado)
+        orders: [], // Sempre vazio para economizar espaço
         cachedAt: Date.now() // Sempre atualizar timestamp do cache
       };
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       setPersistedState(newState);
       
-      console.log('💾 Estado salvo:', {
+      console.log('💾 Estado salvo (otimizado):', {
         hasFilters: Object.keys(newState.filters || {}).length > 0,
-        ordersCount: newState.orders.length,
+        total: newState.total,
         page: newState.currentPage
       });
     } catch (error) {
-      console.warn('Erro ao salvar estado:', error);
+      console.warn('⚠️ Erro ao salvar estado (localStorage cheio):', error);
     }
   }, [persistedState]);
 
