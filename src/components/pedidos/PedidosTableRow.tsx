@@ -91,7 +91,13 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
         return (
           <TableCell 
             key={col.key}
-            className={(col.key === 'logistic_type' || col.key === 'shipping_status') ? 'whitespace-nowrap' : undefined}
+            className={
+              (col.key === 'logistic_type' || col.key === 'shipping_status') 
+                ? 'whitespace-nowrap' 
+                : col.key === 'tags'
+                  ? 'break-words whitespace-normal'
+                  : undefined
+            }
             style={(col as any).width ? { minWidth: `${(col as any).width}px`, width: `${(col as any).width}px` } : undefined}
           >
             {(() => {

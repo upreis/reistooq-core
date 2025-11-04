@@ -209,7 +209,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       // Colunas SKU com largura ajustada ao conteúdo
                       (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                       // Colunas de envio sem quebra de linha
-                      (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap"
+                      (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
+                      // Tags com quebra permitida
+                      def.key === 'tags' && "break-words"
                     )}
                     style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                   >
@@ -970,11 +972,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'comment':
                        return <div className="max-w-xs truncate" title={order.comment || order.unified?.comment || order.obs || order.raw?.comment}>{order.comment || order.unified?.comment || order.obs || order.raw?.comment || '-'}</div>;
                      case 'tags':
-                       {
-                         const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
-                         const translatedTags = translateMLTags(tags);
-                         return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{translatedTags || '-'}</div>;
-                       }
+                        {
+                          const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
+                          const translatedTags = translateMLTags(tags);
+                          return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '150px' }}>{translatedTags || '-'}</div>;
+                        }
                     default:
                        return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
