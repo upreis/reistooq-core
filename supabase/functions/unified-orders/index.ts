@@ -442,6 +442,17 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     const flexLogisticType = detailedShipping?.logistic_type || shipping?.logistic_type || null;
     
+    // Debug Flex para auditoria
+    if (flexLogisticType === 'self_service') {
+      console.log(`[unified-orders:${cid}] 🔍 FLEX DEBUG - Pedido ${order.id}:`, {
+        logistic_type: flexLogisticType,
+        order_cost: flexOrderCost,
+        special_discount: flexSpecialDiscount,
+        tem_detailed_shipping: !!shipping.detailed_shipping,
+        tem_cost_components: !!detailedShipping?.cost_components
+      });
+    }
+    
     // Informações de endereço mais detalhadas
     const address = detailedShipping.receiver_address || shipping.receiver_address || {};
     
