@@ -90,7 +90,13 @@ export function formatSubstatus(substatus: string | null | undefined): string {
  */
 export function formatLogisticType(type: string | null | undefined): string {
   if (!type) return '-';
-  const normalized = String(type).toLowerCase().replace(/_/g, '_');
+  
+  // Normalizar: lowercase, remover acentos, substituir espaços por underscores
+  const normalized = String(type)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+    .replace(/\s+/g, '_'); // Substitui espaços por underscores
   
   // Caso especial: self service = Flex
   if (normalized === 'self_service') return 'Flex';
