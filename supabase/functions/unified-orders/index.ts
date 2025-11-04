@@ -454,6 +454,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
+    // RECEITA FLEX = order_cost quando logistic_type = 'self_service'
+    // Isso representa o valor que o seller RECEBE do ML por fazer a entrega Flex
+    const receitaFlexCalculada = flexOrderCost;
+    
     // Procurar logistic_type em todas as possíveis localizações
     const flexLogisticType = shipping?.logistic?.type || 
                              detailedShipping?.logistic?.type || 
@@ -478,6 +482,8 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       costs: {
         order_cost: flexOrderCost,
         special_discount: flexSpecialDiscount,
+        net_cost: flexNetCost,
+        receita_flex_calculada: receitaFlexCalculada, // ← EXPOR NO DEBUG
         sources: {
           'shipping.costs.order_cost': shipping?.costs?.order_cost,                                            // ← NOVO!
           'detailedShipping.costs.order_cost': detailedShipping?.costs?.order_cost,                           // ← NOVO!
@@ -651,7 +657,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       
       // Valores financeiros detalhados
       frete_pago_cliente: fretePagoCliente,
-      receita_flex: receitaFlex,
+      receita_flex: receitaFlexCalculada, // ← USAR O VALOR CALCULADO (flexOrderCost)
       // Desconto Cupom: Apenas desconto especial Flex (special_discount)
       desconto_cupom: (flexLogisticType === 'self_service' && flexSpecialDiscount > 0) 
         ? flexSpecialDiscount 
@@ -659,8 +665,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       taxa_marketplace: order.marketplace_fee || 0,
       custo_envio_seller: custoEnvioSeller,
       
-      // 🆕 FLEX: Valor Recebido por Entrega Flex (seller_cost_benefit quando negativo)
-      flex_payment_value: receitaFlex < 0 ? Math.abs(receitaFlex) : 0,
+      // 🆕 FLEX: Campos de análise
+      flex_order_cost: flexOrderCost,
+      flex_special_discount: flexSpecialDiscount,
+      flex_net_cost: flexNetCost,
       flex_logistic_type: flexLogisticType,
       
       // Informações de pagamento
