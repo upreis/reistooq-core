@@ -138,19 +138,24 @@ function SimplePedidosPage({ className }: Props) {
       }
       
       // 🔄 VERSÃO DO CACHE - Forçar limpeza quando há mudanças no sistema de colunas
-      const COLUMN_CACHE_VERSION = 5; // v5: Remoção completa de 5 colunas financeiras/shipping
+      const COLUMN_CACHE_VERSION = 6; // v6: Ajustes de largura (UF=100px, Tags=150px)
       const columnCache = validateAndGet('pedidos-column-preferences', null);
       
       if (columnCache && typeof columnCache === 'object') {
         const cacheVersion = columnCache.version || 1;
         
-        // Se a versão do cache é diferente, limpar
+        // Se a versão do cache é diferente, limpar TUDO
         if (cacheVersion !== COLUMN_CACHE_VERSION) {
           localStorage.removeItem('pedidos-column-preferences');
           localStorage.removeItem('pedidos-column-preferences-v4');
           localStorage.removeItem('pedidos-column-preferences-v5');
+          localStorage.removeItem('pedidos-column-preferences-v6');
           localStorage.removeItem('pedidos:lastSearch');
           console.log(`🔄 [CACHE] Cache de colunas limpo completamente - versão ${cacheVersion} → ${COLUMN_CACHE_VERSION}`);
+          
+          // Forçar reload da página para aplicar mudanças
+          console.log('🔄 [CACHE] Recarregando página em 100ms...');
+          setTimeout(() => window.location.reload(), 100);
         }
       }
       
