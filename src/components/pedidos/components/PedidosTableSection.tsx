@@ -737,13 +737,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '200px' }}>{ruaText}</div>;
                     case 'endereco_numero':
                       return <span>{
-                        order.endereco_numero ||
-                        order.numero ||
                         order.shipping?.destination?.shipping_address?.street_number ||
                         order.shipping?.receiver_address?.street_number ||
-                        order.unified?.shipping?.receiver_address?.street_number ||
-                        order.raw?.shipping?.receiver_address?.street_number ||
                         order.raw?.shipping?.destination?.receiver_address?.street_number ||
+                        order.raw?.shipping?.receiver_address?.street_number ||
+                        order.unified?.endereco_numero ||
+                        order.endereco_numero ||
                         '-'
                       }</span>;
                     case 'endereco_bairro':
