@@ -118,17 +118,19 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
               }
 
               // 2.b Endpoints adicionais: custos e SLA (executar em paralelo)
+              // IMPORTANTE: /costs PRECISA do header x-format-new para retornar cost_components.special_discount
               try {
                 const [costsResp, slaResp] = await Promise.all([
                   fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/costs`, {
                     headers: {
                       Authorization: `Bearer ${accessToken}`,
-                      'x-format-new': 'true'
+                      'x-format-new': 'true'  // ⚠️ CRÍTICO para special_discount
                     }
                   }),
                   fetch(`https://api.mercadolibre.com/shipments/${order.shipping.id}/sla`, {
                     headers: {
-                      Authorization: `Bearer ${accessToken}`
+                      Authorization: `Bearer ${accessToken}`,
+                      'x-format-new': 'true'
                     }
                   })
                 ]);
