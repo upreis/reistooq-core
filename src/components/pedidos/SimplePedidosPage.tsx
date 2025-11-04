@@ -449,92 +449,26 @@ function SimplePedidosPage({ className }: Props) {
     };
   }, []);
   
-  // Helpers financeiros: receita_por_envio (Flex) e valor_liquido_vendedor
+  // Helpers financeiros: receita_por_envio (Flex) - REGRA SIMPLES
   const getReceitaPorEnvio = (order: any): number => {
-    // Se já vier calculado do backend, usar
-    if (typeof order?.receita_por_envio === 'number') return order.receita_por_envio;
-
-    // Detectar o tipo logístico a partir de múltiplas fontes (como a tabela exibe)
+    // Detectar o tipo logístico
     const rawType =
       order?.shipping?.logistic?.type ??
       order?.raw?.shipping?.logistic?.type ??
       order?.logistic_type ??
       order?.shipping_details?.logistic_type ??
       order?.unified?.logistic?.type ??
+      order?.flex_logistic_type ??
       order?.logistic?.type;
 
-    const logisticType = String(rawType || '').toLowerCase().replace(/\s+/g, '_');
-    // Receita com envio só existe no Flex (self_service)
-    if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
-
-    // 0) Se o backend já calculou (shipping.bonus_total/bonus), priorizar
-    const shippingBonus = Number(
-      order?.shipping?.bonus_total ??
-      order?.shipping?.bonus ??
-      order?.unified?.shipping?.bonus_total ??
-      order?.unified?.shipping?.bonus ?? 0
-    );
-    if (Number.isFinite(shippingBonus) && shippingBonus > 0) return shippingBonus;
-
-    // 1) Bônus por envio via /shipments/{id}/costs -> senders[].compensation e senders[].compensations[].amount
-    const costs =
-      order?.shipping?.costs ||
-      order?.raw?.shipping?.costs ||
-      order?.unified?.shipping?.costs;
-
-    let compTotal = 0;
-    if (costs?.senders && Array.isArray(costs.senders)) {
-      compTotal = costs.senders.reduce((acc: number, s: any) => {
-        const direct = Number(s?.compensation ?? 0);
-        const nestedList = Array.isArray(s?.compensations) ? s.compensations : [];
-        const nestedSum = nestedList.reduce((a: number, c: any) => a + (Number(c?.amount ?? 0) || 0), 0);
-        return acc + (Number.isFinite(direct) ? direct : 0) + nestedSum;
-      }, 0);
+    const logisticType = String(rawType || '').toLowerCase();
+    
+    // Se for 'self_service' (Envios Flex), retornar flex_special_discount
+    // Caso contrário, retornar 0
+    if (logisticType === 'self_service') {
+      return order?.flex_special_discount || order?.unified?.flex_special_discount || 0;
     }
-
-    if (compTotal > 0) return compTotal;
-
-    // 2) Pagamentos do envio (fallback legado apenas se /costs não disponível)
-    let paymentsTotal = 0;
-    const shippingPaymentArrays = [
-      order?.shipping?.payments,
-      order?.raw?.shipping?.payments,
-      order?.unified?.shipping?.payments,
-      order?.shipping_payments,
-      order?.unified?.shipping_payments,
-      order?.raw?.shipping_payments,
-    ].filter(Boolean);
-    for (const arr of shippingPaymentArrays) {
-      if (Array.isArray(arr)) {
-        for (const p of arr) {
-          const status = String(p?.status || '').toLowerCase();
-          if (status && status !== 'approved') continue;
-          const amt = Number(p?.amount ?? p?.value ?? p?.cost ?? 0);
-          if (!Number.isNaN(amt) && amt > 0) paymentsTotal += amt;
-        }
-      }
-    }
-
-    if (paymentsTotal > 0) return paymentsTotal; // fallback legado
-
-    // 3) Outros campos eventuais
-    const flexBonusFields = [
-      order?.shipping_bonus,
-      order?.envio_bonus,
-      order?.flex_bonus,
-      order?.shipping?.bonus,
-      order?.raw?.shipping?.bonus,
-      order?.shipping?.lead_time?.bonus,
-      order?.raw?.shipping?.lead_time?.bonus,
-    ].filter(val => val !== undefined && val !== null);
-
-    for (const bonus of flexBonusFields) {
-      const amt = Number(bonus);
-      if (!Number.isNaN(amt) && amt > 0) {
-        return amt;
-      }
-    }
-
+    
     return 0;
   };
   

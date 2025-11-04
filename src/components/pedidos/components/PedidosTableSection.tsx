@@ -30,32 +30,6 @@ import {
 } from '@/lib/translations';
 import { cn } from '@/lib/utils';
 import { MapeamentoVerificacao } from '@/services/MapeamentoService';
-
-// Helper function para extrair receita por envio
-function getReceitaPorEnvio(order: any): number {
-  const logisticType = String(
-    order?.shipping?.logistic?.type || 
-    order?.unified?.shipping?.logistic?.type ||
-    order?.logistic_type || 
-    order?.unified?.logistic_type ||
-    ''
-  ).toLowerCase();
-  
-  if (logisticType !== 'self_service' && logisticType !== 'flex') return 0;
-  
-  const bonus = Number(order?.shipping?.bonus_total || order?.shipping?.bonus || order?.unified?.shipping?.bonus_total || 0);
-  if (bonus > 0) return bonus;
-  
-  const costs = order?.shipping?.costs || order?.unified?.shipping?.costs;
-  if (costs?.senders && Array.isArray(costs.senders)) {
-    return costs.senders.reduce((acc: number, s: any) => {
-      const compensation = Number(s?.compensation || 0);
-      return acc + compensation;
-    }, 0);
-  }
-  
-  return 0;
-}
 import { buildIdUnico } from '@/utils/idUnico';
 
 interface PedidosTableSectionProps {
@@ -149,10 +123,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   }, [orders, selectedOrders.size, setSelectedOrders]);
 
   // Funções auxiliares memoizadas
-  const getReceitaPorEnvio = useCallback((order: any) => {
-    return order.shipping?.costs?.receiver?.cost || 0;
-  }, []);
-
   const getValorLiquidoVendedor = useCallback((order: any) => {
     const total = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
     const fee = order.order_items?.[0]?.sale_fee || order.marketplace_fee || 0;
@@ -449,11 +419,20 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                order.unified?.custo_envio_seller ||
                                                order.shipping?.costs?.senders?.[0]?.cost || 
                                                0;
-                        const receitaFlex = order.receita_flex || 
-                                          order.unified?.receita_flex ||
-                                          order.shipping_cost_components?.shipping_method_cost || 
-                                          getReceitaPorEnvio(order) ||
-                                          0;
+                        
+                        // Receita Flex: pegar tipo logístico e aplicar regra
+                        const logisticTypeForCalc = String(
+                          order?.shipping?.logistic?.type || 
+                          order?.unified?.shipping?.logistic?.type ||
+                          order?.logistic_type || 
+                          order?.unified?.logistic_type ||
+                          order?.flex_logistic_type ||
+                          ''
+                        ).toLowerCase();
+                        
+                        const receitaFlex = logisticTypeForCalc === 'self_service'
+                          ? (order.flex_special_discount || order.unified?.flex_special_discount || 0)
+                          : 0;
                         const taxaMarketplace = order.order_items?.[0]?.sale_fee || 
                                               order.marketplace_fee || 
                                               order.fees?.[0]?.value || 
