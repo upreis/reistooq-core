@@ -277,7 +277,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       );
                     }
                     case 'cpf_cnpj': {
-                      // Buscar CPF/CNPJ de múltiplas fontes e normalizar
+                      // ✅ EXTRAÇÃO DIRETA - Sem busca profunda para evitar duplicação
                       const rawDoc = order.cpf_cnpj || 
                                    order.unified?.cpf_cnpj || 
                                    order.documento_cliente ||
@@ -288,57 +288,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                    order.unified?.payments?.[0]?.payer?.identification?.number ||
                                    order.raw?.payments?.[0]?.payer?.identification?.number;
                       
-                      // Normalizar e limpar antes de mascarar
                       const cleanDoc = rawDoc ? rawDoc.toString().trim() : '';
                       
-                      let finalDoc = cleanDoc;
-                      
-                      // Fallback: varrer o objeto em busca de um CPF/CNPJ (11 ou 14 dígitos)
-                      if (!finalDoc) {
-                        const seen = new Set<any>();
-                        const queue: any[] = [order];
-                        const keyPriority = /(cpf|cnpj|doc|document|identif|tax)/i;
-                        let found: string | null = null;
-                        
-                        const pushChildren = (obj: any) => {
-                          try {
-                            const entries = Object.entries(obj || {});
-                            // Priorizar chaves relacionadas a documento
-                            const prioritized = entries.filter(([k]) => keyPriority.test(k));
-                            const others = entries.filter(([k]) => !keyPriority.test(k));
-                            return [...prioritized, ...others];
-                          } catch {
-                            return [] as any[];
-                          }
-                        };
-                        
-                        let steps = 0;
-                        while (queue.length && steps < 800 && !found) {
-                          const node = queue.shift();
-                          steps++;
-                          if (!node || seen.has(node)) continue;
-                          seen.add(node);
-                          
-                          if (typeof node === 'string' || typeof node === 'number') {
-                            const digits = String(node).replace(/\D/g, '');
-                            if (digits.length === 11 || digits.length === 14) { found = digits; break; }
-                          } else if (Array.isArray(node)) {
-                            for (const child of node) queue.push(child);
-                          } else if (typeof node === 'object') {
-                            for (const [k, v] of pushChildren(node)) {
-                              // Se a chave sugere documento e valor é string/number, tentar direto
-                              if (keyPriority.test(k) && (typeof v === 'string' || typeof v === 'number')) {
-                                const digits = String(v).replace(/\D/g, '');
-                                if (digits.length === 11 || digits.length === 14) { found = digits; break; }
-                              }
-                              queue.push(v);
-                            }
-                          }
-                        }
-                        if (found) finalDoc = found;
-                      }
-                      
-                      return <span className="font-mono text-sm">{finalDoc ? maskCpfCnpj(finalDoc) : '-'}</span>;
+                      return <span className="font-mono text-sm">{cleanDoc ? maskCpfCnpj(cleanDoc) : '-'}</span>;
                     }
                      case 'data_pedido':
                        return <span>{formatDate(order.data_pedido || order.unified?.data_pedido || order.date_created)}</span>;

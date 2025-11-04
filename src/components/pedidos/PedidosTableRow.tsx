@@ -128,14 +128,14 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 return show(get(row.unified, 'nome_destinatario') ?? get(row.raw, 'shipping.destination.receiver_name') ?? '—');
               case 'cpf_cnpj':
                 {
-                  // Buscar CPF/CNPJ de múltiplas fontes
-                  const rawDoc = get(row.unified, 'cpf_cnpj') || 
-                                get(row, 'cpf_cnpj') ||
+                  // ✅ EXTRAÇÃO DIRETA - Priorizar valor já processado
+                  const rawDoc = get(row, 'cpf_cnpj') ||
+                                get(row.unified, 'cpf_cnpj') || 
                                 get(row, 'documento_cliente') ||
                                 get(row, 'cliente_documento') ||
                                 get(row.raw, 'buyer.identification.number') ||
                                 get(row.unified, 'buyer.identification.number') ||
-                                get(row.raw, 'buyer.billing_info.doc_number') ||
+                                get(row.raw, 'payments[0].payer.identification.number') ||
                                 '';
                   return <span className="font-mono text-xs">{maskCpfCnpj(rawDoc)}</span>;
                 }
