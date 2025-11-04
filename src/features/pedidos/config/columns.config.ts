@@ -193,6 +193,39 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 130,
     sortable: true
   },
+  {
+    key: 'flex_order_cost',
+    label: 'Flex: Custo Pedido',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo do pedido Flex cobrado pelo ML',
+    width: 140,
+    sortable: true
+  },
+  {
+    key: 'flex_special_discount',
+    label: 'Flex: Desconto Especial',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Desconto especial concedido pelo comprador no Flex',
+    width: 160,
+    sortable: true
+  },
+  {
+    key: 'flex_net_cost',
+    label: 'Flex: Custo Líquido',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo líquido Flex (order_cost - special_discount)',
+    width: 140,
+    sortable: true
+  },
 
 
   // ====== MAPEAMENTO (das imagens 2 e 3) ======
