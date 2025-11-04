@@ -496,8 +496,9 @@ function SimplePedidosPage({ className }: Props) {
       // Buscar valor total exatamente como a coluna 'valor_total' faz
       const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
       
-      // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha≠null E ValorTotal>79
-      if (condition === 'new' && reputation.includes('green') && medalha && medalha !== 'Sem Medalha' && valorTotal > 79.00) {
+      // ✅ CORRIGIDO: medalha será null quando não existir, não a string "Sem Medalha"
+      // Se Tipo Logístico=Envios Flex E Condição=Novo E Reputação contém "green" E Medalha existe E ValorTotal>79
+      if (condition === 'new' && reputation.includes('green') && medalha && valorTotal > 79.00) {
         receitaFlex = receitaFlex * 0.1; // Aplicar 10%
       }
     }
