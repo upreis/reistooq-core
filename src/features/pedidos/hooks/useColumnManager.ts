@@ -1,13 +1,15 @@
 /**
  * 🎛️ HOOK PARA GERENCIAMENTO UNIFICADO DE COLUNAS
  * Mantém estado, persistência e ações centralizadas
+ * 
+ * ✅ ÚLTIMA ATUALIZAÇÃO: 2025-11-04 - Adicionadas colunas de reputação
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { ColumnState, ColumnActions, UseColumnManagerReturn, ColumnProfile } from '../types/columns.types';
 import { COLUMN_DEFINITIONS, DEFAULT_PROFILES, getDefaultVisibleColumns } from '../config/columns.config';
 
-const STORAGE_KEY = 'pedidos-column-preferences';
+const STORAGE_KEY = 'pedidos-column-preferences-v3'; // ← Incrementado para forçar reset
 
 // Estado inicial baseado nas configurações padrão
 const getInitialState = (): ColumnState => {

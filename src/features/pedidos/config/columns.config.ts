@@ -387,6 +387,26 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
+    key: 'power_seller_status',
+    label: 'Medalha',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status de Mercado Líder (Platinum, Gold, Silver)',
+    width: 100
+  },
+  {
+    key: 'level_id',
+    label: 'Reputação',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Nível de reputação do vendedor',
+    width: 120
+  },
+  {
     key: 'shipping_substatus',
     label: 'Substatus do Envio',
     category: 'shipping',
