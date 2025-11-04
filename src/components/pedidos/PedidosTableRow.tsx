@@ -210,9 +210,12 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                 const condition = get(row.unified, 'condition') || get(row.raw, 'order_items[0].item.condition');
                 if (!condition) return <span className="text-xs text-muted-foreground">—</span>;
                 
+                const textoTraduzido = translateCondition(condition);
+                console.log('🔄 Tradução Condição:', { original: condition, traduzido: textoTraduzido });
+                
                 return (
                   <Badge variant="outline" className={condition.toLowerCase() === 'new' ? 'bg-blue-50 text-blue-700' : ''}>
-                    {translateCondition(condition)}
+                    {textoTraduzido}
                   </Badge>
                 );
               
