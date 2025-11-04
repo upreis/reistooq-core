@@ -86,6 +86,9 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
 
   console.log(`[unified-orders:${cid}] Enriquecendo ${orders.length} pedidos com dados completos`);
   
+  // Cache para reputação por seller_id
+  const sellerReputationCache = new Map<string, any>();
+  
   const enrichedOrders = await Promise.all(
     orders.map(async (order) => {
       try {
@@ -114,6 +117,38 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
           }
         } catch (error) {
           console.warn(`[unified-orders:${cid}] Erro ao buscar order ${order.id}:`, error);
+        }
+        
+        // 1.5 Buscar reputação do seller (com cache)
+        const sellerId = enrichedOrder.seller?.id || order.seller?.id;
+        if (sellerId && !sellerReputationCache.has(sellerId.toString())) {
+          try {
+            const reputationResp = await fetch(
+              `https://api.mercadolibre.com/users/${sellerId}/seller_reputation`,
+              {
+                headers: {
+                  Authorization: `Bearer ${accessToken}`
+                }
+              }
+            );
+            
+            if (reputationResp.ok) {
+              const reputationData = await reputationResp.json();
+              sellerReputationCache.set(sellerId.toString(), reputationData);
+              console.log(`[unified-orders:${cid}] ✅ Reputação obtida para seller ${sellerId}`);
+            }
+          } catch (repError) {
+            console.warn(`[unified-orders:${cid}] Aviso ao buscar reputação do seller ${sellerId}:`, repError);
+            sellerReputationCache.set(sellerId.toString(), null);
+          }
+        }
+        
+        // Adicionar reputação ao enrichedOrder
+        if (sellerId) {
+          const reputation = sellerReputationCache.get(sellerId.toString());
+          if (reputation) {
+            enrichedOrder.seller_reputation = reputation;
+          }
         }
 
         // 2. Enriquecer com dados de shipment
@@ -789,6 +824,11 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       tipo_metodo_envio: detailedShipping?.shipping_method?.type || shipping?.shipping_method?.type || null,
       tipo_entrega: shipping?.delivery_type || null,
       substatus: shipping?.substatus || detailedShipping?.status_detail || null,
+      
+      // 🆕 REPUTAÇÃO DO VENDEDOR
+      power_seller_status: order.seller_reputation?.power_seller_status || null,
+      level_id: order.seller_reputation?.level_id || null,
+      
       // "Combinados": reutilizamos as colunas para retornar custos (costs) e SLA conforme solicitado
       modo_envio_combinado: (detailedShipping?.costs
         ? `gross:${detailedShipping.costs?.gross_amount ?? ''}; receiver:${detailedShipping.costs?.receiver?.cost ?? ''}; sender:${Array.isArray(detailedShipping.costs?.senders) && detailedShipping.costs.senders[0]?.cost != null ? detailedShipping.costs.senders[0].cost : ''}`

@@ -77,6 +77,10 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'shipping_substatus', label: 'Substatus', visible: false, category: 'ml' },
   { key: 'tracking_number', label: 'Rastreio', visible: false, category: 'ml' },
   { key: 'shipping_mode', label: 'Modo de Envio', visible: false, category: 'ml' },
+  
+  // Reputação do Vendedor
+  { key: 'power_seller_status', label: 'Medalha', visible: false, category: 'ml' },
+  { key: 'level_id', label: 'Reputação', visible: false, category: 'ml' },
   { key: 'codigo_rastreamento', label: 'Código Rastreamento', visible: false, category: 'ml' },
   { key: 'url_rastreamento', label: 'URL Rastreamento', visible: false, category: 'ml' },
   

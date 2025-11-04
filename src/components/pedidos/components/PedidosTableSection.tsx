@@ -488,6 +488,47 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span className="text-xs">{formatText(order.logistic_mode || order.logistic_mode_principal || order.shipping?.logistic?.mode || order.raw?.shipping?.logistic?.mode || order.unified?.logistic?.mode || '-')}</span>;
                      case 'logistic_type':
                        return <span className="text-xs">{translateLogisticType(order.logistic_type || order.tipo_logistico || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-')}</span>;
+                     
+                     case 'power_seller_status':
+                       {
+                         const medalha = order.power_seller_status || order.unified?.power_seller_status;
+                         if (!medalha) return <span className="text-xs text-muted-foreground">—</span>;
+                         
+                         const medalhaCores: Record<string, string> = {
+                           'platinum': 'bg-slate-100 text-slate-800 border-slate-300',
+                           'gold': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+                           'silver': 'bg-gray-100 text-gray-800 border-gray-300'
+                         };
+                         
+                         return (
+                           <Badge variant="outline" className={medalhaCores[medalha.toLowerCase()] || 'bg-gray-100 text-gray-800'}>
+                             {medalha.charAt(0).toUpperCase() + medalha.slice(1)}
+                           </Badge>
+                         );
+                       }
+                     
+                     case 'level_id':
+                       {
+                         const reputacao = order.level_id || order.unified?.level_id;
+                         if (!reputacao) return <span className="text-xs text-muted-foreground">—</span>;
+                         
+                         // level_id formato: "5_green", "4_yellow", etc.
+                         const [nivel, cor] = String(reputacao).split('_');
+                         const corReputacao: Record<string, string> = {
+                           'green': 'bg-green-100 text-green-800 border-green-300',
+                           'yellow': 'bg-yellow-100 text-yellow-800 border-yellow-300',
+                           'orange': 'bg-orange-100 text-orange-800 border-orange-300',
+                           'red': 'bg-red-100 text-red-800 border-red-300',
+                           'gray': 'bg-gray-100 text-gray-800 border-gray-300'
+                         };
+                         
+                         return (
+                           <Badge variant="outline" className={corReputacao[cor] || 'bg-gray-100 text-gray-800'}>
+                             {nivel && cor ? `${nivel} ${cor}` : reputacao}
+                           </Badge>
+                         );
+                       }
+                     
                      case 'shipping_method_type':
                         return <span className="text-xs">{translateShippingMethodType(
                           order.shipping_method_type ||
