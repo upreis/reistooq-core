@@ -535,13 +535,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     // Valores de frete e receitas
     const fretePagoCliente = shipping.cost || 0;
     const receitaFlex = shipping.seller_cost_benefit || 0;
-    
-    // 🔧 CORREÇÃO: Verificar logistic_type ANTES de definir custoEnvioSeller
-    const preliminaryLogisticType = shipping?.logistic?.type || 
-                                    detailedShipping?.logistic?.type || 
-                                    shipping?.logistic_type || 
-                                    detailedShipping?.logistic_type || 
-                                    null;
+    const custoEnvioSeller = shipping.base_cost || 0;
     
     // 🆕 NOVOS CAMPOS FLEX (baseado na estrutura real da API)
     // shipping.costs vem do /shipments/{id}/costs com estrutura:
@@ -573,6 +567,9 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       is_exact_double: grossAmountRaw === (costs?.receiver?.discounts?.[0]?.promoted_amount || 0) * 2
     });
     
+    // order_cost = gross_amount (valor bruto do envio)
+    const flexOrderCost = costs?.gross_amount || 0;
+    
     // special_discount = SOMA de TODOS os promoted_amount do receiver
     // (incluindo loyal, ratio e outros tipos de desconto)
     // ✅ VALIDAÇÃO: Garantir que discounts é um array antes de usar reduce
@@ -581,35 +578,14 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       ? receiverDiscounts.reduce((sum: number, d: any) => sum + (Number(d.promoted_amount) || 0), 0)
       : 0;
     
-    // 🔧 CORREÇÃO CRÍTICA: API do ML retorna gross_amount duplicado em alguns casos
-    // Verificar se gross_amount é exatamente o dobro do special_discount
-    let rawGrossAmount = costs?.gross_amount || 0;
-    const isExactDouble = rawGrossAmount > 0 && flexSpecialDiscount > 0 && 
-                          rawGrossAmount === flexSpecialDiscount * 2;
-    
-    // Se for exatamente o dobro, dividir por 2 para corrigir
-    const flexOrderCost = isExactDouble ? rawGrossAmount / 2 : rawGrossAmount;
-    
-    // 🔍 LOG DE CORREÇÃO: Avisar quando houver duplicação
-    if (isExactDouble) {
-      console.log(`[unified-orders:${cid}] 🔧 CORREÇÃO APLICADA - Pedido ${order.id}:`, {
-        problema: 'gross_amount duplicado pela API',
-        valor_api_bruto: rawGrossAmount,
-        valor_corrigido: flexOrderCost,
-        special_discount: flexSpecialDiscount,
-        cliente: shipping?.destination?.receiver_name || detailedShipping?.destination?.receiver_name
-      });
-    }
-    
     const flexNetCost = flexOrderCost - flexSpecialDiscount;
     
-    // Usar o logistic_type já definido anteriormente
-    const flexLogisticType = preliminaryLogisticType;
-    
-    // 🔧 CORREÇÃO: Em Flex (self_service), vendedor RECEBE, não paga!
-    const custoEnvioSeller = flexLogisticType === 'self_service' 
-      ? 0  // Flex: vendedor não paga envio, ele RECEBE
-      : (shipping.base_cost || 0); // Outros: vendedor pode ter custo
+    // Procurar logistic_type em todas as possíveis localizações
+    const flexLogisticType = shipping?.logistic?.type || 
+                             detailedShipping?.logistic?.type || 
+                             shipping?.logistic_type || 
+                             detailedShipping?.logistic_type || 
+                             null;
     
     // RECEITA FLEX:
     // - Se logistic_type = 'self_service' (Envios Flex) → special_discount
@@ -618,21 +594,19 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       ? flexSpecialDiscount 
       : 0;
     
-    // 🔍 DEBUG FLEX: Log detalhado dos valores calculados + CORREÇÃO
+    // 🔍 DEBUG FLEX: Log detalhado dos valores calculados
     if (flexOrderCost > 0 || flexSpecialDiscount > 0) {
       console.log(`[unified-orders:${cid}] 💰 FLEX AUDIT - Pedido ${order.id}:`, {
         costs_exists: !!costs,
         receiver_exists: !!costs?.receiver,
         discounts_is_array: Array.isArray(receiverDiscounts),
         discounts_count: receiverDiscounts?.length || 0,
-        raw_gross_amount: rawGrossAmount,
-        is_exact_double: isExactDouble,
-        flexOrderCost_CORRECTED: flexOrderCost,
+        gross_amount: costs?.gross_amount,
+        flexOrderCost,
         flexSpecialDiscount,
         flexNetCost,
         flexLogisticType,
         is_self_service: flexLogisticType === 'self_service',
-        custoEnvioSeller_CORRECTED: custoEnvioSeller,
         receitaFlexCalculada_NOVA: receitaFlexCalculada,
         logic_applied: flexLogisticType === 'self_service' ? 'SPECIAL_DISCOUNT' : 'ORDER_COST'
       });
@@ -641,13 +615,9 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     // 🔍 DEBUG: Valores calculados dos campos Flex
     if (String(order.id) === '2000013656902262') {
       console.log(`[unified-orders:${cid}] 💰 VALORES FLEX CALCULADOS - Pedido ${order.id}:`);
-      console.log(`  rawGrossAmount (API):`, rawGrossAmount);
-      console.log(`  isExactDouble:`, isExactDouble);
-      console.log(`  flexOrderCost (CORRIGIDO):`, flexOrderCost);
-      console.log(`  flexSpecialDiscount (soma promoted_amount):`, flexSpecialDiscount);
+      console.log(`  flexOrderCost (gross_amount):`, flexOrderCost);
+      console.log(`  flexSpecialDiscount (loyal promoted_amount):`, flexSpecialDiscount);
       console.log(`  flexNetCost (calculado):`, flexNetCost);
-      console.log(`  flexLogisticType:`, flexLogisticType);
-      console.log(`  custoEnvioSeller (CORRIGIDO):`, custoEnvioSeller);
       console.log(`  receitaFlexCalculada:`, receitaFlexCalculada);
     }
     
