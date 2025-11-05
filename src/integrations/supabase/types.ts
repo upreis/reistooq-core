@@ -2624,6 +2624,56 @@ export type Database = {
           },
         ]
       }
+      mapeamento_locais_estoque: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          created_by: string | null
+          empresa: string
+          id: string
+          local_estoque_id: string
+          marketplace: string
+          observacoes: string | null
+          organization_id: string
+          tipo_logistico: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          empresa: string
+          id?: string
+          local_estoque_id: string
+          marketplace: string
+          observacoes?: string | null
+          organization_id: string
+          tipo_logistico: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          created_by?: string | null
+          empresa?: string
+          id?: string
+          local_estoque_id?: string
+          marketplace?: string
+          observacoes?: string | null
+          organization_id?: string
+          tipo_logistico?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mapeamento_locais_estoque_local_estoque_id_fkey"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mapeamentos_depara: {
         Row: {
           ativo: boolean
@@ -3508,6 +3558,7 @@ export type Database = {
           id: string
           integration_account_id: string | null
           level_id: string | null
+          local_estoque_id: string | null
           nome_cliente: string
           numero: string
           numero_ecommerce: string | null
@@ -3539,6 +3590,7 @@ export type Database = {
           id?: string
           integration_account_id?: string | null
           level_id?: string | null
+          local_estoque_id?: string | null
           nome_cliente: string
           numero: string
           numero_ecommerce?: string | null
@@ -3570,6 +3622,7 @@ export type Database = {
           id?: string
           integration_account_id?: string | null
           level_id?: string | null
+          local_estoque_id?: string | null
           nome_cliente?: string
           numero?: string
           numero_ecommerce?: string | null
@@ -3592,6 +3645,13 @@ export type Database = {
             columns: ["integration_account_id"]
             isOneToOne: false
             referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_local_estoque_id_fkey"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
             referencedColumns: ["id"]
           },
         ]
@@ -5890,6 +5950,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      aplicar_mapeamento_local_estoque: {
+        Args: { p_pedido_id: string }
+        Returns: string
       }
       backfill_config_for_current_org: { Args: never; Returns: Json }
       backfill_historico_vendas_orphans: { Args: never; Returns: Json }
