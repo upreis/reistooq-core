@@ -646,6 +646,47 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
               .update({ ...updates, ativo: true, status: 'ativo' })
               .eq('id', id);
             if (error) throw error;
+            
+            // ✅ CRIAR/ATUALIZAR estoque_por_local para o produto atualizado
+            // Buscar organização do usuário
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('organizacao_id')
+              .eq('id', (await supabase.auth.getUser()).data.user?.id)
+              .single();
+            
+            if (profileData?.organizacao_id) {
+              // Buscar todos os locais ativos da organização
+              const { data: locaisAtivos } = await supabase
+                .from('locais_estoque')
+                .select('id, nome')
+                .eq('organization_id', profileData.organizacao_id)
+                .eq('ativo', true);
+              
+              if (locaisAtivos && locaisAtivos.length > 0) {
+                // Criar/atualizar estoque_por_local para cada local
+                const estoqueUpdates = locaisAtivos.map(local => ({
+                  produto_id: id,
+                  local_id: local.id,
+                  quantidade: updates.quantidade_atual || 0,
+                  organization_id: profileData.organizacao_id
+                }));
+                
+                const { error: estoqueError } = await supabase
+                  .from('estoque_por_local')
+                  .upsert(estoqueUpdates, { 
+                    onConflict: 'produto_id,local_id',
+                    ignoreDuplicates: false 
+                  });
+                
+                if (estoqueError) {
+                  console.warn('⚠️ Erro ao atualizar estoque_por_local:', estoqueError);
+                } else {
+                  console.log(`✅ Estoque atualizado em ${locaisAtivos.length} locais`);
+                }
+              }
+            }
+            
             successCount++;
           } catch (error: any) {
             errorCount++;
@@ -656,7 +697,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           }
         }
 
-        // Criar novos produtos
+        // Criar novos produtos  
+        // ✅ createProduct já cria estoque_por_local automaticamente
         for (let i = 0; i < rowsToCreate.length; i++) {
           try {
             console.log(`Criando produto ${i + 1}/${rowsToCreate.length}: ${rowsToCreate[i].sku_interno}`);
