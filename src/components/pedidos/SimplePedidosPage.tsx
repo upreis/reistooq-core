@@ -513,15 +513,17 @@ function SimplePedidosPage({ className }: Props) {
       return 0;
     }
     
-    // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
+    // ✅ NOVA LÓGICA: Verificar Valor Médio por Item PRIMEIRO
     const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
+    const quantidadeTotal = order.quantidade_total || 1;
+    const valorMedioPorItem = valorTotal / quantidadeTotal;
     
-    // Se Valor Total < 79.00 → usar cálculo normal (100%)
-    if (valorTotal < 79.00) {
+    // Se Valor Médio por Item < 79.00 → usar cálculo normal (100%)
+    if (valorMedioPorItem < 79.00) {
       return flexOrderCostBase;
     }
     
-    // Se Valor Total >= 79.00 → verificar todas as outras condições
+    // Se Valor Médio por Item >= 79.00 → verificar todas as outras condições
     const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
     const condition = String(conditionRaw).toLowerCase();
     
@@ -552,9 +554,11 @@ function SimplePedidosPage({ className }: Props) {
     const valorFinal = flexOrderCostBase * percentualAplicado;
     
     // 🔍 DEBUG: Log da regra de 10% para pedidos >= R$ 79
-    console.log(`📊 [FLEX DEBUG] Regra 10% (Pedido ≥ R$ 79):`, {
+    console.log(`📊 [FLEX DEBUG] Regra 10% (Valor Médio/Item ≥ R$ 79):`, {
       pedidoId: order?.numero || order?.id,
       valorTotal: valorTotal,
+      quantidadeTotal: quantidadeTotal,
+      valorMedioPorItem: valorMedioPorItem,
       flexOrderCostBase: flexOrderCostBase,
       condicoes: {
         produtoNovo: condition === 'new',

@@ -357,15 +357,17 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                return <span>{formatMoney(0)}</span>;
                              }
                              
-                             // ✅ NOVA LÓGICA: Verificar Valor Total PRIMEIRO
-                             const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
+                              // ✅ NOVA LÓGICA: Verificar Valor Médio por Item PRIMEIRO
+                              const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
+                              const quantidadeTotal = order.quantidade_total || 1;
+                              const valorMedioPorItem = valorTotal / quantidadeTotal;
+                              
+                              // Se Valor Médio por Item < 79.00 → usar cálculo normal (100%)
+                              if (valorMedioPorItem < 79.00) {
+                                return <span>{formatMoney(flexOrderCostBase)}</span>;
+                              }
                              
-                             // Se Valor Total < 79.00 → usar cálculo normal (100%)
-                             if (valorTotal < 79.00) {
-                               return <span>{formatMoney(flexOrderCostBase)}</span>;
-                             }
-                            
-                            // Se Valor Total >= 79.00 → verificar todas as outras condições
+                             // Se Valor Médio por Item >= 79.00 → verificar todas as outras condições
                             const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
                             const condition = String(conditionRaw).toLowerCase();
                             
