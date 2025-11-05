@@ -731,7 +731,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'endereco_bairro', label: 'Bairro', default: false, category: 'shipping' },
     { key: 'endereco_cep', label: 'CEP', default: false, category: 'shipping' },
     { key: 'endereco_cidade', label: 'Cidade', default: false, category: 'shipping' },
-    { key: 'endereco_uf', label: 'UF', default: false, category: 'shipping', width: 200 },
+    { key: 'endereco_uf', label: 'UF', default: false, category: 'shipping', width: 150 },
   ];
 
   // ✅ Sistema de colunas removido - agora usa useColumnManager com persistência automática
