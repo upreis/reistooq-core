@@ -224,13 +224,19 @@ function SimplePedidosPage({ className }: Props) {
   const pedidosManager = usePedidosManager();
   const { state, actions, totalPages } = pedidosManager;
   
-  // ✅ CRÍTICO: Listener para mudanças de filtros aplicados 
+  // ✅ CRÍTICO: Aplicar filtros automaticamente quando restaurados do localStorage
   useEffect(() => {
-    // Quando appliedFilters mudar e não for vazio, force refetch
-    if (filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0) {
-      console.log('🔄 [FILTERS SYNC] Filtros aplicados mudaram, sincronizando...', filtersManager.appliedFilters);
+    const hasRestoredFilters = filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0;
+    
+    if (hasRestoredFilters) {
+      console.log('🔄 [FILTROS RESTAURADOS] Aplicando automaticamente...', filtersManager.appliedFilters);
+      
+      // Aplicar filtros no manager
+      actions.replaceFilters(filtersManager.appliedFilters);
+      
+      // NÃO limpar persistentState aqui pois estamos restaurando
     }
-  }, [filtersManager.appliedFilters]);
+  }, []); // ✅ Executar APENAS uma vez na montagem (filtros já estarão carregados)
   
   // 🔧 P3.1: Sistema de colunas unificado com persistência automatica (memoizado)
   const columnManager = useColumnManager();
