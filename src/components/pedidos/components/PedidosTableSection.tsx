@@ -985,19 +985,63 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        // Renderizar status dos insumos usando callback personalizado
                        return renderStatusInsumos ? renderStatusInsumos(order.id) : <span className="text-xs text-muted-foreground">—</span>;
                      
-                     case 'marketplace_origem':
-                       const marketplace = order.unified?.marketplace_origem || order.marketplace_origem || 'Interno';
-                       const marketplaceColors: Record<string, string> = {
-                         'Mercado Livre': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-                         'Shopee': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-                         'Tiny': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-                         'Interno': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                       };
-                       return (
-                         <Badge variant="outline" className={marketplaceColors[marketplace] || marketplaceColors['Interno']}>
-                           {marketplace}
-                         </Badge>
-                       );
+                      case 'marketplace_origem':
+                        // 🔍 Detecção inteligente do marketplace baseada em múltiplos campos
+                        const detectMarketplace = (order: any): string => {
+                          // 1. Mercado Livre
+                          if (order.empresa === 'mercadolivre' || 
+                              order.empresa === 'mercado livre' ||
+                              order.id?.startsWith('ml_') || 
+                              order.numero?.startsWith('ML-') ||
+                              order.numero_ecommerce?.startsWith('ML-') ||
+                              order.raw?.tags?.includes('pack_id')) {
+                            return 'Mercado Livre';
+                          }
+                          
+                          // 2. Shopee
+                          if (order.empresa === 'shopee' || 
+                              order.id?.startsWith('shopee_') ||
+                              order.raw?.order_sn ||
+                              order.integration_account_id?.includes('shopee')) {
+                            return 'Shopee';
+                          }
+                          
+                          // 3. Tiny ERP
+                          if (order.empresa === 'tiny' || 
+                              order.integration_account_id?.includes('tiny')) {
+                            return 'Tiny';
+                          }
+                          
+                          // 4. Shopify
+                          if (order.empresa === 'shopify' || 
+                              order.integration_account_id?.includes('shopify')) {
+                            return 'Shopify';
+                          }
+                          
+                          // 5. Amazon
+                          if (order.empresa === 'amazon' || 
+                              order.integration_account_id?.includes('amazon')) {
+                            return 'Amazon';
+                          }
+                          
+                          // Padrão: Venda Direta/Interno
+                          return 'Interno';
+                        };
+                        
+                        const marketplace = detectMarketplace(order);
+                        const marketplaceColors: Record<string, string> = {
+                          'Mercado Livre': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
+                          'Shopee': 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
+                          'Tiny': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
+                          'Shopify': 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+                          'Amazon': 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
+                          'Interno': 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                        };
+                        return (
+                          <Badge variant="outline" className={marketplaceColors[marketplace] || marketplaceColors['Interno']}>
+                            {marketplace}
+                          </Badge>
+                        );
                      
                      case 'local_estoque':
                        const localEstoqueId = order.unified?.local_estoque_id || order.local_estoque_id;
