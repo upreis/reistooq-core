@@ -33,14 +33,28 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   mappingData,
   isPedidoProcessado
 }) => {
-  // ✅ SEMPRE usar os pedidos da página atual (respeitando filtros aplicados)
+  // ✅ Usar totalRecords (total de todas as páginas) quando disponível, senão usar orders da página atual
   const counters = useMemo(() => {
     console.log('📊 [StatusBar] Iniciando contagem:', { 
+      totalRecords,
       ordersLength: orders?.length, 
       quickFilter,
       hasMapping: !!mappingData,
-      mappingSize: mappingData?.size 
+      hasGlobalCounts: !!globalCounts
     });
+    
+    // 🎯 USAR globalCounts quando disponível e no modo 'all' (tem os totais de todas as páginas)
+    if (globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all') {
+      console.log('✅ [StatusBar] Usando totais globais do aggregator:', globalCounts);
+      return {
+        total: globalCounts.total || 0,
+        prontosBaixa: globalCounts.prontosBaixa || 0,
+        mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
+        baixados: globalCounts.baixados || 0,
+        semEstoque: 0,
+        skuNaoCadastrado: 0
+      };
+    }
     
     console.log('📊 [StatusBar] Contando pedidos da página atual (fallback):', { 
       ordersLength: orders?.length, 
@@ -53,11 +67,14 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     }
 
     // ✅ LÓGICA SIMPLES: Se quickFilter está ativo, todos os pedidos pertencem a essa categoria
+    // Usar totalRecords se disponível (representa todas as páginas), senão usar orders.length
+    const totalCount = totalRecords || orders.length;
+    
     if (quickFilter === 'pronto_baixar') {
       console.log('📊 [StatusBar] Modo pronto_baixar - todos os pedidos são prontos');
       return {
-        total: orders.length,
-        prontosBaixa: orders.length,
+        total: totalCount,
+        prontosBaixa: totalCount,
         mapeamentoPendente: 0,
         baixados: 0,
         semEstoque: 0,
@@ -68,9 +85,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     if (quickFilter === 'mapear_incompleto') {
       console.log('📊 [StatusBar] Modo mapear_incompleto - todos os pedidos são pendentes');
       return {
-        total: orders.length,
+        total: totalCount,
         prontosBaixa: 0,
-        mapeamentoPendente: orders.length,
+        mapeamentoPendente: totalCount,
         baixados: 0,
         semEstoque: 0,
         skuNaoCadastrado: 0
@@ -80,10 +97,10 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     if (quickFilter === 'baixado') {
       console.log('📊 [StatusBar] Modo baixado - todos os pedidos são baixados');
       return {
-        total: orders.length,
+        total: totalCount,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
-        baixados: orders.length,
+        baixados: totalCount,
         semEstoque: 0,
         skuNaoCadastrado: 0
       };
@@ -91,27 +108,27 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     
     if (quickFilter === 'sem_estoque') {
       return {
-        total: orders.length,
+        total: totalCount,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
         baixados: 0,
-        semEstoque: orders.length,
+        semEstoque: totalCount,
         skuNaoCadastrado: 0
       };
     }
     
     if (quickFilter === 'sku_nao_cadastrado') {
       return {
-        total: orders.length,
+        total: totalCount,
         prontosBaixa: 0,
         mapeamentoPendente: 0,
         baixados: 0,
         semEstoque: 0,
-        skuNaoCadastrado: orders.length
+        skuNaoCadastrado: totalCount
       };
     }
 
-    // ✅ MODO 'ALL': Calcular contadores reais
+    // ✅ MODO 'ALL': Calcular contadores reais da página atual
     let prontosBaixa = 0;
     let mapeamentoPendente = 0;
     let baixados = 0;
@@ -142,7 +159,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     }
 
     const result = {
-      total: orders.length,
+      total: totalCount, // Usar totalRecords para mostrar total de todas as páginas
       prontosBaixa,
       mapeamentoPendente,
       baixados,
@@ -152,7 +169,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     
     console.log('📊 [StatusBar] Contadores calculados:', result);
     return result;
-  }, [orders, mappingData, isPedidoProcessado, quickFilter, globalCounts]);
+  }, [orders, mappingData, isPedidoProcessado, quickFilter, globalCounts, totalRecords]);
 
   const statusChips = [
     {
