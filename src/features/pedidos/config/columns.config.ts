@@ -181,7 +181,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Método de pagamento utilizado',
-    width: 130
+    width: 100
   },
   {
     key: 'payment_status',
@@ -475,7 +475,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Tags do ML',
-    width: 200
+    width: 100
   },
 
 
