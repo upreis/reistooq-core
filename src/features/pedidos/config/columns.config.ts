@@ -152,6 +152,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
+    key: 'custo_fixo_meli',
+    label: 'Custo Fixo Meli',
+    category: 'financial',
+    priority: 'important',
+    visible: false,
+    default: false,
+    description: 'Custo fixo adicional para produtos abaixo de R$ 79',
+    width: 130,
+    sortable: true
+  },
+  {
     key: 'valor_liquido_vendedor',
     label: 'Valor Líquido Vendedor',
     category: 'financial',
