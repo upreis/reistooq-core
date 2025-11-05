@@ -450,10 +450,17 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       } : {};
 
       // Mapeamento tolerante usando os cabeçalhos da planilha
-      const mappedData = (XLSX.utils.sheet_to_json(worksheet) as any[]).map((row: any) => {
+      const mappedData = (XLSX.utils.sheet_to_json(worksheet) as any[]).map((row: any, rowIndex: number) => {
         const mappedRow: any = {};
         const headerMap: Record<string, string> = {};
         Object.keys(row).forEach((h) => { headerMap[normalize(h)] = h; });
+
+        // 🔍 DEBUG: Log dos cabeçalhos da planilha (primeira linha apenas)
+        if (rowIndex === 0) {
+          console.log('🔍 [IMPORT DEBUG] Cabeçalhos originais da planilha:', Object.keys(row));
+          console.log('🔍 [IMPORT DEBUG] Cabeçalhos normalizados:', Object.keys(headerMap));
+          console.log('🔍 [IMPORT DEBUG] Colunas esperadas:', columnsToUse.map(c => ({ key: c.key, label: c.label, normalized: normalize(c.label) })));
+        }
 
         columnsToUse.forEach(col => {
           let value: any = '';
@@ -467,6 +474,16 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             }
           }
           mappedRow[col.key] = value ?? '';
+          
+          // 🔍 DEBUG: Log do mapeamento (primeira linha apenas)
+          if (rowIndex === 0 && (col.key === 'sku_interno' || col.key === 'nome')) {
+            console.log(`🔍 [IMPORT DEBUG] Mapeamento ${col.key}:`, {
+              label: col.label,
+              labelNormalized: normalize(col.label),
+              foundHeader: primary,
+              value: value
+            });
+          }
         });
         return mappedRow;
       });
