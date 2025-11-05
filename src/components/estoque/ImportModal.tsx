@@ -447,6 +447,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       const aliasMap: Record<string, string[]> = importMode === 'produtos' ? {
         sku_interno: ['sku', 'sku interno', 'sku do produto', 'sku produto', 'sku estoque', 'sku_interno', 'sku-interno'],
         nome: ['nome', 'nome do produto', 'produto', 'titulo', 'título'],
+        sku_pai: ['sku pai', 'sku_pai', 'sku-pai', 'pai', 'produto pai'],
       } : {};
 
       // Mapeamento tolerante usando os cabeçalhos da planilha
