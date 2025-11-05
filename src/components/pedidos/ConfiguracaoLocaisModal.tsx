@@ -20,13 +20,21 @@ import {
 interface ConfiguracaoLocaisModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  empresasSelecionadas?: string[]; // Empresas vindas do filtro
+  contasML?: Array<{ id: string; name: string; nickname?: string; }>;
 }
 
-export function ConfiguracaoLocaisModal({ open, onOpenChange }: ConfiguracaoLocaisModalProps) {
+export function ConfiguracaoLocaisModal({ 
+  open, 
+  onOpenChange, 
+  empresasSelecionadas = [],
+  contasML = []
+}: ConfiguracaoLocaisModalProps) {
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [mapeamentos, setMapeamentos] = useState<MapeamentoLocalEstoque[]>([]);
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
+  const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
   
   // Form state
   const [novoMapeamento, setNovoMapeamento] = useState({
@@ -40,8 +48,20 @@ export function ConfiguracaoLocaisModal({ open, onOpenChange }: ConfiguracaoLoca
   useEffect(() => {
     if (open) {
       carregarDados();
+      
+      // Preencher automaticamente a empresa se houver apenas uma selecionada
+      if (empresasSelecionadas.length === 1 && !editando) {
+        const empresaNome = contasML.find(c => c.id === empresasSelecionadas[0])?.nickname || 
+                           contasML.find(c => c.id === empresasSelecionadas[0])?.name || 
+                           empresasSelecionadas[0];
+        setNovoMapeamento(prev => ({ ...prev, empresa: empresaNome }));
+      }
+      // Se for um novo mapeamento, abrir o seletor de empresa
+      if (!editando && !novoMapeamento.empresa) {
+        setEmpresaSelectorOpen(true);
+      }
     }
-  }, [open]);
+  }, [open, empresasSelecionadas, contasML]);
 
   const carregarDados = async () => {
     try {
@@ -159,11 +179,34 @@ export function ConfiguracaoLocaisModal({ open, onOpenChange }: ConfiguracaoLoca
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Empresa / Nome do Vendedor *</Label>
-                <Input
+                <Select
                   value={novoMapeamento.empresa}
-                  onChange={(e) => setNovoMapeamento({ ...novoMapeamento, empresa: e.target.value })}
-                  placeholder="Ex: Loja Principal"
-                />
+                  onValueChange={(value) => setNovoMapeamento({ ...novoMapeamento, empresa: value })}
+                  open={empresaSelectorOpen}
+                  onOpenChange={setEmpresaSelectorOpen}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a empresa..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border border-border z-50">
+                    {contasML.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        Nenhuma conta disponível
+                      </div>
+                    ) : (
+                      contasML.map((conta) => (
+                        <SelectItem key={conta.id} value={conta.nickname || conta.name}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{conta.nickname || conta.name}</span>
+                            {conta.nickname && conta.name && conta.nickname !== conta.name && (
+                              <span className="text-xs text-muted-foreground">{conta.name}</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

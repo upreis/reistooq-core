@@ -269,6 +269,9 @@ function SimplePedidosPage({ className }: Props) {
   const [showMapeamentoModal, setShowMapeamentoModal] = useState(false);
   const [pedidoParaMapeamento, setPedidoParaMapeamento] = useState<any>(null);
   
+  // 🗺️ Estado do modal de configuração de locais
+  const [showLocaisModal, setShowLocaisModal] = useState(false);
+  
   // 🧠 P3.2: Hook de mapeamentos otimizado - CORREÇÃO DE PERFORMANCE (debounce aumentado)
   const {
     mappingData,
@@ -1379,6 +1382,8 @@ useEffect(() => {
       <ConfiguracaoLocaisModal
         open={configLocaisOpen}
         onOpenChange={setConfigLocaisOpen}
+        empresasSelecionadas={filtersManager.appliedFilters?.contasML || []}
+        contasML={accounts}
       />
             </ErrorBoundary>
         </div>
