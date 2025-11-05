@@ -396,15 +396,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                             order.unified?.seller_reputation?.power_seller_status ||
                                             null;
                              
-                              // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
-                              // Se TODAS as condições forem atendidas → aplicar 10%
-                              // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
-                              if (condition === 'new' && reputation.includes('green') && medalha) {
-                                return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
-                              }
-                              
-                              // ✅ CORRIGIDO: Sem qualificações = R$ 0,00
-                              return <span>{formatMoney(0)}</span>;
+                               // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
+                               // Se TODAS as condições forem atendidas → aplicar 10%
+                               // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
+                               if (condition === 'new' && reputation.includes('green')) { // ✅ Removida verificação de medalha
+                                 return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
+                               }
+                               
+                               // ✅ CORRIGIDO: Sem qualificações = R$ 0,00
+                               return <span>{formatMoney(0)}</span>;
                              }
                     case 'custo_envio_seller':
                       return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;

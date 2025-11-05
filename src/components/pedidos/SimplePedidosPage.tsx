@@ -554,7 +554,7 @@ function SimplePedidosPage({ className }: Props) {
     // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
     // Se TODAS as condições forem atendidas → aplicar 10%
     // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
-    const cumpreCondicoes = condition === 'new' && reputation.includes('green') && medalha;
+    const cumpreCondicoes = condition === 'new' && reputation.includes('green'); // ✅ Removida verificação de medalha
     const percentualAplicado = cumpreCondicoes ? 0.1 : 0; // ✅ CORRIGIDO: 0% sem qualificações
     const valorFinal = flexOrderCostBase * percentualAplicado;
     
@@ -568,13 +568,12 @@ function SimplePedidosPage({ className }: Props) {
       condicoes: {
         produtoNovo: condition === 'new',
         reputacaoVerde: reputation.includes('green'),
-        temMedalha: !!medalha,
         todasAtendidas: cumpreCondicoes
       },
       calculo: {
         percentualAplicado: `${percentualAplicado * 100}%`,
         valorFinal: valorFinal,
-        motivoZero: !cumpreCondicoes ? 'Não possui qualificações (MercadoLíderes + Reputação Verde)' : null
+        motivoZero: !cumpreCondicoes ? 'Não possui qualificações (Produto Novo + Reputação Verde)' : null
       },
       dadosBrutos: {
         condition: conditionRaw,
