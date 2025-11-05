@@ -7,6 +7,7 @@ const subNavItems = [
     path: "/pedidos",
     label: "Vendas",
     icon: Package,
+    preserveSearch: true, // ✅ Preservar filtros na URL
   },
   {
     path: "/ml-orders-completas",
@@ -48,10 +49,15 @@ export function MLOrdersNav() {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
           
+          // ✅ Preservar query params para rotas específicas (ex: /pedidos)
+          const to = item.preserveSearch && location.pathname === item.path
+            ? { pathname: item.path, search: location.search }
+            : item.path;
+          
           return (
             <NavLink
               key={item.path}
-              to={item.path}
+              to={to}
               className={cn(
                 "pb-4 px-1 text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
                 isActive

@@ -3,7 +3,7 @@ import { ShoppingCart, Users, Settings, Store, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Vendas Marketplace", href: "/pedidos", icon: Store },
+  { name: "Vendas Marketplace", href: "/pedidos", icon: Store, preserveSearch: true },
   { name: "Vendas Direta/Atacado", href: "/oms/pedidos", icon: ShoppingCart },
   { name: "Clientes", href: "/oms/clientes", icon: Users },
   { name: "Vendedores", href: "/oms/vendedores", icon: UserCheck },
@@ -17,10 +17,15 @@ export function OMSNav() {
     <nav className="flex space-x-8 border-b">
       {navigation.map((item) => {
         const isActive = location.pathname === item.href;
+        // ✅ Preservar query params para rotas específicas (ex: /pedidos)
+        const to = item.preserveSearch && location.pathname === item.href
+          ? { pathname: item.href, search: location.search }
+          : item.href;
+        
         return (
           <Link
             key={item.name}
-            to={item.href}
+            to={to}
             className={cn(
               "flex items-center px-1 pt-1 border-b-2 text-sm font-medium",
               isActive

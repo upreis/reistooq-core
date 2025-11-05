@@ -81,11 +81,13 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     
-    // Se sync está habilitado, usar filtros da URL
-    if (enableURLSync && filterSync.hasActiveFilters) {
+    // ✅ CORREÇÃO: SEMPRE usar filtros da URL quando sync está habilitado
+    // Mesmo que esteja vazio (isso garante que filtros antigos sejam limpos)
+    if (enableURLSync) {
       const syncedFilters = filterSync.filters;
       if (isDev) console.log('🔄 [ETAPA 3] Filtros carregados da URL (INIT):', {
-        filters: syncedFilters
+        filters: syncedFilters,
+        hasFilters: Object.keys(syncedFilters).length > 0
       });
       
       // Carregar tanto no draft quanto no applied
