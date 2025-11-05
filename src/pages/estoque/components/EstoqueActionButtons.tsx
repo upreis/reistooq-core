@@ -1,11 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, LinkIcon, Trash2 } from "lucide-react";
+import { Plus, Settings, LinkIcon, Trash2, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
-import { EstoqueImport } from "@/components/estoque/EstoqueImport";
+import { ImportModal } from "@/components/estoque/ImportModal";
 import { EstoqueExport } from "@/components/estoque/EstoqueExport";
 import { EstoqueReports } from "@/components/estoque/EstoqueReports";
 import { EstoqueSettings } from "@/components/estoque/EstoqueSettings";
 import { Product } from "@/hooks/useProducts";
+import { useState } from "react";
 
 interface EstoqueActionButtonsProps {
   selectedProducts: string[];
@@ -28,8 +29,11 @@ export function EstoqueActionButtons({
   onDelete,
   onImportSuccess
 }: EstoqueActionButtonsProps) {
+  const [importModalOpen, setImportModalOpen] = useState(false);
+
   return (
-    <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
+    <>
+      <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
       <Button 
         variant="default" 
         size="sm"
@@ -69,7 +73,14 @@ export function EstoqueActionButtons({
         </>
       )}
       
-      <EstoqueImport onSuccess={onImportSuccess} />
+      <Button 
+        variant="outline" 
+        size="sm"
+        onClick={() => setImportModalOpen(true)}
+      >
+        <Upload className="h-4 w-4 mr-2" />
+        Importar
+      </Button>
       
       <EstoqueExport 
         products={products}
@@ -87,5 +98,16 @@ export function EstoqueActionButtons({
         </Link>
       </Button>
     </div>
+
+    <ImportModal
+      open={importModalOpen}
+      onOpenChange={setImportModalOpen}
+      onSuccess={() => {
+        onImportSuccess();
+        setImportModalOpen(false);
+      }}
+      tipo="produtos"
+    />
+  </>
   );
 }
