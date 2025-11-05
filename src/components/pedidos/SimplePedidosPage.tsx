@@ -50,6 +50,9 @@ import { usePersistentPedidosState } from '@/hooks/usePersistentPedidosState';
 // ✅ SISTEMA UNIFICADO DE FILTROS
 import { usePedidosFiltersUnified } from '@/hooks/usePedidosFiltersUnified';
 
+// 🔄 ETAPA 1: Polling automático (conforme PDF recomendado)
+import { usePedidosPolling } from '@/hooks/usePedidosPolling';
+
 // F4.1: Sistema de validação e limpeza automática de localStorage
 import { LocalStorageValidator, useStorageValidation } from '@/utils/storageValidation';
 import { ErrorBoundary, withErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -307,6 +310,17 @@ function SimplePedidosPage({ className }: Props) {
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
   const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao'>(() => {
     return persistentState.persistedState?.quickFilter as any || 'all';
+  });
+  
+  // 🔄 ETAPA 1: Polling automático a cada 60s (PDF recomendado)
+  const polling = usePedidosPolling({
+    enabled: !loading && !state.isRefreshing && orders.length > 0,
+    intervalMs: 60000, // 60 segundos
+    onRefresh: () => {
+      console.log('🔄 [POLLING] Atualizando dados automaticamente...');
+      actions.refetch();
+    },
+    pauseOnInteraction: true // Pausa quando usuário está interagindo
   });
 
   // P3.1: Lista exibida considerando o filtro rápido (memoizada para performance)
@@ -1035,11 +1049,9 @@ useEffect(() => {
     }
   };
 
-  // Executar validação periodicamente
-  useEffect(() => {
-    const interval = setInterval(validateSystem, 5000);
-    return () => clearInterval(interval);
-  }, [orders, mappingData]);
+  // 🔄 ETAPA 1: REMOVIDO setInterval de validação (5s)
+  // Substituído por polling automático de 60s mais eficiente
+  // A validação agora acontece apenas quando necessário, não a cada 5s
 
 
   const navigate = useNavigate();
