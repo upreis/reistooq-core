@@ -181,7 +181,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Método de pagamento utilizado',
-    width: 100
+    width: 150
   },
   {
     key: 'payment_status',
