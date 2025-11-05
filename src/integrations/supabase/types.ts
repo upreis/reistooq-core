@@ -3559,6 +3559,7 @@ export type Database = {
           integration_account_id: string | null
           level_id: string | null
           local_estoque_id: string | null
+          marketplace_origem: string | null
           nome_cliente: string
           numero: string
           numero_ecommerce: string | null
@@ -3591,6 +3592,7 @@ export type Database = {
           integration_account_id?: string | null
           level_id?: string | null
           local_estoque_id?: string | null
+          marketplace_origem?: string | null
           nome_cliente: string
           numero: string
           numero_ecommerce?: string | null
@@ -3623,6 +3625,7 @@ export type Database = {
           integration_account_id?: string | null
           level_id?: string | null
           local_estoque_id?: string | null
+          marketplace_origem?: string | null
           nome_cliente?: string
           numero?: string
           numero_ecommerce?: string | null
@@ -6063,6 +6066,10 @@ export type Database = {
       delete_invitation_safe: {
         Args: { p_invitation_id: string }
         Returns: Json
+      }
+      detectar_marketplace_pedido: {
+        Args: { p_integration_account_id: string; p_organization_id: string }
+        Returns: string
       }
       encrypt_simple: { Args: { data: string }; Returns: string }
       ensure_current_org: { Args: never; Returns: Json }
