@@ -74,6 +74,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   const getProductColumns = () => ([
     { key: 'sku_interno', label: 'SKU Interno', required: true },
     { key: 'nome', label: 'Nome', required: true },
+    { key: 'sku_pai', label: 'SKU Pai', required: false },
     { key: 'descricao', label: 'Descrição', required: false },
     { key: 'codigo_barras', label: 'Código de Barras', required: false },
     { key: 'categoria_principal', label: 'Categoria Principal', required: false },
@@ -108,6 +109,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       const exampleRow = [
         'EXEMPLO001',                           // SKU Interno
         'Produto Exemplo',                      // Nome
+        '',                                     // SKU Pai (deixe vazio se não for produto filho)
         'Descrição do produto exemplo',         // Descrição
         '1234567890123',                        // Código de Barras
         'Eletrônicos',                          // Categoria Principal
@@ -183,13 +185,22 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         ['INSTRUÇÕES PARA PREENCHIMENTO'],
         [''],
         ['1. SKU Interno e Nome são obrigatórios'],
-        ['2. Categorias são opcionais mas devem seguir a hierarquia:'],
+        ['2. SKU Pai é opcional - use apenas se este produto for FILHO de outro:'],
+        ['   • Exemplo: Se "FL-14-TRAN-1" é filho de "FL-14-TRAN"'],
+        ['   • Preencha SKU Pai = "FL-14-TRAN"'],
+        ['   • Deixe vazio se o produto não tiver pai'],
+        ['3. Categorias são opcionais mas devem seguir a hierarquia:'],
         ['   • Categoria Principal (Ex: Eletrônicos)'],
         ['   • Categoria (Ex: Smartphones)'], 
-        ['3. Use as categorias das abas "Categorias Principais" e "Estrutura Hierárquica"'],
-        ['4. Se não existir a categoria desejada, crie primeiro em /estoque/categorias'],
-        ['5. Preços são opcionais (deixe em branco se não tiver)'],
-        ['6. URL da imagem deve ser um link válido (opcional)'],
+        ['4. Use as categorias das abas "Categorias Principais" e "Estrutura Hierárquica"'],
+        ['5. Se não existir a categoria desejada, crie primeiro em /estoque/categorias'],
+        ['6. Preços são opcionais (deixe em branco se não tiver)'],
+        ['7. URL da imagem deve ser um link válido (opcional)'],
+        [''],
+        ['HIERARQUIA DE PRODUTOS (Produto Pai/Filho):'],
+        ['• Produto Pai: SKU = "CMD-29", SKU Pai = (vazio)'],
+        ['• Produto Filho: SKU = "CMD-29-VERD-1", SKU Pai = "CMD-29"'],
+        ['• Produto Filho: SKU = "CMD-29-AZUL-1", SKU Pai = "CMD-29"'],
         [''],
         ['EXEMPLO DE CATEGORIZAÇÃO:'],
         ['• Categoria Principal: Eletrônicos'],
