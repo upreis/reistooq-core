@@ -80,14 +80,24 @@ export function ConfiguracaoLocaisModal({
   };
 
   const handleSalvar = async () => {
+    console.log('🔍 Tentando salvar mapeamento:', novoMapeamento);
+    
     if (!novoMapeamento.empresa || !novoMapeamento.tipo_logistico || 
         !novoMapeamento.marketplace || !novoMapeamento.local_estoque_id) {
+      console.error('❌ Campos faltando:', {
+        empresa: !novoMapeamento.empresa,
+        tipo_logistico: !novoMapeamento.tipo_logistico,
+        marketplace: !novoMapeamento.marketplace,
+        local_estoque_id: !novoMapeamento.local_estoque_id
+      });
       toast.error('Preencha todos os campos obrigatórios');
       return;
     }
 
     try {
       setLoading(true);
+      console.log('✅ Salvando mapeamento...');
+      
       if (editando) {
         await atualizarMapeamentoLocal(editando, {
           ...novoMapeamento,
@@ -95,10 +105,11 @@ export function ConfiguracaoLocaisModal({
         });
         toast.success('Mapeamento atualizado!');
       } else {
-        await criarMapeamentoLocal({
+        const resultado = await criarMapeamentoLocal({
           ...novoMapeamento,
           ativo: true
         });
+        console.log('✅ Mapeamento criado:', resultado);
         toast.success('Mapeamento criado!');
       }
       
@@ -110,8 +121,10 @@ export function ConfiguracaoLocaisModal({
         observacoes: ''
       });
       setEditando(null);
+      setMostrarCustomTipoLogistico(false);
       await carregarDados();
     } catch (error: any) {
+      console.error('❌ Erro ao salvar mapeamento:', error);
       toast.error('Erro ao salvar: ' + error.message);
     } finally {
       setLoading(false);
