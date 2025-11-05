@@ -528,15 +528,14 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           ? valorTotal + receitaFlex - taxaMarketplace
                           : valorTotal + receitaFlex - taxaMarketplace - custoEnvioSeller;
                         
-                        // 🔍 DEBUG: Log detalhado com valores individuais
-                        console.log(`💰 [VALOR LÍQUIDO] Pedido ${order.id || order.numero}`);
-                        console.log(`  Valor Total: R$ ${valorTotal.toFixed(2)}`);
-                        console.log(`  - Frete Pago Cliente: R$ ${fretePagoCliente.toFixed(2)}`);
-                        console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)}`);
-                        console.log(`  + Receita Flex: R$ ${receitaFlex.toFixed(2)}`);
-                        console.log(`  - Taxa Marketplace: R$ ${taxaMarketplace.toFixed(2)}`);
-                        console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
-                        console.log(`  Armazenado: R$ ${(order.valor_liquido_vendedor || 0).toFixed(2)}`);
+                         // 🔍 DEBUG: Log detalhado com valores individuais
+                         console.log(`💰 [VALOR LÍQUIDO] Pedido ${order.id || order.numero}`);
+                         console.log(`  Valor Total: R$ ${valorTotal.toFixed(2)}`);
+                         console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)}`);
+                         console.log(`  + Receita Flex: R$ ${receitaFlex.toFixed(2)}`);
+                         console.log(`  - Taxa Marketplace: R$ ${taxaMarketplace.toFixed(2)}`);
+                         console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
+                         console.log(`  Armazenado: R$ ${(order.valor_liquido_vendedor || 0).toFixed(2)}`);
                         
                         return <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">{formatMoney(valorLiquido)}</span>;
                       }
