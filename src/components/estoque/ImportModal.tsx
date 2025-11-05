@@ -765,6 +765,70 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           }
         }
 
+        // 🆕 CRIAR PRODUTOS PAI AUTOMATICAMENTE SE NÃO EXISTIREM
+        const skusPaiUnicos = [...new Set(
+          [...rowsToCreate, ...rowsToReactivate.map(r => r.data)]
+            .map(p => p.sku_pai)
+            .filter(Boolean)
+        )];
+
+        if (skusPaiUnicos.length > 0) {
+          console.log('👨‍👧‍👦 SKUs Pai detectados:', skusPaiUnicos);
+          
+          // Verificar quais SKUs Pai JÁ existem
+          const { data: paiExistentes } = await supabase
+            .from('produtos')
+            .select('sku_interno')
+            .in('sku_interno', skusPaiUnicos);
+          
+          const skusPaiExistentes = new Set((paiExistentes || []).map(p => p.sku_interno));
+          const skusPaiFaltantes = skusPaiUnicos.filter(sku => !skusPaiExistentes.has(sku));
+
+          if (skusPaiFaltantes.length > 0) {
+            console.log('🔨 Criando produtos pai automaticamente:', skusPaiFaltantes);
+            
+            for (const skuPai of skusPaiFaltantes) {
+              // Pegar o primeiro filho para extrair o nome base
+              const primeiroFilho = [...rowsToCreate, ...rowsToReactivate.map(r => r.data)]
+                .find(p => p.sku_pai === skuPai);
+              
+              if (primeiroFilho) {
+                // Remover variação do nome (ex: "KIT XYZ - AZUL" -> "KIT XYZ")
+                let nomePai = primeiroFilho.nome;
+                // Remover últimas palavras que parecem variações (cores, números, etc)
+                nomePai = nomePai.replace(/\s*-\s*[A-Z]+\s*(ESCURO|CLARO)?$/i, '');
+                
+                try {
+                  await createProduct({
+                    sku_interno: skuPai,
+                    nome: nomePai,
+                    categoria: primeiroFilho.categoria || null,
+                    descricao: `Produto pai criado automaticamente`,
+                    codigo_barras: null,
+                    quantidade_atual: 0, // Pai não tem estoque próprio
+                    estoque_minimo: 0,
+                    estoque_maximo: 0,
+                    preco_custo: primeiroFilho.preco_custo || null,
+                    preco_venda: primeiroFilho.preco_venda || null,
+                    localizacao: null,
+                    unidade_medida_id: primeiroFilho.unidade_medida_id || null,
+                    status: 'ativo',
+                    ativo: true,
+                    url_imagem: null,
+                    sku_pai: null,
+                    eh_produto_pai: true
+                  });
+                  console.log(`✅ Produto pai criado: ${skuPai} - ${nomePai}`);
+                  warnings.push(`✨ Produto pai "${skuPai}" foi criado automaticamente`);
+                } catch (error: any) {
+                  console.error(`❌ Erro ao criar produto pai ${skuPai}:`, error);
+                  warnings.push(`⚠️ Não foi possível criar produto pai "${skuPai}" automaticamente. Vincule manualmente depois.`);
+                }
+              }
+            }
+          }
+        }
+
         // Atualizar/Reativar produtos existentes (UPSERT)
         for (let i = 0; i < rowsToReactivate.length; i++) {
           const { id, data: updates } = rowsToReactivate[i];
