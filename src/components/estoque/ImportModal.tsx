@@ -633,6 +633,42 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
 
         console.log(`Iniciando processamento: atualizar=${rowsToReactivate.length}, criar=${rowsToCreate.length}`);
 
+        // ✅ BUSCAR DADOS DO USUÁRIO E LOCAL PRINCIPAL UMA VEZ SÓ (FORA DO LOOP)
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        
+        let localPrincipalId: string | null = null;
+        let orgId: string | null = null;
+        
+        if (userId) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('organizacao_id')
+            .eq('id', userId)
+            .single();
+          
+          orgId = profileData?.organizacao_id || null;
+          
+          if (orgId) {
+            // Buscar apenas o LOCAL PRINCIPAL (tipo = 'principal')
+            const { data: localPrincipal } = await supabase
+              .from('locais_estoque')
+              .select('id, nome')
+              .eq('organization_id', orgId)
+              .eq('tipo', 'principal')
+              .eq('ativo', true)
+              .maybeSingle();
+            
+            localPrincipalId = localPrincipal?.id || null;
+            
+            if (localPrincipalId) {
+              console.log(`✅ Local Principal encontrado: ${localPrincipal.nome}`);
+            } else {
+              console.warn('⚠️ Nenhum local principal encontrado. Produtos serão criados sem estoque_por_local.');
+            }
+          }
+        }
+
         // Atualizar/Reativar produtos existentes (UPSERT)
         for (let i = 0; i < rowsToReactivate.length; i++) {
           const { id, data: updates } = rowsToReactivate[i];
@@ -647,43 +683,22 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
               .eq('id', id);
             if (error) throw error;
             
-            // ✅ CRIAR/ATUALIZAR estoque_por_local para o produto atualizado
-            // Buscar organização do usuário
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('organizacao_id')
-              .eq('id', (await supabase.auth.getUser()).data.user?.id)
-              .single();
-            
-            if (profileData?.organizacao_id) {
-              // Buscar todos os locais ativos da organização
-              const { data: locaisAtivos } = await supabase
-                .from('locais_estoque')
-                .select('id, nome')
-                .eq('organization_id', profileData.organizacao_id)
-                .eq('ativo', true);
-              
-              if (locaisAtivos && locaisAtivos.length > 0) {
-                // Criar/atualizar estoque_por_local para cada local
-                const estoqueUpdates = locaisAtivos.map(local => ({
+            // ✅ CRIAR/ATUALIZAR estoque_por_local APENAS NO ESTOQUE PRINCIPAL
+            if (localPrincipalId && orgId) {
+              const { error: estoqueError } = await supabase
+                .from('estoque_por_local')
+                .upsert({
                   produto_id: id,
-                  local_id: local.id,
+                  local_id: localPrincipalId,
                   quantidade: updates.quantidade_atual || 0,
-                  organization_id: profileData.organizacao_id
-                }));
-                
-                const { error: estoqueError } = await supabase
-                  .from('estoque_por_local')
-                  .upsert(estoqueUpdates, { 
-                    onConflict: 'produto_id,local_id',
-                    ignoreDuplicates: false 
-                  });
-                
-                if (estoqueError) {
-                  console.warn('⚠️ Erro ao atualizar estoque_por_local:', estoqueError);
-                } else {
-                  console.log(`✅ Estoque atualizado em ${locaisAtivos.length} locais`);
-                }
+                  organization_id: orgId
+                }, { 
+                  onConflict: 'produto_id,local_id',
+                  ignoreDuplicates: false 
+                });
+              
+              if (estoqueError) {
+                console.warn('⚠️ Erro ao atualizar estoque_por_local:', estoqueError);
               }
             }
             

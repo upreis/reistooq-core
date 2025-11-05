@@ -309,37 +309,34 @@ export const useProducts = () => {
       throw error;
     }
 
-    // 🆕 Criar registros de estoque em todos os locais ativos
+    // ✅ Criar registro de estoque APENAS NO ESTOQUE PRINCIPAL
     try {
-      const { data: locaisAtivos } = await supabase
+      const { data: localPrincipal } = await supabase
         .from('locais_estoque')
-        .select('id')
+        .select('id, nome')
         .eq('organization_id', orgId)
-        .eq('ativo', true);
+        .eq('tipo', 'principal')
+        .eq('ativo', true)
+        .maybeSingle();
 
-      if (locaisAtivos && locaisAtivos.length > 0) {
-        // Obter o local ativo atual do localStorage
-        const localAtivoAtual = localStorage.getItem('reistoq_local_estoque_ativo');
-        const localAtivoId = localAtivoAtual ? JSON.parse(localAtivoAtual).id : null;
-
-        const estoquesParaCriar = locaisAtivos.map(local => ({
-          produto_id: data.id,
-          local_id: local.id,
-          // Quantidade inicial vai para o local ativo, outros ficam em 0
-          quantidade: (local.id === localAtivoId) ? (product.quantidade_atual || 0) : 0,
-          organization_id: orgId
-        }));
-
+      if (localPrincipal) {
         const { error: estoqueError } = await supabase
           .from('estoque_por_local')
-          .insert(estoquesParaCriar);
+          .insert({
+            produto_id: data.id,
+            local_id: localPrincipal.id,
+            quantidade: product.quantidade_atual || 0,
+            organization_id: orgId
+          });
 
         if (estoqueError) {
           console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
           // Não falha a criação do produto, apenas registra o erro
         } else {
-          console.log(`✅ Produto criado em ${locaisAtivos.length} locais de estoque`);
+          console.log(`✅ Produto criado no Estoque Principal: ${localPrincipal.nome}`);
         }
+      } else {
+        console.warn('⚠️ Nenhum local principal encontrado. Produto criado sem estoque_por_local.');
       }
     } catch (estoqueError) {
       console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
@@ -425,19 +422,40 @@ export const useProducts = () => {
       throw error;
     }
 
-    // 🆕 Se a quantidade foi atualizada, atualizar também no estoque_por_local do local ativo
+    // 🆕 Se a quantidade foi atualizada, atualizar também no estoque_por_local
     if (filteredUpdates.quantidade_atual !== undefined) {
+      // Tentar pegar local ativo do localStorage, senão buscar estoque principal
       const localAtivoAtual = localStorage.getItem('reistoq_local_estoque_ativo');
+      let localId: string | null = null;
+      let localNome: string | null = null;
       
       if (localAtivoAtual) {
         const localAtivo = JSON.parse(localAtivoAtual);
+        localId = localAtivo.id;
+        localNome = localAtivo.nome;
+      } else {
+        // Se não houver local ativo, buscar o estoque principal
+        const { data: localPrincipal } = await supabase
+          .from('locais_estoque')
+          .select('id, nome')
+          .eq('organization_id', orgId)
+          .eq('tipo', 'principal')
+          .eq('ativo', true)
+          .maybeSingle();
         
+        if (localPrincipal) {
+          localId = localPrincipal.id;
+          localNome = localPrincipal.nome;
+        }
+      }
+      
+      if (localId) {
         // Verificar se já existe um registro para este produto neste local
         const { data: existingEstoque } = await supabase
           .from('estoque_por_local')
           .select('id')
           .eq('produto_id', id)
-          .eq('local_id', localAtivo.id)
+          .eq('local_id', localId)
           .maybeSingle();
 
         if (existingEstoque) {
@@ -446,12 +464,12 @@ export const useProducts = () => {
             .from('estoque_por_local')
             .update({ quantidade: filteredUpdates.quantidade_atual })
             .eq('produto_id', id)
-            .eq('local_id', localAtivo.id);
+            .eq('local_id', localId);
 
           if (estoqueError) {
             console.error('⚠️ Erro ao atualizar estoque_por_local:', estoqueError);
           } else {
-            console.log(`✅ Estoque atualizado no local ${localAtivo.nome}: ${filteredUpdates.quantidade_atual}`);
+            console.log(`✅ Estoque atualizado no local ${localNome}: ${filteredUpdates.quantidade_atual}`);
           }
         } else {
           // Criar novo registro
@@ -459,7 +477,7 @@ export const useProducts = () => {
             .from('estoque_por_local')
             .insert({
               produto_id: id,
-              local_id: localAtivo.id,
+              local_id: localId,
               quantidade: filteredUpdates.quantidade_atual,
               organization_id: orgId
             });
@@ -467,7 +485,7 @@ export const useProducts = () => {
           if (estoqueError) {
             console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
           } else {
-            console.log(`✅ Estoque criado no local ${localAtivo.nome}: ${filteredUpdates.quantidade_atual}`);
+            console.log(`✅ Estoque criado no local ${localNome}: ${filteredUpdates.quantidade_atual}`);
           }
         }
       }
