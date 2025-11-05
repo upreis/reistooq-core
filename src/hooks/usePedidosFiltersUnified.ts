@@ -74,126 +74,87 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
   const isInitializingRef = useRef(true);
   const hasInitializedRef = useRef(false);
   
-  // ✅ ETAPA 3 + FIX AUDITORIA: INICIALIZAÇÃO - Ler filtros 100% da URL
-  // Apenas UMA VEZ na inicialização
+  // ✅ INICIALIZAÇÃO SIMPLES - Sempre carregar do localStorage na montagem
   useEffect(() => {
-    // ✅ FIX P1 AUDITORIA: Executar apenas UMA VEZ
+    // ✅ Executar apenas UMA VEZ
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     
-    // ✅ CORREÇÃO: SEMPRE usar filtros da URL quando sync está habilitado
-    // Mesmo que esteja vazio (isso garante que filtros antigos sejam limpos)
-    if (enableURLSync) {
-      const syncedFilters = filterSync.filters;
-      if (isDev) console.log('🔄 [ETAPA 3] Filtros carregados da URL (INIT):', {
-        filters: syncedFilters,
-        hasFilters: Object.keys(syncedFilters).length > 0
-      });
-      
-      // Carregar tanto no draft quanto no applied
-      setDraftFilters(syncedFilters);
-      setAppliedFilters(syncedFilters);
-      
-      // ✅ FIX: Marcar como NÃO inicializando após carregar
-      setTimeout(() => {
-        isInitializingRef.current = false;
-      }, 100);
-      return;
-    }
-    
-    // ✅ FALLBACK: Sistema antigo (apenas localStorage) - DEPRECATED
-    if (loadSavedFilters && !enableURLSync) {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          
-          // Converter datas string para Date com melhor validação
-          if (parsed.dataInicio) {
-            const startDate = typeof parsed.dataInicio === 'string' 
-              ? new Date(parsed.dataInicio) 
-              : parsed.dataInicio;
-            if (startDate && !isNaN(startDate.getTime())) {
-              parsed.dataInicio = startDate;
-            } else {
-              delete parsed.dataInicio;
-            }
-          }
-          
-          if (parsed.dataFim) {
-            const endDate = typeof parsed.dataFim === 'string' 
-              ? new Date(parsed.dataFim) 
-              : parsed.dataFim;
-            if (endDate && !isNaN(endDate.getTime())) {
-              parsed.dataFim = endDate;
-            } else {
-              delete parsed.dataFim;
-            }
-          }
-          
-          // ✅ IMPORTANTE: Apenas carregar no draft, NÃO aplicar automaticamente
-          setDraftFilters(parsed);
-          if (isDev) console.log('📥 [FALLBACK DEPRECATED] Filtros salvos carregados do localStorage:', parsed);
+    // ✅ SEMPRE carregar do localStorage primeiro (como faz /reclamacoes)
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        
+        // Converter datas string para Date
+        if (parsed.dataInicio && typeof parsed.dataInicio === 'string') {
+          const [year, month, day] = parsed.dataInicio.split('-').map(Number);
+          parsed.dataInicio = new Date(year, month - 1, day);
         }
-      } catch (error) {
-        console.warn('Erro ao carregar filtros salvos:', error);
-        // Limpar dados corrompidos
-        localStorage.removeItem(STORAGE_KEY);
+        
+        if (parsed.dataFim && typeof parsed.dataFim === 'string') {
+          const [year, month, day] = parsed.dataFim.split('-').map(Number);
+          parsed.dataFim = new Date(year, month - 1, day);
+        }
+        
+        // Carregar tanto no draft quanto no applied
+        setDraftFilters(parsed);
+        setAppliedFilters(parsed);
+        
+        if (isDev) console.log('📦 [FILTROS] Carregados do localStorage:', parsed);
       }
+    } catch (error) {
+      console.error('❌ Erro ao carregar filtros:', error);
+      localStorage.removeItem(STORAGE_KEY);
     }
     
-    // ✅ FIX: Marcar como NÃO inicializando após carregar
+    // Marcar como NÃO inicializando após carregar
     setTimeout(() => {
       isInitializingRef.current = false;
     }, 100);
-  }, [enableURLSync, filterSync.hasActiveFilters, filterSync.filters, loadSavedFilters]); // ✅ FIX P1 AUDITORIA: Deps corretas
+  }, []); // ✅ Array vazio - executar APENAS UMA VEZ
 
-  // ✅ ETAPA 3 + FIX AUDITORIA: Salvar filtros aplicados apenas na URL
-  // APENAS quando vem do usuário (NÃO durante inicialização)
+  // ✅ SALVAR AUTOMATICAMENTE no localStorage (como faz /reclamacoes)
   useEffect(() => {
-    // ✅ FIX: NÃO salvar durante inicialização (evita loop)
+    // NÃO salvar durante inicialização
     if (isInitializingRef.current) {
       if (isDev) console.log('⏭️ [SYNC] Pulando salvamento - ainda inicializando');
       return;
     }
     
-    if (Object.keys(appliedFilters).length > 0) {
-      // Se sync está habilitado, usar sistema de URL
-      if (enableURLSync) {
-        filterSync.writeFilters(appliedFilters, 'user');
-        if (isDev) console.log('🔄 [ETAPA 3] Filtros sincronizados na URL');
-        return;
-      }
-      
-      // ✅ FALLBACK DEPRECATED: Sistema antigo (apenas localStorage)
-      // Mantido apenas para compatibilidade, mas não recomendado
-      try {
-        // ✅ CORREÇÃO ROBUSTA: Serializar datas como ISO strings para localStorage
-        const serializeValue = (value: any): any => {
-          if (value instanceof Date) {
-            return value.toISOString();
-          }
-          if (Array.isArray(value)) {
-            return value.map(serializeValue);
-          }
-          if (value && typeof value === 'object') {
-            const serialized: any = {};
-            for (const [key, val] of Object.entries(value)) {
-              serialized[key] = serializeValue(val);
-            }
-            return serialized;
-          }
-          return value;
-        };
-        
-        const serializedFilters = serializeValue(appliedFilters);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(serializedFilters));
-        if (isDev) console.log('💾 [FALLBACK DEPRECATED] Filtros salvos apenas no localStorage:', serializedFilters);
-      } catch (error) {
-        console.error('❌ Erro ao salvar filtros no localStorage:', error);
-      }
+    if (Object.keys(appliedFilters).length === 0) {
+      // Se não há filtros aplicados, limpar o localStorage
+      localStorage.removeItem(STORAGE_KEY);
+      if (isDev) console.log('🗑️ [FILTROS] localStorage limpo (sem filtros)');
+      return;
     }
-  }, [appliedFilters, enableURLSync]);
+    
+    try {
+      // Serializar datas como strings ISO
+      const serializeValue = (value: any): any => {
+        if (value instanceof Date) {
+          return value.toISOString().split('T')[0]; // YYYY-MM-DD
+        }
+        if (Array.isArray(value)) {
+          return value.map(serializeValue);
+        }
+        if (value && typeof value === 'object') {
+          const serialized: any = {};
+          for (const [key, val] of Object.entries(value)) {
+            serialized[key] = serializeValue(val);
+          }
+          return serialized;
+        }
+        return value;
+      };
+      
+      const serializedFilters = serializeValue(appliedFilters);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(serializedFilters));
+      if (isDev) console.log('💾 [FILTROS] Salvos no localStorage:', serializedFilters);
+    } catch (error) {
+      console.error('❌ Erro ao salvar filtros:', error);
+    }
+  }, [appliedFilters]); // ✅ Salvar sempre que appliedFilters mudar
 
   // ✅ REMOVIDO: Auto-aplicação de busca - agora tudo é manual
 
