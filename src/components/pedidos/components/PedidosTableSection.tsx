@@ -416,7 +416,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                return <span>{formatMoney(0)}</span>;
                              }
                     case 'custo_envio_seller':
-                      return <span>{formatMoney(order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0)}</span>;
+                      {
+                        const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
+                        const colorClass = custoEnvio > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
+                        return <span className={colorClass}>{formatMoney(custoEnvio)}</span>;
+                      }
                     
                     // 💰 FLEX: Campos Detalhados
                     case 'flex_order_cost':
@@ -458,7 +462,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     case 'marketplace_fee':
                       {
                         const fee = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
-                        return <span>{fee > 0 ? formatMoney(fee) : '-'}</span>;
+                        const colorClass = fee > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
+                        return <span className={colorClass}>{fee > 0 ? formatMoney(fee) : '-'}</span>;
                       }
                     case 'valor_liquido_vendedor':
                       {
@@ -593,8 +598,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             custoFixoMeli = 6.75 * quantidadeTotal;
                           }
                         }
-                        
-                        return <span className="font-mono text-sm font-semibold text-orange-600 dark:text-orange-400">{formatMoney(custoFixoMeli)}</span>;
+                        const colorClass = custoFixoMeli > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
+                        return <span className={colorClass}>{formatMoney(custoFixoMeli)}</span>;
                       }
                      
                      case 'payment_method':
