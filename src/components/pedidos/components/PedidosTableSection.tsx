@@ -277,8 +277,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       );
                     }
                     case 'cpf_cnpj': {
-                      // ✅ EXTRAÇÃO DIRETA - Sem busca profunda para evitar duplicação
-                      const rawDoc = order.cpf_cnpj || 
+                      // 🆕 PRIORIDADE: Usar billing_info se disponível
+                      const buyerDocType = order.buyer_document_type || order.unified?.buyer_document_type || order.raw?.buyer_document_type;
+                      const buyerDocNumber = order.buyer_document_number || order.unified?.buyer_document_number || order.raw?.buyer_document_number;
+                      
+                      // ✅ EXTRAÇÃO com FALLBACK - Prioriza billing_info, depois campos antigos
+                      const rawDoc = buyerDocNumber || 
+                                   order.cpf_cnpj || 
                                    order.unified?.cpf_cnpj || 
                                    order.documento_cliente ||
                                    order.cliente_documento ||
@@ -290,7 +295,29 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       
                       const cleanDoc = rawDoc ? rawDoc.toString().trim() : '';
                       
-                      return <span className="font-mono text-sm">{cleanDoc ? maskCpfCnpj(cleanDoc) : '-'}</span>;
+                      // Formatar CPF/CNPJ baseado no tipo ou tamanho
+                      const formatDocument = (doc: string, type?: string) => {
+                        if (!doc) return '-';
+                        const numOnly = doc.replace(/\D/g, '');
+                        
+                        // CPF: 000.000.000-00
+                        if (type === 'CPF' || (!type && numOnly.length === 11)) {
+                          return numOnly.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                        }
+                        
+                        // CNPJ: 00.000.000/0000-00
+                        if (type === 'CNPJ' || (!type && numOnly.length === 14)) {
+                          return numOnly.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+                        }
+                        
+                        return doc; // Retornar sem formatação se não for CPF nem CNPJ
+                      };
+                      
+                      return (
+                        <span className="font-mono text-sm" title={buyerDocType ? `Tipo: ${buyerDocType}` : undefined}>
+                          {formatDocument(cleanDoc, buyerDocType)}
+                        </span>
+                      );
                     }
                      case 'data_pedido':
                        return <span>{formatDate(order.data_pedido || order.unified?.data_pedido || order.date_created)}</span>;
