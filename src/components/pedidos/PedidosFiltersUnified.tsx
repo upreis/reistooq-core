@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { PedidosFiltersState } from '@/hooks/usePedidosFiltersUnified';
 import { ColumnManager } from '@/features/pedidos/components/ColumnManager';
-import { EnhancedPeriodFilter } from './EnhancedPeriodFilter';
+import { SimplifiedPeriodFilter } from './SimplifiedPeriodFilter';
 
 import { StatusFilters } from '@/features/orders/types/orders-status.types';
 
@@ -309,7 +309,7 @@ export function PedidosFiltersUnified({
             <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <div className="flex items-end gap-2">
-            <EnhancedPeriodFilter
+            <SimplifiedPeriodFilter
               startDate={filters.dataInicio}
               endDate={filters.dataFim}
               onDateRangeChange={(startDate, endDate) => {
