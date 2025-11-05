@@ -603,9 +603,43 @@ function SimplePedidosPage({ className }: Props) {
   const getValorLiquidoVendedor = (order: any): number => {
     if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
 
+    // ✅ NOVA REGRA: Baseado no Tipo Logístico
+    const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
+    
+    // Calcular Receita Flex usando a função getReceitaPorEnvio
+    const receitaFlex = getReceitaPorEnvio(order);
+    
+    const taxaMarketplace = order.order_items?.[0]?.sale_fee || order.raw?.order_items?.[0]?.sale_fee || order.marketplace_fee || order.fees?.[0]?.value || order.raw?.fees?.[0]?.value || 0;
+    const custoEnvioSeller = order.custo_envio_seller || order.unified?.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || order.raw?.shipping?.costs?.senders?.[0]?.cost || 0;
+    
+    // Determinar tipo logístico
+    const rawType = order?.tipo_logistico || 
+                   order?.unified?.tipo_logistico || 
+                   order?.shipping?.logistic_type || 
+                   order?.raw?.shipping?.logistic_type ||
+                   order?.shipping?.logistic?.type ||
+                   order?.unified?.shipping?.logistic?.type ||
+                   order?.logistic_type ||
+                   order?.flex_logistic_type ||
+                   '';
+    const tipoLogistico = String(rawType).toLowerCase();
+    
+    // Se for "self_service" (Envios Flex): Valor Total + Receita Flex - Taxa Marketplace
+    // Se não for Flex: Valor Total + Receita Flex - Taxa Marketplace - Custo Envio Seller
+    const isFlex = tipoLogistico === 'self_service' || tipoLogistico.includes('flex');
+    const valorLiquido = isFlex 
+      ? valorTotal + receitaFlex - taxaMarketplace
+      : valorTotal + receitaFlex - taxaMarketplace - custoEnvioSeller;
+
+    return valorLiquido;
+  };
+  
+  const getValorLiquidoVendedor_OLD_BACKUP = (order: any): number => {
+    if (typeof order?.valor_liquido_vendedor === 'number') return order.valor_liquido_vendedor;
+
     // ✅ USANDO CAMPOS DIRETOS DA API DO ML
     // 1. Verificar se há campo direto de compensação do vendedor nos shipping costs
-    const sellerCompensation = order?.shipping?.costs?.senders?.[0]?.compensation || 
+    const sellerCompensation = order?.shipping?.costs?.senders?.[0]?.compensation ||
                                order?.raw?.shipping?.costs?.senders?.[0]?.compensation || 0;
     
     if (sellerCompensation > 0) {
