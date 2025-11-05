@@ -586,6 +586,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           const normalized = {
             sku_interno: row.sku_interno?.trim(),
             nome: row.nome?.trim() || (existing?.nome || ''),
+            sku_pai: row.sku_pai?.trim() || null,
             categoria: categoriaCompleta || existing?.categoria || null,
             descricao: mergeField(row.descricao?.trim(), existing?.descricao),
             url_imagem: mergeField(row.url_imagem?.trim(), existing?.url_imagem),
@@ -631,9 +632,13 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
 
         console.log(`A reativar: ${rowsToReactivate.length} | A criar: ${rowsToCreate.length}`);
         
-        // 🔍 DEBUG: Mostrar primeiros produtos a criar
+        // 🔍 DEBUG: Mostrar primeiros produtos a criar COM SKU PAI
         if (rowsToCreate.length > 0) {
-          console.log('✅ Produtos VÁLIDOS a criar:', rowsToCreate.slice(0, 3));
+          console.log('✅ Produtos VÁLIDOS a criar:', rowsToCreate.slice(0, 3).map(p => ({
+            sku: p.sku_interno,
+            nome: p.nome,
+            sku_pai: p.sku_pai
+          })));
         } else {
           console.warn('⚠️ NENHUM produto válido para criar!');
         }
@@ -879,6 +884,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             console.log(`🔨 Criando produto ${i + 1}/${rowsToCreate.length}:`, {
               sku: rowsToCreate[i].sku_interno,
               nome: rowsToCreate[i].nome,
+              sku_pai: rowsToCreate[i].sku_pai,
               quantidade: rowsToCreate[i].quantidade_atual
             });
             
