@@ -210,6 +210,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                       // Colunas de envio sem quebra de linha
                       (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
+                      // URL Rastreamento compacta
+                      def.key === 'url_rastreamento' && "max-w-[80px]",
                       // Tags com quebra permitida
                       def.key === 'tags' && "break-words"
                     )}
@@ -1060,7 +1062,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                           // Colunas de envio sem quebra de linha
-                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap"
+                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
+                          // URL Rastreamento com truncamento
+                          def.key === 'url_rastreamento' && "max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap"
                         )}
                         style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                       >
