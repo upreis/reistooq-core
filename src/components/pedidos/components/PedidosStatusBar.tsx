@@ -226,20 +226,10 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   return (
     <Card className={cn("sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
       <div className="p-4 space-y-3">
-        {/* 🎯 INDICADOR: Totais globais vs Página atual */}
-        {isShowingGlobalCounts && totalRecords && (
-          <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-md border border-emerald-200 dark:border-emerald-800">
-            <Database className="w-3.5 h-3.5" />
-            <span>
-              <strong>Totais globais</strong> de todas as páginas 
-              {totalRecords > 0 && ` (${totalRecords.toLocaleString('pt-BR')} pedidos)`}
-            </span>
-            {loadingCounts && <span className="animate-pulse ml-1">⏳</span>}
-          </div>
-        )}
+        {/* Indicadores removidos conforme solicitado */}
         
         {!isShowingGlobalCounts && orders.length > 0 && quickFilter === 'all' && (
-          <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 rounded-md border border-amber-200 dark:border-amber-800">
+          <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 rounded-md border border-amber-200 dark:border-amber-800" style={{ display: 'none' }}>
             <AlertTriangle className="w-3.5 h-3.5" />
             <span>
               Contadores da <strong>página atual</strong> apenas ({orders.length} pedidos)
