@@ -60,10 +60,9 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
     enableURLSync = true // ✅ ETAPA 2: Ativado por padrão (com fallback)
   } = options;
   
-  // ✅ ETAPA 2: Hook de sincronização URL + localStorage
+  // ✅ ETAPA 3: Hook de sincronização 100% URL
   const filterSync = usePedidosFiltersSync({
-    enabled: enableURLSync,
-    localStorageKey: STORAGE_KEY
+    enabled: enableURLSync
   });
 
   // Estados principais

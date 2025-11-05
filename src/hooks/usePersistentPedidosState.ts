@@ -1,19 +1,32 @@
 /**
- * 🔄 HOOK DE PERSISTÊNCIA DE ESTADO DA PÁGINA PEDIDOS
- * Mantém filtros e dados quando o usuário sai e volta à página
+ * 💾 HOOK DE CACHE DE DADOS DA PÁGINA PEDIDOS
+ * Mantém APENAS dados carregados (orders, pagination) para evitar re-fetch
+ * 
+ * ⚠️ IMPORTANTE: NÃO gerencia filtros (isso é feito por usePedidosFiltersSync via URL)
+ * 
+ * RESPONSABILIDADES:
+ * - ✅ Cache de dados (orders, total, currentPage)
+ * - ✅ Integration account ID
+ * - ✅ Quick filter selecionado
+ * - ❌ NÃO gerencia filtros aplicados (URL params fazem isso)
+ * 
  * ✅ MELHORIAS: Debounce para persistência + Validação de integridade
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 
 interface PersistentPedidosState {
-  filters: any;
+  // ⚠️ DEPRECATED: filters não deve ser usado (URL params gerenciam filtros)
+  filters?: any; // Mantido apenas para compatibilidade com estados antigos
+  
+  // ✅ DADOS DE CACHE
   orders: any[];
   total: number;
   currentPage: number;
   integrationAccountId: string;
   quickFilter: string;
-  appliedAt: number; // timestamp da última aplicação de filtros
+  
+  // ✅ TIMESTAMPS
   cachedAt: number; // timestamp do cache dos dados
 }
 
@@ -27,12 +40,10 @@ export function usePersistentPedidosState() {
   // ✅ VALIDAÇÃO DE INTEGRIDADE DOS DADOS
   const validatePersistedState = useCallback((state: PersistentPedidosState): boolean => {
     if (!state.orders || !Array.isArray(state.orders)) return false;
-    if (!state.filters || typeof state.filters !== 'object') return false;
     if (typeof state.total !== 'number') return false;
     if (typeof state.currentPage !== 'number') return false;
     if (typeof state.integrationAccountId !== 'string') return false;
     if (typeof state.quickFilter !== 'string') return false;
-    if (typeof state.appliedAt !== 'number') return false;
     if (typeof state.cachedAt !== 'number') return false;
     return true;
   }, []);
@@ -53,22 +64,10 @@ export function usePersistentPedidosState() {
             return;
           }
           
-          // ✅ VERIFICAR E LIMPAR FILTROS PROBLEMÁTICOS
-          if (parsed.filters?.statusEnvio?.length > 0) {
-            console.log('🗑️ Removendo estado com filtros de status persistentes:', parsed.filters);
-            localStorage.removeItem(STORAGE_KEY);
-            setIsStateLoaded(true);
-            return;
-          }
-          
-          // Converter datas string para Date nos filtros
+          // ✅ LIMPAR FILTROS ANTIGOS (não são mais usados)
           if (parsed.filters) {
-            if (parsed.filters.dataInicio && typeof parsed.filters.dataInicio === 'string') {
-              parsed.filters.dataInicio = new Date(parsed.filters.dataInicio);
-            }
-            if (parsed.filters.dataFim && typeof parsed.filters.dataFim === 'string') {
-              parsed.filters.dataFim = new Date(parsed.filters.dataFim);
-            }
+            console.log('🗑️ Removendo filtros antigos do cache (agora gerenciados por URL)');
+            delete parsed.filters;
           }
           
           // Verificar se o cache ainda é válido (não expirou)
@@ -76,8 +75,7 @@ export function usePersistentPedidosState() {
           const isExpired = now - parsed.cachedAt > CACHE_DURATION;
           
           if (!isExpired) {
-            console.log('🔄 Estado persistido carregado:', {
-              filters: parsed.filters,
+            console.log('🔄 Cache de dados carregado:', {
               ordersCount: parsed.orders.length,
               cacheAge: Math.round((now - parsed.cachedAt) / 1000) + 's'
             });
@@ -102,13 +100,11 @@ export function usePersistentPedidosState() {
   const saveStateImmediate = useCallback((state: Partial<PersistentPedidosState>) => {
     try {
       const currentState = persistedState || {
-        filters: {},
         orders: [],
         total: 0,
         currentPage: 1,
         integrationAccountId: '',
         quickFilter: 'all',
-        appliedAt: 0,
         cachedAt: 0
       };
 
@@ -125,8 +121,7 @@ export function usePersistentPedidosState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       setPersistedState(newState);
       
-      console.log('💾 Estado salvo (otimizado):', {
-        hasFilters: Object.keys(newState.filters || {}).length > 0,
+      console.log('💾 Cache de dados salvo:', {
         total: newState.total,
         page: newState.currentPage
       });
@@ -151,13 +146,12 @@ export function usePersistentPedidosState() {
     debouncedSaveState(state);
   }, [debouncedSaveState]);
 
-  // Salvar filtros aplicados
-  const saveAppliedFilters = useCallback((filters: any) => {
-    saveState({
-      filters,
-      appliedAt: Date.now()
-    });
-  }, [saveState]);
+  // ⚠️ DEPRECATED: Filtros não são mais salvos aqui (URL params gerenciam)
+  // Mantido apenas para compatibilidade com código legado
+  const saveAppliedFilters = useCallback((_filters: any) => {
+    console.warn('⚠️ saveAppliedFilters está deprecated - filtros gerenciados por URL params');
+    // Não faz nada - filtros gerenciados por usePedidosFiltersSync
+  }, []);
 
   // Salvar dados dos pedidos
   const saveOrdersData = useCallback((orders: any[], total: number, currentPage: number) => {
@@ -178,14 +172,14 @@ export function usePersistentPedidosState() {
     saveState({ integrationAccountId });
   }, [saveState]);
 
-  // Limpar estado persistido (quando usuário fizer nova busca ou limpar filtros)
+  // Limpar cache de dados
   const clearPersistedState = useCallback(() => {
     try {
       localStorage.removeItem(STORAGE_KEY);
       setPersistedState(null);
-      console.log('🗑️ Estado persistido removido');
+      console.log('🗑️ Cache de dados removido');
     } catch (error) {
-      console.warn('Erro ao limpar estado:', error);
+      console.warn('Erro ao limpar cache:', error);
     }
   }, []);
 
@@ -194,16 +188,12 @@ export function usePersistentPedidosState() {
     return Boolean(persistedState && persistedState.orders.length > 0);
   }, [persistedState]);
 
-  // Verificar se os filtros mudaram significativamente
-  const shouldRefreshData = useCallback((currentFilters: any) => {
-    if (!persistedState?.filters) return true;
-    
-    // Comparar filtros de forma simples
-    const persistedFiltersStr = JSON.stringify(persistedState.filters);
-    const currentFiltersStr = JSON.stringify(currentFilters);
-    
-    return persistedFiltersStr !== currentFiltersStr;
-  }, [persistedState]);
+  // ⚠️ DEPRECATED: Filtros não são mais comparados aqui (URL params gerenciam)
+  // Mantido apenas para compatibilidade com código legado
+  const shouldRefreshData = useCallback((_currentFilters: any) => {
+    console.warn('⚠️ shouldRefreshData está deprecated - filtros gerenciados por URL params');
+    return true; // Sempre retorna true para forçar refresh baseado em URL
+  }, []);
 
   return {
     // Estado
