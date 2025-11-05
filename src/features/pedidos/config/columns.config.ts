@@ -268,6 +268,26 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Status de validação dos insumos (matéria-prima)',
     width: 130
   },
+  {
+    key: 'marketplace_origem',
+    label: 'Marketplace',
+    category: 'mapping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Origem do pedido (Mercado Livre, Shopee, Tiny ou Interno)',
+    width: 130
+  },
+  {
+    key: 'local_estoque',
+    label: 'Local de Estoque',
+    category: 'mapping',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Local de onde o estoque será retirado',
+    width: 150
+  },
 
   // ====== ENVIO/SHIPPING (da imagem 3) ======
   {

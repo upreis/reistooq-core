@@ -50,6 +50,8 @@ export type Unified = {
   integration_account_id: string | null;
   created_at: string | null;
   updated_at: string | null;
+  marketplace_origem?: string | null;
+  local_estoque_id?: string | null;
 };
 
 export type Row = { raw: RawML; unified: Unified | null };

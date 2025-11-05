@@ -7,7 +7,7 @@
 import { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Download, Search } from 'lucide-react';
+import { RefreshCw, Download, Search, Settings } from 'lucide-react';
 
 interface PedidosHeaderSectionProps {
   title?: string;
@@ -21,6 +21,7 @@ interface PedidosHeaderSectionProps {
   selectedOrdersCount?: number;
   onBaixaEstoque?: () => void;
   hasPendingChanges?: boolean;
+  onOpenConfigLocais?: () => void;
   children?: React.ReactNode;
 }
 
@@ -36,6 +37,7 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
   selectedOrdersCount = 0,
   onBaixaEstoque,
   hasPendingChanges = false,
+  onOpenConfigLocais,
   children
 }: PedidosHeaderSectionProps) {
   
@@ -65,6 +67,19 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
             <Search className="h-4 w-4 mr-2" />
             Aplicar Filtros
           </Button>
+
+          {/* Botão Config Locais */}
+          {onOpenConfigLocais && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenConfigLocais}
+              className="gap-2"
+            >
+              <Settings className="h-4 w-4" />
+              Locais de Estoque
+            </Button>
+          )}
 
           {/* Botão Refresh */}
           <Button

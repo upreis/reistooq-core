@@ -76,6 +76,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { MapeamentoModal } from './MapeamentoModal';
 import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
 import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
+import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 
 import { FEATURES } from '@/config/features';
 
@@ -839,6 +840,9 @@ function SimplePedidosPage({ className }: Props) {
   const [cadastroRapidoOpen, setCadastroRapidoOpen] = useState(false);
   const [skuParaCadastro, setSkuParaCadastro] = useState('');
 
+  // 🗺️ Estado para modal de configuração de locais de estoque
+  const [configLocaisOpen, setConfigLocaisOpen] = useState(false);
+
   // 🔧 Renderizar Status de Insumos com Tooltip e Cadastro Rápido
   const renderStatusInsumos = (pedidoId: string) => {
     const mapping = mappingData.get(pedidoId);
@@ -1097,6 +1101,7 @@ useEffect(() => {
         }}
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={filtersManager.hasPendingChanges}
+        onOpenConfigLocais={() => setConfigLocaisOpen(true)}
       >
       </PedidosHeaderSection>
 
@@ -1368,6 +1373,12 @@ useEffect(() => {
             mappingActions.processOrdersMappings(orders);
           }
         }}
+      />
+
+      {/* 🗺️ MODAL: Configuração de Locais de Estoque */}
+      <ConfiguracaoLocaisModal
+        open={configLocaisOpen}
+        onOpenChange={setConfigLocaisOpen}
       />
             </ErrorBoundary>
         </div>

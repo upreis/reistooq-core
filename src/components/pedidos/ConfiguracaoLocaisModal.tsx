@@ -1,0 +1,308 @@
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'react-hot-toast';
+import { Plus, Trash2, Edit2, Save, X, MapPin } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import {
+  listarLocaisEstoque,
+  listarMapeamentosLocais,
+  criarMapeamentoLocal,
+  atualizarMapeamentoLocal,
+  deletarMapeamentoLocal,
+  LocalEstoque,
+  MapeamentoLocalEstoque
+} from '@/services/LocalEstoqueService';
+
+interface ConfiguracaoLocaisModalProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function ConfiguracaoLocaisModal({ open, onOpenChange }: ConfiguracaoLocaisModalProps) {
+  const [locais, setLocais] = useState<LocalEstoque[]>([]);
+  const [mapeamentos, setMapeamentos] = useState<MapeamentoLocalEstoque[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editando, setEditando] = useState<string | null>(null);
+  
+  // Form state
+  const [novoMapeamento, setNovoMapeamento] = useState({
+    empresa: '',
+    tipo_logistico: '',
+    marketplace: '',
+    local_estoque_id: '',
+    observacoes: ''
+  });
+
+  useEffect(() => {
+    if (open) {
+      carregarDados();
+    }
+  }, [open]);
+
+  const carregarDados = async () => {
+    try {
+      setLoading(true);
+      const [locaisData, mapeamentosData] = await Promise.all([
+        listarLocaisEstoque(),
+        listarMapeamentosLocais()
+      ]);
+      setLocais(locaisData);
+      setMapeamentos(mapeamentosData);
+    } catch (error: any) {
+      toast.error('Erro ao carregar dados: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSalvar = async () => {
+    if (!novoMapeamento.empresa || !novoMapeamento.tipo_logistico || 
+        !novoMapeamento.marketplace || !novoMapeamento.local_estoque_id) {
+      toast.error('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      if (editando) {
+        await atualizarMapeamentoLocal(editando, {
+          ...novoMapeamento,
+          ativo: true
+        });
+        toast.success('Mapeamento atualizado!');
+      } else {
+        await criarMapeamentoLocal({
+          ...novoMapeamento,
+          ativo: true
+        });
+        toast.success('Mapeamento criado!');
+      }
+      
+      setNovoMapeamento({
+        empresa: '',
+        tipo_logistico: '',
+        marketplace: '',
+        local_estoque_id: '',
+        observacoes: ''
+      });
+      setEditando(null);
+      await carregarDados();
+    } catch (error: any) {
+      toast.error('Erro ao salvar: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditar = (mapeamento: MapeamentoLocalEstoque) => {
+    setNovoMapeamento({
+      empresa: mapeamento.empresa,
+      tipo_logistico: mapeamento.tipo_logistico,
+      marketplace: mapeamento.marketplace,
+      local_estoque_id: mapeamento.local_estoque_id,
+      observacoes: mapeamento.observacoes || ''
+    });
+    setEditando(mapeamento.id);
+  };
+
+  const handleDeletar = async (id: string) => {
+    if (!confirm('Deseja realmente excluir este mapeamento?')) return;
+    
+    try {
+      setLoading(true);
+      await deletarMapeamentoLocal(id);
+      toast.success('Mapeamento excluído!');
+      await carregarDados();
+    } catch (error: any) {
+      toast.error('Erro ao excluir: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelar = () => {
+    setNovoMapeamento({
+      empresa: '',
+      tipo_logistico: '',
+      marketplace: '',
+      local_estoque_id: '',
+      observacoes: ''
+    });
+    setEditando(null);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <MapPin className="h-5 w-5" />
+            Configuração de Locais de Estoque
+          </DialogTitle>
+          <DialogDescription>
+            Configure de qual local o estoque será retirado com base em: Empresa + Tipo Logístico + Marketplace
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {/* Formulário */}
+          <div className="border rounded-lg p-4 bg-muted/30">
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
+              {editando ? <Edit2 className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+              {editando ? 'Editar Mapeamento' : 'Novo Mapeamento'}
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Empresa / Nome do Vendedor *</Label>
+                <Input
+                  value={novoMapeamento.empresa}
+                  onChange={(e) => setNovoMapeamento({ ...novoMapeamento, empresa: e.target.value })}
+                  placeholder="Ex: Loja Principal"
+                />
+              </div>
+
+              <div>
+                <Label>Tipo Logístico *</Label>
+                <Select
+                  value={novoMapeamento.tipo_logistico}
+                  onValueChange={(value) => setNovoMapeamento({ ...novoMapeamento, tipo_logistico: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FBM">FBM (Full by Merchant)</SelectItem>
+                    <SelectItem value="FULL">FULL (Mercado Envios Full)</SelectItem>
+                    <SelectItem value="FLEX">FLEX (Mercado Envios Flex)</SelectItem>
+                    <SelectItem value="Padrão">Padrão</SelectItem>
+                    <SelectItem value="Expresso">Expresso</SelectItem>
+                    <SelectItem value="Normal">Normal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Marketplace *</Label>
+                <Select
+                  value={novoMapeamento.marketplace}
+                  onValueChange={(value) => setNovoMapeamento({ ...novoMapeamento, marketplace: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mercado Livre">Mercado Livre</SelectItem>
+                    <SelectItem value="Shopee">Shopee</SelectItem>
+                    <SelectItem value="Tiny">Tiny</SelectItem>
+                    <SelectItem value="Interno">Interno / Manual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label>Local de Estoque *</Label>
+                <Select
+                  value={novoMapeamento.local_estoque_id}
+                  onValueChange={(value) => setNovoMapeamento({ ...novoMapeamento, local_estoque_id: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o local..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locais.map(local => (
+                      <SelectItem key={local.id} value={local.id}>
+                        {local.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="col-span-2">
+                <Label>Observações (opcional)</Label>
+                <Input
+                  value={novoMapeamento.observacoes}
+                  onChange={(e) => setNovoMapeamento({ ...novoMapeamento, observacoes: e.target.value })}
+                  placeholder="Notas adicionais sobre este mapeamento..."
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleSalvar} disabled={loading} size="sm">
+                <Save className="h-4 w-4 mr-2" />
+                {editando ? 'Atualizar' : 'Salvar'}
+              </Button>
+              {editando && (
+                <Button onClick={handleCancelar} variant="outline" size="sm">
+                  <X className="h-4 w-4 mr-2" />
+                  Cancelar
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Lista de mapeamentos */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">
+              Mapeamentos Configurados ({mapeamentos.length})
+            </h3>
+            
+            {mapeamentos.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum mapeamento configurado ainda.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {mapeamentos.map(mapeamento => (
+                  <div key={mapeamento.id} className="border rounded-lg p-3 flex items-start justify-between hover:bg-muted/50">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="secondary">{mapeamento.empresa}</Badge>
+                        <Badge variant="outline">{mapeamento.tipo_logistico}</Badge>
+                        <Badge>{mapeamento.marketplace}</Badge>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-muted-foreground">→ Local: </span>
+                        <span className="font-medium">
+                          {mapeamento.locais_estoque?.nome || 'Local não encontrado'}
+                        </span>
+                      </div>
+                      {mapeamento.observacoes && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          {mapeamento.observacoes}
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditar(mapeamento)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeletar(mapeamento.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
