@@ -307,8 +307,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                     order.raw?.order_items?.[0]?.item?.title ||
                                     order.unified?.order_items?.[0]?.item?.title;
                        return <span>{titulo || '-'}</span>;
-                     case 'valor_total':
-                       return <span>{formatMoney(order.valor_total || order.unified?.valor_total || order.total_amount || 0)}</span>;
+                      case 'valor_total':
+                        {
+                          const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || 0;
+                          const colorClass = valorTotal > 0 ? 'font-mono text-sm font-semibold text-blue-600 dark:text-blue-400' : '';
+                          return <span className={colorClass}>{formatMoney(valorTotal)}</span>;
+                        }
                     case 'paid_amount':
                       return <span>{formatMoney(order.paid_amount || order.unified?.paid_amount || order.payments?.[0]?.transaction_amount || order.total_paid_amount || order.valor_total || 0)}</span>;
                      case 'frete_pago_cliente':
@@ -350,10 +354,10 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                ''
                              ).toLowerCase();
                              
-                             // Se não for 'self_service' (Envios Flex), retornar 0
-                             if (logisticType !== 'self_service') {
-                               return <span>{formatMoney(0)}</span>;
-                             }
+                              // Se não for 'self_service' (Envios Flex), retornar 0
+                              if (logisticType !== 'self_service') {
+                                return <span className="">{formatMoney(0)}</span>;
+                              }
                              
                               // ✅ NOVA REGRA: Usar Flex: Desconto Especial + condições
                               const flexSpecialDiscount = order.flex_special_discount || order.unified?.flex_special_discount || 0;
@@ -367,20 +371,21 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                 ? flexSpecialDiscount 
                                 : flexSpecialDiscount + flexNetCost;
                               
-                              // Se não houver valor, retornar 0
-                              if (flexOrderCostBase <= 0) {
-                                return <span>{formatMoney(0)}</span>;
-                              }
+                               // Se não houver valor, retornar 0
+                               if (flexOrderCostBase <= 0) {
+                                 return <span className="">{formatMoney(0)}</span>;
+                               }
                              
                               // ✅ NOVA LÓGICA: Verificar Valor Médio por Item PRIMEIRO
                               const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
                               const quantidadeTotal = order.quantidade_total || 1;
                               const valorMedioPorItem = valorTotal / quantidadeTotal;
                               
-                              // Se Valor Médio por Item < 79.00 → usar cálculo normal (100%)
-                              if (valorMedioPorItem < 79.00) {
-                                return <span>{formatMoney(flexOrderCostBase)}</span>;
-                              }
+                               // Se Valor Médio por Item < 79.00 → usar cálculo normal (100%)
+                               if (valorMedioPorItem < 79.00) {
+                                 const colorClass = flexOrderCostBase > 0 ? 'font-mono text-sm font-semibold text-blue-600 dark:text-blue-400' : '';
+                                 return <span className={colorClass}>{formatMoney(flexOrderCostBase)}</span>;
+                               }
                              
                              // Se Valor Médio por Item >= 79.00 → verificar todas as outras condições
                             const conditionRaw = order.unified?.conditions || order.raw?.items?.[0]?.item?.condition || order.conditions || order.condition || order.unified?.condition || '';
@@ -405,16 +410,18 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                             order.unified?.seller_reputation?.power_seller_status ||
                                             null;
                              
-                               // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
-                               // Se TODAS as condições forem atendidas → aplicar 10%
-                               // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
-                               if (condition === 'new' && reputation.includes('green')) { // ✅ Removida verificação de medalha
-                                 return <span>{formatMoney(flexOrderCostBase * 0.1)}</span>;
-                               }
-                               
-                               // ✅ CORRIGIDO: Sem qualificações = R$ 0,00
-                               return <span>{formatMoney(0)}</span>;
-                             }
+                                // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
+                                // Se TODAS as condições forem atendidas → aplicar 10%
+                                // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
+                                if (condition === 'new' && reputation.includes('green')) {
+                                  const bonusValue = flexOrderCostBase * 0.1;
+                                  const colorClass = bonusValue > 0 ? 'font-mono text-sm font-semibold text-blue-600 dark:text-blue-400' : '';
+                                  return <span className={colorClass}>{formatMoney(bonusValue)}</span>;
+                                }
+                                
+                                // ✅ CORRIGIDO: Sem qualificações = R$ 0,00
+                                return <span className="">{formatMoney(0)}</span>;
+                              }
                     case 'custo_envio_seller':
                       {
                         const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
