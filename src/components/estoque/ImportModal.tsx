@@ -455,6 +455,8 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       let rowsToReactivate: { id: string; data: any }[] = [];
       // Armazenar pais (kits) detectados durante o pré-processamento das composições
       let parentRows: Record<string, { nome: string; categoria_principal: string | null }> = {};
+      let existingMap: Record<string, any> = {}; // ✅ Declarar fora do if para ficar acessível
+      
       if (importMode === 'produtos') {
         // Verificar SKUs duplicados na planilha
         const skus = mappedData.map(row => row.sku_interno).filter(Boolean);
@@ -469,7 +471,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const uniqueSkus = Array.from(new Set(skus));
         const { data: existingProducts, error: existingError } = await supabase
           .from('produtos')
-          .select('id, sku_interno, ativo')
+          .select('*')  // ✅ Buscar TODOS os campos para fazer merge inteligente
           .in('sku_interno', uniqueSkus);
           
         if (existingError) {
@@ -477,43 +479,26 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           throw new Error('Erro ao verificar produtos existentes');
         }
         
-        const existingMap: Record<string, { id: string; sku_interno: string; ativo: boolean }>
-          = Object.fromEntries((existingProducts || []).map((p: any) => [p.sku_interno, p]));
-        const existingActiveSkus = (existingProducts || []).filter((p: any) => p.ativo).map((p: any) => p.sku_interno);
+        existingMap = Object.fromEntries(
+          (existingProducts || []).map((p: any) => [p.sku_interno, p])
+        );
+        
+        const existingSkusList = Object.keys(existingMap);
         
         console.log('SKUs no arquivo:', skus);
-        console.log('SKUs existentes (ativos):', existingActiveSkus);
+        console.log('SKUs existentes no sistema:', existingSkusList);
         
-        if (existingActiveSkus.length > 0) {
-          const conflicts = skus.filter((sku) => existingActiveSkus.includes(sku));
-          if (conflicts.length > 0) {
-            // 🚨 ERRO CRÍTICO: Informar usuário sobre SKUs duplicados
-            allErrors.push(
-              `❌ DUPLICAÇÃO DETECTADA: ${conflicts.length} SKU(s) já existem como produtos ativos e NÃO podem ser importados novamente.\n\n` +
-              `SKUs duplicados: ${conflicts.slice(0, 5).join(', ')}${conflicts.length > 5 ? ` e mais ${conflicts.length - 5}...` : ''}\n\n` +
-              `SOLUÇÃO:\n` +
-              `1. Remova esses SKUs da planilha, OU\n` +
-              `2. Primeiro inative/delete os produtos existentes no sistema, OU\n` +
-              `3. Use SKUs diferentes para novos produtos`
-            );
-            setResult({ 
-              success: 0, 
-              errors: allErrors, 
-              warnings: [], 
-              failed: conflicts.map((sku, idx) => ({
-                row: skus.indexOf(sku) + 2,
-                data: mappedData[skus.indexOf(sku)],
-                error: `SKU ${sku} já existe como produto ativo`
-              }))
-            });
-            return;
-          }
+        // ✅ MODO UPSERT: Atualizar existentes + Criar novos
+        if (existingSkusList.length > 0) {
+          warnings.push(
+            `📝 ${existingSkusList.length} SKU(s) já existem e serão ATUALIZADOS com os novos dados da planilha. ` +
+            `Campos vazios na planilha manterão os valores atuais do sistema.`
+          );
         }
 
         mappedData.forEach((row, index) => {
           const rowErrors = validateRow(row, index, 'produtos');
           const existing = existingMap[row.sku_interno];
-          const isActiveDuplicate = !!existing && existing.ativo === true;
           
           console.log(
             `Linha ${index + 1}: SKU=${row.sku_interno}, existente=${!!existing}, ativo=${existing?.ativo}, erros=${rowErrors.length}`
@@ -525,30 +510,51 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           if (row.categoria?.trim()) categoriaParts.push(row.categoria.trim());  
           const categoriaCompleta = categoriaParts.length > 0 ? categoriaParts.join(" → ") : null;
           
+          // ✅ MERGE INTELIGENTE: Planilha sobrescreve, mas mantém valores existentes se campo vazio
+          const mergeField = (newValue: any, existingValue: any, isNumeric = false) => {
+            // Se há valor na planilha, usar ele
+            if (newValue !== null && newValue !== undefined && newValue !== '') {
+              return isNumeric ? Number(newValue) : newValue;
+            }
+            // Se planilha está vazia mas existe valor no banco, manter valor do banco
+            if (existing && existingValue !== null && existingValue !== undefined) {
+              return existingValue;
+            }
+            // Se ambos vazios, usar valor padrão
+            return isNumeric ? 0 : null;
+          };
+          
           const normalized = {
             sku_interno: row.sku_interno?.trim(),
-            nome: row.nome?.trim(),
-            categoria: categoriaCompleta,
-            descricao: row.descricao?.trim() || null,
-            url_imagem: row.url_imagem?.trim() || null,
-            quantidade_atual: Number(row.quantidade_atual) || 0,
-            estoque_minimo: Number(row.estoque_minimo) || 0,
-            estoque_maximo: Number(row.estoque_maximo) || 0,
-            preco_custo: row.preco_custo !== '' && row.preco_custo !== undefined ? Number(row.preco_custo) : null,
-            preco_venda: row.preco_venda !== '' && row.preco_venda !== undefined ? Number(row.preco_venda) : null,
-            codigo_barras: row.codigo_barras?.trim() || null,
-            localizacao: row.localizacao?.trim() || null,
+            nome: row.nome?.trim() || (existing?.nome || ''),
+            categoria: categoriaCompleta || existing?.categoria || null,
+            descricao: mergeField(row.descricao?.trim(), existing?.descricao),
+            url_imagem: mergeField(row.url_imagem?.trim(), existing?.url_imagem),
+            quantidade_atual: mergeField(row.quantidade_atual, existing?.quantidade_atual, true),
+            estoque_minimo: mergeField(row.estoque_minimo, existing?.estoque_minimo, true),
+            estoque_maximo: mergeField(row.estoque_maximo, existing?.estoque_maximo, true),
+            preco_custo: row.preco_custo !== '' && row.preco_custo !== undefined 
+              ? Number(row.preco_custo) 
+              : (existing?.preco_custo || null),
+            preco_venda: row.preco_venda !== '' && row.preco_venda !== undefined 
+              ? Number(row.preco_venda) 
+              : (existing?.preco_venda || null),
+            codigo_barras: mergeField(row.codigo_barras?.trim(), existing?.codigo_barras),
+            localizacao: mergeField(row.localizacao?.trim(), existing?.localizacao),
             status: 'ativo',
             ativo: true,
           };
           
           if (rowErrors.length === 0) {
             if (!existing) {
+              // ✅ Produto novo: criar
               rowsToCreate.push(normalized);
             } else if (!existing.ativo) {
+              // ✅ Produto inativo: reativar e atualizar
               rowsToReactivate.push({ id: existing.id, data: normalized });
-            } else if (isActiveDuplicate) {
-              // duplicado ativo -> apenas aviso (já adicionado acima)
+            } else {
+              // ✅ Produto ativo: atualizar (UPSERT)
+              rowsToReactivate.push({ id: existing.id, data: normalized });
             }
           } else {
             allErrors.push(...rowErrors);
@@ -625,13 +631,16 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const totalToProcess = rowsToReactivate.length + rowsToCreate.length;
         let processed = 0;
 
-        console.log(`Iniciando processamento: reativar=${rowsToReactivate.length}, criar=${rowsToCreate.length}`);
+        console.log(`Iniciando processamento: atualizar=${rowsToReactivate.length}, criar=${rowsToCreate.length}`);
 
-        // Reativar produtos existentes inativos
+        // Atualizar/Reativar produtos existentes (UPSERT)
         for (let i = 0; i < rowsToReactivate.length; i++) {
           const { id, data: updates } = rowsToReactivate[i];
           try {
-            console.log(`Reativando produto ${i + 1}/${rowsToReactivate.length}: ${updates.sku_interno}`);
+            const existingProduct = Object.values(existingMap).find((p: any) => p.id === id) as any;
+            const action = existingProduct?.ativo ? 'Atualizando' : 'Reativando';
+            console.log(`${action} produto ${i + 1}/${rowsToReactivate.length}: ${updates.sku_interno}`);
+            
             const { error } = await supabase
               .from('produtos')
               .update({ ...updates, ativo: true, status: 'ativo' })
@@ -640,7 +649,7 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
             successCount++;
           } catch (error: any) {
             errorCount++;
-            processingErrors.push(`Erro ao reativar produto ${rowsToReactivate[i].data.sku_interno}: ${error.message || 'Erro desconhecido'}`);
+            processingErrors.push(`Erro ao atualizar produto ${rowsToReactivate[i].data.sku_interno}: ${error.message || 'Erro desconhecido'}`);
           } finally {
             processed++;
             setProgress((processed / Math.max(1, totalToProcess)) * 100);
@@ -674,18 +683,24 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           failed: []
         });
 
+        const updatedCount = rowsToReactivate.length;
+        const createdCount = rowsToCreate.length;
+        
         if (successCount > 0) {
+          const detalhes = [];
+          if (createdCount > 0) detalhes.push(`${createdCount} criado(s)`);
+          if (updatedCount > 0) detalhes.push(`${updatedCount} atualizado(s)`);
+          
           toast({
             title: "✅ Importação concluída!",
-            description: `${successCount} produto(s) importado(s)/reativado(s) com sucesso.\n\n⚠️ IMPORTANTE: Se os produtos não aparecerem na lista, verifique:\n1. Filtros ativos na tabela (categoria, status, busca)\n2. Local de estoque selecionado no topo da página`,
+            description: `${successCount} produto(s) processado(s): ${detalhes.join(', ')}\n\n⚠️ IMPORTANTE: Se não aparecerem:\n1. Verifique filtros (categoria, status, busca)\n2. Confirme local de estoque selecionado`,
             duration: 8000,
           });
           onSuccess();
-        } else if (errorCount === 0 && rowsToCreate.length === 0 && rowsToReactivate.length === 0) {
-          // Nenhum produto foi processado - provavelmente todos eram duplicados
+        } else if (errorCount === 0 && totalToProcess === 0) {
           toast({
-            title: "⚠️ Nenhum produto importado",
-            description: "Todos os produtos da planilha já existem no sistema como ativos. Verifique os avisos acima.",
+            title: "⚠️ Nenhum produto processado",
+            description: "Não havia produtos válidos para importar na planilha.",
             variant: "destructive",
             duration: 8000,
           });
