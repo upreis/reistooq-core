@@ -631,7 +631,19 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         const totalToProcess = rowsToReactivate.length + rowsToCreate.length;
         let processed = 0;
 
-        console.log(`Iniciando processamento: atualizar=${rowsToReactivate.length}, criar=${rowsToCreate.length}`);
+        console.log('📊 Iniciando processamento:', {
+          atualizar: rowsToReactivate.length,
+          criar: rowsToCreate.length,
+          total: totalToProcess
+        });
+        
+        if (rowsToCreate.length > 0) {
+          console.log('📝 Primeiros 3 produtos a criar:', rowsToCreate.slice(0, 3).map(p => ({
+            sku: p.sku_interno,
+            nome: p.nome,
+            quantidade: p.quantidade_atual
+          })));
+        }
 
         // ✅ BUSCAR DADOS DO USUÁRIO E LOCAL PRINCIPAL UMA VEZ SÓ (FORA DO LOOP)
         const { data: userData } = await supabase.auth.getUser();
@@ -716,16 +728,30 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         // ✅ createProduct já cria estoque_por_local automaticamente
         for (let i = 0; i < rowsToCreate.length; i++) {
           try {
-            console.log(`Criando produto ${i + 1}/${rowsToCreate.length}: ${rowsToCreate[i].sku_interno}`);
-            await createProduct(rowsToCreate[i]);
+            console.log(`🔨 Criando produto ${i + 1}/${rowsToCreate.length}:`, {
+              sku: rowsToCreate[i].sku_interno,
+              nome: rowsToCreate[i].nome,
+              quantidade: rowsToCreate[i].quantidade_atual
+            });
+            
+            const resultado = await createProduct(rowsToCreate[i]);
+            console.log(`✅ Produto criado com sucesso:`, resultado);
             successCount++;
           } catch (error: any) {
             errorCount++;
-            console.error(`❌ Erro ao criar produto ${rowsToCreate[i].sku_interno}:`, error);
+            console.error(`❌ ERRO ao criar produto ${rowsToCreate[i].sku_interno}:`, {
+              error,
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+            });
+            
             if (error.code === '23505') {
               // Chave duplicada - mantemos como aviso silencioso
+              console.warn('Chave duplicada detectada (23505)');
             } else {
-              processingErrors.push(`Erro ao criar produto ${rowsToCreate[i].sku_interno}: ${error.message || 'Erro desconhecido'}`);
+              processingErrors.push(`❌ Erro ao criar produto ${rowsToCreate[i].sku_interno}: ${error.message || 'Erro desconhecido'}`);
             }
           } finally {
             processed++;

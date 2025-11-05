@@ -238,7 +238,14 @@ export const useProducts = () => {
   }, []);
 
   const createProduct = useCallback(async (product: Omit<BaseProduct, 'id' | 'created_at' | 'updated_at' | 'ultima_movimentacao' | 'organization_id' | 'integration_account_id'> & Partial<Product>) => {
+    console.log('🔨 [createProduct] Iniciando criação:', {
+      sku: product.sku_interno,
+      nome: product.nome,
+      quantidade: product.quantidade_atual
+    });
+    
     const orgId = await getCurrentOrgId();
+    console.log('🏢 [createProduct] Organization ID:', orgId);
 
     // Verificar se já existe um produto com o mesmo SKU na organização (ativo ou inativo)
     const { data: existingProduct } = await supabase
@@ -292,6 +299,11 @@ export const useProducts = () => {
       unidade_medida_id: filteredProduct.unidade_medida_id || unidadePadrao?.id || null,
     };
 
+    console.log('💾 [createProduct] Inserindo produto:', {
+      sku: payload.sku_interno,
+      organization_id: payload.organization_id
+    });
+    
     const { data, error } = await supabase
       .from('produtos')
       .insert([payload])
@@ -299,7 +311,13 @@ export const useProducts = () => {
       .single();
 
     if (error) {
-      console.error('Error creating product:', error);
+      console.error('❌ [createProduct] Erro ao criar produto:', {
+        error,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       
       // Tratamento específico para violação de constraint única
       if (error.code === '23505' && error.message?.includes('produtos_sku_interno_org_unique')) {
@@ -308,18 +326,38 @@ export const useProducts = () => {
       
       throw error;
     }
+    
+    console.log('✅ [createProduct] Produto criado com sucesso:', data.id);
 
     // ✅ Criar registro de estoque APENAS NO ESTOQUE PRINCIPAL
     try {
-      const { data: localPrincipal } = await supabase
+      console.log('🏪 [createProduct] Buscando local principal...');
+      const { data: localPrincipal, error: localError } = await supabase
         .from('locais_estoque')
-        .select('id, nome')
+        .select('id, nome, tipo')
         .eq('organization_id', orgId)
         .eq('tipo', 'principal')
         .eq('ativo', true)
         .maybeSingle();
+      
+      if (localError) {
+        console.error('❌ [createProduct] Erro ao buscar local principal:', localError);
+      }
 
       if (localPrincipal) {
+        console.log('✅ [createProduct] Local principal encontrado:', {
+          id: localPrincipal.id,
+          nome: localPrincipal.nome,
+          tipo: localPrincipal.tipo
+        });
+        
+        console.log('📦 [createProduct] Criando estoque_por_local:', {
+          produto_id: data.id,
+          local_id: localPrincipal.id,
+          quantidade: product.quantidade_atual || 0,
+          organization_id: orgId
+        });
+        
         const { error: estoqueError } = await supabase
           .from('estoque_por_local')
           .insert({
@@ -330,16 +368,21 @@ export const useProducts = () => {
           });
 
         if (estoqueError) {
-          console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
+          console.error('❌ [createProduct] Erro ao criar estoque_por_local:', {
+            error: estoqueError,
+            code: estoqueError.code,
+            message: estoqueError.message,
+            details: estoqueError.details
+          });
           // Não falha a criação do produto, apenas registra o erro
         } else {
-          console.log(`✅ Produto criado no Estoque Principal: ${localPrincipal.nome}`);
+          console.log(`✅ [createProduct] Estoque criado no local "${localPrincipal.nome}": ${product.quantidade_atual || 0} unidades`);
         }
       } else {
-        console.warn('⚠️ Nenhum local principal encontrado. Produto criado sem estoque_por_local.');
+        console.warn('⚠️ [createProduct] NENHUM local principal encontrado. Produto criado sem estoque_por_local.');
       }
     } catch (estoqueError) {
-      console.error('⚠️ Erro ao criar estoque_por_local:', estoqueError);
+      console.error('❌ [createProduct] Exceção ao criar estoque_por_local:', estoqueError);
       // Não falha a criação do produto
     }
 
