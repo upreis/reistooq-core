@@ -973,14 +973,19 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>
-              <strong>Instruções:</strong>
-              <ul className="list-disc list-inside mt-2 space-y-1">
+              <strong>📋 Formato do Arquivo:</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1 text-sm">
                 <li>Use apenas arquivos Excel (.xlsx ou .xls)</li>
                 {tipo === 'produtos' ? (
                   <>
-                    <li>SKU Interno e Nome são obrigatórios</li>
-                    <li>SKUs devem ser únicos (não pode duplicar)</li>
-                    <li>URL da Imagem deve ser um link válido (opcional)</li>
+                    <li><strong>Campos OBRIGATÓRIOS:</strong> "SKU Interno" e "Nome"</li>
+                    <li><strong>Todos os outros campos são OPCIONAIS</strong> (deixe vazio se não souber)</li>
+                    <li>SKUs devem ser únicos <strong>dentro da planilha</strong></li>
+                    <li>Se SKU já existe no sistema → <strong>ATUALIZA</strong> o produto</li>
+                    <li>Campos vazios na planilha → <strong>MANTÉM</strong> valores do sistema</li>
+                    <li>Produtos vão para <strong>Estoque Principal</strong> automaticamente</li>
+                    <li>Números podem usar ponto ou vírgula: 10.5 ou 10,5</li>
+                    <li>URL da Imagem deve ser link completo ou vazio</li>
                   </>
                 ) : (
                   <>
@@ -990,7 +995,10 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
                     <li>Quantidade deve ser um número maior que 0</li>
                   </>
                 )}
-                <li>Baixe o template para ver o formato correto</li>
+                <li><strong className="text-primary">💡 Baixe o template</strong> para ver o formato correto</li>
+                <li className="text-muted-foreground mt-2 pt-2 border-t">
+                  <strong>Exemplo mínimo:</strong> Apenas "SKU Interno" e "Nome" são obrigatórios!
+                </li>
               </ul>
             </AlertDescription>
           </Alert>
