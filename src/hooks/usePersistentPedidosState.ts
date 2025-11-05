@@ -120,11 +120,6 @@ export function usePersistentPedidosState() {
 
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
       setPersistedState(newState);
-      
-      console.log('💾 Cache de dados salvo:', {
-        total: newState.total,
-        page: newState.currentPage
-      });
     } catch (error) {
       console.warn('⚠️ Erro ao salvar estado (localStorage cheio):', error);
     }
