@@ -33,9 +33,6 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'valor_total', label: 'Valor Total', visible: true, category: 'financial' },
   { key: 'valor_frete', label: 'Valor Frete', visible: true, category: 'financial' },
   { key: 'valor_desconto', label: 'Valor Desconto', visible: true, category: 'financial' },
-  { key: 'paid_amount', label: 'Valor Pago', visible: false, category: 'financial' },
-  { key: 'currency_id', label: 'Moeda', visible: false, category: 'financial' },
-  
   // 💰 FLEX & CUSTOS (Ocultos por padrão)
   { key: 'receita_flex', label: 'Receita Flex (Bônus)', visible: false, category: 'financial' },
   { key: 'custo_envio_seller', label: 'Custo Envio Seller', visible: false, category: 'financial' },

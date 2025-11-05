@@ -313,8 +313,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           const colorClass = valorTotal > 0 ? 'font-mono text-sm font-semibold text-blue-600 dark:text-blue-400' : '';
                           return <span className={colorClass}>{formatMoney(valorTotal)}</span>;
                         }
-                    case 'paid_amount':
-                      return <span>{formatMoney(order.paid_amount || order.unified?.paid_amount || order.payments?.[0]?.transaction_amount || order.total_paid_amount || order.valor_total || 0)}</span>;
                      case 'frete_pago_cliente':
                        const fretePagoCliente = order.frete_pago_cliente || 
                                               order.unified?.frete_pago_cliente ||
@@ -427,43 +425,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         const custoEnvio = order.custo_envio_seller || order.shipping?.costs?.senders?.[0]?.cost || 0;
                         const colorClass = custoEnvio > 0 ? 'font-mono text-sm font-semibold text-orange-600 dark:text-orange-400' : '';
                         return <span className={colorClass}>{formatMoney(custoEnvio)}</span>;
-                      }
-                    
-                    // 💰 FLEX: Campos Detalhados
-                    case 'flex_order_cost':
-                      {
-                         // 🔧 HELPER: Processar flex_order_cost - TEMPORARIAMENTE DESABILITADO
-                         const getFlexOrderCostProcessed = (order: any): number => {
-                           const flexCostOriginal = order.flex_order_cost || order.unified?.flex_order_cost || 0;
-                           // ⚠️ CÁLCULO DESABILITADO: Retornando valor bruto da API
-                           return flexCostOriginal;
-                           
-                           /* CÁLCULO ORIGINAL (DESABILITADO):
-                           let flexCost = flexCostOriginal;
-                           if (flexCost <= 0) return 0;
-                           
-                           // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
-                           // Caso contrário → divide por 2
-                           const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-                           if (!valoresFixos.includes(flexCost)) {
-                             flexCost = flexCost / 2;
-                           }
-                           return flexCost;
-                           */
-                         };
-                        
-                        const flexOrderCost = getFlexOrderCostProcessed(order);
-                        return <span className="text-blue-600 font-medium">{formatMoney(flexOrderCost)}</span>;
-                      }
-                    case 'flex_special_discount':
-                      {
-                        const flexDiscount = order.flex_special_discount || order.unified?.flex_special_discount || 0;
-                        return <span className="text-orange-600 font-medium">{formatMoney(flexDiscount)}</span>;
-                      }
-                    case 'flex_net_cost':
-                      {
-                        const flexNetCost = order.flex_net_cost || order.unified?.flex_net_cost || 0;
-                        return <span className="text-green-600 font-semibold">{formatMoney(flexNetCost)}</span>;
                       }
                     
                     case 'marketplace_fee':

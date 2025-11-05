@@ -119,17 +119,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'paid_amount',
-    label: 'Valor Pago',
-    category: 'financial',
-    priority: 'essential',
-    visible: true,
-    default: true,
-    description: 'Valor efetivamente pago',
-    width: 100,
-    sortable: true
-  },
-  {
     key: 'receita_flex',
     label: 'Receita Flex (Bônus)',
     category: 'financial',
@@ -203,39 +192,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Status do pagamento',
     width: 120
-  },
-  {
-    key: 'flex_order_cost',
-    label: 'Flex: Custo Pedido',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo do pedido Flex cobrado pelo ML',
-    width: 140,
-    sortable: true
-  },
-  {
-    key: 'flex_special_discount',
-    label: 'Flex: Desconto Especial',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Desconto especial concedido pelo comprador no Flex',
-    width: 160,
-    sortable: true
-  },
-  {
-    key: 'flex_net_cost',
-    label: 'Flex: Custo Líquido',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo líquido Flex (order_cost - special_discount)',
-    width: 140,
-    sortable: true
   },
 
 

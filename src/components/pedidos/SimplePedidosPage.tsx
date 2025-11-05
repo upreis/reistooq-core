@@ -685,7 +685,6 @@ function SimplePedidosPage({ className }: Props) {
 
     // Financeiro - CAMPOS SEPARADOS E EXCLUSIVOS
     { key: 'valor_total', label: 'Valor Total', default: true, category: 'financial' },
-    { key: 'paid_amount', label: 'Valor Pago', default: true, category: 'financial' },
     
     // 💰 FLEX & CUSTOS (Ocultos por padrão)
     { key: 'receita_flex', label: 'Receita Flex (Bônus)', default: false, category: 'financial' },
