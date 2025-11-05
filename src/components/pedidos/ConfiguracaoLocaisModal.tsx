@@ -4,12 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { toast } from 'react-hot-toast';
-import { Plus, Trash2, Edit2, Save, X, MapPin, Check, ChevronsUpDown } from 'lucide-react';
+import { Plus, Trash2, Edit2, Save, X, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import {
   listarLocaisEstoque,
   listarMapeamentosLocais,
@@ -38,8 +35,7 @@ export function ConfiguracaoLocaisModal({
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState<string | null>(null);
   const [empresaSelectorOpen, setEmpresaSelectorOpen] = useState(false);
-  const [tipoLogisticoOpen, setTipoLogisticoOpen] = useState(false);
-  const [customTipoLogistico, setCustomTipoLogistico] = useState('');
+  const [mostrarCustomTipoLogistico, setMostrarCustomTipoLogistico] = useState(false);
   // Form state
   const [novoMapeamento, setNovoMapeamento] = useState({
     empresa: '',
@@ -215,90 +211,55 @@ export function ConfiguracaoLocaisModal({
 
               <div>
                 <Label>Tipo Logístico *</Label>
-                <Popover open={tipoLogisticoOpen} onOpenChange={setTipoLogisticoOpen}>
-                  <PopoverTrigger asChild>
+                {mostrarCustomTipoLogistico ? (
+                  <div className="space-y-2">
+                    <Input
+                      value={novoMapeamento.tipo_logistico}
+                      onChange={(e) => setNovoMapeamento({ ...novoMapeamento, tipo_logistico: e.target.value })}
+                      placeholder="Digite o tipo logístico..."
+                    />
                     <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={tipoLogisticoOpen}
-                      className="w-full justify-between"
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setMostrarCustomTipoLogistico(false);
+                        setNovoMapeamento({ ...novoMapeamento, tipo_logistico: '' });
+                      }}
                     >
-                      {novoMapeamento.tipo_logistico 
-                        ? ([
-                            { value: 'fulfillment', label: 'Fulfillment (Full)' },
-                            { value: 'self_service', label: 'Envios Flex' },
-                            { value: 'cross_docking', label: 'Cross Docking' },
-                            { value: 'drop_off', label: 'Drop Off' },
-                            { value: 'xd_drop_off', label: 'XD Drop Off' },
-                            { value: 'FBM', label: 'FBM (Full by Merchant)' },
-                            { value: 'FLEX', label: 'FLEX (Mercado Envios Flex)' },
-                            { value: 'Padrão', label: 'Padrão' },
-                            { value: 'Expresso', label: 'Expresso' },
-                            { value: 'Normal', label: 'Normal' },
-                          ].find(t => t.value === novoMapeamento.tipo_logistico)?.label || novoMapeamento.tipo_logistico)
-                        : "Selecione ou digite..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      Voltar para lista
                     </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-background border border-border" style={{ zIndex: 9999 }}>
-                    <Command>
-                      <CommandInput 
-                        placeholder="Digite ou busque..." 
-                        value={customTipoLogistico}
-                        onValueChange={setCustomTipoLogistico}
-                      />
-                      <CommandList>
-                        <CommandEmpty>
-                          <Button
-                            variant="ghost"
-                            className="w-full justify-start"
-                            onClick={() => {
-                              setNovoMapeamento({ ...novoMapeamento, tipo_logistico: customTipoLogistico });
-                              setTipoLogisticoOpen(false);
-                              setCustomTipoLogistico('');
-                            }}
-                          >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Usar "{customTipoLogistico}"
-                          </Button>
-                        </CommandEmpty>
-                        <CommandGroup heading="Tipos Conhecidos">
-                          {[
-                            { value: 'fulfillment', label: 'Fulfillment (Full)' },
-                            { value: 'self_service', label: 'Envios Flex' },
-                            { value: 'cross_docking', label: 'Cross Docking' },
-                            { value: 'drop_off', label: 'Drop Off' },
-                            { value: 'xd_drop_off', label: 'XD Drop Off' },
-                            { value: 'FBM', label: 'FBM (Full by Merchant)' },
-                            { value: 'FLEX', label: 'FLEX (Mercado Envios Flex)' },
-                            { value: 'Padrão', label: 'Padrão' },
-                            { value: 'Expresso', label: 'Expresso' },
-                            { value: 'Normal', label: 'Normal' },
-                          ].map((tipo) => (
-                            <CommandItem
-                              key={tipo.value}
-                              value={tipo.value}
-                              className="cursor-pointer"
-                              onSelect={(value) => {
-                                setNovoMapeamento({ ...novoMapeamento, tipo_logistico: value });
-                                setTipoLogisticoOpen(false);
-                                setCustomTipoLogistico('');
-                              }}
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  novoMapeamento.tipo_logistico === tipo.value ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {tipo.label}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                  </div>
+                ) : (
+                  <Select
+                    value={novoMapeamento.tipo_logistico}
+                    onValueChange={(value) => {
+                      if (value === '__custom__') {
+                        setMostrarCustomTipoLogistico(true);
+                        setNovoMapeamento({ ...novoMapeamento, tipo_logistico: '' });
+                      } else {
+                        setNovoMapeamento({ ...novoMapeamento, tipo_logistico: value });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border z-[9999]">
+                      <SelectItem value="fulfillment">Fulfillment (Full)</SelectItem>
+                      <SelectItem value="self_service">Envios Flex</SelectItem>
+                      <SelectItem value="cross_docking">Cross Docking</SelectItem>
+                      <SelectItem value="drop_off">Drop Off</SelectItem>
+                      <SelectItem value="xd_drop_off">XD Drop Off</SelectItem>
+                      <SelectItem value="FBM">FBM (Full by Merchant)</SelectItem>
+                      <SelectItem value="FLEX">FLEX (Mercado Envios Flex)</SelectItem>
+                      <SelectItem value="Padrão">Padrão</SelectItem>
+                      <SelectItem value="Expresso">Expresso</SelectItem>
+                      <SelectItem value="Normal">Normal</SelectItem>
+                      <SelectItem value="__custom__">✏️ Digitar outro...</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
               </div>
 
               <div>
