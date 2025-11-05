@@ -500,9 +500,16 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           const rowErrors = validateRow(row, index, 'produtos');
           const existing = existingMap[row.sku_interno];
           
-          console.log(
-            `Linha ${index + 1}: SKU=${row.sku_interno}, existente=${!!existing}, ativo=${existing?.ativo}, erros=${rowErrors.length}`
-          );
+          // 🔍 DEBUG: Log cada linha processada
+          if (index < 3) {
+            console.log(`📝 Processando linha ${index + 1}:`, {
+              sku: row.sku_interno,
+              nome: row.nome,
+              existing: !!existing,
+              ativo: existing?.ativo,
+              errors: rowErrors
+            });
+          }
           
           // Montar categoria completa hierárquica
           const categoriaParts = [];
@@ -548,15 +555,19 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           if (rowErrors.length === 0) {
             if (!existing) {
               // ✅ Produto novo: criar
+              console.log(`✅ Produto novo (será criado): ${normalized.sku_interno}`);
               rowsToCreate.push(normalized);
             } else if (!existing.ativo) {
               // ✅ Produto inativo: reativar e atualizar
+              console.log(`🔄 Produto inativo (será reativado): ${normalized.sku_interno}`);
               rowsToReactivate.push({ id: existing.id, data: normalized });
             } else {
               // ✅ Produto ativo: atualizar (UPSERT)
+              console.log(`🔄 Produto ativo (será atualizado): ${normalized.sku_interno}`);
               rowsToReactivate.push({ id: existing.id, data: normalized });
             }
           } else {
+            console.error(`❌ Linha ${index + 1} com erros:`, rowErrors);
             allErrors.push(...rowErrors);
             failedRows.push({
               row: index + 2,
@@ -567,10 +578,31 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         });
 
         console.log(`A reativar: ${rowsToReactivate.length} | A criar: ${rowsToCreate.length}`);
+        
+        // 🔍 DEBUG: Mostrar primeiros produtos a criar
+        if (rowsToCreate.length > 0) {
+          console.log('✅ Produtos VÁLIDOS a criar:', rowsToCreate.slice(0, 3));
+        } else {
+          console.warn('⚠️ NENHUM produto válido para criar!');
+        }
+        
+        if (rowsToReactivate.length > 0) {
+          console.log('✅ Produtos a atualizar:', rowsToReactivate.slice(0, 3).map(r => r.data));
+        }
 
         if (allErrors.length > 0) {
+          console.error('❌ Erros de validação encontrados:', allErrors);
           setResult({ success: 0, errors: allErrors, warnings: [], failed: failedRows });
           return;
+        }
+        
+        // 🔍 DEBUG: Verificar se há produtos para processar
+        if (rowsToCreate.length === 0 && rowsToReactivate.length === 0) {
+          console.error('❌ PROBLEMA: Nenhum produto para processar!', {
+            mappedDataLength: mappedData.length,
+            skusLength: skus.length,
+            existingMapSize: Object.keys(existingMap).length
+          });
         }
       } else {
         // Para composições, processar múltiplos componentes por linha
