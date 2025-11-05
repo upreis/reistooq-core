@@ -1100,6 +1100,9 @@ useEffect(() => {
         onQuickFilterChange={(filter) => setQuickFilter(filter)}
         mappingData={mappingData}
         isPedidoProcessado={isPedidoProcessado}
+        globalCounts={globalCounts}
+        loadingCounts={loadingCounts}
+        totalRecords={state.total}
       />
 
       {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}

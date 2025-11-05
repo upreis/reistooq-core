@@ -16,6 +16,8 @@ interface PedidosStatusBarProps {
   onQuickFilterChange: (filter: 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'sem_estoque' | 'sku_nao_cadastrado') => void;
   className?: string;
   globalCounts?: Partial<{ total: number; prontosBaixa: number; mapeamentoPendente: number; baixados: number }>;
+  loadingCounts?: boolean;
+  totalRecords?: number;
   mappingData?: Map<string, any>;
   isPedidoProcessado?: (order: any) => boolean;
 }
@@ -26,16 +28,38 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   onQuickFilterChange,
   className,
   globalCounts,
+  loadingCounts,
+  totalRecords,
   mappingData,
   isPedidoProcessado
 }) => {
-  // ✅ CONTAGEM SIMPLES: Contar pedidos da página atual (já filtrados)
+  // ✅ PRIORIDADE: Usar globalCounts do aggregator quando disponível
   const counters = useMemo(() => {
-    console.log('📊 [StatusBar] Contando pedidos filtrados:', { 
+    console.log('📊 [StatusBar] Iniciando contagem:', { 
+      hasGlobalCounts: !!globalCounts,
+      globalCounts,
       ordersLength: orders?.length, 
       quickFilter,
       hasMapping: !!mappingData,
       mappingSize: mappingData?.size 
+    });
+    
+    // 🎯 SOLUÇÃO: Usar totais globais do aggregator quando disponível
+    if (globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all') {
+      console.log('✅ [StatusBar] Usando TOTAIS GLOBAIS do aggregator:', globalCounts);
+      return {
+        total: globalCounts.total || 0,
+        prontosBaixa: globalCounts.prontosBaixa || 0,
+        mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
+        baixados: globalCounts.baixados || 0,
+        semEstoque: 0, // aggregator não tem esse campo ainda
+        skuNaoCadastrado: 0 // aggregator não tem esse campo ainda
+      };
+    }
+    
+    console.log('📊 [StatusBar] Contando pedidos da página atual (fallback):', { 
+      ordersLength: orders?.length, 
+      quickFilter
     });
     
     if (!orders?.length) {
@@ -141,9 +165,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       skuNaoCadastrado
     };
     
-    console.log('📊 [StatusBar] Contadores da página atual:', result);
+    console.log('📊 [StatusBar] Contadores calculados:', result);
     return result;
-  }, [orders, mappingData, isPedidoProcessado, quickFilter]);
+  }, [orders, mappingData, isPedidoProcessado, quickFilter, globalCounts]);
 
   const statusChips = [
     {
@@ -196,14 +220,39 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     }
   ];
 
+  // 🎯 Indicador de totais vs página atual
+  const isShowingGlobalCounts = globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all';
+
   return (
     <Card className={cn("sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60", className)}>
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-medium text-muted-foreground mr-2">
-            Resumo:
-          </span>
-          {statusChips.map((chip) => {
+      <div className="p-4 space-y-3">
+        {/* 🎯 INDICADOR: Totais globais vs Página atual */}
+        {isShowingGlobalCounts && totalRecords && (
+          <div className="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400 px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/20 rounded-md border border-emerald-200 dark:border-emerald-800">
+            <Database className="w-3.5 h-3.5" />
+            <span>
+              <strong>Totais globais</strong> de todas as páginas 
+              {totalRecords > 0 && ` (${totalRecords.toLocaleString('pt-BR')} pedidos)`}
+            </span>
+            {loadingCounts && <span className="animate-pulse ml-1">⏳</span>}
+          </div>
+        )}
+        
+        {!isShowingGlobalCounts && orders.length > 0 && quickFilter === 'all' && (
+          <div className="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-400 px-3 py-1.5 bg-amber-50 dark:bg-amber-950/20 rounded-md border border-amber-200 dark:border-amber-800">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>
+              Contadores da <strong>página atual</strong> apenas ({orders.length} pedidos)
+            </span>
+          </div>
+        )}
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-muted-foreground mr-2">
+              Resumo:
+            </span>
+            {statusChips.map((chip) => {
             const Icon = chip.icon;
             const isActive = quickFilter === chip.key;
             
@@ -228,15 +277,16 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
                 </Badge>
               </Button>
             );
-          })}
-        </div>
-        
-        {/* Indicador do filtro ativo */}
-        {quickFilter !== 'all' && (
-          <div className="text-xs text-muted-foreground">
-            Mostrando apenas: {statusChips.find(c => c.key === quickFilter)?.label}
+            })}
           </div>
-        )}
+          
+          {/* Indicador do filtro ativo */}
+          {quickFilter !== 'all' && (
+            <div className="text-xs text-muted-foreground">
+              Mostrando apenas: {statusChips.find(c => c.key === quickFilter)?.label}
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );
