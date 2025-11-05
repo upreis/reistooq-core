@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
@@ -24,7 +24,6 @@ interface SimplifiedPeriodFilterProps {
 }
 
 type FilterMode = 'dia' | 'mes' | 'intervalo';
-type DateType = 'venda' | 'faturamento';
 
 export function SimplifiedPeriodFilter({ 
   startDate, 
@@ -37,7 +36,6 @@ export function SimplifiedPeriodFilter({
 }: SimplifiedPeriodFilterProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>('dia');
-  const [dateType, setDateType] = useState<DateType>('venda');
   
   // Estados para cada modo
   const [selectedDay, setSelectedDay] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
@@ -97,18 +95,38 @@ export function SimplifiedPeriodFilter({
 
     console.log('🗓️ [SimplifiedPeriodFilter] Aplicando filtro:', {
       mode: filterMode,
-      dateType,
       start: start?.toISOString(),
       end: end?.toISOString()
     });
 
     onDateRangeChange(start, end);
     setIsOpen(false);
-  }, [filterMode, dateType, selectedDay, selectedMonth, intervalStart, intervalEnd, onDateRangeChange]);
+  }, [filterMode, selectedDay, selectedMonth, intervalStart, intervalEnd, onDateRangeChange]);
 
   const handleCancel = useCallback(() => {
     setIsOpen(false);
   }, []);
+
+  // Aplicar filtro rápido de últimos N dias
+  const handleQuickFilter = useCallback((days: number | null) => {
+    if (days === null) {
+      // Sem filtro
+      onDateRangeChange(undefined, undefined);
+      setIsOpen(false);
+      return;
+    }
+
+    const end = endOfDay(new Date());
+    const start = startOfDay(subDays(new Date(), days - 1));
+    
+    console.log(`🗓️ [SimplifiedPeriodFilter] Aplicando filtro rápido: últimos ${days} dias`, {
+      start: start.toISOString(),
+      end: end.toISOString()
+    });
+
+    onDateRangeChange(start, end);
+    setIsOpen(false);
+  }, [onDateRangeChange]);
 
   const hasDateRange = Boolean(startDate || endDate);
 
@@ -138,34 +156,29 @@ export function SimplifiedPeriodFilter({
       
       <PopoverContent className="w-[340px] p-4 bg-background border border-border shadow-lg" align="start">
         <div className="space-y-4">
-          {/* Tipo de data */}
-          <div className="flex gap-2">
-            <Button
-              variant={dateType === 'venda' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setDateType('venda')}
-            >
-              data venda
-            </Button>
-            <Button
-              variant={dateType === 'faturamento' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setDateType('faturamento')}
-            >
-              data faturamento
-            </Button>
-          </div>
-
-          {/* Período label */}
+          {/* Período label com filtros rápidos clicáveis */}
           <div className="space-y-2">
             <label className="text-sm font-medium text-muted-foreground">Período</label>
-            <div className="flex gap-2 text-xs">
-              <Badge variant="outline" className="cursor-default">
+            <div className="flex gap-2 text-xs flex-wrap">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={() => handleQuickFilter(7)}
+              >
+                últimos 7 dias
+              </Badge>
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={() => handleQuickFilter(30)}
+              >
                 últimos 30 dias
               </Badge>
-              <Badge variant="outline" className="cursor-default">
+              <Badge 
+                variant="outline" 
+                className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                onClick={() => handleQuickFilter(null)}
+              >
                 sem filtro
               </Badge>
             </div>
