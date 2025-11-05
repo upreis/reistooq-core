@@ -988,19 +988,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       case 'marketplace_origem':
                         // 🔍 Detecção inteligente do marketplace baseada em múltiplos campos
                         const detectMarketplace = (order: any): string => {
-                          // DEBUG: Log para diagnóstico (remover após auditoria)
-                          if (import.meta.env.DEV) {
-                            console.log('🔍 [Marketplace Debug]', {
-                              id: order.id,
-                              empresa: order.empresa,
-                              unified_empresa: order.unified?.empresa,
-                              raw_empresa: order.raw?.empresa,
-                              numero: order.numero,
-                              numero_ecommerce: order.numero_ecommerce,
-                              integration_account_id: order.integration_account_id
-                            });
-                          }
-                          
                           // Buscar empresa em múltiplos locais
                           const empresa = (order.empresa || order.unified?.empresa || order.raw?.empresa || '').toLowerCase();
                           const id = order.id || '';
