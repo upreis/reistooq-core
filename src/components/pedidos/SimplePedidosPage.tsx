@@ -5,7 +5,7 @@
  * FLUXOS: SimplePedidosPage → BaixaEstoqueModal → baixar_estoque_direto → hv_insert
  */
 
-import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
@@ -225,18 +225,26 @@ function SimplePedidosPage({ className }: Props) {
   const { state, actions, totalPages } = pedidosManager;
   
   // ✅ CRÍTICO: Aplicar filtros automaticamente quando restaurados do localStorage
+  const hasAppliedRestoredFilters = useRef(false);
+  
   useEffect(() => {
+    // Se já aplicou uma vez, não fazer nada
+    if (hasAppliedRestoredFilters.current) return;
+    
     const hasRestoredFilters = filtersManager.appliedFilters && Object.keys(filtersManager.appliedFilters).length > 0;
     
     if (hasRestoredFilters) {
       console.log('🔄 [FILTROS RESTAURADOS] Aplicando automaticamente...', filtersManager.appliedFilters);
+      
+      // Marcar que já aplicou
+      hasAppliedRestoredFilters.current = true;
       
       // Aplicar filtros no manager
       actions.replaceFilters(filtersManager.appliedFilters);
       
       // NÃO limpar persistentState aqui pois estamos restaurando
     }
-  }, []); // ✅ Executar APENAS uma vez na montagem (filtros já estarão carregados)
+  }, [filtersManager.appliedFilters, actions]); // ✅ Executar quando appliedFilters mudar
   
   // 🔧 P3.1: Sistema de colunas unificado com persistência automatica (memoizado)
   const columnManager = useColumnManager();
