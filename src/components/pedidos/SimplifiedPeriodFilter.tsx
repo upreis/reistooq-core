@@ -55,7 +55,8 @@ export function SimplifiedPeriodFilter({
       if (start === end) {
         return start;
       }
-      return `${format(startDate, 'dd/MM')} - ${format(endDate, 'dd/MM/yyyy')}`;
+      // ✅ Mostrar sempre data completa com ano em ambas as datas
+      return `${start} - ${end}`;
     }
 
     if (startDate) {
