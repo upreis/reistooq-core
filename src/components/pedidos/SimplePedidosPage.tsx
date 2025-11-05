@@ -711,7 +711,7 @@ function SimplePedidosPage({ className }: Props) {
     // Metadados ML
     { key: 'date_created', label: 'Data Criação ML', default: false, category: 'meta' },
     { key: 'pickup_id', label: 'Pickup ID', default: false, category: 'meta' },
-    { key: 'tags', label: 'Tags', default: false, category: 'meta', width: 200 },
+    { key: 'tags', label: 'Tags', default: false, category: 'meta', width: 500 },
 
     // Envio (combinado)
     { key: 'shipping_status', label: 'Status do Envio', default: true, category: 'shipping', width: 150 },
