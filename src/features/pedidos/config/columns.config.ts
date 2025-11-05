@@ -291,16 +291,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'logistic_mode',
-    label: 'Tipo de Logística',
-    category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Modo logístico principal',
-    width: 150
-  },
-  {
     key: 'logistic_type',
     label: 'Tipo Logístico',
     category: 'shipping',
@@ -525,7 +515,7 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     description: 'Foco em envio e rastreamento',
     columns: [
       'id', 'numero', 'nome_completo', 'data_pedido',
-      'situacao', 'shipping_status', 'shipping_substatus', 'logistic_mode', 'logistic_type',
+      'situacao', 'shipping_status', 'shipping_substatus', 'logistic_type',
       'codigo_rastreamento', 'url_rastreamento'
     ]
   },
