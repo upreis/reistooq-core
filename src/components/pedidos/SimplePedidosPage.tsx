@@ -692,6 +692,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'custo_envio_seller', label: 'Custo Envio Seller', default: false, category: 'financial' },
     
     { key: 'marketplace_fee', label: 'Taxa Marketplace', default: true, category: 'financial' },
+    { key: 'custo_fixo_meli', label: 'Custo Fixo Meli', default: false, category: 'financial' },
     { key: 'valor_liquido_vendedor', label: 'Valor Líquido Vendedor', default: true, category: 'financial' },
     { key: 'payment_method', label: 'Método Pagamento', default: false, category: 'financial' },
     { key: 'payment_status', label: 'Status Pagamento', default: false, category: 'financial' },

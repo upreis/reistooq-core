@@ -539,6 +539,43 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         
                         return <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">{formatMoney(valorLiquido)}</span>;
                       }
+                     
+                     case 'custo_fixo_meli': {
+                        // Calcular Custo Fixo Meli
+                        const valorTotal = order.total_amount || 
+                                         order.valor_total || 
+                                         order.unified?.total_amount || 
+                                         order.raw?.total_amount || 
+                                         0;
+                        
+                        const quantidadeTotal = order.quantity || 
+                                              order.quantidade || 
+                                              order.unified?.quantity || 
+                                              order.raw?.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 
+                                              1;
+                        
+                        let custoFixoMeli = 0;
+                        
+                        // Se Valor Total for abaixo de R$ 79, aplicar as faixas
+                        if (valorTotal < 79.00) {
+                          if (valorTotal <= 12.50) {
+                            // Até R$ 12,50: metade do preço do produto por unidade
+                            custoFixoMeli = (valorTotal / 2) * quantidadeTotal;
+                          } else if (valorTotal <= 29.00) {
+                            // Entre R$ 12,50 e R$ 29: R$ 6,25 por unidade
+                            custoFixoMeli = 6.25 * quantidadeTotal;
+                          } else if (valorTotal <= 50.00) {
+                            // Entre R$ 29 e R$ 50: R$ 6,50 por unidade
+                            custoFixoMeli = 6.50 * quantidadeTotal;
+                          } else {
+                            // Entre R$ 50 e R$ 79: R$ 6,75 por unidade
+                            custoFixoMeli = 6.75 * quantidadeTotal;
+                          }
+                        }
+                        
+                        return <span className="font-mono text-sm font-semibold text-orange-600 dark:text-orange-400">{formatMoney(custoFixoMeli)}</span>;
+                      }
+                     
                      case 'payment_method':
                        return <span className="text-xs">{translatePaymentMethod(order.payments?.[0]?.payment_method_id || order.payment_method || order.raw?.payments?.[0]?.payment_method_id || order.metodo_pagamento || '-')}</span>;
                      case 'payment_status':
