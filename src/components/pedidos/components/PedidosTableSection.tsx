@@ -1025,14 +1025,14 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                            // Função para gerar cor baseada no texto da tag
                            const getTagColor = (tag: string, index: number) => {
                              const colors = [
-                               'bg-blue-500/20 text-blue-600 dark:bg-blue-500/30 dark:text-blue-200 border-blue-500/30 dark:border-blue-400/40',
-                               'bg-green-500/20 text-green-600 dark:bg-green-500/30 dark:text-green-200 border-green-500/30 dark:border-green-400/40',
-                               'bg-purple-500/20 text-purple-600 dark:bg-purple-500/30 dark:text-purple-200 border-purple-500/30 dark:border-purple-400/40',
-                               'bg-orange-500/20 text-orange-600 dark:bg-orange-500/30 dark:text-orange-200 border-orange-500/30 dark:border-orange-400/40',
-                               'bg-pink-500/20 text-pink-600 dark:bg-pink-500/30 dark:text-pink-200 border-pink-500/30 dark:border-pink-400/40',
-                               'bg-cyan-500/20 text-cyan-600 dark:bg-cyan-500/30 dark:text-cyan-200 border-cyan-500/30 dark:border-cyan-400/40',
-                               'bg-amber-500/20 text-amber-600 dark:bg-amber-500/30 dark:text-amber-200 border-amber-500/30 dark:border-amber-400/40',
-                               'bg-indigo-500/20 text-indigo-600 dark:bg-indigo-500/30 dark:text-indigo-200 border-indigo-500/30 dark:border-indigo-400/40',
+                               'bg-blue-500/25 text-blue-700 dark:bg-blue-600/40 dark:text-blue-50 border-blue-500/30 dark:border-blue-400/50',
+                               'bg-green-500/25 text-green-700 dark:bg-green-600/40 dark:text-green-50 border-green-500/30 dark:border-green-400/50',
+                               'bg-purple-500/25 text-purple-700 dark:bg-purple-600/40 dark:text-purple-50 border-purple-500/30 dark:border-purple-400/50',
+                               'bg-orange-500/25 text-orange-700 dark:bg-orange-600/40 dark:text-orange-50 border-orange-500/30 dark:border-orange-400/50',
+                               'bg-pink-500/25 text-pink-700 dark:bg-pink-600/40 dark:text-pink-50 border-pink-500/30 dark:border-pink-400/50',
+                               'bg-cyan-500/25 text-cyan-700 dark:bg-cyan-600/40 dark:text-cyan-50 border-cyan-500/30 dark:border-cyan-400/50',
+                               'bg-amber-500/25 text-amber-700 dark:bg-amber-600/40 dark:text-amber-50 border-amber-500/30 dark:border-amber-400/50',
+                               'bg-indigo-500/25 text-indigo-700 dark:bg-indigo-600/40 dark:text-indigo-50 border-indigo-500/30 dark:border-indigo-400/50',
                              ];
                              // Usa hash simples do texto para consistência de cores
                              const hash = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
