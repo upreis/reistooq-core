@@ -548,16 +548,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           ? valorTotal + receitaFlex - taxaMarketplace - custoFixoMeli
                           : valorTotal + receitaFlex - taxaMarketplace - custoEnvioSeller - custoFixoMeli;
                         
-                         // 🔍 DEBUG: Log detalhado com valores individuais
-                         console.log(`💰 [VALOR LÍQUIDO] Pedido ${order.id || order.numero}`);
-                         console.log(`  Valor Total: R$ ${valorTotal.toFixed(2)}`);
-                         console.log(`  + Receita Flex: R$ ${receitaFlex.toFixed(2)}`);
-                         console.log(`  - Taxa Marketplace: R$ ${taxaMarketplace.toFixed(2)}`);
-                         console.log(`  - Custo Fixo Meli: R$ ${custoFixoMeli.toFixed(2)}`);
-                         console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)} (${isFlex ? 'NÃO APLICADO - É FLEX' : 'APLICADO'})`);
-                         console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
-                         console.log(`  Tipo Logístico: ${logisticTypeForCalc} (Flex: ${isFlex})`);
-                        
                          // ✅ Cor condicional: Verde se > 0.01, Vermelho se <= 0.01
                          const colorClass = valorLiquido > 0.01 
                            ? 'font-mono text-sm font-semibold text-green-600 dark:text-green-400' 
@@ -640,16 +630,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                      case 'logistic_type':
                        return <span className="text-xs">{translateLogisticType(order.logistic_type || order.tipo_logistico || order.shipping?.logistic?.type || order.raw?.shipping?.logistic?.type || order.unified?.logistic?.type || '-')}</span>;
                      
-                     case 'power_seller_status':
-                       {
-                         // Debug: Verificar onde os dados estão
-                         console.log('🔍 [MEDALHA] Buscando em:', {
-                           pedidoId: order.id || order.numero,
-                           direct: order.power_seller_status,
-                           unified: order.unified?.power_seller_status,
-                           raw: order.raw?.power_seller_status,
-                           sellerReputation: order.raw?.seller_reputation || order.raw?.sellerReputation
-                         });
+                      case 'power_seller_status':
+                        {
                          
                          // Buscar em todos os locais possíveis
                          const medalha = order.power_seller_status || 
@@ -677,16 +659,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          );
                        }
                      
-                     case 'level_id':
-                       {
-                         // Debug: Verificar onde os dados estão
-                         console.log('🔍 [REPUTAÇÃO] Buscando em:', {
-                           pedidoId: order.id || order.numero,
-                           direct: order.level_id,
-                           unified: order.unified?.level_id,
-                           raw: order.raw?.seller_reputation?.level_id,
-                           sellerReputation: order.raw?.seller_reputation
-                         });
+                      case 'level_id':
+                        {
                          
                          const levelId = order.level_id || order.unified?.level_id || order.raw?.seller_reputation?.level_id;
                          if (!levelId) return <span className="text-xs text-muted-foreground">—</span>;

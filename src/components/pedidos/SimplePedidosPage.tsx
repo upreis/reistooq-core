@@ -850,13 +850,6 @@ function SimplePedidosPage({ className }: Props) {
   const renderStatusInsumos = (pedidoId: string) => {
     const mapping = mappingData.get(pedidoId);
     
-    console.log('[DEBUG renderStatusInsumos]', {
-      pedidoId,
-      hasMapping: !!mapping,
-      statusInsumo: mapping?.statusInsumo,
-      detalhes: mapping?.detalhesInsumo
-    });
-    
     if (!mapping || !mapping.statusInsumo) {
       return <span className="text-xs text-muted-foreground">—</span>;
     }
