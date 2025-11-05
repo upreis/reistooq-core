@@ -461,15 +461,30 @@ function SimplePedidosPage({ className }: Props) {
   const getReceitaPorEnvio = (order: any): number => {
     // 🔧 HELPER: Processar flex_order_cost com divisão por 2
     const getFlexOrderCostProcessed = (order: any): number => {
-      let flexCost = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+      const flexCostOriginal = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+      let flexCost = flexCostOriginal;
       if (flexCost <= 0) return 0;
       
       // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
       // Caso contrário → divide por 2
       const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-      if (!valoresFixos.includes(flexCost)) {
+      const foiDividido = !valoresFixos.includes(flexCost);
+      
+      if (foiDividido) {
         flexCost = flexCost / 2;
       }
+      
+      // 🔍 DEBUG: Log de valores duplicados
+      if (foiDividido && flexCostOriginal > 0) {
+        console.log(`🚨 [FLEX DEBUG] Valor Dividido:`, {
+          pedidoId: order?.numero || order?.id,
+          valorOriginal: flexCostOriginal,
+          valorProcessado: flexCost,
+          motivoDivisao: 'Não está na lista de valores fixos',
+          valoresFixosPermitidos: valoresFixos
+        });
+      }
+      
       return flexCost;
     };
     
@@ -531,8 +546,34 @@ function SimplePedidosPage({ className }: Props) {
     
     // Se TODAS as condições forem atendidas → aplicar 10%
     // Senão → usar cálculo normal (100%)
-    if (condition === 'new' && reputation.includes('green') && medalha) {
-      return flexOrderCostBase * 0.1;
+    const cumpreCondicoes = condition === 'new' && reputation.includes('green') && medalha;
+    const percentualAplicado = cumpreCondicoes ? 0.1 : 1.0;
+    const valorFinal = flexOrderCostBase * percentualAplicado;
+    
+    // 🔍 DEBUG: Log da regra de 10% para pedidos >= R$ 79
+    console.log(`📊 [FLEX DEBUG] Regra 10% (Pedido ≥ R$ 79):`, {
+      pedidoId: order?.numero || order?.id,
+      valorTotal: valorTotal,
+      flexOrderCostBase: flexOrderCostBase,
+      condicoes: {
+        produtoNovo: condition === 'new',
+        reputacaoVerde: reputation.includes('green'),
+        temMedalha: !!medalha,
+        todasAtendidas: cumpreCondicoes
+      },
+      calculo: {
+        percentualAplicado: `${percentualAplicado * 100}%`,
+        valorFinal: valorFinal
+      },
+      dadosBrutos: {
+        condition: conditionRaw,
+        reputation: reputationRaw,
+        medalha: medalha
+      }
+    });
+    
+    if (cumpreCondicoes) {
+      return valorFinal;
     }
     
     return flexOrderCostBase;
