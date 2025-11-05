@@ -172,7 +172,6 @@ export function PedidosFiltersUnified({
         <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Buscar
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -192,7 +191,6 @@ export function PedidosFiltersUnified({
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Status do Pedido
-            <Badge variant="secondary" className="text-xs px-1 py-0">API</Badge>
           </label>
           <Popover open={statusPedidoOpen} onOpenChange={setStatusPedidoOpen}>
             <PopoverTrigger asChild>
@@ -233,7 +231,6 @@ export function PedidosFiltersUnified({
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Contas ML
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
@@ -306,7 +303,6 @@ export function PedidosFiltersUnified({
         <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
-            <Badge variant="secondary" className="text-xs px-1 py-0">Manual</Badge>
           </label>
           <div className="flex items-end gap-2">
             <SimplifiedPeriodFilter
