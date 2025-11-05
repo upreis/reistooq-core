@@ -1086,7 +1086,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     </td>
 
                     {/* Coluna fixa ID-Único */}
-                    <td className="px-4 text-center">
+                    <td className="px-4 text-left">
                       <div className="break-words whitespace-normal text-xs leading-tight line-clamp-2" style={{ minWidth: '250px' }}>{idUnico}</div>
                     </td>
 
@@ -1095,7 +1095,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       <td 
                         key={def.key} 
                         className={cn(
-                          "px-4 text-center",
+                          "px-4 text-left",
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                           // Colunas de envio sem quebra de linha
