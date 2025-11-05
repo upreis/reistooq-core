@@ -570,8 +570,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                          console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
                          console.log(`  Tipo Logístico: ${logisticTypeForCalc} (Flex: ${isFlex})`);
                         
-                        return <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">{formatMoney(valorLiquido)}</span>;
-                      }
+                         // ✅ Cor condicional: Verde se > 0.01, Vermelho se <= 0.01
+                         const colorClass = valorLiquido > 0.01 
+                           ? 'font-mono text-sm font-semibold text-green-600 dark:text-green-400' 
+                           : 'font-mono text-sm font-semibold text-red-600 dark:text-red-400';
+                         
+                         return <span className={colorClass}>{formatMoney(valorLiquido)}</span>;
+                       }
                      
                      case 'custo_fixo_meli': {
                         // Calcular Custo Fixo Meli
