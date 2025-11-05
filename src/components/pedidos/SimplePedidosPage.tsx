@@ -514,17 +514,6 @@ function SimplePedidosPage({ className }: Props) {
         flexCost = flexCost / 2;
       }
       
-      // 🔍 DEBUG: Log de valores duplicados
-      if (foiDividido && flexCostOriginal > 0) {
-        console.log(`🚨 [FLEX DEBUG] Valor Dividido:`, {
-          pedidoId: order?.numero || order?.id,
-          valorOriginal: flexCostOriginal,
-          valorProcessado: flexCost,
-          motivoDivisao: 'Não está na lista de valores fixos',
-          valoresFixosPermitidos: valoresFixos
-        });
-      }
-      
       return flexCost;
       */
     };
@@ -602,35 +591,6 @@ function SimplePedidosPage({ className }: Props) {
     const cumpreCondicoes = condition === 'new' && reputation.includes('green'); // ✅ Removida verificação de medalha
     const percentualAplicado = cumpreCondicoes ? 0.1 : 0; // ✅ CORRIGIDO: 0% sem qualificações
     const valorFinal = flexOrderCostBase * percentualAplicado;
-    
-    // 🔍 DEBUG: Log da regra de 10% para pedidos >= R$ 79
-    console.log(`📊 [FLEX DEBUG] Regra 10% (Valor Médio/Item ≥ R$ 79):`, {
-      pedidoId: order?.numero || order?.id,
-      valorTotal: valorTotal,
-      quantidadeTotal: quantidadeTotal,
-      valorMedioPorItem: valorMedioPorItem,
-      baseCalculo: {
-        flexSpecialDiscount: flexSpecialDiscount,
-        flexNetCost: flexNetCost,
-        usouValorEspecifico: valoresEspecificos.includes(flexSpecialDiscount),
-        flexOrderCostBase: flexOrderCostBase
-      },
-      condicoes: {
-        produtoNovo: condition === 'new',
-        reputacaoVerde: reputation.includes('green'),
-        todasAtendidas: cumpreCondicoes
-      },
-      calculo: {
-        percentualAplicado: `${percentualAplicado * 100}%`,
-        valorFinal: valorFinal,
-        motivoZero: !cumpreCondicoes ? 'Não possui qualificações (Produto Novo + Reputação Verde)' : null
-      },
-      dadosBrutos: {
-        condition: conditionRaw,
-        reputation: reputationRaw,
-        medalha: medalha
-      }
-    });
     
     // ✅ Retornar valor calculado (0% ou 10% conforme qualificações)
     return valorFinal;

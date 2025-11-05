@@ -78,30 +78,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
   renderStatusBaixa,
   renderStatusInsumos
 }) => {
-  // Debug dos dados quando orders mudam
-  useEffect(() => {
-    if (orders.length > 0) {
-      const sampleOrder = orders[0];
-      console.log('[DEBUG] Orders updated:', {
-        total: orders.length,
-        sampleOrder: {
-          numero: sampleOrder?.numero,
-          id: sampleOrder?.id,
-          nome_cliente: sampleOrder?.nome_cliente || sampleOrder?.unified?.nome_cliente,
-          cidade: sampleOrder?.cidade || sampleOrder?.unified?.cidade,
-          uf: sampleOrder?.uf || sampleOrder?.unified?.uf,
-          valor_total: sampleOrder?.valor_total || sampleOrder?.unified?.valor_total,
-          has_unified: !!sampleOrder?.unified,
-          has_raw: !!sampleOrder?.raw,
-          structure: {
-            isUnified: typeof sampleOrder?.unified === 'object',
-            hasRaw: typeof sampleOrder?.raw === 'object',
-            directFields: Object.keys(sampleOrder || {}).slice(0, 10)
-          }
-        }
-      });
-    }
-  }, [orders]);
 
   // PedidosTableSection rendering
 

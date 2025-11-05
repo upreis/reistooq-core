@@ -101,9 +101,6 @@ export function IntelligentPedidosDashboard({
   // 📊 ANÁLISE COMPLETA E INTELIGENTE DOS DADOS
   const dashboardData = useMemo(() => {
     const workingOrders = allOrders?.length ? allOrders : orders;
-    console.log('🔍 [DASHBOARD] Debug - orders:', orders?.length || 0, 'allOrders:', allOrders?.length || 0);
-    console.log('🔍 [DASHBOARD] workingOrders:', workingOrders?.length || 0);
-    console.log('🔍 [DASHBOARD] Sample order:', workingOrders?.[0] || 'none');
     
     if (!workingOrders?.length) {
       return {
