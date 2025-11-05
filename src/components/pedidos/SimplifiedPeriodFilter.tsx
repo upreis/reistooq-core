@@ -72,23 +72,30 @@ export function SimplifiedPeriodFilter({
     switch (filterMode) {
       case 'dia':
         if (selectedDay) {
-          start = new Date(selectedDay);
-          end = new Date(selectedDay);
+          // ✅ FIX: Criar data sem problema de timezone
+          const [year, month, day] = selectedDay.split('-').map(Number);
+          start = new Date(year, month - 1, day, 0, 0, 0, 0);
+          end = new Date(year, month - 1, day, 23, 59, 59, 999);
         }
         break;
       case 'mes':
         if (selectedMonth) {
-          const monthDate = new Date(selectedMonth + '-01');
+          const [year, month] = selectedMonth.split('-').map(Number);
+          const monthDate = new Date(year, month - 1, 1);
           start = startOfMonth(monthDate);
           end = endOfMonth(monthDate);
         }
         break;
       case 'intervalo':
         if (intervalStart) {
-          start = new Date(intervalStart);
+          // ✅ FIX: Criar data de início sem problema de timezone
+          const [yearStart, monthStart, dayStart] = intervalStart.split('-').map(Number);
+          start = new Date(yearStart, monthStart - 1, dayStart, 0, 0, 0, 0);
         }
         if (intervalEnd) {
-          end = new Date(intervalEnd);
+          // ✅ FIX: Criar data de fim sem problema de timezone
+          const [yearEnd, monthEnd, dayEnd] = intervalEnd.split('-').map(Number);
+          end = new Date(yearEnd, monthEnd - 1, dayEnd, 23, 59, 59, 999);
         }
         break;
     }
