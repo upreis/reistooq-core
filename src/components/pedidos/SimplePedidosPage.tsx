@@ -459,9 +459,13 @@ function SimplePedidosPage({ className }: Props) {
   
   // Helpers financeiros: receita_por_envio (Flex) - REGRA SIMPLES
   const getReceitaPorEnvio = (order: any): number => {
-    // 🔧 HELPER: Processar flex_order_cost com divisão por 2
+    // 🔧 HELPER: Processar flex_order_cost - TEMPORARIAMENTE DESABILITADO
     const getFlexOrderCostProcessed = (order: any): number => {
       const flexCostOriginal = order?.flex_order_cost || order?.unified?.flex_order_cost || 0;
+      // ⚠️ CÁLCULO DESABILITADO: Retornando valor bruto da API
+      return flexCostOriginal;
+      
+      /* CÁLCULO ORIGINAL (DESABILITADO):
       let flexCost = flexCostOriginal;
       if (flexCost <= 0) return 0;
       
@@ -486,6 +490,7 @@ function SimplePedidosPage({ className }: Props) {
       }
       
       return flexCost;
+      */
     };
     
     // Detectar o tipo logístico

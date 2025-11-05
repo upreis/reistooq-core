@@ -320,19 +320,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return <span>{formatMoney(fretePagoCliente)}</span>;
                         case 'receita_flex':
                            {
-                             // 🔧 HELPER: Processar flex_order_cost com divisão por 2
-                             const getFlexOrderCostProcessed = (order: any): number => {
-                               let flexCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
-                               if (flexCost <= 0) return 0;
-                               
-                               // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
-                               // Caso contrário → divide por 2
-                               const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-                               if (!valoresFixos.includes(flexCost)) {
-                                 flexCost = flexCost / 2;
-                               }
-                               return flexCost;
-                             };
+                              // 🔧 HELPER: Processar flex_order_cost - TEMPORARIAMENTE DESABILITADO
+                              const getFlexOrderCostProcessed = (order: any): number => {
+                                const flexCostOriginal = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                                // ⚠️ CÁLCULO DESABILITADO: Retornando valor bruto da API
+                                return flexCostOriginal;
+                                
+                                /* CÁLCULO ORIGINAL (DESABILITADO):
+                                let flexCost = flexCostOriginal;
+                                if (flexCost <= 0) return 0;
+                                
+                                // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
+                                // Caso contrário → divide por 2
+                                const valoresFixos = [8.90, 13.90, 15.90, 15.99];
+                                if (!valoresFixos.includes(flexCost)) {
+                                  flexCost = flexCost / 2;
+                                }
+                                return flexCost;
+                                */
+                              };
                              
                              // Pegar o tipo logístico da ordem
                              const logisticType = String(
@@ -406,19 +412,25 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                     // 💰 FLEX: Campos Detalhados
                     case 'flex_order_cost':
                       {
-                        // 🔧 HELPER: Processar flex_order_cost com divisão por 2
-                        const getFlexOrderCostProcessed = (order: any): number => {
-                          let flexCost = order.flex_order_cost || order.unified?.flex_order_cost || 0;
-                          if (flexCost <= 0) return 0;
-                          
-                          // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
-                          // Caso contrário → divide por 2
-                          const valoresFixos = [8.90, 13.90, 15.90, 15.99];
-                          if (!valoresFixos.includes(flexCost)) {
-                            flexCost = flexCost / 2;
-                          }
-                          return flexCost;
-                        };
+                         // 🔧 HELPER: Processar flex_order_cost - TEMPORARIAMENTE DESABILITADO
+                         const getFlexOrderCostProcessed = (order: any): number => {
+                           const flexCostOriginal = order.flex_order_cost || order.unified?.flex_order_cost || 0;
+                           // ⚠️ CÁLCULO DESABILITADO: Retornando valor bruto da API
+                           return flexCostOriginal;
+                           
+                           /* CÁLCULO ORIGINAL (DESABILITADO):
+                           let flexCost = flexCostOriginal;
+                           if (flexCost <= 0) return 0;
+                           
+                           // ✅ Se for 8.90, 13.90, 15.90 ou 15.99 → mantém valor
+                           // Caso contrário → divide por 2
+                           const valoresFixos = [8.90, 13.90, 15.90, 15.99];
+                           if (!valoresFixos.includes(flexCost)) {
+                             flexCost = flexCost / 2;
+                           }
+                           return flexCost;
+                           */
+                         };
                         
                         const flexOrderCost = getFlexOrderCostProcessed(order);
                         return <span className="text-blue-600 font-medium">{formatMoney(flexOrderCost)}</span>;
