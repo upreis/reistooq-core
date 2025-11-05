@@ -318,7 +318,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Status de Mercado Líder (Platinum, Gold, Silver)',
-    width: 100
+    width: 150
   },
   {
     key: 'level_id',

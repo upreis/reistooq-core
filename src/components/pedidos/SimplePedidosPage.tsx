@@ -719,7 +719,7 @@ function SimplePedidosPage({ className }: Props) {
     { key: 'logistic_type', label: 'Tipo Logístico', default: true, category: 'shipping', width: 150 },
     
     // Reputação do Vendedor
-    { key: 'power_seller_status', label: 'Medalha', default: false, category: 'shipping', width: 100 },
+    { key: 'power_seller_status', label: 'Medalha', default: false, category: 'shipping', width: 150 },
     { key: 'level_id', label: 'Reputação', default: false, category: 'shipping' },
     
     { key: 'substatus_detail', label: 'Substatus (Estado Atual)', default: false, category: 'shipping' },
