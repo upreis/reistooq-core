@@ -39,6 +39,7 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   // 💰 FLEX & CUSTOS (Ocultos por padrão)
   { key: 'receita_flex', label: 'Receita Flex (Bônus)', visible: false, category: 'financial' },
   { key: 'custo_envio_seller', label: 'Custo Envio Seller', visible: false, category: 'financial' },
+  { key: 'custo_fixo_meli', label: 'Custo Fixo Meli', visible: false, category: 'financial' },
   
   // Colunas de mapeamento
   { key: 'sku_estoque', label: 'SKU Estoque', visible: true, category: 'mapping' },
