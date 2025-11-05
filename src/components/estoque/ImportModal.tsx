@@ -487,7 +487,26 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         if (existingActiveSkus.length > 0) {
           const conflicts = skus.filter((sku) => existingActiveSkus.includes(sku));
           if (conflicts.length > 0) {
-            warnings.push(`${conflicts.length} SKUs já existem ativos e serão ignorados: ${conflicts.join(', ')}`);
+            // 🚨 ERRO CRÍTICO: Informar usuário sobre SKUs duplicados
+            allErrors.push(
+              `❌ DUPLICAÇÃO DETECTADA: ${conflicts.length} SKU(s) já existem como produtos ativos e NÃO podem ser importados novamente.\n\n` +
+              `SKUs duplicados: ${conflicts.slice(0, 5).join(', ')}${conflicts.length > 5 ? ` e mais ${conflicts.length - 5}...` : ''}\n\n` +
+              `SOLUÇÃO:\n` +
+              `1. Remova esses SKUs da planilha, OU\n` +
+              `2. Primeiro inative/delete os produtos existentes no sistema, OU\n` +
+              `3. Use SKUs diferentes para novos produtos`
+            );
+            setResult({ 
+              success: 0, 
+              errors: allErrors, 
+              warnings: [], 
+              failed: conflicts.map((sku, idx) => ({
+                row: skus.indexOf(sku) + 2,
+                data: mappedData[skus.indexOf(sku)],
+                error: `SKU ${sku} já existe como produto ativo`
+              }))
+            });
+            return;
           }
         }
 
@@ -657,10 +676,19 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
 
         if (successCount > 0) {
           toast({
-            title: "Importação concluída",
-            description: `${successCount} produto(s) importado(s)/reativado(s) com sucesso.`,
+            title: "✅ Importação concluída!",
+            description: `${successCount} produto(s) importado(s)/reativado(s) com sucesso.\n\n⚠️ IMPORTANTE: Se os produtos não aparecerem na lista, verifique:\n1. Filtros ativos na tabela (categoria, status, busca)\n2. Local de estoque selecionado no topo da página`,
+            duration: 8000,
           });
           onSuccess();
+        } else if (errorCount === 0 && rowsToCreate.length === 0 && rowsToReactivate.length === 0) {
+          // Nenhum produto foi processado - provavelmente todos eram duplicados
+          toast({
+            title: "⚠️ Nenhum produto importado",
+            description: "Todos os produtos da planilha já existem no sistema como ativos. Verifique os avisos acima.",
+            variant: "destructive",
+            duration: 8000,
+          });
         }
       } else {
         // Processar composições
