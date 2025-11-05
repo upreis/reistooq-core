@@ -210,8 +210,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                       // Colunas de envio sem quebra de linha
                       (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
-                      // URL Rastreamento compacta
-                      def.key === 'url_rastreamento' && "max-w-[80px]",
                       // Tags com quebra permitida
                       def.key === 'tags' && "break-words"
                     )}
@@ -1022,9 +1020,37 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
                           const translatedTags = translateMLTags(tags);
                           return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2" style={{ minWidth: '150px' }}>{translatedTags || '-'}</div>;
+                         }
+                      case 'url_rastreamento':
+                        {
+                          const trackingUrl = order.url_rastreamento || 
+                                            order.unified?.url_rastreamento || 
+                                            order.shipping?.tracking_number_url ||
+                                            order.raw?.shipping?.tracking_number_url ||
+                                            '';
+                          
+                          if (!trackingUrl || trackingUrl === '-') {
+                            return <span className="text-xs text-muted-foreground">-</span>;
+                          }
+                          
+                          return (
+                            <a 
+                              href={trackingUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                            >
+                              <span>Rastrear</span>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                              </svg>
+                            </a>
+                          );
                         }
-                    default:
-                       return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
+                     default:
+                        return <span>{String(order[key] ?? order.unified?.[key] ?? order.raw?.[key] ?? '-')}</span>;
                   }
                 };
 
@@ -1062,9 +1088,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           // Colunas SKU com largura ajustada ao conteúdo
                           (def.key === 'sku_estoque' || def.key === 'sku_kit') && "w-auto whitespace-nowrap",
                           // Colunas de envio sem quebra de linha
-                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap",
-                          // URL Rastreamento com truncamento
-                          def.key === 'url_rastreamento' && "max-w-[80px] overflow-hidden text-ellipsis whitespace-nowrap"
+                          (def.key === 'logistic_type' || def.key === 'shipping_status') && "whitespace-nowrap"
                         )}
                         style={(def as any).width ? { minWidth: `${(def as any).width}px`, width: `${(def as any).width}px` } : undefined}
                       >
