@@ -20,6 +20,7 @@ interface PedidosStatusBarProps {
   totalRecords?: number;
   mappingData?: Map<string, any>;
   isPedidoProcessado?: (order: any) => boolean;
+  hasActiveFilters?: boolean; // ✅ NOVO: Indica se há filtros aplicados (período, busca, etc.)
 }
 
 export const PedidosStatusBar = memo<PedidosStatusBarProps>(({ 
@@ -31,7 +32,8 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   loadingCounts,
   totalRecords,
   mappingData,
-  isPedidoProcessado
+  isPedidoProcessado,
+  hasActiveFilters = false // ✅ NOVO: Padrão = sem filtros
 }) => {
   // ✅ Usar totalRecords (total de todas as páginas) quando disponível, senão usar orders da página atual
   const counters = useMemo(() => {
@@ -40,12 +42,14 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       ordersLength: orders?.length, 
       quickFilter,
       hasMapping: !!mappingData,
-      hasGlobalCounts: !!globalCounts
+      hasGlobalCounts: !!globalCounts,
+      hasActiveFilters // ✅ NOVO: Log do estado de filtros
     });
     
-    // 🎯 USAR globalCounts quando disponível e no modo 'all' (tem os totais de todas as páginas)
-    if (globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all') {
-      console.log('✅ [StatusBar] Usando totais globais do aggregator:', globalCounts);
+    // 🎯 SOLUÇÃO: Só usar globalCounts quando NÃO há filtros ativos
+    // Se há filtros de período, busca, etc., usar totalRecords que vem da API já filtrado
+    if (globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all' && !hasActiveFilters) {
+      console.log('✅ [StatusBar] Usando totais globais do aggregator (SEM filtros):', globalCounts);
       return {
         total: globalCounts.total || 0,
         prontosBaixa: globalCounts.prontosBaixa || 0,

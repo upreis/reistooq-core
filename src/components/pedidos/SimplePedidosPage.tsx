@@ -1105,6 +1105,13 @@ useEffect(() => {
         globalCounts={globalCounts}
         loadingCounts={loadingCounts}
         totalRecords={state.total}
+        hasActiveFilters={
+          !!filtersManager.appliedFilters?.dataInicio || 
+          !!filtersManager.appliedFilters?.dataFim || 
+          !!filtersManager.appliedFilters?.search ||
+          (filtersManager.appliedFilters?.contasML && filtersManager.appliedFilters.contasML.length > 0) ||
+          (filtersManager.appliedFilters?.statusPedido && filtersManager.appliedFilters.statusPedido.length > 0)
+        }
       />
 
       {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
