@@ -4,10 +4,10 @@
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { Calendar, ChevronDown } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
+import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
 import { format, startOfMonth, endOfMonth, subDays, startOfDay, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,11 +37,11 @@ export function SimplifiedPeriodFilter({
   const [isOpen, setIsOpen] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>('dia');
   
-  // Estados para cada modo
-  const [selectedDay, setSelectedDay] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [selectedMonth, setSelectedMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
-  const [intervalStart, setIntervalStart] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [intervalEnd, setIntervalEnd] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
+  // Estados para cada modo - agora usando Date ao invés de string
+  const [selectedDay, setSelectedDay] = useState<Date>(new Date());
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [intervalStart, setIntervalStart] = useState<Date>(new Date());
+  const [intervalEnd, setIntervalEnd] = useState<Date>(new Date());
 
   // Formatar display do período
   const formatPeriodDisplay = useCallback(() => {
@@ -72,30 +72,22 @@ export function SimplifiedPeriodFilter({
     switch (filterMode) {
       case 'dia':
         if (selectedDay) {
-          // ✅ FIX: Criar data sem problema de timezone
-          const [year, month, day] = selectedDay.split('-').map(Number);
-          start = new Date(year, month - 1, day, 0, 0, 0, 0);
-          end = new Date(year, month - 1, day, 23, 59, 59, 999);
+          start = startOfDay(selectedDay);
+          end = endOfDay(selectedDay);
         }
         break;
       case 'mes':
         if (selectedMonth) {
-          const [year, month] = selectedMonth.split('-').map(Number);
-          const monthDate = new Date(year, month - 1, 1);
-          start = startOfMonth(monthDate);
-          end = endOfMonth(monthDate);
+          start = startOfMonth(selectedMonth);
+          end = endOfMonth(selectedMonth);
         }
         break;
       case 'intervalo':
         if (intervalStart) {
-          // ✅ FIX: Criar data de início sem problema de timezone
-          const [yearStart, monthStart, dayStart] = intervalStart.split('-').map(Number);
-          start = new Date(yearStart, monthStart - 1, dayStart, 0, 0, 0, 0);
+          start = startOfDay(intervalStart);
         }
         if (intervalEnd) {
-          // ✅ FIX: Criar data de fim sem problema de timezone
-          const [yearEnd, monthEnd, dayEnd] = intervalEnd.split('-').map(Number);
-          end = new Date(yearEnd, monthEnd - 1, dayEnd, 23, 59, 59, 999);
+          end = endOfDay(intervalEnd);
         }
         break;
     }
@@ -152,7 +144,7 @@ export function SimplifiedPeriodFilter({
           )}
         >
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Calendar className="h-3.5 w-3.5 shrink-0" />
+            <CalendarIcon className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">
               {formatPeriodDisplay()}
             </span>
@@ -228,44 +220,51 @@ export function SimplifiedPeriodFilter({
           <div className="space-y-3">
             {filterMode === 'dia' && (
               <div>
-                <Input
-                  type="date"
-                  value={selectedDay}
-                  onChange={(e) => setSelectedDay(e.target.value)}
-                  className="w-full"
+                <label className="text-xs text-muted-foreground mb-2 block">Selecione o dia</label>
+                <Calendar
+                  mode="single"
+                  selected={selectedDay}
+                  onSelect={(date) => date && setSelectedDay(date)}
+                  locale={ptBR}
+                  className={cn("rounded-md border pointer-events-auto")}
                 />
               </div>
             )}
 
             {filterMode === 'mes' && (
               <div>
-                <Input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="w-full"
+                <label className="text-xs text-muted-foreground mb-2 block">Selecione o mês</label>
+                <Calendar
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={(date) => date && setSelectedMonth(date)}
+                  locale={ptBR}
+                  className={cn("rounded-md border pointer-events-auto")}
                 />
               </div>
             )}
 
             {filterMode === 'intervalo' && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">De</label>
-                  <Input
-                    type="date"
-                    value={intervalStart}
-                    onChange={(e) => setIntervalStart(e.target.value)}
-                    className="w-full"
+                  <label className="text-xs text-muted-foreground mb-2 block">De</label>
+                  <Calendar
+                    mode="single"
+                    selected={intervalStart}
+                    onSelect={(date) => date && setIntervalStart(date)}
+                    locale={ptBR}
+                    className={cn("rounded-md border pointer-events-auto")}
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Até</label>
-                  <Input
-                    type="date"
-                    value={intervalEnd}
-                    onChange={(e) => setIntervalEnd(e.target.value)}
-                    className="w-full"
+                  <label className="text-xs text-muted-foreground mb-2 block">Até</label>
+                  <Calendar
+                    mode="single"
+                    selected={intervalEnd}
+                    onSelect={(date) => date && setIntervalEnd(date)}
+                    locale={ptBR}
+                    disabled={(date) => date < intervalStart}
+                    className={cn("rounded-md border pointer-events-auto")}
                   />
                 </div>
               </div>
