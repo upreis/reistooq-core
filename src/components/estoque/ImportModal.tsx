@@ -434,9 +434,14 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
       // Detectar automaticamente o tipo a partir dos cabeçalhos
       const aoaSelected = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
       const headersNorm = (aoaSelected?.[0] || []).map((h: any) => normalize(h));
-      const isComposicoesSheet = headersNorm.includes(normalize('SKU do componente 1')) || headersNorm.includes(normalize('SKU Pai'));
-      const isProdutosSheet = headersNorm.includes(normalize('SKU Interno')) || headersNorm.includes(normalize('Nome'));
+      
+      // Composições TEM "SKU do componente 1" (obrigatório para composições)
+      // Produtos podem ter "SKU Pai" para hierarquia, mas NÃO têm "SKU do componente 1"
+      const isComposicoesSheet = headersNorm.includes(normalize('SKU do componente 1'));
+      const isProdutosSheet = headersNorm.includes(normalize('SKU Interno')) && headersNorm.includes(normalize('Nome'));
+      
       const importMode: 'produtos' | 'composicoes' = isComposicoesSheet ? 'composicoes' : (isProdutosSheet ? 'produtos' : tipo);
+      
       if (importMode !== tipo) {
         toast({ title: 'Tipo detectado automaticamente', description: `Detectamos um arquivo de ${importMode}. Vamos importar nesse modo.` });
       }
