@@ -49,8 +49,9 @@ export function MLOrdersNav() {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
           
-          // ✅ Preservar query params para rotas específicas (ex: /pedidos)
-          const to = item.preserveSearch && location.pathname === item.path
+          // ✅ CORREÇÃO: Se o item tem preserveSearch E estamos em /pedidos, preservar params
+          // Isso mantém os filtros quando clicamos no link novamente
+          const to = item.preserveSearch && location.pathname === '/pedidos'
             ? { pathname: item.path, search: location.search }
             : item.path;
           

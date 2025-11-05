@@ -17,8 +17,10 @@ export function OMSNav() {
     <nav className="flex space-x-8 border-b">
       {navigation.map((item) => {
         const isActive = location.pathname === item.href;
-        // ✅ Preservar query params para rotas específicas (ex: /pedidos)
-        const to = item.preserveSearch && location.pathname === item.href
+        
+        // ✅ CORREÇÃO: Se o item tem preserveSearch E estamos em /pedidos, preservar params
+        // Isso mantém os filtros quando clicamos no link novamente
+        const to = item.preserveSearch && location.pathname === '/pedidos'
           ? { pathname: item.href, search: location.search }
           : item.href;
         
