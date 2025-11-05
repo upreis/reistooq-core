@@ -2,10 +2,10 @@
  * 🚀 HOOK UNIFICADO DE FILTROS - EXPERIÊNCIA CONSISTENTE
  * Resolve problemas de UX e performance identificados na auditoria
  * 
- * ✅ ETAPA 2: Sincronização URL + localStorage
- * - Prioriza URL como fonte de verdade
- * - Fallback para localStorage
- * - Sincronização bidirecional automática
+ * ✅ ETAPA 3: Sistema 100% baseado em URL params
+ * - URL é a única fonte de verdade para filtros
+ * - LocalStorage usado apenas para cache de dados (via usePersistentPedidosState)
+ * - URLs compartilháveis e bookmarks funcionam perfeitamente
  */
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'; // ✅ FIX: Adicionar useRef
@@ -74,18 +74,17 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
   const isInitializingRef = useRef(true);
   const hasInitializedRef = useRef(false);
   
-  // ✅ ETAPA 2 + FIX P1: INICIALIZAÇÃO - Ler filtros do sistema híbrido (URL → localStorage)
+  // ✅ ETAPA 3 + FIX AUDITORIA: INICIALIZAÇÃO - Ler filtros 100% da URL
   // Apenas UMA VEZ na inicialização
   useEffect(() => {
-    // ✅ FIX P1: Executar apenas UMA VEZ
+    // ✅ FIX P1 AUDITORIA: Executar apenas UMA VEZ
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
     
-    // Se sync está habilitado, usar filtros do sistema híbrido
+    // Se sync está habilitado, usar filtros da URL
     if (enableURLSync && filterSync.hasActiveFilters) {
       const syncedFilters = filterSync.filters;
-      if (isDev) console.log('🔄 [ETAPA 2] Filtros carregados do sistema híbrido (INIT):', {
-        source: filterSync.source,
+      if (isDev) console.log('🔄 [ETAPA 3] Filtros carregados da URL (INIT):', {
         filters: syncedFilters
       });
       
@@ -93,14 +92,14 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
       setDraftFilters(syncedFilters);
       setAppliedFilters(syncedFilters);
       
-      // ✅ FIX P1: Marcar como NÃO inicializando após carregar
+      // ✅ FIX: Marcar como NÃO inicializando após carregar
       setTimeout(() => {
         isInitializingRef.current = false;
       }, 100);
       return;
     }
     
-    // ✅ FALLBACK: Sistema antigo (apenas localStorage)
+    // ✅ FALLBACK: Sistema antigo (apenas localStorage) - DEPRECATED
     if (loadSavedFilters && !enableURLSync) {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -132,7 +131,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
           
           // ✅ IMPORTANTE: Apenas carregar no draft, NÃO aplicar automaticamente
           setDraftFilters(parsed);
-          if (isDev) console.log('📥 [FALLBACK] Filtros salvos carregados do localStorage:', parsed);
+          if (isDev) console.log('📥 [FALLBACK DEPRECATED] Filtros salvos carregados do localStorage:', parsed);
         }
       } catch (error) {
         console.warn('Erro ao carregar filtros salvos:', error);
@@ -141,30 +140,31 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
       }
     }
     
-    // ✅ FIX P1: Marcar como NÃO inicializando após carregar
+    // ✅ FIX: Marcar como NÃO inicializando após carregar
     setTimeout(() => {
       isInitializingRef.current = false;
     }, 100);
-  }, []); // ✅ FIX P1: Array vazio - executar APENAS uma vez
+  }, [enableURLSync, filterSync.hasActiveFilters, filterSync.filters, loadSavedFilters]); // ✅ FIX P1 AUDITORIA: Deps corretas
 
-  // ✅ ETAPA 2 + FIX P1: Salvar filtros aplicados no sistema híbrido (URL + localStorage)
+  // ✅ ETAPA 3 + FIX AUDITORIA: Salvar filtros aplicados apenas na URL
   // APENAS quando vem do usuário (NÃO durante inicialização)
   useEffect(() => {
-    // ✅ FIX P1: NÃO salvar durante inicialização (evita loop)
+    // ✅ FIX: NÃO salvar durante inicialização (evita loop)
     if (isInitializingRef.current) {
       if (isDev) console.log('⏭️ [SYNC] Pulando salvamento - ainda inicializando');
       return;
     }
     
     if (Object.keys(appliedFilters).length > 0) {
-      // Se sync está habilitado, usar sistema híbrido
+      // Se sync está habilitado, usar sistema de URL
       if (enableURLSync) {
         filterSync.writeFilters(appliedFilters, 'user');
-        if (isDev) console.log('🔄 [ETAPA 2] Filtros sincronizados (URL + localStorage)');
+        if (isDev) console.log('🔄 [ETAPA 3] Filtros sincronizados na URL');
         return;
       }
       
-      // ✅ FALLBACK: Sistema antigo (apenas localStorage)
+      // ✅ FALLBACK DEPRECATED: Sistema antigo (apenas localStorage)
+      // Mantido apenas para compatibilidade, mas não recomendado
       try {
         // ✅ CORREÇÃO ROBUSTA: Serializar datas como ISO strings para localStorage
         const serializeValue = (value: any): any => {
@@ -186,7 +186,7 @@ export function usePedidosFiltersUnified(options: UseUnifiedFiltersOptions = {})
         
         const serializedFilters = serializeValue(appliedFilters);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(serializedFilters));
-        if (isDev) console.log('💾 [FALLBACK] Filtros salvos apenas no localStorage:', serializedFilters);
+        if (isDev) console.log('💾 [FALLBACK DEPRECATED] Filtros salvos apenas no localStorage:', serializedFilters);
       } catch (error) {
         console.error('❌ Erro ao salvar filtros no localStorage:', error);
       }
