@@ -1018,8 +1018,43 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       case 'tags':
                          {
                            const tags = order.tags || order.unified?.tags || order.raw?.tags || [];
+                           if (!Array.isArray(tags) || tags.length === 0) {
+                             return <span className="text-muted-foreground">-</span>;
+                           }
+                           
+                           // Função para gerar cor baseada no texto da tag
+                           const getTagColor = (tag: string, index: number) => {
+                             const colors = [
+                               'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20',
+                               'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20',
+                               'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20',
+                               'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20',
+                               'bg-pink-500/10 text-pink-700 dark:text-pink-400 border-pink-500/20',
+                               'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20',
+                               'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20',
+                               'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20',
+                             ];
+                             // Usa hash simples do texto para consistência de cores
+                             const hash = tag.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                             return colors[hash % colors.length];
+                           };
+                           
                            const translatedTags = translateMLTags(tags);
-                           return <div className="break-words whitespace-normal text-sm leading-snug line-clamp-2">{translatedTags || '-'}</div>;
+                           const tagArray = translatedTags.split(', ').filter(Boolean);
+                           
+                           return (
+                             <div className="flex flex-wrap gap-1.5 py-1">
+                               {tagArray.map((tag, index) => (
+                                 <span
+                                   key={`${tag}-${index}`}
+                                   className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border transition-colors ${getTagColor(tag, index)}`}
+                                   title={tag}
+                                 >
+                                   {tag}
+                                 </span>
+                               ))}
+                             </div>
+                           );
                           }
                       case 'url_rastreamento':
                         {
