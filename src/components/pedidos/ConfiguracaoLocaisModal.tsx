@@ -188,7 +188,7 @@ export function ConfiguracaoLocaisModal({
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a empresa..." />
                   </SelectTrigger>
-                  <SelectContent className="bg-background border border-border z-50">
+                  <SelectContent className="bg-background border border-border z-[9999]">
                     {contasML.length === 0 ? (
                       <div className="p-2 text-sm text-muted-foreground">
                         Nenhuma conta disponível
