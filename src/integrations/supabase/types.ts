@@ -6007,6 +6007,7 @@ export type Database = {
         Returns: Json
       }
       fix_historico_integration_accounts: { Args: never; Returns: Json }
+      fix_produtos_organization_id: { Args: never; Returns: Json }
       generate_category_hierarchy_from_products: { Args: never; Returns: Json }
       generate_password_reset_token: { Args: { _email: string }; Returns: Json }
       gerar_numero_cotacao: { Args: never; Returns: string }
