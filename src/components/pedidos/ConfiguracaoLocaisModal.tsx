@@ -223,11 +223,24 @@ export function ConfiguracaoLocaisModal({
                       aria-expanded={tipoLogisticoOpen}
                       className="w-full justify-between"
                     >
-                      {novoMapeamento.tipo_logistico || "Selecione ou digite..."}
+                      {novoMapeamento.tipo_logistico 
+                        ? ([
+                            { value: 'fulfillment', label: 'Fulfillment (Full)' },
+                            { value: 'self_service', label: 'Envios Flex' },
+                            { value: 'cross_docking', label: 'Cross Docking' },
+                            { value: 'drop_off', label: 'Drop Off' },
+                            { value: 'xd_drop_off', label: 'XD Drop Off' },
+                            { value: 'FBM', label: 'FBM (Full by Merchant)' },
+                            { value: 'FLEX', label: 'FLEX (Mercado Envios Flex)' },
+                            { value: 'Padrão', label: 'Padrão' },
+                            { value: 'Expresso', label: 'Expresso' },
+                            { value: 'Normal', label: 'Normal' },
+                          ].find(t => t.value === novoMapeamento.tipo_logistico)?.label || novoMapeamento.tipo_logistico)
+                        : "Selecione ou digite..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 bg-background border border-border z-[9999]">
+                  <PopoverContent className="w-full p-0 bg-background border border-border" style={{ zIndex: 9999 }}>
                     <Command>
                       <CommandInput 
                         placeholder="Digite ou busque..." 
@@ -252,7 +265,7 @@ export function ConfiguracaoLocaisModal({
                         <CommandGroup heading="Tipos Conhecidos">
                           {[
                             { value: 'fulfillment', label: 'Fulfillment (Full)' },
-                            { value: 'self_service', label: 'Self Service (Flex)' },
+                            { value: 'self_service', label: 'Envios Flex' },
                             { value: 'cross_docking', label: 'Cross Docking' },
                             { value: 'drop_off', label: 'Drop Off' },
                             { value: 'xd_drop_off', label: 'XD Drop Off' },
@@ -264,9 +277,9 @@ export function ConfiguracaoLocaisModal({
                           ].map((tipo) => (
                             <CommandItem
                               key={tipo.value}
-                              value={tipo.value}
-                              onSelect={(currentValue) => {
-                                setNovoMapeamento({ ...novoMapeamento, tipo_logistico: currentValue });
+                              value={tipo.label}
+                              onSelect={() => {
+                                setNovoMapeamento({ ...novoMapeamento, tipo_logistico: tipo.value });
                                 setTipoLogisticoOpen(false);
                                 setCustomTipoLogistico('');
                               }}
