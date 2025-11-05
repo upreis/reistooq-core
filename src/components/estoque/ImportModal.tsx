@@ -544,13 +544,16 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
           const rowErrors = validateRow(row, index, 'produtos');
           const existing = existingMap[row.sku_interno];
           
-          // 🔍 DEBUG: Log cada linha processada
-          if (index < 3) {
-            console.log(`📝 Processando linha ${index + 1}:`, {
-              sku: row.sku_interno,
-              nome: row.nome,
-              existing: !!existing,
-              ativo: existing?.ativo,
+          // 🔍 DEBUG: Log cada linha processada (COMPLETO)
+          if (index < 5) {
+            console.log(`🔍 [LINHA ${index + 2}] Dados mapeados:`, {
+              sku_interno: `"${row.sku_interno}"`,
+              nome: `"${row.nome}"`,
+              sku_pai: `"${row.sku_pai}"`,
+              temSku: !!row.sku_interno,
+              temNome: !!row.nome,
+              tipoSku: typeof row.sku_interno,
+              tipoNome: typeof row.nome,
               errors: rowErrors
             });
           }
