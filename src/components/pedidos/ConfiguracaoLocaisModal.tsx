@@ -277,9 +277,10 @@ export function ConfiguracaoLocaisModal({
                           ].map((tipo) => (
                             <CommandItem
                               key={tipo.value}
-                              value={tipo.label}
-                              onSelect={() => {
-                                setNovoMapeamento({ ...novoMapeamento, tipo_logistico: tipo.value });
+                              value={tipo.value}
+                              className="cursor-pointer"
+                              onSelect={(value) => {
+                                setNovoMapeamento({ ...novoMapeamento, tipo_logistico: value });
                                 setTipoLogisticoOpen(false);
                                 setCustomTipoLogistico('');
                               }}
