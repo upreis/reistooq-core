@@ -53,13 +53,6 @@ export default function MLOrdersCompletas() {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Breadcrumb principal */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <span>📦</span>
-        <span>/</span>
-        <span className="text-primary">Vendas</span>
-      </div>
-
       {/* Navigation tabs principais */}
       <OMSNav />
 
