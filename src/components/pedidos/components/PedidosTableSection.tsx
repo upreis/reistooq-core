@@ -988,38 +988,58 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       case 'marketplace_origem':
                         // 🔍 Detecção inteligente do marketplace baseada em múltiplos campos
                         const detectMarketplace = (order: any): string => {
+                          // DEBUG: Log para diagnóstico (remover após auditoria)
+                          if (import.meta.env.DEV) {
+                            console.log('🔍 [Marketplace Debug]', {
+                              id: order.id,
+                              empresa: order.empresa,
+                              unified_empresa: order.unified?.empresa,
+                              raw_empresa: order.raw?.empresa,
+                              numero: order.numero,
+                              numero_ecommerce: order.numero_ecommerce,
+                              integration_account_id: order.integration_account_id
+                            });
+                          }
+                          
+                          // Buscar empresa em múltiplos locais
+                          const empresa = (order.empresa || order.unified?.empresa || order.raw?.empresa || '').toLowerCase();
+                          const id = order.id || '';
+                          const numero = order.numero || '';
+                          const numeroEcommerce = order.numero_ecommerce || '';
+                          
                           // 1. Mercado Livre
-                          if (order.empresa === 'mercadolivre' || 
-                              order.empresa === 'mercado livre' ||
-                              order.id?.startsWith('ml_') || 
-                              order.numero?.startsWith('ML-') ||
-                              order.numero_ecommerce?.startsWith('ML-') ||
-                              order.raw?.tags?.includes('pack_id')) {
+                          if (empresa.includes('mercado') || 
+                              empresa === 'mercadolivre' ||
+                              id.startsWith('ml_') || 
+                              numero.startsWith('ML-') ||
+                              numeroEcommerce.startsWith('ML-') ||
+                              order.raw?.tags?.includes('pack_id') ||
+                              order.raw?.pack_id) {
                             return 'Mercado Livre';
                           }
                           
                           // 2. Shopee
-                          if (order.empresa === 'shopee' || 
-                              order.id?.startsWith('shopee_') ||
+                          if (empresa === 'shopee' || 
+                              id.startsWith('shopee_') ||
                               order.raw?.order_sn ||
                               order.integration_account_id?.includes('shopee')) {
                             return 'Shopee';
                           }
                           
                           // 3. Tiny ERP
-                          if (order.empresa === 'tiny' || 
+                          if (empresa === 'tiny' || 
                               order.integration_account_id?.includes('tiny')) {
                             return 'Tiny';
                           }
                           
                           // 4. Shopify
-                          if (order.empresa === 'shopify' || 
+                          if (empresa === 'shopify' || 
                               order.integration_account_id?.includes('shopify')) {
                             return 'Shopify';
                           }
                           
                           // 5. Amazon
-                          if (order.empresa === 'amazon' || 
+                          if (empresa === 'amazon' || 
                               order.integration_account_id?.includes('amazon')) {
                             return 'Amazon';
                           }
