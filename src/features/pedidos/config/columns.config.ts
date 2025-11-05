@@ -369,7 +369,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Link para rastreamento do envio',
-    width: 120
+    width: 80
   },
 
   // ====== ENDEREÇO (novo) ======
