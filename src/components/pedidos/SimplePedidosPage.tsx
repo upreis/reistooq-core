@@ -250,8 +250,6 @@ function SimplePedidosPage({ className }: Props) {
   // 🔧 P3.1: Sistema de colunas unificado com persistência automatica (memoizado)
   const columnManager = useColumnManager();
   const visibleColumns = useMemo(() => {
-    console.log('🔍 [VISIBLE COLUMNS]', columnManager.state.visibleColumns);
-    console.log('🔍 [HAS CONDITIONS?]', Array.from(columnManager.state.visibleColumns).some((col: any) => col.key === 'conditions'));
     return columnManager.state.visibleColumns;
   }, [columnManager.state.visibleColumns]);
   
