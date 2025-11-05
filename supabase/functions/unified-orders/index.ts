@@ -726,7 +726,8 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       valor_desconto: order.coupon?.amount || 0,
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
-      empresa: 'mercadolivre', // Fixo para identificação do marketplace
+      empresa: accountName || 'Mercado Livre', // Nome da conta do seller (preservado para filtros/mapeamentos)
+      marketplace: 'mercadolivre', // NOVO: Identificador fixo do marketplace
       cidade: address.city?.name || null,
       uf: address.state?.id || null,
       codigo_rastreamento: shipping.tracking_number || null,
