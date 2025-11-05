@@ -33,29 +33,14 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
   mappingData,
   isPedidoProcessado
 }) => {
-  // ✅ PRIORIDADE: Usar globalCounts do aggregator quando disponível
+  // ✅ SEMPRE usar os pedidos da página atual (respeitando filtros aplicados)
   const counters = useMemo(() => {
     console.log('📊 [StatusBar] Iniciando contagem:', { 
-      hasGlobalCounts: !!globalCounts,
-      globalCounts,
       ordersLength: orders?.length, 
       quickFilter,
       hasMapping: !!mappingData,
       mappingSize: mappingData?.size 
     });
-    
-    // 🎯 SOLUÇÃO: Usar totais globais do aggregator quando disponível
-    if (globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all') {
-      console.log('✅ [StatusBar] Usando TOTAIS GLOBAIS do aggregator:', globalCounts);
-      return {
-        total: globalCounts.total || 0,
-        prontosBaixa: globalCounts.prontosBaixa || 0,
-        mapeamentoPendente: globalCounts.mapeamentoPendente || 0,
-        baixados: globalCounts.baixados || 0,
-        semEstoque: 0, // aggregator não tem esse campo ainda
-        skuNaoCadastrado: 0 // aggregator não tem esse campo ainda
-      };
-    }
     
     console.log('📊 [StatusBar] Contando pedidos da página atual (fallback):', { 
       ordersLength: orders?.length, 
