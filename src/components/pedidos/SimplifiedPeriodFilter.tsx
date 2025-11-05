@@ -220,28 +220,62 @@ export function SimplifiedPeriodFilter({
           {/* Campos de data baseados no modo */}
           <div className="space-y-3">
             {filterMode === 'dia' && (
-              <div>
+              <div className="relative">
                 <label className="text-xs text-muted-foreground mb-2 block">Selecione o dia</label>
-                <Calendar
-                  mode="single"
-                  selected={selectedDay}
-                  onSelect={(date) => date && setSelectedDay(date)}
-                  locale={ptBR}
-                  className={cn("rounded-md border pointer-events-auto")}
-                />
+                <Popover>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={format(selectedDay, 'dd/MM/yyyy')}
+                      readOnly
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                    />
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="icon" className="shrink-0">
+                        <CalendarIcon className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                  </div>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDay}
+                      onSelect={(date) => date && setSelectedDay(date)}
+                      locale={ptBR}
+                      className={cn("pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
             {filterMode === 'mes' && (
-              <div>
+              <div className="relative">
                 <label className="text-xs text-muted-foreground mb-2 block">Selecione o mês</label>
-                <Calendar
-                  mode="single"
-                  selected={selectedMonth}
-                  onSelect={(date) => date && setSelectedMonth(date)}
-                  locale={ptBR}
-                  className={cn("rounded-md border pointer-events-auto")}
-                />
+                <Popover>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={format(selectedMonth, 'MMMM yyyy', { locale: ptBR })}
+                      readOnly
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background capitalize"
+                    />
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="icon" className="shrink-0">
+                        <CalendarIcon className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                  </div>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedMonth}
+                      onSelect={(date) => date && setSelectedMonth(date)}
+                      locale={ptBR}
+                      className={cn("pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             )}
 
@@ -249,24 +283,58 @@ export function SimplifiedPeriodFilter({
               <div className="space-y-3">
                 <div>
                   <label className="text-xs text-muted-foreground mb-2 block">De</label>
-                  <Calendar
-                    mode="single"
-                    selected={intervalStart}
-                    onSelect={(date) => date && setIntervalStart(date)}
-                    locale={ptBR}
-                    className={cn("rounded-md border pointer-events-auto")}
-                  />
+                  <Popover>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={format(intervalStart, 'dd/MM/yyyy')}
+                        readOnly
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      />
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" className="shrink-0">
+                          <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </div>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={intervalStart}
+                        onSelect={(date) => date && setIntervalStart(date)}
+                        locale={ptBR}
+                        className={cn("pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground mb-2 block">Até</label>
-                  <Calendar
-                    mode="single"
-                    selected={intervalEnd}
-                    onSelect={(date) => date && setIntervalEnd(date)}
-                    locale={ptBR}
-                    disabled={(date) => date < intervalStart}
-                    className={cn("rounded-md border pointer-events-auto")}
-                  />
+                  <Popover>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={format(intervalEnd, 'dd/MM/yyyy')}
+                        readOnly
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                      />
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" className="shrink-0">
+                          <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                      </PopoverTrigger>
+                    </div>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={intervalEnd}
+                        onSelect={(date) => date && setIntervalEnd(date)}
+                        locale={ptBR}
+                        disabled={(date) => date < intervalStart}
+                        className={cn("pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             )}
