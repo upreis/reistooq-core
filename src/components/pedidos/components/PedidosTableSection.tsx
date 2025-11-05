@@ -462,7 +462,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       }
                     case 'valor_liquido_vendedor':
                       {
-                        // ✅ NOVA REGRA: Baseado no Tipo Logístico
+                        // ✅ NOVA REGRA: Baseado no Tipo Logístico + incluindo Custo Fixo Meli
                         const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
                         
                         const custoEnvioSeller = order.custo_envio_seller || 
@@ -470,6 +470,26 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                                order.shipping?.costs?.senders?.[0]?.cost || 
                                                order.raw?.shipping?.costs?.senders?.[0]?.cost ||
                                                0;
+                        
+                        // Calcular Custo Fixo Meli (mesma lógica da coluna separada)
+                        const quantidadeTotal = order.quantity || 
+                                              order.quantidade || 
+                                              order.unified?.quantity || 
+                                              order.raw?.order_items?.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0) || 
+                                              1;
+                        
+                        let custoFixoMeli = 0;
+                        if (valorTotal < 79.00) {
+                          if (valorTotal <= 12.50) {
+                            custoFixoMeli = (valorTotal / 2) * quantidadeTotal;
+                          } else if (valorTotal <= 29.00) {
+                            custoFixoMeli = 6.25 * quantidadeTotal;
+                          } else if (valorTotal <= 50.00) {
+                            custoFixoMeli = 6.50 * quantidadeTotal;
+                          } else {
+                            custoFixoMeli = 6.75 * quantidadeTotal;
+                          }
+                        }
                         
                         // Receita Flex: Calcular usando a mesma lógica da coluna Receita Flex (Bônus)
                         const logisticTypeForCalc = String(
@@ -496,7 +516,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             : flexSpecialDiscount + flexNetCost;
                           
                           if (flexOrderCostBase > 0) {
-                            const quantidadeTotal = order.quantidade_total || 1;
                             const valorMedioPorItem = valorTotal / quantidadeTotal;
                             
                             if (valorMedioPorItem < 79.00) {
@@ -522,20 +541,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         // Determinar se é Flex
                         const isFlex = logisticTypeForCalc === 'self_service' || logisticTypeForCalc.includes('flex');
                         
-                        // Se for Flex: Valor Total + Receita Flex - Taxa Marketplace
-                        // Se não for Flex: Valor Total + Receita Flex - Taxa Marketplace - Custo Envio Seller
+                        // ✅ NOVA FÓRMULA COM CUSTO FIXO MELI:
+                        // Se for Flex: Valor Total + Receita Flex - Taxa Marketplace - Custo Fixo Meli
+                        // Se não for Flex: Valor Total + Receita Flex - Taxa Marketplace - Custo Envio Seller - Custo Fixo Meli
                         const valorLiquido = isFlex
-                          ? valorTotal + receitaFlex - taxaMarketplace
-                          : valorTotal + receitaFlex - taxaMarketplace - custoEnvioSeller;
+                          ? valorTotal + receitaFlex - taxaMarketplace - custoFixoMeli
+                          : valorTotal + receitaFlex - taxaMarketplace - custoEnvioSeller - custoFixoMeli;
                         
                          // 🔍 DEBUG: Log detalhado com valores individuais
                          console.log(`💰 [VALOR LÍQUIDO] Pedido ${order.id || order.numero}`);
                          console.log(`  Valor Total: R$ ${valorTotal.toFixed(2)}`);
-                         console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)}`);
                          console.log(`  + Receita Flex: R$ ${receitaFlex.toFixed(2)}`);
                          console.log(`  - Taxa Marketplace: R$ ${taxaMarketplace.toFixed(2)}`);
+                         console.log(`  - Custo Fixo Meli: R$ ${custoFixoMeli.toFixed(2)}`);
+                         console.log(`  - Custo Envio Seller: R$ ${custoEnvioSeller.toFixed(2)} (${isFlex ? 'NÃO APLICADO - É FLEX' : 'APLICADO'})`);
                          console.log(`  = VALOR LÍQUIDO: R$ ${valorLiquido.toFixed(2)}`);
-                         console.log(`  Armazenado: R$ ${(order.valor_liquido_vendedor || 0).toFixed(2)}`);
+                         console.log(`  Tipo Logístico: ${logisticTypeForCalc} (Flex: ${isFlex})`);
                         
                         return <span className="font-mono text-sm font-semibold text-green-600 dark:text-green-400">{formatMoney(valorLiquido)}</span>;
                       }
