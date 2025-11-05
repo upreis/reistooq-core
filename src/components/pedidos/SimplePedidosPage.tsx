@@ -176,6 +176,7 @@ function SimplePedidosPage({ className }: Props) {
   });
 
   // ✅ SISTEMA UNIFICADO DE FILTROS - UX CONSISTENTE + REFETCH AUTOMÁTICO
+  // ✅ ETAPA 3: 100% baseado em URL params para filtros persistentes
   const filtersManager = usePedidosFiltersUnified({
     onFiltersApply: async (filters) => {
       console.groupCollapsed('[filters/apply]');
@@ -201,7 +202,8 @@ function SimplePedidosPage({ className }: Props) {
       persistentState.saveAppliedFilters(filters);
     },
     autoLoad: false,
-    loadSavedFilters: false
+    loadSavedFilters: false,
+    enableURLSync: true // ✅ ETAPA 3: Ativar sincronização com URL
   });
 
   // Handlers para filtros avançados
