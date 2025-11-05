@@ -48,20 +48,6 @@ export function MapeamentoModal({
     pedido?.skus_produtos?.split(', ')?.[0] ||
     pedido?.sku_produto ||
     '';
-    
-  debugLog('SKU extraction', {
-    pedido: pedido,
-    order_items: pedido?.order_items,
-    skuToMap,
-    skuPedido,
-    estruturas: {
-      'order_items[0].sku': pedido?.order_items?.[0]?.sku,
-      'order_items[0].item.sku': pedido?.order_items?.[0]?.item?.sku,
-      'order_items[0].item.seller_sku': pedido?.order_items?.[0]?.item?.seller_sku,
-      'skus_produtos': pedido?.skus_produtos,
-      'sku_produto': pedido?.sku_produto
-    }
-  });
   const isEditing = !!existingMapping;
 
   const form = useForm<SkuMapping>({
