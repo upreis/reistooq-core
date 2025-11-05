@@ -312,9 +312,11 @@ function SimplePedidosPage({ className }: Props) {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
   
-  // 🔄 ETAPA 1: Polling automático a cada 60s (PDF recomendado)
+  // 🔄 ETAPA 1: Polling automático a cada 60s (PDF recomendado) - CORRIGIDO
   const polling = usePedidosPolling({
-    enabled: !loading && !state.isRefreshing && orders.length > 0,
+    // ✅ FIX CRÍTICO: Removido "orders.length > 0" - polling funciona mesmo com lista vazia
+    // Isso garante que novos pedidos apareçam automaticamente mesmo se lista começar vazia
+    enabled: !loading && !state.isRefreshing,
     intervalMs: 60000, // 60 segundos
     onRefresh: () => {
       console.log('🔄 [POLLING] Atualizando dados automaticamente...');
