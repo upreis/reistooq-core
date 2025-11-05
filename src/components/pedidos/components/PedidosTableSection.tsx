@@ -355,13 +355,22 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                                return <span>{formatMoney(0)}</span>;
                              }
                              
-                             // ✅ USAR VALOR PROCESSADO (com divisão por 2 já aplicada)
-                             const flexOrderCostBase = getFlexOrderCostProcessed(order);
-                             
-                             // Se não houver valor, retornar 0
-                             if (flexOrderCostBase <= 0) {
-                               return <span>{formatMoney(0)}</span>;
-                             }
+                              // ✅ NOVA REGRA: Usar Flex: Desconto Especial + condições
+                              const flexSpecialDiscount = order.flex_special_discount || order.unified?.flex_special_discount || 0;
+                              const flexNetCost = order.flex_net_cost || order.unified?.flex_net_cost || 0;
+                              
+                              // Valores específicos que devem ser usados diretamente
+                              const valoresEspecificos = [8.90, 8.99, 13.90, 13.99, 15.90, 15.99];
+                              
+                              // Determinar a base do cálculo
+                              const flexOrderCostBase = valoresEspecificos.includes(flexSpecialDiscount) 
+                                ? flexSpecialDiscount 
+                                : flexSpecialDiscount + flexNetCost;
+                              
+                              // Se não houver valor, retornar 0
+                              if (flexOrderCostBase <= 0) {
+                                return <span>{formatMoney(0)}</span>;
+                              }
                              
                               // ✅ NOVA LÓGICA: Verificar Valor Médio por Item PRIMEIRO
                               const valorTotal = order.valor_total || order.unified?.valor_total || order.total_amount || order.unified?.total_amount || 0;
