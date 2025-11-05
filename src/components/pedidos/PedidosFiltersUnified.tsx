@@ -230,7 +230,7 @@ export function PedidosFiltersUnified({
         {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Contas ML
+            Nome do Vendedor
           </label>
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
