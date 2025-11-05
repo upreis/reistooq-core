@@ -475,7 +475,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Tags do ML',
-    width: 500
+    width: 350
   },
 
 
