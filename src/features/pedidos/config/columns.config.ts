@@ -152,6 +152,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
+    key: 'custo_envio_seller',
+    label: 'Custo Envio Seller',
+    category: 'financial',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Custo de envio pago pelo vendedor',
+    width: 130,
+    sortable: true
+  },
+  {
     key: 'custo_fixo_meli',
     label: 'Custo Fixo Meli',
     category: 'financial',
@@ -192,17 +203,6 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Status do pagamento',
     width: 120
-  },
-  {
-    key: 'custo_envio_seller',
-    label: 'Custo Envio Seller',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Custo de envio pago pelo vendedor',
-    width: 130,
-    sortable: true
   },
   {
     key: 'flex_order_cost',
