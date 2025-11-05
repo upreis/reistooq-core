@@ -13,6 +13,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, TrendingUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { OMSNav } from '@/features/oms/components/OMSNav';
 
 export default function VendasOnline() {
   const { refresh } = useVendasData();
@@ -30,7 +31,17 @@ export default function VendasOnline() {
     <div className="h-screen flex flex-col">
       <div className="flex-1 overflow-auto m-0">
         <div className="space-y-6">
-          {/* Navegação */}
+          {/* Breadcrumb principal */}
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <span>📦</span>
+            <span>/</span>
+            <span className="text-primary">Vendas</span>
+          </div>
+
+          {/* Navegação principal */}
+          <OMSNav />
+
+          {/* Sub-navegação */}
           <MLOrdersNav />
           
           {/* Header */}
