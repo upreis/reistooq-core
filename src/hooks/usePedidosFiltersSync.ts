@@ -1,20 +1,18 @@
 /**
- * 🎯 ETAPA 3 - SISTEMA 100% BASEADO EM URL PARAMS
- * Hook que gerencia filtros exclusivamente através de URL params
+ * 🎯 ETAPA 3.1 - SISTEMA HÍBRIDO: URL + localStorage
+ * Hook que gerencia filtros através de URL params COM fallback para localStorage
  * 
- * ARQUITETURA FINAL:
- * 1. URL é a ÚNICA fonte de verdade para filtros
- * 2. LocalStorage usado APENAS para cache de dados
+ * ARQUITETURA MELHORADA:
+ * 1. URL é a fonte primária de verdade para filtros (compartilhável)
+ * 2. localStorage é usado como BACKUP quando URL está vazia
  * 3. URLs compartilháveis funcionam 100%
- * 4. Browser history funciona perfeitamente
+ * 4. Navegação interna preserva filtros via localStorage
  * 
  * BENEFÍCIOS:
  * - ✅ URLs compartilháveis (copiar/colar link mantém filtros)
- * - ✅ Bookmarks funcionam corretamente
- * - ✅ Navegação back/forward do browser
- * - ✅ Código mais simples e confiável
- * - ✅ Zero dependência de localStorage para filtros
- * - ✅ Separação clara: URL (filtros) vs LocalStorage (cache de dados)
+ * - ✅ Navegação interna preserva filtros (via localStorage)
+ * - ✅ Browser history funciona perfeitamente
+ * - ✅ Melhor UX: filtros persistem mesmo sem query params na URL
  */
 
 import { useEffect, useCallback, useMemo, useRef } from 'react';
@@ -22,6 +20,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PedidosFiltersState } from './usePedidosFiltersUnified';
 
 const isDev = process.env.NODE_ENV === 'development';
+const STORAGE_KEY = 'pedidos_filters_backup_v1'; // ✅ Key para backup no localStorage
 
 interface UsePedidosFiltersSyncOptions {
   enabled?: boolean; // Permite desabilitar sync durante testes
@@ -106,6 +105,48 @@ function urlParamsToFilters(params: URLSearchParams): PedidosFiltersState {
   return filters;
 }
 
+/**
+ * Salvar filtros no localStorage como backup
+ */
+function saveFiltersToStorage(filters: PedidosFiltersState): void {
+  try {
+    const serialized = JSON.stringify(filters);
+    localStorage.setItem(STORAGE_KEY, serialized);
+    if (isDev) console.log('💾 [SYNC] Filtros salvos no localStorage (backup)');
+  } catch (error) {
+    console.error('❌ [SYNC] Erro ao salvar filtros no localStorage:', error);
+  }
+}
+
+/**
+ * Carregar filtros do localStorage (fallback)
+ */
+function loadFiltersFromStorage(): PedidosFiltersState {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return {};
+    
+    const parsed = JSON.parse(stored);
+    
+    // Converter datas string para Date
+    if (parsed.dataInicio && typeof parsed.dataInicio === 'string') {
+      const [year, month, day] = parsed.dataInicio.split('-').map(Number);
+      parsed.dataInicio = new Date(year, month - 1, day);
+    }
+    
+    if (parsed.dataFim && typeof parsed.dataFim === 'string') {
+      const [year, month, day] = parsed.dataFim.split('-').map(Number);
+      parsed.dataFim = new Date(year, month - 1, day);
+    }
+    
+    if (isDev) console.log('📂 [SYNC] Filtros carregados do localStorage (backup):', parsed);
+    return parsed;
+  } catch (error) {
+    console.error('❌ [SYNC] Erro ao carregar filtros do localStorage:', error);
+    return {};
+  }
+}
+
 export function usePedidosFiltersSync(
   options: UsePedidosFiltersSyncOptions = {}
 ) {
@@ -128,22 +169,31 @@ export function usePedidosFiltersSync(
   
   
   /**
-   * LER filtros (100% da URL - sem fallback)
+   * LER filtros (prioriza URL, fallback para localStorage)
    */
   const currentFilters = useMemo((): PedidosFiltersState => {
     if (!enabled) return {};
     
     const urlFilters = urlParamsToFilters(searchParams);
     
-    if (isDev && Object.keys(urlFilters).length > 0) {
-      console.log('📍 [SYNC] Filtros lidos da URL:', urlFilters);
+    // ✅ Se URL tem filtros, usar (prioridade)
+    if (Object.keys(urlFilters).length > 0) {
+      if (isDev) console.log('📍 [SYNC] Filtros lidos da URL (prioridade):', urlFilters);
+      return urlFilters;
     }
     
-    return urlFilters;
+    // ✅ Se URL vazia, tentar restaurar do localStorage
+    const storageFilters = loadFiltersFromStorage();
+    if (Object.keys(storageFilters).length > 0) {
+      if (isDev) console.log('📂 [SYNC] Filtros restaurados do localStorage (fallback):', storageFilters);
+      return storageFilters;
+    }
+    
+    return {};
   }, [enabled, searchParams]);
   
   /**
-   * ESCREVER filtros (atualiza apenas URL)
+   * ESCREVER filtros (atualiza URL E localStorage)
    */
   const writeFilters = useCallback((filters: PedidosFiltersState, source: 'user' | 'restore' = 'user') => {
     if (!enabled || !isMountedRef.current) return;
@@ -156,37 +206,46 @@ export function usePedidosFiltersSync(
     }
     lastSyncedRef.current = serialized;
     
-    // ATUALIZAR URL (única fonte de verdade)
+    // ✅ ATUALIZAR URL (fonte primária)
     const params = filtersToURLParams(filters);
-    setSearchParams(params, { replace: true }); // replace evita poluir histórico
+    setSearchParams(params, { replace: true });
     
-    if (isDev) console.log(`📍 [SYNC] Filtros salvos na URL (${source}):`, { url: params.toString(), filters });
+    // ✅ SALVAR NO localStorage (backup)
+    saveFiltersToStorage(filters);
+    
+    if (isDev) console.log(`📍 [SYNC] Filtros salvos (URL + localStorage) [${source}]:`, { url: params.toString(), filters });
   }, [enabled, setSearchParams]);
   
   /**
-   * LIMPAR filtros (remove apenas da URL)
+   * LIMPAR filtros (remove da URL E localStorage)
    */
   const clearFilters = useCallback(() => {
     if (!enabled || !isMountedRef.current) return;
     
     lastSyncedRef.current = '';
     setSearchParams({}, { replace: true });
+    localStorage.removeItem(STORAGE_KEY);
     
-    if (isDev) console.log('🗑️ [SYNC] Filtros removidos da URL');
+    if (isDev) console.log('🗑️ [SYNC] Filtros removidos (URL + localStorage)');
   }, [enabled, setSearchParams]);
   
   /**
-   * INICIALIZAÇÃO: Marca como inicializado (sem migração localStorage)
+   * INICIALIZAÇÃO: Verificar se há filtros (URL ou localStorage)
    */
   useEffect(() => {
     if (!enabled || isInitializedRef.current) return;
     
     isInitializedRef.current = true;
     
+    const hasURLParams = searchParams.toString().length > 0;
+    const storageFilters = loadFiltersFromStorage();
+    const hasStorageFilters = Object.keys(storageFilters).length > 0;
+    
     if (isDev) {
-      const hasURLParams = searchParams.toString().length > 0;
       if (hasURLParams) {
         console.log('📍 [SYNC] Inicializado com filtros da URL');
+      } else if (hasStorageFilters) {
+        console.log('📂 [SYNC] Inicializado com filtros do localStorage');
       } else {
         console.log('📍 [SYNC] Inicializado sem filtros');
       }
@@ -215,7 +274,9 @@ export function usePedidosFiltersSync(
     clearFilters,
     
     // Metadata
-    source: 'url' as const, // Sempre URL agora
+    source: currentFilters && Object.keys(currentFilters).length > 0 
+      ? (searchParams.toString().length > 0 ? 'url' : 'localStorage') 
+      : 'none' as const,
     isEnabled: enabled
   };
 }
