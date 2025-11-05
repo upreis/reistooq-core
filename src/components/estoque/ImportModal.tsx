@@ -369,14 +369,29 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
   };
 
   const processImport = async () => {
-    if (!file) return;
+    if (!file) {
+      console.error('❌ processImport: Nenhum arquivo selecionado!');
+      return;
+    }
+
+    console.log('🚀 ========== INÍCIO DA IMPORTAÇÃO ==========');
+    console.log('📁 Arquivo:', {
+      nome: file.name,
+      tamanho: file.size,
+      tipo: file.type
+    });
 
     setIsProcessing(true);
     setProgress(0);
     
     try {
+      console.log('📂 Lendo arquivo como ArrayBuffer...');
       const data = await file.arrayBuffer();
+      console.log('✅ ArrayBuffer criado. Tamanho:', data.byteLength);
+      
+      console.log('📊 Lendo workbook Excel...');
       const workbook = XLSX.read(data);
+      console.log('✅ Workbook lido. Sheets:', workbook.SheetNames);
 
       // Normalizador de texto para cabeçalhos
       const normalize = (s: any) => String(s || '').toLowerCase()
