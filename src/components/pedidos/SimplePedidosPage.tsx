@@ -544,10 +544,11 @@ function SimplePedidosPage({ className }: Props) {
                    order.unified?.seller_reputation?.power_seller_status ||
                    null;
     
+    // ✅ REGRA OFICIAL ML: Acima R$ 79 SÓ recebe bônus se tiver qualificações
     // Se TODAS as condições forem atendidas → aplicar 10%
-    // Senão → usar cálculo normal (100%)
+    // Se NÃO tiver qualificações → R$ 0,00 (sem bônus)
     const cumpreCondicoes = condition === 'new' && reputation.includes('green') && medalha;
-    const percentualAplicado = cumpreCondicoes ? 0.1 : 1.0;
+    const percentualAplicado = cumpreCondicoes ? 0.1 : 0; // ✅ CORRIGIDO: 0% sem qualificações
     const valorFinal = flexOrderCostBase * percentualAplicado;
     
     // 🔍 DEBUG: Log da regra de 10% para pedidos >= R$ 79
@@ -563,7 +564,8 @@ function SimplePedidosPage({ className }: Props) {
       },
       calculo: {
         percentualAplicado: `${percentualAplicado * 100}%`,
-        valorFinal: valorFinal
+        valorFinal: valorFinal,
+        motivoZero: !cumpreCondicoes ? 'Não possui qualificações (MercadoLíderes + Reputação Verde)' : null
       },
       dadosBrutos: {
         condition: conditionRaw,
@@ -572,11 +574,8 @@ function SimplePedidosPage({ className }: Props) {
       }
     });
     
-    if (cumpreCondicoes) {
-      return valorFinal;
-    }
-    
-    return flexOrderCostBase;
+    // ✅ Retornar valor calculado (0% ou 10% conforme qualificações)
+    return valorFinal;
   };
   
   const getValorLiquidoVendedor = (order: any): number => {
