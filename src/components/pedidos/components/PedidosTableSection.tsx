@@ -986,40 +986,65 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        return renderStatusInsumos ? renderStatusInsumos(order.id) : <span className="text-xs text-muted-foreground">—</span>;
                      
                       case 'marketplace_origem':
-                        // 🔍 Detecção inteligente do marketplace
+                        // 🔍 Detecção inteligente do marketplace baseada em múltiplos campos
                         const detectMarketplace = (order: any): string => {
-                          // 1. PRIORIDADE: Campo marketplace dedicado (novo)
-                          const marketplace = order.marketplace || order.unified?.marketplace;
-                          if (marketplace) {
-                            const marketplaceMap: Record<string, string> = {
-                              'mercadolivre': 'Mercado Livre',
-                              'shopee': 'Shopee',
-                              'tiny': 'Tiny',
-                              'shopify': 'Shopify',
-                              'amazon': 'Amazon'
-                            };
-                            return marketplaceMap[marketplace.toLowerCase()] || 'Interno';
+                          // DEBUG: Log para diagnóstico (remover após auditoria)
+                          if (import.meta.env.DEV) {
+                            console.log('🔍 [Marketplace Debug]', {
+                              id: order.id,
+                              empresa: order.empresa,
+                              unified_empresa: order.unified?.empresa,
+                              raw_empresa: order.raw?.empresa,
+                              numero: order.numero,
+                              numero_ecommerce: order.numero_ecommerce,
+                              integration_account_id: order.integration_account_id
+                            });
                           }
                           
-                          // 2. FALLBACK: Detectar por outros indicadores
-                          const empresa = (order.empresa || order.unified?.empresa || '').toLowerCase();
+                          // Buscar empresa em múltiplos locais
+                          const empresa = (order.empresa || order.unified?.empresa || order.raw?.empresa || '').toLowerCase();
                           const id = order.id || '';
                           const numero = order.numero || '';
+                          const numeroEcommerce = order.numero_ecommerce || '';
                           
+                          // 1. Mercado Livre
                           if (empresa.includes('mercado') || 
+                              empresa === 'mercadolivre' ||
                               id.startsWith('ml_') || 
-                              numero.startsWith('ML-')) {
+                              numero.startsWith('ML-') ||
+                              numeroEcommerce.startsWith('ML-') ||
+                              order.raw?.tags?.includes('pack_id') ||
+                              order.raw?.pack_id) {
                             return 'Mercado Livre';
                           }
                           
-                          if (empresa === 'shopee' || id.startsWith('shopee_')) {
+                          // 2. Shopee
+                          if (empresa === 'shopee' || 
+                              id.startsWith('shopee_') ||
+                              order.raw?.order_sn ||
+                              order.integration_account_id?.includes('shopee')) {
                             return 'Shopee';
                           }
                           
-                          if (empresa === 'tiny') return 'Tiny';
-                          if (empresa === 'shopify') return 'Shopify';
-                          if (empresa === 'amazon') return 'Amazon';
+                          // 3. Tiny ERP
+                          if (empresa === 'tiny' || 
+                              order.integration_account_id?.includes('tiny')) {
+                            return 'Tiny';
+                          }
                           
+                          // 4. Shopify
+                          if (empresa === 'shopify' || 
+                              order.integration_account_id?.includes('shopify')) {
+                            return 'Shopify';
+                          }
+                          
+                          // 5. Amazon
+                          if (empresa === 'amazon' || 
+                              order.integration_account_id?.includes('amazon')) {
+                            return 'Amazon';
+                          }
+                          
+                          // Padrão: Venda Direta/Interno
                           return 'Interno';
                         };
                         
