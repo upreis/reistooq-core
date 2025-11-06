@@ -8,9 +8,13 @@ export interface InsumoParaBaixa {
 /**
  * Processa baixa de insumos para múltiplos SKUs de produtos
  * @param skusProdutos - Array de SKUs de produtos únicos (sem repetição)
+ * @param localEstoqueId - ID do local de estoque onde buscar as composições e dar baixa
  * @returns Resultado da operação de baixa
  */
-export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
+export async function processarBaixaInsumos(
+  skusProdutos: string[], 
+  localEstoqueId: string
+): Promise<{
   success: boolean;
   message: string;
   insumosBaixados?: InsumoParaBaixa[];
@@ -22,14 +26,22 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
       };
     }
 
-    try {
-      console.log('🔧 Iniciando baixa de insumos para SKUs:', skusProdutos);
+    if (!localEstoqueId) {
+      return {
+        success: false,
+        message: 'Local de estoque não especificado para baixa de insumos'
+      };
+    }
 
-      // 1. Buscar composições de todos os produtos
+    try {
+      console.log('🔧 Iniciando baixa de insumos para SKUs:', skusProdutos, 'no local:', localEstoqueId);
+
+      // 1. Buscar composições de todos os produtos FILTRADAS POR LOCAL
       const { data: composicoes, error: composicoesError } = await supabase
         .from('composicoes_insumos')
-        .select('sku_produto, sku_insumo, quantidade')
+        .select('sku_produto, sku_insumo, quantidade, local_id')
         .in('sku_produto', skusProdutos)
+        .eq('local_id', localEstoqueId)
         .eq('ativo', true);
 
       console.log('📦 Composições encontradas no banco:', composicoes);
@@ -43,10 +55,10 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
       }
 
       if (!composicoes || composicoes.length === 0) {
-        console.warn('Nenhuma composição encontrada para os SKUs:', skusProdutos);
+        console.warn('Nenhuma composição de insumos encontrada para os SKUs:', skusProdutos, 'no local:', localEstoqueId);
         return {
           success: false,
-          message: 'Nenhuma composição de insumos encontrada para os produtos'
+          message: `Nenhuma composição de insumos encontrada para os produtos no local especificado (ID: ${localEstoqueId})`
         };
       }
 
@@ -82,20 +94,72 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
       console.log('📋 Array final de insumos para baixa:', insumosBaixar);
       console.log('📋 JSON stringified:', JSON.stringify(insumosBaixar, null, 2));
 
-      // 3. Executar baixa via RPC function
-      console.log('🚀 Chamando RPC baixar_estoque_direto com:', { p_baixas: insumosBaixar });
-      const { data: resultado, error: baixaError } = await supabase.rpc('baixar_estoque_direto', {
-        p_baixas: insumosBaixar as any
-      });
-      console.log('📥 Resposta do RPC:', { resultado, baixaError });
-
-      if (baixaError) {
-        console.error('❌ Erro na baixa de insumos:', baixaError);
-        return {
-          success: false,
-          message: `Erro na baixa de insumos: ${baixaError.message}`
-        };
+      // 3. Dar baixa no estoque do local específico (não via RPC, mas diretamente no estoque_por_local)
+      console.log('🚀 Dando baixa de insumos diretamente no estoque do local:', localEstoqueId);
+      
+      for (const insumo of insumosBaixar) {
+        // Buscar produto_id do insumo
+        const { data: produtoInsumo, error: prodError } = await supabase
+          .from('produtos')
+          .select('id, sku_interno')
+          .eq('sku_interno', insumo.sku)
+          .maybeSingle();
+        
+        if (prodError || !produtoInsumo) {
+          console.error(`❌ Insumo ${insumo.sku} não encontrado no cadastro de produtos`);
+          return {
+            success: false,
+            message: `Insumo ${insumo.sku} não encontrado no cadastro de produtos`
+          };
+        }
+        
+        // Buscar estoque atual no local
+        const { data: estoqueAtual, error: estoqueError } = await supabase
+          .from('estoque_por_local')
+          .select('quantidade')
+          .eq('produto_id', produtoInsumo.id)
+          .eq('local_id', localEstoqueId)
+          .maybeSingle();
+        
+        if (estoqueError) {
+          console.error(`❌ Erro ao buscar estoque do insumo ${insumo.sku}:`, estoqueError);
+          return {
+            success: false,
+            message: `Erro ao buscar estoque do insumo ${insumo.sku}: ${estoqueError.message}`
+          };
+        }
+        
+        const quantidadeAtual = estoqueAtual?.quantidade || 0;
+        
+        if (quantidadeAtual < insumo.quantidade) {
+          return {
+            success: false,
+            message: `Estoque insuficiente do insumo ${insumo.sku} no local (Disponível: ${quantidadeAtual}, Necessário: ${insumo.quantidade})`
+          };
+        }
+        
+        const novaQuantidade = quantidadeAtual - insumo.quantidade;
+        
+        // Atualizar estoque no local
+        const { error: updateError } = await supabase
+          .from('estoque_por_local')
+          .update({ quantidade: novaQuantidade })
+          .eq('produto_id', produtoInsumo.id)
+          .eq('local_id', localEstoqueId);
+        
+        if (updateError) {
+          console.error(`❌ Erro ao atualizar estoque do insumo ${insumo.sku}:`, updateError);
+          return {
+            success: false,
+            message: `Erro ao atualizar estoque do insumo ${insumo.sku}: ${updateError.message}`
+          };
+        }
+        
+        console.log(`✅ Insumo ${insumo.sku}: ${insumo.quantidade} unidades baixadas (${quantidadeAtual} → ${novaQuantidade})`);
       }
+      
+      const resultado = { success: true };
+      console.log('📥 Baixa de insumos concluída:', resultado);
 
       const result = resultado as any;
 
@@ -103,7 +167,7 @@ export async function processarBaixaInsumos(skusProdutos: string[]): Promise<{
         console.error('❌ Baixa de insumos falhou:', result);
         return {
           success: false,
-          message: result.erros?.[0]?.erro || 'Falha na baixa de insumos'
+          message: 'Falha na baixa de insumos'
         };
       }
 

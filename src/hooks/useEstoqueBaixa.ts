@@ -208,13 +208,14 @@ export function useProcessarBaixaEstoque() {
           const skuProduto = (mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit).toString().trim().toUpperCase();
           const quantidadePedido = Number(pedido.total_itens || 0);
           
-          console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome}`);
+          console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome} (ID: ${localEstoqueId})`);
           
-          // Buscar composições do produto
+          // ✅ CRÍTICO: Buscar composições do produto FILTRADAS POR LOCAL
           const { data: composicoes, error: compError } = await supabase
             .from('produto_componentes')
             .select('sku_componente, quantidade')
-            .eq('sku_produto', skuProduto);
+            .eq('sku_produto', skuProduto)
+            .eq('local_id', localEstoqueId);
           
           if (compError) {
             console.error(`❌ Erro ao buscar composições para ${skuProduto}:`, compError);
@@ -222,7 +223,7 @@ export function useProcessarBaixaEstoque() {
           }
           
           if (!composicoes || composicoes.length === 0) {
-            throw new Error(`Produto ${skuProduto} não possui composição cadastrada em /estoque/composicoes`);
+            throw new Error(`Produto ${skuProduto} não possui composição cadastrada no local "${localEstoqueNome}" em /estoque/composicoes`);
           }
           
           console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
@@ -333,19 +334,42 @@ export function useProcessarBaixaEstoque() {
         
         console.log('✅ Baixa de estoque bem-sucedida, iniciando baixa de insumos...');
         
-        // 🔧 BAIXA DE INSUMOS - Processar insumos dos produtos
-        console.log('🔧 Iniciando baixa de insumos...');
+        // 🔧 BAIXA DE INSUMOS - Processar insumos dos produtos POR LOCAL
+        console.log('🔧 Iniciando baixa de insumos por local...');
         try {
-          const skusUnicos = [...new Set(baixas.map(b => b.sku))];
-          console.log('🔍 SKUs únicos para baixa de insumos:', skusUnicos);
+          // ✅ NOVO: Agrupar pedidos por local de estoque para processar insumos
+          const pedidosPorLocal = new Map<string, { localId: string; localNome: string; skus: string[] }>();
           
-          const resultadoInsumos = await processarBaixaInsumos(skusUnicos);
-          console.log('📊 Resultado da baixa de insumos:', resultadoInsumos);
+          for (const pedido of pedidos) {
+            const localEstoqueId = (pedido as any).local_estoque_id;
+            const localEstoqueNome = (pedido as any).local_estoque_nome || (pedido as any).local_estoque;
+            const mapping = contextoDaUI?.mappingData?.get(pedido.id);
+            const sku = (mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit).toString().trim().toUpperCase();
+            
+            if (!pedidosPorLocal.has(localEstoqueId)) {
+              pedidosPorLocal.set(localEstoqueId, {
+                localId: localEstoqueId,
+                localNome: localEstoqueNome,
+                skus: []
+              });
+            }
+            
+            pedidosPorLocal.get(localEstoqueId)!.skus.push(sku);
+          }
           
-          if (!resultadoInsumos.success) {
-            console.warn('⚠️ Aviso na baixa de insumos:', resultadoInsumos.message);
-          } else {
-            console.log('✅ Baixa de insumos concluída:', resultadoInsumos.message);
+          // Processar insumos para cada local
+          for (const [localId, info] of pedidosPorLocal) {
+            const skusUnicos = [...new Set(info.skus)];
+            console.log(`🔍 Processando ${skusUnicos.length} SKUs únicos para baixa de insumos no local "${info.localNome}"`, skusUnicos);
+            
+            const resultadoInsumos = await processarBaixaInsumos(skusUnicos, localId);
+            console.log(`📊 Resultado da baixa de insumos no local "${info.localNome}":`, resultadoInsumos);
+            
+            if (!resultadoInsumos.success) {
+              console.warn(`⚠️ Aviso na baixa de insumos no local "${info.localNome}":`, resultadoInsumos.message);
+            } else {
+              console.log(`✅ Baixa de insumos concluída no local "${info.localNome}":`, resultadoInsumos.message);
+            }
           }
         } catch (insumoError) {
           console.error('❌ Erro ao processar insumos:', insumoError);
