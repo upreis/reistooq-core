@@ -6354,6 +6354,7 @@ export type Database = {
           bairro: string
           cep: string
           cidade: string
+          cliente_documento: string
           cliente_nome: string
           codigo_barras: string
           codigo_rastreamento: string
@@ -6373,6 +6374,9 @@ export type Database = {
           id_unico: string
           integration_account_id: string
           last_updated: string
+          local_estoque: string
+          local_estoque_id: string
+          local_estoque_nome: string
           logistic_mode_principal: string
           meta: Json
           metodo_envio_combinado: string
@@ -6395,6 +6399,7 @@ export type Database = {
           qtd_kit: number
           quantidade: number
           quantidade_itens: number
+          quantidade_kit: number
           quantidade_total: number
           receita_flex_bonus: number
           rua: string
@@ -6414,6 +6419,7 @@ export type Database = {
           substatus_estado_atual: string
           tags: string[]
           taxa_marketplace: number
+          tipo_entrega: string
           tipo_logistico: string
           tipo_metodo_envio: string
           tipo_pagamento: string
