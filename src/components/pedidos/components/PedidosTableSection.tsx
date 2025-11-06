@@ -1027,22 +1027,15 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         );
                      
                       case 'local_estoque':
-                        // Verificar se tem mapeamento baseado nos dados de mappingData
-                        const pedidoId = order.id || order.numero || buildIdUnico(order);
-                        const pedidoMappingData = mappingData?.get(pedidoId);
-                        const skuPedido = order.sku_kit || order.sku || order.order_items?.[0]?.item?.seller_sku || order.itens?.[0]?.sku;
+                        // Buscar nome do local de estoque enriquecido pelo hook useLocalEstoqueEnriquecimento
+                        const localEstoque = order.unified?.local_estoque_nome || order.unified?.local_estoque;
                         
-                        // pedidoMappingData pode ser um objeto ou array - normalizar
-                        const mappingArray = Array.isArray(pedidoMappingData) ? pedidoMappingData : (pedidoMappingData ? [pedidoMappingData] : []);
-                        const mapeamento = mappingArray.find((m: MapeamentoVerificacao) => m.skuPedido === skuPedido);
-                        const temMapeamento = mapeamento?.temMapeamento && mapeamento?.skuEstoque;
-                        
-                        if (temMapeamento) {
+                        if (localEstoque) {
                           return (
                             <Badge variant="secondary">
                               <span className="inline-flex items-center gap-1">
                                 <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                {mapeamento.skuEstoque}
+                                {localEstoque}
                               </span>
                             </Badge>
                           );
