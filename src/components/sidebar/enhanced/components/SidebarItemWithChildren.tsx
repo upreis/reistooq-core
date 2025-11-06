@@ -223,7 +223,11 @@ export function SidebarItemWithChildren({
               <div className="p-2 space-y-1">
                 {item.children?.map((child) => {
                   const ChildIcon = getIconComponent(child.icon);
-                   const childActive = child.path ? location.pathname.startsWith(child.path) : false;
+                  // Verificação precisa: exact match ou startsWith para subpaths
+                  const childActive = child.path ? (
+                    location.pathname === child.path || 
+                    location.pathname.startsWith(child.path + '/')
+                  ) : false;
                   
                   return (
                     <NavLink
@@ -233,7 +237,7 @@ export function SidebarItemWithChildren({
                         'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                         childActive
-                          ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
+                          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))]/90 to-[hsl(var(--brand-yellow-glow))]/80 text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))] shadow-md font-semibold'
                           : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
                       )}
                     >
@@ -262,7 +266,11 @@ export function SidebarItemWithChildren({
         >
           {item.children?.map((child) => {
             const ChildIcon = getIconComponent(child.icon);
-            const childActive = child.path ? location.pathname.startsWith(child.path) : false;
+            // Verificação precisa: exact match ou startsWith para subpaths
+            const childActive = child.path ? (
+              location.pathname === child.path || 
+              location.pathname.startsWith(child.path + '/')
+            ) : false;
 
             return (
               <NavLink
@@ -271,11 +279,10 @@ export function SidebarItemWithChildren({
                 className={cn(
                   'group flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
-                  'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
                   'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
                   childActive
-                    ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
-                    : 'text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]'
+                    ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))]/90 to-[hsl(var(--brand-yellow-glow))]/80 text-[hsl(var(--brand-yellow-foreground))] shadow-md shadow-[hsl(var(--brand-yellow))]/20 font-semibold'
+                    : 'text-[hsl(var(--muted-foreground))] hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30 hover:text-[hsl(var(--foreground))]'
                 )}
               >
                 <ChildIcon className={cn(
@@ -284,7 +291,7 @@ export function SidebarItemWithChildren({
                 )} />
                 <span className={cn(
                   "truncate font-medium transition-colors duration-200",
-                  childActive ? "text-[hsl(var(--brand-yellow-foreground))] font-semibold" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
+                  childActive ? "text-[hsl(var(--brand-yellow-foreground))]" : ""
                 )}>
                   {child.label}
                 </span>
