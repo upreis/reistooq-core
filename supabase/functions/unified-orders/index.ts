@@ -1477,6 +1477,17 @@ Deno.serve(async (req) => {
     // Transformar para formato unificado
     const transformedOrders = transformMLOrders(filteredOrders, integration_account_id, accountData?.name, cid);
 
+    // 📍 DEBUG: Verificar primeiros 3 pedidos transformados
+    console.log(`📦 [unified-orders:${cid}] Primeiros 3 pedidos transformados:`, 
+      transformedOrders.slice(0, 3).map(p => ({
+        numero: p.numero,
+        empresa: p.empresa,
+        marketplace_origem: p.marketplace_origem,
+        tipo_logistico: p.tipo_logistico,
+        tipo_logistico_raw: p.tipo_logistico_raw
+      }))
+    );
+
     return ok({
       // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
       results: enrichedOrders,
