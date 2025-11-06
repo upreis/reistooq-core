@@ -6826,7 +6826,7 @@ export type Database = {
         }[]
       }
       hv_fix_orphans: { Args: { default_account_id?: string }; Returns: number }
-      hv_insert: { Args: { p: Json }; Returns: string }
+      hv_insert: { Args: { p_data: Json }; Returns: Json }
       hv_orphaned_stats: { Args: never; Returns: Json }
       log_audit_enhanced: {
         Args: {
