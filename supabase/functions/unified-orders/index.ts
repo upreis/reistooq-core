@@ -1465,6 +1465,15 @@ Deno.serve(async (req) => {
 
     console.log(`[unified-orders:${cid}] Após filtros locais: ${filteredOrders.length} pedidos`);
 
+    // 📍 DEBUG: Verificar accountData antes da transformação
+    console.log(`📦 [unified-orders:${cid}] AccountData ANTES da transformação:`, {
+      hasAccountData: !!accountData,
+      accountId: accountData?.id,
+      accountName: accountData?.name,
+      accountProvider: accountData?.provider,
+      integration_account_id
+    });
+
     // Transformar para formato unificado
     const transformedOrders = transformMLOrders(filteredOrders, integration_account_id, accountData?.name, cid);
 
