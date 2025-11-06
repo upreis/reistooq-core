@@ -57,7 +57,16 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
 
   // Enriquecer rows com local de estoque
   useEffect(() => {
-    if (loading || mapeamentos.length === 0 || !rows) {
+    // ✅ Se não há pedidos, retorna array vazio
+    if (!rows || rows.length === 0) {
+      console.log('📦 [LocalEstoque] Nenhum pedido para enriquecer');
+      setRowsEnriquecidos([]);
+      return;
+    }
+    
+    // ⏳ Se ainda está carregando mapeamentos, retorna pedidos sem enriquecimento
+    if (loading) {
+      console.log('📦 [LocalEstoque] Aguardando mapeamentos... Processando', rows.length, 'pedidos sem enriquecimento');
       setRowsEnriquecidos(rows);
       return;
     }
