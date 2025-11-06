@@ -1046,18 +1046,47 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           });
                         }
                         
+                        // 🎨 Sistema de cores para cada local de estoque
+                        const getLocalEstoqueColor = (nome: string | undefined): string => {
+                          if (!nome) return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+                          
+                          const nomeUpper = nome.toUpperCase();
+                          
+                          // Cores específicas por local
+                          if (nomeUpper.includes('FULL PLATINUM')) {
+                            return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+                          } else if (nomeUpper.includes('ESTOQUE PRINCIPAL') || nomeUpper.includes('PRINCIPAL')) {
+                            return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+                          } else if (nomeUpper.includes('FLEX')) {
+                            return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+                          } else if (nomeUpper.includes('CROSSDOCKING') || nomeUpper.includes('CROSS')) {
+                            return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+                          } else if (nomeUpper.includes('SECUNDÁRIO') || nomeUpper.includes('SECUNDARIO')) {
+                            return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200';
+                          } else if (nomeUpper.includes('RESERVA')) {
+                            return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+                          } else {
+                            // Hash simples para gerar cores consistentes para outros nomes
+                            const hash = nome.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                            const colors = [
+                              'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200',
+                              'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200',
+                              'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200',
+                              'bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-200',
+                            ];
+                            return colors[hash % colors.length];
+                          }
+                        };
+                        
                         if (localEstoque) {
                           return (
-                            <Badge variant="secondary">
-                              <span className="inline-flex items-center gap-1">
-                                <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                                {localEstoque}
-                              </span>
+                            <Badge variant="outline" className={getLocalEstoqueColor(localEstoque)}>
+                              {localEstoque}
                             </Badge>
                           );
                         }
                         return (
-                          <Badge variant="outline" className="text-amber-600">
+                          <Badge variant="outline" className="text-amber-600 border-amber-300">
                             <span className="inline-flex items-center gap-1">
                               <span className="h-2 w-2 rounded-full bg-amber-500"></span>
                               Sem Mapeamento
