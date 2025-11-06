@@ -55,6 +55,11 @@ export interface FotografiaPedido {
   total_itens: number;
   status_baixa: string;
   
+  // ===== LOCAL DE ESTOQUE (CRÍTICO PARA REVERSÃO) =====
+  local_estoque_id: string;
+  local_estoque_nome: string;
+  local_estoque: string;
+  
   // ===== ENVIO =====
   status_envio: string;
   logistic_mode_principal: string;
@@ -358,6 +363,11 @@ export function fotografarPedidoCompleto(
     
     status_baixa: '-', // Será definido no momento da baixa
     
+    // LOCAL DE ESTOQUE (CRÍTICO PARA REVERSÃO)
+    local_estoque_id: order.local_estoque_id || order.unified?.local_estoque_id || '',
+    local_estoque_nome: order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque || '-',
+    local_estoque: order.local_estoque || order.unified?.local_estoque || '-',
+    
     // ENVIO
     status_envio: (() => {
       const status = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status;
@@ -603,6 +613,11 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     
     // 🎯 NOTA: Para baixa de estoque, usa-se sku_kit e total_itens
     // (os campos já estão mapeados acima corretamente)
+    
+    // 🛡️ LOCAL DE ESTOQUE (CRÍTICO PARA REVERSÃO)
+    local_estoque_id: fotografia.local_estoque_id,
+    local_estoque_nome: fotografia.local_estoque_nome,
+    local_estoque: fotografia.local_estoque,
     
     // Pagamento
     metodo_pagamento: fotografia.metodo_pagamento,
