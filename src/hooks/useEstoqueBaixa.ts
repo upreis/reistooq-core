@@ -1,4 +1,4 @@
-// 🛡️ SISTEMA BLINDADO - HOOK DE BAIXA DE ESTOQUE PROTEGIDO COM SUPORTE A LOCAIS
+// 🛡️ SISTEMA BLINDADO - HOOK DE BAIXA DE ESTOQUE PROTEGIDO
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { salvarSnapshotBaixa } from '@/utils/snapshot';
 import { Pedido } from '@/types/pedido';
@@ -8,8 +8,6 @@ import { validarFluxoCompleto, type PedidoEnriquecido } from '@/core/integracao'
 import { MonitorIntegracao, medirTempoExecucao } from '@/core/integracao/MonitorIntegracao';
 import { buildIdUnico } from '@/utils/idUnico';
 import { processarBaixaInsumos } from '@/services/InsumosBaixaService';
-import { baixarEstoqueLocal, verificarEstoqueLocal } from '@/services/EstoquePorLocalService';
-
 interface ProcessarBaixaParams {
   pedidos: Pedido[];  // Voltar para Pedido[] pois já vem enriquecido do SimplePedidosPage
   contextoDaUI?: {
@@ -182,56 +180,40 @@ export function useProcessarBaixaEstoque() {
           throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
         }
 
-        // 🛡️ NOVA LÓGICA: Verificar estoque nos locais específicos de cada pedido
-        console.log('🔍 Verificando estoque nos locais específicos dos pedidos...');
+        // 🛡️ VALIDAÇÃO CRÍTICA: Verificar se todos os SKUs existem no estoque E TÊM QUANTIDADE ANTES de buscar composições
+        console.log('🔍 Verificando existência e quantidade dos SKUs no estoque...');
+        const skusParaValidar = baixas.map(b => b.sku);
         
-        const errosVerificacao: string[] = [];
+        const { data: produtosExistentes, error: validacaoError } = await supabase
+          .from('produtos')
+          .select('sku_interno, quantidade_atual')
+          .in('sku_interno', skusParaValidar);
         
-        for (const baixa of baixas) {
-          const pedido = pedidos.find(p => {
-            const mapping = contextoDaUI?.mappingData?.get(p.id);
-            const sku = (mapping?.skuKit || mapping?.skuEstoque || p.sku_kit || '').toString().trim().toUpperCase();
-            return sku === baixa.sku;
-          });
-
-          if (!pedido) {
-            errosVerificacao.push(`Pedido não encontrado para SKU ${baixa.sku}`);
-            continue;
-          }
-
-          // Extrair local_estoque_id do pedido enriquecido
-          const localEstoqueId = (pedido as any).local_estoque_id;
-          const localEstoqueNome = (pedido as any).local_estoque_nome || (pedido as any).local_estoque || 'Sem local definido';
-
-          if (!localEstoqueId) {
-            errosVerificacao.push(
-              `❌ Pedido ${pedido.numero || pedido.id} (SKU: ${baixa.sku}) não possui local de estoque definido. ` +
-              `Configure o mapeamento de local de estoque em Configurações.`
-            );
-            continue;
-          }
-
-          console.log(`🔍 Verificando SKU ${baixa.sku} no local "${localEstoqueNome}" (${localEstoqueId})`);
-
-          // Verificar se o SKU existe e tem estoque no local específico
-          const verificacao = await verificarEstoqueLocal(baixa.sku, localEstoqueId, baixa.quantidade);
-
-          if (!verificacao.sucesso) {
-            errosVerificacao.push(
-              `❌ ${verificacao.mensagem || `SKU ${baixa.sku} - problema no local "${localEstoqueNome}"`}`
-            );
-          } else {
-            console.log(`✅ SKU ${baixa.sku} disponível no local "${localEstoqueNome}": ${verificacao.quantidade_disponivel} unidades`);
-          }
+        if (validacaoError) {
+          console.error('❌ Erro ao validar SKUs no estoque:', validacaoError);
+          throw new Error('Erro ao validar produtos no estoque');
         }
-
-        if (errosVerificacao.length > 0) {
-          const erroMsg = `Problemas encontrados na verificação de estoque:\n\n${errosVerificacao.join('\n')}`;
+        
+        const produtosMap = new Map(produtosExistentes?.map(p => [p.sku_interno, p.quantidade_atual || 0]) || []);
+        const skusNaoEncontrados = skusParaValidar.filter(sku => !produtosMap.has(sku));
+        const skusSemEstoque = skusParaValidar.filter(sku => {
+          const qtd = produtosMap.get(sku);
+          return qtd !== undefined && qtd <= 0;
+        });
+        
+        if (skusNaoEncontrados.length > 0) {
+          const erroMsg = `❌ SKU(s) não cadastrado(s) no estoque: ${skusNaoEncontrados.join(', ')}. Por favor, cadastre os produtos antes de fazer a baixa.`;
           console.error(erroMsg);
           throw new Error(erroMsg);
         }
         
-        console.log('✅ Todos os SKUs estão disponíveis nos locais específicos dos pedidos');
+        if (skusSemEstoque.length > 0) {
+          const erroMsg = `❌ SKU(s) sem estoque disponível (quantidade = 0): ${skusSemEstoque.join(', ')}. Por favor, reponha o estoque antes de fazer a baixa.`;
+          console.error(erroMsg);
+          throw new Error(erroMsg);
+        }
+        
+        console.log('✅ Todos os SKUs estão cadastrados e possuem estoque disponível');
         
         // 🔍 ETAPA NOVA: Buscar composições e preparar baixa dos componentes
         console.log('🔍 Buscando composições dos produtos...');
@@ -302,83 +284,32 @@ export function useProcessarBaixaEstoque() {
         
         console.log('✅ Todos os SKUs possuem composição cadastrada');
 
-        // 🛡️ BAIXA DE ESTOQUE POR LOCAL COM MONITORAMENTO
-        console.log('🚀 INICIANDO BAIXA DE ESTOQUE POR LOCAL');
-        const resultadosBaixa: Array<{ sku: string; sucesso: boolean; local: string; erro?: string }> = [];
-        
+        // 🛡️ BAIXA DE ESTOQUE DOS COMPONENTES COM MONITORAMENTO
+        console.log('🚀 INICIANDO BAIXA DE ESTOQUE DOS COMPONENTES');
         const resultadoBaixa = await medirTempoExecucao(
-          'baixar_estoque_por_local',
+          'baixar_estoque_componentes',
           'useEstoqueBaixa',
           'supabase',
           async () => {
-            // Processar cada baixa no seu local específico
-            for (const baixa of baixas) {
-              const pedido = pedidos.find(p => {
-                const mapping = contextoDaUI?.mappingData?.get(p.id);
-                const sku = (mapping?.skuKit || mapping?.skuEstoque || p.sku_kit || '').toString().trim().toUpperCase();
-                return sku === baixa.sku;
-              });
+            console.log('🔍 DEBUG - Chamando baixar_estoque_direto com componentes:', baixasComponentes);
+            
+            const { data, error } = await supabase.rpc('baixar_estoque_direto', {
+              p_baixas: baixasComponentes
+            });
 
-              if (!pedido) {
-                resultadosBaixa.push({
-                  sku: baixa.sku,
-                  sucesso: false,
-                  local: 'Desconhecido',
-                  erro: 'Pedido não encontrado'
-                });
-                continue;
-              }
+            console.log('🔍 DEBUG - Resposta da função:', { data, error });
 
-              const localEstoqueId = (pedido as any).local_estoque_id;
-              const localEstoqueNome = (pedido as any).local_estoque_nome || (pedido as any).local_estoque || 'Desconhecido';
-
-              try {
-                console.log(`🔧 Baixando ${baixa.quantidade} unidades de ${baixa.sku} do local "${localEstoqueNome}"`);
-                
-                const resultado = await baixarEstoqueLocal(baixa.sku, localEstoqueId, baixa.quantidade);
-                
-                resultadosBaixa.push({
-                  sku: baixa.sku,
-                  sucesso: resultado.sucesso,
-                  local: localEstoqueNome
-                });
-                
-                console.log(`✅ Baixa realizada: ${baixa.sku} - ${resultado.mensagem}`);
-              } catch (error) {
-                const mensagemErro = error instanceof Error ? error.message : 'Erro desconhecido';
-                console.error(`❌ Erro ao baixar ${baixa.sku}:`, mensagemErro);
-                
-                resultadosBaixa.push({
-                  sku: baixa.sku,
-                  sucesso: false,
-                  local: localEstoqueNome,
-                  erro: mensagemErro
-                });
-              }
+            if (error) {
+              console.error('❌ Erro na função SQL:', error);
+              throw error;
             }
 
-            // Verificar se todas as baixas foram bem-sucedidas
-            const todasBemSucedidas = resultadosBaixa.every(r => r.sucesso);
-            const erros = resultadosBaixa.filter(r => !r.sucesso);
-
-            if (!todasBemSucedidas) {
-              return {
-                success: false,
-                erros: erros.map(e => ({
-                  erro: `${e.sku} no local "${e.local}": ${e.erro || 'Falha na baixa'}`
-                }))
-              };
-            }
-
-            return {
-              success: true,
-              baixas: resultadosBaixa
-            };
+            return data;
           }
         );
 
         const result = resultadoBaixa as any;
-        console.log('📊 RESULTADO DA BAIXA POR LOCAL:', result);
+        console.log('📊 RESULTADO DA BAIXA:', result);
         
         // ✅ VALIDAR RESULTADO DA BAIXA ANTES DE CONTINUAR
         if (!result.success) {
