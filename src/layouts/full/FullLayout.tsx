@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useSidebarUI } from "@/context/SidebarUIContext";
-import { EnhancedSidebar } from "@/components/sidebar/enhanced";
+import { AceternityEnhancedSidebar } from "@/components/sidebar/AceternityEnhancedSidebar";
 import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
 import Header from "./vertical/header/Header";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
@@ -72,13 +72,11 @@ const InnerLayout = () => {
         )}
         
         <div className={`w-full bg-background min-h-screen`}>
-          {/* Enhanced Sidebar - agora será renderizada como fixed */}
+          {/* Aceternity Sidebar */}
           {!isMobile && (
-            <EnhancedSidebar 
+            <AceternityEnhancedSidebar 
               navItems={ENHANCED_NAV_ITEMS}
               isMobile={false}
-              onMobileClose={() => {}}
-              isCollapsed={isSidebarCollapsed}
             />
           )}
 
