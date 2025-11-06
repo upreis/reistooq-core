@@ -25,6 +25,7 @@ export interface HistoricoItem {
   frete_pago_cliente?: number;
   receita_flex_bonus?: number;
   custo_envio_seller?: number;
+  custo_fixo_meli?: number;
   desconto_cupom?: number;
   taxa_marketplace?: number;
   valor_liquido_vendedor?: number;
@@ -39,15 +40,23 @@ export interface HistoricoItem {
   quantidade_kit?: number;
   total_itens?: number;
   status_baixa?: string;
+  status_resumos?: string;
+  
+  // === ML SELLER INFO ===
+  condicao?: string;
+  medalha?: string;
+  reputacao?: string;
+  marketplace?: string;
 
   // === SEÇÃO ENVIO ===
-  status: string; // Status do pagamento ('baixado')
+  status: string;
   status_envio?: string;
   logistic_mode_principal?: string;
   tipo_logistico?: string;
   tipo_metodo_envio?: string;
   tipo_entrega?: string;
   substatus_estado_atual?: string;
+  substatus_detail?: string;
   modo_envio_combinado?: string;
   metodo_envio_combinado?: string;
   endereco_rua?: string;
@@ -58,6 +67,10 @@ export interface HistoricoItem {
   endereco_uf?: string;
   codigo_rastreamento?: string;
   url_rastreamento?: string;
+  pack_id?: string;
+  pickup_id?: string;
+  numero_ecommerce?: string;
+  tags_pedido?: string;
   
   // === SEÇÃO LOCAL DE ESTOQUE ===
   local_estoque?: string;
@@ -67,6 +80,7 @@ export interface HistoricoItem {
   // === SISTEMA ===
   created_at: string;
   integration_account_id?: string;
+  data_criacao_ml?: string;
 }
 
 export interface HistoricoFilters {
@@ -112,19 +126,27 @@ export class HistoricoSimpleService {
         });
         
         return {
+          // BÁSICAS
           id: item.id,
           id_unico: item.id_unico || item.numero_pedido || '',
           numero_pedido: item.numero_pedido || '',
           cliente_nome: item.cliente_nome || item.nome_cliente || '',
           nome_completo: item.nome_completo || item.cliente_nome || '',
+          data_pedido: item.data_pedido || '',
+          ultima_atualizacao: item.ultima_atualizacao || item.last_updated || '',
+          empresa: item.empresa || '',
+          
+          // PRODUTOS
           sku_produto: item.sku_produto || '',
           sku_estoque: item.sku_estoque || '',
           sku_kit: item.sku_kit || '',
-          quantidade_total: Number(item.quantidade_total) || Number(item.quantidade) || 0,
-          qtd_kit: Number(item.qtd_kit) || 0,
-          total_itens: Number(item.total_itens) || Number(item.itens) || 0,
           titulo_produto: item.titulo_produto || item.descricao || '',
-          valor_total: Number(item.valor_total) || Number(item.total) || 0,
+          quantidade_total: Number(item.quantidade_total) || Number(item.quantidade) || 0,
+          total_itens: Number(item.total_itens) || Number(item.quantidade_itens) || 0,
+          quantidade_kit: Number(item.quantidade_kit) || Number(item.qtd_kit) || 0,
+          
+          // FINANCEIRAS
+          valor_total: Number(item.valor_total) || 0,
           valor_pago: Number(item.valor_pago) || 0,
           frete_pago_cliente: Number(item.frete_pago_cliente) || Number(item.valor_frete) || 0,
           receita_flex_bonus: Number(item.receita_flex_bonus) || 0,
@@ -133,46 +155,57 @@ export class HistoricoSimpleService {
           desconto_cupom: Number(item.desconto_cupom) || Number(item.valor_desconto) || 0,
           taxa_marketplace: Number(item.taxa_marketplace) || 0,
           valor_liquido_vendedor: Number(item.valor_liquido_vendedor) || 0,
-          metodo_pagamento: item.metodo_pagamento || '',
+          metodo_pagamento: item.metodo_pagamento || item.tipo_pagamento || '',
           status_pagamento: item.status_pagamento || '',
           tipo_pagamento: item.tipo_pagamento || '',
+          
+          // MAPEAMENTO
           cpf_cnpj: item.cpf_cnpj || item.cliente_documento || '',
           status_baixa: item.status_baixa || '',
+          status_resumos: item.status_resumos || '',
+          
+          // ML SELLER INFO
+          condicao: item.conditions || item.condicao || '',
+          medalha: item.power_seller_status || item.medalha || '',
+          reputacao: item.level_id || item.reputacao || '',
+          marketplace: item.marketplace || 'Mercado Livre',
+          
+          // STATUS & ENVIO
           status: item.status || 'baixado',
           status_envio: item.status_envio || '',
-          status_resumos: item.status_resumos || '',
-          condicao: item.conditions || '',
-          medalha: item.power_seller_status || '',
-          reputacao: item.level_id || '',
-          // Campos de envio/endereço - USAR NOMES COM PREFIXO PARA MATCH COM COLUMNS CONFIG
           logistic_mode_principal: item.logistic_mode_principal || '',
-          tipo_logistico: item.tipo_logistico || '',
+          tipo_logistico: item.tipo_logistico || item.shipping_mode || '',
           tipo_metodo_envio: item.tipo_metodo_envio || '',
           tipo_entrega: item.tipo_entrega || '',
           substatus_estado_atual: item.substatus_estado_atual || '',
           substatus_detail: item.substatus_detail || '',
           modo_envio_combinado: item.modo_envio_combinado || '',
           metodo_envio_combinado: item.metodo_envio_combinado || '',
+          
+          // IDS & TRACKING
           pack_id: item.pack_id || '',
           pickup_id: item.pickup_id || '',
           numero_ecommerce: item.numero_ecommerce || '',
-          numero_venda: item.numero_venda || '',
-          pedido_id: item.pedido_id || '',
+          codigo_rastreamento: item.codigo_rastreamento || '',
+          url_rastreamento: item.url_rastreamento || '',
+          tags_pedido: item.tags_pedido || item.tags || '',
+          
+          // ENDEREÇO
           endereco_rua: item.rua || item.endereco_rua || '',
           endereco_numero: item.numero || item.endereco_numero || '',
           endereco_bairro: item.bairro || item.endereco_bairro || '',
           endereco_cep: item.cep || item.endereco_cep || '',
           endereco_cidade: item.cidade || item.endereco_cidade || '',
           endereco_uf: item.uf || item.endereco_uf || '',
-          codigo_rastreamento: item.codigo_rastreamento || '',
-          url_rastreamento: item.url_rastreamento || '',
+          
+          // LOCAL DE ESTOQUE
           local_estoque: item.local_estoque || '',
           local_estoque_id: item.local_estoque_id || '',
           local_estoque_nome: item.local_estoque_nome || '',
-          empresa: item.empresa || '',
-          data_pedido: item.data_pedido || '',
-          ultima_atualizacao: item.ultima_atualizacao || item.updated_at || '',
+          
+          // SISTEMA
           created_at: item.created_at || '',
+          data_criacao_ml: item.date_created || '',
           integration_account_id: item.integration_account_id || ''
         };
       });
