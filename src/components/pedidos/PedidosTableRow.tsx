@@ -309,6 +309,20 @@ export const PedidosTableRow = memo<PedidosTableRowProps>(({
                   return <span>{formatMoney(get(row.unified, 'valor_liquido_vendedor') || valorLiquido || 0)}</span>;
                 }
               
+              case 'local_estoque':
+                const localEstoque = get(row.unified, 'local_estoque') || get(row.unified, 'local_estoque_nome');
+                return localEstoque ? (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {localEstoque}
+                  </Badge>
+                ) : <span className="text-xs text-muted-foreground">—</span>;
+              
+              case 'marketplace_origem':
+                const marketplace = get(row.unified, 'marketplace_origem') || get(row.unified, 'marketplace');
+                return marketplace ? (
+                  <span className="text-sm">{marketplace}</span>
+                ) : <span className="text-xs text-muted-foreground">—</span>;
+              
               default:
                 return show(get(row.unified, col.key) ?? get(row.raw, col.key));
             }
