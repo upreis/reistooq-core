@@ -299,7 +299,7 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Período + Colunas - Aplicação manual */}
+        {/* Período + Colunas + Limpar - Aplicação manual */}
         <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
@@ -323,7 +323,7 @@ export function PedidosFiltersUnified({
               placeholder="Selecionar período"
             />
 
-            {/* Botão de Colunas (ao lado do Período) */}
+            {/* Botão de Colunas */}
             {columnManager && (
               <ColumnManager 
                 manager={columnManager}
@@ -336,18 +336,19 @@ export function PedidosFiltersUnified({
                 }
               />
             )}
+
+            {/* Botão de Limpar */}
+            {activeFiltersCount > 0 && (
+              <Button variant="outline" size="sm" onClick={onClearFilters} className="h-9 px-2.5">
+                <X className="h-4 w-4 sm:mr-1.5" />
+                <span className="hidden sm:inline">Limpar</span>
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Botão de Limpar */}
-        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1 flex gap-1 justify-start items-end">
-          {activeFiltersCount > 0 && (
-            <Button variant="outline" size="sm" onClick={onClearFilters} className="h-9 px-3">
-              <X className="h-4 w-4 mr-1.5" />
-              <span className="hidden sm:inline">Limpar</span>
-            </Button>
-          )}
-        </div>
+        {/* Espaço vazio para manter layout grid */}
+        <div className="sm:col-span-2 lg:col-span-1 xl:col-span-1"></div>
       </div>
 
 
