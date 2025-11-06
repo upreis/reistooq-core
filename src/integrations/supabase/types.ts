@@ -1804,6 +1804,7 @@ export type Database = {
           local_estoque_nome: string | null
           logistic_mode_principal: string | null
           logistic_type: string | null
+          marketplace: string | null
           marketplace_origem: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
@@ -1849,6 +1850,7 @@ export type Database = {
           status_insumos: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
+          status_resumos: string | null
           substatus_detail: string | null
           substatus_estado_atual: string | null
           tags: string[] | null
@@ -1903,6 +1905,7 @@ export type Database = {
           local_estoque_nome?: string | null
           logistic_mode_principal?: string | null
           logistic_type?: string | null
+          marketplace?: string | null
           marketplace_origem?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
@@ -1948,6 +1951,7 @@ export type Database = {
           status_insumos?: string | null
           status_mapeamento?: string | null
           status_pagamento?: string | null
+          status_resumos?: string | null
           substatus_detail?: string | null
           substatus_estado_atual?: string | null
           tags?: string[] | null
@@ -2002,6 +2006,7 @@ export type Database = {
           local_estoque_nome?: string | null
           logistic_mode_principal?: string | null
           logistic_type?: string | null
+          marketplace?: string | null
           marketplace_origem?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
@@ -2047,6 +2052,7 @@ export type Database = {
           status_insumos?: string | null
           status_mapeamento?: string | null
           status_pagamento?: string | null
+          status_resumos?: string | null
           substatus_detail?: string | null
           substatus_estado_atual?: string | null
           tags?: string[] | null
@@ -6268,6 +6274,7 @@ export type Database = {
           local_estoque_nome: string | null
           logistic_mode_principal: string | null
           logistic_type: string | null
+          marketplace: string | null
           marketplace_origem: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
@@ -6313,6 +6320,7 @@ export type Database = {
           status_insumos: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
+          status_resumos: string | null
           substatus_detail: string | null
           substatus_estado_atual: string | null
           tags: string[] | null
@@ -6358,10 +6366,14 @@ export type Database = {
           cliente_nome: string
           codigo_barras: string
           codigo_rastreamento: string
+          condicao: string
+          conditions: string
           cpf_cnpj: string
           created_at: string
           created_by: string
           custo_envio_seller: number
+          custo_fixo_meli: number
+          data_criacao_ml: string
           data_pedido: string
           data_prevista: string
           date_created: string
@@ -6369,15 +6381,24 @@ export type Database = {
           desconto_cupom: number
           descricao: string
           empresa: string
+          endereco_bairro: string
+          endereco_cep: string
+          endereco_cidade: string
+          endereco_numero: string
+          endereco_rua: string
+          endereco_uf: string
           frete_pago_cliente: number
           id: string
           id_unico: string
           integration_account_id: string
           last_updated: string
+          level_id: string
           local_estoque: string
           local_estoque_id: string
           local_estoque_nome: string
           logistic_mode_principal: string
+          marketplace: string
+          medalha: string
           meta: Json
           metodo_envio_combinado: string
           metodo_pagamento: string
@@ -6396,12 +6417,14 @@ export type Database = {
           pack_status_detail: string
           pedido_id: string
           pickup_id: string
+          power_seller_status: string
           qtd_kit: number
           quantidade: number
           quantidade_itens: number
           quantidade_kit: number
           quantidade_total: number
           receita_flex_bonus: number
+          reputacao: string
           rua: string
           shipping_method: string
           shipping_mode: string
@@ -6415,9 +6438,11 @@ export type Database = {
           status_envio: string
           status_mapeamento: string
           status_pagamento: string
+          status_resumos: string
           substatus_detail: string
           substatus_estado_atual: string
           tags: string[]
+          tags_pedido: string
           taxa_marketplace: number
           tipo_entrega: string
           tipo_logistico: string
@@ -6477,6 +6502,7 @@ export type Database = {
           local_estoque_nome: string | null
           logistic_mode_principal: string | null
           logistic_type: string | null
+          marketplace: string | null
           marketplace_origem: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
@@ -6522,6 +6548,7 @@ export type Database = {
           status_insumos: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
+          status_resumos: string | null
           substatus_detail: string | null
           substatus_estado_atual: string | null
           tags: string[] | null
