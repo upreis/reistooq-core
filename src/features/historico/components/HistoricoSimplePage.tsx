@@ -1,5 +1,5 @@
-// Página completa de histórico - com seletor de colunas
-import '../utils/clearHistoricoCache'; // Limpar cache ao carregar
+// Página completa de histórico - otimizada e simplificada
+import '../utils/clearHistoricoCache';
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,11 +8,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { History, RefreshCw, ChevronLeft, ChevronRight, Download, Upload, CheckSquare, Square } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Componentes simplificados
+// Componentes
 import { HistoricoSimpleTable } from './HistoricoSimpleTable';
 import { HistoricoSimpleFilters } from './HistoricoSimpleFilters';
 import { HistoricoSimpleStats } from './HistoricoSimpleStats';
-import { HistoricoColumnSelector, defaultColumns, type ColumnConfig } from './HistoricoColumnSelector';
+import { HISTORICO_COLUMN_DEFINITIONS } from '../config/columns.config';
 import { HistoricoExportModal } from './HistoricoExportModal';
 import { HistoricoImportModal } from './HistoricoImportModal';
 import { HistoricoBulkActions } from './HistoricoBulkActions';
@@ -22,64 +22,25 @@ import { useHistoricoRealtime } from '../hooks/useHistoricoRealtime';
 import { useHistoricoSelection } from '../hooks/useHistoricoSelection';
 import { HistoricoDeleteService } from '../services/HistoricoDeleteService';
 import { HistoricoItem } from '../services/HistoricoSimpleService';
-import { criarSnapshot } from '@/services/HistoricoSnapshotService';
-import { maskCpfCnpj } from '@/lib/format';
+
+// Configuração de colunas - TODAS VISÍVEIS
+const allColumns = HISTORICO_COLUMN_DEFINITIONS.map(def => ({
+  key: def.key,
+  label: def.label,
+  category: def.category,
+  visible: true, // SEMPRE VISÍVEL
+  width: def.width
+}));
 
 export function HistoricoSimplePage() {
   const { toast } = useToast();
   const [selectedItem, setSelectedItem] = useState<HistoricoItem | null>(null);
-  
-  // Persistência de colunas no localStorage com atualização forçada
-  const [columns, setColumns] = useState<ColumnConfig[]>(() => {
-    try {
-      console.log('🔧 [HISTORICO COLUMNS] Inicializando configuração...');
-      console.log('📊 Total de colunas disponíveis:', defaultColumns.length);
-      
-      const savedColumns = localStorage.getItem('historico-columns-config');
-      if (savedColumns) {
-        const parsed = JSON.parse(savedColumns);
-        console.log('💾 Configuração encontrada no localStorage:', parsed.length, 'colunas');
-        
-        // Verificar se tem exatamente as 46 colunas corretas
-        const hasCorrectColumns = parsed.length === 46 && 
-          defaultColumns.every(dc => parsed.some((pc: any) => pc.key === dc.key));
-        
-        if (hasCorrectColumns && Array.isArray(parsed)) {
-          console.log('✅ Configuração válida carregada');
-          // Mesclar colunas salvas com novas colunas padrão
-          const mergedColumns = defaultColumns.map(defaultCol => {
-            const savedCol = parsed.find((col: ColumnConfig) => col.key === defaultCol.key);
-            return savedCol || defaultCol;
-          });
-          return mergedColumns;
-        } else {
-          console.warn('🔄 Configuração incompleta detectada, usando padrão');
-          console.log('Diferença:', {
-            saved: parsed.length,
-            expected: defaultColumns.length,
-            missing: defaultColumns.filter(dc => !parsed.some((pc: any) => pc.key === dc.key)).map(c => c.key)
-          });
-        }
-      }
-      
-      // Limpar cache antigo e usar configuração padrão
-      localStorage.removeItem('historico-columns-config');
-      localStorage.setItem('historico-columns-config', JSON.stringify(defaultColumns));
-      console.log('✅ Usando configuração padrão:', defaultColumns.length, 'colunas');
-      return defaultColumns;
-    } catch (error) {
-      console.error('❌ Erro ao carregar colunas:', error);
-      localStorage.removeItem('historico-columns-config');
-      return defaultColumns;
-    }
-  });
-  
   const [exportModalOpen, setExportModalOpen] = useState(false);
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<HistoricoItem | null>(null);
   const [itemsToDelete, setItemsToDelete] = useState<HistoricoItem[]>([]);
 
-  // Auto refresh com real-time
+  // Real-time updates
   useHistoricoRealtime({ enabled: true });
   
   // Hook de exportação
@@ -98,47 +59,27 @@ export function HistoricoSimplePage() {
     selectedCount
   } = useHistoricoSelection();
 
-  // Hook principal simplificado - direto do HistoricoService
+  // Dados e paginação
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const { data: response, isLoading, refetch } = useHistoricoVendas(page, pageSize);
+  
   const data = response?.data || [];
   const total = response?.total || 0;
-  const isFetching = isLoading;
+  const hasMore = data.length === pageSize;
   
-  console.log('[HistoricoSimplePage] Dados carregados:', { data: data.length, total, isLoading });
+  // Estados computados
+  const stats = { totalVendas: total, valorTotal: 0, ticketMedio: 0 };
+  const filters = {};
+  const hasFilters = false;
   
+  // Handlers simplificados
+  const updateFilters = () => {};
+  const clearFilters = () => {};
   const goToPage = (newPage: number) => setPage(newPage);
   const changePageSize = (size: number) => {
     setPageSize(size);
     setPage(1);
-  };
-  
-  // Valores padrão para compatibilidade
-  const hasMore = data.length === pageSize;
-  const stats = { totalVendas: total, valorTotal: 0, ticketMedio: 0 };
-  const filters = {};
-  const hasFilters = false;
-  const updateFilters = () => {};
-  const clearFilters = () => {};
-
-  // Salvar configuração de colunas no localStorage
-  const handleColumnsChange = (newColumns: ColumnConfig[]) => {
-    setColumns(newColumns);
-    try {
-      localStorage.setItem('historico-columns-config', JSON.stringify(newColumns));
-      toast({
-        title: "Configuração salva",
-        description: "Configuração de colunas salva com sucesso!"
-      });
-    } catch (error) {
-      console.error('Erro ao salvar configuração de colunas:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar a configuração de colunas.",
-        variant: "destructive"
-      });
-    }
   };
 
   const handleRowClick = (item: HistoricoItem) => {
@@ -215,80 +156,11 @@ export function HistoricoSimplePage() {
     setItemsToDelete([]);
   };
 
-  // Função de teste DEV-ONLY
-  const handleDevTestSnapshot = async () => {
-    try {
-      // Criar um pedido mock mais completo para testar o normalizador
-      const pedidoMock = {
-        id: `TEST-E2E-${Date.now()}`,
-        numero: `PEDIDO-${Date.now()}`,
-        numero_ecommerce: 'ML123456789',
-        empresa: 'MercadoLivre',
-        origem: 'marketplace',
-        situacao: 'Pago',
-        status: 'paid',
-        nome_cliente: 'Cliente QA Teste',
-        cliente: 'Cliente QA Teste',
-        valor_total: 89.50,
-        valor_pago: 89.50,
-        valor_frete: 15.90,
-        valor_desconto: 5.00,
-        cidade: 'São Paulo',
-        uf: 'SP',
-        codigo_rastreamento: 'BR123456789QA',
-        data_prevista: '2025-09-01',
-        itens: [
-          { sku: 'PROD-001', nome: 'Produto Teste 1', quantidade: 2, preco: 25.00 },
-          { sku: 'PROD-002', nome: 'Produto Teste 2', quantidade: 1, preco: 39.50 }
-        ],
-        skus: ['PROD-001', 'PROD-002'],
-        shipping: {
-          cost: 15.90,
-          status: 'shipped',
-          tracking_number: 'BR123456789QA',
-          logistic: {
-            type: 'self_service',
-            mode: 'me2'
-          },
-          shipping_method: {
-            name: 'Mercado Envios'
-          }
-        },
-        payments: [
-          { 
-            payment_method_id: 'credit_card',
-            status: 'approved',
-            payment_type_id: 'credit_card'
-          }
-        ]
-      };
-      
-      const resultado = await criarSnapshot(pedidoMock);
-      console.log('[TESTE-COMPLETO] ID criado:', resultado.id);
-      
-      // Aguardar um momento e recarregar dados
-      setTimeout(() => {
-        refetch(); // Invalidar cache
-      }, 500);
-      
-      toast({
-        title: "✅ Snapshot de teste criado",
-        description: `Snapshot ${pedidoMock.numero} criado com ID: ${resultado.id}. Verifique os logs no console!`,
-        variant: "default"
-      });
-    } catch (error) {
-      console.error('Erro ao criar snapshot de teste:', error);
-      toast({
-        title: "❌ Erro no teste",
-        description: String(error),
-        variant: "destructive"
-      });
-    }
-  };
 
+  // Paginação computada
   const totalPages = Math.ceil(total / pageSize);
   const canGoPrev = page > 1;
-  const canGoNext = hasMore;
+  const canGoNext = page < totalPages;
 
   return (
     <main className="container py-6 space-y-6">
@@ -304,60 +176,54 @@ export function HistoricoSimplePage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
               onClick={() => setImportModalOpen(true)}
-              disabled={isFetching}
+              disabled={isLoading}
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="h-4 w-4 mr-2" />
               Importar
             </Button>
 
-            
             <Button
               variant="outline"
               size="sm"
               onClick={() => setExportModalOpen(true)}
-              disabled={isFetching || isExporting || total === 0}
+              disabled={isLoading || isExporting || total === 0}
             >
-              <Download className="h-4 w-4" />
+              <Download className="h-4 w-4 mr-2" />
               {isExporting ? 'Exportando...' : 'Exportar'}
             </Button>
-            
-            <HistoricoColumnSelector
-              columns={columns}
-              onColumnsChange={handleColumnsChange}
-            />
             
             <Button
               variant={isSelectMode ? "default" : "outline"}
               size="sm"
               onClick={toggleSelectMode}
             >
-              {isSelectMode ? <CheckSquare className="h-4 w-4" /> : <Square className="h-4 w-4" />}
-              {isSelectMode ? 'Sair da Seleção' : 'Selecionar'}
+              {isSelectMode ? <CheckSquare className="h-4 w-4 mr-2" /> : <Square className="h-4 w-4 mr-2" />}
+              {isSelectMode ? 'Sair' : 'Selecionar'}
             </Button>
 
             <Button
               variant="outline"
               size="sm"
               onClick={() => refetch()}
-              disabled={isFetching}
+              disabled={isLoading}
             >
-              <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
-            
-            <div className="text-right text-sm">
-              <div className="font-medium">
-                {total.toLocaleString()} registros
-              </div>
-              <div className="text-muted-foreground flex items-center gap-2">
-                {hasFilters && <Badge variant="secondary">Filtrado</Badge>}
-              </div>
+          </div>
+          
+          <div className="text-right text-sm">
+            <div className="font-semibold text-lg">
+              {total.toLocaleString()} registros
             </div>
+            {hasFilters && (
+              <Badge variant="secondary" className="mt-1">Filtrado</Badge>
+            )}
           </div>
         </div>
       </section>
@@ -382,7 +248,7 @@ export function HistoricoSimplePage() {
           onDeleteSelected={handleDeleteSelected}
           onClearSelection={clearSelection}
           onSelectAll={() => selectAll(data)}
-          isProcessing={isFetching}
+          isProcessing={isLoading}
         />
       )}
 
@@ -409,7 +275,7 @@ export function HistoricoSimplePage() {
         <CardContent className="p-0">
           <HistoricoSimpleTable
             data={data}
-            columns={columns}
+            columns={allColumns}
             isLoading={isLoading}
             onRowClick={handleRowClick}
             onDeleteItem={handleDeleteItem}
@@ -434,24 +300,24 @@ export function HistoricoSimplePage() {
               variant="outline"
               size="sm"
               onClick={() => goToPage(page - 1)}
-              disabled={!canGoPrev || isFetching}
+              disabled={!canGoPrev || isLoading}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 mr-1" />
               Anterior
             </Button>
             
-            <span className="px-3 py-1 text-sm">
-              {page}
-            </span>
+            <div className="flex items-center gap-1 px-3 py-1 border rounded text-sm font-medium">
+              {page} / {totalPages}
+            </div>
             
             <Button
               variant="outline"
               size="sm"
               onClick={() => goToPage(page + 1)}
-              disabled={!canGoNext || isFetching}
+              disabled={!canGoNext || isLoading}
             >
               Próximo
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         </div>
@@ -505,7 +371,7 @@ export function HistoricoSimplePage() {
               {selectedItem.cpf_cnpj && (
                 <div>
                   <strong>CPF/CNPJ:</strong>{' '}
-                  <span className="font-mono">{maskCpfCnpj(selectedItem.cpf_cnpj)}</span>
+                  <span className="font-mono">{selectedItem.cpf_cnpj}</span>
                 </div>
               )}
               {selectedItem.status_baixa && (
@@ -530,7 +396,7 @@ export function HistoricoSimplePage() {
         onOpenChange={setExportModalOpen}
         totalRecords={total}
         onExport={handleExport}
-        isLoading={isFetching}
+        isLoading={isLoading}
       />
 
       <HistoricoImportModal
