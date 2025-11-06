@@ -1026,26 +1026,32 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                           </Badge>
                         );
                      
-                     case 'local_estoque':
-                       const localEstoqueId = order.unified?.local_estoque_id || order.local_estoque_id;
-                       if (localEstoqueId) {
-                         return (
-                           <Badge variant="secondary">
-                             <span className="inline-flex items-center gap-1">
-                               <span className="h-2 w-2 rounded-full bg-green-500"></span>
-                               Local Configurado
-                             </span>
-                           </Badge>
-                         );
-                       }
-                       return (
-                         <Badge variant="outline" className="text-amber-600">
-                           <span className="inline-flex items-center gap-1">
-                             <span className="h-2 w-2 rounded-full bg-amber-500"></span>
-                             Sem Mapeamento
-                           </span>
-                         </Badge>
-                       );
+                      case 'local_estoque':
+                        // Verificar se tem mapeamento baseado nos dados de mappingData
+                        const pedidoId = order.id || order.numero || buildIdUnico(order);
+                        const pedidoMapping = mappingData?.get(pedidoId) || [];
+                        const skuPedido = order.sku_kit || order.sku || order.order_items?.[0]?.item?.seller_sku || order.itens?.[0]?.sku;
+                        const mapeamento = pedidoMapping?.find((m: MapeamentoVerificacao) => m.skuPedido === skuPedido);
+                        const temMapeamento = mapeamento?.temMapeamento && mapeamento?.skuEstoque;
+                        
+                        if (temMapeamento) {
+                          return (
+                            <Badge variant="secondary">
+                              <span className="inline-flex items-center gap-1">
+                                <span className="h-2 w-2 rounded-full bg-green-500"></span>
+                                {mapeamento.skuEstoque}
+                              </span>
+                            </Badge>
+                          );
+                        }
+                        return (
+                          <Badge variant="outline" className="text-amber-600">
+                            <span className="inline-flex items-center gap-1">
+                              <span className="h-2 w-2 rounded-full bg-amber-500"></span>
+                              Sem Mapeamento
+                            </span>
+                          </Badge>
+                        );
                      
                      case 'date_created':
                        return <span>{formatDate(order.date_created || order.unified?.date_created || order.created_at) || '-'}</span>;
