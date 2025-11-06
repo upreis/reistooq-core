@@ -78,7 +78,6 @@ import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
 import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
 import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
-import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 
 import { FEATURES } from '@/config/features';
 
@@ -1063,9 +1062,6 @@ useEffect(() => {
         onOpenConfigLocais={() => setConfigLocaisOpen(true)}
       >
       </PedidosHeaderSection>
-
-      {/* Tab Navigation */}
-      <MLOrdersNav />
 
       {/* ⚠️ Feedback sobre status das contas ML */}
       {state.loading && (
