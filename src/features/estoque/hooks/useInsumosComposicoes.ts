@@ -20,14 +20,20 @@ export function useInsumosComposicoes(localId?: string) {
     queryFn: async () => {
       if (!localId) return [];
 
+      console.log('🔍 [useInsumosComposicoes] Carregando insumos para local:', localId);
+      
       const { data, error } = await supabase
         .from('composicoes_insumos')
         .select('*')
-        .eq('ativo', true)
         .eq('local_id', localId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar insumos:', error);
+        throw error;
+      }
+      
+      console.log('✅ [useInsumosComposicoes] Insumos carregados:', data?.length);
       return data as ComposicaoInsumo[];
     },
     enabled: !!localId
@@ -39,14 +45,20 @@ export function useInsumosComposicoes(localId?: string) {
     queryFn: async () => {
       if (!localId) return [];
 
+      console.log('🔍 [Enriquecidos] Carregando para local:', localId);
+
       const { data: composicoes, error } = await supabase
         .from('composicoes_insumos')
         .select('*')
-        .eq('ativo', true)
         .eq('local_id', localId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar composições:', error);
+        throw error;
+      }
+
+      console.log('📋 [Enriquecidos] Composições encontradas:', composicoes?.length);
 
       // Buscar nomes dos produtos e estoque dos insumos
       const skusProdutos = [...new Set(composicoes?.map(c => c.sku_produto) || [])];
@@ -77,6 +89,7 @@ export function useInsumosComposicoes(localId?: string) {
         estoque_disponivel: insumosMap.get(comp.sku_insumo)?.estoque || 0
       })) || [];
 
+      console.log('✅ [Enriquecidos] Dados enriquecidos:', enriquecidos.length);
       return enriquecidos;
     },
     enabled: !!localId
