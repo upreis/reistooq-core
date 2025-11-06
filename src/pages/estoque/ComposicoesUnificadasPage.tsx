@@ -6,11 +6,17 @@ import InsumosPage from "./InsumosPage";
 import { Layers, PackageCheck } from "lucide-react";
 import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
 import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
+import { useToast } from "@/hooks/use-toast";
+import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
+import { backfillComposicoesEstoque } from "@/utils/backfillComposicoesEstoque";
 
 export default function ComposicoesUnificadasPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("produtos");
+  const [reloadKey, setReloadKey] = useState(0);
+  const { toast } = useToast();
+  const { localAtivo } = useLocalEstoqueAtivo();
 
   // Sync tab with route
   useEffect(() => {
@@ -20,6 +26,36 @@ export default function ComposicoesUnificadasPage() {
       setActiveTab('produtos');
     }
   }, [location.pathname]);
+
+  // Reload data when local changes
+  useEffect(() => {
+    setReloadKey(prev => prev + 1);
+  }, [localAtivo?.id]);
+
+  // Backfill de composições em locais existentes (executa apenas 1x)
+  useEffect(() => {
+    const executarBackfill = async () => {
+      const jaExecutou = localStorage.getItem('backfill-composicoes-executado');
+      
+      if (!jaExecutou) {
+        console.log('🔄 Executando backfill de composições...');
+        const resultado = await backfillComposicoesEstoque();
+        
+        if (resultado.success && resultado.criados > 0) {
+          toast({
+            title: "Estoque Atualizado",
+            description: `${resultado.criados} registros de composições foram adicionados aos locais existentes.`,
+          });
+          localStorage.setItem('backfill-composicoes-executado', 'true');
+          setReloadKey(prev => prev + 1);
+        } else if (resultado.success) {
+          localStorage.setItem('backfill-composicoes-executado', 'true');
+        }
+      }
+    };
+
+    executarBackfill();
+  }, [toast]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -31,14 +67,31 @@ export default function ComposicoesUnificadasPage() {
   };
 
   const handleLocalChange = () => {
+    toast({
+      title: "Local criado com sucesso!",
+      description: "Recarregando dados...",
+    });
+    
+    // Recarregar locais e dados
     window.dispatchEvent(new Event('reload-locais-estoque'));
+    
+    setTimeout(() => {
+      setReloadKey(prev => prev + 1);
+    }, 500);
   };
 
   return (
     <div className="space-y-6">
       {/* Seletor de Local de Estoque */}
       <div className="flex items-center justify-between gap-4 pb-4 border-b">
-        <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+        <div className="flex items-center gap-3">
+          <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+          {localAtivo && (
+            <span className="text-sm text-muted-foreground">
+              📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
+            </span>
+          )}
+        </div>
         <GerenciarLocaisModal onSuccess={handleLocalChange} />
       </div>
 
@@ -56,11 +109,11 @@ export default function ComposicoesUnificadasPage() {
         </TabsList>
 
         <TabsContent value="produtos" className="mt-6">
-          <ComposicoesEstoque />
+          <ComposicoesEstoque key={`produtos-${reloadKey}`} />
         </TabsContent>
 
         <TabsContent value="insumos" className="mt-6">
-          <InsumosPage hideHeader />
+          <InsumosPage hideHeader key={`insumos-${reloadKey}`} />
         </TabsContent>
       </Tabs>
     </div>
