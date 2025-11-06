@@ -149,6 +149,7 @@ const SidebarContent = memo(({
     if (path.startsWith('/pedidos')) return 'pedidos:marketplace';
     if (path.startsWith('/oms/pedidos')) return 'oms:pedidos';
     if (path.startsWith('/oms/clientes')) return 'oms:clientes';
+    if (path.startsWith('/oms/vendedores')) return 'oms:vendedores';
     if (path.startsWith('/oms/configuracoes')) return 'oms:configuracoes';
     
     // Compras permissions

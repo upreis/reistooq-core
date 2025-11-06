@@ -61,6 +61,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Users'
           },
           {
+            id: 'oms-vendedores',
+            label: 'Vendedores',
+            path: '/oms/vendedores',
+            icon: 'UserCheck'
+          },
+          {
             id: 'oms-configuracoes',
             label: 'Configurações OMS',
             path: '/oms/configuracoes',
