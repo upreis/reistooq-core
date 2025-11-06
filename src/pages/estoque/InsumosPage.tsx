@@ -58,8 +58,12 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
   };
 
   const handleFormSubmit = async (data: any) => {
+    if (!localId) {
+      toast.error('Nenhum local de estoque selecionado');
+      return;
+    }
     // O InsumoForm sempre cria novos registros (ele deleta os antigos se estiver editando)
-    await createInsumo(data);
+    await createInsumo({ ...data, local_id: localId });
   };
 
   const handleConfirmDelete = async () => {
