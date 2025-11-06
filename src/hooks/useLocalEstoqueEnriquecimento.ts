@@ -139,8 +139,11 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
         }
         return {
           ...row,
+          local_estoque_id: mapeamento.local_estoque_id,
+          local_estoque: mapeamento.locais_estoque.nome,
+          local_estoque_nome: mapeamento.locais_estoque.nome,
           unified: {
-            ...row.unified,
+            ...(row.unified || {}),
             local_estoque_id: mapeamento.local_estoque_id,
             local_estoque: mapeamento.locais_estoque.nome,
             local_estoque_nome: mapeamento.locais_estoque.nome
@@ -157,7 +160,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
     });
 
     console.log('📦 [LocalEstoque] Enriquecimento concluído');
-    setRowsEnriquecidos(enriquecidos);
+    setRowsEnriquecidos(enriquecidos as any);
   }, [rows, mapeamentos, loading]);
 
   return {
