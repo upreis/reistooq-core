@@ -1470,12 +1470,19 @@ Deno.serve(async (req) => {
       hasAccountData: !!accountData,
       accountId: accountData?.id,
       accountName: accountData?.name,
+      accountLabel: accountData?.account_label,
+      accountNickname: accountData?.account_nickname,
       accountProvider: accountData?.provider,
+      allAccountFields: Object.keys(accountData || {}),
       integration_account_id
     });
 
+    // 🔧 FIX: Usar account_label ou account_nickname como empresa
+    const empresaNome = accountData?.account_label || accountData?.account_nickname || accountData?.name || 'Mercado Livre';
+    console.log(`📦 [unified-orders:${cid}] Empresa definida como:`, empresaNome);
+
     // Transformar para formato unificado
-    const transformedOrders = transformMLOrders(filteredOrders, integration_account_id, accountData?.name, cid);
+    const transformedOrders = transformMLOrders(filteredOrders, integration_account_id, empresaNome, cid);
 
     // 📍 DEBUG: Verificar primeiros 3 pedidos transformados
     console.log(`📦 [unified-orders:${cid}] Primeiros 3 pedidos transformados:`, 
@@ -1493,11 +1500,16 @@ Deno.serve(async (req) => {
       _debug_account: {
         hasAccountData: !!accountData,
         accountName: accountData?.name,
+        accountLabel: accountData?.account_label,
+        accountNickname: accountData?.account_nickname,
+        empresaUsada: empresaNome,
+        accountFields: Object.keys(accountData || {}),
         primeiros3: transformedOrders.slice(0, 3).map(p => ({
           numero: p.numero,
           empresa: p.empresa,
           marketplace_origem: p.marketplace_origem,
-          tipo_logistico: p.tipo_logistico
+          tipo_logistico: p.tipo_logistico,
+          tipo_logistico_raw: p.tipo_logistico_raw
         }))
       },
       // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
