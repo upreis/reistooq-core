@@ -746,7 +746,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       valor_desconto: order.coupon?.amount || 0,
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
-      empresa: accountName || 'Mercado Livre',
+      empresa: accountName || seller.nickname || seller.id?.toString() || 'Mercado Livre',
       marketplace: 'mercadolivre',
       cidade: address.city?.name || null,
       uf: address.state?.id || null,
@@ -796,6 +796,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       // 📍 LOCAL DE ESTOQUE: Dados para mapeamento automático
       marketplace_origem,
       tipo_logistico_raw: logisticTypeRaw,
+      tipo_logistico: flexLogisticType || logisticTypeRaw || null,
       
       // ===== DADOS DE DEVOLUÇÕES (CLAIMS API + ORDERS API) =====
       // Priorizar dados detalhados da Claims API se disponíveis
