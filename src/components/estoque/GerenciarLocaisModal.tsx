@@ -81,7 +81,7 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (localError) throw localError;
 
-      // Buscar todos os produtos ativos da organização (produtos)
+      // Buscar todos os produtos ativos da organização (apenas produtos, não composições)
       const { data: produtosAtivos, error: produtosError } = await supabase
         .from('produtos')
         .select('id')
@@ -90,37 +90,15 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (produtosError) throw produtosError;
 
-      // Buscar todos os produtos composições ativos
-      const { data: composicoesAtivas, error: composicoesError } = await supabase
-        .from('produtos_composicoes')
-        .select('id')
-        .eq('organization_id', profile.organizacao_id)
-        .eq('ativo', true);
-
-      if (composicoesError) throw composicoesError;
-
-      // Criar registros de estoque_por_local com quantidade 0 para cada produto e composição
-      const estoqueInicial = [];
-
+      // Criar registros de estoque_por_local com quantidade 0 para cada produto
       if (produtosAtivos && produtosAtivos.length > 0) {
-        estoqueInicial.push(...produtosAtivos.map(produto => ({
+        const estoqueInicial = produtosAtivos.map(produto => ({
           produto_id: produto.id,
           local_id: novoLocal.id,
           quantidade: 0,
           organization_id: profile.organizacao_id
-        })));
-      }
+        }));
 
-      if (composicoesAtivas && composicoesAtivas.length > 0) {
-        estoqueInicial.push(...composicoesAtivas.map(composicao => ({
-          produto_id: composicao.id,
-          local_id: novoLocal.id,
-          quantidade: 0,
-          organization_id: profile.organizacao_id
-        })));
-      }
-
-      if (estoqueInicial.length > 0) {
         const { error: estoqueError } = await supabase
           .from('estoque_por_local')
           .insert(estoqueInicial);
@@ -185,11 +163,12 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
         }
       }
 
+      const totalItens = produtosAtivos?.length || 0;
       const totalComposicoes = componentesPrincipal.length + insumosPrincipal.length;
       
       toast({
         title: 'Local criado com sucesso!',
-        description: `${nome} foi criado com ${estoqueInicial.length} itens de estoque e ${totalComposicoes} composições clonadas.`
+        description: `${nome} foi criado com ${totalItens} produtos de estoque e ${totalComposicoes} composições clonadas.`
       });
 
       // Disparar evento para recarregar lista de locais
