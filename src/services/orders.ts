@@ -138,6 +138,20 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   const unifiedRaw: Unified[] = Array.isArray(data?.unified) ? data.unified : [];
   const pedidos: Unified[] = Array.isArray(data?.pedidos) ? data.pedidos : [];
 
+  // 📍 DEBUG: Verificar primeiros 3 pedidos recebidos
+  console.log('📦 [Orders Service] Dados recebidos do edge function:', {
+    hasResults: resultsRaw.length > 0,
+    hasUnified: unifiedRaw.length > 0,
+    hasPedidos: pedidos.length > 0,
+    primeiros3Pedidos: pedidos.slice(0, 3).map(p => ({
+      numero: p.numero,
+      empresa: p.empresa,
+      marketplace_origem: p.marketplace_origem,
+      tipo_logistico: p.tipo_logistico,
+      tipo_logistico_raw: p.tipo_logistico_raw
+    }))
+  });
+
   const results: RawML[] = resultsRaw.length ? resultsRaw : pedidos;
   const unified: Unified[] = unifiedRaw.length ? unifiedRaw : pedidos;
 
