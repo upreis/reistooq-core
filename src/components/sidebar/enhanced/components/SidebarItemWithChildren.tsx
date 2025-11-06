@@ -234,7 +234,7 @@ export function SidebarItemWithChildren({
                         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                         childActive
                           ? 'bg-[hsl(var(--brand-yellow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))]'
-                          : 'hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+                          : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
                       )}
                     >
                       <ChildIcon className="h-4 w-4 shrink-0" />
@@ -284,7 +284,7 @@ export function SidebarItemWithChildren({
                 )} />
                 <span className={cn(
                   "truncate font-medium transition-colors duration-200",
-                  childActive ? "text-[hsl(var(--brand-yellow-foreground))] font-semibold" : "text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]"
+                  childActive ? "text-[hsl(var(--brand-yellow-foreground))] font-semibold" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--foreground))]"
                 )}>
                   {child.label}
                 </span>
