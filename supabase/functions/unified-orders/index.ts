@@ -1489,6 +1489,17 @@ Deno.serve(async (req) => {
     );
 
     return ok({
+      // ⚠️ DEBUG TEMPORÁRIO: Incluir no response para debug no browser
+      _debug_account: {
+        hasAccountData: !!accountData,
+        accountName: accountData?.name,
+        primeiros3: transformedOrders.slice(0, 3).map(p => ({
+          numero: p.numero,
+          empresa: p.empresa,
+          marketplace_origem: p.marketplace_origem,
+          tipo_logistico: p.tipo_logistico
+        }))
+      },
       // Compatibilidade: retornar tanto 'results' (raw ML enriquecido) quanto 'pedidos' (formato unificado)
       results: enrichedOrders,
       pedidos: transformedOrders,

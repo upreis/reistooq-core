@@ -138,64 +138,18 @@ export async function fetchPedidosRealtime(params: UnifiedOrdersParams) {
   const unifiedRaw: Unified[] = Array.isArray(data?.unified) ? data.unified : [];
   const pedidos: Unified[] = Array.isArray(data?.pedidos) ? data.pedidos : [];
 
-  // 🔍 DEBUG CRÍTICO: Verificar estrutura EXATA recebida do edge
-  console.log('🔍 [CRITICAL DEBUG] Estrutura data recebida:', {
-    hasResults: !!data?.results,
-    hasUnified: !!data?.unified,
-    hasPedidos: !!data?.pedidos,
-    resultsLength: resultsRaw.length,
-    unifiedLength: unifiedRaw.length,
-    pedidosLength: pedidos.length
-  });
-
-  // 🔍 DEBUG: Primeiro pedido de CADA array
-  if (resultsRaw.length > 0) {
-    console.log('🔍 resultsRaw[0]:', {
-      empresa: resultsRaw[0].empresa,
-      marketplace_origem: resultsRaw[0].marketplace_origem,
-      tipo_logistico: resultsRaw[0].tipo_logistico
-    });
-  }
-  if (unifiedRaw.length > 0) {
-    console.log('🔍 unifiedRaw[0]:', {
-      empresa: unifiedRaw[0].empresa,
-      marketplace_origem: unifiedRaw[0].marketplace_origem,
-      tipo_logistico: unifiedRaw[0].tipo_logistico
-    });
-  }
-  if (pedidos.length > 0) {
-    console.log('🔍 pedidos[0]:', {
-      numero: pedidos[0].numero,
-      empresa: pedidos[0].empresa,
-      marketplace_origem: pedidos[0].marketplace_origem,
-      tipo_logistico: pedidos[0].tipo_logistico,
-      tipo_logistico_raw: pedidos[0].tipo_logistico_raw
-    });
+  // 🚨 DEBUG TEMPORÁRIO: Mostrar _debug_account do edge function
+  if (data?._debug_account) {
+    console.log('🚨 [EDGE DEBUG] AccountData recebido:', data._debug_account);
   }
 
   const results: RawML[] = resultsRaw.length ? resultsRaw : pedidos;
   const unified: Unified[] = unifiedRaw.length ? unifiedRaw : pedidos;
 
-  console.log('🔍 Após seleção - usando:', {
-    usingResults: resultsRaw.length > 0 ? 'resultsRaw' : 'pedidos',
-    usingUnified: unifiedRaw.length > 0 ? 'unifiedRaw' : 'pedidos'
-  });
-
   const rows: Row[] = results.map((r, i) => ({
     raw: resultsRaw.length ? r : null,
     unified: unified[i] ?? null
   }));
-
-  // 🔍 DEBUG: Verificar primeiro row montado
-  if (rows.length > 0) {
-    console.log('🔍 rows[0] final:', {
-      hasRaw: !!rows[0].raw,
-      hasUnified: !!rows[0].unified,
-      unified_empresa: rows[0].unified?.empresa,
-      unified_marketplace: rows[0].unified?.marketplace_origem,
-      unified_tipo: rows[0].unified?.tipo_logistico
-    });
-  }
 
   const total = data?.paging?.total ?? data?.paging?.count ?? data?.total ?? (Array.isArray(results) ? results.length : rows.length);
   return { rows, total, debug: data?.debug };
