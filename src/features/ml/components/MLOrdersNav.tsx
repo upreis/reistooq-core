@@ -36,13 +36,6 @@ export function MLOrdersNav() {
 
   return (
     <div className="space-y-4">
-      {/* Breadcrumb secundário */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <span>📦</span>
-        <span>/</span>
-        <span>Pedidos</span>
-      </div>
-
       {/* Sub-navegação */}
       <nav className="flex space-x-8 border-b border-border">
         {subNavItems.map((item) => {
