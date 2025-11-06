@@ -154,13 +154,6 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
         </Card>
       )}
 
-        {(filters.situacao || filters.dataInicio || filters.dataFim) && (
-          <div className="flex items-center gap-1">
-            <Badge variant="secondary" className="text-xs">
-              Filtros ativos
-            </Badge>
-          </div>
-        )}
 
       {/* Tabela Principal */}
       <Card>

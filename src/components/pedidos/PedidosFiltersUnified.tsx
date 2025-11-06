@@ -352,37 +352,6 @@ export function PedidosFiltersUnified({
 
 
 
-      {/* Tags de filtros ativos */}
-      {activeFiltersCount > 0 && (
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
-          {appliedFilters.search && (
-            <Badge variant="secondary" className="gap-1">
-              Busca: {appliedFilters.search}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('search', undefined)} />
-            </Badge>
-          )}
-          {(appliedFilters.contasML?.length || 0) > 0 && (
-            <Badge variant="secondary" className="gap-1">
-              Contas ML: {appliedFilters.contasML!.length === 1 
-                ? (contasML.find(c => c.id === appliedFilters.contasML![0])?.nickname || 
-                   contasML.find(c => c.id === appliedFilters.contasML![0])?.name || 
-                   appliedFilters.contasML![0])
-                : `${appliedFilters.contasML!.length} selecionadas`
-              }
-              <X className="h-3 w-3 cursor-pointer" onClick={() => onFilterChange('contasML', undefined)} />
-            </Badge>
-          )}
-          {(appliedFilters.dataInicio || appliedFilters.dataFim) && (
-            <Badge variant="secondary" className="gap-1">
-              Período: {appliedFilters.dataInicio ? format(appliedFilters.dataInicio, 'dd/MM', { locale: ptBR }) : '...'} até {appliedFilters.dataFim ? format(appliedFilters.dataFim, 'dd/MM', { locale: ptBR }) : '...'}
-              <X className="h-3 w-3 cursor-pointer" onClick={() => {
-                onFilterChange('dataInicio', undefined);
-                onFilterChange('dataFim', undefined);
-              }} />
-            </Badge>
-          )}
-        </div>
-      )}
     </div>
   );
 }
