@@ -190,6 +190,7 @@ export async function fetchShopeeOrders(params: UnifiedOrdersParams): Promise<Fe
         numero_ecommerce: order.numero_ecommerce,
         numero_venda: order.numero_venda,
         empresa: order.empresa || 'Shopee',
+        marketplace: 'shopee',
         cidade: order.cidade,
         uf: order.uf,
         codigo_rastreamento: order.codigo_rastreamento,

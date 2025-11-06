@@ -727,6 +727,7 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       numero_ecommerce: order.pack_id?.toString() || null,
       numero_venda: order.id?.toString() || null,
       empresa: accountName || 'Mercado Livre',
+      marketplace: 'mercadolivre',
       cidade: address.city?.name || null,
       uf: address.state?.id || null,
       codigo_rastreamento: shipping.tracking_number || null,

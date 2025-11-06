@@ -985,68 +985,38 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                        // Renderizar status dos insumos usando callback personalizado
                        return renderStatusInsumos ? renderStatusInsumos(order.id) : <span className="text-xs text-muted-foreground">—</span>;
                      
-                      case 'marketplace_origem':
-                        // 🔍 Detecção inteligente do marketplace baseada em múltiplos campos
-                        const detectMarketplace = (order: any): string => {
-                          // DEBUG: Log para diagnóstico (remover após auditoria)
-                          if (import.meta.env.DEV) {
-                            console.log('🔍 [Marketplace Debug]', {
-                              id: order.id,
-                              empresa: order.empresa,
-                              unified_empresa: order.unified?.empresa,
-                              raw_empresa: order.raw?.empresa,
-                              numero: order.numero,
-                              numero_ecommerce: order.numero_ecommerce,
-                              integration_account_id: order.integration_account_id
-                            });
-                          }
-                          
-                          // Buscar empresa em múltiplos locais
-                          const empresa = (order.empresa || order.unified?.empresa || order.raw?.empresa || '').toLowerCase();
-                          const id = order.id || '';
-                          const numero = order.numero || '';
-                          const numeroEcommerce = order.numero_ecommerce || '';
-                          
-                          // 1. Mercado Livre
-                          if (empresa.includes('mercado') || 
-                              empresa === 'mercadolivre' ||
-                              id.startsWith('ml_') || 
-                              numero.startsWith('ML-') ||
-                              numeroEcommerce.startsWith('ML-') ||
-                              order.raw?.tags?.includes('pack_id') ||
-                              order.raw?.pack_id) {
-                            return 'Mercado Livre';
-                          }
-                          
-                          // 2. Shopee
-                          if (empresa === 'shopee' || 
-                              id.startsWith('shopee_') ||
-                              order.raw?.order_sn ||
-                              order.integration_account_id?.includes('shopee')) {
-                            return 'Shopee';
-                          }
-                          
-                          // 3. Tiny ERP
-                          if (empresa === 'tiny' || 
-                              order.integration_account_id?.includes('tiny')) {
-                            return 'Tiny';
-                          }
-                          
-                          // 4. Shopify
-                          if (empresa === 'shopify' || 
-                              order.integration_account_id?.includes('shopify')) {
-                            return 'Shopify';
-                          }
-                          
-                          // 5. Amazon
-                          if (empresa === 'amazon' || 
-                              order.integration_account_id?.includes('amazon')) {
-                            return 'Amazon';
-                          }
-                          
-                          // Padrão: Venda Direta/Interno
-                          return 'Interno';
-                        };
+                       case 'marketplace_origem':
+                         // 🔍 Detecção de marketplace usando campo marketplace da API
+                         const detectMarketplace = (order: any): string => {
+                           // 1. Verificar campo marketplace (prioridade - vem da API)
+                           const marketplace = (
+                             order.marketplace || 
+                             order.unified?.marketplace || 
+                             order.raw?.marketplace || 
+                             ''
+                           ).toLowerCase();
+                           
+                           if (marketplace === 'mercadolivre') return 'Mercado Livre';
+                           if (marketplace === 'shopee') return 'Shopee';
+                           if (marketplace === 'tiny') return 'Tiny';
+                           if (marketplace === 'shopify') return 'Shopify';
+                           if (marketplace === 'amazon') return 'Amazon';
+                           
+                           // 2. Fallback para compatibilidade com dados antigos
+                           if (order.integration_account_id) {
+                             const empresa = (order.empresa || order.unified?.empresa || order.raw?.empresa || '').toLowerCase();
+                             
+                             if (empresa.includes('mercado') || empresa.includes('livre')) return 'Mercado Livre';
+                             if (empresa.includes('shopee')) return 'Shopee';
+                             if (empresa.includes('tiny')) return 'Tiny';
+                             if (empresa.includes('shopify')) return 'Shopify';
+                             if (empresa.includes('amazon')) return 'Amazon';
+                             
+                             return 'Marketplace';
+                           }
+                           
+                           return 'Interno';
+                         };
                         
                         const marketplace = detectMarketplace(order);
                         const marketplaceColors: Record<string, string> = {
