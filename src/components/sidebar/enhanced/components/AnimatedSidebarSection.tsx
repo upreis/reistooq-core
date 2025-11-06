@@ -22,15 +22,6 @@ export const AnimatedSidebarSection = memo(({
   // Filter only single items (no children)
   const singleItems = items.filter(item => !item.children || item.children.length === 0);
 
-  if (singleItems.length === 0) {
-    return null;
-  }
-
-  // Item dimensions: altura do item + gap entre itens
-  const ITEM_HEIGHT = 38; // h-[38px]
-  const GAP = 2; // space-y-0.5
-  const TOTAL_HEIGHT = ITEM_HEIGHT + GAP;
-
   return (
     <div 
       className={cn(
@@ -56,23 +47,19 @@ export const AnimatedSidebarSection = memo(({
           </li>
         ))}
         
-        {/* 🎯 Animated hover background - move to hovered item position */}
+        {/* Animated hover background */}
         <motion.div
           className={cn(
-            "absolute inset-x-1 rounded-lg pointer-events-none",
-            "bg-gradient-to-r from-[hsl(var(--accent))] to-[hsl(var(--accent))]/50",
-            isCollapsed ? "h-11 w-11 left-1/2 -translate-x-1/2" : "h-[38px]"
+            "absolute inset-x-1 h-[38px] rounded-lg pointer-events-none",
+            "bg-gradient-to-r from-[hsl(var(--accent))] to-[hsl(var(--accent))]/50"
           )}
-          initial={{ opacity: 0, scale: 0.75 }}
+          initial={{ opacity: 0, scale: 0.85 }}
           animate={{
             opacity: hoveredIndex !== null ? 1 : 0,
-            scale: hoveredIndex !== null ? 1 : 0.75,
-            top: hoveredIndex !== null ? (hoveredIndex * TOTAL_HEIGHT) + 2 : 0,
+            scale: hoveredIndex !== null ? 1 : 0.85,
+            top: hoveredIndex !== null ? hoveredIndex * 38 + 2 : 0,
           }}
-          transition={{ 
-            duration: 0.1,
-            ease: [0.4, 0, 0.2, 1] // cubic-bezier easing
-          }}
+          transition={{ duration: 0.1, ease: "easeOut" }}
         />
       </menu>
     </div>
