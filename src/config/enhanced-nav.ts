@@ -2,9 +2,10 @@ import { NavSection } from '@/components/sidebar/enhanced/types/sidebar.types';
 
 export const ENHANCED_NAV_ITEMS: NavSection[] = [
   {
-    id: 'dashboards',
-    group: 'Dashboards',
+    id: 'main',
+    group: '', // Estrutura plana sem seções
     items: [
+      // MÓDULOS PRINCIPAIS
       { 
         id: 'dashboard', 
         label: 'Dashboard', 
@@ -39,7 +40,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
       {
         id: 'oms',
         label: 'Vendas',
-        icon: 'DollarSign',
+        icon: 'TrendingUp',
         children: [
           {
             id: 'vendas-marketplace',
@@ -97,19 +98,40 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Upload'
           }
         ]
-      }
-    ]
-  },
-  {
-    id: 'applications',
-    group: 'Aplicações',
-    items: [
+      },
+      { 
+        id: 'estoque', 
+        label: 'Estoque', 
+        icon: 'Package',
+        children: [
+          {
+            id: 'controle-estoque',
+            label: 'Controle de Estoque',
+            path: '/estoque',
+            icon: 'Package'
+          },
+          {
+            id: 'composicoes',
+            label: 'Composições',
+            path: '/estoque/composicoes',
+            icon: 'Layers'
+          },
+          {
+            id: 'historico-estoque',
+            label: 'Histórico',
+            path: '/estoque/historico',
+            icon: 'Clock'
+          }
+        ]
+      },
       {
         id: 'ecommerce-app',
         label: 'eCommerce',
         icon: 'ShoppingCart',
         path: '/apps/ecommerce/shop'
       },
+      
+      // FERRAMENTAS E APLICATIVOS
       {
         id: 'aplicativos',
         label: 'Aplicativos',
@@ -126,31 +148,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             label: 'Notas', 
             path: '/aplicativos/notas', 
             icon: 'Notebook' 
-          }
-        ]
-      },
-      { 
-        id: 'estoque', 
-        label: 'Gestão de Estoque', 
-        icon: 'Boxes',
-        children: [
-          {
-            id: 'controle-estoque',
-            label: 'Controle de Estoque',
-            path: '/estoque',
-            icon: 'Package'
-          },
-          {
-            id: 'composicoes',
-            label: 'Composições',
-            path: '/estoque/composicoes',
-            icon: 'Layers'
-          },
-          {
-            id: 'historico',
-            label: 'Histórico',
-            path: '/estoque/historico',
-            icon: 'Clock'
           }
         ]
       },
@@ -172,6 +169,14 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         path: '/alertas', 
         icon: 'Bell'
       },
+      { 
+        id: 'historico', 
+        label: 'Histórico', 
+        path: '/historico', 
+        icon: 'History' 
+      },
+      
+      // CONFIGURAÇÕES E ADMINISTRAÇÃO
       {
         id: 'configuracoes',
         label: 'Configurações',
@@ -190,24 +195,12 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Megaphone' 
           },
           { 
-            id: 'administracao', 
-            label: 'Administração', 
-            path: '/configuracoes/administracao', 
-            icon: 'UserCheck' 
-          },
-          { 
             id: 'ml-orders-completas', 
             label: 'Devoluções ML', 
             path: '/ml-orders-completas', 
             icon: 'Database' 
           }
         ]
-      },
-      { 
-        id: 'historico', 
-        label: 'Histórico', 
-        path: '/historico', 
-        icon: 'History' 
       },
       { 
         id: 'admin', 
