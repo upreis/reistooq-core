@@ -158,16 +158,29 @@ export function usePedidosMappingsOptimized({
 
             let mapping: MapeamentoVerificacao | undefined;
             if (skuParaVerificar && typeof skuParaVerificar === 'string') {
-              // 🛡️ CORREÇÃO: usar verificarMapeamentos (plural) que retorna statusBaixa correto
+              // 🛡️ CORREÇÃO: Extrair localEstoqueId e quantidade do pedido
+              const localEstoqueId = (order as any).local_estoque_id;
+              const quantidadePedido = Number((order as any).total_itens || 1);
               const skuNormalizado = String(skuParaVerificar).trim().toUpperCase();
-              const mappings = await MapeamentoService.verificarMapeamentos([skuNormalizado]);
+              
+              // Criar mapa de quantidade por SKU
+              const quantidadeMap = new Map<string, number>();
+              quantidadeMap.set(skuNormalizado, quantidadePedido);
+              
+              // 🛡️ Verificar mapeamento COM local específico
+              const mappings = await MapeamentoService.verificarMapeamentos(
+                [skuNormalizado],
+                localEstoqueId,
+                quantidadeMap
+              );
               mapping = mappings[0];
               
               // 🔍 DEBUG: Log do statusBaixa calculado
-              console.log(`📊 [Mapping] Pedido ${idUnico} | SKU: ${skuNormalizado} | Status: ${mapping?.statusBaixa}`, {
+              console.log(`📊 [Mapping] Pedido ${idUnico} | SKU: ${skuNormalizado} | Local: ${localEstoqueId} | Status: ${mapping?.statusBaixa}`, {
                 temMapeamento: mapping?.temMapeamento,
                 skuEstoque: mapping?.skuEstoque,
-                skuCadastradoNoEstoque: mapping?.skuCadastradoNoEstoque
+                skuCadastradoNoEstoque: mapping?.skuCadastradoNoEstoque,
+                localEstoqueNome: mapping?.localEstoqueNome
               });
             } else {
               mapping = { skuPedido: '', temMapeamento: false, statusBaixa: 'sem_mapear' };
