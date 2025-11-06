@@ -12,7 +12,7 @@ interface EstoqueHeaderProps {
 export function EstoqueHeader({ onLocalChange, onTransferClick, selectedProductsCount }: EstoqueHeaderProps) {
   return (
     <div className="flex items-center justify-between gap-4 pb-4 border-b">
-      <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+      <LocalEstoqueSelector showActions={true} key={`selector-${Date.now()}`} />
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
