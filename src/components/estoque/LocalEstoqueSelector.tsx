@@ -44,23 +44,31 @@ export function LocalEstoqueSelector() {
 
       if (error) throw error;
 
-      // Ordenar para colocar o principal sempre primeiro
+      // ✅ CRÍTICO: Ordenar para colocar o principal SEMPRE primeiro
       const locaisOrdenados = (data || []).sort((a, b) => {
+        // Principal sempre vem primeiro
         if (a.tipo === 'principal') return -1;
         if (b.tipo === 'principal') return 1;
-        return 0;
+        // Depois ordena alfabeticamente
+        return a.nome.localeCompare(b.nome);
       });
 
       setLocais(locaisOrdenados as LocalEstoque[]);
 
-      // Se não tem local ativo, seleciona o principal automaticamente
-      if (!localAtivo && locaisOrdenados && locaisOrdenados.length > 0) {
+      // ✅ CRÍTICO: Se não tem local ativo OU se o local salvo não existe mais,
+      // SEMPRE seleciona o principal primeiro
+      const localSalvoAindaExiste = localAtivo && locaisOrdenados.some(l => l.id === localAtivo.id);
+      
+      if (!localAtivo || !localSalvoAindaExiste) {
         const principal = locaisOrdenados.find(l => l.tipo === 'principal') || locaisOrdenados[0];
-        setLocalAtivo({
-          id: principal.id,
-          nome: principal.nome,
-          tipo: principal.tipo
-        });
+        if (principal) {
+          console.log('🏢 Selecionando Estoque Principal por padrão');
+          setLocalAtivo({
+            id: principal.id,
+            nome: principal.nome,
+            tipo: principal.tipo
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar locais:', error);
