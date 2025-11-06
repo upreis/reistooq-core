@@ -31,8 +31,12 @@ export class HistoricoDeleteService {
       const vendaDataAny = vendaData as any;
       
       // 🛡️ BUSCAR LOCAL DE ESTOQUE DO PEDIDO ORIGINAL
+      // ✅ CORREÇÃO: O RPC retorna os campos diretamente (SETOF historico_vendas)
       const localEstoqueId = vendaDataAny.local_estoque_id;
       const localEstoqueNome = vendaDataAny.local_estoque_nome || vendaDataAny.local_estoque || 'desconhecido';
+      
+      console.log('📊 Dados completos da venda:', vendaDataAny);
+      console.log('🏢 Local identificado:', { localEstoqueId, localEstoqueNome });
       
       if (!localEstoqueId) {
         console.warn('⚠️ Local de estoque não encontrado no histórico - reversão de estoque pode não funcionar corretamente');

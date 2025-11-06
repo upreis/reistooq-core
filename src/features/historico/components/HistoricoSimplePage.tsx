@@ -1,4 +1,5 @@
 // Página completa de histórico - com seletor de colunas
+import '../utils/clearHistoricoCache'; // Limpar cache ao carregar
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
