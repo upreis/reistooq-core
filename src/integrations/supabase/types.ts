@@ -1796,6 +1796,9 @@ export type Database = {
           id_unico: string
           integration_account_id: string | null
           last_updated: string | null
+          local_estoque: string | null
+          local_estoque_id: string | null
+          local_estoque_nome: string | null
           logistic_mode_principal: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
@@ -1881,6 +1884,9 @@ export type Database = {
           id_unico: string
           integration_account_id?: string | null
           last_updated?: string | null
+          local_estoque?: string | null
+          local_estoque_id?: string | null
+          local_estoque_nome?: string | null
           logistic_mode_principal?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
@@ -1966,6 +1972,9 @@ export type Database = {
           id_unico?: string
           integration_account_id?: string | null
           last_updated?: string | null
+          local_estoque?: string | null
+          local_estoque_id?: string | null
+          local_estoque_nome?: string | null
           logistic_mode_principal?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
@@ -2028,6 +2037,13 @@ export type Database = {
           valor_unitario?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_historico_vendas_local_estoque"
+            columns: ["local_estoque_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "historico_vendas_integration_account_id_fkey"
             columns: ["integration_account_id"]
@@ -6330,6 +6346,9 @@ export type Database = {
           id_unico: string
           integration_account_id: string | null
           last_updated: string | null
+          local_estoque: string | null
+          local_estoque_id: string | null
+          local_estoque_nome: string | null
           logistic_mode_principal: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
