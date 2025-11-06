@@ -1,4 +1,5 @@
 import { NavSection } from '@/components/sidebar/enhanced/types/sidebar.types';
+// Navigation configuration - Updated with Vendedores
 
 export const ENHANCED_NAV_ITEMS: NavSection[] = [
   {
