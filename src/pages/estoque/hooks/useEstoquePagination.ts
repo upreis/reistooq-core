@@ -58,10 +58,64 @@ export function useEstoquePagination(products: Product[]) {
     return filtered;
   }, [intelligentFilteredData, searchTerm, selectedStatus, selectedProductType]);
 
-  const paginatedProducts = useMemo(() => 
-    finalFilteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [finalFilteredProducts, currentPage, itemsPerPage]
-  );
+  // 🎯 CRITICAL FIX: Paginar mantendo hierarquia (pais e filhos juntos)
+  const paginatedProducts = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // Pegar a "fatia" inicial da paginação
+    const pageSlice = finalFilteredProducts.slice(startIndex, endIndex);
+    
+    // Criar Set com IDs e SKUs dos produtos na página
+    const productIds = new Set(pageSlice.map(p => p.id));
+    const productSkus = new Set(pageSlice.map(p => p.sku_interno));
+    const parentSkus = new Set(pageSlice.map(p => p.sku_pai).filter(Boolean));
+    
+    // Adicionar produtos relacionados que não estão na página
+    const relatedProducts: Product[] = [];
+    
+    finalFilteredProducts.forEach(product => {
+      // Já está na página
+      if (productIds.has(product.id)) return;
+      
+      // É filho de um produto pai que está na página
+      if (product.sku_pai && productSkus.has(product.sku_pai)) {
+        relatedProducts.push(product);
+        return;
+      }
+      
+      // É pai de um produto filho que está na página
+      if (product.eh_produto_pai && parentSkus.has(product.sku_interno)) {
+        relatedProducts.push(product);
+        return;
+      }
+    });
+    
+    // Combinar produtos da página + relacionados e ordenar
+    const allProducts = [...pageSlice, ...relatedProducts];
+    
+    // Ordenar: pais primeiro, depois seus filhos
+    return allProducts.sort((a, b) => {
+      // Se A é pai de B, A vem primeiro
+      if (a.eh_produto_pai && b.sku_pai === a.sku_interno) return -1;
+      if (b.eh_produto_pai && a.sku_pai === b.sku_interno) return 1;
+      
+      // Se têm o mesmo pai, manter ordem original
+      if (a.sku_pai && b.sku_pai && a.sku_pai === b.sku_pai) {
+        return a.sku_interno.localeCompare(b.sku_interno);
+      }
+      
+      // Manter ordem da fatia original
+      const indexA = pageSlice.findIndex(p => p.id === a.id);
+      const indexB = pageSlice.findIndex(p => p.id === b.id);
+      
+      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1) return -1;
+      if (indexB !== -1) return 1;
+      
+      return 0;
+    });
+  }, [finalFilteredProducts, currentPage, itemsPerPage]);
   
   const totalPages = Math.ceil(finalFilteredProducts.length / itemsPerPage);
 
