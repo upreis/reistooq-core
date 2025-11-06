@@ -253,7 +253,19 @@ export function useProcessarBaixaEstoque() {
               .eq('local_id', localEstoqueId)
               .maybeSingle();
             
-            const quantidadeDisponivel = estoqueLocal?.quantidade || 0;
+            if (estoqueError) {
+              throw new Error(`Erro ao buscar estoque do componente ${comp.sku_componente} no local: ${estoqueError.message}`);
+            }
+            
+            // ✅ CRÍTICO: Validar se o componente está cadastrado no local
+            if (!estoqueLocal) {
+              throw new Error(
+                `❌ Componente ${comp.sku_componente} não está cadastrado no local "${localEstoqueNome}"\n` +
+                `Você precisa adicionar este componente ao estoque deste local primeiro.`
+              );
+            }
+            
+            const quantidadeDisponivel = estoqueLocal.quantidade;
             
             console.log(`🔍 Componente ${comp.sku_componente}: Necessário=${quantidadeNecessaria}, Disponível no local=${quantidadeDisponivel}`);
             

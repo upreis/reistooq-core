@@ -36,12 +36,37 @@ export async function processarBaixaInsumos(
     try {
       console.log('🔧 Iniciando baixa de insumos para SKUs:', skusProdutos, 'no local:', localEstoqueId);
 
-      // 1. Buscar composições de todos os produtos FILTRADAS POR LOCAL
+      // Buscar organization_id do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          success: false,
+          message: 'Usuário não autenticado'
+        };
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('organizacao_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.organizacao_id) {
+        return {
+          success: false,
+          message: 'Organização não encontrada'
+        };
+      }
+
+      const organizationId = profile.organizacao_id;
+
+      // 1. Buscar composições de todos os produtos FILTRADAS POR LOCAL E ORGANIZAÇÃO
       const { data: composicoes, error: composicoesError } = await supabase
         .from('composicoes_insumos')
         .select('sku_produto, sku_insumo, quantidade, local_id')
         .in('sku_produto', skusProdutos)
         .eq('local_id', localEstoqueId)
+        .eq('organization_id', organizationId)
         .eq('ativo', true);
 
       console.log('📦 Composições encontradas no banco:', composicoes);
@@ -87,29 +112,30 @@ export async function processarBaixaInsumos(
       console.log('🗺️ Map de insumos agrupados:', Object.fromEntries(insumosMap));
 
       const insumosBaixar: InsumoParaBaixa[] = Array.from(insumosMap.entries()).map(([sku, quantidade]) => ({
-        sku: sku.trim(), // Mantém o SKU como está na composição, sem forçar uppercase
+        sku: sku.trim().toUpperCase(), // ✅ CRÍTICO: Normalizar para UPPERCASE para consistência
         quantidade
       }));
 
       console.log('📋 Array final de insumos para baixa:', insumosBaixar);
       console.log('📋 JSON stringified:', JSON.stringify(insumosBaixar, null, 2));
 
-      // 3. Dar baixa no estoque do local específico (não via RPC, mas diretamente no estoque_por_local)
+      // 3. Dar baixa no estoque do local específico
       console.log('🚀 Dando baixa de insumos diretamente no estoque do local:', localEstoqueId);
       
       for (const insumo of insumosBaixar) {
-        // Buscar produto_id do insumo
+        // Buscar produto_id do insumo filtrando por organização
         const { data: produtoInsumo, error: prodError } = await supabase
           .from('produtos')
           .select('id, sku_interno')
-          .eq('sku_interno', insumo.sku)
+          .eq('sku_interno', insumo.sku.toUpperCase()) // ✅ CRÍTICO: Normalizar para UPPERCASE
+          .eq('organization_id', organizationId)
           .maybeSingle();
         
         if (prodError || !produtoInsumo) {
           console.error(`❌ Insumo ${insumo.sku} não encontrado no cadastro de produtos`);
           return {
             success: false,
-            message: `Insumo ${insumo.sku} não encontrado no cadastro de produtos`
+            message: `Insumo ${insumo.sku} não encontrado no cadastro de produtos da sua organização`
           };
         }
         
@@ -119,6 +145,7 @@ export async function processarBaixaInsumos(
           .select('quantidade')
           .eq('produto_id', produtoInsumo.id)
           .eq('local_id', localEstoqueId)
+          .eq('organization_id', organizationId)
           .maybeSingle();
         
         if (estoqueError) {
@@ -129,7 +156,16 @@ export async function processarBaixaInsumos(
           };
         }
         
-        const quantidadeAtual = estoqueAtual?.quantidade || 0;
+        // ✅ CRÍTICO: Validar se o insumo existe no local
+        if (!estoqueAtual) {
+          console.error(`❌ Insumo ${insumo.sku} não está cadastrado no local especificado`);
+          return {
+            success: false,
+            message: `Insumo ${insumo.sku} não está cadastrado no local. Adicione-o ao estoque deste local primeiro.`
+          };
+        }
+        
+        const quantidadeAtual = estoqueAtual.quantidade;
         
         if (quantidadeAtual < insumo.quantidade) {
           return {
@@ -145,7 +181,8 @@ export async function processarBaixaInsumos(
           .from('estoque_por_local')
           .update({ quantidade: novaQuantidade })
           .eq('produto_id', produtoInsumo.id)
-          .eq('local_id', localEstoqueId);
+          .eq('local_id', localEstoqueId)
+          .eq('organization_id', organizationId);
         
         if (updateError) {
           console.error(`❌ Erro ao atualizar estoque do insumo ${insumo.sku}:`, updateError);
@@ -158,19 +195,6 @@ export async function processarBaixaInsumos(
         console.log(`✅ Insumo ${insumo.sku}: ${insumo.quantidade} unidades baixadas (${quantidadeAtual} → ${novaQuantidade})`);
       }
       
-      const resultado = { success: true };
-      console.log('📥 Baixa de insumos concluída:', resultado);
-
-      const result = resultado as any;
-
-      if (!result.success) {
-        console.error('❌ Baixa de insumos falhou:', result);
-        return {
-          success: false,
-          message: 'Falha na baixa de insumos'
-        };
-      }
-
       console.log('✅ Baixa de insumos concluída com sucesso');
       return {
         success: true,
