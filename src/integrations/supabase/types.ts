@@ -6545,27 +6545,136 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      get_historico_vendas_masked: {
-        Args: {
-          p_end?: string
-          p_limit?: number
-          p_offset?: number
-          p_search?: string
-          p_start?: string
-        }
-        Returns: {
-          cliente_nome: string
-          data_pedido: string
-          id: string
-          integration_account_id: string
-          numero_pedido: string
-          origem: string
-          quantidade: number
-          sku_produto: string
-          status: string
-          valor_total: number
-        }[]
-      }
+      get_historico_vendas_masked:
+        | {
+            Args: {
+              _end?: string
+              _limit?: number
+              _offset?: number
+              _search?: string
+              _start?: string
+            }
+            Returns: {
+              bairro: string
+              cep: string
+              cidade: string
+              cliente_documento: string
+              cliente_nome: string
+              codigo_barras: string
+              codigo_rastreamento: string
+              conditions: string
+              cpf_cnpj: string
+              created_at: string
+              created_by: string
+              custo_envio_seller: number
+              custo_fixo_meli: number
+              data_pedido: string
+              data_prevista: string
+              date_created: string
+              delivery_type: string
+              desconto_cupom: number
+              descricao: string
+              empresa: string
+              frete_pago_cliente: number
+              id: string
+              id_unico: string
+              integration_account_id: string
+              last_updated: string
+              level_id: string
+              local_estoque: string
+              local_estoque_id: string
+              local_estoque_nome: string
+              logistic_mode_principal: string
+              logistic_type: string
+              marketplace_origem: string
+              meta: Json
+              metodo_envio_combinado: string
+              metodo_pagamento: string
+              modo_envio_combinado: string
+              ncm: string
+              nome_completo: string
+              numero: string
+              numero_ecommerce: string
+              numero_pedido: string
+              numero_venda: string
+              obs: string
+              obs_interna: string
+              observacoes: string
+              origem: string
+              pack_id: string
+              pack_status: string
+              pack_status_detail: string
+              pedido_id: string
+              pickup_id: string
+              power_seller_status: string
+              qtd_kit: number
+              quantidade: number
+              quantidade_itens: number
+              quantidade_kit: number
+              quantidade_total: number
+              raw: Json
+              raw_data: Json
+              receita_flex_bonus: number
+              rua: string
+              shipping_method: string
+              shipping_mode: string
+              shipping_shipping_status: string
+              shipping_substatus: string
+              situacao: string
+              sku_estoque: string
+              sku_kit: string
+              sku_produto: string
+              skus_produtos: string
+              status: string
+              status_baixa: string
+              status_envio: string
+              status_insumos: string
+              status_mapeamento: string
+              status_pagamento: string
+              substatus_detail: string
+              substatus_estado_atual: string
+              tags: string[]
+              taxa_marketplace: number
+              tipo_entrega: string
+              tipo_logistico: string
+              tipo_metodo_envio: string
+              tipo_pagamento: string
+              titulo_anuncio: string
+              titulo_produto: string
+              total_itens: number
+              uf: string
+              ultima_atualizacao: string
+              updated_at: string
+              url_rastreamento: string
+              valor_desconto: number
+              valor_frete: number
+              valor_liquido_vendedor: number
+              valor_pago: number
+              valor_total: number
+              valor_unitario: number
+            }[]
+          }
+        | {
+            Args: {
+              p_end?: string
+              p_limit?: number
+              p_offset?: number
+              p_search?: string
+              p_start?: string
+            }
+            Returns: {
+              cliente_nome: string
+              data_pedido: string
+              id: string
+              integration_account_id: string
+              numero_pedido: string
+              origem: string
+              quantidade: number
+              sku_produto: string
+              status: string
+              valor_total: number
+            }[]
+          }
       get_integration_secret: {
         Args: { _key: string; _provider: string }
         Returns: string
