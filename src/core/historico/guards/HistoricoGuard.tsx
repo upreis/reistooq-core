@@ -34,8 +34,8 @@ export function HistoricoGuard({ children, fallbackComponent: FallbackComponent 
 
       // Tentar acessar a função RPC para verificar permissões
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        p_limit: 1,
-        p_offset: 0
+        _limit: 1,
+        _offset: 0
       });
 
       if (error) {
@@ -141,8 +141,8 @@ export function useHistoricoGuard() {
         }
 
         const { error } = await supabase.rpc('get_historico_vendas_masked', {
-          p_limit: 1,
-          p_offset: 0
+          _limit: 1,
+          _offset: 0
         });
 
         setHasAccess(!error);

@@ -23,10 +23,10 @@ export class HistoricoAnalyticsService {
 
       // Buscar dados base
       const { data: vendasData, error } = await supabase.rpc('get_historico_vendas_masked', {
-        p_start: dataInicio || null,
-        p_end: dataFim || null,
-        p_limit: 10000, // Limite alto para analytics
-        p_offset: 0
+        _start: dataInicio || null,
+        _end: dataFim || null,
+        _limit: 10000, // Limite alto para analytics
+        _offset: 0
       });
 
       if (error) {

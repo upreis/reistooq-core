@@ -56,6 +56,8 @@ export interface HistoricoItem {
   cep?: string;
   cidade?: string;
   uf?: string;
+  codigo_rastreamento?: string;
+  url_rastreamento?: string;
 
   // === SISTEMA ===
   created_at: string;
@@ -140,8 +142,14 @@ export class HistoricoSimpleService {
           substatus_estado_atual: item.substatus_estado_atual || '',
           modo_envio_combinado: item.modo_envio_combinado || '',
           metodo_envio_combinado: item.metodo_envio_combinado || '',
+          rua: item.rua || item.endereco_rua || '',
+          numero: item.numero || item.endereco_numero || '',
+          bairro: item.bairro || item.endereco_bairro || '',
+          cep: item.cep || item.endereco_cep || '',
           cidade: item.cidade || '',
           uf: item.uf || '',
+          codigo_rastreamento: item.codigo_rastreamento || '',
+          url_rastreamento: item.url_rastreamento || '',
           empresa: item.empresa || '',
           data_pedido: item.data_pedido || '',
           ultima_atualizacao: item.ultima_atualizacao || item.updated_at || '',

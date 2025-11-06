@@ -60,11 +60,11 @@ export const useAnalytics = (timeRange: string = '30d') => {
       // Carregar dados reais de histórico de vendas
       const { data: salesData } = await supabase
         .rpc('get_historico_vendas_masked', {
-          p_start: startDate.toISOString().split('T')[0],
-          p_end: null,
-          p_search: null,
-          p_limit: 5000,
-          p_offset: 0
+          _start: startDate.toISOString().split('T')[0],
+          _end: null,
+          _search: null,
+          _limit: 5000,
+          _offset: 0
         });
 
       // Carregar dados reais de produtos
@@ -86,11 +86,11 @@ export const useAnalytics = (timeRange: string = '30d') => {
 
       const { data: previousSalesData } = await supabase
         .rpc('get_historico_vendas_masked', {
-          p_start: previousStartDate.toISOString().split('T')[0],
-          p_end: startDate.toISOString().split('T')[0],
-          p_search: null,
-          p_limit: 5000,
-          p_offset: 0
+          _start: previousStartDate.toISOString().split('T')[0],
+          _end: startDate.toISOString().split('T')[0],
+          _search: null,
+          _limit: 5000,
+          _offset: 0
         });
 
       const prevArray = (previousSalesData as any[]) || [];

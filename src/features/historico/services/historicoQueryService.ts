@@ -29,11 +29,11 @@ export class HistoricoQueryService {
 
       // Use RPC segura que aplica RLS e mascara dados sensíveis
       const { data, error, count } = await supabase.rpc('get_historico_vendas_masked', {
-        p_search: filters.search || null,
-        p_start: filters.dataInicio || null,
-        p_end: filters.dataFim || null,
-        p_limit: validatedLimit,
-        p_offset: offset
+        _search: filters.search || null,
+        _start: filters.dataInicio || null,
+        _end: filters.dataFim || null,
+        _limit: validatedLimit,
+        _offset: offset
       });
 
       // Filtros, ordenação e paginação são feitos via RPC parameters
@@ -142,9 +142,9 @@ export class HistoricoQueryService {
   static async getHistoricoById(id: string): Promise<HistoricoVendaPublic | null> {
     try {
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        p_search: id,
-        p_limit: 1,
-        p_offset: 0
+        _search: id,
+        _limit: 1,
+        _offset: 0
       });
 
       if (error) {
@@ -164,9 +164,9 @@ export class HistoricoQueryService {
   static async getStatusOptions(): Promise<string[]> {
     try {
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        p_search: null,
-        p_limit: 1000,
-        p_offset: 0
+        _search: null,
+        _limit: 1000,
+        _offset: 0
       });
 
       if (error) {
@@ -187,9 +187,9 @@ export class HistoricoQueryService {
   static async getCidadesOptions(): Promise<string[]> {
     try {
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        p_search: null,
-        p_limit: 1000,
-        p_offset: 0
+        _search: null,
+        _limit: 1000,
+        _offset: 0
       });
 
       if (error) {
@@ -210,9 +210,9 @@ export class HistoricoQueryService {
   static async getUfOptions(): Promise<string[]> {
     try {
       const { data, error } = await supabase.rpc('get_historico_vendas_masked', {
-        p_search: null,
-        p_limit: 1000,
-        p_offset: 0
+        _search: null,
+        _limit: 1000,
+        _offset: 0
       });
 
       if (error) {
