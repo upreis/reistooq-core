@@ -1780,10 +1780,12 @@ export type Database = {
           cliente_nome: string | null
           codigo_barras: string | null
           codigo_rastreamento: string | null
+          conditions: string | null
           cpf_cnpj: string | null
           created_at: string
           created_by: string | null
           custo_envio_seller: number | null
+          custo_fixo_meli: number | null
           data_pedido: string
           data_prevista: string | null
           date_created: string | null
@@ -1796,10 +1798,13 @@ export type Database = {
           id_unico: string
           integration_account_id: string | null
           last_updated: string | null
+          level_id: string | null
           local_estoque: string | null
           local_estoque_id: string | null
           local_estoque_nome: string | null
           logistic_mode_principal: string | null
+          logistic_type: string | null
+          marketplace_origem: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
           metodo_pagamento: string | null
@@ -1819,16 +1824,20 @@ export type Database = {
           pack_status_detail: string | null
           pedido_id: string | null
           pickup_id: string | null
+          power_seller_status: string | null
           qtd_kit: number | null
           quantidade: number
           quantidade_itens: number | null
           quantidade_kit: number | null
           quantidade_total: number | null
           raw: Json | null
+          raw_data: Json | null
           receita_flex_bonus: number | null
           rua: string | null
           shipping_method: string | null
           shipping_mode: string | null
+          shipping_shipping_status: string | null
+          shipping_substatus: string | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
@@ -1837,6 +1846,7 @@ export type Database = {
           status: string
           status_baixa: string | null
           status_envio: string | null
+          status_insumos: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
           substatus_detail: string | null
@@ -1847,6 +1857,7 @@ export type Database = {
           tipo_logistico: string | null
           tipo_metodo_envio: string | null
           tipo_pagamento: string | null
+          titulo_anuncio: string | null
           titulo_produto: string | null
           total_itens: number | null
           uf: string | null
@@ -1868,10 +1879,12 @@ export type Database = {
           cliente_nome?: string | null
           codigo_barras?: string | null
           codigo_rastreamento?: string | null
+          conditions?: string | null
           cpf_cnpj?: string | null
           created_at?: string
           created_by?: string | null
           custo_envio_seller?: number | null
+          custo_fixo_meli?: number | null
           data_pedido: string
           data_prevista?: string | null
           date_created?: string | null
@@ -1884,10 +1897,13 @@ export type Database = {
           id_unico: string
           integration_account_id?: string | null
           last_updated?: string | null
+          level_id?: string | null
           local_estoque?: string | null
           local_estoque_id?: string | null
           local_estoque_nome?: string | null
           logistic_mode_principal?: string | null
+          logistic_type?: string | null
+          marketplace_origem?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
           metodo_pagamento?: string | null
@@ -1907,16 +1923,20 @@ export type Database = {
           pack_status_detail?: string | null
           pedido_id?: string | null
           pickup_id?: string | null
+          power_seller_status?: string | null
           qtd_kit?: number | null
           quantidade?: number
           quantidade_itens?: number | null
           quantidade_kit?: number | null
           quantidade_total?: number | null
           raw?: Json | null
+          raw_data?: Json | null
           receita_flex_bonus?: number | null
           rua?: string | null
           shipping_method?: string | null
           shipping_mode?: string | null
+          shipping_shipping_status?: string | null
+          shipping_substatus?: string | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
@@ -1925,6 +1945,7 @@ export type Database = {
           status?: string
           status_baixa?: string | null
           status_envio?: string | null
+          status_insumos?: string | null
           status_mapeamento?: string | null
           status_pagamento?: string | null
           substatus_detail?: string | null
@@ -1935,6 +1956,7 @@ export type Database = {
           tipo_logistico?: string | null
           tipo_metodo_envio?: string | null
           tipo_pagamento?: string | null
+          titulo_anuncio?: string | null
           titulo_produto?: string | null
           total_itens?: number | null
           uf?: string | null
@@ -1956,10 +1978,12 @@ export type Database = {
           cliente_nome?: string | null
           codigo_barras?: string | null
           codigo_rastreamento?: string | null
+          conditions?: string | null
           cpf_cnpj?: string | null
           created_at?: string
           created_by?: string | null
           custo_envio_seller?: number | null
+          custo_fixo_meli?: number | null
           data_pedido?: string
           data_prevista?: string | null
           date_created?: string | null
@@ -1972,10 +1996,13 @@ export type Database = {
           id_unico?: string
           integration_account_id?: string | null
           last_updated?: string | null
+          level_id?: string | null
           local_estoque?: string | null
           local_estoque_id?: string | null
           local_estoque_nome?: string | null
           logistic_mode_principal?: string | null
+          logistic_type?: string | null
+          marketplace_origem?: string | null
           meta?: Json | null
           metodo_envio_combinado?: string | null
           metodo_pagamento?: string | null
@@ -1995,16 +2022,20 @@ export type Database = {
           pack_status_detail?: string | null
           pedido_id?: string | null
           pickup_id?: string | null
+          power_seller_status?: string | null
           qtd_kit?: number | null
           quantidade?: number
           quantidade_itens?: number | null
           quantidade_kit?: number | null
           quantidade_total?: number | null
           raw?: Json | null
+          raw_data?: Json | null
           receita_flex_bonus?: number | null
           rua?: string | null
           shipping_method?: string | null
           shipping_mode?: string | null
+          shipping_shipping_status?: string | null
+          shipping_substatus?: string | null
           situacao?: string | null
           sku_estoque?: string | null
           sku_kit?: string | null
@@ -2013,6 +2044,7 @@ export type Database = {
           status?: string
           status_baixa?: string | null
           status_envio?: string | null
+          status_insumos?: string | null
           status_mapeamento?: string | null
           status_pagamento?: string | null
           substatus_detail?: string | null
@@ -2023,6 +2055,7 @@ export type Database = {
           tipo_logistico?: string | null
           tipo_metodo_envio?: string | null
           tipo_pagamento?: string | null
+          titulo_anuncio?: string | null
           titulo_produto?: string | null
           total_itens?: number | null
           uf?: string | null
@@ -6330,10 +6363,12 @@ export type Database = {
           cliente_nome: string | null
           codigo_barras: string | null
           codigo_rastreamento: string | null
+          conditions: string | null
           cpf_cnpj: string | null
           created_at: string
           created_by: string | null
           custo_envio_seller: number | null
+          custo_fixo_meli: number | null
           data_pedido: string
           data_prevista: string | null
           date_created: string | null
@@ -6346,10 +6381,13 @@ export type Database = {
           id_unico: string
           integration_account_id: string | null
           last_updated: string | null
+          level_id: string | null
           local_estoque: string | null
           local_estoque_id: string | null
           local_estoque_nome: string | null
           logistic_mode_principal: string | null
+          logistic_type: string | null
+          marketplace_origem: string | null
           meta: Json | null
           metodo_envio_combinado: string | null
           metodo_pagamento: string | null
@@ -6369,16 +6407,20 @@ export type Database = {
           pack_status_detail: string | null
           pedido_id: string | null
           pickup_id: string | null
+          power_seller_status: string | null
           qtd_kit: number | null
           quantidade: number
           quantidade_itens: number | null
           quantidade_kit: number | null
           quantidade_total: number | null
           raw: Json | null
+          raw_data: Json | null
           receita_flex_bonus: number | null
           rua: string | null
           shipping_method: string | null
           shipping_mode: string | null
+          shipping_shipping_status: string | null
+          shipping_substatus: string | null
           situacao: string | null
           sku_estoque: string | null
           sku_kit: string | null
@@ -6387,6 +6429,7 @@ export type Database = {
           status: string
           status_baixa: string | null
           status_envio: string | null
+          status_insumos: string | null
           status_mapeamento: string | null
           status_pagamento: string | null
           substatus_detail: string | null
@@ -6397,6 +6440,7 @@ export type Database = {
           tipo_logistico: string | null
           tipo_metodo_envio: string | null
           tipo_pagamento: string | null
+          titulo_anuncio: string | null
           titulo_produto: string | null
           total_itens: number | null
           uf: string | null
