@@ -180,145 +180,142 @@ export function useProcessarBaixaEstoque() {
           throw new Error('Nenhum pedido válido para baixa (SKU KIT e Total de Itens são obrigatórios)');
         }
 
-        // 🛡️ VALIDAÇÃO CRÍTICA POR LOCAL: Verificar estoque por local específico
-        console.log('🔍 Verificando estoque por local específico...');
+        // 🛡️ VALIDAÇÃO CRÍTICA: Validar pedidos têm local definido
+        console.log('🔍 Validando locais de estoque dos pedidos...');
         
-        // Importar funções
-        const { verificarEstoqueNoLocal } = await import('@/services/estoquePorLocal');
-        
-        // Validar cada pedido no seu local específico
         for (const pedido of pedidos) {
           const localEstoqueId = (pedido as any).local_estoque_id;
-          const localEstoqueNome = (pedido as any).local_estoque_nome || (pedido as any).local_estoque;
           
           if (!localEstoqueId) {
             const erroMsg = `❌ Pedido ${pedido.numero || pedido.id} sem local de estoque definido`;
             console.error(erroMsg);
             throw new Error(erroMsg);
           }
-          
-          const baixa = baixas.find(b => {
-            const mapping = contextoDaUI?.mappingData?.get(pedido.id);
-            const skuPedido = mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit;
-            return b.sku === skuPedido?.trim().toUpperCase();
-          });
-          
-          if (!baixa) continue;
-          
-          console.log(`🔍 Validando pedido ${pedido.numero} no local ${localEstoqueNome}...`);
-          
-          const verificacao = await verificarEstoqueNoLocal(
-            supabase,
-            baixa.sku,
-            baixa.quantidade,
-            localEstoqueId
-          );
-          
-          if (!verificacao.disponivel) {
-            const erroMsg = `❌ Estoque insuficiente no local "${verificacao.nomeLocal || localEstoqueNome}"\n` +
-                           `Produto: ${baixa.sku}\n` +
-                           `Necessário: ${baixa.quantidade}\n` +
-                           `Disponível: ${verificacao.quantidadeAtual}`;
-            console.error(erroMsg);
-            throw new Error(erroMsg);
-          }
         }
         
-        console.log('✅ Todos os produtos têm estoque suficiente nos locais específicos');
+        console.log('✅ Todos os pedidos têm local de estoque definido');
         
-        // 🔍 ETAPA NOVA: Buscar composições e preparar baixa dos componentes
-        console.log('🔍 Buscando composições dos produtos...');
-        const baixasComponentes: Array<{ sku: string; quantidade: number }> = [];
+        // 🔍 BUSCAR COMPOSIÇÕES E VALIDAR ESTOQUE POR LOCAL
+        console.log('🔍 Buscando composições e validando estoque por local...');
         
-        for (const baixa of baixas) {
-          const skuMapeado = baixa.sku;
+        // Mapa para armazenar componentes necessários por pedido
+        const componentesPorPedido = new Map<string, Array<{ sku: string; quantidade: number; produtoId: string }>>();
+        
+        for (const pedido of pedidos) {
+          const localEstoqueId = (pedido as any).local_estoque_id;
+          const localEstoqueNome = (pedido as any).local_estoque_nome || (pedido as any).local_estoque;
+          const mapping = contextoDaUI?.mappingData?.get(pedido.id);
+          const skuProduto = (mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit).toString().trim().toUpperCase();
+          const quantidadePedido = Number(pedido.total_itens || 0);
           
-          // Buscar composição do produto em produto_componentes
-          const { data: composicao, error: composicaoError } = await supabase
+          console.log(`📦 Processando pedido ${pedido.numero}: SKU=${skuProduto}, Qtd=${quantidadePedido}, Local=${localEstoqueNome}`);
+          
+          // Buscar composições do produto
+          const { data: composicoes, error: compError } = await supabase
             .from('produto_componentes')
             .select('sku_componente, quantidade')
-            .eq('sku_produto', skuMapeado);
+            .eq('sku_produto', skuProduto);
           
-          if (composicaoError) {
-            console.error(`❌ Erro ao buscar composição para SKU ${skuMapeado}:`, composicaoError);
-            continue;
+          if (compError) {
+            console.error(`❌ Erro ao buscar composições para ${skuProduto}:`, compError);
+            throw new Error(`Erro ao buscar composições: ${compError.message}`);
           }
           
-          if (!composicao || composicao.length === 0) {
-            const erroMsg = `❌ ERRO CRÍTICO: SKU ${skuMapeado} passou na validação mas não tem composição cadastrada!`;
-            console.error(erroMsg);
-            throw new Error(erroMsg);
+          if (!composicoes || composicoes.length === 0) {
+            throw new Error(`Produto ${skuProduto} não possui composição cadastrada em /estoque/composicoes`);
           }
           
-          console.log(`📦 Composição encontrada para ${skuMapeado}:`, composicao);
+          console.log(`✅ Composição encontrada para ${skuProduto}:`, composicoes);
           
-          // Para cada componente, calcular quantidade total necessária
-          for (const componente of composicao) {
-            const quantidadeComponente = componente.quantidade * baixa.quantidade;
-            baixasComponentes.push({
-              sku: componente.sku_componente,
-              quantidade: quantidadeComponente
+          // Para cada componente, validar estoque no local específico
+          const componentesDoPedido: Array<{ sku: string; quantidade: number; produtoId: string }> = [];
+          
+          for (const comp of composicoes) {
+            const quantidadeNecessaria = comp.quantidade * quantidadePedido;
+            
+            // Buscar produto_id do componente
+            const { data: produtoComponente, error: prodError } = await supabase
+              .from('produtos')
+              .select('id, sku_interno, quantidade_atual')
+              .eq('sku_interno', comp.sku_componente)
+              .maybeSingle();
+            
+            if (prodError || !produtoComponente) {
+              throw new Error(`Componente ${comp.sku_componente} não encontrado no cadastro de produtos`);
+            }
+            
+            // Verificar estoque no local específico
+            const { data: estoqueLocal, error: estoqueError } = await supabase
+              .from('estoque_por_local')
+              .select('quantidade')
+              .eq('produto_id', produtoComponente.id)
+              .eq('local_id', localEstoqueId)
+              .maybeSingle();
+            
+            const quantidadeDisponivel = estoqueLocal?.quantidade || 0;
+            
+            console.log(`🔍 Componente ${comp.sku_componente}: Necessário=${quantidadeNecessaria}, Disponível no local=${quantidadeDisponivel}`);
+            
+            if (quantidadeDisponivel < quantidadeNecessaria) {
+              throw new Error(
+                `❌ Estoque insuficiente no local "${localEstoqueNome}"\n` +
+                `Componente: ${comp.sku_componente}\n` +
+                `Necessário: ${quantidadeNecessaria}\n` +
+                `Disponível: ${quantidadeDisponivel}`
+              );
+            }
+            
+            componentesDoPedido.push({
+              sku: comp.sku_componente,
+              quantidade: quantidadeNecessaria,
+              produtoId: produtoComponente.id
             });
           }
+          
+          componentesPorPedido.set(pedido.id, componentesDoPedido);
         }
         
-        if (baixasComponentes.length === 0) {
-          console.warn('⚠️ Nenhum componente encontrado nas composições');
-          throw new Error('Nenhum componente encontrado para baixa de estoque. Verifique se os produtos têm composições definidas.');
-        }
-        
-        console.log('📋 Componentes para baixa:', baixasComponentes);
+        console.log('✅ Todos os componentes têm estoque suficiente nos locais específicos');
 
-        // 🛡️ VALIDAÇÃO CRÍTICA: Verificar se TODOS os SKUs têm composição cadastrada
-        console.log('🔍 Validando se todos os SKUs têm composição cadastrada...');
-        const skusParaValidarComposicao = baixas.map(b => b.sku);
-        
-        const { data: composicoesExistentes, error: composicaoValidacaoError } = await supabase
-          .from('produto_componentes')
-          .select('sku_produto')
-          .in('sku_produto', skusParaValidarComposicao);
-        
-        if (composicaoValidacaoError) {
-          console.error('❌ Erro ao validar composições:', composicaoValidacaoError);
-          throw new Error('Erro ao verificar composições dos produtos');
-        }
-        
-        const skusComComposicao = new Set(composicoesExistentes?.map(c => c.sku_produto) || []);
-        const skusSemComposicao = skusParaValidarComposicao.filter(sku => !skusComComposicao.has(sku));
-        
-        if (skusSemComposicao.length > 0) {
-          const erroMsg = `❌ Os seguintes SKUs não têm composição cadastrada: ${skusSemComposicao.join(', ')}.\n\n` +
-                          `Por favor, cadastre as composições em /estoque/composicoes antes de fazer a baixa.`;
-          console.error(erroMsg);
-          throw new Error(erroMsg);
-        }
-        
-        console.log('✅ Todos os SKUs possuem composição cadastrada');
 
-        // 🛡️ BAIXA DE ESTOQUE POR LOCAL ESPECÍFICO
-        console.log('🚀 INICIANDO BAIXA DE ESTOQUE POR LOCAL');
+        // 🛡️ BAIXA DE COMPONENTES NO LOCAL ESPECÍFICO
+        console.log('🚀 INICIANDO BAIXA DE COMPONENTES POR LOCAL');
         const resultadoBaixa = await medirTempoExecucao(
-          'baixar_estoque_por_local',
+          'baixar_componentes_por_local',
           'useEstoqueBaixa',
           'supabase',
           async () => {
-            const { baixarEstoqueNoLocal } = await import('@/services/estoquePorLocal');
-            
-            // Processar cada pedido no seu local específico
+            // Processar cada pedido e seus componentes
             for (const pedido of pedidos) {
               const localEstoqueId = (pedido as any).local_estoque_id;
-              const mapping = contextoDaUI?.mappingData?.get(pedido.id);
-              const sku = (mapping?.skuKit || mapping?.skuEstoque || pedido.sku_kit).toString().trim().toUpperCase();
-              const quantidade = Number(pedido.total_itens || 0);
+              const componentes = componentesPorPedido.get(pedido.id) || [];
               
-              console.log(`🔽 Processando baixa do pedido ${pedido.numero} no local ${localEstoqueId}`);
+              console.log(`🔽 Baixando ${componentes.length} componentes do pedido ${pedido.numero} no local ${localEstoqueId}`);
               
-              await baixarEstoqueNoLocal(
-                supabase,
-                sku,
-                quantidade,
-                localEstoqueId
-              );
+              for (const componente of componentes) {
+                // Buscar estoque atual no local
+                const { data: estoqueAtual } = await supabase
+                  .from('estoque_por_local')
+                  .select('quantidade')
+                  .eq('produto_id', componente.produtoId)
+                  .eq('local_id', localEstoqueId)
+                  .single();
+                
+                const novaQuantidade = (estoqueAtual?.quantidade || 0) - componente.quantidade;
+                
+                // Atualizar estoque no local
+                const { error: updateError } = await supabase
+                  .from('estoque_por_local')
+                  .update({ quantidade: novaQuantidade })
+                  .eq('produto_id', componente.produtoId)
+                  .eq('local_id', localEstoqueId);
+                
+                if (updateError) {
+                  throw new Error(`Erro ao baixar componente ${componente.sku}: ${updateError.message}`);
+                }
+                
+                console.log(`✅ Componente ${componente.sku}: ${componente.quantidade} unidades baixadas`);
+              }
             }
             
             return { success: true };
