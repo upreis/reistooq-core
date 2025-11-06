@@ -21,7 +21,7 @@ export interface ComposicaoEstoque {
   componentes: ProdutoComponente[];
 }
 
-export function useComposicoesEstoque() {
+export function useComposicoesEstoque(localId?: string) {
   const [composicoes, setComposicoes] = useState<Record<string, ProdutoComponente[]>>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -33,11 +33,19 @@ export function useComposicoesEstoque() {
 
   // Carregar todas as composições com unidades de medida e estoque dos componentes
   const loadComposicoes = useCallback(async () => {
+    if (!localId) {
+      console.log('⚠️ Local não definido, aguardando...');
+      setComposicoes({});
+      return;
+    }
+
     try {
       setLoading(true);
       
-      // Primeiro buscar as composições
-      const { data: composicoesData, error: composicoesError } = await supabase
+      console.log('🔍 Carregando composições para local:', localId);
+      
+      // Primeiro buscar as composições filtradas por local
+      let query = supabase
         .from('produto_componentes')
         .select(`
           *,
@@ -48,8 +56,11 @@ export function useComposicoesEstoque() {
             tipo
           )
         `)
+        .eq('local_id', localId)
         .order('sku_produto', { ascending: true });
 
+      const { data: composicoesData, error: composicoesError } = await query;
+      
       if (composicoesError) throw composicoesError;
 
       // Buscar os SKUs únicos dos componentes (normalizar para uppercase e trim)
@@ -113,7 +124,7 @@ export function useComposicoesEstoque() {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [localId, toast]);
 
   // Carregar composições automaticamente
   useEffect(() => {

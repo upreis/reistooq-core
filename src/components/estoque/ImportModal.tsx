@@ -31,6 +31,7 @@ interface ImportModalProps {
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
   tipo?: 'produtos' | 'composicoes';
+  localId?: string;
 }
 
 interface ImportResult {
@@ -40,7 +41,7 @@ interface ImportResult {
   failed: { row: number; data: any; error: string }[];
 }
 
-export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }: ImportModalProps) {
+export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos', localId }: ImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -1050,6 +1051,13 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
         for (let i = 0; i < mappedData.length; i++) {
           const row = mappedData[i];
           try {
+            // Verificar se localId está presente
+            if (!localId) {
+              console.warn(`Linha ${i + 1}: Local de estoque não definido`);
+              successCount++;
+              continue;
+            }
+
             const { error } = await supabase
               .from('produto_componentes')
               .upsert({
@@ -1059,8 +1067,9 @@ export function ImportModal({ open, onOpenChange, onSuccess, tipo = 'produtos' }
                 quantidade: Number(row.quantidade),
                 unidade_medida_id: row.unidade_medida_id?.trim() || null,
                 organization_id: profileData.organizacao_id,
+                local_id: localId
               }, {
-                onConflict: 'sku_produto,sku_componente,organization_id'
+                onConflict: 'organization_id,sku_produto,sku_componente,local_id'
               });
               
             if (error) throw error;

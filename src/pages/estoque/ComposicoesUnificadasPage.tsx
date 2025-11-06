@@ -8,7 +8,8 @@ import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector"
 import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
 import { useToast } from "@/hooks/use-toast";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
-import { backfillComposicoesEstoque } from "@/utils/backfillComposicoesEstoque";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export default function ComposicoesUnificadasPage() {
   const location = useLocation();
@@ -31,31 +32,6 @@ export default function ComposicoesUnificadasPage() {
   useEffect(() => {
     setReloadKey(prev => prev + 1);
   }, [localAtivo?.id]);
-
-  // Backfill de composições em locais existentes (executa apenas 1x)
-  useEffect(() => {
-    const executarBackfill = async () => {
-      const jaExecutou = localStorage.getItem('backfill-composicoes-executado');
-      
-      if (!jaExecutou) {
-        console.log('🔄 Executando backfill de composições...');
-        const resultado = await backfillComposicoesEstoque();
-        
-        if (resultado.success && resultado.criados > 0) {
-          toast({
-            title: "Estoque Atualizado",
-            description: `${resultado.criados} registros de composições foram adicionados aos locais existentes.`,
-          });
-          localStorage.setItem('backfill-composicoes-executado', 'true');
-          setReloadKey(prev => prev + 1);
-        } else if (resultado.success) {
-          localStorage.setItem('backfill-composicoes-executado', 'true');
-        }
-      }
-    };
-
-    executarBackfill();
-  }, [toast]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -95,6 +71,16 @@ export default function ComposicoesUnificadasPage() {
         <GerenciarLocaisModal onSuccess={handleLocalChange} />
       </div>
 
+      {/* Alerta se nenhum local selecionado */}
+      {!localAtivo && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Selecione um local de estoque para visualizar e gerenciar as composições.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -109,11 +95,11 @@ export default function ComposicoesUnificadasPage() {
         </TabsList>
 
         <TabsContent value="produtos" className="mt-6">
-          <ComposicoesEstoque key={`produtos-${reloadKey}`} />
+          <ComposicoesEstoque localId={localAtivo?.id} key={`produtos-${reloadKey}`} />
         </TabsContent>
 
         <TabsContent value="insumos" className="mt-6">
-          <InsumosPage hideHeader key={`insumos-${reloadKey}`} />
+          <InsumosPage localId={localAtivo?.id} hideHeader key={`insumos-${reloadKey}`} />
         </TabsContent>
       </Tabs>
     </div>

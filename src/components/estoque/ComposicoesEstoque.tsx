@@ -36,7 +36,7 @@ const sortOptions = [
   { id: "category", name: "Por Categoria", sortBy: "categoria", sortOrder: "asc" },
 ];
 
-export function ComposicoesEstoque() {
+export function ComposicoesEstoque({ localId }: { localId?: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoSelecionado, setProdutoSelecionado] = useState<ProdutoComposicao | null>(null);
   const [custosProdutos, setCustosProdutos] = useState<Record<string, number>>({});
@@ -85,7 +85,7 @@ export function ComposicoesEstoque() {
     isImporting
   } = useProdutosComposicoes();
 
-  const { getComposicoesForSku, loadComposicoes, composicoes } = useComposicoesEstoque();
+  const { getComposicoesForSku, loadComposicoes, composicoes } = useComposicoesEstoque(localId);
 
   // Hook para produtos do controle de estoque (para criar novos produtos)
   const { createProduct } = useProducts();
@@ -1066,6 +1066,7 @@ export function ComposicoesEstoque() {
         produto={produtoSelecionado ? adaptProdutoComposicaoToModalProduct(produtoSelecionado) : null}
         composicoes={produtoSelecionado ? getComposicoesForSku(produtoSelecionado.sku_interno) : []}
         onSave={handleSalvarComposicoes}
+        localId={localId}
       />
 
       {/* Modal de Importação de Excel */}
@@ -1077,6 +1078,7 @@ export function ComposicoesEstoque() {
           setImportModalOpen(false);
         }}
         tipo="composicoes"
+        localId={localId}
       />
 
       {/* Modal de Importação de Produtos do Estoque */}

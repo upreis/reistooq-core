@@ -11,32 +11,39 @@ import type { ComposicaoInsumo, ComposicaoInsumoEnriquecida, InsumoFormData } fr
 
 type ComposicaoInsumoInsert = Database['public']['Tables']['composicoes_insumos']['Insert'];
 
-export function useInsumosComposicoes() {
+export function useInsumosComposicoes(localId?: string) {
   const queryClient = useQueryClient();
 
-  // 📥 Buscar todos os insumos
+  // 📥 Buscar todos os insumos filtrados por local
   const { data: insumos = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['composicoes-insumos'],
+    queryKey: ['composicoes-insumos', localId],
     queryFn: async () => {
+      if (!localId) return [];
+
       const { data, error } = await supabase
         .from('composicoes_insumos')
         .select('*')
         .eq('ativo', true)
+        .eq('local_id', localId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as ComposicaoInsumo[];
-    }
+    },
+    enabled: !!localId
   });
 
   // 📥 Buscar insumos enriquecidos (com nomes e estoque)
   const { data: insumosEnriquecidos = [] } = useQuery({
-    queryKey: ['composicoes-insumos-enriquecidos'],
+    queryKey: ['composicoes-insumos-enriquecidos', localId],
     queryFn: async () => {
+      if (!localId) return [];
+
       const { data: composicoes, error } = await supabase
         .from('composicoes_insumos')
         .select('*')
         .eq('ativo', true)
+        .eq('local_id', localId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -71,7 +78,8 @@ export function useInsumosComposicoes() {
       })) || [];
 
       return enriquecidos;
-    }
+    },
+    enabled: !!localId
   });
 
   // 🔍 Buscar insumos de um produto específico
@@ -81,14 +89,15 @@ export function useInsumosComposicoes() {
 
   // ➕ Criar novo insumo
   const createMutation = useMutation({
-    mutationFn: async (data: InsumoFormData) => {
+    mutationFn: async (data: InsumoFormData & { local_id: string }) => {
       const { data: result, error } = await supabase
         .from('composicoes_insumos')
         .insert({
           sku_produto: data.sku_produto,
           sku_insumo: data.sku_insumo,
           quantidade: data.quantidade,
-          observacoes: data.observacoes || null
+          observacoes: data.observacoes || null,
+          local_id: data.local_id
         } as any)
         .select()
         .single();

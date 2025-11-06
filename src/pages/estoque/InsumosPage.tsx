@@ -20,8 +20,8 @@ import type { ComposicaoInsumoEnriquecida } from '@/features/estoque/types/insum
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export default function InsumosPage({ hideHeader = false }: { hideHeader?: boolean }) {
-  const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes();
+export default function InsumosPage({ hideHeader = false, localId }: { hideHeader?: boolean; localId?: string }) {
+  const { createInsumo, updateInsumo, deleteInsumo, insumosEnriquecidos } = useInsumosComposicoes(localId);
   
   const [formOpen, setFormOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

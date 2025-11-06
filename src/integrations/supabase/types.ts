@@ -481,6 +481,7 @@ export type Database = {
           ativo: boolean
           created_at: string
           id: string
+          local_id: string
           observacoes: string | null
           organization_id: string
           quantidade: number
@@ -492,6 +493,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           id?: string
+          local_id: string
           observacoes?: string | null
           organization_id: string
           quantidade?: number
@@ -503,6 +505,7 @@ export type Database = {
           ativo?: boolean
           created_at?: string
           id?: string
+          local_id?: string
           observacoes?: string | null
           organization_id?: string
           quantidade?: number
@@ -511,6 +514,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "composicoes_insumos_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "composicoes_insumos_organization_id_fkey"
             columns: ["organization_id"]
@@ -4315,6 +4325,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          local_id: string
           nome_componente: string
           organization_id: string
           quantidade: number
@@ -4326,6 +4337,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          local_id: string
           nome_componente: string
           organization_id: string
           quantidade?: number
@@ -4337,6 +4349,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          local_id?: string
           nome_componente?: string
           organization_id?: string
           quantidade?: number
@@ -4346,6 +4359,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "produto_componentes_local_id_fkey"
+            columns: ["local_id"]
+            isOneToOne: false
+            referencedRelation: "locais_estoque"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "produto_componentes_unidade_medida_id_fkey"
             columns: ["unidade_medida_id"]

@@ -20,6 +20,7 @@ interface ComposicoesModalProps {
   produto: ShopProduct | null;
   composicoes: ProdutoComponente[];
   onSave: () => void;
+  localId?: string;
 }
 
 interface ComposicaoForm {
@@ -30,7 +31,7 @@ interface ComposicaoForm {
   unidade_medida_id: string;
 }
 
-export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave }: ComposicoesModalProps) {
+export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave, localId }: ComposicoesModalProps) {
   const [formComposicoes, setFormComposicoes] = useState<ComposicaoForm[]>([]);
   const [saving, setSaving] = useState(false);
   const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
@@ -188,13 +189,19 @@ export function ComposicoesModal({ isOpen, onClose, produto, composicoes, onSave
           throw new Error('Não foi possível obter o ID da organização');
         }
 
+        // Verificar se localId está presente
+        if (!localId) {
+          throw new Error('Local de estoque não definido');
+        }
+
         const composicoesParaInserir = composicoesValidas.map(comp => ({
           sku_produto: produtoSku.trim(),
           sku_componente: comp.sku_componente.trim(),
           nome_componente: comp.nome_componente.trim(),
           quantidade: comp.quantidade,
           unidade_medida_id: comp.unidade_medida_id || null,
-          organization_id: productData.organization_id
+          organization_id: productData.organization_id,
+          local_id: localId
         }));
 
         console.log('📦 Inserindo composições:', composicoesParaInserir);

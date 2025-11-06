@@ -128,9 +128,68 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
         if (estoqueError) throw estoqueError;
       }
 
+      // 📋 CLONAR COMPOSIÇÕES DO LOCAL PRINCIPAL
+      const { data: localPrincipal } = await supabase
+        .from('locais_estoque')
+        .select('id')
+        .eq('organization_id', profile.organizacao_id)
+        .eq('tipo', 'principal')
+        .single();
+
+      let componentesPrincipal: any[] = [];
+      let insumosPrincipal: any[] = [];
+
+      if (localPrincipal) {
+        // Clonar produto_componentes
+        const { data: compData } = await supabase
+          .from('produto_componentes')
+          .select('*')
+          .eq('local_id', localPrincipal.id);
+
+        componentesPrincipal = compData || [];
+
+        if (componentesPrincipal.length > 0) {
+          const componentesClonados = componentesPrincipal.map(comp => ({
+            organization_id: comp.organization_id,
+            sku_produto: comp.sku_produto,
+            sku_componente: comp.sku_componente,
+            nome_componente: comp.nome_componente,
+            quantidade: comp.quantidade,
+            unidade_medida_id: comp.unidade_medida_id,
+            local_id: novoLocal.id
+          }));
+
+          await supabase.from('produto_componentes').insert(componentesClonados);
+        }
+
+        // Clonar composicoes_insumos
+        const { data: insData } = await supabase
+          .from('composicoes_insumos')
+          .select('*')
+          .eq('local_id', localPrincipal.id);
+
+        insumosPrincipal = insData || [];
+
+        if (insumosPrincipal.length > 0) {
+          const insumosClonados = insumosPrincipal.map(ins => ({
+            organization_id: ins.organization_id,
+            sku_produto: ins.sku_produto,
+            sku_insumo: ins.sku_insumo,
+            quantidade: ins.quantidade,
+            observacoes: ins.observacoes,
+            ativo: ins.ativo,
+            local_id: novoLocal.id
+          }));
+
+          await supabase.from('composicoes_insumos').insert(insumosClonados);
+        }
+      }
+
+      const totalComposicoes = componentesPrincipal.length + insumosPrincipal.length;
+      
       toast({
         title: 'Local criado com sucesso!',
-        description: `${nome} foi criado com ${estoqueInicial.length} itens (produtos + composições) com quantidades zeradas.`
+        description: `${nome} foi criado com ${estoqueInicial.length} itens de estoque e ${totalComposicoes} composições clonadas.`
       });
 
       // Disparar evento para recarregar lista de locais
