@@ -52,18 +52,11 @@ export function useInsumosComposicoes(localId?: string) {
       const skusProdutos = [...new Set(composicoes?.map(c => c.sku_produto) || [])];
       const skusInsumos = [...new Set(composicoes?.map(c => c.sku_insumo) || [])];
 
-      // Buscar produtos (podem estar em produtos ou produtos_composicoes) do mesmo local
-      // @ts-ignore - Supabase typing issue with complex queries
-      const produtosPromise = supabase.from('produtos').select('sku_interno, nome').in('sku_interno', skusProdutos).eq('local_id', localId);
-      // @ts-ignore - Supabase typing issue with complex queries  
-      const composicoesPromise = supabase.from('produtos_composicoes').select('sku_interno, nome').in('sku_interno', skusProdutos);
-      // @ts-ignore - Supabase typing issue with complex queries
-      const insumosPromise = supabase.from('produtos').select('sku_interno, nome, quantidade_atual').in('sku_interno', skusInsumos).eq('local_id', localId);
-      
+      // Buscar produtos (podem estar em produtos ou produtos_composicoes)
       const [produtosRes, composicoesRes, insumosRes] = await Promise.all([
-        produtosPromise,
-        composicoesPromise,
-        insumosPromise
+        supabase.from('produtos').select('sku_interno, nome').in('sku_interno', skusProdutos),
+        supabase.from('produtos_composicoes').select('sku_interno, nome').in('sku_interno', skusProdutos),
+        supabase.from('produtos').select('sku_interno, nome, quantidade_atual').in('sku_interno', skusInsumos)
       ]);
 
       // Criar mapas de nomes e estoques
