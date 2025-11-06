@@ -47,6 +47,14 @@ export async function salvarSnapshotBaixa(
     // Converter fotografia para formato do banco
     const dadosBaixa = fotografiaParaBanco(fotografia);
     
+    console.log('🔍 VERIFICAÇÃO LOCAL DE ESTOQUE:', {
+      id_unico: dadosBaixa.id_unico,
+      local_estoque_id: dadosBaixa.local_estoque_id,
+      local_estoque_nome: dadosBaixa.local_estoque_nome,
+      local_estoque: dadosBaixa.local_estoque,
+      tem_local_id: !!dadosBaixa.local_estoque_id
+    });
+    
     // Adicionar usuário que fez a baixa
     dadosBaixa.created_by = user.id;
 

@@ -393,6 +393,22 @@ export function fotografarPedidoCompleto(
     local_estoque_nome: order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque || '-',
     local_estoque: order.local_estoque || order.unified?.local_estoque || '-',
     
+    // 🔍 LOG PARA DEBUG
+    ...(() => {
+      const localId = order.local_estoque_id || order.unified?.local_estoque_id;
+      const localNome = order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque;
+      console.log('📸 FOTOGRAFIA - Local de estoque capturado:', {
+        pedido_numero: order.numero || order.id,
+        local_estoque_id: localId,
+        local_estoque_nome: localNome,
+        tem_local_id: !!localId,
+        tem_local_nome: !!localNome,
+        order_tem_local_id: !!order.local_estoque_id,
+        order_tem_unified_local_id: !!order.unified?.local_estoque_id
+      });
+      return {};
+    })(),
+    
     // ENVIO/SHIPPING (COMPLETO)
     status_envio: (() => {
       const status = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status;
