@@ -16,6 +16,7 @@ import {
   LocalEstoque,
   MapeamentoLocalEstoque
 } from '@/services/LocalEstoqueService';
+import { translateLogisticType } from '@/lib/translations';
 
 interface ConfiguracaoLocaisModalProps {
   open: boolean;
@@ -353,7 +354,7 @@ export function ConfiguracaoLocaisModal({
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <Badge variant="secondary">{mapeamento.empresa}</Badge>
-                        <Badge variant="outline">{mapeamento.tipo_logistico}</Badge>
+                        <Badge variant="outline">{translateLogisticType(mapeamento.tipo_logistico)}</Badge>
                         <Badge>{mapeamento.marketplace}</Badge>
                       </div>
                       <div className="text-sm">
