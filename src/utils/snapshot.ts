@@ -47,12 +47,28 @@ export async function salvarSnapshotBaixa(
     // Converter fotografia para formato do banco
     const dadosBaixa = fotografiaParaBanco(fotografia);
     
-    console.log('🔍 VERIFICAÇÃO LOCAL DE ESTOQUE:', {
-      id_unico: dadosBaixa.id_unico,
-      local_estoque_id: dadosBaixa.local_estoque_id,
-      local_estoque_nome: dadosBaixa.local_estoque_nome,
-      local_estoque: dadosBaixa.local_estoque,
-      tem_local_id: !!dadosBaixa.local_estoque_id
+    // 🔍 DEBUG CRÍTICO: Verificar se local_estoque_id está sendo capturado
+    console.log('🔍 VERIFICAÇÃO COMPLETA - LOCAL DE ESTOQUE:', {
+      pedido_numero: pedido.numero || pedido.id,
+      
+      // Do pedido original
+      pedido_local_estoque_id: pedido.local_estoque_id,
+      pedido_local_estoque_nome: pedido.local_estoque_nome || pedido.local_estoque,
+      pedido_unified_local_id: pedido.unified?.local_estoque_id,
+      
+      // Da fotografia
+      fotografia_local_estoque_id: fotografia.local_estoque_id,
+      fotografia_local_estoque_nome: fotografia.local_estoque_nome,
+      
+      // Dos dados para banco
+      banco_local_estoque_id: dadosBaixa.local_estoque_id,
+      banco_local_estoque_nome: dadosBaixa.local_estoque_nome,
+      banco_local_estoque: dadosBaixa.local_estoque,
+      
+      // Validação
+      tem_local_id_no_pedido: !!pedido.local_estoque_id || !!pedido.unified?.local_estoque_id,
+      tem_local_id_na_fotografia: !!fotografia.local_estoque_id,
+      tem_local_id_no_banco: !!dadosBaixa.local_estoque_id
     });
     
     // Adicionar usuário que fez a baixa
@@ -63,10 +79,12 @@ export async function salvarSnapshotBaixa(
       delete (dadosBaixa as any).integration_account_id;
     }
 
-    console.log('📊 Dados finais para banco:', {
+    console.log('📊 Dados finais para banco (hv_insert):', {
       id_unico: dadosBaixa.id_unico,
       sku_produto: dadosBaixa.sku_produto,
       empresa: dadosBaixa.empresa,
+      local_estoque_id: dadosBaixa.local_estoque_id, // ✅ CRÍTICO
+      local_estoque_nome: dadosBaixa.local_estoque_nome, // ✅ CRÍTICO
       valor_total: dadosBaixa.valor_total,
       enderecos: `${dadosBaixa.rua}, ${dadosBaixa.numero}`,
       status_envio: dadosBaixa.status_envio,

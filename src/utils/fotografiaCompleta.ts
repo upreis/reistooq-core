@@ -393,19 +393,30 @@ export function fotografarPedidoCompleto(
     local_estoque_nome: order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque || '-',
     local_estoque: order.local_estoque || order.unified?.local_estoque || '-',
     
-    // 🔍 LOG PARA DEBUG
+    // 🔍 LOG PARA DEBUG - Captura completa do local de estoque
     ...(() => {
       const localId = order.local_estoque_id || order.unified?.local_estoque_id;
       const localNome = order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque;
+      
       console.log('📸 FOTOGRAFIA - Local de estoque capturado:', {
         pedido_numero: order.numero || order.id,
-        local_estoque_id: localId,
-        local_estoque_nome: localNome,
+        
+        // Fontes de dados
+        order_local_estoque_id: order.local_estoque_id,
+        order_local_estoque_nome: order.local_estoque_nome,
+        order_local_estoque: order.local_estoque,
+        unified_local_estoque_id: order.unified?.local_estoque_id,
+        unified_local_estoque_nome: order.unified?.local_estoque_nome,
+        
+        // Valores finais
+        local_estoque_id_final: localId,
+        local_estoque_nome_final: localNome,
+        
+        // Validação
         tem_local_id: !!localId,
-        tem_local_nome: !!localNome,
-        order_tem_local_id: !!order.local_estoque_id,
-        order_tem_unified_local_id: !!order.unified?.local_estoque_id
+        tem_local_nome: !!localNome && localNome !== '-'
       });
+      
       return {};
     })(),
     
