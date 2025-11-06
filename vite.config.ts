@@ -47,6 +47,8 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    // ✅ CRÍTICO: Previne múltiplas instâncias do React
+    dedupe: ['react', 'react-dom', 'react-router-dom'],
   },
   optimizeDeps: {
     // ✅ REMOVIDO: lista explícita - deixa Vite detectar automaticamente
