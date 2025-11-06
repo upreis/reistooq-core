@@ -36,36 +36,6 @@ export default function ComposicoesUnificadasPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span>🏠</span>
-          <span>/</span>
-          <span>Estoque</span>
-          <span>/</span>
-          <span className="text-primary font-medium">Composições</span>
-        </div>
-        <div className="flex items-start justify-between gap-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Composições</h1>
-            <p className="text-muted-foreground max-w-2xl">
-              Gerencie composições de produtos e insumos por pedido
-            </p>
-          </div>
-          <div className="text-right">
-            <h2 className="text-2xl font-bold text-foreground mb-2">
-              {activeTab === "produtos" ? "Composições de Produtos" : "Composições de Insumos"}
-            </h2>
-            <p className="text-muted-foreground max-w-xl">
-              {activeTab === "produtos" 
-                ? "Gerencie as composições dos seus produtos, defina componentes e monitore custos"
-                : "Gerencie as composições dos seus Insumos, defina componentes e monitore custos"
-              }
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Seletor de Local de Estoque */}
       <div className="flex items-center justify-between gap-4 pb-4 border-b">
         <LocalEstoqueSelector key={`selector-${Date.now()}`} />
