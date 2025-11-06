@@ -34,21 +34,6 @@ export class HistoricoDeleteService {
       console.log('📊 DADOS COMPLETOS DA VENDA:', JSON.stringify(vendaDataAny, null, 2));
       console.log('🔑 Chaves disponíveis:', Object.keys(vendaDataAny));
       
-      // ✅ BUSCAR LOCAL DE ESTOQUE (testar diferentes formatos possíveis)
-      const localEstoqueId = vendaDataAny.local_estoque_id;
-      const localEstoqueNome = vendaDataAny.local_estoque_nome || vendaDataAny.local_estoque || 'desconhecido';
-      
-      console.log('🏢 Local identificado:', { 
-        localEstoqueId, 
-        localEstoqueNome,
-        todosOsCampos: vendaDataAny 
-      });
-      
-      if (!localEstoqueId) {
-        console.warn('⚠️ Local de estoque não encontrado no histórico - reversão de estoque pode não funcionar corretamente');
-        // Não bloquear a exclusão, mas avisar o usuário
-      }
-
       // 🛡️ BUSCAR organization_id UMA VEZ para reutilizar
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -61,7 +46,7 @@ export class HistoricoDeleteService {
         .from('profiles')
         .select('organizacao_id')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!profile?.organizacao_id) {
         console.error('❌ Organization ID não encontrado');
@@ -70,7 +55,54 @@ export class HistoricoDeleteService {
       }
 
       const organizationId = profile.organizacao_id;
-      console.log(`🏢 Local de estoque identificado: ${localEstoqueNome} (${localEstoqueId || 'não informado'})`);
+      
+      // ✅ BUSCAR LOCAL DE ESTOQUE (pode não existir em registros antigos)
+      let localEstoqueId: string | null = vendaDataAny.local_estoque_id || null;
+      let localEstoqueNome: string = vendaDataAny.local_estoque_nome || vendaDataAny.local_estoque || 'Padrão';
+      
+      // 🔧 SE NÃO TEM LOCAL (registro antigo), buscar local padrão
+      if (!localEstoqueId) {
+        console.warn('⚠️ Registro antigo sem local de estoque - buscando local padrão da organização');
+        
+        try {
+          // @ts-ignore - Evitar erro de tipos profundos do Supabase
+          const resultado = await supabase
+            .from('locais_estoque')
+            .select('id, nome')
+            .eq('organization_id', organizationId)
+            .eq('padrao', true)
+            .maybeSingle();
+          
+          if (resultado.data) {
+            localEstoqueId = resultado.data.id;
+            localEstoqueNome = resultado.data.nome;
+            console.log(`✅ Local padrão encontrado: ${localEstoqueNome}`);
+          } else {
+            // @ts-ignore - Evitar erro de tipos profundos do Supabase
+            const primeiro = await supabase
+              .from('locais_estoque')
+              .select('id, nome')
+              .eq('organization_id', organizationId)
+              .limit(1)
+              .maybeSingle();
+            
+            if (primeiro.data) {
+              localEstoqueId = primeiro.data.id;
+              localEstoqueNome = primeiro.data.nome;
+              console.log(`✅ Usando primeiro local: ${localEstoqueNome}`);
+            } else {
+              toast.error('Configure um local de estoque antes de excluir');
+              return false;
+            }
+          }
+        } catch (err) {
+          console.error('Erro ao buscar local:', err);
+          toast.error('Erro ao buscar local de estoque');
+          return false;
+        }
+      }
+
+      console.log('🏢 Local para reversão:', { localEstoqueId, localEstoqueNome });
       
       // 📝 LISTA DE REVERSÕES para rollback em caso de erro
       const reversoesRealizadas: Array<{tipo: 'produto' | 'insumo', produtoId: string, localId: string, quantidadeRevertida: number}> = [];
@@ -83,132 +115,55 @@ export class HistoricoDeleteService {
           if (quantidadePedido <= 0) {
             console.warn('⚠️ Quantidade do pedido é zero ou inválida, pulando reversão de estoque');
           } else {
-            console.log(`🔄 Revertendo estoque para SKU ${skuMapeado}, quantidade: ${quantidadePedido}`);
+            console.log(`🔄 Revertendo estoque para SKU ${skuMapeado}, quantidade: ${quantidadePedido} no local ${localEstoqueNome}`);
 
             // 🔍 VERIFICAR SE É COMPOSIÇÃO DE PRODUTOS OU INSUMOS
-            if (localEstoqueId) {
-              // Buscar composição do produto NO LOCAL ESPECÍFICO
-              const { data: composicao, error: composicaoError } = await supabase
-                .from('produto_componentes')
-                .select('sku_componente, quantidade')
-                .eq('sku_produto', skuMapeado)
-                .eq('local_id', localEstoqueId);
+            // Buscar composição do produto NO LOCAL ESPECÍFICO
+            const { data: composicao, error: composicaoError } = await supabase
+              .from('produto_componentes')
+              .select('sku_componente, quantidade')
+              .eq('sku_produto', skuMapeado)
+              .eq('local_id', localEstoqueId);
 
-              // Buscar composição de insumos NO LOCAL ESPECÍFICO
-              const { data: composicaoInsumos, error: insumosError } = await supabase
-                .from('composicoes_insumos')
-                .select('sku_insumo, quantidade')
-                .eq('sku_produto', skuMapeado)
-                .eq('local_id', localEstoqueId);
+            // Buscar composição de insumos NO LOCAL ESPECÍFICO
+            const { data: composicaoInsumos, error: insumosError } = await supabase
+              .from('composicoes_insumos')
+              .select('sku_insumo, quantidade')
+              .eq('sku_produto', skuMapeado)
+              .eq('local_id', localEstoqueId);
 
-              if (composicaoError) {
-                console.error('Erro ao buscar composição de produtos:', composicaoError);
-              }
+            if (composicaoError) {
+              console.error('Erro ao buscar composição de produtos:', composicaoError);
+            }
 
-              if (insumosError) {
-                console.error('Erro ao buscar composição de insumos:', insumosError);
-              }
-              
-              // 🔧 REVERTER COMPOSIÇÃO DE PRODUTOS
-              if (composicao && composicao.length > 0) {
-                console.log(`📋 Composição de produtos encontrada com ${composicao.length} componentes no local ${localEstoqueNome}`);
+            if (insumosError) {
+              console.error('Erro ao buscar composição de insumos:', insumosError);
+            }
+            
+            // 🔧 REVERTER COMPOSIÇÃO DE PRODUTOS
+            if (composicao && composicao.length > 0) {
+              console.log(`📋 Composição de produtos encontrada com ${composicao.length} componentes no local ${localEstoqueNome}`);
 
-                for (const componente of composicao) {
-                  const quantidadeReverter = componente.quantidade * quantidadePedido;
-                  
-                  console.log(`➕ Revertendo ${quantidadeReverter} unidades do componente ${componente.sku_componente} no local ${localEstoqueNome}`);
-
-                  // Buscar produto_id do componente
-                  const { data: produto } = await supabase
-                    .from('produtos')
-                    .select('id, sku_interno')
-                    .eq('sku_interno', componente.sku_componente.toUpperCase())
-                    .eq('organization_id', organizationId)
-                    .maybeSingle();
-
-                  if (produto) {
-                    await this.reverterEstoqueLocal(
-                      produto.id,
-                      localEstoqueId,
-                      organizationId,
-                      quantidadeReverter,
-                      componente.sku_componente,
-                      localEstoqueNome,
-                      vendaDataAny.numero_pedido || vendaDataAny.id_unico,
-                      'produto'
-                    );
-                    
-                    reversoesRealizadas.push({
-                      tipo: 'produto',
-                      produtoId: produto.id,
-                      localId: localEstoqueId,
-                      quantidadeRevertida: quantidadeReverter
-                    });
-                  } else {
-                    console.error(`❌ Componente ${componente.sku_componente} não encontrado no estoque`);
-                  }
-                }
-              }
-              
-              // 🔧 REVERTER COMPOSIÇÃO DE INSUMOS
-              if (composicaoInsumos && composicaoInsumos.length > 0) {
-                console.log(`📋 Composição de insumos encontrada com ${composicaoInsumos.length} insumos no local ${localEstoqueNome}`);
-
-                for (const insumo of composicaoInsumos) {
-                  const quantidadeReverter = insumo.quantidade * quantidadePedido;
-                  
-                  console.log(`➕ Revertendo ${quantidadeReverter} unidades do insumo ${insumo.sku_insumo} no local ${localEstoqueNome}`);
-
-                  // Buscar produto_id do insumo
-                  const { data: produto } = await supabase
-                    .from('produtos')
-                    .select('id, sku_interno')
-                    .eq('sku_interno', insumo.sku_insumo.toUpperCase())
-                    .eq('organization_id', organizationId)
-                    .maybeSingle();
-
-                  if (produto) {
-                    await this.reverterEstoqueLocal(
-                      produto.id,
-                      localEstoqueId,
-                      organizationId,
-                      quantidadeReverter,
-                      insumo.sku_insumo,
-                      localEstoqueNome,
-                      vendaDataAny.numero_pedido || vendaDataAny.id_unico,
-                      'insumo'
-                    );
-                    
-                    reversoesRealizadas.push({
-                      tipo: 'insumo',
-                      produtoId: produto.id,
-                      localId: localEstoqueId,
-                      quantidadeRevertida: quantidadeReverter
-                    });
-                  } else {
-                    console.error(`❌ Insumo ${insumo.sku_insumo} não encontrado no estoque`);
-                  }
-                }
-              }
-              
-              // 🔄 Se NÃO tem composição (nem produtos nem insumos), reverter o produto principal
-              if ((!composicao || composicao.length === 0) && (!composicaoInsumos || composicaoInsumos.length === 0)) {
-                console.log(`⚠️ Nenhuma composição encontrada para ${skuMapeado} no local ${localEstoqueNome} - Revertendo produto principal`);
+              for (const componente of composicao) {
+                const quantidadeReverter = componente.quantidade * quantidadePedido;
                 
-                const { data: produtoPrincipal } = await supabase
+                console.log(`➕ Revertendo ${quantidadeReverter} unidades do componente ${componente.sku_componente} no local ${localEstoqueNome}`);
+
+                // Buscar produto_id do componente
+                const { data: produto } = await supabase
                   .from('produtos')
                   .select('id, sku_interno')
-                  .eq('sku_interno', skuMapeado.toUpperCase())
+                  .eq('sku_interno', componente.sku_componente.toUpperCase())
                   .eq('organization_id', organizationId)
                   .maybeSingle();
 
-                if (produtoPrincipal) {
+                if (produto) {
                   await this.reverterEstoqueLocal(
-                    produtoPrincipal.id,
+                    produto.id,
                     localEstoqueId,
                     organizationId,
-                    quantidadePedido,
-                    skuMapeado,
+                    quantidadeReverter,
+                    componente.sku_componente,
                     localEstoqueNome,
                     vendaDataAny.numero_pedido || vendaDataAny.id_unico,
                     'produto'
@@ -216,16 +171,89 @@ export class HistoricoDeleteService {
                   
                   reversoesRealizadas.push({
                     tipo: 'produto',
-                    produtoId: produtoPrincipal.id,
+                    produtoId: produto.id,
                     localId: localEstoqueId,
-                    quantidadeRevertida: quantidadePedido
+                    quantidadeRevertida: quantidadeReverter
                   });
                 } else {
-                  console.error(`❌ Produto principal ${skuMapeado} não encontrado no estoque`);
+                  console.error(`❌ Componente ${componente.sku_componente} não encontrado no estoque`);
                 }
               }
-            } else {
-              console.warn('⚠️ Local de estoque não identificado, não é possível reverter estoque corretamente');
+            }
+            
+            // 🔧 REVERTER COMPOSIÇÃO DE INSUMOS
+            if (composicaoInsumos && composicaoInsumos.length > 0) {
+              console.log(`📋 Composição de insumos encontrada com ${composicaoInsumos.length} insumos no local ${localEstoqueNome}`);
+
+              for (const insumo of composicaoInsumos) {
+                const quantidadeReverter = insumo.quantidade * quantidadePedido;
+                
+                console.log(`➕ Revertendo ${quantidadeReverter} unidades do insumo ${insumo.sku_insumo} no local ${localEstoqueNome}`);
+
+                // Buscar produto_id do insumo
+                const { data: produto } = await supabase
+                  .from('produtos')
+                  .select('id, sku_interno')
+                  .eq('sku_interno', insumo.sku_insumo.toUpperCase())
+                  .eq('organization_id', organizationId)
+                  .maybeSingle();
+
+                if (produto) {
+                  await this.reverterEstoqueLocal(
+                    produto.id,
+                    localEstoqueId,
+                    organizationId,
+                    quantidadeReverter,
+                    insumo.sku_insumo,
+                    localEstoqueNome,
+                    vendaDataAny.numero_pedido || vendaDataAny.id_unico,
+                    'insumo'
+                  );
+                  
+                  reversoesRealizadas.push({
+                    tipo: 'insumo',
+                    produtoId: produto.id,
+                    localId: localEstoqueId,
+                    quantidadeRevertida: quantidadeReverter
+                  });
+                } else {
+                  console.error(`❌ Insumo ${insumo.sku_insumo} não encontrado no estoque`);
+                }
+              }
+            }
+            
+            // 🔄 Se NÃO tem composição (nem produtos nem insumos), reverter o produto principal
+            if ((!composicao || composicao.length === 0) && (!composicaoInsumos || composicaoInsumos.length === 0)) {
+              console.log(`⚠️ Nenhuma composição encontrada para ${skuMapeado} no local ${localEstoqueNome} - Revertendo produto principal`);
+              
+              const { data: produtoPrincipal } = await supabase
+                .from('produtos')
+                .select('id, sku_interno')
+                .eq('sku_interno', skuMapeado.toUpperCase())
+                .eq('organization_id', organizationId)
+                .maybeSingle();
+
+              if (produtoPrincipal) {
+                await this.reverterEstoqueLocal(
+                  produtoPrincipal.id,
+                  localEstoqueId,
+                  organizationId,
+                  quantidadePedido,
+                  skuMapeado,
+                  localEstoqueNome,
+                  vendaDataAny.numero_pedido || vendaDataAny.id_unico,
+                  'produto'
+                );
+                
+                reversoesRealizadas.push({
+                  tipo: 'produto',
+                  produtoId: produtoPrincipal.id,
+                  localId: localEstoqueId,
+                  quantidadeRevertida: quantidadePedido
+                });
+              } else {
+                console.error(`❌ Produto principal ${skuMapeado} não encontrado no estoque`);
+              }
             }
           }
         }
