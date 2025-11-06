@@ -93,7 +93,7 @@ export async function salvarSnapshotBaixa(
 
     // 💾 Inserir fotografia completa no histórico de vendas via RPC segura (bypassa RLS)
     const { data, error } = await supabase.rpc('hv_insert', {
-      p: dadosBaixa as any
+      p_data: dadosBaixa as any
     });
 
     if (error) {

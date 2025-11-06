@@ -220,7 +220,7 @@ export class SimpleBaixaService {
       };
 
       // Salvar DIRETO no histórico usando RPC
-      const { error } = await supabase.rpc('hv_insert', { p: historicoData });
+      const { error } = await supabase.rpc('hv_insert', { p_data: historicoData });
       
       if (error) {
         console.error('❌ Erro ao salvar no histórico:', error);
