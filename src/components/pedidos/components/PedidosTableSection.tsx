@@ -1030,6 +1030,19 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         // Buscar nome do local de estoque enriquecido pelo hook useLocalEstoqueEnriquecimento
                         const localEstoque = order.unified?.local_estoque_nome || order.unified?.local_estoque;
                         
+                        // DEBUG: Log detalhado dos primeiros 3 pedidos
+                        const orderIndex = orders.indexOf(order);
+                        if (orderIndex < 3) {
+                          console.log(`🔍 [RENDER LOCAL] Pedido #${orderIndex}:`, {
+                            numero: order.unified?.numero,
+                            local_estoque_nome: order.unified?.local_estoque_nome,
+                            local_estoque: order.unified?.local_estoque,
+                            local_estoque_id: order.unified?.local_estoque_id,
+                            localEstoque_final: localEstoque,
+                            unified_keys: Object.keys(order.unified || {})
+                          });
+                        }
+                        
                         if (localEstoque) {
                           return (
                             <Badge variant="secondary">

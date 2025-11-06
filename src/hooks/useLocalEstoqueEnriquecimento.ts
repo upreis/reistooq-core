@@ -76,7 +76,10 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
 
     const enriquecidos = rows.map((row, index) => {
       // Se unified é null, retornar row como está
-      if (!row.unified) return row;
+      if (!row.unified) {
+        if (index < 3) console.log(`⚠️ [LocalEstoque] Pedido #${index} SEM unified`);
+        return row;
+      }
       
       const empresa = row.unified.empresa || '';
       const marketplace = row.unified.marketplace_origem || 'Mercado Livre';
@@ -93,13 +96,16 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       }
 
       if (index < 3) {
-        console.log(`📦 [LocalEstoque] Pedido #${index}:`, {
+        console.log(`📦 [LocalEstoque] ========== Pedido #${index} ==========`);
+        console.log(`📦 [LocalEstoque] Número: ${row.unified.numero}`);
+        console.log(`📦 [LocalEstoque] ESPERADO: empresa, marketplace, tipo_logistico`);
+        console.log(`📦 [LocalEstoque] RECEBIDO DO PEDIDO:`, {
           empresa,
           marketplace,
           tipoLogistico,
-          tipoLogisticoNormalizado,
-          numero: row.unified.numero
+          tipoLogisticoNormalizado
         });
+        console.log(`📦 [LocalEstoque] Unified completo:`, row.unified);
       }
 
       // Buscar mapeamento correspondente
@@ -110,10 +116,18 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           m.tipo_logistico.toLowerCase() === tipoLogisticoNormalizado;
         
         if (index < 3) {
-          console.log(`📦 [LocalEstoque] Testando mapeamento:`, {
-            mapeamento: { empresa: m.empresa, marketplace: m.marketplace, tipo: m.tipo_logistico },
-            pedido: { empresa, marketplace, tipo: tipoLogisticoNormalizado },
-            match
+          console.log(`📦 [LocalEstoque] --- Testando mapeamento ---`);
+          console.log(`📦 [LocalEstoque] Mapeamento DB:`, {
+            empresa: m.empresa,
+            marketplace: m.marketplace,
+            tipo_logistico: m.tipo_logistico,
+            tipo_normalizado: m.tipo_logistico.toLowerCase()
+          });
+          console.log(`📦 [LocalEstoque] Comparação:`, {
+            empresa_match: m.empresa === empresa,
+            marketplace_match: m.marketplace === marketplace,
+            tipo_match: m.tipo_logistico.toLowerCase() === tipoLogisticoNormalizado,
+            MATCH_FINAL: match
           });
         }
         
@@ -122,7 +136,10 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
 
       if (mapeamento && mapeamento.locais_estoque) {
         if (index < 3) {
-          console.log(`✅ [LocalEstoque] Mapeamento encontrado para pedido #${index}:`, mapeamento.locais_estoque.nome);
+          console.log(`✅ [LocalEstoque] MAPEAMENTO ENCONTRADO!`, {
+            local_estoque_id: mapeamento.local_estoque_id,
+            local_estoque_nome: mapeamento.locais_estoque.nome
+          });
         }
         return {
           ...row,
@@ -133,8 +150,11 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
             local_estoque_nome: mapeamento.locais_estoque.nome
           }
         };
-      } else if (index < 3) {
-        console.log(`⚠️ [LocalEstoque] Nenhum mapeamento encontrado para pedido #${index}`);
+      } else {
+        if (index < 3) {
+          console.log(`❌ [LocalEstoque] NENHUM MAPEAMENTO ENCONTRADO`);
+          console.log(`❌ [LocalEstoque] Total de mapeamentos disponíveis: ${mapeamentos.length}`);
+        }
       }
 
       return row;
