@@ -81,15 +81,20 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
       const marketplace = rowAny.marketplace_origem || row.unified?.marketplace_origem || 'Mercado Livre';
       const tipoLogistico = rowAny.tipo_logistico_raw || rowAny.tipo_logistico || row.unified?.tipo_logistico_raw || row.unified?.tipo_logistico || '';
 
-      // Normalizar tipo logístico
-      let tipoLogisticoNormalizado = tipoLogistico.toLowerCase();
-      if (tipoLogisticoNormalizado.includes('fulfillment') || tipoLogisticoNormalizado.includes('full')) {
-        tipoLogisticoNormalizado = 'fulfillment';
-      } else if (tipoLogisticoNormalizado.includes('flex') || tipoLogisticoNormalizado.includes('self')) {
-        tipoLogisticoNormalizado = 'flex';
-      } else if (tipoLogisticoNormalizado.includes('cross')) {
-        tipoLogisticoNormalizado = 'crossdocking';
-      }
+      // Função para normalizar tipo logístico de forma consistente
+      const normalizarTipoLogistico = (tipo: string): string => {
+        const tipoLower = tipo.toLowerCase().trim();
+        if (tipoLower.includes('fulfillment') || tipoLower.includes('full')) {
+          return 'fulfillment';
+        } else if (tipoLower.includes('flex') || tipoLower.includes('self') || tipoLower.includes('envios')) {
+          return 'flex';
+        } else if (tipoLower.includes('cross')) {
+          return 'crossdocking';
+        }
+        return tipoLower;
+      };
+
+      const tipoLogisticoNormalizado = normalizarTipoLogistico(tipoLogistico);
 
       if (index < 3) {
         console.log(`📦 [LocalEstoque] ========== Pedido #${index} ==========`);
@@ -106,23 +111,28 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
 
       // Buscar mapeamento correspondente
       const mapeamento = mapeamentos.find(m => {
+        // ✅ Normalizar AMBOS os lados para garantir match correto
+        const tipoMapeamentoNormalizado = normalizarTipoLogistico(m.tipo_logistico);
+        
         const match = 
           m.empresa === empresa &&
           m.marketplace === marketplace &&
-          m.tipo_logistico.toLowerCase() === tipoLogisticoNormalizado;
+          tipoMapeamentoNormalizado === tipoLogisticoNormalizado;
         
         if (index < 3) {
           console.log(`📦 [LocalEstoque] --- Testando mapeamento ---`);
           console.log(`📦 [LocalEstoque] Mapeamento DB:`, {
             empresa: m.empresa,
             marketplace: m.marketplace,
-            tipo_logistico: m.tipo_logistico,
-            tipo_normalizado: m.tipo_logistico.toLowerCase()
+            tipo_logistico_original: m.tipo_logistico,
+            tipo_logistico_normalizado: tipoMapeamentoNormalizado
           });
           console.log(`📦 [LocalEstoque] Comparação:`, {
             empresa_match: m.empresa === empresa,
             marketplace_match: m.marketplace === marketplace,
-            tipo_match: m.tipo_logistico.toLowerCase() === tipoLogisticoNormalizado,
+            tipo_match: tipoMapeamentoNormalizado === tipoLogisticoNormalizado,
+            tipo_pedido_norm: tipoLogisticoNormalizado,
+            tipo_mapeamento_norm: tipoMapeamentoNormalizado,
             MATCH_FINAL: match
           });
         }
