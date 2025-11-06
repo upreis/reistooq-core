@@ -99,16 +99,25 @@ export class MapeamentoService {
 
         if (produtosExistentes) {
           for (const produto of produtosExistentes) {
-            // Para cada produto (composição), buscar seus componentes
-            const { data: componentes } = await supabase
+            // Para cada produto (composição), buscar seus componentes NO LOCAL ESPECÍFICO
+            let queryComponentes = supabase
               .from('produto_componentes')
               .select('sku_componente, quantidade')
               .eq('sku_produto', produto.sku_interno);
             
-            console.log(`📦 [MapeamentoService] Produto ${produto.sku_interno} tem ${componentes?.length || 0} componentes`);
+            // 🛡️ CRÍTICO: Filtrar por local_id se fornecido
+            if (localEstoqueId) {
+              queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
+            }
+            
+            const { data: componentes } = await queryComponentes;
+            
+            const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
+            console.log(`📦 [MapeamentoService] Produto ${produto.sku_interno} tem ${componentes?.length || 0} componentes${localInfo}`);
             
             if (!componentes || componentes.length === 0) {
-              // Sem componentes = sem composição
+              // Sem componentes no local específico = sem composição neste local
+              console.warn(`⚠️ [MapeamentoService] Produto ${produto.sku_interno} NÃO possui componentes cadastrados${localInfo}`);
               produtosInfoMap.set(produto.sku_interno, {
                 existe: true,
                 quantidade: 0,
@@ -186,13 +195,26 @@ export class MapeamentoService {
 
         if (produtosComposicoes) {
           for (const prodComp of produtosComposicoes) {
-            const { data: componentes } = await supabase
+            // 🛡️ CRÍTICO: Buscar componentes NO LOCAL ESPECÍFICO
+            let queryComponentes = supabase
               .from('produto_componentes')
               .select('*')
               .eq('sku_produto', prodComp.sku_interno);
             
+            // 🛡️ Filtrar por local_id se fornecido
+            if (localEstoqueId) {
+              queryComponentes = queryComponentes.eq('local_id', localEstoqueId);
+            }
+            
+            const { data: componentes } = await queryComponentes;
+            
+            const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
+            const temComponentes = componentes && componentes.length > 0;
+            
+            console.log(`🔍 [MapeamentoService] SKU ${prodComp.sku_interno}: ${componentes?.length || 0} componentes${localInfo}`);
+            
             composicoesMap.set(prodComp.sku_interno, {
-              temComposicao: true,
+              temComposicao: temComponentes,
               componentes: componentes || []
             });
           }
@@ -223,23 +245,24 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // 🔍 FLUXO CORRETO: Verificar se produto está em produtos_composicoes
+            // 🔍 FLUXO CORRETO: Verificar se produto está em produtos_composicoes E tem componentes no local
             const composicaoData = composicoesMap.get(skuEstoque);
+            const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
             
-            console.log(`🔍 [FLUXO CORRETO] SKU: ${skuEstoque} | É composição: ${!!composicaoData?.temComposicao}`);
+            console.log(`🔍 [FLUXO CORRETO] SKU: ${skuEstoque} | É composição: ${!!composicaoData?.temComposicao}${localInfo}`);
             
             if (!composicaoData?.temComposicao) {
-              // NÃO está cadastrado como composição = Sem Mapear
-              statusBaixa = 'sem_mapear';
-              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} NÃO está em produtos_composicoes -> SEM_MAPEAR`);
+              // NÃO tem componentes cadastrados no local específico = Sem Composição
+              statusBaixa = 'sem_composicao';
+              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} NÃO possui composição cadastrada${localInfo} -> SEM_COMPOSICAO`);
             } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
-              // Está em produtos_composicoes mas sem componentes cadastrados
-              statusBaixa = 'sem_mapear';
-              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} está em produtos_composicoes mas SEM componentes -> SEM_MAPEAR`);
+              // Está em produtos_composicoes mas sem componentes cadastrados no local
+              statusBaixa = 'sem_composicao';
+              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} está em produtos_composicoes mas SEM componentes${localInfo} -> SEM_COMPOSICAO`);
             } else {
-              // Tem composição E componentes = Pronto para baixar
+              // Tem composição E componentes no local = Pronto para baixar
               statusBaixa = 'pronto_baixar';
-              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} tem composição com ${composicaoData.componentes.length} componentes -> PRONTO_BAIXAR`);
+              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} tem composição com ${composicaoData.componentes.length} componentes${localInfo} -> PRONTO_BAIXAR`);
             }
             skuCadastradoNoEstoque = true;
           }
