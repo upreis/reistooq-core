@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { useSidebarUI } from "@/context/SidebarUIContext";
-import { EnhancedSidebar, SidebarProvider } from "@/components/sidebar/enhanced";
+import { EnhancedSidebar } from "@/components/sidebar/enhanced";
 import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
 import Header from "./vertical/header/Header";
 import { AnnouncementTicker } from "@/components/ui/AnnouncementTicker";
@@ -60,10 +60,9 @@ const InnerLayout = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen w-full overflow-x-hidden">
-        {/* Mobile Header - Only show for pages that don't use MobileAppShell */}
-        {isMobile && !usesMobileAppShell() && <AppMobileHeader title={getPageTitle()} />}
+    <div className="min-h-screen w-full overflow-x-hidden">
+      {/* Mobile Header - Only show for pages that don't use MobileAppShell */}
+      {isMobile && !usesMobileAppShell() && <AppMobileHeader title={getPageTitle()} />}
         
         {/* Desktop Layout */}
         {!isMobile && (
@@ -104,10 +103,9 @@ const InnerLayout = () => {
             </main>
           </div>
         </div>
-        {/* Mobile Bottom Navigation */}
-        {isMobile && <MobileBottomNav />}
-      </div>
-    </SidebarProvider>
+      {/* Mobile Bottom Navigation */}
+      {isMobile && <MobileBottomNav />}
+    </div>
   );
 };
 

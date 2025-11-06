@@ -1,11 +1,11 @@
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useCallback, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import * as LucideIcons from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useSidebarState } from '../hooks/useSidebarState';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
 import { AnimatedSidebarSection } from './AnimatedSidebarSection';
+import { useLocation } from 'react-router-dom';
 import { /* Tooltip, TooltipContent, TooltipTrigger, */ TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
@@ -147,23 +147,23 @@ const SidebarSingleItem = memo(({
 
 SidebarSingleItem.displayName = 'SidebarSingleItem';
 
-// Memoized section component
+// Memoized section component (extracted to separate file for better organization)
 const SidebarSection = memo(({ 
   section, 
   isCollapsed, 
   isMobile, 
-  sidebarState, 
-  actions, 
-  utils 
+  isActive,
+  getPointerType,
+  calculateFlyoutPosition
 }: {
   section: NavSection;
   isCollapsed: boolean;
   isMobile: boolean;
-  sidebarState: any;
-  actions: any;
-  utils: any;
+  isActive: (path: string) => boolean;
+  getPointerType: () => 'mouse' | 'touch' | 'pen';
+  calculateFlyoutPosition: (element: HTMLElement) => any;
 }) => {
-  const { hasActiveChild, isActive } = useActiveRoute([section]);
+  const { hasActiveChild } = useActiveRoute([section]);
 
   return (
     <div key={section.id}>
@@ -193,8 +193,8 @@ const SidebarSection = memo(({
             item={item}
             isCollapsed={isCollapsed}
             isMobile={isMobile}
-            pointerType={utils.getPointerType()}
-            calculateFlyoutPosition={utils.calculateFlyoutPosition}
+            pointerType={getPointerType()}
+            calculateFlyoutPosition={calculateFlyoutPosition}
           />
         ))}
         
@@ -224,10 +224,36 @@ const SidebarContent = memo(({
   onMobileClose?: () => void;
   externalIsCollapsed?: boolean;
 }) => {
-  const { state, actions, utils } = useSidebarState();
   const { hasPermission } = useUserPermissions();
+  const location = useLocation();
+  
   // Use external collapsed state if provided (from SidebarUIProvider)
-  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : (!isMobile && state.expanded === false);
+  const isCollapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : false;
+  
+  // Memoized isActive function
+  const isActive = useCallback((path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  }, [location.pathname]);
+  
+  // Memoized getPointerType
+  const getPointerType = useCallback((): 'mouse' | 'touch' | 'pen' => {
+    if (window.matchMedia('(pointer: coarse)').matches) return 'touch';
+    if (window.matchMedia('(pointer: fine)').matches) return 'mouse';
+    return 'mouse';
+  }, []);
+  
+  // Memoized calculateFlyoutPosition
+  const calculateFlyoutPosition = useCallback((element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const flyoutMaxHeight = Math.min(300, viewportHeight - 40);
+    
+    return {
+      top: Math.max(10, Math.min(rect.top, viewportHeight - flyoutMaxHeight - 10)),
+      left: rect.right + 8,
+      maxHeight: flyoutMaxHeight
+    };
+  }, []);
 
   // Map route paths to permission keys
   const getPermissionForPath = (path?: string): string | null => {
@@ -276,28 +302,30 @@ const SidebarContent = memo(({
     return null;
   };
 
-  // Recursively filter items by permission
-  const filterItems = (items: NavItem[]): NavItem[] => {
-    const result: NavItem[] = [];
-    for (const item of items) {
-      const children = item.children ? filterItems(item.children) : undefined;
-      const required = getPermissionForPath(item.path);
-      const visible = required ? hasPermission(required) : true;
-      if (children && children.length > 0) {
-        result.push({ ...item, children });
-      } else if (visible) {
-        result.push({ ...item, children: undefined });
+  // Memoized filter function - only recalculate when permissions change
+  const filteredNav = useMemo(() => {
+    const filterItems = (items: NavItem[]): NavItem[] => {
+      const result: NavItem[] = [];
+      for (const item of items) {
+        const children = item.children ? filterItems(item.children) : undefined;
+        const required = getPermissionForPath(item.path);
+        const visible = required ? hasPermission(required) : true;
+        if (children && children.length > 0) {
+          result.push({ ...item, children });
+        } else if (visible) {
+          result.push({ ...item, children: undefined });
+        }
       }
-    }
-    return result;
-  };
+      return result;
+    };
 
-  const filteredNav = navItems
-    .map((section) => ({
-      ...section,
-      items: filterItems(section.items)
-    }))
-    .filter((section) => section.items.length > 0);
+    return navItems
+      .map((section) => ({
+        ...section,
+        items: filterItems(section.items)
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [navItems, hasPermission]);
 
   return (
     <TooltipProvider>
@@ -348,9 +376,9 @@ const SidebarContent = memo(({
               section={section}
               isCollapsed={isCollapsed}
               isMobile={isMobile}
-              sidebarState={state}
-              actions={actions}
-              utils={utils}
+              isActive={isActive}
+              getPointerType={getPointerType}
+              calculateFlyoutPosition={calculateFlyoutPosition}
             />
           ))}
         </nav>
@@ -362,7 +390,6 @@ const SidebarContent = memo(({
 SidebarContent.displayName = 'SidebarContent';
 
 export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isCollapsed: externalIsCollapsed }: EnhancedSidebarProps) => {
-  const { state } = useSidebarState();
   const [isHovered, setIsHovered] = useState(false);
   
   if (isMobile) {
@@ -377,8 +404,8 @@ export const EnhancedSidebar = memo(({ navItems, isMobile, onMobileClose, isColl
     );
   }
 
-  // Use external collapsed state if provided, otherwise use internal state
-  const collapsed = externalIsCollapsed !== undefined ? externalIsCollapsed : !state.expanded;
+  // Use external collapsed state (always controlled by SidebarUIProvider now)
+  const collapsed = externalIsCollapsed ?? false;
   const effectiveWidth = (collapsed && !isHovered) ? 72 : 288;
 
   return (

@@ -151,7 +151,7 @@ function App() {
                     } />
                      <Route path="/pedidos" element={
                        <PermissionRoute requiredPermissions={['orders:read']}>
-                         <OMS />
+                         <Pedidos />
                        </PermissionRoute>
                      } />
                      <Route path="/vendas-online" element={
