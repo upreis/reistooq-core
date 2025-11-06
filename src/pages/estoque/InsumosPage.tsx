@@ -284,6 +284,7 @@ export default function InsumosPage({ hideHeader = false, localId }: { hideHeade
           selectedItems={selectedItems}
           onSelectItem={selectItem}
           isSelected={isSelected}
+          localId={localId}
         />
       </div>
 
