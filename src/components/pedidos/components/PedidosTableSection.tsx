@@ -1029,9 +1029,12 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                       case 'local_estoque':
                         // Verificar se tem mapeamento baseado nos dados de mappingData
                         const pedidoId = order.id || order.numero || buildIdUnico(order);
-                        const pedidoMapping = mappingData?.get(pedidoId) || [];
+                        const pedidoMappingData = mappingData?.get(pedidoId);
                         const skuPedido = order.sku_kit || order.sku || order.order_items?.[0]?.item?.seller_sku || order.itens?.[0]?.sku;
-                        const mapeamento = pedidoMapping?.find((m: MapeamentoVerificacao) => m.skuPedido === skuPedido);
+                        
+                        // pedidoMappingData pode ser um objeto ou array - normalizar
+                        const mappingArray = Array.isArray(pedidoMappingData) ? pedidoMappingData : (pedidoMappingData ? [pedidoMappingData] : []);
+                        const mapeamento = mappingArray.find((m: MapeamentoVerificacao) => m.skuPedido === skuPedido);
                         const temMapeamento = mapeamento?.temMapeamento && mapeamento?.skuEstoque;
                         
                         if (temMapeamento) {
