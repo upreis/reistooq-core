@@ -679,7 +679,7 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     status: 'baixado',
     situacao: fotografia.situacao,
     status_mapeamento: fotografia.status_mapeamento,
-    sku_estoque: fotografia.sku_estoque,
+    sku_estoque: fotografia.sku_kit, // ✅ CRÍTICO: usar sku_kit para reversão correta!
     sku_kit: fotografia.sku_kit,
     qtd_kit: fotografia.quantidade_kit,
     quantidade_kit: fotografia.quantidade_kit,
