@@ -234,15 +234,21 @@ export function SidebarItemWithChildren({
                       key={child.id || child.path || child.label}
                       to={child.path || '#'}
                       className={cn(
-                        'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                        'group relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                         'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]',
                         childActive
-                          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))]/90 to-[hsl(var(--brand-yellow-glow))]/80 text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))] shadow-md font-semibold'
-                          : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))]'
+                          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] [&_svg]:text-[hsl(var(--brand-yellow-foreground))] shadow-lg font-semibold border-l-4 border-[hsl(var(--brand-yellow-foreground))]'
+                          : 'text-[hsl(var(--muted-foreground))] hover:bg-[hsl(var(--interactive-hover))] hover:text-[hsl(var(--foreground))] border-l-4 border-transparent'
                       )}
                     >
                       <ChildIcon className="h-4 w-4 shrink-0" />
-                      <span className="truncate">{child.label}</span>
+                      <span className="truncate relative">
+                        {child.label}
+                        {/* Linha inferior para item ativo no hover card */}
+                        {childActive && (
+                          <span className="absolute -bottom-0.5 left-0 right-0 h-0.5 bg-[hsl(var(--brand-yellow-foreground))]/60 rounded-full" />
+                        )}
+                      </span>
                     </NavLink>
                   );
                 })}
@@ -277,12 +283,12 @@ export function SidebarItemWithChildren({
                 key={child.id || child.path || child.label}
                 to={child.path || '#'}
                 className={cn(
-                  'group flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200',
+                  'group relative flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all duration-200',
                   'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
                   'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
                   childActive
-                    ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))]/90 to-[hsl(var(--brand-yellow-glow))]/80 text-[hsl(var(--brand-yellow-foreground))] shadow-md shadow-[hsl(var(--brand-yellow))]/20 font-semibold'
-                    : 'text-[hsl(var(--muted-foreground))] hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30 hover:text-[hsl(var(--foreground))]'
+                    ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/30 font-semibold border-l-4 border-[hsl(var(--brand-yellow-foreground))]'
+                    : 'text-[hsl(var(--muted-foreground))] hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30 hover:text-[hsl(var(--foreground))] border-l-4 border-transparent'
                 )}
               >
                 <ChildIcon className={cn(
@@ -290,10 +296,14 @@ export function SidebarItemWithChildren({
                   childActive ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
                 )} />
                 <span className={cn(
-                  "truncate font-medium transition-colors duration-200",
+                  "truncate font-medium transition-colors duration-200 relative",
                   childActive ? "text-[hsl(var(--brand-yellow-foreground))]" : ""
                 )}>
                   {child.label}
+                  {/* Linha inferior para item ativo */}
+                  {childActive && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[hsl(var(--brand-yellow-foreground))]/60 rounded-full" />
+                  )}
                 </span>
                 {child.badge && (
                   <span className={cn(
