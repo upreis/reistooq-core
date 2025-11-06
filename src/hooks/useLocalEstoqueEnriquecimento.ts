@@ -75,15 +75,11 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
     console.log('📦 [LocalEstoque] Mapeamentos disponíveis:', mapeamentos);
 
     const enriquecidos = rows.map((row, index) => {
-      // Se unified é null, retornar row como está
-      if (!row.unified) {
-        if (index < 3) console.log(`⚠️ [LocalEstoque] Pedido #${index} SEM unified`);
-        return row;
-      }
-      
-      const empresa = row.unified.empresa || '';
-      const marketplace = row.unified.marketplace_origem || 'Mercado Livre';
-      const tipoLogistico = row.unified.tipo_logistico_raw || row.unified.tipo_logistico || '';
+      // ✅ CORREÇÃO CRÍTICA: Campos estão no NÍVEL SUPERIOR do row, não dentro de unified
+      const rowAny = row as any;
+      const empresa = rowAny.empresa || row.unified?.empresa || '';
+      const marketplace = rowAny.marketplace_origem || row.unified?.marketplace_origem || 'Mercado Livre';
+      const tipoLogistico = rowAny.tipo_logistico_raw || rowAny.tipo_logistico || row.unified?.tipo_logistico_raw || row.unified?.tipo_logistico || '';
 
       // Normalizar tipo logístico
       let tipoLogisticoNormalizado = tipoLogistico.toLowerCase();
@@ -97,7 +93,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
 
       if (index < 3) {
         console.log(`📦 [LocalEstoque] ========== Pedido #${index} ==========`);
-        console.log(`📦 [LocalEstoque] Número: ${row.unified.numero}`);
+        console.log(`📦 [LocalEstoque] Número: ${rowAny.numero || row.unified?.numero}`);
         console.log(`📦 [LocalEstoque] ESPERADO: empresa, marketplace, tipo_logistico`);
         console.log(`📦 [LocalEstoque] RECEBIDO DO PEDIDO:`, {
           empresa,
@@ -105,7 +101,7 @@ export function useLocalEstoqueEnriquecimento(rows: Row[]) {
           tipoLogistico,
           tipoLogisticoNormalizado
         });
-        console.log(`📦 [LocalEstoque] Unified completo:`, row.unified);
+        console.log(`📦 [LocalEstoque] Row completo (keys):`, Object.keys(row));
       }
 
       // Buscar mapeamento correspondente
