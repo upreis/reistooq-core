@@ -11,7 +11,7 @@ import { buildIdUnico } from '@/utils/idUnico';
 import { formatPt, formatSubstatus, formatLogisticType, formatShippingStatus } from '@/utils/orderFormatters';
 
 // Interface que representa EXATAMENTE os dados como aparecem na UI
-// EXPANDIDA para incluir TODAS as colunas da configuração de pedidos
+// ✨ TODAS AS 50+ COLUNAS da página /pedidos capturadas aqui
 export interface FotografiaPedido {
   // ===== CAMPOS BÁSICOS =====
   id_unico: string;
@@ -29,7 +29,9 @@ export interface FotografiaPedido {
   quantidade_total: number;
   quantidade_itens: number;
   titulo_produto: string;
+  titulo_anuncio: string; // título do anúncio ML
   descricao: string;
+  conditions: string; // new, used, refurbished
   
   // ===== FINANCEIROS =====
   valor_total: number;
@@ -37,6 +39,7 @@ export interface FotografiaPedido {
   frete_pago_cliente: number;
   receita_flex_bonus: number;
   custo_envio_seller: number;
+  custo_fixo_meli: number; // custo fixo para produtos < R$ 79
   desconto_cupom: number;
   taxa_marketplace: number;
   valor_liquido_vendedor: number;
@@ -54,35 +57,41 @@ export interface FotografiaPedido {
   quantidade_kit: number;
   total_itens: number;
   status_baixa: string;
+  status_insumos: string; // validação de insumos/matéria-prima
+  marketplace_origem: string; // ML, Shopee, Tiny, Interno
   
   // ===== LOCAL DE ESTOQUE (CRÍTICO PARA REVERSÃO) =====
   local_estoque_id: string;
   local_estoque_nome: string;
   local_estoque: string;
   
-  // ===== ENVIO =====
+  // ===== ENVIO/SHIPPING =====
   status_envio: string;
+  shipping_substatus: string; // substatus detalhado (printed, picked_up, etc)
   logistic_mode_principal: string;
   tipo_logistico: string;
+  logistic_type: string; // tipo de logística (fulfillment, etc)
   tipo_metodo_envio: string;
   tipo_entrega: string;
   substatus_estado_atual: string;
   modo_envio_combinado: string;
   metodo_envio_combinado: string;
+  delivery_type: string;
+  substatus_detail: string;
+  shipping_method: string;
+  shipping_mode: string;
   
-  // ===== ENDEREÇO =====
+  // ===== RASTREAMENTO =====
+  codigo_rastreamento: string;
+  url_rastreamento: string;
+  
+  // ===== ENDEREÇO COMPLETO =====
   rua: string;
   numero: string;
   bairro: string;
   cep: string;
   cidade: string;
   uf: string;
-  
-  // ===== SHIPPING/LOGÍSTICA ADICIONAL =====
-  delivery_type: string;
-  substatus_detail: string;
-  shipping_method: string;
-  shipping_mode: string;
   
   // ===== MERCADO LIVRE ESPECÍFICO =====
   date_created: string;
@@ -91,16 +100,16 @@ export interface FotografiaPedido {
   pack_status: string;
   pack_status_detail: string;
   tags: string[];
+  power_seller_status: string; // Platinum, Gold, Silver
+  level_id: string; // nível de reputação
   
   // ===== METADADOS =====
   integration_account_id: string;
   numero_ecommerce: string;
   numero_venda: string;
-  codigo_rastreamento: string;
-  url_rastreamento: string;
   obs: string;
   obs_interna: string;
-  raw_data: any; // backup dos dados originais
+  raw_data: any; // backup dos dados originais completos
 }
 
 // ✅ REMOVIDO: Usar formatPt do orderFormatters
@@ -240,7 +249,7 @@ export function fotografarPedidoCompleto(
     return isFulfillment ? `${companyName} (MLF)` : companyName;
   };
   
-  // ===== CONSTRUIR FOTOGRAFIA COMPLETA =====
+  // ===== CONSTRUIR FOTOGRAFIA COMPLETA (50+ CAMPOS) =====
   const fotografia: FotografiaPedido = {
     // CAMPOS BÁSICOS
     id_unico: order.id_unico || buildIdUnico(order),
@@ -262,7 +271,10 @@ export function fotografarPedidoCompleto(
     quantidade_total: quantidadeItens,
     quantidade_itens: quantidadeItens,
     titulo_produto: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
+    titulo_anuncio: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
     descricao: order.order_items?.[0]?.item?.title || order.titulo_anuncio || '-',
+    conditions: order.order_items?.[0]?.item?.condition || 
+               order.condition || '-',
     
     // FINANCEIROS (exatamente como calculado na UI)
     valor_total: order.valor_total || order.total_amount || 0,
@@ -274,6 +286,11 @@ export function fotografarPedidoCompleto(
     receita_flex_bonus: order.receita_flex || getReceitaPorEnvio(order),
     custo_envio_seller: order.custo_envio_seller ||
                        order.shipping?.costs?.senders?.[0]?.cost || 0,
+    custo_fixo_meli: (() => {
+      // Custo fixo de R$ 6 para pedidos abaixo de R$ 79
+      const valorTotal = order.valor_total || order.total_amount || 0;
+      return valorTotal < 79 ? 6 : 0;
+    })(),
     desconto_cupom: order.payments?.[0]?.coupon_amount ||
                    order.raw?.payments?.[0]?.coupon_amount ||
                    order.coupon?.amount ||
@@ -362,17 +379,33 @@ export function fotografarPedidoCompleto(
     })(),
     
     status_baixa: '-', // Será definido no momento da baixa
+    status_insumos: mapping?.status_insumos || '-',
+    marketplace_origem: (() => {
+      if (order.marketplace_origem) return order.marketplace_origem;
+      if (order.integration_account_id) return 'Mercado Livre';
+      if (order.origin === 'shopee') return 'Shopee';
+      if (order.origin === 'tiny') return 'Tiny';
+      return 'Interno';
+    })(),
     
     // LOCAL DE ESTOQUE (CRÍTICO PARA REVERSÃO)
     local_estoque_id: order.local_estoque_id || order.unified?.local_estoque_id || '',
     local_estoque_nome: order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque || '-',
     local_estoque: order.local_estoque || order.unified?.local_estoque || '-',
     
-    // ENVIO
+    // ENVIO/SHIPPING (COMPLETO)
     status_envio: (() => {
       const status = order.shipping_status || order.shipping?.status || order.raw?.shipping?.status;
       return translateShippingStatus(status);
     })(),
+    
+    shipping_substatus: formatSubstatus(
+      order.shipping_substatus || 
+      order.shipping?.substatus || 
+      order.raw?.shipping?.substatus || 
+      order.substatus || 
+      order.raw?.substatus || ''
+    ),
     
     logistic_mode_principal: order.shipping?.logistic?.mode || 
                            order.raw?.shipping?.logistic?.mode || 
@@ -383,6 +416,10 @@ export function fotografarPedidoCompleto(
       order.raw?.shipping?.logistic?.type || 
       order.logistic_type
     ),
+    
+    logistic_type: order.shipping?.logistic?.type || 
+                  order.raw?.shipping?.logistic?.type || 
+                  order.logistic_type || '-',
     
     tipo_metodo_envio: formatPt(
       order.shipping_method?.type || 
@@ -403,6 +440,22 @@ export function fotografarPedidoCompleto(
       order.substatus || 
       order.raw?.substatus || ''
     ),
+    
+    delivery_type: order.delivery_type || 
+                  order.shipping?.delivery_type || 
+                  order.raw?.shipping?.delivery_type || '-',
+    
+    substatus_detail: order.shipping?.substatus?.detail || 
+                     order.substatus_detail || 
+                     order.raw?.shipping?.substatus?.detail || '-',
+    
+    shipping_method: order.shipping?.method?.combined || 
+                    order.shipping_method || 
+                    order.raw?.shipping?.method?.combined || '-',
+    
+    shipping_mode: order.shipping?.mode?.combined || 
+                  order.shipping_mode || 
+                  order.raw?.shipping?.mode?.combined || '-',
     
     modo_envio_combinado: (() => {
       const logisticMode = order.shipping?.logistic?.mode ||
@@ -441,6 +494,14 @@ export function fotografarPedidoCompleto(
       
       return parts.length > 0 ? parts.join(' | ') : 'Objeto complexo';
     })(),
+    
+    // RASTREAMENTO
+    codigo_rastreamento: order.codigo_rastreamento || 
+                        order.shipping?.tracking_number || 
+                        order.raw?.shipping?.tracking_number || '-',
+    url_rastreamento: order.url_rastreamento || 
+                     order.shipping?.tracking_url || 
+                     order.raw?.shipping?.tracking_url || '-',
     
     // ENDEREÇO
     rua: order.shipping?.destination?.shipping_address?.street_name ||
@@ -481,23 +542,6 @@ export function fotografarPedidoCompleto(
          order.raw?.shipping?.receiver_address?.state?.name ||
          order.receiver_address_state || '-',
      
-     // SHIPPING/LOGÍSTICA ADICIONAL
-     delivery_type: order.delivery_type || 
-                   order.shipping?.delivery_type || 
-                   order.raw?.shipping?.delivery_type || '-',
-     
-     substatus_detail: order.shipping?.substatus?.detail || 
-                      order.substatus_detail || 
-                      order.raw?.shipping?.substatus?.detail || '-',
-     
-     shipping_method: order.shipping?.method?.combined || 
-                     order.shipping_method || 
-                     order.raw?.shipping?.method?.combined || '-',
-     
-     shipping_mode: order.shipping?.mode?.combined || 
-                   order.shipping_mode || 
-                   order.raw?.shipping?.mode?.combined || '-',
-     
      // MERCADO LIVRE ESPECÍFICO
      date_created: order.date_created || 
                   order.created_at || 
@@ -509,16 +553,28 @@ export function fotografarPedidoCompleto(
      pack_status_detail: order.pack?.status_detail || '-',
      tags: order.tags || [],
      
+     power_seller_status: (() => {
+       const seller = order.seller || order.raw?.seller;
+       const powerStatus = seller?.seller_reputation?.power_seller_status;
+       if (powerStatus === 'platinum') return 'Platinum';
+       if (powerStatus === 'gold') return 'Gold';
+       if (powerStatus === 'silver') return 'Silver';
+       return '-';
+     })(),
+     
+     level_id: (() => {
+       const seller = order.seller || order.raw?.seller;
+       return seller?.seller_reputation?.level_id || '-';
+     })(),
+     
      // METADADOS
      integration_account_id: order.integration_account_id || integrationAccountId || '',
     numero_ecommerce: order.numero_ecommerce || '-',
     numero_venda: order.numero_venda || '-',
-    codigo_rastreamento: order.codigo_rastreamento || '-',
-    url_rastreamento: order.url_rastreamento || '-',
     obs: order.obs || '-',
     obs_interna: order.obs_interna || '-',
     
-    // BACKUP DOS DADOS ORIGINAIS
+    // BACKUP DOS DADOS ORIGINAIS COMPLETOS
     raw_data: order
   };
   
