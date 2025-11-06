@@ -6237,26 +6237,110 @@ export type Database = {
       get_historico_venda_by_id: {
         Args: { p_id: string }
         Returns: {
-          cliente_nome: string
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
+          cliente_documento: string | null
+          cliente_nome: string | null
+          codigo_barras: string | null
+          codigo_rastreamento: string | null
+          conditions: string | null
+          cpf_cnpj: string | null
           created_at: string
+          created_by: string | null
+          custo_envio_seller: number | null
+          custo_fixo_meli: number | null
           data_pedido: string
-          descricao: string
+          data_prevista: string | null
+          date_created: string | null
+          delivery_type: string | null
+          desconto_cupom: number | null
+          descricao: string | null
+          empresa: string | null
+          frete_pago_cliente: number | null
           id: string
           id_unico: string
-          nome_completo: string
+          integration_account_id: string | null
+          last_updated: string | null
+          level_id: string | null
+          local_estoque: string | null
+          local_estoque_id: string | null
+          local_estoque_nome: string | null
+          logistic_mode_principal: string | null
+          logistic_type: string | null
+          marketplace_origem: string | null
+          meta: Json | null
+          metodo_envio_combinado: string | null
+          metodo_pagamento: string | null
+          modo_envio_combinado: string | null
+          ncm: string | null
+          nome_completo: string | null
+          numero: string | null
+          numero_ecommerce: string | null
           numero_pedido: string
-          observacoes: string
+          numero_venda: string | null
+          obs: string | null
+          obs_interna: string | null
+          observacoes: string | null
+          origem: string | null
+          pack_id: string | null
+          pack_status: string | null
+          pack_status_detail: string | null
+          pedido_id: string | null
+          pickup_id: string | null
+          power_seller_status: string | null
+          qtd_kit: number | null
           quantidade: number
-          quantidade_total: number
-          sku_estoque: string
-          sku_kit: string
+          quantidade_itens: number | null
+          quantidade_kit: number | null
+          quantidade_total: number | null
+          raw: Json | null
+          raw_data: Json | null
+          receita_flex_bonus: number | null
+          rua: string | null
+          shipping_method: string | null
+          shipping_mode: string | null
+          shipping_shipping_status: string | null
+          shipping_substatus: string | null
+          situacao: string | null
+          sku_estoque: string | null
+          sku_kit: string | null
           sku_produto: string
+          skus_produtos: string | null
           status: string
-          titulo_produto: string
+          status_baixa: string | null
+          status_envio: string | null
+          status_insumos: string | null
+          status_mapeamento: string | null
+          status_pagamento: string | null
+          substatus_detail: string | null
+          substatus_estado_atual: string | null
+          tags: string[] | null
+          taxa_marketplace: number | null
+          tipo_entrega: string | null
+          tipo_logistico: string | null
+          tipo_metodo_envio: string | null
+          tipo_pagamento: string | null
+          titulo_anuncio: string | null
+          titulo_produto: string | null
+          total_itens: number | null
+          uf: string | null
+          ultima_atualizacao: string | null
           updated_at: string
+          url_rastreamento: string | null
+          valor_desconto: number | null
+          valor_frete: number | null
+          valor_liquido_vendedor: number | null
+          valor_pago: number | null
           valor_total: number
           valor_unitario: number
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "historico_vendas"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       get_historico_vendas_browse: {
         Args: {
