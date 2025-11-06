@@ -81,8 +81,8 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (localError) throw localError;
 
-      // Buscar todos os produtos ativos da organização
-      const { data: produtos, error: produtosError } = await supabase
+      // Buscar todos os produtos ativos da organização (produtos)
+      const { data: produtosAtivos, error: produtosError } = await supabase
         .from('produtos')
         .select('id')
         .eq('organization_id', profile.organizacao_id)
@@ -90,25 +90,47 @@ export function GerenciarLocaisModal({ trigger, onSuccess }: GerenciarLocaisModa
 
       if (produtosError) throw produtosError;
 
-      if (produtos && produtos.length > 0) {
-        // Criar registros de estoque zerados para cada produto
-        const estoquesParaCriar = produtos.map(p => ({
-          produto_id: p.id,
+      // Buscar todos os produtos composições ativos
+      const { data: composicoesAtivas, error: composicoesError } = await supabase
+        .from('produtos_composicoes')
+        .select('id')
+        .eq('organization_id', profile.organizacao_id)
+        .eq('ativo', true);
+
+      if (composicoesError) throw composicoesError;
+
+      // Criar registros de estoque_por_local com quantidade 0 para cada produto e composição
+      const estoqueInicial = [];
+
+      if (produtosAtivos && produtosAtivos.length > 0) {
+        estoqueInicial.push(...produtosAtivos.map(produto => ({
+          produto_id: produto.id,
           local_id: novoLocal.id,
           quantidade: 0,
           organization_id: profile.organizacao_id
-        }));
+        })));
+      }
 
+      if (composicoesAtivas && composicoesAtivas.length > 0) {
+        estoqueInicial.push(...composicoesAtivas.map(composicao => ({
+          produto_id: composicao.id,
+          local_id: novoLocal.id,
+          quantidade: 0,
+          organization_id: profile.organizacao_id
+        })));
+      }
+
+      if (estoqueInicial.length > 0) {
         const { error: estoqueError } = await supabase
           .from('estoque_por_local')
-          .insert(estoquesParaCriar);
+          .insert(estoqueInicial);
 
         if (estoqueError) throw estoqueError;
       }
 
       toast({
         title: 'Local criado com sucesso!',
-        description: `${nome} foi criado com ${produtos?.length || 0} produtos (quantidades zeradas).`
+        description: `${nome} foi criado com ${estoqueInicial.length} itens (produtos + composições) com quantidades zeradas.`
       });
 
       // Disparar evento para recarregar lista de locais

@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ComposicoesEstoque } from "@/components/estoque/ComposicoesEstoque";
 import InsumosPage from "./InsumosPage";
 import { Layers, PackageCheck } from "lucide-react";
+import { LocalEstoqueSelector } from "@/components/estoque/LocalEstoqueSelector";
+import { GerenciarLocaisModal } from "@/components/estoque/GerenciarLocaisModal";
 
 export default function ComposicoesUnificadasPage() {
   const location = useLocation();
@@ -26,6 +28,10 @@ export default function ComposicoesUnificadasPage() {
     } else {
       navigate('/estoque/composicoes');
     }
+  };
+
+  const handleLocalChange = () => {
+    window.dispatchEvent(new Event('reload-locais-estoque'));
   };
 
   return (
@@ -58,6 +64,12 @@ export default function ComposicoesUnificadasPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Seletor de Local de Estoque */}
+      <div className="flex items-center justify-between gap-4 pb-4 border-b">
+        <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+        <GerenciarLocaisModal onSuccess={handleLocalChange} />
       </div>
 
       {/* Tabs */}
