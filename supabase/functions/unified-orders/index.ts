@@ -524,7 +524,13 @@ async function enrichWithReturnReviews(order: any, returnData: any, accessToken:
 }
 
 function transformMLOrders(orders: any[], integration_account_id: string, accountName?: string, cid?: string) {
-  return orders.map(order => {
+  // 📍 DEBUG: Log do accountName para verificar mapeamento
+  if (orders.length > 0) {
+    console.log(`📦 [transformMLOrders:${cid}] AccountName recebido:`, accountName);
+    console.log(`📦 [transformMLOrders:${cid}] Total de pedidos:`, orders.length);
+  }
+  
+  return orders.map((order, index) => {
     const buyer = order.buyer || {};
     const seller = order.seller || {};
     const shipping = order.shipping || {};
@@ -540,6 +546,16 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     // 📍 LOCAL DE ESTOQUE: Detectar marketplace e tipo logístico para mapeamento
     const logisticTypeRaw = detailedShipping?.logistic?.type || shipping?.logistic?.type || shipping?.logistic_type || detailedShipping?.logistic_type;
     const marketplace_origem = 'Mercado Livre'; // Para Shopee e outras plataformas, ajustar no futuro
+    
+    // 📍 DEBUG: Log dos primeiros 3 pedidos para verificar dados de mapeamento
+    if (index < 3) {
+      console.log(`📦 [transformMLOrders:${cid}] Pedido #${index}:`, {
+        numero: order.id,
+        empresa: accountName || 'Mercado Livre',
+        marketplace_origem,
+        tipo_logistico_raw: logisticTypeRaw
+      });
+    }
     
     // 🔍 DEBUG PROFUNDO: Log IMEDIATO da estrutura costs (ANTES de qualquer processamento)
     if (String(order.id) === '2000013656902262') {
