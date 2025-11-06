@@ -149,6 +149,29 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
 
     setEditando(true);
     try {
+      // ✅ VALIDAÇÃO: Verificar se já existe outro local com o mesmo nome
+      const { data: localExistente, error: checkError } = await supabase
+        .from('locais_estoque')
+        .select('id, nome')
+        .eq('organization_id', localParaEditar.organization_id)
+        .ilike('nome', formData.nome.trim())
+        .neq('id', localParaEditar.id) // Excluir o próprio local da verificação
+        .single();
+
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw checkError;
+      }
+
+      if (localExistente) {
+        toast({
+          title: 'Nome já existe',
+          description: `Já existe um local de estoque chamado "${localExistente.nome}". Por favor, escolha outro nome.`,
+          variant: 'destructive'
+        });
+        setEditando(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('locais_estoque')
         .update({
