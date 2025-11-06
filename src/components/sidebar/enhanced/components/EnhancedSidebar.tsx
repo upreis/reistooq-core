@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useSidebarState } from '../hooks/useSidebarState';
 import { useActiveRoute } from '../hooks/useActiveRoute';
 import { SidebarItemWithChildren } from './SidebarItemWithChildren';
+import { AnimatedSidebarSection } from './AnimatedSidebarSection';
 import { /* Tooltip, TooltipContent, TooltipTrigger, */ TooltipProvider } from '@/components/ui/tooltip';
 import { NavSection, NavItem } from '../types/sidebar.types';
 import { Logo } from '@/components/ui/Logo';
@@ -185,32 +186,25 @@ const SidebarSection = memo(({
 
       {/* Section Items */}
       <div className="space-y-1">
-        {section.items.map((item) => {
-          const hasChildren = item.children && item.children.length > 0;
-
-          if (hasChildren) {
-            return (
-              <SidebarItemWithChildren
-                key={item.id || item.label}
-                item={item}
-                isCollapsed={isCollapsed}
-                isMobile={isMobile}
-                pointerType={utils.getPointerType()}
-                calculateFlyoutPosition={utils.calculateFlyoutPosition}
-              />
-            );
-          }
-
-          return (
-            <SidebarSingleItem
-              key={item.id || item.path || item.label}
-              item={item}
-              isCollapsed={isCollapsed}
-              isMobile={isMobile}
-              isActive={isActive}
-            />
-          );
-        })}
+        {/* Items with children (groups) */}
+        {section.items.filter(item => item.children && item.children.length > 0).map((item) => (
+          <SidebarItemWithChildren
+            key={item.id || item.label}
+            item={item}
+            isCollapsed={isCollapsed}
+            isMobile={isMobile}
+            pointerType={utils.getPointerType()}
+            calculateFlyoutPosition={utils.calculateFlyoutPosition}
+          />
+        ))}
+        
+        {/* Single items (no children) - with animated menu style */}
+        <AnimatedSidebarSection
+          items={section.items}
+          isCollapsed={isCollapsed}
+          isMobile={isMobile}
+          isActive={isActive}
+        />
       </div>
     </div>
   );
