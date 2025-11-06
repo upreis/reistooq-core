@@ -1,21 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { MapPin, Loader2, X } from 'lucide-react';
+import { MapPin, Loader2 } from 'lucide-react';
 import { LocalEstoque } from '@/features/estoque/types/locais.types';
 import { useLocalEstoqueAtivo } from '@/hooks/useLocalEstoqueAtivo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const TIPO_ICONS: Record<string, string> = {
   principal: '🏢',
@@ -28,10 +17,7 @@ const TIPO_ICONS: Record<string, string> = {
 export function LocalEstoqueSelector() {
   const [locais, setLocais] = useState<LocalEstoque[]>([]);
   const [loading, setLoading] = useState(true);
-  const [localParaDeletar, setLocalParaDeletar] = useState<LocalEstoque | null>(null);
-  const [deletando, setDeletando] = useState(false);
   const { localAtivo, setLocalAtivo } = useLocalEstoqueAtivo();
-  const { toast } = useToast();
 
   const carregarLocais = async () => {
     setLoading(true);
@@ -104,59 +90,6 @@ export function LocalEstoqueSelector() {
     }
   };
 
-  const confirmarExclusao = async () => {
-    if (!localParaDeletar) return;
-
-    setDeletando(true);
-    try {
-      // 1. Deletar todos os registros de estoque_por_local
-      const { error: estoqueError } = await supabase
-        .from('estoque_por_local')
-        .delete()
-        .eq('local_id', localParaDeletar.id);
-
-      if (estoqueError) throw estoqueError;
-
-      // 2. Deletar o local de estoque
-      const { error: localError } = await supabase
-        .from('locais_estoque')
-        .delete()
-        .eq('id', localParaDeletar.id);
-
-      if (localError) throw localError;
-
-      toast({
-        title: 'Local excluído',
-        description: `${localParaDeletar.nome} foi removido com sucesso.`,
-      });
-
-      // Se o local excluído era o ativo, selecionar o principal
-      if (localAtivo?.id === localParaDeletar.id) {
-        const principal = locais.find(l => l.tipo === 'principal');
-        if (principal) {
-          setLocalAtivo({
-            id: principal.id,
-            nome: principal.nome,
-            tipo: principal.tipo
-          });
-        }
-      }
-
-      // Recarregar lista
-      carregarLocais();
-    } catch (error) {
-      console.error('Erro ao excluir local:', error);
-      toast({
-        title: 'Erro ao excluir local',
-        description: error instanceof Error ? error.message : 'Ocorreu um erro inesperado.',
-        variant: 'destructive'
-      });
-    } finally {
-      setDeletando(false);
-      setLocalParaDeletar(null);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
@@ -176,80 +109,26 @@ export function LocalEstoqueSelector() {
   }
 
   return (
-    <>
-      <div className="flex items-center gap-2 flex-wrap">
-        {locais.map((local) => {
-          const isActive = localAtivo?.id === local.id;
-          const isPrincipal = local.tipo === 'principal';
-          
-          return (
-            <div key={local.id} className="relative group">
-              <Button
-                variant={isActive ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleLocalChange(local.id)}
-                className={cn(
-                  "flex items-center gap-2 transition-all",
-                  isActive && "shadow-md",
-                  !isPrincipal && "pr-8"
-                )}
-              >
-                <span>{TIPO_ICONS[local.tipo] || '📍'}</span>
-                <span>{local.nome}</span>
-              </Button>
-              
-              {!isPrincipal && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full shadow-sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLocalParaDeletar(local);
-                  }}
-                  title="Excluir local"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      <AlertDialog open={!!localParaDeletar} onOpenChange={(open) => !open && setLocalParaDeletar(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja excluir o local <strong>{localParaDeletar?.nome}</strong>?
-              <br /><br />
-              <span className="text-destructive font-semibold">
-                ⚠️ Todos os registros de estoque deste local serão permanentemente removidos.
-              </span>
-              <br />
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deletando}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmarExclusao}
-              disabled={deletando}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deletando ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Excluindo...
-                </>
-              ) : (
-                'Excluir Local'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <div className="flex items-center gap-2 flex-wrap">
+      {locais.map((local) => {
+        const isActive = localAtivo?.id === local.id;
+        
+        return (
+          <Button
+            key={local.id}
+            variant={isActive ? "default" : "outline"}
+            size="sm"
+            onClick={() => handleLocalChange(local.id)}
+            className={cn(
+              "flex items-center gap-2 transition-all",
+              isActive && "shadow-md"
+            )}
+          >
+            <span>{TIPO_ICONS[local.tipo] || '📍'}</span>
+            <span>{local.nome}</span>
+          </Button>
+        );
+      })}
+    </div>
   );
 }
