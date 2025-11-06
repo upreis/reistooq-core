@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 
 interface PedidosBulkActionsSectionProps {
   orders: any[];
+  displayedOrders: any[]; // ✅ NOVO: Pedidos enriquecidos com local_estoque_id
   selectedOrders: Set<string>;
   setSelectedOrders: (orders: Set<string>) => void;
   mappingData: Map<string, any>;
@@ -25,6 +26,7 @@ interface PedidosBulkActionsSectionProps {
 
 export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
   orders,
+  displayedOrders, // ✅ NOVO: Receber pedidos enriquecidos
   selectedOrders,
   setSelectedOrders,
   mappingData,
@@ -82,15 +84,24 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
     setSelectedOrders(new Set(readyOrders.map(order => order.id)));
   }, [orders, mappingData, isPedidoProcessado, setSelectedOrders]);
 
-  // Preparar dados para o modal de baixa
+  // ✅ CORREÇÃO CRÍTICA: Usar displayedOrders (enriquecidos com local_estoque_id)
   const selectedPedidosForBaixa = useMemo(() => {
     return Array.from(selectedOrders).map(id => {
-      const order = orders.find(o => o.id === id);
+      // ✅ USAR displayedOrders (tem local_estoque_id) em vez de orders
+      const order = displayedOrders.find(o => o.id === id);
       if (!order) return null;
       
       const mapping = mappingData.get(order.id);
       const quantidadeItens = order.order_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
       const qtdKit = mapping?.quantidade || 1;
+      
+      // 🔍 DEBUG: Verificar se local_estoque_id está presente
+      console.log('📦 Pedido preparado para baixa:', {
+        numero: order.numero || order.id,
+        local_estoque_id: order.local_estoque_id,
+        local_estoque_nome: order.local_estoque_nome || order.local_estoque,
+        sku_kit: mapping?.skuKit
+      });
       
       return {
         ...order,
@@ -98,7 +109,7 @@ export const PedidosBulkActionsSection = memo<PedidosBulkActionsSectionProps>(({
         total_itens: quantidadeItens * qtdKit
       };
     }).filter(Boolean);
-  }, [selectedOrders, orders, mappingData]);
+  }, [selectedOrders, displayedOrders, mappingData]);
 
   // Sempre mostrar a barra, mesmo sem seleção
   const hasSelection = selectedOrders.size > 0;

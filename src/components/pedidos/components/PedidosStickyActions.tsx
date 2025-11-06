@@ -89,15 +89,24 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
     setSelectedOrders(new Set(readyOrders.map(order => order.id)));
   }, [displayedOrders, mappingData, isPedidoProcessado, setSelectedOrders]);
 
-  // Preparar dados para baixa
+  // ✅ CORREÇÃO CRÍTICA: Pedidos já vêm enriquecidos com local_estoque_id
   const selectedPedidosForBaixa = useMemo(() => {
     return Array.from(selectedOrders).map(id => {
+      // ✅ displayedOrders já tem local_estoque_id do hook useLocalEstoqueEnriquecimento
       const order = displayedOrders.find(o => o.id === id);
       if (!order) return null;
       
       const mapping = mappingData.get(order.id);
       const quantidadeItens = order.order_items?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0;
       const qtdKit = mapping?.quantidade || 1;
+      
+      // 🔍 DEBUG: Verificar se local_estoque_id está presente
+      console.log('📦 Pedido preparado para baixa (sticky):', {
+        numero: order.numero || order.id,
+        local_estoque_id: order.local_estoque_id,
+        local_estoque_nome: order.local_estoque_nome || order.local_estoque,
+        sku_kit: mapping?.skuKit
+      });
       
       return {
         ...order,
