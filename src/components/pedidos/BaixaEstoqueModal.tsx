@@ -69,6 +69,8 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       
       // 🛡️ VALIDAÇÃO: Verificar se SKU está cadastrado E se tem estoque E se tem composição
       let problema = null;
+      const localEstoque = (pedido as any).local_estoque_nome || (pedido as any).local_estoque || 'Local não definido';
+      
       if (!temMapeamento) {
         problema = 'Sem mapeamento';
       } else if (statusBaixaCalc === 'sku_nao_cadastrado') {
@@ -76,9 +78,9 @@ export function BaixaEstoqueModal({ pedidos, trigger, contextoDaUI }: BaixaEstoq
       } else if (statusBaixaCalc === 'sem_composicao') {
         problema = 'Sem composição cadastrada';
       } else if (statusBaixaCalc === 'sem_estoque') {
-        problema = 'Sem estoque (quantidade = 0)';
+        problema = `Sem estoque no local "${localEstoque}"`;
       } else if (!temEstoque) {
-        problema = 'Sem estoque';
+        problema = `Sem estoque disponível no local "${localEstoque}"`;
       }
       
       console.log(`🔍 DIAGNÓSTICO - Pedido ${pedido.numero || pedido.id}:`, {

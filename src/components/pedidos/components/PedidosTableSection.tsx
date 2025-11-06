@@ -14,6 +14,7 @@ import { formatMoney, formatDate, maskCpfCnpj } from '@/lib/format';
 import { mapApiStatusToLabel } from '@/utils/statusMapping';
 import { getStatusBadgeVariant } from '@/utils/mlStatusMapping';
 import { StatusBadge } from '@/components/pedidos/StatusBadge';
+import { LocalEstoqueBadge } from '@/components/pedidos/LocalEstoqueBadge';
 import { 
   translatePaymentStatus, 
   translatePaymentMethod, 
@@ -1027,8 +1028,13 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         );
                      
                       case 'local_estoque':
-                        // Buscar nome do local de estoque enriquecido (TANTO no nível superior quanto em unified)
+                        // Buscar dados do local de estoque enriquecido
                         const localEstoque = order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque;
+                        const localEstoqueId = order.local_estoque_id || order.unified?.local_estoque_id;
+                        
+                        // Buscar SKU do pedido para preview de saldo
+                        const orderMapping = mappingData.get(order.id);
+                        const skuPedido = orderMapping?.skuEstoque || orderMapping?.skuKit || order.sku_kit || '';
                         
                         // DEBUG: Log detalhado dos primeiros 3 pedidos
                         const orderIndex = orders.indexOf(order);
@@ -1037,52 +1043,19 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                             numero: order.numero || order.unified?.numero,
                             local_estoque_nome: order.local_estoque_nome,
                             local_estoque: order.local_estoque,
-                            unified_local_estoque_nome: order.unified?.local_estoque_nome,
-                            unified_local_estoque: order.unified?.local_estoque,
-                            local_estoque_id: order.local_estoque_id || order.unified?.local_estoque_id,
-                            localEstoque_final: localEstoque,
-                            has_unified: !!order.unified,
-                            order_keys: Object.keys(order)
+                            local_estoque_id: localEstoqueId,
+                            sku_pedido: skuPedido,
+                            localEstoque_final: localEstoque
                           });
                         }
                         
-                        // 🎨 Sistema de cores DISTINTAS para cada local de estoque
-                        const getLocalEstoqueColor = (nome: string | undefined): string => {
-                          if (!nome) return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-                          
-                          const nomeUpper = nome.toUpperCase();
-                          
-                          // Cores BEM DIFERENTES por local
-                          if (nomeUpper.includes('FULL PLATINUM')) {
-                            return 'bg-purple-500 text-white dark:bg-purple-600 dark:text-white border-purple-600';
-                          } else if (nomeUpper.includes('ESTOQUE PRINCIPAL') || nomeUpper.includes('PRINCIPAL')) {
-                            return 'bg-blue-500 text-white dark:bg-blue-600 dark:text-white border-blue-600';
-                          } else if (nomeUpper.includes('FLEX')) {
-                            return 'bg-green-500 text-white dark:bg-green-600 dark:text-white border-green-600';
-                          } else if (nomeUpper.includes('CROSSDOCKING') || nomeUpper.includes('CROSS')) {
-                            return 'bg-orange-500 text-white dark:bg-orange-600 dark:text-white border-orange-600';
-                          } else if (nomeUpper.includes('SECUNDÁRIO') || nomeUpper.includes('SECUNDARIO')) {
-                            return 'bg-indigo-500 text-white dark:bg-indigo-600 dark:text-white border-indigo-600';
-                          } else if (nomeUpper.includes('RESERVA')) {
-                            return 'bg-yellow-500 text-gray-900 dark:bg-yellow-600 dark:text-gray-900 border-yellow-600';
-                          } else {
-                            // Hash para gerar cores VIBRANTES e consistentes
-                            const hash = nome.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-                            const colors = [
-                              'bg-teal-500 text-white dark:bg-teal-600 dark:text-white border-teal-600',
-                              'bg-pink-500 text-white dark:bg-pink-600 dark:text-white border-pink-600',
-                              'bg-rose-500 text-white dark:bg-rose-600 dark:text-white border-rose-600',
-                              'bg-cyan-500 text-white dark:bg-cyan-600 dark:text-white border-cyan-600',
-                            ];
-                            return colors[hash % colors.length];
-                          }
-                        };
-                        
                         if (localEstoque) {
                           return (
-                            <Badge variant="outline" className={getLocalEstoqueColor(localEstoque)}>
-                              {localEstoque}
-                            </Badge>
+                            <LocalEstoqueBadge
+                              localNome={localEstoque}
+                              localId={localEstoqueId}
+                              sku={skuPedido}
+                            />
                           );
                         }
                         return (

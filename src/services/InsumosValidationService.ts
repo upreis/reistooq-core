@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { StatusBaixaInsumo } from './MapeamentoService';
+import { verificarEstoqueLocal } from './EstoquePorLocalService';
 
 export interface ValidacaoInsumoResult {
   sku: string;
@@ -10,7 +11,10 @@ export interface ValidacaoInsumoResult {
     sku: string;
     quantidade: number;
     quantidadeDisponivel: number;
+    localNome?: string; // 🆕 Nome do local onde foi verificado
   }>;
+  localId?: string; // 🆕 ID do local verificado
+  localNome?: string; // 🆕 Nome do local verificado
 }
 
 /**
