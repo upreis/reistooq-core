@@ -286,7 +286,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Local de onde o estoque será retirado',
-    width: 150
+    width: 200
   },
 
   // ====== ENVIO/SHIPPING (da imagem 3) ======
