@@ -104,12 +104,18 @@ export function HistoricoSimpleTable({
       return new Date(value).toLocaleDateString('pt-BR');
     }
     
-    if (columnKey.includes('valor') && typeof value === 'number') {
-      return formatCurrency(value);
+    if (columnKey.includes('valor') || columnKey.includes('custo') || columnKey.includes('taxa') || columnKey.includes('receita')) {
+      if (typeof value === 'number') {
+        return formatCurrency(value);
+      }
+      return '-';
     }
     
-    if (columnKey.includes('quantidade') && typeof value === 'number') {
-      return value;
+    if (columnKey.includes('quantidade') || columnKey.includes('qtd') || columnKey.includes('total_itens')) {
+      if (typeof value === 'number' || value === 0) {
+        return value;
+      }
+      return '-';
     }
     
     if (columnKey.includes('status') && value) {
@@ -129,7 +135,12 @@ export function HistoricoSimpleTable({
       return value;
     }
     
-    return value || '-';
+    // Verificação segura para valores falsy (mas não zero)
+    if (value === null || value === undefined || value === '') {
+      return '-';
+    }
+    
+    return value;
   };
 
   const formatDate = (dateString: string) => {
