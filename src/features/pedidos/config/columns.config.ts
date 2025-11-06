@@ -276,7 +276,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Origem do pedido (Mercado Livre, Shopee, Tiny ou Interno)',
-    width: 130
+    width: 150
   },
   {
     key: 'local_estoque',
