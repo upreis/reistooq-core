@@ -169,7 +169,7 @@ export function PedidosFiltersUnified({
       {/* Layout principal dos filtros */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-end">
         {/* Busca - Aplicação manual */}
-        <div className="sm:col-span-2 lg:col-span-2 xl:col-span-2">
+        <div className="sm:col-span-1 lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Buscar
           </label>
