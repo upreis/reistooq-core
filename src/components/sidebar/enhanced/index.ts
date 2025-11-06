@@ -10,7 +10,8 @@ export { AnimatedSidebarSection } from './components/AnimatedSidebarSection';
 export { useSidebarState } from './hooks/useSidebarState';
 export { useActiveRoute } from './hooks/useActiveRoute';
 
-// Context
+// Context (mantido para compatibilidade mas não mais usado no FullLayout)
+// Use SidebarUIProvider do App.tsx para controle global
 export { SidebarProvider, useSidebar } from './SidebarContext';
 
 // Types
