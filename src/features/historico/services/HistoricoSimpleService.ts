@@ -50,14 +50,19 @@ export interface HistoricoItem {
   substatus_estado_atual?: string;
   modo_envio_combinado?: string;
   metodo_envio_combinado?: string;
-  rua?: string;
-  numero?: string;
-  bairro?: string;
-  cep?: string;
-  cidade?: string;
-  uf?: string;
+  endereco_rua?: string;
+  endereco_numero?: string;
+  endereco_bairro?: string;
+  endereco_cep?: string;
+  endereco_cidade?: string;
+  endereco_uf?: string;
   codigo_rastreamento?: string;
   url_rastreamento?: string;
+  
+  // === SEÇÃO LOCAL DE ESTOQUE ===
+  local_estoque?: string;
+  local_estoque_id?: string;
+  local_estoque_nome?: string;
 
   // === SISTEMA ===
   created_at: string;
@@ -134,7 +139,7 @@ export class HistoricoSimpleService {
           status_baixa: item.status_baixa || '',
           status: item.status || 'baixado',
           status_envio: item.status_envio || '',
-          // Campos de envio/endereço
+          // Campos de envio/endereço - USAR NOMES COM PREFIXO PARA MATCH COM COLUMNS CONFIG
           logistic_mode_principal: item.logistic_mode_principal || '',
           tipo_logistico: item.tipo_logistico || '',
           tipo_metodo_envio: item.tipo_metodo_envio || '',
@@ -142,14 +147,17 @@ export class HistoricoSimpleService {
           substatus_estado_atual: item.substatus_estado_atual || '',
           modo_envio_combinado: item.modo_envio_combinado || '',
           metodo_envio_combinado: item.metodo_envio_combinado || '',
-          rua: item.rua || item.endereco_rua || '',
-          numero: item.numero || item.endereco_numero || '',
-          bairro: item.bairro || item.endereco_bairro || '',
-          cep: item.cep || item.endereco_cep || '',
-          cidade: item.cidade || '',
-          uf: item.uf || '',
+          endereco_rua: item.rua || item.endereco_rua || '',
+          endereco_numero: item.numero || item.endereco_numero || '',
+          endereco_bairro: item.bairro || item.endereco_bairro || '',
+          endereco_cep: item.cep || item.endereco_cep || '',
+          endereco_cidade: item.cidade || item.endereco_cidade || '',
+          endereco_uf: item.uf || item.endereco_uf || '',
           codigo_rastreamento: item.codigo_rastreamento || '',
           url_rastreamento: item.url_rastreamento || '',
+          local_estoque: item.local_estoque || '',
+          local_estoque_id: item.local_estoque_id || '',
+          local_estoque_nome: item.local_estoque_nome || '',
           empresa: item.empresa || '',
           data_pedido: item.data_pedido || '',
           ultima_atualizacao: item.ultima_atualizacao || item.updated_at || '',

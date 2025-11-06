@@ -84,6 +84,20 @@ export function HistoricoSimpleTable({
   const getCellValue = (item: HistoricoItem, columnKey: string): any => {
     const value = (item as any)[columnKey];
 
+    // URL de rastreamento - renderizar como link
+    if (columnKey === 'url_rastreamento' && value) {
+      return (
+        <a 
+          href={value} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-primary hover:underline flex items-center gap-1"
+          onClick={(e) => e.stopPropagation()}
+        >
+          🔗 Rastrear
+        </a>
+      );
+    }
     
     // Formatações especiais por tipo de campo
     if (columnKey.includes('data') && value) {
@@ -104,6 +118,15 @@ export function HistoricoSimpleTable({
           {value}
         </Badge>
       );
+    }
+
+    // Formatar CEP
+    if (columnKey === 'endereco_cep' && value) {
+      const cepStr = String(value).replace(/\D/g, '');
+      if (cepStr.length === 8) {
+        return `${cepStr.slice(0, 5)}-${cepStr.slice(5)}`;
+      }
+      return value;
     }
     
     return value || '-';
