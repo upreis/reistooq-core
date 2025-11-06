@@ -77,6 +77,7 @@ import { MapeamentoModal } from './MapeamentoModal';
 import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
 import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
 import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
+import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
 
 import { FEATURES } from '@/config/features';
 
@@ -288,6 +289,9 @@ function SimplePedidosPage({ className }: Props) {
   
   // Hook para verificar pedidos já processados
   const { pedidosProcessados, verificarPedidos, isLoading: loadingProcessados, isPedidoProcessado } = usePedidosProcessados();
+  
+  // 📍 Hook para enriquecer pedidos com local de estoque
+  const { rowsEnriquecidos, loading: loadingLocais } = useLocalEstoqueEnriquecimento(state.orders);
 
   // ✅ Função para calcular estatísticas das contas ML baseado nos erros do console
   const getAccountsStats = useCallback(() => {
@@ -306,10 +310,10 @@ function SimplePedidosPage({ className }: Props) {
     return { total, successful, failed, successfulAccounts, failedAccounts };
   }, [accounts]);
   
-  // Aliases para compatibilidade
-  const orders = state.orders;
+  // Aliases para compatibilidade - usando rows enriquecidos com local de estoque
+  const orders = rowsEnriquecidos;
   const total = state.total;
-  const loading = state.loading;
+  const loading = state.loading || loadingLocais;
   const error = state.error;
   const currentPage = state.currentPage;
   const integrationAccountId = state.integrationAccountId;
@@ -470,9 +474,9 @@ function SimplePedidosPage({ className }: Props) {
   useEffect(() => {
     if (orders && orders.length > 0) {
       
-      verificarPedidos(orders);
+      verificarPedidos(orders as any);
       // ✅ Usar a função correta que processa diretamente
-      mappingActions.processOrdersMappings(orders);
+      mappingActions.processOrdersMappings(orders as any);
     }
   }, [orders]); // ✅ Dependência otimizada - removida verificarPedidos para evitar loops
   

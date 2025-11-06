@@ -52,6 +52,10 @@ export type Unified = {
   updated_at: string | null;
   marketplace_origem?: string | null;
   local_estoque_id?: string | null;
+  local_estoque?: string | null;
+  local_estoque_nome?: string | null;
+  tipo_logistico?: string | null;
+  tipo_logistico_raw?: string | null;
 };
 
 export type Row = { raw: RawML; unified: Unified | null };

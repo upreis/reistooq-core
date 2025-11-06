@@ -537,6 +537,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     const context = order.context || {};
     const feedback = order.feedback || {};
     
+    // 📍 LOCAL DE ESTOQUE: Detectar marketplace e tipo logístico para mapeamento
+    const logisticTypeRaw = detailedShipping?.logistic?.type || shipping?.logistic?.type || shipping?.logistic_type || detailedShipping?.logistic_type;
+    const marketplace_origem = 'Mercado Livre'; // Para Shopee e outras plataformas, ajustar no futuro
+    
     // 🔍 DEBUG PROFUNDO: Log IMEDIATO da estrutura costs (ANTES de qualquer processamento)
     if (String(order.id) === '2000013656902262') {
       console.log(`[unified-orders:${cid}] 🔍 PEDIDO ${order.id} - Análise shipping.costs:`);
@@ -772,6 +776,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
       skus_produtos: skus || 'Sem SKU',
       quantidade_total: totalQuantity,
       titulo_produto: productTitles || 'Produto sem título',
+      
+      // 📍 LOCAL DE ESTOQUE: Dados para mapeamento automático
+      marketplace_origem,
+      tipo_logistico_raw: logisticTypeRaw,
       
       // ===== DADOS DE DEVOLUÇÕES (CLAIMS API + ORDERS API) =====
       // Priorizar dados detalhados da Claims API se disponíveis
