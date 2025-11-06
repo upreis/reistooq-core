@@ -71,13 +71,13 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
         const produtoEncontrado = produtos.find(p => p.sku === insumo.sku_produto);
         setProdutoNome(produtoEncontrado?.nome || insumo.nome_produto || '');
         
-        // Buscar todos os insumos existentes para este produto
+        // Buscar todos os insumos existentes para este produto NO LOCAL ATUAL
         try {
           const { data: insumosExistentes, error } = await supabase
             .from('composicoes_insumos')
             .select('*')
             .eq('sku_produto', insumo.sku_produto)
-            .eq('ativo', true);
+            .eq('local_id', insumo.local_id); // ✅ CRÍTICO: Filtrar por local!
 
           if (error) throw error;
 
@@ -222,19 +222,24 @@ export function InsumoForm({ open, onClose, onSubmit, insumo }: InsumoFormProps)
 
     setSaving(true);
     try {
-      // Se estiver editando, deletar insumos existentes primeiro
+      // ✅ CRÍTICO: Se estiver editando, deletar insumos SOMENTE do local atual
       if (insumo) {
-        console.log('🗑️ Deletando insumos existentes para:', produtoSku);
+        console.log('🗑️ Deletando insumos existentes para:', {
+          sku_produto: produtoSku,
+          local_id: insumo.local_id
+        });
+        
         const { error: deleteError } = await supabase
           .from('composicoes_insumos')
           .delete()
-          .eq('sku_produto', produtoSku.trim());
+          .eq('sku_produto', produtoSku.trim())
+          .eq('local_id', insumo.local_id); // ✅ CRÍTICO: Filtrar por local!
 
         if (deleteError) {
           console.error('❌ Erro ao deletar insumos existentes:', deleteError);
           throw deleteError;
         }
-        console.log('✅ Insumos existentes deletados');
+        console.log('✅ Insumos do local deletados');
       }
 
       // Salvar cada componente válido
