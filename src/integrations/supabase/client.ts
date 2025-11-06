@@ -18,6 +18,9 @@ export const supabase = createClient<Database>(
       headers: {
         'X-Client-Info': `${config.app.name}/${config.app.version}`
       }
+    },
+    db: {
+      schema: 'public'
     }
   }
 );

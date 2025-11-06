@@ -70,10 +70,15 @@ export function useComposicoesEstoque(localId?: string) {
 
       console.log('🔍 SKUs componentes para buscar:', skusComponentes);
 
-      // Buscar informações dos produtos componentes
-      const { data: produtosData, error: produtosError } = await supabase
+      // Buscar informações dos produtos componentes do mesmo local
+      // @ts-ignore - Supabase typing issue with complex queries
+      const produtosResponse = await supabase
         .from('produtos')
-        .select('sku_interno, nome, quantidade_atual');
+        .select('sku_interno, nome, quantidade_atual')
+        .eq('local_id', localId);
+      
+      const produtosData = produtosResponse.data;
+      const produtosError = produtosResponse.error;
 
       if (produtosError) throw produtosError;
 
