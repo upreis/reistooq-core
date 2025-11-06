@@ -638,9 +638,11 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     sku_produto: fotografia.skus_produtos.split(',')[0]?.trim() || 'BAIXA_ESTOQUE',
     skus_produtos: fotografia.skus_produtos,
     descricao: fotografia.titulo_produto,
-    titulo_produto: fotografia.titulo_produto, // Mapeamento correto para a coluna titulo_produto
+    titulo_produto: fotografia.titulo_produto,
+    titulo_anuncio: fotografia.titulo_anuncio, // ✅ NOVA COLUNA
+    conditions: fotografia.conditions, // ✅ NOVA COLUNA
     quantidade: fotografia.quantidade_total,
-    quantidade_total: fotografia.quantidade_total, // Mapeamento correto para a coluna quantidade_total
+    quantidade_total: fotografia.quantidade_total,
     quantidade_itens: fotografia.quantidade_itens,
     valor_unitario: fotografia.quantidade_total > 0 ? 
       Number(fotografia.valor_total) / fotografia.quantidade_total : 0,
@@ -667,6 +669,7 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     frete_pago_cliente: Number(fotografia.frete_pago_cliente),
     receita_flex_bonus: Number(fotografia.receita_flex_bonus),
     custo_envio_seller: Number(fotografia.custo_envio_seller),
+    custo_fixo_meli: Number(fotografia.custo_fixo_meli), // ✅ NOVA COLUNA
     desconto_cupom: Number(fotografia.desconto_cupom),
     taxa_marketplace: Number(fotografia.taxa_marketplace),
     valor_liquido_vendedor: Number(fotografia.valor_liquido_vendedor),
@@ -682,9 +685,8 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     quantidade_kit: fotografia.quantidade_kit,
     total_itens: fotografia.total_itens,
     status_baixa: 'concluida',
-    
-    // 🎯 NOTA: Para baixa de estoque, usa-se sku_kit e total_itens
-    // (os campos já estão mapeados acima corretamente)
+    status_insumos: fotografia.status_insumos, // ✅ NOVA COLUNA
+    marketplace_origem: fotografia.marketplace_origem, // ✅ NOVA COLUNA
     
     // 🛡️ LOCAL DE ESTOQUE (CRÍTICO PARA REVERSÃO)
     local_estoque_id: fotografia.local_estoque_id,
@@ -698,8 +700,10 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     
     // Envio
     status_envio: fotografia.status_envio,
+    shipping_substatus: fotografia.shipping_substatus, // ✅ NOVA COLUNA
     logistic_mode_principal: fotografia.logistic_mode_principal,
     tipo_logistico: fotografia.tipo_logistico,
+    logistic_type: fotografia.logistic_type, // ✅ NOVA COLUNA
     tipo_metodo_envio: fotografia.tipo_metodo_envio,
     tipo_entrega: fotografia.tipo_entrega,
     substatus_estado_atual: fotografia.substatus_estado_atual,
@@ -719,6 +723,8 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     pack_status: fotografia.pack_status,
     pack_status_detail: fotografia.pack_status_detail,
     tags: fotografia.tags,
+    power_seller_status: fotografia.power_seller_status, // ✅ NOVA COLUNA
+    level_id: fotografia.level_id, // ✅ NOVA COLUNA
     
     // Metadados (datas normalizadas)
     data_pedido: dataPedidoISO,
@@ -732,13 +738,19 @@ export function fotografiaParaBanco(fotografia: FotografiaPedido) {
     obs: fotografia.obs,
     obs_interna: fotografia.obs_interna,
     
-    // Backup
+    // Backup dos dados originais completos
     raw: fotografia.raw_data,
+    raw_data: fotografia.raw_data, // ✅ NOVA COLUNA (mantém compatibilidade)
     meta: {
       fotografia_completa: true,
       timestamp: new Date().toISOString(),
-      versao: '3.0',
-      campos_capturados: 60
+      versao: '3.1',
+      campos_capturados: 71, // Atualizado para refletir total de campos
+      colunas_novas_adicionadas: [
+        'titulo_anuncio', 'conditions', 'shipping_substatus', 'logistic_type',
+        'status_insumos', 'custo_fixo_meli', 'marketplace_origem',
+        'power_seller_status', 'level_id', 'raw_data'
+      ]
     },
     
     // Campo de auditoria (será preenchido pelo snapshot.ts)
