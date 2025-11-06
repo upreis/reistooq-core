@@ -167,7 +167,7 @@ export function PedidosFiltersUnified({
       )}
 
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 xl:grid-cols-6 gap-4 items-end">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 xl:grid-cols-8 gap-4 items-end">
         {/* Busca - Aplicação manual */}
         <div className="sm:col-span-1 lg:col-span-1 xl:col-span-1">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
@@ -188,7 +188,7 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* ✅ NOVO: Status do Pedido */}
-        <div className="lg:col-span-1 xl:col-span-1">
+        <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Status do Pedido
           </label>
@@ -228,7 +228,7 @@ export function PedidosFiltersUnified({
 
 
         {/* Contas ML - Aplicação manual */}
-        <div className="lg:col-span-1 xl:col-span-1">
+        <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Nome do Vendedor
           </label>
@@ -300,7 +300,7 @@ export function PedidosFiltersUnified({
         </div>
 
         {/* Período + Colunas + Limpar - Aplicação manual */}
-        <div className="lg:col-span-2 xl:col-span-2">
+        <div className="lg:col-span-3 xl:col-span-3">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
             Período
           </label>
