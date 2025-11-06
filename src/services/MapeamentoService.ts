@@ -79,7 +79,6 @@ export class MapeamentoService {
           .maybeSingle();
         
         nomeLocal = localData?.nome;
-        console.log(`🏢 [MapeamentoService] Verificando estoque no local: ${nomeLocal} (${localEstoqueId})`);
       }
 
       // 🛡️ VERIFICAÇÃO CRÍTICA POR LOCAL: Verificar estoque dos COMPONENTES
@@ -113,11 +112,10 @@ export class MapeamentoService {
             const { data: componentes } = await queryComponentes;
             
             const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
-            console.log(`📦 [MapeamentoService] Produto ${produto.sku_interno} tem ${componentes?.length || 0} componentes${localInfo}`);
             
             if (!componentes || componentes.length === 0) {
               // Sem componentes no local específico = sem composição neste local
-              console.warn(`⚠️ [MapeamentoService] Produto ${produto.sku_interno} NÃO possui componentes cadastrados${localInfo}`);
+              console.warn(`⚠️ Produto ${produto.sku_interno} NÃO possui componentes cadastrados${localInfo}`);
               produtosInfoMap.set(produto.sku_interno, {
                 existe: true,
                 quantidade: 0,
@@ -156,8 +154,6 @@ export class MapeamentoService {
                 
                 const quantidadeDisponivel = estoqueLocal?.quantidade || 0;
                 
-                console.log(`🔍 [MapeamentoService] Componente ${comp.sku_componente}: Necessário=${quantidadeNecessariaComponente}, Disponível no local=${quantidadeDisponivel}`);
-                
                 if (quantidadeDisponivel < quantidadeNecessariaComponente) {
                   temEstoqueSuficiente = false;
                   break;
@@ -184,8 +180,6 @@ export class MapeamentoService {
       const skusParaVerificarComposicao = [...produtosInfoMap.keys()];
       let composicoesMap = new Map<string, { temComposicao: boolean; componentes?: any[] }>();
       
-      console.log('🔍 [FLUXO CORRETO] Verificando se SKUs são COMPOSIÇÕES:', skusParaVerificarComposicao);
-      
       if (skusParaVerificarComposicao.length > 0) {
         const { data: produtosComposicoes } = await supabase
           .from('produtos_composicoes')
@@ -208,10 +202,7 @@ export class MapeamentoService {
             
             const { data: componentes } = await queryComponentes;
             
-            const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
             const temComponentes = componentes && componentes.length > 0;
-            
-            console.log(`🔍 [MapeamentoService] SKU ${prodComp.sku_interno}: ${componentes?.length || 0} componentes${localInfo}`);
             
             composicoesMap.set(prodComp.sku_interno, {
               temComposicao: temComponentes,
@@ -245,24 +236,19 @@ export class MapeamentoService {
             statusBaixa = 'sem_estoque';
             skuCadastradoNoEstoque = true;
           } else {
-            // 🔍 FLUXO CORRETO: Verificar se produto está em produtos_composicoes E tem componentes no local
+            // 🔍 Verificar se produto está em produtos_composicoes E tem componentes no local
             const composicaoData = composicoesMap.get(skuEstoque);
             const localInfo = nomeLocal ? ` no local "${nomeLocal}"` : '';
-            
-            console.log(`🔍 [FLUXO CORRETO] SKU: ${skuEstoque} | É composição: ${!!composicaoData?.temComposicao}${localInfo}`);
             
             if (!composicaoData?.temComposicao) {
               // NÃO tem componentes cadastrados no local específico = Sem Composição
               statusBaixa = 'sem_composicao';
-              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} NÃO possui composição cadastrada${localInfo} -> SEM_COMPOSICAO`);
             } else if (!composicaoData?.componentes || composicaoData.componentes.length === 0) {
               // Está em produtos_composicoes mas sem componentes cadastrados no local
               statusBaixa = 'sem_composicao';
-              console.log(`⚠️ [FLUXO CORRETO] SKU ${skuEstoque} está em produtos_composicoes mas SEM componentes${localInfo} -> SEM_COMPOSICAO`);
             } else {
               // Tem composição E componentes no local = Pronto para baixar
               statusBaixa = 'pronto_baixar';
-              console.log(`✅ [FLUXO CORRETO] SKU ${skuEstoque} tem composição com ${composicaoData.componentes.length} componentes${localInfo} -> PRONTO_BAIXAR`);
             }
             skuCadastradoNoEstoque = true;
           }

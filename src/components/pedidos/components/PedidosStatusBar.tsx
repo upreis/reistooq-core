@@ -37,19 +37,9 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
 }) => {
   // ✅ Usar totalRecords (total de todas as páginas) quando disponível, senão usar orders da página atual
   const counters = useMemo(() => {
-    console.log('📊 [StatusBar] Iniciando contagem:', { 
-      totalRecords,
-      ordersLength: orders?.length, 
-      quickFilter,
-      hasMapping: !!mappingData,
-      hasGlobalCounts: !!globalCounts,
-      hasActiveFilters // ✅ NOVO: Log do estado de filtros
-    });
-    
     // 🎯 SOLUÇÃO: Só usar globalCounts quando NÃO há filtros ativos
     // Se há filtros de período, busca, etc., usar totalRecords que vem da API já filtrado
     if (globalCounts && typeof globalCounts.total === 'number' && quickFilter === 'all' && !hasActiveFilters) {
-      console.log('✅ [StatusBar] Usando totais globais do aggregator (SEM filtros):', globalCounts);
       return {
         total: globalCounts.total || 0,
         prontosBaixa: globalCounts.prontosBaixa || 0,
@@ -60,13 +50,7 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       };
     }
     
-    console.log('📊 [StatusBar] Contando pedidos da página atual (fallback):', { 
-      ordersLength: orders?.length, 
-      quickFilter
-    });
-    
     if (!orders?.length) {
-      console.log('📊 [StatusBar] Nenhum pedido na página');
       return { total: 0, prontosBaixa: 0, mapeamentoPendente: 0, baixados: 0, semEstoque: 0, skuNaoCadastrado: 0 };
     }
 
@@ -75,7 +59,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     const totalCount = totalRecords || orders.length;
     
     if (quickFilter === 'pronto_baixar') {
-      console.log('📊 [StatusBar] Modo pronto_baixar - todos os pedidos são prontos');
       return {
         total: totalCount,
         prontosBaixa: totalCount,
@@ -87,7 +70,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     }
     
     if (quickFilter === 'mapear_incompleto') {
-      console.log('📊 [StatusBar] Modo mapear_incompleto - todos os pedidos são pendentes');
       return {
         total: totalCount,
         prontosBaixa: 0,
@@ -99,7 +81,6 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
     }
     
     if (quickFilter === 'baixado') {
-      console.log('📊 [StatusBar] Modo baixado - todos os pedidos são baixados');
       return {
         total: totalCount,
         prontosBaixa: 0,
@@ -162,17 +143,14 @@ export const PedidosStatusBar = memo<PedidosStatusBarProps>(({
       }
     }
 
-    const result = {
-      total: totalCount, // Usar totalRecords para mostrar total de todas as páginas
+    return {
+      total: totalCount,
       prontosBaixa,
       mapeamentoPendente,
       baixados,
       semEstoque,
       skuNaoCadastrado
     };
-    
-    console.log('📊 [StatusBar] Contadores calculados:', result);
-    return result;
   }, [orders, mappingData, isPedidoProcessado, quickFilter, globalCounts, totalRecords]);
 
   const statusChips = [

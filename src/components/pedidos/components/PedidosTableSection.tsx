@@ -1027,24 +1027,8 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                         );
                      
                       case 'local_estoque':
-                        // Buscar nome do local de estoque enriquecido (TANTO no nível superior quanto em unified)
+                        // Buscar nome do local de estoque enriquecido
                         const localEstoque = order.local_estoque_nome || order.local_estoque || order.unified?.local_estoque_nome || order.unified?.local_estoque;
-                        
-                        // DEBUG: Log detalhado dos primeiros 3 pedidos
-                        const orderIndex = orders.indexOf(order);
-                        if (orderIndex < 3) {
-                          console.log(`🔍 [RENDER LOCAL] Pedido #${orderIndex}:`, {
-                            numero: order.numero || order.unified?.numero,
-                            local_estoque_nome: order.local_estoque_nome,
-                            local_estoque: order.local_estoque,
-                            unified_local_estoque_nome: order.unified?.local_estoque_nome,
-                            unified_local_estoque: order.unified?.local_estoque,
-                            local_estoque_id: order.local_estoque_id || order.unified?.local_estoque_id,
-                            localEstoque_final: localEstoque,
-                            has_unified: !!order.unified,
-                            order_keys: Object.keys(order)
-                          });
-                        }
                         
                         // 🎨 Sistema de cores DISTINTAS para cada local de estoque
                         const getLocalEstoqueColor = (nome: string | undefined): string => {
