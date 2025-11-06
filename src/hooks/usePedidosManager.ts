@@ -920,16 +920,15 @@ export function usePedidosManager(initialAccountId?: string) {
       
       // 🔍 DEBUG: Verificar estrutura de dados recebida
       if (index === 0) {
-        console.log('🔍 [CPF/CNPJ DEBUG] Estrutura do primeiro pedido:', {
+        console.log('🔍 [CAMPOS EMPRESA/LOGÍSTICA] Primeiro pedido:', {
           id: o.id || rawData.id,
-          has_cpf_cnpj: !!o.cpf_cnpj,
-          has_unified_cpf: !!o.unified?.cpf_cnpj,
-          has_buyer: !!o.buyer,
-          has_raw_buyer: !!rawData.buyer,
-          buyer_id_number: o.buyer?.identification?.number,
-          raw_buyer_id_number: rawData.buyer?.identification?.number,
-          payments_length: o.payments?.length || 0,
-          raw_payments_length: rawData.payments?.length || 0,
+          empresa: o.empresa || rawData.empresa,
+          marketplace_origem: o.marketplace_origem || rawData.marketplace_origem,
+          tipo_logistico: o.tipo_logistico || rawData.tipo_logistico,
+          tipo_logistico_raw: o.tipo_logistico_raw || rawData.tipo_logistico_raw,
+          has_empresa: !!(o.empresa || rawData.empresa),
+          has_marketplace: !!(o.marketplace_origem || rawData.marketplace_origem),
+          has_tipo_logistico: !!(o.tipo_logistico || rawData.tipo_logistico),
           first_payment_payer: o.payments?.[0]?.payer?.identification?.number,
           raw_first_payment_payer: rawData.payments?.[0]?.payer?.identification?.number
         });
