@@ -1,11 +1,11 @@
 /**
  * 🎯 CONFIGURAÇÃO DE COLUNAS PARA HISTÓRICO
- * ✅ SINCRONIZADA COM /PEDIDOS - Mesmas colunas disponíveis
+ * ✅ 100% SINCRONIZADA COM /PEDIDOS - 45 COLUNAS
  */
 
 import { ColumnDefinition, ColumnProfile } from '../../pedidos/types/columns.types';
 
-// 🔸 COLUNAS DO HISTÓRICO - SINCRONIZADAS COM PEDIDOS
+// 🔸 COLUNAS DO HISTÓRICO - IDÊNTICAS A /PEDIDOS
 export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== BÁSICAS ======
   {
@@ -17,17 +17,6 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: true,
     description: 'Identificador único do pedido',
     width: 250,
-    sortable: true
-  },
-  {
-    key: 'id_unico',
-    label: 'ID-Único (Legacy)',
-    category: 'basic',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Identificador único legado',
-    width: 120,
     sortable: true
   },
   {
@@ -52,26 +41,14 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'cliente_nome',
-    label: 'Nome do Cliente',
+    key: 'nome_completo',
+    label: 'Nome Completo',
     category: 'basic',
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Nome do cliente',
-    width: 180,
-    sortable: true
-  },
-  {
-    key: 'nome_completo',
-    label: 'Nome Completo',
-    category: 'basic',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Nome completo do cliente',
-    width: 200,
-    sortable: true
+    description: 'Nome completo do destinatário',
+    width: 150
   },
   {
     key: 'data_pedido',
@@ -80,8 +57,8 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'essential',
     visible: true,
     default: true,
-    description: 'Data em que o pedido foi criado',
-    width: 120,
+    description: 'Data de criação do pedido',
+    width: 110,
     sortable: true
   },
   {
@@ -93,17 +70,6 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: false,
     description: 'Data da última atualização',
     width: 130,
-    sortable: true
-  },
-  {
-    key: 'updated_at',
-    label: 'Atualização DB',
-    category: 'meta',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Timestamp de atualização no banco',
-    width: 140,
     sortable: true
   },
 
@@ -130,17 +96,6 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'quantidade_total',
-    label: 'Qtd Total (Legacy)',
-    category: 'products',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Quantidade total legado',
-    width: 120,
-    sortable: true
-  },
-  {
     key: 'titulo_anuncio',
     label: 'Título do Produto',
     category: 'products',
@@ -149,16 +104,6 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     default: true,
     description: 'Título do produto/anúncio',
     width: 300
-  },
-  {
-    key: 'titulo_produto',
-    label: 'Título (Legacy)',
-    category: 'products',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Título legado',
-    width: 200
   },
 
   // ====== FINANCEIRAS ======
@@ -181,17 +126,6 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Receita adicional do Mercado Envios Flex',
-    width: 140,
-    sortable: true
-  },
-  {
-    key: 'receita_flex_bonus',
-    label: 'Receita Flex (Legacy)',
-    category: 'financial',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Receita Flex legado',
     width: 140,
     sortable: true
   },
@@ -386,13 +320,43 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
+    key: 'power_seller_status',
+    label: 'Medalha',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Status de Mercado Líder (Platinum, Gold, Silver)',
+    width: 150
+  },
+  {
+    key: 'level_id',
+    label: 'Reputação',
+    category: 'shipping',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Nível de reputação do vendedor',
+    width: 120
+  },
+  {
+    key: 'conditions',
+    label: 'Condição',
+    category: 'products',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Condição do produto (new, used, refurbished)',
+    width: 100
+  },
+  {
     key: 'shipping_substatus',
     label: 'Substatus do Envio',
     category: 'shipping',
     priority: 'important',
     visible: true,
     default: true,
-    description: 'Substatus detalhado do envio',
+    description: 'Substatus detalhado do envio (printed, picked_up, out_for_delivery, etc.)',
     width: 160,
     filterable: true
   },
@@ -436,7 +400,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Número do endereço',
-    width: 80
+    width: 90
   },
   {
     key: 'endereco_bairro',
@@ -446,7 +410,7 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: false,
     default: false,
     description: 'Bairro do destinatário',
-    width: 150
+    width: 200
   },
   {
     key: 'endereco_cep',
@@ -455,164 +419,140 @@ export const HISTORICO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
     priority: 'optional',
     visible: false,
     default: false,
-    description: 'CEP do endereço',
-    width: 100
+    description: 'CEP do destinatário',
+    width: 110,
+    sortable: true
   },
   {
-    key: 'cidade',
+    key: 'endereco_cidade',
     label: 'Cidade',
     category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
+    priority: 'important',
+    visible: true,
+    default: true,
     description: 'Cidade do destinatário',
-    width: 150
+    width: 140
   },
   {
-    key: 'uf',
+    key: 'endereco_uf',
     label: 'UF',
     category: 'shipping',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Estado/UF',
-    width: 60
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Estado (UF) do destinatário',
+    width: 150
   },
 
-  // ====== MERCADO LIVRE ======
+  // ====== METADADOS ML ======
   {
     key: 'date_created',
     label: 'Data Criação ML',
-    category: 'ml',
+    category: 'meta',
     priority: 'optional',
     visible: false,
     default: false,
-    description: 'Data de criação no Mercado Livre',
-    width: 130,
+    description: 'Data de criação no ML',
+    width: 120,
     sortable: true
   },
   {
     key: 'pack_id',
     label: 'Pack ID',
-    category: 'ml',
+    category: 'meta',
     priority: 'optional',
     visible: false,
     default: false,
-    description: 'ID do pacote ML',
+    description: 'ID do pacote',
     width: 100
   },
   {
     key: 'pickup_id',
     label: 'Pickup ID',
-    category: 'ml',
+    category: 'meta',
     priority: 'optional',
     visible: false,
     default: false,
-    description: 'ID do pickup ML',
+    description: 'ID de retirada',
     width: 100
   },
   {
     key: 'tags',
-    label: 'Tags',
-    category: 'ml',
+    label: 'Tags do Pedido',
+    category: 'meta',
     priority: 'optional',
     visible: false,
     default: false,
-    description: 'Tags do pedido',
-    width: 120
+    description: 'Tags do ML',
+    width: 350
   },
-  {
-    key: 'pack_status',
-    label: 'Pack Status',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Status do pacote',
-    width: 110
-  },
-  {
-    key: 'pack_status_detail',
-    label: 'Pack Status Detail',
-    category: 'ml',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Detalhe do status do pacote',
-    width: 150
-  }
 ];
 
-// 🎯 PERFIS PRÉ-DEFINIDOS PARA HISTÓRICO
-export const HISTORICO_DEFAULT_PROFILES: ColumnProfile[] = [
+console.log(`✅ Total de colunas no histórico: ${HISTORICO_COLUMN_DEFINITIONS.length}`);
+
+// 🔍 VALIDAÇÃO: Detectar chaves duplicadas
+const keys = HISTORICO_COLUMN_DEFINITIONS.map(col => col.key);
+const duplicates = keys.filter((key, index) => keys.indexOf(key) !== index);
+if (duplicates.length > 0) {
+  console.error('🚨 COLUNAS DUPLICADAS DETECTADAS:', duplicates);
+}
+
+// ====== PERFIS DE VISUALIZAÇÃO ======
+export const HISTORICO_COLUMN_PROFILES: ColumnProfile[] = [
   {
-    id: 'essential',
+    id: 'essencial',
     name: 'Essencial',
-    description: 'Apenas colunas essenciais para análise básica do histórico',
+    description: 'Apenas colunas essenciais (mais rápido)',
     columns: HISTORICO_COLUMN_DEFINITIONS
       .filter(col => col.priority === 'essential')
       .map(col => col.key)
   },
   {
-    id: 'standard',
-    name: 'Padrão',
-    description: 'Configuração padrão para histórico de vendas',
-    columns: HISTORICO_COLUMN_DEFINITIONS
-      .filter(col => col.default === true)
-      .map(col => col.key)
-  },
-  {
-    id: 'financial',
-    name: 'Financeiro',
-    description: 'Foco em análise financeira e de pagamentos',
-    columns: [
-      'id_unico', 'numero_pedido', 'cliente_nome', 'data_pedido',
-      'valor_total', 'valor_pago', 'frete_pago_cliente', 'receita_flex_bonus',
-      'valor_liquido_vendedor', 'taxa_marketplace', 'metodo_pagamento',
-      'status_pagamento', 'tipo_pagamento', 'desconto_cupom'
-    ]
-  },
-  {
-    id: 'logistic',
-    name: 'Logística',
-    description: 'Foco em envio e rastreamento',
-    columns: [
-      'id_unico', 'numero_pedido', 'cliente_nome', 'nome_completo', 'data_pedido',
-      'situacao', 'status_envio', 'logistic_mode_principal', 'tipo_logistico',
-      'tipo_metodo_envio', 'delivery_type', 'substatus_estado_atual',
-      'cidade', 'uf', 'codigo_rastreamento'
-    ]
-  },
-  {
-    id: 'mapping',
-    name: 'Mapeamento',
-    description: 'Foco em análise de mapeamento e baixa de estoque',
-    columns: [
-      'id_unico', 'numero_pedido', 'skus_produtos', 'quantidade_itens',
-      'status_mapeamento', 'sku_estoque', 'sku_kit', 'qtd_kit', 'total_itens', 'status_baixa'
-    ]
-  },
-  {
-    id: 'complete',
+    id: 'completo',
     name: 'Completo',
     description: 'Todas as colunas disponíveis',
     columns: HISTORICO_COLUMN_DEFINITIONS.map(col => col.key)
+  },
+  {
+    id: 'financeiro',
+    name: 'Financeiro',
+    description: 'Foco em dados financeiros',
+    columns: [
+      'id',
+      'numero_pedido',
+      'data_pedido',
+      'valor_total',
+      'receita_flex',
+      'marketplace_fee',
+      'custo_envio_seller',
+      'custo_fixo_meli',
+      'valor_liquido_vendedor',
+      'payment_method',
+      'payment_status'
+    ]
+  },
+  {
+    id: 'logistica',
+    name: 'Logística',
+    description: 'Foco em envio e rastreamento',
+    columns: [
+      'id',
+      'numero_pedido',
+      'data_pedido',
+      'nome_completo',
+      'endereco_cidade',
+      'endereco_uf',
+      'shipping_status',
+      'shipping_substatus',
+      'codigo_rastreamento',
+      'url_rastreamento',
+      'logistic_type'
+    ]
   }
 ];
 
-// 🔧 HELPERS PARA HISTÓRICO
-export const getHistoricoColumnsByCategory = (category: keyof typeof import('../../pedidos/config/columns.config').CATEGORY_LABELS) => {
-  return HISTORICO_COLUMN_DEFINITIONS.filter(col => col.category === category);
-};
-
-export const getHistoricoEssentialColumns = () => {
-  return HISTORICO_COLUMN_DEFINITIONS.filter(col => col.priority === 'essential');
-};
-
-export const getHistoricoDefaultVisibleColumns = () => {
-  return HISTORICO_COLUMN_DEFINITIONS.filter(col => col.default === true);
-};
-
-export const getHistoricoColumnDefinition = (key: string) => {
-  return HISTORICO_COLUMN_DEFINITIONS.find(col => col.key === key);
+export const getDefaultVisibleColumns = (): string[] => {
+  return HISTORICO_COLUMN_DEFINITIONS
+    .filter(col => col.default)
+    .map(col => col.key);
 };

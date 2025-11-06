@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Settings, Eye, EyeOff } from 'lucide-react';
-import { HISTORICO_COLUMN_DEFINITIONS, getHistoricoDefaultVisibleColumns } from '../config/columns.config';
+import { HISTORICO_COLUMN_DEFINITIONS, getDefaultVisibleColumns } from '../config/columns.config';
 import type { ColumnDefinition } from '../../pedidos/types/columns.types';
 
 interface ColumnConfig {
