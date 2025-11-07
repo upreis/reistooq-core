@@ -112,7 +112,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         children: [
           {
             id: 'controle-estoque',
-            label: 'Controle de Estoque',
+            label: 'Estoque',
             path: '/estoque',
             icon: 'Package'
           },

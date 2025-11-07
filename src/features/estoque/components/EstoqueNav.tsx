@@ -6,7 +6,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 const navItems = [
   {
     path: "/estoque",
-    label: "Controle de Estoque",
+    label: "Estoque",
     icon: Package,
   },
   {
