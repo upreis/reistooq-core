@@ -5,7 +5,7 @@ import { LimelightNav } from "@/components/ui/limelight-nav";
 const navItems = [
   {
     path: "/aplicativos/calendario",
-    label: "Calendário Logístico",
+    label: "Calendário",
     icon: Calendar,
   },
   {
