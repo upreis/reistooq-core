@@ -1,13 +1,13 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2 } from "lucide-react";
+import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const subNavItems = [
   {
     path: "/pedidos",
     label: "Marketplace",
     icon: Package,
-    preserveSearch: true, // ✅ Preservar filtros na URL
+    preserveSearch: true,
   },
   {
     path: "/ml-orders-completas",
@@ -32,39 +32,42 @@ const subNavItems = [
 ];
 
 export function MLOrdersNav() {
+  const navigate = useNavigate();
   const location = useLocation();
 
+  // Encontrar o índice ativo baseado na rota atual
+  const activeIndex = subNavItems.findIndex(item => location.pathname === item.path);
+  const defaultActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+
+  // Mapear para o formato do LimelightNav
+  const limelightItems = subNavItems.map((item) => {
+    const Icon = item.icon;
+    return {
+      id: item.path,
+      icon: <Icon />,
+      label: item.label,
+      onClick: () => {
+        if (item.preserveSearch && location.pathname === '/pedidos') {
+          navigate({ pathname: item.path, search: location.search });
+        } else {
+          navigate(item.path);
+        }
+      },
+    };
+  });
+
   return (
-    <div className="space-y-4">
-      {/* Sub-navegação */}
-      <nav className="flex space-x-8 border-b border-border">
-        {subNavItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          const Icon = item.icon;
-          
-          // ✅ CORREÇÃO: Se o item tem preserveSearch E estamos em /pedidos, preservar params
-          // Isso mantém os filtros quando clicamos no link novamente
-          const to = item.preserveSearch && location.pathname === '/pedidos'
-            ? { pathname: item.path, search: location.search }
-            : item.path;
-          
-          return (
-            <NavLink
-              key={item.path}
-              to={to}
-              className={cn(
-                "pb-4 px-1 text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
-                isActive
-                  ? "border-b-2 border-primary text-primary"
-                  : "text-muted-foreground border-b-2 border-transparent"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </NavLink>
-          );
-        })}
-      </nav>
-    </div>
+    <LimelightNav
+      items={limelightItems}
+      defaultActiveIndex={defaultActiveIndex}
+      onTabChange={(index) => {
+        const item = subNavItems[index];
+        if (item.preserveSearch && location.pathname === '/pedidos') {
+          navigate({ pathname: item.path, search: location.search });
+        } else {
+          navigate(item.path);
+        }
+      }}
+    />
   );
 }
