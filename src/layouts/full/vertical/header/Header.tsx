@@ -8,6 +8,7 @@ import { ComprasNavLimelight } from "@/features/compras/components/ComprasNavLim
 import { AplicativosNavLimelight } from "@/features/aplicativos/components/AplicativosNavLimelight";
 import { ConfiguracoesNavLimelight } from "@/features/configuracoes/components/ConfiguracoesNavLimelight";
 import { AdminNavLimelight } from "@/features/admin/components/AdminNavLimelight";
+import { EcommerceNavLimelight } from "@/features/ecommerce/components/EcommerceNavLimelight";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -151,6 +152,7 @@ export default function Header() {
           {location.pathname.startsWith('/aplicativos') && <AplicativosNavLimelight />}
           {location.pathname.startsWith('/configuracoes') && <ConfiguracoesNavLimelight />}
           {location.pathname.startsWith('/admin') && <AdminNavLimelight />}
+          {location.pathname.startsWith('/apps/ecommerce') && <EcommerceNavLimelight />}
         </div>
 
         {/* Right side - Actions and user menu */}
