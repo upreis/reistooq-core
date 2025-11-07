@@ -84,12 +84,12 @@ export const LimelightNav = ({
           >
             {cloneElement(icon, {
               className: `w-5 h-5 transition-all duration-300 ease-in-out ${
-                activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-40 text-muted-foreground'
+                activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-70 text-muted-foreground'
               } ${icon.props.className || ''} ${iconClassName || ''}`,
             })}
             {label && (
               <span className={`text-xs font-medium transition-all duration-300 ease-in-out ${
-                activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-40 text-muted-foreground'
+                activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-70 text-muted-foreground'
               }`}>
                 {label}
               </span>
