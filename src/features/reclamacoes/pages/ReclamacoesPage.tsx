@@ -26,7 +26,6 @@ import { RefreshCw, ChevronDown, X, Search } from 'lucide-react';
 import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
 import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
-import { OMSNav } from '@/features/oms/components/OMSNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
@@ -523,16 +522,6 @@ export function ReclamacoesPage() {
     return (
       <ErrorBoundary>
         <div className="space-y-6">
-          {/* Breadcrumb principal */}
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <span>📦</span>
-            <span>/</span>
-            <span className="text-primary">Vendas</span>
-          </div>
-
-          {/* Navigation tabs principais */}
-          <OMSNav />
-
           {/* Sub-navegação de Pedidos */}
           <MLOrdersNav />
 
@@ -551,16 +540,6 @@ export function ReclamacoesPage() {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Breadcrumb principal */}
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-          <span>📦</span>
-          <span>/</span>
-          <span className="text-primary">Vendas</span>
-        </div>
-
-        {/* Navigation tabs principais */}
-        <OMSNav />
-
         {/* Sub-navegação de Pedidos */}
         <MLOrdersNav />
 

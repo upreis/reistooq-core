@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
-import { OMSNav } from "@/features/oms/components/OMSNav";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { validateMLAccounts } from "@/features/devolucoes/utils/AccountValidator";
 
@@ -53,16 +52,6 @@ export default function MLOrdersCompletas() {
   return (
     <ErrorBoundary>
       <div className="space-y-6">
-        {/* Breadcrumb principal */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <span>📦</span>
-        <span>/</span>
-        <span className="text-primary">Vendas</span>
-      </div>
-
-      {/* Navigation tabs principais */}
-      <OMSNav />
-
       {/* Sub-navegação de Pedidos */}
       <MLOrdersNav />
 
