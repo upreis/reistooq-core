@@ -203,12 +203,6 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         ]
       },
       { 
-        id: 'ml-orders-completas', 
-        label: 'Devoluções ML', 
-        path: '/ml-orders-completas', 
-        icon: 'Database' 
-      },
-      { 
         id: 'admin', 
         label: 'Administração', 
         icon: 'Shield',
