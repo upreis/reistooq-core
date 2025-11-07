@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2 } from "lucide-react";
-import { LimelightNav } from "@/components/ui/limelight-nav";
+import { MagneticTabs } from "@/components/ui/magnetic-tabs";
 
 const subNavItems = [
   {
@@ -35,39 +35,36 @@ export function MLOrdersNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Encontrar o índice ativo baseado na rota atual
-  const activeIndex = subNavItems.findIndex(item => location.pathname === item.path);
-  const defaultActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+  // Encontrar a aba ativa baseada na rota atual
+  const activeItem = subNavItems.find(item => location.pathname === item.path);
+  const activeValue = activeItem ? activeItem.path : "/pedidos";
 
-  // Mapear para o formato do LimelightNav
-  const limelightItems = subNavItems.map((item) => {
+  // Mapear para o formato do MagneticTabs
+  const magneticItems = subNavItems.map((item) => {
     const Icon = item.icon;
     return {
-      id: item.path,
-      icon: <Icon />,
+      value: item.path,
       label: item.label,
-      onClick: () => {
-        if (item.preserveSearch && location.pathname === '/pedidos') {
-          navigate({ pathname: item.path, search: location.search });
-        } else {
-          navigate(item.path);
-        }
-      },
+      icon: <Icon className="w-5 h-5" />,
     };
   });
 
+  const handleValueChange = (value: string) => {
+    const item = subNavItems.find(i => i.path === value);
+    if (item) {
+      if (item.preserveSearch && location.pathname === '/pedidos') {
+        navigate({ pathname: item.path, search: location.search });
+      } else {
+        navigate(item.path);
+      }
+    }
+  };
+
   return (
-    <LimelightNav
-      items={limelightItems}
-      defaultActiveIndex={defaultActiveIndex}
-      onTabChange={(index) => {
-        const item = subNavItems[index];
-        if (item.preserveSearch && location.pathname === '/pedidos') {
-          navigate({ pathname: item.path, search: location.search });
-        } else {
-          navigate(item.path);
-        }
-      }}
+    <MagneticTabs
+      items={magneticItems}
+      activeValue={activeValue}
+      onValueChange={handleValueChange}
     />
   );
 }
