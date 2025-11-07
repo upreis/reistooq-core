@@ -13,7 +13,7 @@ export function ComprasNav() {
   const location = useLocation();
 
   return (
-    <nav className="flex space-x-8 border-b">
+    <nav className="flex space-x-8 rounded-lg border bg-card text-card-foreground shadow-sm p-1">
       {navigation.map((item) => {
         const isActive = location.pathname === item.href;
         return (
