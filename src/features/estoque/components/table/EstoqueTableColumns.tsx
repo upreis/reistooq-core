@@ -118,7 +118,7 @@ export function getEstoqueTableColumns({
     },
     {
       key: "estoque_minimo",
-      label: "Estoque Mínimo",
+      label: "Qdd Minima",
       sortable: true,
       width: "90px",
       render: (value: number) => (
@@ -127,7 +127,7 @@ export function getEstoqueTableColumns({
     },
     {
       key: "estoque_maximo",
-      label: "Estoque Máximo",
+      label: "Qdd Maxima",
       sortable: true,
       width: "90px",
       render: (value: number) => (
