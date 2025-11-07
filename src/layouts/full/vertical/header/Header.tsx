@@ -4,6 +4,7 @@ import { useLocation } from "react-router-dom";
 import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
+import { ComprasNavLimelight } from "@/features/compras/components/ComprasNavLimelight";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -143,6 +144,7 @@ export default function Header() {
           {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/ml-orders-completas' || location.pathname === '/reclamacoes' || location.pathname === '/vendas-online' || location.pathname === '/devolucoes-ml') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
+          {location.pathname.startsWith('/compras') && <ComprasNavLimelight />}
         </div>
 
         {/* Right side - Actions and user menu */}

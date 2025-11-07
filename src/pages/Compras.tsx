@@ -48,16 +48,6 @@ const ComprasContent = () => {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <span>🛒</span>
-        <span>/</span>
-        <span className="text-primary">Compras</span>
-      </div>
-
-      <ComprasNav />
-
-      
       <div className="mt-6">
         <Routes>
           <Route path="/" element={<Navigate to="/compras/pedidos" replace />} />
