@@ -73,31 +73,39 @@ export const LimelightNav = ({
   };
 
   return (
-    <nav className={`relative inline-flex items-center h-16 rounded-lg bg-card text-foreground border px-2 ${className}`}>
+    <nav className={`relative inline-flex items-center h-14 rounded-2xl bg-card/80 backdrop-blur-sm text-foreground border border-border/50 px-2 ${className}`}>
       {items.map(({ id, icon, label, onClick }, index) => (
           <a
             key={id}
             ref={el => (navItemRefs.current[index] = el)}
-            className={`relative z-20 flex h-full cursor-pointer items-center justify-center p-5 ${iconContainerClassName}`}
+            className={`relative z-20 flex h-full cursor-pointer items-center justify-center px-6 ${iconContainerClassName}`}
             onClick={() => handleItemClick(index, onClick)}
             aria-label={label}
           >
             {cloneElement(icon, {
-              className: `w-6 h-6 transition-opacity duration-100 ease-in-out ${
-                activeIndex === index ? 'opacity-100' : 'opacity-40'
+              className: `w-5 h-5 transition-all duration-300 ease-in-out ${
+                activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-40 text-muted-foreground'
               } ${icon.props.className || ''} ${iconClassName || ''}`,
             })}
           </a>
       ))}
 
+      {/* Limelight effect - luz acendendo no topo */}
       <div 
         ref={limelightRef}
-        className={`absolute top-0 z-10 w-11 h-[5px] rounded-full bg-primary shadow-[0_50px_15px_var(--primary)] ${
-          isReady ? 'transition-[left] duration-400 ease-in-out' : ''
+        className={`absolute top-0 z-10 w-16 h-1 rounded-b-full ${
+          isReady ? 'transition-[left] duration-500 ease-out' : ''
         } ${limelightClassName}`}
         style={{ left: '-999px' }}
       >
-        <div className="absolute left-[-30%] top-[5px] w-[160%] h-14 [clip-path:polygon(5%_100%,25%_0,75%_0,95%_100%)] bg-gradient-to-b from-primary/30 to-transparent pointer-events-none" />
+        {/* Barra de luz no topo */}
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-b from-primary to-transparent rounded-b-full shadow-[0_0_20px_rgba(var(--primary-rgb),0.8)]" />
+        
+        {/* Gradiente de luz descendo */}
+        <div className="absolute left-[10%] top-0 w-[80%] h-12 bg-gradient-to-b from-primary/40 via-primary/10 to-transparent [clip-path:polygon(20%_0,80%_0,100%_100%,0%_100%)] pointer-events-none blur-sm" />
+        
+        {/* Glow adicional */}
+        <div className="absolute left-[20%] top-0 w-[60%] h-8 bg-gradient-to-b from-primary/60 to-transparent rounded-b-full blur-md pointer-events-none" />
       </div>
     </nav>
   );
