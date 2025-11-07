@@ -98,8 +98,8 @@ export function HoverGradientOMSNav(): React.JSX.Element {
   return (
     <motion.nav
       className="w-fit mx-auto px-4 py-2 rounded-3xl 
-      bg-[hsl(25,60%,45%)]/90 dark:bg-[hsl(25,60%,45%)]/80 backdrop-blur-lg 
-      border border-[hsl(25,60%,35%)]/50 
+      bg-[hsl(40,70%,45%)]/90 dark:bg-[hsl(40,70%,45%)]/80 backdrop-blur-lg 
+      border border-[hsl(40,70%,35%)]/50 
       shadow-lg relative"
       initial="initial"
       whileHover="hover"
