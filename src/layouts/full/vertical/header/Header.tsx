@@ -7,6 +7,7 @@ import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
 import { ComprasNavLimelight } from "@/features/compras/components/ComprasNavLimelight";
 import { AplicativosNavLimelight } from "@/features/aplicativos/components/AplicativosNavLimelight";
 import { ConfiguracoesNavLimelight } from "@/features/configuracoes/components/ConfiguracoesNavLimelight";
+import { AdminNavLimelight } from "@/features/admin/components/AdminNavLimelight";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -149,6 +150,7 @@ export default function Header() {
           {location.pathname.startsWith('/compras') && <ComprasNavLimelight />}
           {location.pathname.startsWith('/aplicativos') && <AplicativosNavLimelight />}
           {location.pathname.startsWith('/configuracoes') && <ConfiguracoesNavLimelight />}
+          {location.pathname.startsWith('/admin') && <AdminNavLimelight />}
         </div>
 
         {/* Right side - Actions and user menu */}

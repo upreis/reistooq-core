@@ -15,17 +15,7 @@ import AdminPerfil from "./admin/AdminPerfil";
 const AdminContent = () => {
   return (
     <div className="space-y-6">
-      {/* 1. Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <Shield className="h-4 w-4" />
-        <span>/</span>
-        <span className="text-primary">Administração</span>
-      </div>
-
-      {/* 2. Navigation tabs */}
-      <AdminNav />
-
-      {/* 3. Stats cards */}
+      {/* Stats cards */}
       <AdminStats />
       
       {/* 4. Conteúdo das rotas */}
