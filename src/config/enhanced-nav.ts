@@ -31,7 +31,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           {
             id: 'dashboard-financeiro',
-            label: 'Dashboard Financeiro',
+            label: 'Análises',
             path: '/dashboardinicial/analises',
             icon: 'DollarSign'
           }
