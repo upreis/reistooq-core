@@ -1,145 +1,125 @@
-"use client";
+"use client"
 
-import * as React from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { motion, AnimatePresence, useMotionValue, useSpring } from "framer-motion";
-import { cn } from "@/lib/utils";
+import * as React from "react"
+import { useState, useRef, useEffect } from "react"
+import { cn } from "@/lib/utils"
 
-export interface MagneticTabItem {
-  value: string;
-  label: string;
-  icon?: React.ReactNode;
-  content?: React.ReactNode;
+interface Tab {
+  id: string
+  label: string
+  icon?: React.ReactNode
 }
 
-interface MagneticTabsProps {
-  items: MagneticTabItem[];
-  activeValue: string;
-  onValueChange: (value: string) => void;
-  className?: string;
-  indicatorPadding?: number;
-  children?: React.ReactNode;
+interface MagneticTabsProps extends React.HTMLAttributes<HTMLDivElement> {
+  items: Tab[]
+  activeValue: string
+  onValueChange?: (tabId: string) => void
 }
 
-export function MagneticTabs({
-  items,
-  activeValue,
-  onValueChange,
-  className,
-  indicatorPadding = 6,
-  children,
-}: MagneticTabsProps) {
-  const [hovered, setHovered] = React.useState<string | null>(null);
+export const MagneticTabs = React.forwardRef<HTMLDivElement, MagneticTabsProps>(
+  ({ className, items, activeValue, onValueChange, ...props }, ref) => {
+    const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+    const [activeIndex, setActiveIndex] = useState(0)
+    const [hoverStyle, setHoverStyle] = useState({})
+    const [activeStyle, setActiveStyle] = useState({ left: "0px", width: "0px" })
+    const tabRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  const containerRef = React.useRef<HTMLDivElement | null>(null);
-  const tabRefs = React.useRef<Array<HTMLButtonElement | null>>([]);
-  const indicatorX = useMotionValue(0);
-  const indicatorWidth = useMotionValue(0);
-  const indicatorTop = useMotionValue(0);
-  const indicatorHeight = useMotionValue(0);
+    // Atualizar activeIndex quando activeValue mudar
+    useEffect(() => {
+      const newIndex = items.findIndex(item => item.id === activeValue)
+      if (newIndex !== -1) {
+        setActiveIndex(newIndex)
+      }
+    }, [activeValue, items])
 
-  const springConfig = { stiffness: 300, damping: 25 };
-  const springX = useSpring(indicatorX, springConfig);
-  const springW = useSpring(indicatorWidth, springConfig);
-  const springTop = useSpring(indicatorTop, springConfig);
-  const springH = useSpring(indicatorHeight, springConfig);
+    useEffect(() => {
+      if (hoveredIndex !== null) {
+        const hoveredElement = tabRefs.current[hoveredIndex]
+        if (hoveredElement) {
+          const { offsetLeft, offsetWidth } = hoveredElement
+          setHoverStyle({
+            left: `${offsetLeft}px`,
+            width: `${offsetWidth}px`,
+          })
+        }
+      }
+    }, [hoveredIndex])
 
-  const updateIndicator = (value: string) => {
-    const idx = items.findIndex((item) => item.value === value);
-    const btn = tabRefs.current[idx];
-    const container = containerRef.current;
-    if (btn && container) {
-      const cRect = container.getBoundingClientRect();
-      const tRect = btn.getBoundingClientRect();
-      indicatorX.set(tRect.left - cRect.left - indicatorPadding);
-      indicatorWidth.set(tRect.width + indicatorPadding * 2);
-      indicatorTop.set(tRect.top - cRect.top - indicatorPadding);
-      indicatorHeight.set(tRect.height + indicatorPadding * 2);
-    }
-  };
+    useEffect(() => {
+      const activeElement = tabRefs.current[activeIndex]
+      if (activeElement) {
+        const { offsetLeft, offsetWidth } = activeElement
+        setActiveStyle({
+          left: `${offsetLeft}px`,
+          width: `${offsetWidth}px`,
+        })
+      }
+    }, [activeIndex])
 
-  React.useEffect(() => {
-    updateIndicator(activeValue);
-    const ro = new ResizeObserver(() => updateIndicator(activeValue));
-    if (containerRef.current) ro.observe(containerRef.current);
-    tabRefs.current.forEach((el) => el && ro.observe(el));
-    window.addEventListener("resize", () => updateIndicator(activeValue));
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", () => updateIndicator(activeValue));
-    };
-  }, [activeValue, indicatorPadding]);
+    useEffect(() => {
+      requestAnimationFrame(() => {
+        const firstElement = tabRefs.current[activeIndex]
+        if (firstElement) {
+          const { offsetLeft, offsetWidth } = firstElement
+          setActiveStyle({
+            left: `${offsetLeft}px`,
+            width: `${offsetWidth}px`,
+          })
+        }
+      })
+    }, [activeIndex])
 
-  React.useEffect(() => {
-    if (hovered) updateIndicator(hovered);
-    else updateIndicator(activeValue);
-  }, [hovered, activeValue, indicatorPadding]);
-
-  return (
-    <div className={cn("w-full", className)}>
-      <Tabs value={activeValue} onValueChange={onValueChange} className="w-full">
-        <TabsList
-          ref={containerRef}
-          className="relative flex justify-start gap-2 p-2 bg-background/60 w-full"
-        >
-          {/* Magnetic Indicator */}
-          <motion.div
+    return (
+      <div 
+        ref={ref} 
+        className={cn("relative", className)} 
+        {...props}
+      >
+        <div className="relative">
+          {/* Hover Highlight */}
+          <div
+            className="absolute h-[40px] transition-all duration-300 ease-out bg-[#0e0f1114] dark:bg-[#ffffff1a] rounded-[8px] flex items-center"
             style={{
-              left: springX,
-              width: springW,
-              top: springTop,
-              height: springH,
+              ...hoverStyle,
+              opacity: hoveredIndex !== null ? 1 : 0,
             }}
-            className="absolute rounded-lg bg-primary/30 pointer-events-none"
-          >
-            <motion.div
-              className={cn("absolute inset-0 rounded-lg filter blur-md opacity-40")}
-              initial={false}
-              animate={{ opacity: 0.4 }}
-            />
-          </motion.div>
+          />
 
-          {items.map((item, i) => (
-            <TabsTrigger
-              key={item.value}
-              ref={(el) => (tabRefs.current[i] = el)}
-              value={item.value}
-              asChild
-              onMouseEnter={() => setHovered(item.value)}
-              onMouseLeave={() => setHovered(null)}
-            >
-              <motion.button
+          {/* Active Indicator */}
+          <div
+            className="absolute bottom-[-6px] h-[2px] bg-primary transition-all duration-300 ease-out"
+            style={activeStyle}
+          />
+
+          {/* Tabs */}
+          <div className="relative flex space-x-[6px] items-center">
+            {items.map((tab, index) => (
+              <div
+                key={tab.id}
+                ref={(el) => (tabRefs.current[index] = el)}
                 className={cn(
-                  "relative z-10 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2",
-                  activeValue === item.value ? "text-primary-foreground" : "text-muted-foreground"
+                  "px-4 py-2 cursor-pointer transition-colors duration-300 h-[40px] flex items-center gap-2",
+                  index === activeIndex 
+                    ? "text-foreground" 
+                    : "text-muted-foreground"
                 )}
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                onClick={() => {
+                  setActiveIndex(index)
+                  onValueChange?.(tab.id)
+                }}
               >
-                {item.icon && <span className="text-lg">{item.icon}</span>}
-                {item.label}
-              </motion.button>
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* Tab Content */}
-        {children && (
-          <div className="mt-6 w-full">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeValue}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ type: "spring", stiffness: 250, damping: 25 }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
+                {tab.icon && <span className="text-lg">{tab.icon}</span>}
+                <div className="text-sm font-medium leading-5 whitespace-nowrap">
+                  {tab.label}
+                </div>
+              </div>
+            ))}
           </div>
-        )}
-      </Tabs>
-    </div>
-  );
-}
+        </div>
+      </div>
+    )
+  }
+)
+MagneticTabs.displayName = "MagneticTabs"

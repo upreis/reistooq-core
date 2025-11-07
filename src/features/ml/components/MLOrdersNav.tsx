@@ -43,14 +43,14 @@ export function MLOrdersNav() {
   const magneticItems = subNavItems.map((item) => {
     const Icon = item.icon;
     return {
-      value: item.path,
+      id: item.path,
       label: item.label,
       icon: <Icon className="w-5 h-5" />,
     };
   });
 
-  const handleValueChange = (value: string) => {
-    const item = subNavItems.find(i => i.path === value);
+  const handleValueChange = (tabId: string) => {
+    const item = subNavItems.find(i => i.path === tabId);
     if (item) {
       if (item.preserveSearch && location.pathname === '/pedidos') {
         navigate({ pathname: item.path, search: location.search });
