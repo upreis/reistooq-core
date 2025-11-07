@@ -111,76 +111,79 @@ export function SidebarItemWithChildren({
   }, [handleParentClick, isCollapsed, openGroup, closeGroup, item.id]);
 
   const button = (
-    <button
-      ref={buttonRef}
-      onClick={handleParentClick}
-      onKeyDown={handleKeyDown}
-      role="button"
-      tabIndex={0}
-      className={cn(
-        'group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
-        'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
-        'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
-        'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
-        hasActiveChild
-          ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
-          : 'text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]'
-      )}
-      aria-expanded={!isCollapsed ? isOpen : undefined}
-      aria-haspopup="true"
-      aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
-    >
-      <Icon className={cn(
-        "h-5 w-5 shrink-0 transition-all duration-200", 
-        hasActiveChild ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
-      )} />
-      
-      {/* Label com tipografia melhorada */}
-      <span className={cn(
-        'font-medium truncate transition-all duration-200',
-        !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
-        hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))] font-semibold' : 'text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]'
-      )}>
-        {item.label}
-      </span>
-
-      {/* Chevron com animação suave - clickável independente */}
+    <div className="relative">
       <button
-        onClick={handleChevronClick}
+        ref={buttonRef}
+        onClick={handleParentClick}
+        onKeyDown={handleKeyDown}
+        role="button"
+        tabIndex={0}
         className={cn(
-          'ml-auto p-1 rounded-md hover:bg-[hsl(var(--accent))] transition-all shrink-0',
-          !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100'
+          'group w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-[hsl(var(--ring))]/20 focus:bg-[hsl(var(--accent))]/50',
+          'hover:bg-gradient-to-r hover:from-[hsl(var(--accent))]/50 hover:to-[hsl(var(--accent))]/30',
+          'hover:shadow-sm hover:scale-[1.02] active:scale-[0.98]',
+          hasActiveChild
+            ? 'bg-gradient-to-r from-[hsl(var(--brand-yellow))] to-[hsl(var(--brand-yellow-glow))] text-[hsl(var(--brand-yellow-foreground))] shadow-lg shadow-[hsl(var(--brand-yellow))]/25'
+            : 'text-[hsl(var(--foreground))] hover:text-[hsl(var(--foreground))]'
         )}
-        aria-label={isOpen ? 'Recolher' : 'Expandir'}
+        aria-expanded={!isCollapsed ? isOpen : undefined}
+        aria-haspopup="true"
+        aria-controls={!isCollapsed ? `submenu-${item.id}` : undefined}
       >
-        <ChevronDown className={cn(
-          'h-4 w-4 transition-all duration-300',
-          isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : 'rotate-0',
-          hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))]' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]'
+        <Icon className={cn(
+          "h-5 w-5 shrink-0 transition-all duration-200", 
+          hasActiveChild ? "text-[hsl(var(--brand-yellow-foreground))] drop-shadow-sm" : "text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]"
         )} />
-      </button>
-
-      {/* Badge melhorado */}
-      {item.badge && (
+        
+        {/* Label com tipografia melhorada */}
         <span className={cn(
-          'ml-auto px-2 py-1 text-xs font-semibold rounded-full shrink-0 shadow-sm',
-          !isMobile && isCollapsed ? 'absolute -top-1 -right-1 ml-0' : '',
-          {
-            'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]': item.badge.variant === 'default',
-            'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]': item.badge.variant === 'destructive',
-            'bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]': item.badge.variant === 'warning',
-            'bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]': item.badge.variant === 'success'
-          }
+          'font-medium truncate transition-all duration-200',
+          !isMobile && isCollapsed ? 'opacity-0 pointer-events-none w-0' : 'opacity-100',
+          hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))] font-semibold' : 'text-[hsl(var(--foreground))] group-hover:text-[hsl(var(--foreground))]'
         )}>
-          {item.badge.content}
+          {item.label}
         </span>
-      )}
 
-      {/* Indicador ativo melhorado - sempre visível quando collapsed e tem filho ativo */}
-      {!isMobile && isCollapsed && hasActiveChild && (
-        <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] shrink-0 animate-pulse border-2 border-[hsl(var(--background))]" />
+        {/* Badge melhorado */}
+        {item.badge && (
+          <span className={cn(
+            'ml-auto px-2 py-1 text-xs font-semibold rounded-full shrink-0 shadow-sm',
+            !isMobile && isCollapsed ? 'absolute -top-1 -right-1 ml-0' : '',
+            {
+              'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]': item.badge.variant === 'default',
+              'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]': item.badge.variant === 'destructive',
+              'bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]': item.badge.variant === 'warning',
+              'bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]': item.badge.variant === 'success'
+            }
+          )}>
+            {item.badge.content}
+          </span>
+        )}
+
+        {/* Indicador ativo melhorado - sempre visível quando collapsed e tem filho ativo */}
+        {!isMobile && isCollapsed && hasActiveChild && (
+          <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-[hsl(var(--primary))] shrink-0 animate-pulse border-2 border-[hsl(var(--background))]" />
+        )}
+      </button>
+      
+      {/* Chevron separado - fora do botão principal */}
+      {!isCollapsed && (
+        <div
+          onClick={handleChevronClick}
+          className={cn(
+            'absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-[hsl(var(--accent))] transition-all cursor-pointer'
+          )}
+          aria-label={isOpen ? 'Recolher' : 'Expandir'}
+        >
+          <ChevronDown className={cn(
+            'h-4 w-4 transition-all duration-300',
+            isOpen ? 'rotate-180 text-[hsl(var(--primary))]' : 'rotate-0',
+            hasActiveChild ? 'text-[hsl(var(--brand-yellow-foreground))]' : 'text-[hsl(var(--muted-foreground))] group-hover:text-[hsl(var(--primary))]'
+          )} />
+        </div>
       )}
-    </button>
+    </div>
   );
 
   return (
