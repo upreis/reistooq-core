@@ -1,6 +1,7 @@
 import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { OMSNav } from "@/features/oms/components/OMSNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -124,23 +125,20 @@ export default function Header() {
           )}
         </button>
 
-        {/* Breadcrumb or Search */}
-        <div className="flex items-center gap-4 flex-1">
-          {breadcrumb ? (
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-4">
+          {breadcrumb && (
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <span>{breadcrumb.icon}</span>
               <span>/</span>
               <span className="text-primary">{breadcrumb.label}</span>
             </div>
-          ) : (
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Pesquisar..."
-                className="pl-10 w-80"
-              />
-            </div>
           )}
+        </div>
+
+        {/* Navigation - Centered */}
+        <div className="flex-1 flex justify-center">
+          {location.pathname === '/pedidos' && <OMSNav />}
         </div>
 
         {/* Right side - Actions and user menu */}
