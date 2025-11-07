@@ -200,6 +200,26 @@ export function getEstoqueTableColumns({
       )
     },
     {
+      key: "codigo_cest",
+      label: "Código CEST",
+      sortable: true,
+      width: "110px",
+      render: (value: string) => (
+        <span className="text-[10px] font-mono block truncate">{value || "-"}</span>
+      )
+    },
+    {
+      key: "origem",
+      label: "Origem",
+      sortable: true,
+      width: "70px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">
+          {value !== null && value !== undefined ? value : "-"}
+        </span>
+      )
+    },
+    {
       key: "localizacao",
       label: "Localização",
       sortable: true,
@@ -255,17 +275,6 @@ export function getEstoqueTableColumns({
       )
     },
     {
-      key: "origem",
-      label: "Origem",
-      sortable: true,
-      width: "70px",
-      render: (value: number) => (
-        <span className="text-[11px] block text-center">
-          {value !== null && value !== undefined ? value : "-"}
-        </span>
-      )
-    },
-    {
       key: "sob_encomenda",
       label: "Sob Encomenda",
       sortable: true,
@@ -289,15 +298,6 @@ export function getEstoqueTableColumns({
       width: "120px",
       render: (value: string) => (
         <span className="text-[11px] block truncate">{value || "-"}</span>
-      )
-    },
-    {
-      key: "codigo_cest",
-      label: "Código CEST",
-      sortable: true,
-      width: "110px",
-      render: (value: string) => (
-        <span className="text-[10px] font-mono block truncate">{value || "-"}</span>
       )
     },
     {
