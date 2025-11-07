@@ -164,6 +164,17 @@ export function getEstoqueTableColumns({
       )
     },
     {
+      key: "categoria_principal",
+      label: "Categoria Principal",
+      sortable: true,
+      width: "150px",
+      render: (value: string) => (
+        <span className="text-[11px] block line-clamp-2 max-w-[150px]" title={value}>
+          {value || "-"}
+        </span>
+      )
+    },
+    {
       key: "categoria",
       label: "Categoria",
       sortable: true,
@@ -300,16 +311,5 @@ export function getEstoqueTableColumns({
         <span className="text-[11px] block truncate">{value || "-"}</span>
       )
     },
-    {
-      key: "categoria_principal",
-      label: "Categoria Principal",
-      sortable: true,
-      width: "150px",
-      render: (value: string) => (
-        <span className="text-[11px] block line-clamp-2 max-w-[150px]" title={value}>
-          {value || "-"}
-        </span>
-      )
-    }
   ];
 }
