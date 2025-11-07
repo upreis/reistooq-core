@@ -10,14 +10,6 @@ import DashboardAnalises from "./dashboard/DashboardAnalises";
 const DashboardInicialContent = () => {
   return (
     <div className="space-y-6">
-      {/* 1. Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <BarChart3 className="h-4 w-4" />
-        <span>/</span>
-        <span className="text-primary">Dashboard</span>
-      </div>
-
-      {/* 2. Navigation tabs */}
       <DashboardInicialNav />
       
       {/* 3. Conteúdo das rotas */}
