@@ -193,44 +193,6 @@ export function getEstoqueTableColumns({
       render: (value: boolean) => <ActiveStatusBadge isActive={value} />
     },
     {
-      key: "codigo_barras",
-      label: "Código EAN",
-      sortable: true,
-      width: "130px",
-      render: (value: string) => (
-        <span className="text-[11px] font-mono block truncate">{value || "-"}</span>
-      )
-    },
-    {
-      key: "ncm",
-      label: "NCM",
-      sortable: true,
-      width: "100px",
-      render: (value: string) => (
-        <span className="text-[11px] font-mono block">{value || "-"}</span>
-      )
-    },
-    {
-      key: "codigo_cest",
-      label: "Código CEST",
-      sortable: true,
-      width: "110px",
-      render: (value: string) => (
-        <span className="text-[10px] font-mono block truncate">{value || "-"}</span>
-      )
-    },
-    {
-      key: "origem",
-      label: "Origem",
-      sortable: true,
-      width: "70px",
-      render: (value: number) => (
-        <span className="text-[11px] block text-center">
-          {value !== null && value !== undefined ? value : "-"}
-        </span>
-      )
-    },
-    {
       key: "localizacao",
       label: "Localização",
       sortable: true,
@@ -309,6 +271,44 @@ export function getEstoqueTableColumns({
       width: "120px",
       render: (value: string) => (
         <span className="text-[11px] block truncate">{value || "-"}</span>
+      )
+    },
+    {
+      key: "codigo_barras",
+      label: "Código EAN",
+      sortable: true,
+      width: "130px",
+      render: (value: string) => (
+        <span className="text-[11px] font-mono block truncate">{value || "-"}</span>
+      )
+    },
+    {
+      key: "ncm",
+      label: "NCM",
+      sortable: true,
+      width: "100px",
+      render: (value: string) => (
+        <span className="text-[11px] font-mono block">{value || "-"}</span>
+      )
+    },
+    {
+      key: "codigo_cest",
+      label: "Código CEST",
+      sortable: true,
+      width: "110px",
+      render: (value: string) => (
+        <span className="text-[10px] font-mono block truncate">{value || "-"}</span>
+      )
+    },
+    {
+      key: "origem",
+      label: "Origem",
+      sortable: true,
+      width: "70px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">
+          {value !== null && value !== undefined ? value : "-"}
+        </span>
       )
     },
   ];
