@@ -183,10 +183,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'Settings',
         children: [
           { 
-            id: 'configuracoes-administracao', 
-            label: 'Administração', 
-            path: '/configuracoes/administracao', 
-            icon: 'Shield' 
+            id: 'integracoes', 
+            label: 'Integrações', 
+            path: '/configuracoes/integracoes', 
+            icon: 'Zap' 
           },
           { 
             id: 'anuncios', 
@@ -195,10 +195,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Megaphone' 
           },
           { 
-            id: 'integracoes', 
-            label: 'Integrações', 
-            path: '/configuracoes/integracoes', 
-            icon: 'Zap' 
+            id: 'configuracoes-administracao', 
+            label: 'Administração', 
+            path: '/configuracoes/administracao', 
+            icon: 'Shield' 
           }
         ]
       },
