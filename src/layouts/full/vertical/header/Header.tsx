@@ -140,7 +140,7 @@ export default function Header() {
 
         {/* Navigation - Centered */}
         <div className="flex-1 flex justify-center">
-          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms')) && <OMSNavLimelight />}
+          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/ml-orders-completas' || location.pathname === '/reclamacoes' || location.pathname === '/vendas-online' || location.pathname === '/devolucoes-ml') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
         </div>
