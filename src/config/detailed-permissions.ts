@@ -19,13 +19,13 @@ export const DETAILED_PERMISSIONS: DetailedPermission[] = [
   // VENDAS (OMS) - 4 permissões reais correspondentes às páginas
   {
     key: 'pedidos:marketplace',
-    name: 'Vendas Marketplace',
+    name: 'Marketplace',
     description: 'Acessar página de vendas marketplace (/pedidos)',
     category: 'VENDAS (OMS)'
   },
   {
     key: 'oms:pedidos',
-    name: 'Vendas Direta/Atacado',
+    name: 'Atacado',
     description: 'Acessar página de vendas direta e atacado (/oms/pedidos)',
     category: 'VENDAS (OMS)'
   },

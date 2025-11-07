@@ -15,7 +15,7 @@ interface HoverGradientMenuItem {
 const menuItems: HoverGradientMenuItem[] = [
   { 
     icon: <Store className="h-5 w-5" />, 
-    label: "Vendas Marketplace", 
+    label: "Marketplace", 
     href: "/pedidos", 
     gradient: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)", 
     iconColor: "group-hover:text-blue-500 dark:group-hover:text-blue-400",
@@ -23,7 +23,7 @@ const menuItems: HoverGradientMenuItem[] = [
   },
   { 
     icon: <ShoppingCart className="h-5 w-5" />, 
-    label: "Vendas Direta/Atacado", 
+    label: "Atacado", 
     href: "/oms/pedidos", 
     gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)", 
     iconColor: "group-hover:text-orange-500 dark:group-hover:text-orange-400" 

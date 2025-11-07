@@ -44,13 +44,13 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         children: [
           {
             id: 'vendas-marketplace',
-            label: 'Vendas Marketplace',
+            label: 'Marketplace',
             path: '/pedidos',
             icon: 'Store'
           },
           {
             id: 'oms-pedidos',
-            label: 'Vendas Direta/Atacado',
+            label: 'Atacado',
             path: '/oms/pedidos',
             icon: 'ShoppingCart'
           },
