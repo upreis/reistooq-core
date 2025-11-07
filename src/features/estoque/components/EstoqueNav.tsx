@@ -21,9 +21,39 @@ const navItems = [
   },
 ];
 
-export function EstoqueNav() {
+export function EstoqueNav({ compact = false }: { compact?: boolean }) {
   const location = useLocation();
 
+  if (compact) {
+    // Versão compacta para header - apenas ícones
+    return (
+      <nav className="flex items-center gap-0.5">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          const Icon = item.icon;
+          
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "relative flex items-center justify-center p-2 rounded-lg transition-colors",
+                "after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-0.5",
+                isActive
+                  ? "after:bg-primary text-primary"
+                  : "text-muted-foreground hover:text-primary hover:bg-muted/50"
+              )}
+              title={item.label}
+            >
+              <Icon className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            </NavLink>
+          );
+        })}
+      </nav>
+    );
+  }
+
+  // Versão completa para página
   return (
     <ScrollArea>
       <nav className="mb-3 flex h-auto -space-x-px bg-background p-0 shadow-sm shadow-black/5 rtl:space-x-reverse">
