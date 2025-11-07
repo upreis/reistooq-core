@@ -174,35 +174,30 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
           </SheetContent>
         </Sheet>
 
-        <div className="min-w-0 flex-1 flex items-center justify-center relative">
-          {actions ? (
-            actions
-          ) : breadcrumb ? (
-            breadcrumb
-          ) : (
+        <div className="min-w-0 flex-1">
+          {breadcrumb || (
             <h1 className="text-base font-semibold truncate text-foreground">
               {title}
             </h1>
           )}
         </div>
 
-        {!actions && (
-          <div className="flex items-center gap-1 shrink-0">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="relative h-10 w-10 touch-manipulation"
+        <div className="flex items-center gap-1 shrink-0">
+          {actions}
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative h-10 w-10 touch-manipulation"
+          >
+            <Bell className="h-4 w-4" />
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
             >
-              <Bell className="h-4 w-4" />
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-              >
-                3
-              </Badge>
-            </Button>
-          </div>
-        )}
+              3
+            </Badge>
+          </Button>
+        </div>
       </div>
     </div>
   );
