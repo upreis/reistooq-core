@@ -186,13 +186,6 @@ export function getEstoqueTableColumns({
       )
     },
     {
-      key: "ativo",
-      label: "Status",
-      sortable: true,
-      width: "80px",
-      render: (value: boolean) => <ActiveStatusBadge isActive={value} />
-    },
-    {
       key: "localizacao",
       label: "Localização",
       sortable: true,
@@ -310,6 +303,13 @@ export function getEstoqueTableColumns({
           {value !== null && value !== undefined ? value : "-"}
         </span>
       )
+    },
+    {
+      key: "ativo",
+      label: "Status",
+      sortable: true,
+      width: "80px",
+      render: (value: boolean) => <ActiveStatusBadge isActive={value} />
     },
   ];
 }
