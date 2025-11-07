@@ -35,6 +35,7 @@ interface EstoqueTableProps {
   rowClassName?: string; // Nova prop para classes customizadas
   parentSkus?: Set<string>; // SKUs dos produtos PAI para estilo diferenciado
   parentAggregatedData?: Map<string, { custoTotal: number; vendaTotal: number }>; // Dados agregados dos produtos PAI
+  allProducts?: Product[]; // Array completo para cálculos de produtos PAI
 }
 
 export function EstoqueTable({
@@ -51,6 +52,7 @@ export function EstoqueTable({
   rowClassName,
   parentSkus,
   parentAggregatedData,
+  allProducts = [],
 }: EstoqueTableProps) {
   const [movementModalOpen, setMovementModalOpen] = useState(false);
   const [selectedProductForMovement, setSelectedProductForMovement] = useState<Product | null>(null);
@@ -71,7 +73,7 @@ export function EstoqueTable({
   const someSelected = selectedProducts.length > 0 && selectedProducts.length < products.length;
 
   // 📋 Obter definições de colunas com contexto
-  const columns = getEstoqueTableColumns({ parentSkus, parentAggregatedData });
+  const columns = getEstoqueTableColumns({ parentSkus, parentAggregatedData, allProducts });
 
   const actions = [
     {

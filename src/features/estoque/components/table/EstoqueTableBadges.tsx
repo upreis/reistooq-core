@@ -6,6 +6,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Product } from "@/hooks/useProducts";
 import { Package, Layers, AlertTriangle } from "lucide-react";
+import { calculateParentProductData } from "@/utils/parentProductCalculations";
 
 export interface StockBadgeData {
   type: string;
@@ -108,14 +109,27 @@ interface StatusBadgesProps {
   product: Product;
   isParent: boolean;
   isOrphan: boolean;
+  allProducts?: Product[]; // Necessário para calcular valores de produtos PAI
 }
 
 /**
  * Badges de status (Órfão, Status de Estoque)
  * Para produtos PAI, o status é calculado baseado nos valores agregados dos filhos
  */
-export function StatusBadges({ product, isParent, isOrphan }: StatusBadgesProps) {
-  const stockBadge = getStockBadge(product);
+export function StatusBadges({ product, isParent, isOrphan, allProducts = [] }: StatusBadgesProps) {
+  // Se for produto PAI e tivermos todos os produtos, calcular valores agregados
+  let productForBadge = product;
+  if (isParent && allProducts.length > 0) {
+    const calculatedData = calculateParentProductData(product.sku_interno, allProducts);
+    productForBadge = {
+      ...product,
+      quantidade_atual: calculatedData.quantidade_atual,
+      estoque_minimo: calculatedData.estoque_minimo,
+      estoque_maximo: calculatedData.estoque_maximo,
+    };
+  }
+  
+  const stockBadge = getStockBadge(productForBadge);
   
   return (
     <div className="flex flex-wrap gap-1 ml-0">

@@ -148,6 +148,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
           products={organizedProducts}
           parentSkus={parentSkusSet}
           parentAggregatedData={parentAggregatedData}
+          allProducts={props.products}
         />
       </div>
     );
@@ -397,6 +398,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                             products={group.children}
                             rowClassName="!border-l-4 !border-l-blue-500 !bg-blue-500/10 hover:!bg-blue-500/15"
                             parentSkus={parentSkusSet}
+                            allProducts={props.products}
                           />
                         </div>
                       </div>
@@ -412,6 +414,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                   <EstoqueTable
                     {...props}
                     products={[group.parentProduct]}
+                    allProducts={props.products}
                   />
                 </div>
               )}

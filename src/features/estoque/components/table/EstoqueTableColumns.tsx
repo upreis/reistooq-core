@@ -19,11 +19,13 @@ export interface ColumnDefinition {
 interface GetColumnsParams {
   parentSkus?: Set<string>;
   parentAggregatedData?: Map<string, { custoTotal: number; vendaTotal: number }>;
+  allProducts?: Product[]; // Array completo para cálculos de produtos PAI
 }
 
 export function getEstoqueTableColumns({ 
   parentSkus, 
-  parentAggregatedData 
+  parentAggregatedData,
+  allProducts = []
 }: GetColumnsParams = {}): ColumnDefinition[] {
   return [
     {
@@ -45,7 +47,12 @@ export function getEstoqueTableColumns({
               <ProductTypeBadges isParent={isParent} isChild={isChild} />
               <div className="font-mono text-[11px] font-semibold">{value}</div>
             </div>
-            <StatusBadges product={product} isParent={isParent} isOrphan={isOrphan} />
+            <StatusBadges 
+              product={product} 
+              isParent={isParent} 
+              isOrphan={isOrphan}
+              allProducts={allProducts}
+            />
           </div>
         );
       }
