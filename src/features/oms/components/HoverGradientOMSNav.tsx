@@ -146,7 +146,7 @@ export function HoverGradientOMSNav(): React.JSX.Element {
                   <span className={`transition-colors duration-300 ${isActive ? '' : item.iconColor}`}>
                     {item.icon}
                   </span>
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-bold">{item.label}</span>
                 </motion.a>
                 {/* Back-facing */}
                 <motion.a
@@ -170,7 +170,7 @@ export function HoverGradientOMSNav(): React.JSX.Element {
                   <span className={`transition-colors duration-300 ${isActive ? '' : item.iconColor}`}>
                     {item.icon}
                   </span>
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-bold">{item.label}</span>
                 </motion.a>
               </motion.div>
             </motion.li>
