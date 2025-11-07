@@ -278,8 +278,10 @@ export function SidebarItemWithChildren({
             isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           )}
         >
-          {item.children?.map((child) => {
-            console.log(`🔍 Renderizando filho de "${item.label}":`, child.label, child.path);
+          {(() => {
+            console.log(`📋 Item "${item.label}" tem ${item.children?.length || 0} filhos:`, item.children);
+            return item.children?.map((child) => {
+              console.log(`🔍 Renderizando filho de "${item.label}":`, child.label, child.path);
             const ChildIcon = getIconComponent(child.icon);
             // Verificação precisa: exact match ou startsWith para subpaths
             const childActive = child.path ? (
@@ -329,7 +331,7 @@ export function SidebarItemWithChildren({
                 )}
               </NavLink>
             );
-          })}
+          })})()}
         </div>
       )}
 
