@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LucideIcon } from 'lucide-react';
+import { GlassFilter } from './glass-filter';
 
 interface RadioOption {
   value: string;
@@ -39,18 +40,20 @@ export function RadioGroupNav({
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: rtl ? 'row-reverse' : 'row',
-        gap,
-        width: '100%',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 18,
-      }}
-    >
-      {options.map((option) => {
+    <>
+      <GlassFilter />
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: rtl ? 'row-reverse' : 'row',
+          gap,
+          width: '100%',
+          justifyContent: 'center',
+          alignItems: 'center',
+          marginTop: 18,
+        }}
+      >
+        {options.map((option) => {
         const isActive = activeTab === option.value;
         const isHovered = hovered === option.value;
 
@@ -94,17 +97,21 @@ export function RadioGroupNav({
               ${isHovered && !isActive ? 'bg-accent text-accent-foreground' : ''}
             `}
             style={{
-              padding,
-              borderRadius,
-              fontSize,
-              fontWeight,
-              fontFamily,
+              ...{
+                padding,
+                borderRadius,
+                fontSize,
+                fontWeight,
+                fontFamily,
+              },
+              filter: 'url(#radio-glass)',
             }}
           >
             {content}
           </button>
         );
       })}
-    </div>
+      </div>
+    </>
   );
 }
