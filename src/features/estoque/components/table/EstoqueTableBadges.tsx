@@ -112,9 +112,10 @@ interface StatusBadgesProps {
 
 /**
  * Badges de status (Órfão, Status de Estoque)
+ * Para produtos PAI, o status é calculado baseado nos valores agregados dos filhos
  */
 export function StatusBadges({ product, isParent, isOrphan }: StatusBadgesProps) {
-  const stockBadge = !isParent ? getStockBadge(product) : null;
+  const stockBadge = getStockBadge(product);
   
   return (
     <div className="flex flex-wrap gap-1 ml-0">
