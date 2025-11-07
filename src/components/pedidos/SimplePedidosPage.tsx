@@ -8,6 +8,7 @@
 import { useState, useEffect, useMemo, useCallback, memo, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'react-hot-toast';
+import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1060,8 +1061,10 @@ useEffect(() => {
         selectedOrdersCount={selectedOrders.size}
         hasPendingChanges={filtersManager.hasPendingChanges}
         onOpenConfigLocais={() => setConfigLocaisOpen(true)}
-      >
-      </PedidosHeaderSection>
+      />
+
+      {/* Sub-navegação */}
+      <MLOrdersNav />
 
       {/* ⚠️ Feedback sobre status das contas ML */}
       {state.loading && (

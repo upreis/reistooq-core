@@ -34,12 +34,8 @@ const OMS = () => {
 
   return (
     <div className="space-y-6">
-      {/* Sub-navegação apenas para rotas de pedidos marketplace */}
-      {isPedidosMarketplace && <MLOrdersNav />}
-      
-      <div className="mt-6">
-        {renderContent()}
-      </div>
+      {/* Renderizar conteúdo baseado na rota */}
+      {renderContent()}
     </div>
   );
 };
