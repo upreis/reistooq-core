@@ -183,10 +183,10 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
         icon: 'Settings',
         children: [
           { 
-            id: 'integracoes', 
-            label: 'Integrações', 
-            path: '/configuracoes/integracoes', 
-            icon: 'Zap' 
+            id: 'configuracoes-administracao', 
+            label: 'Administração', 
+            path: '/configuracoes/administracao', 
+            icon: 'Shield' 
           },
           { 
             id: 'anuncios', 
@@ -195,12 +195,18 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
             icon: 'Megaphone' 
           },
           { 
-            id: 'ml-orders-completas', 
-            label: 'Devoluções ML', 
-            path: '/ml-orders-completas', 
-            icon: 'Database' 
+            id: 'integracoes', 
+            label: 'Integrações', 
+            path: '/configuracoes/integracoes', 
+            icon: 'Zap' 
           }
         ]
+      },
+      { 
+        id: 'ml-orders-completas', 
+        label: 'Devoluções ML', 
+        path: '/ml-orders-completas', 
+        icon: 'Database' 
       },
       { 
         id: 'admin', 
