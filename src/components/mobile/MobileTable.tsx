@@ -192,7 +192,7 @@ export default function MobileTable({
                       <div className="min-w-0 w-full">
                         {column.render 
                           ? column.render(item[column.key], item)
-                          : <span className="text-xs truncate block">{item[column.key]}</span>
+                          : <span className="text-xs block">{item[column.key]}</span>
                         }
                       </div>
                     </div>
