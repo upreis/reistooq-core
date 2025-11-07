@@ -100,19 +100,19 @@ export const LimelightNav = ({
       {/* Limelight effect - luz acendendo no topo */}
       <div 
         ref={limelightRef}
-        className={`absolute top-0 z-10 w-16 h-1 rounded-b-full ${
+        className={`absolute top-0 z-10 w-24 h-1 rounded-b-full ${
           isReady ? 'transition-[left] duration-500 ease-out' : ''
         } ${limelightClassName}`}
         style={{ left: '-999px' }}
       >
         {/* Barra de luz no topo */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-b from-primary to-transparent rounded-b-full shadow-[0_0_20px_rgba(var(--primary-rgb),0.8)]" />
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-primary rounded-b-md shadow-[0_0_20px_hsl(var(--primary)/.8)]" />
         
         {/* Gradiente de luz descendo */}
-        <div className="absolute left-[10%] top-0 w-[80%] h-12 bg-gradient-to-b from-primary/40 via-primary/10 to-transparent [clip-path:polygon(20%_0,80%_0,100%_100%,0%_100%)] pointer-events-none blur-sm" />
+        <div className="absolute left-[10%] top-0 w-[80%] h-16 bg-gradient-to-b from-primary/40 via-primary/10 to-transparent [clip-path:polygon(20%_0,80%_0,100%_100%,0%_100%)] pointer-events-none blur-sm" />
         
         {/* Glow adicional */}
-        <div className="absolute left-[20%] top-0 w-[60%] h-8 bg-gradient-to-b from-primary/60 to-transparent rounded-b-full blur-md pointer-events-none" />
+        <div className="absolute left-[20%] top-0 w-[60%] h-12 bg-gradient-to-b from-primary/60 to-transparent rounded-b-full blur-md pointer-events-none" />
       </div>
     </nav>
   );
