@@ -1,6 +1,6 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Calendar, Notebook } from "lucide-react";
+import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
   {
@@ -16,30 +16,29 @@ const navItems = [
 ];
 
 export function AplicativosNav() {
+  const navigate = useNavigate();
   const location = useLocation();
 
+  // Encontrar o índice ativo baseado na rota atual
+  const activeIndex = navItems.findIndex(item => location.pathname === item.path);
+  const defaultActiveIndex = activeIndex >= 0 ? activeIndex : 0;
+
+  // Mapear para o formato do LimelightNav
+  const limelightItems = navItems.map((item) => {
+    const Icon = item.icon;
+    return {
+      id: item.path,
+      icon: <Icon />,
+      label: item.label,
+      onClick: () => navigate(item.path),
+    };
+  });
+
   return (
-    <nav className="flex space-x-8 border-b border-border">
-      {navItems.map((item) => {
-        const isActive = location.pathname === item.path;
-        const Icon = item.icon;
-        
-        return (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            className={cn(
-              "pb-4 px-1 text-sm font-medium transition-colors hover:text-primary flex items-center gap-2",
-              isActive
-                ? "border-b-2 border-primary text-primary"
-                : "text-muted-foreground border-b-2 border-transparent"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {item.label}
-          </NavLink>
-        );
-      })}
-    </nav>
+    <LimelightNav
+      items={limelightItems}
+      defaultActiveIndex={defaultActiveIndex}
+      onTabChange={(index) => navigate(navItems[index].path)}
+    />
   );
 }
