@@ -174,7 +174,7 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
           </SheetContent>
         </Sheet>
 
-        <div className="min-w-0 shrink-0">
+        <div className="min-w-0 flex-1">
           {breadcrumb || (
             <h1 className="text-base font-semibold truncate text-foreground">
               {title}
@@ -182,13 +182,8 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
           )}
         </div>
 
-        {actions && (
-          <div className="flex-1 flex items-center justify-center px-2">
-            {actions}
-          </div>
-        )}
-
         <div className="flex items-center gap-1 shrink-0">
+          {actions}
           <Button 
             variant="ghost" 
             size="icon" 
