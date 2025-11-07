@@ -196,7 +196,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           },
           { 
             id: 'anuncios', 
-            label: 'Anúncios', 
+            label: 'Avisos', 
             path: '/configuracoes/anuncios', 
             icon: 'Megaphone' 
           }

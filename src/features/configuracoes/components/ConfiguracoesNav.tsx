@@ -10,7 +10,7 @@ const navItems = [
   },
   {
     path: "/configuracoes/anuncios", 
-    label: "Anúncios",
+    label: "Avisos",
     icon: Megaphone,
   },
 ];
