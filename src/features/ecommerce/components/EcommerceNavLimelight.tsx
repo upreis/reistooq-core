@@ -15,17 +15,17 @@ const navItems = [
   },
   {
     path: "/apps/ecommerce/list",
-    label: "Lista de Produtos",
+    label: "Produtos",
     icon: Package,
   },
   {
     path: "/apps/ecommerce/addproduct",
-    label: "Adicionar Produto",
+    label: "Adicionar",
     icon: PlusSquare,
   },
   {
     path: "/apps/ecommerce/editproduct",
-    label: "Editar Produtos",
+    label: "Editar",
     icon: Edit,
   },
   {
