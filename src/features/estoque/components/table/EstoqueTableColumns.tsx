@@ -81,6 +81,24 @@ export function getEstoqueTableColumns({
       )
     },
     {
+      key: "estoque_minimo",
+      label: "Qdd Minima",
+      sortable: true,
+      width: "90px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">{value}</span>
+      )
+    },
+    {
+      key: "estoque_maximo",
+      label: "Qdd Maxima",
+      sortable: true,
+      width: "90px",
+      render: (value: number) => (
+        <span className="text-[11px] block text-center">{value}</span>
+      )
+    },
+    {
       key: "preco_custo",
       label: "Preço Custo",
       sortable: true,
@@ -115,24 +133,6 @@ export function getEstoqueTableColumns({
         }
         return <span className="text-[11px]">{formatPrice(value)}</span>;
       }
-    },
-    {
-      key: "estoque_minimo",
-      label: "Qdd Minima",
-      sortable: true,
-      width: "90px",
-      render: (value: number) => (
-        <span className="text-[11px] block text-center">{value}</span>
-      )
-    },
-    {
-      key: "estoque_maximo",
-      label: "Qdd Maxima",
-      sortable: true,
-      width: "90px",
-      render: (value: number) => (
-        <span className="text-[11px] block text-center">{value}</span>
-      )
     },
     {
       key: "url_imagem",
