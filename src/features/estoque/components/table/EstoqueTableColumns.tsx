@@ -73,7 +73,7 @@ export function getEstoqueTableColumns({
     },
     {
       key: "quantidade_atual",
-      label: "Quantidade Atual",
+      label: "Quantidade",
       sortable: true,
       width: "100px",
       render: (value: number) => (
