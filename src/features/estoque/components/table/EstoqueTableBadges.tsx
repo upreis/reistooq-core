@@ -30,7 +30,7 @@ export const getStockBadge = (product: Product): StockBadgeData | null => {
   if (product.quantidade_atual <= product.estoque_minimo) {
     return {
       type: 'critico',
-      label: 'Crítico',
+      label: 'Estoque crítico',
       className: 'bg-orange-500/20 text-orange-400 border-orange-500/30'
     };
   }
@@ -56,7 +56,7 @@ export const getStockBadge = (product: Product): StockBadgeData | null => {
   // Normal (entre mínimo * 1.5 e máximo)
   return {
     type: 'normal',
-    label: 'Normal',
+    label: 'Estoque normal',
     className: 'bg-green-500/20 text-green-400 border-green-500/30'
   };
 };
