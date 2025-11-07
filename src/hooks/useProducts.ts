@@ -396,10 +396,12 @@ export const useProducts = () => {
 
     // Filtrar apenas colunas que existem na tabela produtos
     const allowedColumns = [
-      'sku_interno', 'nome', 'categoria', 'descricao', 'codigo_barras',
+      'sku_interno', 'nome', 'categoria', 'categoria_principal', 'descricao', 'codigo_barras',
       'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
       'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
-      'url_imagem', 'sku_pai', 'eh_produto_pai'
+      'url_imagem', 'sku_pai', 'eh_produto_pai', 'sob_encomenda', 'dias_preparacao',
+      'peso_liquido_kg', 'peso_bruto_kg', 'numero_volumes', 'tipo_embalagem',
+      'largura', 'altura', 'comprimento', 'ncm', 'codigo_cest', 'origem'
     ];
 
     const filteredUpdates = Object.keys(updates).reduce((acc, key) => {

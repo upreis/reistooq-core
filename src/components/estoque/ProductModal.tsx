@@ -137,6 +137,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       sku_interno: "",
       nome: "",
       categoria: "",
+      categoria_principal: "",
       descricao: "",
       quantidade_atual: "" as any,
       estoque_minimo: "" as any,
@@ -168,6 +169,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         sku_interno: product.sku_interno,
         nome: product.nome,
         categoria: product.categoria || "",
+        categoria_principal: product.categoria_principal || "",
         descricao: product.descricao || "",
         quantidade_atual: product.quantidade_atual,
         estoque_minimo: product.estoque_minimo,
@@ -200,6 +202,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         sku_interno: initialSku || "",
         nome: "",
         categoria: "",
+        categoria_principal: "",
         descricao: "",
         quantidade_atual: "" as any,
         estoque_minimo: "" as any,
@@ -238,6 +241,31 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
       refreshCategories?.();
     }
   }, [open]);
+
+  // Sincronizar os selects de categoria quando um produto existente é carregado
+  useEffect(() => {
+    if (product && open && categories?.length) {
+      // Procurar a categoria principal pelo nome
+      if (product.categoria_principal) {
+        const catPrincipal = getCategoriasPrincipais().find(c => c.nome === product.categoria_principal);
+        if (catPrincipal) {
+          setSelectedCategoriaPrincipal(catPrincipal.id);
+          
+          // Procurar a categoria pelo nome
+          if (product.categoria) {
+            const categoria = getCategorias(catPrincipal.id).find(c => c.nome === product.categoria);
+            if (categoria) {
+              setSelectedCategoria(categoria.id);
+            }
+          }
+        }
+      }
+    } else if (!product && open) {
+      // Limpar seleções ao criar novo produto
+      setSelectedCategoriaPrincipal("");
+      setSelectedCategoria("");
+    }
+  }, [product, open, categories, getCategoriasPrincipais, getCategorias]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
