@@ -1,4 +1,5 @@
 import { Product } from "@/hooks/useProducts";
+import { calculateParentProductData } from "./parentProductCalculations";
 
 export interface SkuGroup {
   parentSku: string;
@@ -23,7 +24,7 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
       parentProduct: parent,
       children: [],
       totalStock: parent.quantidade_atual,
-      hasLowStock: parent.quantidade_atual <= parent.estoque_minimo
+      hasLowStock: false // Será calculado após adicionar os filhos
     });
   });
   
@@ -34,9 +35,6 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
       if (group) {
         group.children.push(child);
         group.totalStock += child.quantidade_atual;
-        if (child.quantidade_atual <= child.estoque_minimo) {
-          group.hasLowStock = true;
-        }
       } else {
         // Se o pai não existe, tratar como independente
         groups.set(child.sku_interno, {
@@ -47,6 +45,21 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
           hasLowStock: child.quantidade_atual <= child.estoque_minimo
         });
       }
+    }
+  });
+  
+  // Calcular hasLowStock para grupos com filhos baseado nos valores agregados
+  groups.forEach(group => {
+    if (group.children.length > 0 && group.parentProduct) {
+      const calculatedData = calculateParentProductData(group.parentProduct.sku_interno, products);
+      // Verifica se está abaixo ou igual ao mínimo (crítico/sem estoque)
+      // OU se está entre mínimo e mínimo * 1.5 (estoque baixo)
+      group.hasLowStock = calculatedData.quantidade_atual === 0 || 
+                          calculatedData.quantidade_atual <= calculatedData.estoque_minimo * 1.5;
+    } else if (group.parentProduct && group.children.length === 0) {
+      // Produtos sem filhos usam seus próprios valores
+      group.hasLowStock = group.parentProduct.quantidade_atual === 0 ||
+                          group.parentProduct.quantidade_atual <= group.parentProduct.estoque_minimo * 1.5;
     }
   });
   
