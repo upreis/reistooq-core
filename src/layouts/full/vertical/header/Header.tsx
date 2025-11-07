@@ -1,7 +1,7 @@
 import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
 import { useLocation } from "react-router-dom";
-import { HoverGradientOMSNav } from "@/features/oms/components/HoverGradientOMSNav";
+import { OMSNavLimelight } from "@/features/oms/components/OMSNavLimelight";
 import { DashboardInicialNav } from "@/features/dashboard/components/DashboardInicialNav";
 import { EstoqueNav } from "@/features/estoque/components/EstoqueNav";
 import { Button } from "@/components/ui/button";
@@ -140,7 +140,7 @@ export default function Header() {
 
         {/* Navigation - Centered */}
         <div className="flex-1 flex justify-center">
-          {location.pathname === '/pedidos' && <HoverGradientOMSNav />}
+          {location.pathname === '/pedidos' && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
         </div>
