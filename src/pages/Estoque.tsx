@@ -8,30 +8,22 @@ import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 
 const EstoqueContent = () => {
-  const breadcrumb = (
-    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-      <Package className="h-4 w-4" />
-      <span>/</span>
-      <span className="text-primary">Gestão de Estoque</span>
-    </div>
-  );
-
   return (
     <MobileAppShell 
-      title="Gestão de Estoque" 
-      breadcrumb={breadcrumb}
+      title="Gestão de Estoque"
+      headerActions={
+        <div className="absolute left-1/2 -translate-x-1/2">
+          <EstoqueNav />
+        </div>
+      }
     >
       <div className="space-y-6">
-        <EstoqueNav />
-        
-        <div className="mt-6">
-          <Routes>
-            <Route index element={<ControleEstoquePage />} />
-            <Route path="composicoes" element={<ComposicoesUnificadasPage />} />
-            <Route path="insumos" element={<ComposicoesUnificadasPage />} />
-            <Route path="historico" element={<HistoricoMovimentacoesPage />} />
-          </Routes>
-        </div>
+        <Routes>
+          <Route index element={<ControleEstoquePage />} />
+          <Route path="composicoes" element={<ComposicoesUnificadasPage />} />
+          <Route path="insumos" element={<ComposicoesUnificadasPage />} />
+          <Route path="historico" element={<HistoricoMovimentacoesPage />} />
+        </Routes>
       </div>
     </MobileAppShell>
   );
