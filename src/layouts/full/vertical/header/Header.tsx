@@ -31,7 +31,76 @@ export default function Header() {
     await signOut();
   };
 
-  const isPedidosPage = location.pathname === '/pedidos';
+  // Função para obter o breadcrumb baseado na rota atual
+  const getBreadcrumb = () => {
+    const path = location.pathname;
+    
+    // Dashboard Inicial
+    if (path.startsWith('/dashboardinicial/visao-geral')) return { icon: '📊', label: 'Dashboard / Visão Geral' };
+    if (path.startsWith('/dashboardinicial/vendas')) return { icon: '💰', label: 'Dashboard / Vendas' };
+    if (path.startsWith('/dashboardinicial/estoque')) return { icon: '📦', label: 'Dashboard / Estoque' };
+    if (path.startsWith('/dashboardinicial/analises')) return { icon: '📈', label: 'Dashboard / Análises' };
+    if (path.startsWith('/dashboardinicial')) return { icon: '📊', label: 'Dashboard' };
+    
+    // OMS
+    if (path.startsWith('/oms')) return { icon: '🎯', label: 'OMS' };
+    
+    // Compras
+    if (path.startsWith('/compras/pedidos')) return { icon: '🛒', label: 'Compras / Pedidos' };
+    if (path.startsWith('/compras/fornecedores')) return { icon: '🏭', label: 'Compras / Fornecedores' };
+    if (path.startsWith('/compras/cotacoes')) return { icon: '💵', label: 'Compras / Cotações' };
+    if (path.startsWith('/compras/importacao')) return { icon: '📥', label: 'Compras / Importação' };
+    if (path.startsWith('/compras')) return { icon: '🛒', label: 'Compras' };
+    
+    // Estoque
+    if (path.startsWith('/estoque')) return { icon: '📦', label: 'Estoque' };
+    if (path.startsWith('/category-manager')) return { icon: '🏷️', label: 'Categorias' };
+    
+    // Pedidos e Vendas
+    if (path === '/pedidos') return { icon: '📦', label: 'Vendas' };
+    if (path.startsWith('/vendas-online')) return { icon: '🛍️', label: 'Vendas Online' };
+    if (path.startsWith('/ml-orders-completas')) return { icon: '↩️', label: 'Devoluções de Vendas' };
+    if (path.startsWith('/devolucoes-ml')) return { icon: '📮', label: 'Devoluções ML' };
+    if (path.startsWith('/reclamacoes')) return { icon: '⚠️', label: 'Reclamações' };
+    
+    // Ferramentas
+    if (path.startsWith('/scanner')) return { icon: '📷', label: 'Scanner' };
+    if (path.startsWith('/de-para')) return { icon: '🔄', label: 'De-Para' };
+    if (path.startsWith('/alertas')) return { icon: '🔔', label: 'Alertas' };
+    
+    // Configurações
+    if (path.startsWith('/configuracoes/integracoes')) return { icon: '🔌', label: 'Configurações / Integrações' };
+    if (path.startsWith('/configuracoes/anuncios')) return { icon: '📢', label: 'Configurações / Avisos' };
+    if (path.startsWith('/configuracoes')) return { icon: '⚙️', label: 'Configurações' };
+    if (path.startsWith('/historico')) return { icon: '📜', label: 'Histórico' };
+    
+    // Aplicativos
+    if (path.startsWith('/aplicativos/calendario')) return { icon: '📅', label: 'Aplicativos / Calendário' };
+    if (path.startsWith('/aplicativos/notas')) return { icon: '📝', label: 'Aplicativos / Notas' };
+    if (path.startsWith('/aplicativos')) return { icon: '🎨', label: 'Aplicativos' };
+    
+    // Admin
+    if (path.startsWith('/admin/usuarios')) return { icon: '👥', label: 'Admin / Usuários' };
+    if (path.startsWith('/admin/cargos')) return { icon: '🎭', label: 'Admin / Cargos' };
+    if (path.startsWith('/admin/convites')) return { icon: '✉️', label: 'Admin / Convites' };
+    if (path.startsWith('/admin/alertas')) return { icon: '🚨', label: 'Admin / Alertas' };
+    if (path.startsWith('/admin/seguranca')) return { icon: '🔒', label: 'Admin / Segurança' };
+    if (path.startsWith('/admin/auditoria')) return { icon: '📋', label: 'Admin / Auditoria' };
+    if (path.startsWith('/admin/perfil')) return { icon: '👤', label: 'Admin / Perfil' };
+    if (path.startsWith('/admin')) return { icon: '🛡️', label: 'Administração' };
+    
+    // eCommerce
+    if (path.startsWith('/apps/ecommerce/shop')) return { icon: '🛒', label: 'eCommerce / Loja' };
+    if (path.startsWith('/apps/ecommerce/detail')) return { icon: '🔍', label: 'eCommerce / Detalhes' };
+    if (path.startsWith('/apps/ecommerce/list')) return { icon: '📋', label: 'eCommerce / Produtos' };
+    if (path.startsWith('/apps/ecommerce/addproduct')) return { icon: '➕', label: 'eCommerce / Adicionar' };
+    if (path.startsWith('/apps/ecommerce/editproduct')) return { icon: '✏️', label: 'eCommerce / Editar' };
+    if (path.startsWith('/apps/ecommerce')) return { icon: '🛒', label: 'eCommerce' };
+    
+    return null;
+  };
+
+  const breadcrumb = getBreadcrumb();
 
   return (
     <header className={`sticky z-40 bg-background border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
@@ -55,13 +124,13 @@ export default function Header() {
           )}
         </button>
 
-        {/* Search or Breadcrumb */}
+        {/* Breadcrumb or Search */}
         <div className="flex items-center gap-4 flex-1">
-          {isPedidosPage ? (
+          {breadcrumb ? (
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-              <span>📦</span>
+              <span>{breadcrumb.icon}</span>
               <span>/</span>
-              <span className="text-primary">Vendas</span>
+              <span className="text-primary">{breadcrumb.label}</span>
             </div>
           ) : (
             <div className="relative max-w-md">
