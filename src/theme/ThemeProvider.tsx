@@ -56,6 +56,13 @@ export function ThemeProvider({
     // Apply theme data attribute and class
     root.setAttribute('data-theme', theme);
     root.classList.add(theme);
+    
+    // Add/remove 'dark' class for Tailwind dark: variants
+    if (theme === 'materialm-dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
 
     // Apply CSS variables from theme tokens
     try {
