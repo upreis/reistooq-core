@@ -3,8 +3,8 @@ import { ShoppingCart, Users, Settings, Store, UserCheck } from "lucide-react";
 import { RadioGroupNav } from "@/components/ui/radio-group-nav";
 
 const navigation = [
-  { name: "Vendas Marketplace", href: "/pedidos", icon: Store, preserveSearch: true },
-  { name: "Vendas Direta/Atacado", href: "/oms/pedidos", icon: ShoppingCart },
+  { name: "Marketplace", href: "/pedidos", icon: Store, preserveSearch: true },
+  { name: "Atacado", href: "/oms/pedidos", icon: ShoppingCart },
   { name: "Clientes", href: "/oms/clientes", icon: Users },
   { name: "Vendedores", href: "/oms/vendedores", icon: UserCheck },
   { name: "Configurações", href: "/oms/configuracoes", icon: Settings },

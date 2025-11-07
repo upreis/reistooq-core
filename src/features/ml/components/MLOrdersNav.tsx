@@ -5,7 +5,7 @@ import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2 } from "lucide-rea
 const subNavItems = [
   {
     path: "/pedidos",
-    label: "Vendas",
+    label: "Marketplace",
     icon: Package,
     preserveSearch: true, // ✅ Preservar filtros na URL
   },
