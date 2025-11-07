@@ -11,11 +11,7 @@ const EstoqueContent = () => {
   return (
     <MobileAppShell 
       title="Gestão de Estoque"
-      headerActions={
-        <div className="absolute left-1/2 -translate-x-1/2">
-          <EstoqueNav />
-        </div>
-      }
+      headerActions={<EstoqueNav />}
     >
       <div className="space-y-6">
         <Routes>
