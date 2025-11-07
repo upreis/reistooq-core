@@ -1,5 +1,6 @@
 import React from "react";
 import { Bell, Search, Settings, User, Moon, Sun, Grid3X3, Flag, Plus, ChevronDown, Megaphone, LogOut, TriangleAlert } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,6 +21,7 @@ import { useSidebarUI } from "@/context/SidebarUIContext";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
 
 export default function Header() {
+  const location = useLocation();
   const { isMobileSidebarOpen, setIsMobileSidebarOpen, isSidebarCollapsed, setIsSidebarCollapsed } = useSidebarUI();
   const { isHidden, setIsHidden, hasAnnouncements, isCollapsed, setIsCollapsed } = useAnnouncements();
   const { user, signOut } = useAuth();
@@ -28,6 +30,8 @@ export default function Header() {
   const handleSignOut = async () => {
     await signOut();
   };
+
+  const isPedidosPage = location.pathname === '/pedidos';
 
   return (
     <header className={`sticky z-40 bg-background border-b transition-all duration-300 ${hasAnnouncements && !isCollapsed && !isHidden ? 'top-12' : 'top-0'}`}>
@@ -51,15 +55,23 @@ export default function Header() {
           )}
         </button>
 
-        {/* Search */}
+        {/* Search or Breadcrumb */}
         <div className="flex items-center gap-4 flex-1">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Pesquisar..."
-              className="pl-10 w-80"
-            />
-          </div>
+          {isPedidosPage ? (
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <span>📦</span>
+              <span>/</span>
+              <span className="text-primary">Vendas</span>
+            </div>
+          ) : (
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Pesquisar..."
+                className="pl-10 w-80"
+              />
+            </div>
+          )}
         </div>
 
         {/* Right side - Actions and user menu */}
