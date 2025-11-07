@@ -139,17 +139,12 @@ const SidebarContent = memo(({
   const getPermissionForPath = (path?: string): string | null => {
     if (!path) return null;
     
-    // Dashboard permissions
-    if (path === '/' || path.startsWith('/dashboardinicial')) return 'dashboard:view';
-    if (path.startsWith('/dashboard/vendas')) return 'vendas:read';
-    if (path.startsWith('/dashboard/estoque')) return 'estoque:view';
-    if (path.startsWith('/dashboard/financeiro')) return 'vendas:view_pii';
+    // Dashboard permissions - todos sob dashboard:view
+    if (path === '/' || path.startsWith('/dashboard')) return 'dashboard:view';
     
-    // OMS/Vendas permissions - mapeamento atualizado
-    if (path.startsWith('/pedidos')) return 'pedidos:marketplace';
-    if (path.startsWith('/oms/pedidos')) return 'oms:pedidos';
-    if (path.startsWith('/oms/clientes')) return 'oms:clientes';
-    if (path.startsWith('/oms/configuracoes')) return 'oms:configuracoes';
+    // OMS/Vendas permissions - todos sob oms:view
+    if (path.startsWith('/pedidos')) return 'oms:view';
+    if (path.startsWith('/oms')) return 'oms:view';
     
     // Compras permissions
     if (path.startsWith('/compras/pedidos')) return 'compras:view';
