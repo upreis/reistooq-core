@@ -73,12 +73,12 @@ export const LimelightNav = ({
   };
 
   return (
-    <nav className={`relative inline-flex items-center h-14 rounded-2xl bg-card/80 backdrop-blur-sm text-foreground border border-border/50 px-2 ${className}`}>
+    <nav className={`relative inline-flex items-center h-20 rounded-2xl bg-card/80 backdrop-blur-sm text-foreground border border-border/50 px-2 ${className}`}>
       {items.map(({ id, icon, label, onClick }, index) => (
           <a
             key={id}
             ref={el => (navItemRefs.current[index] = el)}
-            className={`relative z-20 flex h-full cursor-pointer items-center justify-center px-6 ${iconContainerClassName}`}
+            className={`relative z-20 flex h-full cursor-pointer flex-col items-center justify-center px-6 gap-1.5 ${iconContainerClassName}`}
             onClick={() => handleItemClick(index, onClick)}
             aria-label={label}
           >
@@ -87,6 +87,13 @@ export const LimelightNav = ({
                 activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-40 text-muted-foreground'
               } ${icon.props.className || ''} ${iconClassName || ''}`,
             })}
+            {label && (
+              <span className={`text-xs font-medium transition-all duration-300 ease-in-out ${
+                activeIndex === index ? 'opacity-100 text-foreground' : 'opacity-40 text-muted-foreground'
+              }`}>
+                {label}
+              </span>
+            )}
           </a>
       ))}
 
