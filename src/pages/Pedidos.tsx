@@ -1,11 +1,30 @@
 // 🛡️ PÁGINA PROTEGIDA - Sistema Blindado Ativo
 import { PedidosGuard } from '@/core/pedidos/guards/PedidosGuard';
 import SimplePedidosPage from '@/components/pedidos/SimplePedidosPage';
+import { OMSNav } from "@/features/oms/components/OMSNav";
+import { MLOrdersNav } from "@/features/ml/components/MLOrdersNav";
 
 export default function Pedidos() {
   return (
     <PedidosGuard>
-      <SimplePedidosPage />
+      <div className="space-y-6">
+        {/* Breadcrumb principal */}
+        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+          <span>📦</span>
+          <span>/</span>
+          <span className="text-primary">Vendas</span>
+        </div>
+
+        {/* Navegação principal */}
+        <OMSNav />
+
+        {/* Sub-navegação */}
+        <MLOrdersNav />
+
+        <div className="mt-6">
+          <SimplePedidosPage />
+        </div>
+      </div>
     </PedidosGuard>
   );
 }
