@@ -78,7 +78,7 @@ export const LimelightNav = ({
           <a
             key={id}
             ref={el => (navItemRefs.current[index] = el)}
-            className={`relative z-20 flex h-full cursor-pointer flex-col items-center justify-center px-6 gap-1.5 ${iconContainerClassName}`}
+            className={`relative z-20 flex h-full cursor-pointer flex-col items-center justify-end pb-3 px-6 gap-1.5 ${iconContainerClassName}`}
             onClick={() => handleItemClick(index, onClick)}
             aria-label={label}
           >
