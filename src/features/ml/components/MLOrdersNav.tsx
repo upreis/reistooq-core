@@ -37,7 +37,7 @@ export function MLOrdersNav() {
   return (
     <div className="space-y-4">
       {/* Sub-navegação */}
-      <nav className="flex space-x-8 border-b border-border">
+      <nav className="flex space-x-8 border-b border-border bg-[hsl(25,60%,45%)]/10 backdrop-blur-sm px-4 py-2 rounded-t-lg">
         {subNavItems.map((item) => {
           const isActive = location.pathname === item.path;
           const Icon = item.icon;
