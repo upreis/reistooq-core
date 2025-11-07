@@ -30,6 +30,7 @@ export function SidebarItemWithChildren({
   calculateFlyoutPosition
 }: SidebarItemWithChildrenProps) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const hasAutoExpandedRef = useRef(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -55,12 +56,16 @@ export function SidebarItemWithChildren({
   // Check if this group is open (força re-renderização com openGroups como dependência)
   const isOpen = useMemo(() => isGroupOpen(item.id), [isGroupOpen, item.id, openGroups]);
   
-  // Auto-expand group when child is active (só quando necessário)
+  // Auto-expand group when child is active (uma única vez)
   useEffect(() => {
-    if (hasActiveChild && !isOpen) {
+    if (hasActiveChild && !hasAutoExpandedRef.current) {
+      hasAutoExpandedRef.current = true;
       openGroup(item.id);
     }
-  }, [hasActiveChild, isOpen, item.id, openGroup]);
+    if (!hasActiveChild && hasAutoExpandedRef.current) {
+      hasAutoExpandedRef.current = false;
+    }
+  }, [hasActiveChild, item.id, openGroup]);
 
   // Remove flyout functionality temporarily as it's not used in the unified context
   const isFlyoutPinned = false;
