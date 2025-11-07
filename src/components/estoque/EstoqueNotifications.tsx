@@ -286,7 +286,7 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
               </div>
               
               <div className="space-y-1 mb-3">
-                {notification.products.slice(0, 3).map((product) => (
+                {notification.products.slice(0, 2).map((product) => (
                   <div 
                     key={product.id}
                     className="text-xs bg-background/50 border border-border/50 p-2 rounded cursor-pointer hover:bg-muted transition-colors"
@@ -313,9 +313,9 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
                   </div>
                 ))}
                 
-                {notification.products.length > 3 && (
+                {notification.products.length > 2 && (
                   <div className="text-[10px] text-muted-foreground text-center py-1">
-                    ... e mais {notification.products.length - 3} produtos
+                    ... e mais {notification.products.length - 2} produtos
                   </div>
                 )}
               </div>
