@@ -10,15 +10,6 @@ import AnunciosPage from "./AnunciosPage";
 const ConfiguracoesContent = () => {
   return (
     <div className="space-y-6">
-      {/* 1. Breadcrumb */}
-      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-        <Settings className="h-4 w-4" />
-        <span>/</span>
-        <span className="text-primary">Configurações</span>
-      </div>
-
-      {/* 2. Navigation tabs */}
-      <ConfiguracoesNav />
       
       {/* 3. Conteúdo das rotas */}
       <div className="mt-6">
