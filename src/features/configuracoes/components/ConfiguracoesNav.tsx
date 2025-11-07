@@ -1,6 +1,6 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { Zap, Megaphone, Shield } from "lucide-react";
+import { Zap, Megaphone } from "lucide-react";
 
 const navItems = [
   {
@@ -12,11 +12,6 @@ const navItems = [
     path: "/configuracoes/anuncios", 
     label: "Anúncios",
     icon: Megaphone,
-  },
-  {
-    path: "/configuracoes/administracao",
-    label: "Administração",
-    icon: Shield,
   },
 ];
 
