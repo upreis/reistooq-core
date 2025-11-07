@@ -163,7 +163,7 @@ export default function MobileTable({
                 <div
                   key={item[keyField]}
                   className={cn(
-                    "grid gap-2 py-2 px-4 rounded-md border-2 transition-colors",
+                    "grid gap-2 py-3 px-4 rounded-md border-2 transition-colors min-h-[60px]",
                     isSelected 
                       ? "bg-primary/10 border-primary/20" 
                       : computedRowClassName,
