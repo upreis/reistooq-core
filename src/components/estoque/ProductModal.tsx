@@ -42,6 +42,7 @@ const productSchema = z.object({
   sku_interno: z.string().min(1, "SKU interno é obrigatório"),
   nome: z.string().min(1, "Nome é obrigatório"),
   categoria: z.string().optional(),
+  categoria_principal: z.string().optional(),
   descricao: z.string().optional(),
   quantidade_atual: z.coerce.number().min(0, "Quantidade deve ser positiva"),
   estoque_minimo: z.coerce.number().min(0, "Estoque mínimo deve ser positivo"),
@@ -288,21 +289,25 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
     }
   };
 
-  // Função para atualizar a categoria completa no form (apenas 2 níveis)
-  const updateCategoriaCompleta = (categoriaPrincipalId: string, categoriaId: string) => {
-    const categorias = [];
-    
+  // Função para atualizar a categoria_principal e categoria separadamente
+  const updateCategorias = (categoriaPrincipalId: string, categoriaId: string) => {
     if (categoriaPrincipalId) {
       const catPrincipal = getCategoriasPrincipais().find(c => c.id === categoriaPrincipalId);
-      if (catPrincipal) categorias.push(catPrincipal.nome);
+      if (catPrincipal) {
+        form.setValue("categoria_principal", catPrincipal.nome);
+      }
+    } else {
+      form.setValue("categoria_principal", "");
     }
     
     if (categoriaId) {
       const categoria = getCategorias(categoriaPrincipalId).find(c => c.id === categoriaId);
-      if (categoria) categorias.push(categoria.nome);
+      if (categoria) {
+        form.setValue("categoria", categoria.nome);
+      }
+    } else {
+      form.setValue("categoria", "");
     }
-    
-    form.setValue("categoria", categorias.join(" → "));
   };
 
   const onSubmit = async (data: ProductFormData) => {
@@ -386,6 +391,7 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           sku_interno: data.sku_interno,
           nome: data.nome,
           categoria: data.categoria || null,
+          categoria_principal: data.categoria_principal || null,
           descricao: data.descricao || null,
           quantidade_atual: data.quantidade_atual,
           estoque_minimo: data.estoque_minimo,
@@ -520,11 +526,11 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                      <FormLabel>Categoria Principal</FormLabel>
                      <Select 
                        value={selectedCategoriaPrincipal} 
-                       onValueChange={(value) => {
-                         setSelectedCategoriaPrincipal(value);
-                         setSelectedCategoria("");
-                         updateCategoriaCompleta(value, "");
-                       }}
+                        onValueChange={(value) => {
+                          setSelectedCategoriaPrincipal(value);
+                          setSelectedCategoria("");
+                          updateCategorias(value, "");
+                        }}
                      >
                         <SelectTrigger onMouseDown={() => console.info('🔽 Abrindo categorias principais...')}>
                           <SelectValue placeholder="Ex: Eletrônicos" />
@@ -550,10 +556,10 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                      <FormLabel>Categoria</FormLabel>
                      <Select 
                        value={selectedCategoria} 
-                       onValueChange={(value) => {
-                         setSelectedCategoria(value);
-                         updateCategoriaCompleta(selectedCategoriaPrincipal, value);
-                       }}
+                        onValueChange={(value) => {
+                          setSelectedCategoria(value);
+                          updateCategorias(selectedCategoriaPrincipal, value);
+                        }}
                        disabled={!selectedCategoriaPrincipal}
                      >
                         <SelectTrigger onMouseDown={() => console.info('🔽 Abrindo categorias do nível 2...')}>
