@@ -81,6 +81,38 @@ export function getEstoqueTableColumns({
       )
     },
     {
+      key: "descricao",
+      label: "Descrição",
+      width: "250px",
+      render: (value: string) => (
+        <span className="text-[11px] block line-clamp-2 max-w-[250px]" title={value}>
+          {value || "-"}
+        </span>
+      )
+    },
+    {
+      key: "categoria_principal",
+      label: "Categoria Principal",
+      sortable: true,
+      width: "150px",
+      render: (value: string) => (
+        <span className="text-[11px] block line-clamp-2 max-w-[150px]" title={value}>
+          {value || "-"}
+        </span>
+      )
+    },
+    {
+      key: "categoria",
+      label: "Categoria",
+      sortable: true,
+      width: "120px",
+      render: (value: string) => (
+        <span className="text-[11px] block line-clamp-2 max-w-[120px]" title={value}>
+          {value || "-"}
+        </span>
+      )
+    },
+    {
       key: "quantidade_atual",
       label: "Quantidade",
       sortable: true,
@@ -151,38 +183,6 @@ export function getEstoqueTableColumns({
         <div className="text-[10px] font-mono text-muted-foreground truncate max-w-[150px]" title={value}>
           {value || "-"}
         </div>
-      )
-    },
-    {
-      key: "descricao",
-      label: "Descrição",
-      width: "250px",
-      render: (value: string) => (
-        <span className="text-[11px] block line-clamp-2 max-w-[250px]" title={value}>
-          {value || "-"}
-        </span>
-      )
-    },
-    {
-      key: "categoria_principal",
-      label: "Categoria Principal",
-      sortable: true,
-      width: "150px",
-      render: (value: string) => (
-        <span className="text-[11px] block line-clamp-2 max-w-[150px]" title={value}>
-          {value || "-"}
-        </span>
-      )
-    },
-    {
-      key: "categoria",
-      label: "Categoria",
-      sortable: true,
-      width: "120px",
-      render: (value: string) => (
-        <span className="text-[11px] block line-clamp-2 max-w-[120px]" title={value}>
-          {value || "-"}
-        </span>
       )
     },
     {
