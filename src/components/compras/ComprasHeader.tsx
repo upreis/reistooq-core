@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,8 +17,6 @@ import {
 import { formatMoney } from "@/lib/format";
 
 interface ComprasHeaderProps {
-  activeTab: string;
-  onTabChange: (tab: string) => void;
   stats?: {
     pedidos_pendentes?: number;
     cotacoes_abertas?: number;
@@ -27,10 +26,26 @@ interface ComprasHeaderProps {
 }
 
 export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
-  activeTab,
-  onTabChange,
   stats = {}
 }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Detectar aba ativa baseado na rota atual
+  const getActiveTab = () => {
+    const path = location.pathname;
+    if (path.includes('/compras/pedidos')) return 'pedidos';
+    if (path.includes('/compras/cotacoes')) return 'cotacoes';
+    if (path.includes('/compras/fornecedores')) return 'fornecedores';
+    if (path.includes('/compras/importacao')) return 'importacao';
+    return 'pedidos';
+  };
+
+  const activeTab = getActiveTab();
+
+  const handleTabChange = (tab: string) => {
+    navigate(`/compras/${tab}`);
+  };
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -90,8 +105,8 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
       </div>
 
       {/* Navegação por Abas */}
-      <Tabs value={activeTab} onValueChange={onTabChange}>
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pedidos" className="flex items-center gap-2">
             <ShoppingCart className="h-4 w-4" />
             Pedidos de Compra
@@ -102,14 +117,19 @@ export const ComprasHeader: React.FC<ComprasHeaderProps> = ({
             )}
           </TabsTrigger>
           
+          <TabsTrigger value="cotacoes" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Cotações
+          </TabsTrigger>
+
           <TabsTrigger value="fornecedores" className="flex items-center gap-2">
             <Building className="h-4 w-4" />
             Fornecedores
           </TabsTrigger>
 
-          <TabsTrigger value="configuracoes" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Configurações
+          <TabsTrigger value="importacao" className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Importação
           </TabsTrigger>
         </TabsList>
       </Tabs>

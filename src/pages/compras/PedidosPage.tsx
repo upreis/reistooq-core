@@ -1,14 +1,10 @@
 import { useState, useEffect } from "react";
-import { TabsContent } from "@/components/ui/tabs";
 import { PedidosCompraTab } from "@/components/compras/PedidosCompraTab";
-import { FornecedoresTab } from "@/components/compras/FornecedoresTab";
 import { ComprasHeader } from "@/components/compras/ComprasHeader";
-import { ConfiguracoesFiscais } from "@/components/compras/ConfiguracoesFiscais";
 import { useCompras } from "@/hooks/useCompras";
 import { useToast } from "@/hooks/use-toast";
 
 export default function PedidosPage() {
-  const [activeTab, setActiveTab] = useState('pedidos');
   const [pedidosCompra, setPedidosCompra] = useState([]);
   const [fornecedores, setFornecedores] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -66,37 +62,18 @@ export default function PedidosPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Header com navegação por abas */}
-      <ComprasHeader 
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        stats={stats}
+      <ComprasHeader stats={stats} />
+
+      {/* Conteúdo da aba de Pedidos */}
+      <PedidosCompraTab 
+        pedidosCompra={pedidosCompra}
+        fornecedores={fornecedores}
+        searchTerm=""
+        selectedStatus="all"
+        selectedFornecedor="all"
+        dateRange={{ start: "", end: "" }}
+        onRefresh={loadData}
       />
-
-      {/* Conteúdo das abas */}
-      <div className="mt-6">
-        {activeTab === 'pedidos' && (
-          <PedidosCompraTab 
-            pedidosCompra={pedidosCompra}
-            fornecedores={fornecedores}
-            searchTerm=""
-            selectedStatus="all"
-            selectedFornecedor="all"
-            dateRange={{ start: "", end: "" }}
-            onRefresh={loadData}
-          />
-        )}
-
-        {activeTab === 'fornecedores' && (
-          <FornecedoresTab 
-            fornecedores={fornecedores}
-            onRefresh={loadData}
-          />
-        )}
-
-        {activeTab === 'configuracoes' && (
-          <ConfiguracoesFiscais />
-        )}
-      </div>
     </div>
   );
 }
