@@ -1,13 +1,41 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Product } from '@/hooks/useProducts';
 import { useEstoqueFilters } from '@/features/estoque/hooks/useEstoqueFilters';
+import { useUniversalFilters } from '@/hooks/useUniversalFilters';
 
 export function useEstoquePagination(products: Product[]) {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProductType, setSelectedProductType] = useState<string>("all");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  // 🔍 Usar filtros universais com persistência via URL
+  const { filters: urlFilters, updateFilters } = useUniversalFilters<{
+    search: string;
+    productType: string;
+    status: string;
+    page: number;
+    perPage: number;
+  }>([
+    { key: 'search', defaultValue: '' },
+    { key: 'productType', defaultValue: 'all' },
+    { key: 'status', defaultValue: 'all' },
+    { key: 'page', defaultValue: 1, serialize: String, deserialize: Number },
+    { key: 'perPage', defaultValue: 50, serialize: String, deserialize: Number },
+  ]);
+
+  // Estados locais inicializados com valores da URL
+  const [currentPage, setCurrentPage] = useState(urlFilters.page);
+  const [itemsPerPage, setItemsPerPage] = useState(urlFilters.perPage);
+  const [searchTerm, setSearchTerm] = useState(urlFilters.search);
+  const [selectedProductType, setSelectedProductType] = useState<string>(urlFilters.productType);
+  const [selectedStatus, setSelectedStatus] = useState<string>(urlFilters.status);
+
+  // Sincronizar mudanças locais com URL
+  useEffect(() => {
+    updateFilters({
+      search: searchTerm,
+      productType: selectedProductType,
+      status: selectedStatus,
+      page: currentPage,
+      perPage: itemsPerPage,
+    });
+  }, [searchTerm, selectedProductType, selectedStatus, currentPage, itemsPerPage, updateFilters]);
 
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);
 
