@@ -58,6 +58,15 @@ export function getEstoqueTableColumns({
       }
     },
     {
+      key: "sku_pai",
+      label: "SKU Pai",
+      sortable: true,
+      width: "120px",
+      render: (value: string) => (
+        <span className="text-[11px] font-mono block">{value || "-"}</span>
+      )
+    },
+    {
       key: "nome",
       label: "Nome",
       primary: true,
@@ -171,15 +180,6 @@ export function getEstoqueTableColumns({
       sortable: true,
       width: "80px",
       render: (value: boolean) => <ActiveStatusBadge isActive={value} />
-    },
-    {
-      key: "sku_pai",
-      label: "SKU Pai",
-      sortable: true,
-      width: "120px",
-      render: (value: string) => (
-        <span className="text-[11px] font-mono block">{value || "-"}</span>
-      )
     },
     {
       key: "codigo_barras",
