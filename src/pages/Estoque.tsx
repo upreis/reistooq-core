@@ -20,9 +20,10 @@ const EstoqueContent = () => {
     <MobileAppShell 
       title="Gestão de Estoque" 
       breadcrumb={breadcrumb}
-      headerActions={<EstoqueNav />}
     >
       <div className="space-y-6">
+        <EstoqueNav />
+        
         <div className="mt-6">
           <Routes>
             <Route index element={<ControleEstoquePage />} />
