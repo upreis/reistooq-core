@@ -279,6 +279,7 @@ export function SidebarItemWithChildren({
           )}
         >
           {item.children?.map((child) => {
+            console.log(`🔍 Renderizando filho de "${item.label}":`, child.label, child.path);
             const ChildIcon = getIconComponent(child.icon);
             // Verificação precisa: exact match ou startsWith para subpaths
             const childActive = child.path ? (
