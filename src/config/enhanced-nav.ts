@@ -14,7 +14,7 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           {
             id: 'dashboard-inicial',
             label: 'Visão Geral',
-            path: '/dashboardinicial',
+            path: '/dashboardinicial/visao-geral',
             icon: 'Home'
           },
           {
