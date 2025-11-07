@@ -17,37 +17,37 @@ const menuItems: HoverGradientMenuItem[] = [
     icon: <Store className="h-5 w-5" />, 
     label: "Vendas Marketplace", 
     href: "/pedidos", 
-    gradient: "radial-gradient(circle, hsl(210,73%,35%,0.15) 0%, hsl(210,73%,25%,0.06) 50%, hsl(210,73%,15%,0) 100%)", 
-    iconColor: "group-hover:text-[hsl(210,73%,55%)]",
+    gradient: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)", 
+    iconColor: "group-hover:text-blue-500 dark:group-hover:text-blue-400",
     preserveSearch: true 
   },
   { 
     icon: <ShoppingCart className="h-5 w-5" />, 
     label: "Vendas Direta/Atacado", 
     href: "/oms/pedidos", 
-    gradient: "radial-gradient(circle, hsl(210,73%,35%,0.15) 0%, hsl(210,73%,25%,0.06) 50%, hsl(210,73%,15%,0) 100%)", 
-    iconColor: "group-hover:text-[hsl(210,73%,55%)]" 
+    gradient: "radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)", 
+    iconColor: "group-hover:text-orange-500 dark:group-hover:text-orange-400" 
   },
   { 
     icon: <Users className="h-5 w-5" />, 
     label: "Clientes", 
     href: "/oms/clientes", 
-    gradient: "radial-gradient(circle, hsl(210,73%,35%,0.15) 0%, hsl(210,73%,25%,0.06) 50%, hsl(210,73%,15%,0) 100%)", 
-    iconColor: "group-hover:text-[hsl(210,73%,55%)]" 
+    gradient: "radial-gradient(circle, rgba(147,51,234,0.15) 0%, rgba(126,34,206,0.06) 50%, rgba(88,28,135,0) 100%)", 
+    iconColor: "group-hover:text-purple-500 dark:group-hover:text-purple-400" 
   },
   { 
     icon: <UserCheck className="h-5 w-5" />, 
     label: "Vendedores", 
     href: "/oms/vendedores", 
-    gradient: "radial-gradient(circle, hsl(210,73%,35%,0.15) 0%, hsl(210,73%,25%,0.06) 50%, hsl(210,73%,15%,0) 100%)", 
-    iconColor: "group-hover:text-[hsl(210,73%,55%)]" 
+    gradient: "radial-gradient(circle, rgba(34,197,94,0.15) 0%, rgba(22,163,74,0.06) 50%, rgba(21,128,61,0) 100%)", 
+    iconColor: "group-hover:text-green-500 dark:group-hover:text-green-400" 
   },
   { 
     icon: <Settings className="h-5 w-5" />, 
     label: "Configurações", 
     href: "/oms/configuracoes", 
-    gradient: "radial-gradient(circle, hsl(210,73%,35%,0.15) 0%, hsl(210,73%,25%,0.06) 50%, hsl(210,73%,15%,0) 100%)", 
-    iconColor: "group-hover:text-[hsl(210,73%,55%)]" 
+    gradient: "radial-gradient(circle, rgba(161,98,7,0.15) 0%, rgba(133,77,14,0.06) 50%, rgba(100,62,8,0) 100%)", 
+    iconColor: "group-hover:text-amber-600 dark:group-hover:text-amber-400" 
   },
 ];
 
@@ -98,8 +98,8 @@ export function HoverGradientOMSNav(): React.JSX.Element {
   return (
     <motion.nav
       className="w-fit mx-auto px-4 py-2 rounded-3xl 
-      bg-[hsl(210,73%,15%)]/90 dark:bg-[hsl(210,73%,15%)]/80 backdrop-blur-lg 
-      border border-[hsl(210,73%,25%)]/50 
+      bg-black/90 dark:bg-black/80 backdrop-blur-lg 
+      border border-gray-800/50 
       shadow-lg relative"
       initial="initial"
       whileHover="hover"
@@ -133,8 +133,8 @@ export function HoverGradientOMSNav(): React.JSX.Element {
                   px-4 py-2 relative z-10 
                   bg-transparent transition-colors rounded-2xl text-sm
                   ${isActive 
-                    ? 'text-white font-semibold' 
-                    : 'text-gray-400 group-hover:text-white'
+                    ? 'text-primary font-semibold' 
+                    : 'text-muted-foreground group-hover:text-foreground'
                   }`}
                   variants={itemVariants}
                   transition={sharedTransition}
@@ -156,8 +156,8 @@ export function HoverGradientOMSNav(): React.JSX.Element {
                   px-4 py-2 absolute inset-0 z-10 
                   bg-transparent transition-colors rounded-2xl text-sm
                   ${isActive 
-                    ? 'text-white font-semibold' 
-                    : 'text-gray-400 group-hover:text-white'
+                    ? 'text-primary font-semibold' 
+                    : 'text-muted-foreground group-hover:text-foreground'
                   }`}
                   variants={backVariants}
                   transition={sharedTransition}
