@@ -144,11 +144,6 @@ export default function ControleEstoquePage() {
 
   return (
     <div className="space-y-6">
-      <EstoqueHeader 
-        onLocalChange={loadProducts} 
-        onTransferClick={() => setTransferenciaModalOpen(true)}
-        selectedProductsCount={selectedProducts.length}
-      />
 
       <EstoqueNotifications 
         products={products}
