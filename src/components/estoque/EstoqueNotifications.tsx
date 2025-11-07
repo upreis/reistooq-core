@@ -233,7 +233,8 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
           onClick={() => setIsCollapsed(false)}
           className="h-8"
         >
-          <ChevronDown className="w-4 h-4" />
+          <ChevronDown className="w-4 h-4 mr-2" />
+          Mostrar Notificações
         </Button>
       </div>
     );
