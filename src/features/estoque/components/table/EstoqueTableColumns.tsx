@@ -65,7 +65,7 @@ export function getEstoqueTableColumns({
       width: "200px",
       render: (value: string) => (
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-[11px] break-words whitespace-normal leading-tight">
+          <p className="font-medium text-[11px] leading-tight line-clamp-2">
             {value}
           </p>
         </div>
@@ -149,7 +149,7 @@ export function getEstoqueTableColumns({
       label: "Descrição",
       width: "250px",
       render: (value: string) => (
-        <span className="text-[11px] block break-words whitespace-normal max-w-[250px]" title={value}>
+        <span className="text-[11px] block line-clamp-2 max-w-[250px]" title={value}>
           {value || "-"}
         </span>
       )
@@ -160,7 +160,7 @@ export function getEstoqueTableColumns({
       sortable: true,
       width: "120px",
       render: (value: string) => (
-        <span className="text-[11px] block break-words whitespace-normal max-w-[120px]" title={value}>
+        <span className="text-[11px] block line-clamp-2 max-w-[120px]" title={value}>
           {value || "-"}
         </span>
       )
@@ -306,7 +306,7 @@ export function getEstoqueTableColumns({
       sortable: true,
       width: "150px",
       render: (value: string) => (
-        <span className="text-[11px] block break-words whitespace-normal max-w-[150px]" title={value}>
+        <span className="text-[11px] block line-clamp-2 max-w-[150px]" title={value}>
           {value || "-"}
         </span>
       )
