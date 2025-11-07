@@ -188,7 +188,7 @@ export default function MobileTable({
                     </div>
                   )}
                   {columns.map((column) => (
-                    <div key={column.key} className="flex items-center min-w-0">
+                    <div key={column.key} className="flex items-start min-w-0 py-1">
                       <div className="min-w-0 w-full">
                         {column.render 
                           ? column.render(item[column.key], item)
