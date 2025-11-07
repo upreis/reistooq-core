@@ -247,18 +247,20 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
           Notificações do Estoque
           <Badge variant="secondary">{visibleNotifications.length}</Badge>
         </h3>
-        <div className="flex items-center gap-2">
-          <EstoqueSettings />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(true)}
-            className="h-8"
-            title="Ocultar notificações"
-          >
-            <ChevronUp className="w-4 h-4" />
-          </Button>
-        </div>
+        <EstoqueSettings />
+      </div>
+
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setIsCollapsed(true)}
+          className="h-8"
+          title="Ocultar notificações"
+        >
+          <ChevronUp className="w-4 h-4 mr-2" />
+          Ocultar notificações
+        </Button>
       </div>
 
       <div className="overflow-x-auto -mx-4 px-4 pb-2">
