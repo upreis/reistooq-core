@@ -63,16 +63,13 @@ export function getEstoqueTableColumns({
       primary: true,
       sortable: true,
       width: "200px",
-      render: (value: string, product: Product) => {
-        const isChild = !!product.sku_pai;
-        return (
-          <div className="min-w-0 flex-1">
-            <p className={`font-medium text-[11px] leading-tight ${isChild ? 'break-words whitespace-normal' : 'truncate'}`}>
-              {value}
-            </p>
-          </div>
-        );
-      }
+      render: (value: string) => (
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-[11px] break-words whitespace-normal leading-tight">
+            {value}
+          </p>
+        </div>
+      )
     },
     {
       key: "quantidade_atual",
@@ -151,34 +148,22 @@ export function getEstoqueTableColumns({
       key: "descricao",
       label: "Descrição",
       width: "250px",
-      render: (value: string, product: Product) => {
-        const isChild = !!product.sku_pai;
-        return (
-          <span 
-            className={`text-[11px] block max-w-[250px] ${isChild ? 'break-words whitespace-normal' : 'truncate'}`} 
-            title={value}
-          >
-            {value || "-"}
-          </span>
-        );
-      }
+      render: (value: string) => (
+        <span className="text-[11px] block break-words whitespace-normal max-w-[250px]" title={value}>
+          {value || "-"}
+        </span>
+      )
     },
     {
       key: "categoria",
       label: "Categoria",
       sortable: true,
       width: "120px",
-      render: (value: string, product: Product) => {
-        const isChild = !!product.sku_pai;
-        return (
-          <span 
-            className={`text-[11px] block max-w-[120px] ${isChild ? 'break-words whitespace-normal' : 'truncate'}`} 
-            title={value}
-          >
-            {value || "-"}
-          </span>
-        );
-      }
+      render: (value: string) => (
+        <span className="text-[11px] block break-words whitespace-normal max-w-[120px]" title={value}>
+          {value || "-"}
+        </span>
+      )
     },
     {
       key: "ativo",
@@ -320,17 +305,11 @@ export function getEstoqueTableColumns({
       label: "Categoria Principal",
       sortable: true,
       width: "150px",
-      render: (value: string, product: Product) => {
-        const isChild = !!product.sku_pai;
-        return (
-          <span 
-            className={`text-[11px] block max-w-[150px] ${isChild ? 'break-words whitespace-normal' : 'truncate'}`} 
-            title={value}
-          >
-            {value || "-"}
-          </span>
-        );
-      }
+      render: (value: string) => (
+        <span className="text-[11px] block break-words whitespace-normal max-w-[150px]" title={value}>
+          {value || "-"}
+        </span>
+      )
     }
   ];
 }
