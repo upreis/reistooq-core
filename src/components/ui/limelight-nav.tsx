@@ -106,7 +106,7 @@ export const LimelightNav = ({
         style={{ left: '-999px' }}
       >
         {/* Barra de luz no topo */}
-        <div className="absolute left-[20%] w-[60%] top-0 h-[6px] bg-primary rounded-b-md shadow-[0_0_20px_hsl(var(--primary)/.8)]" />
+        <div className="absolute left-[20%] w-[60%] top-0 h-[10px] bg-primary rounded-b-md shadow-[0_0_20px_hsl(var(--primary)/.8)]" />
         
         {/* Gradiente de luz descendo */}
         <div className="absolute left-[10%] top-0 w-[80%] h-16 bg-gradient-to-b from-primary/40 via-primary/10 to-transparent [clip-path:polygon(20%_0,80%_0,100%_100%,0%_100%)] pointer-events-none blur-sm" />
