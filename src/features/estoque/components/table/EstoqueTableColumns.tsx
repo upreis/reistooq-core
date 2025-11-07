@@ -210,7 +210,7 @@ export function getEstoqueTableColumns({
     },
     {
       key: "peso_bruto_kg",
-      label: "Peso Bruto (Kg)",
+      label: "Peso Bruto",
       sortable: true,
       width: "90px",
       render: (value: number) => (
@@ -219,7 +219,7 @@ export function getEstoqueTableColumns({
     },
     {
       key: "peso_liquido_kg",
-      label: "Peso Líquido (Kg)",
+      label: "Peso Líquido",
       sortable: true,
       width: "90px",
       render: (value: number) => (
