@@ -167,10 +167,8 @@ const SidebarContent = memo(({
     if (path.startsWith('/alertas')) return 'alerts:view';
     if (path.startsWith('/historico')) return 'historico:view';
     
-    // Configurações permissions
-    if (path.startsWith('/configuracoes/integracoes')) return 'integrations:read';
-    if (path.startsWith('/configuracoes/anuncios')) return 'system:announce';
-    if (path.startsWith('/configuracoes/administracao')) return 'admin:access';
+    // Configurações permissions - todas sob configuracoes:view
+    if (path.startsWith('/configuracoes')) return 'configuracoes:view';
     if (path.startsWith('/ml-orders-completas')) return 'integrations:manage';
     
     // Admin permissions
