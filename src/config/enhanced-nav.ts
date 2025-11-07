@@ -20,19 +20,19 @@ export const ENHANCED_NAV_ITEMS: NavSection[] = [
           {
             id: 'dashboard-vendas',
             label: 'Dashboard Vendas',
-            path: '/dashboard/vendas',
+            path: '/dashboardinicial/vendas',
             icon: 'TrendingUp'
           },
           {
             id: 'dashboard-estoque',
             label: 'Dashboard Estoque',
-            path: '/dashboard/estoque',
+            path: '/dashboardinicial/estoque',
             icon: 'Package'
           },
           {
             id: 'dashboard-financeiro',
             label: 'Dashboard Financeiro',
-            path: '/dashboard/financeiro',
+            path: '/dashboardinicial/analises',
             icon: 'DollarSign'
           }
         ]
