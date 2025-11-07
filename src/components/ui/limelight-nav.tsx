@@ -73,7 +73,7 @@ export const LimelightNav = ({
   };
 
   return (
-    <nav className={`relative inline-flex items-center h-20 rounded-2xl bg-card/80 backdrop-blur-sm text-foreground border border-border/50 px-3 ${className}`}>
+    <nav className={`relative inline-flex items-center h-20 rounded-2xl bg-card/50 dark:bg-card/30 backdrop-blur-md text-foreground border border-border/30 px-3 shadow-lg ${className}`}>
       {items.map(({ id, icon, label, onClick }, index) => (
           <a
             key={id}
@@ -97,22 +97,19 @@ export const LimelightNav = ({
           </a>
       ))}
 
-      {/* Limelight effect - luz acendendo no topo */}
+      {/* Linha grossa no topo + efeito de luz */}
       <div 
         ref={limelightRef}
-        className={`absolute top-0 z-10 w-20 h-1 rounded-b-full ${
+        className={`absolute top-0 z-10 w-20 ${
           isReady ? 'transition-[left] duration-500 ease-out' : ''
         } ${limelightClassName}`}
         style={{ left: '-999px' }}
       >
-        {/* Barra de luz no topo */}
-        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-b from-primary to-transparent rounded-b-full shadow-[0_0_20px_rgba(var(--primary-rgb),0.8)]" />
+        {/* Linha grossa em negrito no topo */}
+        <div className="absolute inset-x-0 top-0 h-[3px] bg-primary rounded-b-md" />
         
-        {/* Gradiente de luz descendo */}
-        <div className="absolute left-[10%] top-0 w-[80%] h-16 bg-gradient-to-b from-primary/40 via-primary/10 to-transparent [clip-path:polygon(20%_0,80%_0,100%_100%,0%_100%)] pointer-events-none blur-sm" />
-        
-        {/* Glow adicional */}
-        <div className="absolute left-[20%] top-0 w-[60%] h-12 bg-gradient-to-b from-primary/60 to-transparent rounded-b-full blur-md pointer-events-none" />
+        {/* Glow/luz descendo da linha */}
+        <div className="absolute left-0 right-0 top-0 h-16 bg-gradient-to-b from-primary/30 via-primary/10 to-transparent pointer-events-none" />
       </div>
     </nav>
   );
