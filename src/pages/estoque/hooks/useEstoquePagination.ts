@@ -4,37 +4,68 @@ import { useEstoqueFilters } from '@/features/estoque/hooks/useEstoqueFilters';
 import { useUniversalFilters } from '@/hooks/useUniversalFilters';
 
 export function useEstoquePagination(products: Product[]) {
-  // 🔍 Usar filtros universais com persistência via URL
+  // 🔍 Memoizar configs para evitar recriação e loop infinito
+  const filterConfigs = useMemo(() => [
+    { key: 'search', defaultValue: '' },
+    { key: 'productType', defaultValue: 'all' },
+    { key: 'status', defaultValue: 'all' },
+    { 
+      key: 'page', 
+      defaultValue: 1, 
+      serialize: String, 
+      deserialize: (val: string) => {
+        const num = parseInt(val, 10);
+        return isNaN(num) || num < 1 ? 1 : num;
+      }
+    },
+    { 
+      key: 'perPage', 
+      defaultValue: 50, 
+      serialize: String, 
+      deserialize: (val: string) => {
+        const num = parseInt(val, 10);
+        return isNaN(num) || num < 1 ? 50 : num;
+      }
+    },
+  ], []);
+
   const { filters: urlFilters, updateFilters } = useUniversalFilters<{
     search: string;
     productType: string;
     status: string;
     page: number;
     perPage: number;
-  }>([
-    { key: 'search', defaultValue: '' },
-    { key: 'productType', defaultValue: 'all' },
-    { key: 'status', defaultValue: 'all' },
-    { key: 'page', defaultValue: 1, serialize: String, deserialize: Number },
-    { key: 'perPage', defaultValue: 50, serialize: String, deserialize: Number },
-  ]);
+  }>(filterConfigs);
 
-  // Estados locais inicializados com valores da URL
+  // 🔄 Estados locais sincronizados bidirecionalmente com URL
   const [currentPage, setCurrentPage] = useState(urlFilters.page);
   const [itemsPerPage, setItemsPerPage] = useState(urlFilters.perPage);
   const [searchTerm, setSearchTerm] = useState(urlFilters.search);
   const [selectedProductType, setSelectedProductType] = useState<string>(urlFilters.productType);
   const [selectedStatus, setSelectedStatus] = useState<string>(urlFilters.status);
 
-  // Sincronizar mudanças locais com URL
+  // 🔧 Sincronizar URL → Estados locais (quando usuário usa botão voltar)
   useEffect(() => {
-    updateFilters({
-      search: searchTerm,
-      productType: selectedProductType,
-      status: selectedStatus,
-      page: currentPage,
-      perPage: itemsPerPage,
-    });
+    setCurrentPage(urlFilters.page);
+    setItemsPerPage(urlFilters.perPage);
+    setSearchTerm(urlFilters.search);
+    setSelectedProductType(urlFilters.productType);
+    setSelectedStatus(urlFilters.status);
+  }, [urlFilters.page, urlFilters.perPage, urlFilters.search, urlFilters.productType, urlFilters.status]);
+
+  // 🔧 Sincronizar Estados locais → URL (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      updateFilters({
+        search: searchTerm,
+        productType: selectedProductType,
+        status: selectedStatus,
+        page: currentPage,
+        perPage: itemsPerPage,
+      });
+    }, 300); // Debounce de 300ms para evitar updates excessivos
+
+    return () => clearTimeout(timeoutId);
   }, [searchTerm, selectedProductType, selectedStatus, currentPage, itemsPerPage, updateFilters]);
 
   const { filters: intelligentFilters, setFilters: setIntelligentFilters, filteredData: intelligentFilteredData, stats: intelligentStats } = useEstoqueFilters(products);

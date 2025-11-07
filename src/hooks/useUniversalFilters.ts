@@ -4,7 +4,7 @@
  * Mantém filtros ao navegar entre páginas
  */
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 export interface UniversalFilterConfig<T = any> {
@@ -18,25 +18,36 @@ export function useUniversalFilters<T extends Record<string, any>>(
   configs: UniversalFilterConfig[]
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // 🔧 FIX: Memoizar configs para evitar recriação
+  const configsRef = useRef(configs);
+  useEffect(() => {
+    configsRef.current = configs;
+  }, [configs]);
 
   // Ler filtros da URL
   const filters = useMemo(() => {
     const result: Record<string, any> = {};
     
-    configs.forEach(config => {
+    configsRef.current.forEach(config => {
       const urlValue = searchParams.get(config.key);
       
       if (urlValue !== null) {
-        result[config.key] = config.deserialize 
-          ? config.deserialize(urlValue)
-          : urlValue;
+        try {
+          result[config.key] = config.deserialize 
+            ? config.deserialize(urlValue)
+            : urlValue;
+        } catch (error) {
+          console.warn(`Failed to deserialize ${config.key}:`, error);
+          result[config.key] = config.defaultValue;
+        }
       } else {
         result[config.key] = config.defaultValue;
       }
     });
     
     return result as T;
-  }, [searchParams, configs]);
+  }, [searchParams]);
 
   // Atualizar filtros na URL
   const updateFilters = useCallback((updates: Partial<T>) => {
@@ -44,7 +55,7 @@ export function useUniversalFilters<T extends Record<string, any>>(
       const newParams = new URLSearchParams(prev);
       
       Object.entries(updates).forEach(([key, value]) => {
-        const config = configs.find(c => c.key === key);
+        const config = configsRef.current.find(c => c.key === key);
         if (!config) return;
         
         // Se for valor default, remover da URL
@@ -60,7 +71,7 @@ export function useUniversalFilters<T extends Record<string, any>>(
       
       return newParams;
     }, { replace: true });
-  }, [configs, setSearchParams]);
+  }, [setSearchParams]);
 
   // Limpar todos os filtros
   const clearFilters = useCallback(() => {
@@ -69,11 +80,11 @@ export function useUniversalFilters<T extends Record<string, any>>(
 
   // Verificar se tem filtros ativos
   const hasActiveFilters = useMemo(() => {
-    return configs.some(config => {
+    return configsRef.current.some(config => {
       const currentValue = filters[config.key];
       return currentValue !== config.defaultValue;
     });
-  }, [filters, configs]);
+  }, [filters]);
 
   return {
     filters,
