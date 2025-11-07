@@ -58,6 +58,19 @@ export default function ComposicoesUnificadasPage() {
 
   return (
     <div className="space-y-6">
+      {/* Seletor de Local de Estoque */}
+      <div className="flex items-center justify-between gap-4 pb-4 border-b">
+        <div className="flex items-center gap-3">
+          <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+          {localAtivo && (
+            <span className="text-sm text-muted-foreground">
+              📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
+            </span>
+          )}
+        </div>
+        <GerenciarLocaisModal onSuccess={handleLocalChange} />
+      </div>
+
       {/* Alerta se nenhum local selecionado */}
       {!localAtivo && (
         <Alert>

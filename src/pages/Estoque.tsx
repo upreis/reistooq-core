@@ -8,12 +8,20 @@ import HistoricoMovimentacoesPage from "./estoque/HistoricoMovimentacoesPage";
 import { MobileAppShell } from "@/components/mobile/standard/MobileAppShell";
 
 const EstoqueContent = () => {
+  const breadcrumb = (
+    <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+      <Package className="h-4 w-4" />
+      <span>/</span>
+      <span className="text-primary">Gestão de Estoque</span>
+    </div>
+  );
+
   return (
     <MobileAppShell 
-      title="Gestão de Estoque"
+      title="Gestão de Estoque" 
+      breadcrumb={breadcrumb}
     >
       <div className="space-y-6">
-        {/* Navegação de tabs agora no topo */}
         <EstoqueNav />
         
         <div className="mt-6">
