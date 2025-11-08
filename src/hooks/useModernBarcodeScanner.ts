@@ -320,7 +320,11 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     try {
       cleanup();
 
-      // Check secure context
+      // Detectar Safari
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      console.log(`📱 [Scanner] Browser: ${isSafari ? 'Safari' : 'Other'}`);
+
+      // Check secure context - Safari é mais rigoroso
       if (!window.isSecureContext && location.hostname !== 'localhost') {
         throw new Error('HTTPS required for camera access');
       }
@@ -350,26 +354,33 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       readerRef.current = new BrowserMultiFormatReader(hints);
       console.log('✅ [Scanner] ZXing reader configured with enhanced detection');
 
-      // ✅ CONFIGURAÇÃO OTIMIZADA: Resolução melhorada para desktop
-      const constraints: MediaStreamConstraints = {
-        video: deviceId 
-          ? { 
-              deviceId: { exact: deviceId },
-              width: { ideal: 1920, min: 1280 },
-              height: { ideal: 1080, min: 720 },
-              facingMode: preferredCamera === 'back' ? 'environment' : 'user',
-              frameRate: { ideal: 30 }
-            }
-          : { 
-              facingMode: preferredCamera === 'back' ? 'environment' : 'user',
-              width: { ideal: 1920, min: 1280 },
-              height: { ideal: 1080, min: 720 },
-              frameRate: { ideal: 30 }
-            },
-        audio: false  // ⚠️ CRITICAL: Explicitly FALSE - no audio!
-      };
+      // ✅ CONFIGURAÇÃO OTIMIZADA: Constraints compatíveis com Safari
+      const constraints: MediaStreamConstraints = isSafari 
+        ? {
+            // Safari: constraints mais simples e permissivas
+            video: deviceId
+              ? { deviceId: { exact: deviceId } }
+              : { facingMode: preferredCamera === 'back' ? 'environment' : 'user' }
+          }
+        : {
+            // Chrome/outros: constraints avançadas
+            video: deviceId 
+              ? { 
+                  deviceId: { exact: deviceId },
+                  width: { ideal: 1920, min: 1280 },
+                  height: { ideal: 1080, min: 720 },
+                  facingMode: preferredCamera === 'back' ? 'environment' : 'user',
+                  frameRate: { ideal: 30 }
+                }
+              : { 
+                  facingMode: preferredCamera === 'back' ? 'environment' : 'user',
+                  width: { ideal: 1920, min: 1280 },
+                  height: { ideal: 1080, min: 720 },
+                  frameRate: { ideal: 30 }
+                }
+          };
 
-      console.log('📷 [Scanner] Requesting camera access (VIDEO ONLY)...');
+      console.log(`📷 [Scanner] Requesting camera access (VIDEO ONLY) - ${isSafari ? 'Safari mode' : 'Standard mode'}...`);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       
@@ -385,17 +396,37 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       });
 
       if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        
         const video = videoRef.current;
+        
+        // Limpar srcObject anterior se existir
+        if (video.srcObject) {
+          const oldStream = video.srcObject as MediaStream;
+          oldStream.getTracks().forEach(track => track.stop());
+        }
+        
+        video.srcObject = stream;
+        
+        // ✅ Configuração específica para Safari
         video.setAttribute('autoplay', 'true');
         video.setAttribute('muted', 'true');
         video.setAttribute('playsinline', 'true');
+        video.setAttribute('webkit-playsinline', 'true'); // Safari iOS específico
         video.muted = true;
-        (video as any).playsInline = true;
+        video.playsInline = true;
+        (video as any).webkitPlaysInline = true; // Safari iOS específico
 
-        await video.play();
-        console.log('✅ [Scanner] Video playing');
+        // Safari precisa de um pequeno delay antes do play
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        try {
+          await video.play();
+          console.log('✅ [Scanner] Video playing');
+        } catch (playError) {
+          console.error('⚠️ [Scanner] Play error:', playError);
+          // Tentar novamente em caso de erro
+          await new Promise(resolve => setTimeout(resolve, 200));
+          await video.play();
+        }
       }
 
       // Check torch support
