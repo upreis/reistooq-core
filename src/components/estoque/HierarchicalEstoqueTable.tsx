@@ -320,7 +320,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                                 <span className="font-semibold text-xs">
                                   {group.parentSku}
                                 </span>
-                                <Badge variant={status.variant} className="text-[10px] px-1.5 py-0">
+                                <Badge variant={status.variant} className="text-[9px] px-1 py-0 whitespace-nowrap">
                                   {status.label}
                                 </Badge>
                               </div>
