@@ -1,8 +1,38 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
-// Audio feedback utility
+// Audio feedback utilities
 const playSuccessBeep = () => {
+  try {
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Som de sucesso: Dois bips ascendentes (positivo)
+    const createBeep = (freq: number, startTime: number, duration: number) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.value = freq;
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + startTime + duration);
+      
+      oscillator.start(audioContext.currentTime + startTime);
+      oscillator.stop(audioContext.currentTime + startTime + duration);
+    };
+    
+    // Duas notas ascendentes: Dó → Sol (sucesso!)
+    createBeep(523, 0, 0.1);      // Dó (C5)
+    createBeep(784, 0.12, 0.15);  // Sol (G5)
+  } catch (error) {
+    console.warn('Audio playback not supported:', error);
+  }
+};
+
+const playPartialBeep = () => {
   try {
     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
@@ -11,31 +41,15 @@ const playSuccessBeep = () => {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
     
-    // Success sound: two quick beeps
-    oscillator.frequency.value = 800;
-    oscillator.type = 'sine';
+    // Som de alerta: Bip único grave e curto (parcial)
+    oscillator.frequency.value = 300;  // Frequência mais grave
+    oscillator.type = 'triangle';      // Som mais suave
     
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+    gainNode.gain.setValueAtTime(0.2, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
     
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.1);
-    
-    // Second beep
-    const oscillator2 = audioContext.createOscillator();
-    const gainNode2 = audioContext.createGain();
-    
-    oscillator2.connect(gainNode2);
-    gainNode2.connect(audioContext.destination);
-    
-    oscillator2.frequency.value = 1000;
-    oscillator2.type = 'sine';
-    
-    gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime + 0.15);
-    gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
-    
-    oscillator2.start(audioContext.currentTime + 0.15);
-    oscillator2.stop(audioContext.currentTime + 0.25);
+    oscillator.stop(audioContext.currentTime + 0.15);
   } catch (error) {
     console.warn('Audio playback not supported:', error);
   }
@@ -423,32 +437,41 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               const format = result.getBarcodeFormat();
               const now = Date.now();
               
-              // ✅ VALIDAÇÃO: Código muito curto pode ser leitura parcial
-              if (code.length < 3) {
-                console.warn(`⚠️ [Scanner] Code too short (${code.length} chars), ignoring: ${code}`);
+              // ✅ VALIDAÇÃO: Detectar leitura parcial
+              const isPartialRead = code.length < 7; // Maioria dos códigos tem 7+ dígitos
+              
+              if (isPartialRead) {
+                console.warn(`⚠️ [Scanner] Leitura parcial detectada: "${code}" (${code.length} chars)`);
+                
+                // Feedback para leitura parcial
+                if ('vibrate' in navigator) {
+                  navigator.vibrate(50); // Vibração curta única
+                }
+                playPartialBeep();
+                
+                // Não processar, apenas alertar visualmente
                 return;
               }
               
-              console.log(`🎯 [Scanner] BARCODE DETECTED! Code: "${code}" (${code.length} chars), Format: ${format}`);
+              console.log(`🎯 [Scanner] CÓDIGO COMPLETO! Code: "${code}" (${code.length} chars), Format: ${format}`);
               
               // Anti-duplicate com delay menor para desktop
               if (code === lastScanRef.current && now - lastScanTimeRef.current < scanDelay) {
-                console.log('⏭️ [Scanner] Skipping duplicate scan');
+                console.log('⏭️ [Scanner] Ignorando scan duplicado');
                 return;
               }
               
               lastScanRef.current = code;
               lastScanTimeRef.current = now;
               
-              // Success feedback
+              // ✅ Feedback de SUCESSO - código completo
               if ('vibrate' in navigator) {
-                navigator.vibrate([50, 50, 100]);
+                navigator.vibrate([50, 50, 100]); // Padrão de vibração de sucesso
               }
               
-              // Play success sound
-              playSuccessBeep();
+              playSuccessBeep(); // Som de sucesso (dois bips ascendentes)
               
-              console.log('✅ [Scanner] Processing valid scanned code:', code);
+              console.log('✅ [Scanner] Processando código válido completo:', code);
               
               if (scanSafetyTimeoutRef.current) {
                 clearTimeout(scanSafetyTimeoutRef.current);
