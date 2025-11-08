@@ -9,10 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, Upload, X } from "lucide-react";
+import { Package, Upload, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CreateParentProductModalProps {
   open: boolean;
@@ -37,6 +39,7 @@ export function CreateParentProductModal({
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
+  const { hasPermission, loading: permissionsLoading } = useUserPermissions();
 
   // Preencher campos quando editando ou com código escaneado
   useEffect(() => {
@@ -67,6 +70,16 @@ export function CreateParentProductModal({
   }, [editProduct, open, initialBarcode]);
 
   const handleCreateParent = async () => {
+    // Verificar permissão
+    if (!editProduct && !hasPermission('estoque:create')) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para criar produtos. Entre em contato com o administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!skuInterno.trim() || !nome.trim()) {
       toast({
         title: "Campos obrigatórios",
@@ -223,6 +236,16 @@ export function CreateParentProductModal({
             }
           </DialogDescription>
         </DialogHeader>
+
+        {/* Alerta de permissão */}
+        {!permissionsLoading && !editProduct && !hasPermission('estoque:create') && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Você não tem permissão para criar produtos. Entre em contato com o administrador para solicitar a permissão "estoque:create".
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-4">
           <div className="space-y-2">

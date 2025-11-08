@@ -18,12 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Package, Plus, Trash2, Link, Scale, FileText, Upload } from "lucide-react";
+import { Package, Plus, Trash2, Link, Scale, FileText, Upload, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
 import { useUnidadesMedida } from "@/hooks/useUnidadesMedida";
 import { useCatalogCategories } from "@/features/products/hooks/useCatalogCategories";
 import { useImageUpload } from "@/hooks/useImageUpload";
+import { useUserPermissions } from "@/hooks/useUserPermissions";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface VariationForm {
   suffix: string;
@@ -105,6 +107,7 @@ export function CreateChildProductModal({
   const { unidades, getUnidadeBasePorTipo } = useUnidadesMedida();
   const { getCategoriasPrincipais, getCategorias, refreshCategories } = useCatalogCategories();
   const { uploadImage, uploading } = useImageUpload();
+  const { hasPermission, loading: permissionsLoading } = useUserPermissions();
 
   useEffect(() => {
     if (open) {
@@ -238,6 +241,16 @@ export function CreateChildProductModal({
   };
 
   const handleCreateVariations = async () => {
+    // Verificar permissão
+    if (!hasPermission('estoque:create')) {
+      toast({
+        title: "Sem permissão",
+        description: "Você não tem permissão para criar produtos. Entre em contato com o administrador.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const invalidVariations = variations.filter(v => !v.suffix.trim() || !v.nome.trim());
     if (invalidVariations.length > 0) {
       toast({
@@ -365,6 +378,16 @@ export function CreateChildProductModal({
               : 'Crie produtos independentes. Para agrupá-los posteriormente, selecione um produto pai ou use a funcionalidade de agrupamento.'}
           </DialogDescription>
         </DialogHeader>
+
+        {/* Alerta de permissão */}
+        {!permissionsLoading && !hasPermission('estoque:create') && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Você não tem permissão para criar produtos. Entre em contato com o administrador para solicitar a permissão "estoque:create".
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="space-y-6">
 
