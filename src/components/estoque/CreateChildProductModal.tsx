@@ -224,20 +224,21 @@ export function CreateChildProductModal({
     setVariations(updated);
   };
 
-  const updateCategoriaCompleta = (categoriaPrincipalId: string, categoriaId: string) => {
-    const categorias = [];
+  const getCategoriaInfo = (categoriaPrincipalId: string, categoriaId: string) => {
+    let categoriaPrincipalNome = null;
+    let categoriaNome = null;
     
     if (categoriaPrincipalId) {
       const catPrincipal = getCategoriasPrincipais().find(c => c.id === categoriaPrincipalId);
-      if (catPrincipal) categorias.push(catPrincipal.nome);
+      if (catPrincipal) categoriaPrincipalNome = catPrincipal.nome;
     }
     
     if (categoriaId) {
       const categoria = getCategorias(categoriaPrincipalId).find(c => c.id === categoriaId);
-      if (categoria) categorias.push(categoria.nome);
+      if (categoria) categoriaNome = categoria.nome;
     }
     
-    return categorias.join(" → ");
+    return { categoriaPrincipalNome, categoriaNome };
   };
 
   const handleCreateVariations = async () => {
@@ -263,7 +264,7 @@ export function CreateChildProductModal({
 
     setIsCreating(true);
     try {
-      const categoriaCompleta = updateCategoriaCompleta(selectedCategoriaPrincipal, selectedCategoria);
+      const { categoriaPrincipalNome, categoriaNome } = getCategoriaInfo(selectedCategoriaPrincipal, selectedCategoria);
       const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
 
       for (const variation of variations) {
@@ -288,7 +289,9 @@ export function CreateChildProductModal({
           localizacao: variation.localizacao || '',
           codigo_barras: variation.barcode || '',
           unidade_medida_id: variation.unidade_medida_id || unidadePadrao?.id || '',
-          categoria: categoriaCompleta || null,
+          categoria: null, // Campo legado
+          categoria_principal: categoriaPrincipalNome || null,
+          categoria_nivel2: categoriaNome || null,
           descricao: variation.descricao || null,
           status: 'ativo',
           ativo: true,
