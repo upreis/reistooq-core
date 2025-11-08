@@ -143,11 +143,29 @@ export default function ControleEstoquePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <EstoqueHeader 
         onLocalChange={loadProducts} 
         onTransferClick={() => setTransferenciaModalOpen(true)}
         selectedProductsCount={selectedProducts.length}
+      />
+
+      <EstoqueFilters
+        searchTerm={searchTerm}
+        selectedCategory={selectedCategory}
+        selectedStatus={paginationSelectedStatus}
+        selectedProductType={selectedProductType}
+        categories={categories}
+        onSearchChange={setSearchTerm}
+        onCategoryChange={setSelectedCategory}
+        onStatusChange={setPaginationSelectedStatus}
+        onProductTypeChange={setSelectedProductType}
+        onClearFilters={handleClearFilters}
+        onSearch={handleSearch}
+        useHierarchicalCategories={false}
+        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
+        onCreateParent={() => setParentProductModalOpen(true)}
+        onCreateChild={() => setChildProductModalOpen(true)}
       />
 
       <EstoqueNotifications 
@@ -189,24 +207,6 @@ export default function ControleEstoquePage() {
         onLinkChild={() => setLinkChildModalOpen(true)}
         onDelete={handleDeleteSelected}
         onImportSuccess={loadProducts}
-      />
-
-      <EstoqueFilters
-        searchTerm={searchTerm}
-        selectedCategory={selectedCategory}
-        selectedStatus={paginationSelectedStatus}
-        selectedProductType={selectedProductType}
-        categories={categories}
-        onSearchChange={setSearchTerm}
-        onCategoryChange={setSelectedCategory}
-        onStatusChange={setPaginationSelectedStatus}
-        onProductTypeChange={setSelectedProductType}
-        onClearFilters={handleClearFilters}
-        onSearch={handleSearch}
-        useHierarchicalCategories={false}
-        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
-        onCreateParent={() => setParentProductModalOpen(true)}
-        onCreateChild={() => setChildProductModalOpen(true)}
       />
 
       <TableWrapper>
