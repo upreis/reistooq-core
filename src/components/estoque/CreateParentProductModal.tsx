@@ -19,13 +19,15 @@ interface CreateParentProductModalProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
   editProduct?: Product | null;
+  initialBarcode?: string;
 }
 
 export function CreateParentProductModal({ 
   open, 
   onOpenChange, 
   onSuccess,
-  editProduct 
+  editProduct,
+  initialBarcode
 }: CreateParentProductModalProps) {
   const [skuInterno, setSkuInterno] = useState('');
   const [nome, setNome] = useState('');
@@ -35,13 +37,16 @@ export function CreateParentProductModal({
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
 
-  // Preencher campos quando editando
+  // Preencher campos quando editando ou com código escaneado
   useEffect(() => {
     if (editProduct && open) {
       setSkuInterno(editProduct.sku_interno || '');
       setNome(editProduct.nome || '');
       setImageUrl(editProduct.url_imagem || '');
       setImageFile(null);
+    } else if (open && initialBarcode && !editProduct) {
+      // Preencher com código escaneado ao criar novo
+      setSkuInterno(initialBarcode);
     } else if (!open) {
       // Limpar quando fechar
       setSkuInterno('');
@@ -49,7 +54,7 @@ export function CreateParentProductModal({
       setImageUrl('');
       setImageFile(null);
     }
-  }, [editProduct, open]);
+  }, [editProduct, open, initialBarcode]);
 
   const handleCreateParent = async () => {
     if (!skuInterno.trim() || !nome.trim()) {

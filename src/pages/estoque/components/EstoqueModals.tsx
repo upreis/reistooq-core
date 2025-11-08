@@ -56,6 +56,9 @@ interface EstoqueModalsProps {
     errorMessage: string;
   } | null;
   setDeleteErrors: (errors: any) => void;
+  
+  // Scanner
+  scannedBarcode?: string;
 }
 
 export function EstoqueModals({
@@ -83,7 +86,8 @@ export function EstoqueModals({
   deleteConfirmOpen,
   setDeleteConfirmOpen,
   deleteErrors,
-  setDeleteErrors
+  setDeleteErrors,
+  scannedBarcode
 }: EstoqueModalsProps) {
   return (
     <>
@@ -109,12 +113,14 @@ export function EstoqueModals({
         }}
         editProduct={editingParentProduct}
         onSuccess={onParentProductSuccess}
+        initialBarcode={!editingParentProduct ? scannedBarcode : undefined}
       />
 
       <CreateChildProductModal
         open={childProductModalOpen}
         onOpenChange={setChildProductModalOpen}
         onSuccess={onChildProductSuccess}
+        initialBarcode={scannedBarcode}
       />
 
       <LinkChildToParentModal

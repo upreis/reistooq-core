@@ -57,12 +57,14 @@ interface CreateChildProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  initialBarcode?: string;
 }
 
 export function CreateChildProductModal({ 
   open, 
   onOpenChange, 
-  onSuccess 
+  onSuccess,
+  initialBarcode
 }: CreateChildProductModalProps) {
   const [selectedCategoriaPrincipal, setSelectedCategoriaPrincipal] = useState<string>("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
@@ -73,7 +75,7 @@ export function CreateChildProductModal({
       suffix: '', 
       nome: '',
       quantity: 0, 
-      barcode: '',
+      barcode: initialBarcode || '',
       preco_custo: 0,
       preco_venda: 0,
       localizacao: '',
