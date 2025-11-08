@@ -127,12 +127,47 @@ Deno.serve(async (req) => {
         const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
         console.log(`🌐 Claims URL: ${claimsUrl}`);
 
-        const claimsResponse = await fetch(claimsUrl, {
+        let claimsResponse = await fetch(claimsUrl, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
         });
+
+        // Se token expirado (401), tentar refresh automático
+        if (!claimsResponse.ok && claimsResponse.status === 401) {
+          console.log(`🔄 Token expirado para conta ${accountId}, tentando refresh...`);
+          
+          try {
+            // Chamar função de refresh
+            const refreshResponse = await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/mercadolibre-token-refresh`, {
+              method: 'POST',
+              headers: {
+                'Authorization': authHeader,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ account_id: accountId }),
+            });
+
+            if (refreshResponse.ok) {
+              const refreshData = await refreshResponse.json();
+              accessToken = refreshData.access_token;
+              console.log(`✅ Token renovado com sucesso para conta ${accountId}`);
+              
+              // Tentar novamente com o novo token
+              claimsResponse = await fetch(claimsUrl, {
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                  'Content-Type': 'application/json',
+                },
+              });
+            } else {
+              console.error(`❌ Falha ao renovar token para conta ${accountId}`);
+            }
+          } catch (refreshError) {
+            console.error(`❌ Erro ao tentar refresh:`, refreshError);
+          }
+        }
 
         if (!claimsResponse.ok) {
           const errorText = await claimsResponse.text();
