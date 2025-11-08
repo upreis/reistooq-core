@@ -302,19 +302,19 @@ export default function MobileTable({
                         col.key === 'estoque_range'
                       )
                       .map((column) => {
-                        // Para quantidade_atual, inverter a ordem (número primeiro, depois label)
+                        // Para quantidade_atual, alinhar label e valor na mesma linha
                         if (column.key === 'quantidade_atual') {
                           return (
-                            <div key={column.key} className="min-w-0 flex items-baseline gap-1">
+                            <div key={column.key} className="min-w-0 flex items-center justify-between">
+                              <span className="text-muted-foreground/70 text-[9px]">
+                                {column.label}:
+                              </span>
                               <div className="text-foreground font-semibold text-[11px]">
                                 {column.render 
                                   ? column.render(item[column.key], item)
                                   : <span>{item[column.key] || "0"}</span>
                                 }
                               </div>
-                              <span className="text-muted-foreground/70 text-[9px]">
-                                {column.label}
-                              </span>
                             </div>
                           );
                         }
