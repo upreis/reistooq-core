@@ -149,8 +149,9 @@ Deno.serve(async (req) => {
               body: JSON.stringify({ integration_account_id: accountId }),
             });
 
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
+            const refreshData = await refreshResponse.json();
+
+            if (refreshResponse.ok && refreshData.success && refreshData.access_token) {
               accessToken = refreshData.access_token;
               console.log(`✅ Token renovado com sucesso para conta ${accountId}`);
               
@@ -161,18 +162,28 @@ Deno.serve(async (req) => {
                   'Content-Type': 'application/json',
                 },
               });
+              
+              if (!claimsResponse.ok) {
+                const errorText = await claimsResponse.text();
+                console.error(`❌ Mesmo com token renovado, falhou (${claimsResponse.status}):`, errorText);
+                continue;
+              }
             } else {
-              console.error(`❌ Falha ao renovar token para conta ${accountId}`);
+              console.error(`❌ Falha ao renovar token para conta ${accountId}:`, JSON.stringify(refreshData));
+              console.error(`   - HTTP Status: ${refreshResponse.status}`);
+              console.error(`   - Error Type: ${refreshData.error_type}`);
+              console.error(`   - Message: ${refreshData.error || refreshData.message}`);
+              
+              // Se é erro de reconexão necessária, pular esta conta
+              if (refreshData.error_type === 'reconnect_required') {
+                console.warn(`⚠️ Conta ${accountId} precisa ser reconectada no OAuth`);
+              }
+              continue;
             }
           } catch (refreshError) {
-            console.error(`❌ Erro ao tentar refresh:`, refreshError);
+            console.error(`❌ Erro ao tentar refresh para conta ${accountId}:`, refreshError);
+            continue;
           }
-        }
-
-        if (!claimsResponse.ok) {
-          const errorText = await claimsResponse.text();
-          console.error(`❌ Erro ML Claims API (${claimsResponse.status}):`, errorText);
-          continue;
         }
 
         const claimsData = await claimsResponse.json();
