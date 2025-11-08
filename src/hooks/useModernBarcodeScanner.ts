@@ -10,7 +10,7 @@ interface ScannerConfig {
 
 interface ScannerState {
   isActive: boolean;
-  isScanning: boolean; // ✅ NOVO: Estado de scanning separado
+  isScanning: boolean;
   isLoading: boolean;
   hasPermission: boolean | null;
   error: string | null;
@@ -29,7 +29,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
   const [state, setState] = useState<ScannerState>({
     isActive: false,
-    isScanning: false, // ✅ NOVO: Inicializa isScanning
+    isScanning: false,
     isLoading: false,
     hasPermission: null,
     error: null,
@@ -48,43 +48,41 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const isMountedRef = useRef<boolean>(true);
   const isScanningRef = useRef<boolean>(false);
   const scanSafetyTimeoutRef = useRef<NodeJS.Timeout>();
-  const isCallbackActiveRef = useRef<boolean>(false); // ✅ BUG 3: Controla se callback pode executar
-  const isInitializingRef = useRef<boolean>(false); // ✅ PROBLEMA 3: Previne race condition em startCamera
+  const isCallbackActiveRef = useRef<boolean>(false);
+  const isInitializingRef = useRef<boolean>(false);
 
-  // Cleanup function - ORDEM CRÍTICA!
+  // Cleanup function
   const cleanup = useCallback(() => {
-    console.log('🧹 Cleaning up scanner...');
+    console.log('🧹 [Scanner] Cleaning up...');
     
-    // 1. PRIMEIRO: Parar scanner ZXing
+    // Stop scanner
     if (readerRef.current) {
       try {
         readerRef.current.reset();
-        console.log('✅ Scanner ZXing stopped');
+        console.log('✅ [Scanner] ZXing stopped');
       } catch (e) {
-        console.log('Scanner already stopped');
+        console.log('[Scanner] Already stopped');
       }
       readerRef.current = null;
     }
 
-    // 2. SEGUNDO: Parar TODOS os tracks de mídia
+    // Stop all media tracks
     if (streamRef.current) {
       const tracks = streamRef.current.getTracks();
-      console.log(`🛑 Stopping ${tracks.length} media tracks`);
+      console.log(`🛑 [Scanner] Stopping ${tracks.length} tracks`);
       
       tracks.forEach(track => {
-        console.log(`  Stopping ${track.kind} track: ${track.label} (state: ${track.readyState})`);
         try {
           track.stop();
         } catch (e) {
-          console.error('Error stopping track:', e);
+          console.error('[Scanner] Error stopping track:', e);
         }
       });
       
       streamRef.current = null;
-      console.log('✅ All tracks stopped and stream cleared');
     }
 
-    // 3. TERCEIRO: Limpar o elemento de vídeo
+    // Clear video element
     if (videoRef.current) {
       videoRef.current.onloadedmetadata = null;
       videoRef.current.onerror = null;
@@ -92,7 +90,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       try {
         videoRef.current.pause();
       } catch (e) {
-        console.log('Video already paused');
+        console.log('[Scanner] Video already paused');
       }
       
       videoRef.current.srcObject = null;
@@ -101,13 +99,11 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       try {
         videoRef.current.load();
       } catch (e) {
-        console.log('Error resetting video element:', e);
+        console.log('[Scanner] Error resetting video:', e);
       }
-      
-      console.log('✅ Video element cleaned');
     }
 
-    // 4. QUARTO: Limpar timeouts E desativar callback
+    // Clear timeouts
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = undefined;
@@ -118,19 +114,11 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       scanSafetyTimeoutRef.current = undefined;
     }
     
-    // ✅ BUG 3: CRITICAL - Desativar callback para prevenir execução após cleanup
     isCallbackActiveRef.current = false;
 
-    // 5. QUINTO: Reset states apenas se montado
+    // Reset states
     if (isMountedRef.current) {
-      // ✅ Resetar ref síncrona PRIMEIRO
       isScanningRef.current = false;
-      
-      // ✅ Limpar timeout de segurança
-      if (scanSafetyTimeoutRef.current) {
-        clearTimeout(scanSafetyTimeoutRef.current);
-        scanSafetyTimeoutRef.current = undefined;
-      }
       
       setState(prev => ({
         ...prev,
@@ -143,7 +131,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       }));
     }
 
-    console.log('✅ Cleanup complete - all resources released');
+    console.log('✅ [Scanner] Cleanup complete');
   }, []);
 
   // Load devices
@@ -175,7 +163,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       
       return videoDevices;
     } catch (error) {
-      console.error('Failed to load devices:', error);
+      console.error('[Scanner] Failed to load devices:', error);
       return [];
     }
   }, [preferredCamera]);
@@ -197,23 +185,16 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
   // Start camera
   const startCamera = useCallback(async (deviceId?: string) => {
-    // ✅ PROBLEMA 3: Prevenir race condition - bloquear chamadas simultâneas
     if (isInitializingRef.current) {
-      console.warn('⚠️ Camera already initializing - prevented race condition');
+      console.warn('⚠️ [Scanner] Already initializing');
       return false;
     }
 
-    // ✅ Marcar como inicializando IMEDIATAMENTE (síncrono)
     isInitializingRef.current = true;
-    
     setState(prev => ({ ...prev, isLoading: true, error: null }));
-    
-    // ✅ CORREÇÃO BUG 2: Resetar isScanning quando iniciar câmera
-    // Isso garante estado limpo ao reiniciar
     isScanningRef.current = false;
     
     try {
-      // Stop any existing stream first
       cleanup();
 
       // Check secure context
@@ -221,25 +202,23 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         throw new Error('HTTPS required for camera access');
       }
 
-      // Load ZXing
+      console.log('📷 [Scanner] Loading ZXing...');
       const { BrowserMultiFormatReader } = await import('@zxing/browser');
       readerRef.current = new BrowserMultiFormatReader();
 
-      // Get video constraints
       const constraints: MediaStreamConstraints = {
         video: deviceId 
           ? { deviceId: { exact: deviceId } }
           : { facingMode: preferredCamera === 'back' ? 'environment' : 'user' }
       };
 
-      // Start video stream
+      console.log('📷 [Scanner] Requesting camera access...', constraints);
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         
-        // Configure video element for mobile
         const video = videoRef.current;
         video.setAttribute('autoplay', 'true');
         video.setAttribute('muted', 'true');
@@ -248,6 +227,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         (video as any).playsInline = true;
 
         await video.play();
+        console.log('✅ [Scanner] Video playing');
       }
 
       // Check torch support
@@ -258,44 +238,38 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       setState(prev => ({
         ...prev,
         isActive: true,
-        isScanning: false, // ✅ CORREÇÃO BUG 2: Resetar isScanning quando câmera inicia
+        isScanning: false,
         isLoading: false,
         currentDevice: deviceId || prev.currentDevice,
         torchSupported,
         hasPermission: true
       }));
 
-      console.log('✅ Camera started successfully');
-      
-      // ✅ PROBLEMA 3: Liberar flag de inicialização após sucesso
+      console.log('✅ [Scanner] Camera started successfully');
       isInitializingRef.current = false;
-      
       return true;
 
     } catch (error: any) {
-      console.error('❌ Failed to start camera:', error);
+      console.error('❌ [Scanner] Failed to start camera:', error);
       
-      let errorMessage = 'Failed to access camera';
+      let errorMessage = 'Falha ao acessar câmera';
       if (error.name === 'NotAllowedError') {
-        errorMessage = 'Camera permission denied';
+        errorMessage = 'Permissão de câmera negada';
       } else if (error.name === 'NotFoundError') {
-        errorMessage = 'No camera found';
+        errorMessage = 'Nenhuma câmera encontrada';
       } else if (error.message.includes('HTTPS')) {
-        errorMessage = 'HTTPS required for camera access';
+        errorMessage = 'HTTPS necessário para acesso à câmera';
       }
 
-      // ✅ CORREÇÃO BUG 2: Garantir que isScanning também está false em caso de erro
       setState(prev => ({
         ...prev,
-        isScanning: false, // ✅ Estado limpo mesmo com erro
+        isScanning: false,
         isLoading: false,
         error: errorMessage,
         hasPermission: false
       }));
 
-      // ✅ PROBLEMA 3: Liberar flag de inicialização após erro
       isInitializingRef.current = false;
-
       toast.error(errorMessage);
       return false;
     }
@@ -304,56 +278,46 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   // Start scanning
   const startScanning = useCallback((onScan: (code: string) => void) => {
     if (!readerRef.current || !videoRef.current) {
-      console.error('❌ Scanner not initialized - cannot start scanning');
+      console.error('❌ [Scanner] Not initialized');
       toast.error('Câmera não está ativa');
       return;
     }
 
-    // ✅ CORREÇÃO BUG 1: Verificar ref SÍNCRONA antes de state assíncrono
     if (isScanningRef.current) {
-      console.warn('⚠️ Scanner already scanning (prevented race condition)');
+      console.warn('⚠️ [Scanner] Already scanning');
       return;
     }
 
-    console.log('🔍 Starting barcode scanning...');
+    console.log('🔍 [Scanner] Starting barcode scanning...');
 
     try {
-      // ✅ Setar ref IMEDIATAMENTE (síncrono) - protege contra duplo clique
       isScanningRef.current = true;
-      
-      // ✅ Depois atualizar state (assíncrono) - para UI
       setState(prev => ({ ...prev, isScanning: true }));
 
-      // ✅ CORREÇÃO B: Timeout de segurança - resetar após 60s sem atividade
       scanSafetyTimeoutRef.current = setTimeout(() => {
         if (isScanningRef.current) {
-          console.warn('⚠️ Scanner safety timeout reached - resetting');
+          console.warn('⚠️ [Scanner] Safety timeout - resetting');
           isScanningRef.current = false;
           setState(prev => ({ ...prev, isScanning: false }));
           toast.warning('Scanner reiniciado por segurança');
         }
-      }, 60000); // 60 segundos
+      }, 60000);
 
-      // ✅ BUG 3: Ativar callback antes de iniciar decode
       isCallbackActiveRef.current = true;
 
       readerRef.current.decodeFromVideoDevice(
         state.currentDevice,
         videoRef.current,
         (result: any, error: any) => {
-          // ✅ BUG 3: CRITICAL - Verificar se callback ainda é válido
           if (!isCallbackActiveRef.current) {
-            console.warn('⚠️ Callback ignorado - componente desmontado ou scanning parado');
             return;
           }
 
-          // ✅ CORREÇÃO A: Try/catch dentro do callback para proteger contra erros
           try {
             if (result) {
               const code = result.getText();
               const now = Date.now();
               
-              // Prevent duplicate scans
               if (code === lastScanRef.current && now - lastScanTimeRef.current < scanDelay) {
                 return;
               }
@@ -361,14 +325,12 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               lastScanRef.current = code;
               lastScanTimeRef.current = now;
               
-              // Immediate feedback
               if ('vibrate' in navigator) {
                 navigator.vibrate([50, 50, 100]);
               }
               
-              console.log('📱 Code scanned:', code);
+              console.log('📱 [Scanner] Code scanned:', code);
               
-              // ✅ Resetar timeout de segurança quando há scan bem-sucedido
               if (scanSafetyTimeoutRef.current) {
                 clearTimeout(scanSafetyTimeoutRef.current);
                 scanSafetyTimeoutRef.current = undefined;
@@ -377,38 +339,31 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               onScan(code);
             }
             
-            // Ignore common scanning errors
             if (error && !error.name?.includes('NotFound')) {
-              console.warn('Scanner error:', error);
+              console.warn('[Scanner] Scan error:', error);
             }
           } catch (callbackError) {
-            // ✅ CORREÇÃO A: Capturar erros dentro do callback ZXing
-            console.error('❌ Error in scan callback:', callbackError);
+            console.error('❌ [Scanner] Callback error:', callbackError);
             isScanningRef.current = false;
             setState(prev => ({ ...prev, isScanning: false }));
             
-            // Limpar timeout de segurança
             if (scanSafetyTimeoutRef.current) {
               clearTimeout(scanSafetyTimeoutRef.current);
               scanSafetyTimeoutRef.current = undefined;
             }
             
-            toast.error('Erro ao processar código escaneado');
+            toast.error('Erro ao processar código');
           }
         }
       );
 
-      console.log('✅ Barcode scanning started successfully');
+      console.log('✅ [Scanner] Scanning started');
     } catch (error) {
-      console.error('❌ Failed to start scanning:', error);
-      // ✅ Resetar AMBOS ref e state em caso de erro
+      console.error('❌ [Scanner] Failed to start scanning:', error);
       isScanningRef.current = false;
       setState(prev => ({ ...prev, isScanning: false }));
-      
-      // ✅ BUG 3: Desativar callback em caso de erro
       isCallbackActiveRef.current = false;
       
-      // Limpar timeout de segurança
       if (scanSafetyTimeoutRef.current) {
         clearTimeout(scanSafetyTimeoutRef.current);
         scanSafetyTimeoutRef.current = undefined;
@@ -421,7 +376,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   // Toggle torch
   const toggleTorch = useCallback(async () => {
     if (!streamRef.current || !state.torchSupported) {
-      toast.warning('Torch not supported');
+      toast.warning('Lanterna não suportada');
       return;
     }
 
@@ -439,10 +394,10 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         navigator.vibrate(50);
       }
       
-      toast.success(newTorchState ? '🔦 Torch on' : '💡 Torch off');
+      toast.success(newTorchState ? '🔦 Lanterna ligada' : '💡 Lanterna desligada');
     } catch (error) {
-      console.error('Failed to toggle torch:', error);
-      toast.error('Failed to control torch');
+      console.error('[Scanner] Failed to toggle torch:', error);
+      toast.error('Falha ao controlar lanterna');
     }
   }, [state.torchEnabled, state.torchSupported]);
 
@@ -455,101 +410,59 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     }
   }, [state.isActive, startCamera]);
 
-  // Mount/Unmount effect - Cleanup inline para evitar dependências
-  useEffect(() => {
-    isMountedRef.current = true;
-    
-    return () => {
-      console.log('🧹 Unmounting - Cleaning up scanner...');
-      isMountedRef.current = false;
-      
-      // ✅ Resetar ref síncrona no unmount também
-      isScanningRef.current = false;
-      
-      // ✅ Limpar timeout de segurança no unmount
-      if (scanSafetyTimeoutRef.current) {
-        clearTimeout(scanSafetyTimeoutRef.current);
-        scanSafetyTimeoutRef.current = undefined;
-      }
-      
-      // Cleanup inline - executa na desmontagem do componente
-      // 1. Parar scanner ZXing
-      if (readerRef.current) {
-        try {
-          readerRef.current.reset();
-          console.log('✅ Scanner ZXing stopped');
-        } catch (e) {
-          console.log('Scanner already stopped');
-        }
-        readerRef.current = null;
-      }
-
-      // 2. Parar TODOS os tracks de mídia
-      if (streamRef.current) {
-        const tracks = streamRef.current.getTracks();
-        console.log(`🛑 Stopping ${tracks.length} media tracks`);
-        
-        tracks.forEach(track => {
-          console.log(`  Stopping ${track.kind} track: ${track.label}`);
-          try {
-            track.stop();
-          } catch (e) {
-            console.error('Error stopping track:', e);
-          }
-        });
-        
-        streamRef.current = null;
-        console.log('✅ All tracks stopped and stream cleared');
-      }
-
-      // 3. Limpar o elemento de vídeo
-      if (videoRef.current) {
-        videoRef.current.onloadedmetadata = null;
-        videoRef.current.onerror = null;
-        
-        try {
-          videoRef.current.pause();
-        } catch (e) {
-          console.log('Video already paused');
-        }
-        
-        videoRef.current.srcObject = null;
-        videoRef.current.src = '';
-        
-        try {
-          videoRef.current.load();
-        } catch (e) {
-          console.log('Error resetting video element:', e);
-        }
-        
-        console.log('✅ Video element cleaned');
-      }
-
-      // 4. Limpar timeouts
-      if (scanTimeoutRef.current) {
-        clearTimeout(scanTimeoutRef.current);
-        scanTimeoutRef.current = undefined;
-      }
-
-      console.log('✅ Unmount cleanup complete');
-    };
-  }, []); // Array vazio - só executa no mount/unmount
-
-  // Initialization effect - Separado para evitar loop
+  // Initialize on mount
   useEffect(() => {
     const init = async () => {
-      console.log('🚀 Initializing scanner...');
       await loadDevices();
       await checkPermissions();
       
       if (autoStart) {
-        console.log('📸 Auto-starting camera...');
         await startCamera();
       }
     };
     
     init();
-  }, [autoStart]); // Só depende de autoStart
+  }, [autoStart, loadDevices, checkPermissions, startCamera]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    isMountedRef.current = true;
+    
+    return () => {
+      console.log('🧹 [Scanner] Unmounting...');
+      isMountedRef.current = false;
+      isScanningRef.current = false;
+      
+      if (scanSafetyTimeoutRef.current) {
+        clearTimeout(scanSafetyTimeoutRef.current);
+        scanSafetyTimeoutRef.current = undefined;
+      }
+      
+      if (readerRef.current) {
+        try {
+          readerRef.current.reset();
+        } catch (e) {
+          console.log('[Scanner] Already stopped');
+        }
+        readerRef.current = null;
+      }
+
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => {
+          try {
+            track.stop();
+          } catch (e) {
+            console.error('[Scanner] Error stopping track:', e);
+          }
+        });
+        streamRef.current = null;
+      }
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, []);
 
   return {
     ...state,
