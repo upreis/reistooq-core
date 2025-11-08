@@ -162,6 +162,25 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
+      // Converter período em datas
+      const days = parseInt(periodo);
+      const dateTo = new Date();
+      const dateFrom = new Date();
+      dateFrom.setDate(dateTo.getDate() - days);
+      
+      console.log('📅 Aplicando filtros de data:', {
+        periodo: `${days} dias`,
+        dateFrom: dateFrom.toISOString().split('T')[0],
+        dateTo: dateTo.toISOString().split('T')[0],
+      });
+      
+      // Aplicar filtros de data
+      actions.setFilters({
+        dateFrom,
+        dateTo,
+        search: searchTerm,
+      });
+      
       if (selectedAccountIds.length === 1) {
         // Busca de conta única
         console.log('🔍 Buscando devoluções da conta:', selectedAccountIds[0]);
@@ -179,7 +198,7 @@ export default function DevolucoesMercadoLivre() {
         ? 'conta selecionada' 
         : `${selectedAccountIds.length} contas selecionadas`;
       
-      toast.success(`Buscando devoluções de ${contasTexto}...`);
+      toast.success(`Buscando devoluções de ${contasTexto} - Últimos ${days} dias`);
     } catch (error) {
       console.error('Erro ao buscar:', error);
       toast.error('Erro ao buscar devoluções');
