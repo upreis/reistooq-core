@@ -254,6 +254,7 @@ export default function MobileTable({
       {/* Mobile Cards - layout mais compacto */}
       {data.map((item) => {
         const isSelected = selectableItems ? selectedItems.includes(item[keyField]) : false;
+        const isChildProduct = item.sku_pai; // Produto filho tem sku_pai definido
         
         return (
           <Card 
@@ -269,7 +270,8 @@ export default function MobileTable({
           >
             <CardContent className="p-2">
               <div className="flex items-start gap-2">
-                {selectableItems && (
+                {/* Ocultar checkbox para produtos filho */}
+                {selectableItems && !isChildProduct && (
                   <Checkbox
                     checked={isSelected}
                     onCheckedChange={() => onSelectItem(item[keyField])}
