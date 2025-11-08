@@ -188,87 +188,7 @@ export function EstoqueFilters({
               )}
             </div>
 
-            {/* Filtro de categoria */}
-            {useHierarchicalCategories && onHierarchicalFiltersChange ? (
-              <div className="min-w-[200px]">
-                <HierarchicalCategoryFilter
-                  selectedFilters={hierarchicalFilters}
-                  onFilterChange={onHierarchicalFiltersChange}
-                  className="space-y-2"
-                />
-              </div>
-            ) : (
-              <Select value={selectedCategory} onValueChange={onCategoryChange}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Categoria" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas categorias</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category} value={category}>
-                      {category}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Filtro de status */}
-            <Select value={selectedStatus} onValueChange={onStatusChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className="bg-background z-50">
-                {statusOptions.map((option) => {
-                  const IconComponent = option.icon;
-                  return (
-                    <SelectItem key={option.value} value={option.value}>
-                      <div className="flex items-center">
-                        <IconComponent className="w-4 h-4 mr-2" />
-                        {option.label}
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-
-            {/* Filtro de tipo de produto (Pai/Filho) */}
-            {onProductTypeChange && (
-              <Select value={selectedProductType} onValueChange={onProductTypeChange}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Tipo de Produto" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="all">
-                    <div className="flex items-center">
-                      <Package className="w-4 h-4 mr-2" />
-                      Todos os Produtos
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="parent">
-                    <div className="flex items-center">
-                      <Package className="w-4 h-4 mr-2" />
-                      Apenas Produtos Pai
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="child">
-                    <div className="flex items-center">
-                      <Package className="w-4 h-4 mr-2" />
-                      Apenas Produtos Filho
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="standalone">
-                    <div className="flex items-center">
-                      <Package className="w-4 h-4 mr-2" />
-                      Produtos Sem Vínculo
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-
-            {/* Filtros avançados */}
+            {/* Filtros avançados - agora inclui categoria, status e tipo */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="gap-2">
@@ -281,8 +201,98 @@ export function EstoqueFilters({
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80">
+              <PopoverContent className="w-80 bg-background z-50">
                 <div className="space-y-4">
+                  {/* Filtro de categoria */}
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Categoria</h4>
+                    {useHierarchicalCategories && onHierarchicalFiltersChange ? (
+                      <div className="min-w-[200px]">
+                        <HierarchicalCategoryFilter
+                          selectedFilters={hierarchicalFilters}
+                          onFilterChange={onHierarchicalFiltersChange}
+                          className="space-y-2"
+                        />
+                      </div>
+                    ) : (
+                      <Select value={selectedCategory} onValueChange={onCategoryChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Categoria" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="all">Todas categorias</SelectItem>
+                          {categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+
+                  {/* Filtro de status */}
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Status do Estoque</h4>
+                    <Select value={selectedStatus} onValueChange={onStatusChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {statusOptions.map((option) => {
+                          const IconComponent = option.icon;
+                          return (
+                            <SelectItem key={option.value} value={option.value}>
+                              <div className="flex items-center">
+                                <IconComponent className="w-4 h-4 mr-2" />
+                                {option.label}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filtro de tipo de produto (Pai/Filho) */}
+                  {onProductTypeChange && (
+                    <div>
+                      <h4 className="font-medium text-sm mb-2">Tipo de Produto</h4>
+                      <Select value={selectedProductType} onValueChange={onProductTypeChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Tipo de Produto" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="all">
+                            <div className="flex items-center">
+                              <Package className="w-4 h-4 mr-2" />
+                              Todos os Produtos
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="parent">
+                            <div className="flex items-center">
+                              <Package className="w-4 h-4 mr-2" />
+                              Apenas Produtos Pai
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="child">
+                            <div className="flex items-center">
+                              <Package className="w-4 h-4 mr-2" />
+                              Apenas Produtos Filho
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="standalone">
+                            <div className="flex items-center">
+                              <Package className="w-4 h-4 mr-2" />
+                              Produtos Sem Vínculo
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  {/* Faixas adicionais */}
                   <div>
                     <h4 className="font-medium text-sm mb-2">Faixa de Preço (Custo)</h4>
                     <div className="flex items-center space-x-2">
