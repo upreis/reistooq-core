@@ -28,7 +28,11 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const lastScanRef = useRef<string>('');
   const scanTimeoutRef = useRef<NodeJS.Timeout>();
+  const inactivityTimeoutRef = useRef<NodeJS.Timeout>();
   const isMountedRef = useRef<boolean>(true);
+
+  // Configuração de auto-desligamento (2 minutos)
+  const INACTIVITY_TIMEOUT = 2 * 60 * 1000; // 2 minutos em ms
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -44,10 +48,15 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   const cleanup = () => {
     console.log('🧹 Cleaning up scanner resources...');
     
-    // Clear timeout
+    // Clear timeouts
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = undefined;
+    }
+    
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = undefined;
     }
     
     // Stop scanner
@@ -97,6 +106,40 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
     
     console.log('✅ Cleanup complete');
   };
+
+  // Reset inactivity timer
+  const resetInactivityTimer = () => {
+    console.log('🔄 Resetting inactivity timer');
+    
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+    }
+
+    if (isScanning) {
+      inactivityTimeoutRef.current = setTimeout(() => {
+        console.log('⏰ Auto-desligamento por inatividade (2 minutos)');
+        
+        toast.info('Câmera desligada por inatividade', {
+          description: 'A câmera foi desligada automaticamente após 2 minutos sem uso para economizar bateria.',
+          duration: 5000,
+        });
+        
+        cleanup();
+      }, INACTIVITY_TIMEOUT);
+    }
+  };
+
+  // Start inactivity timer when scanning starts
+  useEffect(() => {
+    if (isScanning) {
+      resetInactivityTimer();
+    } else {
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+        inactivityTimeoutRef.current = undefined;
+      }
+    }
+  }, [isScanning]);
 
   const startNativeCamera = async () => {
     try {
@@ -292,6 +335,9 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   const handleScanSuccess = (code: string) => {
     console.log('📱 Código escaneado:', code);
     
+    // Reset inactivity timer on scan activity
+    resetInactivityTimer();
+    
     // Feedback imediato
     if ('vibrate' in navigator) {
       navigator.vibrate([50, 50, 100]);
@@ -306,6 +352,9 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
       toast.warning('Inicie a câmera primeiro');
       return;
     }
+    
+    // Reset inactivity timer on user interaction
+    resetInactivityTimer();
     
     try {
       const videoTrack = streamRef.current.getVideoTracks()[0];

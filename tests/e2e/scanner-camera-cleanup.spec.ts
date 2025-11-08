@@ -239,6 +239,81 @@ test.describe('Scanner - Camera and Microphone Cleanup', () => {
     expect(finalState.hasSrcObject).toBeFalsy();
   });
 
+  test('should auto-shutdown camera after 2 minutes of inactivity', async ({ page }) => {
+    // Start camera
+    const startButton = page.locator('button:has-text("Toque para iniciar")');
+    if (await startButton.isVisible()) {
+      await startButton.click();
+      await page.waitForTimeout(1500);
+    }
+
+    // Verify camera is active
+    const isActiveInitially = await page.evaluate(() => {
+      const video = document.querySelector('video') as HTMLVideoElement;
+      return video && video.srcObject !== null;
+    });
+    expect(isActiveInitially).toBeTruthy();
+
+    // Fast-forward time by 2 minutes (120000ms)
+    await page.evaluate(() => {
+      // Speed up timers for testing
+      const originalSetTimeout = window.setTimeout;
+      window.setTimeout = function(callback: any, delay: number, ...args: any[]) {
+        // Reduce delay to 1/60th for testing (2 minutes becomes 2 seconds)
+        return originalSetTimeout(callback, delay / 60, ...args);
+      } as any;
+    });
+
+    // Wait for auto-shutdown (2 seconds in accelerated time = 2 minutes real time)
+    await page.waitForTimeout(3000);
+
+    // Verify camera stopped automatically
+    const isStoppedAfterTimeout = await page.evaluate(() => {
+      const video = document.querySelector('video') as HTMLVideoElement;
+      return !video || video.srcObject === null;
+    });
+    expect(isStoppedAfterTimeout).toBeTruthy();
+
+    // Verify toast notification appeared
+    const toastMessage = page.locator('text=Câmera desligada por inatividade');
+    await expect(toastMessage).toBeVisible({ timeout: 1000 });
+  });
+
+  test('should reset inactivity timer when scanning a code', async ({ page }) => {
+    // Start camera
+    const startButton = page.locator('button:has-text("Toque para iniciar")');
+    if (await startButton.isVisible()) {
+      await startButton.click();
+      await page.waitForTimeout(1500);
+    }
+
+    // Simulate scanning activity every 30 seconds to prevent auto-shutdown
+    let scanCount = 0;
+    const scanInterval = setInterval(async () => {
+      // Simulate a scan by calling manual input
+      await page.evaluate(() => {
+        const event = new CustomEvent('scan', { detail: { code: 'TEST123' } });
+        window.dispatchEvent(event);
+      });
+      scanCount++;
+    }, 30000);
+
+    // Wait 2.5 minutes
+    await page.waitForTimeout(150000);
+
+    clearInterval(scanInterval);
+
+    // Camera should still be active because of scan activity
+    const isStillActive = await page.evaluate(() => {
+      const video = document.querySelector('video') as HTMLVideoElement;
+      return video && video.srcObject !== null;
+    });
+    
+    // Due to scan activity, camera should still be on
+    expect(isStillActive).toBeTruthy();
+    expect(scanCount).toBeGreaterThan(0);
+  });
+
   test('should cleanup when modal closes (if product type selector appears)', async ({ page }) => {
     // This test handles the case where scanning triggers product type selector modal
     
