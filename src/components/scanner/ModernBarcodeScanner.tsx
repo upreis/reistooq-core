@@ -145,20 +145,51 @@ export function ModernBarcodeScanner({
               muted
             />
             
-            {/* Scanning Overlay */}
+            {/* Scanning Overlay - Enhanced Visual Guides */}
             {isScanning && (
               <div className="absolute inset-0 pointer-events-none">
-                {/* Scan Frame */}
-                <div className="absolute inset-6 border-2 border-white/50 rounded-lg">
-                  <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-white rounded-tl" />
-                  <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-white rounded-tr" />
-                  <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-white rounded-bl" />
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-white rounded-br" />
+                {/* Dark overlay except scan area */}
+                <div className="absolute inset-0 bg-black/60">
+                  {/* Transparent scan area */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[140px] bg-transparent border-2 border-transparent" 
+                       style={{ 
+                         boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.6)',
+                         borderRadius: '12px'
+                       }} 
+                  />
                 </div>
                 
-                {/* Scan Line */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-3/4 h-0.5 bg-white animate-pulse shadow-lg" />
+                {/* Scan Frame with corner guides */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[140px] rounded-xl">
+                  {/* Corner guides - Top Left */}
+                  <div className="absolute -top-1 -left-1 w-10 h-10 border-t-4 border-l-4 border-primary rounded-tl-xl animate-pulse" />
+                  {/* Top Right */}
+                  <div className="absolute -top-1 -right-1 w-10 h-10 border-t-4 border-r-4 border-primary rounded-tr-xl animate-pulse" />
+                  {/* Bottom Left */}
+                  <div className="absolute -bottom-1 -left-1 w-10 h-10 border-b-4 border-l-4 border-primary rounded-bl-xl animate-pulse" />
+                  {/* Bottom Right */}
+                  <div className="absolute -bottom-1 -right-1 w-10 h-10 border-b-4 border-r-4 border-primary rounded-br-xl animate-pulse" />
+                  
+                  {/* Center alignment guides */}
+                  <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-primary/30 -translate-y-1/2" />
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-primary/30 -translate-x-1/2" />
+                </div>
+                
+                {/* Animated scan line */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[140px] overflow-hidden rounded-xl">
+                  <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent animate-scan-line" 
+                       style={{
+                         animation: 'scan-line 2s ease-in-out infinite'
+                       }}
+                  />
+                </div>
+
+                {/* Instructions */}
+                <div className="absolute bottom-4 left-0 right-0 text-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur-sm rounded-full text-white text-sm font-medium">
+                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                    Posicione o código na área marcada
+                  </div>
                 </div>
               </div>
             )}

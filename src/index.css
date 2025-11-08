@@ -480,3 +480,27 @@
     border-color: hsl(43 96% 56% / 0.3); /* amber-500/30 */
   }
 }
+
+/* Scanner Scan Line Animation */
+@keyframes scan-line {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@layer utilities {
+  .animate-scan-line {
+    animation: scan-line 2s ease-in-out infinite;
+  }
+}
