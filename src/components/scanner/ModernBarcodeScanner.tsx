@@ -33,16 +33,18 @@ export function ModernBarcodeScanner({
 }: ModernBarcodeScannerProps) {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
 
   const scanner = useModernBarcodeScanner({
     preferredCamera,
-    autoStart,
+    autoStart: false,
     scanDelay: 300
   });
 
   const handleStartScanning = async () => {
     const started = await scanner.startCamera();
     if (started) {
+      setIsScanning(true);
       scanner.startScanning((code) => {
         onScan(code);
       });
@@ -52,6 +54,7 @@ export function ModernBarcodeScanner({
   };
 
   const handleStopScanning = () => {
+    setIsScanning(false);
     scanner.stopCamera();
   };
 
@@ -103,7 +106,7 @@ export function ModernBarcodeScanner({
 
   const getStatusColor = () => {
     if (scanner.error) return 'destructive';
-    if (scanner.isActive && scanner.isScanning) return 'default';
+    if (isScanning) return 'default';
     if (scanner.hasPermission) return 'secondary';
     return 'outline';
   };
@@ -111,7 +114,7 @@ export function ModernBarcodeScanner({
   const getStatusText = () => {
     if (scanner.error) return scanner.error;
     if (scanner.isLoading) return 'Iniciando câmera...';
-    if (scanner.isActive && scanner.isScanning) return 'Escaneamento ativo';
+    if (isScanning) return 'Escaneamento ativo';
     if (scanner.hasPermission === false) return 'Permissão de câmera necessária';
     if (scanner.hasPermission === null) return 'Verificando permissões...';
     return 'Pronto para escanear';
@@ -124,7 +127,7 @@ export function ModernBarcodeScanner({
         <Badge variant={getStatusColor()} className="px-3 py-1">
           {scanner.isLoading && <Loader2 className="w-3 h-3 mr-1 animate-spin" />}
           {scanner.error && <AlertCircle className="w-3 h-3 mr-1" />}
-          {scanner.isActive && scanner.isScanning && <CheckCircle className="w-3 h-3 mr-1" />}
+          {isScanning && <CheckCircle className="w-3 h-3 mr-1" />}
           {getStatusText()}
         </Badge>
       </div>
@@ -143,7 +146,7 @@ export function ModernBarcodeScanner({
             />
             
             {/* Scanning Overlay */}
-            {scanner.isActive && scanner.isScanning && (
+            {isScanning && (
               <div className="absolute inset-0 pointer-events-none">
                 {/* Scan Frame */}
                 <div className="absolute inset-6 border-2 border-white/50 rounded-lg">
@@ -174,7 +177,7 @@ export function ModernBarcodeScanner({
           {/* Controls */}
           <div className="space-y-3">
             {/* Primary Actions */}
-            {!scanner.isScanning ? (
+            {!isScanning ? (
               <Button 
                 onClick={handleStartScanning}
                 disabled={scanner.isLoading || scanner.hasPermission === false}
