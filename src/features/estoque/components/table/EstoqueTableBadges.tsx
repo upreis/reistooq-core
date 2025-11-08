@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Product } from "@/hooks/useProducts";
 import { Package, Layers, AlertTriangle } from "lucide-react";
 import { calculateParentProductData } from "@/utils/parentProductCalculations";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface StockBadgeData {
   type: string;
@@ -71,6 +72,8 @@ interface ProductTypeBadgesProps {
  * Badges de tipo de produto (PAI/FILHO) com indentação visual
  */
 export function ProductTypeBadges({ isParent, isChild }: ProductTypeBadgesProps) {
+  const isMobile = useIsMobile();
+  
   if (isParent) {
     return (
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -85,7 +88,8 @@ export function ProductTypeBadges({ isParent, isChild }: ProductTypeBadgesProps)
     );
   }
   
-  if (isChild) {
+  // Ocultar badge FILHO no mobile
+  if (isChild && !isMobile) {
     return (
       <div className="flex items-center gap-2 flex-shrink-0 ml-6">
         <div className="flex items-center gap-1">
