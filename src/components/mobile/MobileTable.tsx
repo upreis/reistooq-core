@@ -301,19 +301,39 @@ export default function MobileTable({
                         col.key === 'quantidade_atual' ||
                         col.key === 'estoque_range'
                       )
-                      .map((column) => (
-                        <div key={column.key} className="min-w-0">
-                          <span className="text-muted-foreground/70 block leading-tight">
-                            {column.label}:
-                          </span>
-                          <div className="text-foreground font-medium leading-tight text-[10px]">
-                            {column.render 
-                              ? column.render(item[column.key], item)
-                              : <span className="truncate block">{item[column.key] || "N/A"}</span>
-                            }
+                      .map((column) => {
+                        // Para quantidade_atual, inverter a ordem (número primeiro, depois label)
+                        if (column.key === 'quantidade_atual') {
+                          return (
+                            <div key={column.key} className="min-w-0 flex items-baseline gap-1">
+                              <div className="text-foreground font-semibold text-[11px]">
+                                {column.render 
+                                  ? column.render(item[column.key], item)
+                                  : <span>{item[column.key] || "0"}</span>
+                                }
+                              </div>
+                              <span className="text-muted-foreground/70 text-[9px]">
+                                {column.label}
+                              </span>
+                            </div>
+                          );
+                        }
+                        
+                        // Para outros campos, manter o padrão
+                        return (
+                          <div key={column.key} className="min-w-0">
+                            <span className="text-muted-foreground/70 block leading-tight">
+                              {column.label}:
+                            </span>
+                            <div className="text-foreground font-medium leading-tight text-[10px]">
+                              {column.render 
+                                ? column.render(item[column.key], item)
+                                : <span className="truncate block">{item[column.key] || "N/A"}</span>
+                              }
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                   </div>
                   
                   {/* Actions - botões menores */}
