@@ -289,26 +289,34 @@ export default function MobileTable({
                     </h3>
                   )}
                   
-                  {/* Secondary info - grid 2 colunas super compacto */}
+                  {/* Secondary info - apenas campos específicos */}
                   <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px]">
-                    {secondaryColumns.slice(0, 6).map((column) => (
-                      <div key={column.key} className="min-w-0">
-                        <span className="text-muted-foreground/70 block leading-tight">
-                          {column.label}:
-                        </span>
-                        <div className="text-foreground font-medium leading-tight text-[10px]">
-                          {column.render 
-                            ? column.render(item[column.key], item)
-                            : <span className="truncate block">{item[column.key] || "N/A"}</span>
-                          }
+                    {secondaryColumns
+                      .filter(col => 
+                        col.key === 'sku_interno' || 
+                        col.key === 'nome' || 
+                        col.key === 'categoria_principal' || 
+                        col.key === 'quantidade_atual' ||
+                        col.key === 'estoque_range'
+                      )
+                      .map((column) => (
+                        <div key={column.key} className="min-w-0">
+                          <span className="text-muted-foreground/70 block leading-tight">
+                            {column.label}:
+                          </span>
+                          <div className="text-foreground font-medium leading-tight text-[10px]">
+                            {column.render 
+                              ? column.render(item[column.key], item)
+                              : <span className="truncate block">{item[column.key] || "N/A"}</span>
+                            }
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                   
-                  {/* Actions - horizontal na base do card */}
+                  {/* Actions - botões menores */}
                   {actions.length > 0 && (
-                    <div className="flex gap-1 pt-1 border-t border-border/50 mt-1">
+                    <div className="flex gap-0.5 pt-1 border-t border-border/50 mt-1">
                       {actions.map((action, index) => (
                         <Button
                           key={index}
@@ -318,11 +326,11 @@ export default function MobileTable({
                             e.stopPropagation();
                             action.onClick(item);
                           }}
-                          className="h-6 px-2 text-[9px] flex-1"
+                          className="h-5 px-1.5 text-[8px] flex-1"
                           title={action.label}
                         >
-                          <span className="flex items-center gap-1">
-                            {action.icon}
+                          <span className="flex items-center gap-0.5">
+                            {action.icon && <span className="scale-75">{action.icon}</span>}
                             <span className="hidden xs:inline">{action.label}</span>
                           </span>
                         </Button>
