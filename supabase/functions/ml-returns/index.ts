@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
                 'Authorization': authHeader,
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ account_id: accountId }),
+              body: JSON.stringify({ integration_account_id: accountId }),
             });
 
             if (refreshResponse.ok) {
