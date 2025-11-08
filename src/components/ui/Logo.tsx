@@ -1,5 +1,6 @@
 import { useTheme } from "@/theme/ThemeProvider";
 import logoLight from "@/assets/logo-light.png";
+import reistoqLogo from "@/assets/reistoq-logo.png";
 
 interface LogoProps {
   className?: string;
@@ -9,11 +10,8 @@ interface LogoProps {
 export function Logo({ className = "", size = "md" }: LogoProps) {
   const { theme } = useTheme();
   
-  // Logo para dark mode (atual) e light mode (novo)
-  const logoSrc = theme === "materialm-light" ? logoLight : "/logo-reistoq.png";
-  
-  // Debug para verificar qual logo está sendo usado
-  console.log('🎨 Logo Debug:', { theme, logoSrc, logoLight });
+  // Usando o novo logo
+  const logoSrc = reistoqLogo;
   
   const sizeClasses = {
     sm: "h-10 w-10",
