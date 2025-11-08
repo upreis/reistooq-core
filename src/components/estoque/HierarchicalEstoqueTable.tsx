@@ -293,9 +293,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           })()}
                           
                           {/* Informações - 75% */}
-                          <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex-1 min-w-0 space-y-1 relative">
+                            {/* Tag Pai/Filho no canto superior direito */}
+                            <Badge 
+                              variant={hasChildren ? "default" : "secondary"}
+                              className="absolute top-0 right-0 text-[9px] px-1.5 py-0 h-4"
+                            >
+                              {hasChildren ? "PAI" : "FILHO"}
+                            </Badge>
+                            
                             <div 
-                              className="cursor-pointer hover:opacity-80 transition-opacity"
+                              className="cursor-pointer hover:opacity-80 transition-opacity pr-12"
                               onClick={(e) => {
                                 if (group.parentProduct) {
                                   e.stopPropagation();
