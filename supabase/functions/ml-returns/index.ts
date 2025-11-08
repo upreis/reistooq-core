@@ -120,9 +120,19 @@ Deno.serve(async (req) => {
         const params = new URLSearchParams();
         params.append('player_role', 'respondent');
         params.append('player_user_id', sellerId);
-        params.append('limit', '50'); // Buscar mais claims para encontrar devoluções
+        params.append('limit', '100'); // Aumentado para pegar mais claims
         params.append('offset', '0');
         params.append('sort', 'date_created:desc');
+        
+        // APLICAR FILTROS DE DATA (date_created)
+        if (filters.dateFrom) {
+          params.append('date_created_from', `${filters.dateFrom}T00:00:00.000Z`);
+          console.log(`📅 Filtro dateFrom aplicado: ${filters.dateFrom}`);
+        }
+        if (filters.dateTo) {
+          params.append('date_created_to', `${filters.dateTo}T23:59:59.999Z`);
+          console.log(`📅 Filtro dateTo aplicado: ${filters.dateTo}`);
+        }
 
         const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
         console.log(`🌐 Claims URL: ${claimsUrl}`);
