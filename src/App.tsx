@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/theme/ThemeProvider";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { SidebarUIProvider } from "@/context/SidebarUIContext";
 import { MobileProvider } from "@/contexts/MobileContext";
 import { InactivityTracker } from "@/components/auth/InactivityTracker";
@@ -14,6 +14,7 @@ import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Import pages
 import NotFound from "./pages/NotFound";
@@ -68,6 +69,21 @@ const queryClient = new QueryClient({
   },
 });
 
+function MobileRedirect() {
+  const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (isMobile && user && (location.pathname === '/' || location.pathname === '/dashboardinicial/visao-geral')) {
+      navigate('/estoque', { replace: true });
+    }
+  }, [isMobile, user, location.pathname, navigate]);
+
+  return null;
+}
+
 function App() {
   useEffect(() => {
     const validation = validateConfig();
@@ -88,6 +104,7 @@ function App() {
           <AuthProvider>
           <MobileProvider>
             <SidebarUIProvider>
+              <MobileRedirect />
               <InactivityTracker />
               <Toaster />
               <Sonner />
