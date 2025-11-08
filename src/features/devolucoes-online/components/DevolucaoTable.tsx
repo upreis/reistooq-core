@@ -15,6 +15,7 @@ import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 interface DevolucaoTableWithAnalise extends MLReturn {
   status_analise?: StatusAnalise;
+  empresa?: string;
 }
 
 interface DevolucaoTableProps {
@@ -149,6 +150,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
         <TableHeader>
           <TableRow className="bg-muted/50">
             <TableHead className="font-semibold sticky left-0 bg-muted/50 z-10">Análise</TableHead>
+            <TableHead className="font-semibold">Empresa</TableHead>
             <TableHead className="font-semibold">ID Devolução</TableHead>
             <TableHead className="font-semibold">Claim ID</TableHead>
             <TableHead className="font-semibold">Order ID</TableHead>
@@ -203,6 +205,9 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                       onChange={(newStatus) => onStatusChange(String(dev.id), newStatus)}
                     />
                   )}
+                </TableCell>
+                <TableCell className="text-sm font-medium">
+                  {dev.empresa || '-'}
                 </TableCell>
                 <TableCell className="font-medium text-xs">
                   {dev.id}

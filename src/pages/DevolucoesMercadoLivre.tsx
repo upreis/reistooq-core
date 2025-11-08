@@ -105,15 +105,21 @@ export default function DevolucoesMercadoLivre() {
     refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
   }), [state.devolucoes, state.total]);
 
-  // Adicionar status de análise às devoluções
+  // Adicionar status de análise e empresa às devoluções
   const devolucoesComAnalise = useMemo(() => {
     const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
     
-    return dataToUse.map((dev) => ({
-      ...dev,
-      status_analise: analiseStatus[dev.id]?.status || ('pendente' as StatusAnalise),
-    }));
-  }, [filteredByQuickFilter, state.devolucoes, analiseStatus]);
+    return dataToUse.map((dev) => {
+      // Encontrar nome da empresa/conta
+      const account = accounts.find(acc => acc.id === state.integrationAccountId);
+      
+      return {
+        ...dev,
+        status_analise: analiseStatus[dev.id]?.status || ('pendente' as StatusAnalise),
+        empresa: account?.name || 'N/A',
+      };
+    });
+  }, [filteredByQuickFilter, state.devolucoes, analiseStatus, accounts, state.integrationAccountId]);
 
   // Separar em Ativas e Histórico
   const devolucoesFiltradas = useMemo(() => {
