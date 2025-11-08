@@ -6,6 +6,7 @@ import { useLocalEstoqueAtivo } from '@/hooks/useLocalEstoqueAtivo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,6 +63,7 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
   });
   const { localAtivo, setLocalAtivo } = useLocalEstoqueAtivo();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const carregarLocais = async () => {
     setLoading(true);
@@ -287,6 +289,19 @@ export function LocalEstoqueSelector({ showActions = false }: LocalEstoqueSelect
       <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground">
         <MapPin className="h-4 w-4" />
         Nenhum local cadastrado
+      </div>
+    );
+  }
+
+  // Em mobile, mostrar apenas o estoque principal de forma simplificada
+  if (isMobile) {
+    const principal = locais.find(l => l.tipo === 'principal');
+    if (!principal) return null;
+    
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 text-sm bg-primary/10 rounded-lg">
+        <span>{TIPO_ICONS['principal']}</span>
+        <span className="font-medium text-primary">{principal.nome}</span>
       </div>
     );
   }
