@@ -162,22 +162,30 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // Converter período em datas
+      // ✅ Calcular datas e converter para ISO strings (igual /reclamacoes)
+      const calcularDataInicio = (periodoDias: string) => {
+        const hoje = new Date();
+        const dias = parseInt(periodoDias);
+        hoje.setDate(hoje.getDate() - dias);
+        return hoje.toISOString(); // ✅ Retorna ISO string
+      };
+
       const days = parseInt(periodo);
-      const dateTo = new Date();
-      const dateFrom = new Date();
-      dateFrom.setDate(dateTo.getDate() - days);
+      const dataInicio = calcularDataInicio(periodo); // ✅ String ISO
+      const dataFim = new Date().toISOString(); // ✅ String ISO
       
-      console.log('📅 Aplicando filtros de data:', {
+      console.log('📅 Aplicando filtros de data (ISO strings):', {
         periodo: `${days} dias`,
-        dateFrom: dateFrom.toISOString().split('T')[0],
-        dateTo: dateTo.toISOString().split('T')[0],
+        dateFrom: dataInicio.split('T')[0],
+        dateTo: dataFim.split('T')[0],
+        dateFromFull: dataInicio,
+        dateToFull: dataFim,
       });
       
-      // Aplicar filtros de data
+      // ✅ Aplicar filtros de data como strings ISO
       actions.setFilters({
-        dateFrom,
-        dateTo,
+        dateFrom: dataInicio,  // ✅ String ISO
+        dateTo: dataFim,       // ✅ String ISO
         search: searchTerm,
       });
       
