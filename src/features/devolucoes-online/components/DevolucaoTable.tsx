@@ -192,12 +192,14 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
           </TableRow>
         </TableHeader>
         <TableBody>
-          {devolucoes.map((dev) => {
+          {devolucoes.map((dev, i) => {
             const firstOrder = dev.orders?.[0];
             const currentStatus = dev.status_analise || ('pendente' as StatusAnalise);
+            // Usar dev.id + index como key única para evitar duplicatas
+            const uniqueKey = `${dev.id}-${i}`;
             
             return (
-              <TableRow key={dev.id} className="hover:bg-muted/50 transition-colors">
+              <TableRow key={uniqueKey} className="hover:bg-muted/50 transition-colors">
                 <TableCell className="sticky left-0 bg-background z-10">
                   {onStatusChange && (
                     <StatusAnaliseSelect

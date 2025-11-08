@@ -63,9 +63,11 @@ export default function DevolucoesMercadoLivre() {
       
       setAccounts(data || []);
       
-      // Selecionar todas as contas por padrão
+      // Selecionar a primeira conta por padrão (não todas, pois o manager suporta apenas 1)
       if (data && data.length > 0) {
-        setSelectedAccountIds(data.map(acc => acc.id));
+        const firstAccountId = data[0].id;
+        setSelectedAccountIds([firstAccountId]);
+        actions.setIntegrationAccountId(firstAccountId);
       }
     };
     fetchAccounts();
@@ -162,10 +164,21 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // TODO: Implementar busca com múltiplas contas
-      toast.success('Busca realizada com sucesso');
-      await actions.refetch();
+      // Usar as contas selecionadas para buscar
+      // Como o manager atual suporta apenas 1 conta, vamos usar a primeira
+      // TODO: Refatorar manager para suportar múltiplas contas
+      if (selectedAccountIds.length > 0) {
+        actions.setIntegrationAccountId(selectedAccountIds[0]);
+        await actions.refetch();
+        
+        if (selectedAccountIds.length > 1) {
+          toast.info(`Buscando apenas da primeira conta selecionada. Suporte para múltiplas contas em breve.`);
+        } else {
+          toast.success('Busca realizada com sucesso');
+        }
+      }
     } catch (error) {
+      console.error('Erro ao buscar:', error);
       toast.error('Erro ao buscar devoluções');
     } finally {
       setIsSearching(false);
