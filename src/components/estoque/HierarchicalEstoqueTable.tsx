@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Filter, X } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,60 @@ interface HierarchicalEstoqueTableProps {
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showHierarchy, setShowHierarchy] = useState(true);
+  const [activeFilters, setActiveFilters] = useState<Map<string, { categoria?: string; status?: string }>>(new Map());
   const isMobile = useIsMobile();
+
+  const toggleFilter = (parentSku: string) => {
+    setActiveFilters(prev => {
+      const newFilters = new Map(prev);
+      if (newFilters.has(parentSku)) {
+        newFilters.delete(parentSku);
+      } else {
+        newFilters.set(parentSku, {});
+      }
+      return newFilters;
+    });
+  };
+
+  const updateFilter = (parentSku: string, filterType: 'categoria' | 'status', value: string) => {
+    setActiveFilters(prev => {
+      const newFilters = new Map(prev);
+      const currentFilter = newFilters.get(parentSku) || {};
+      
+      if (currentFilter[filterType] === value) {
+        delete currentFilter[filterType];
+      } else {
+        currentFilter[filterType] = value;
+      }
+      
+      if (Object.keys(currentFilter).length === 0) {
+        newFilters.delete(parentSku);
+      } else {
+        newFilters.set(parentSku, currentFilter);
+      }
+      
+      return newFilters;
+    });
+  };
+
+  const getFilteredChildren = (group: SkuGroup) => {
+    const filters = activeFilters.get(group.parentSku);
+    if (!filters || Object.keys(filters).length === 0) {
+      return group.children;
+    }
+
+    return group.children.filter(child => {
+      if (filters.categoria && child.categoria !== filters.categoria) {
+        return false;
+      }
+      if (filters.status) {
+        const hasLowStock = (child.quantidade_atual || 0) < (child.estoque_minimo || 0);
+        if (filters.status === 'low_stock' && !hasLowStock) return false;
+        if (filters.status === 'normal' && hasLowStock) return false;
+      }
+      return true;
+    });
+  };
 
   // 🚀 OTIMIZAÇÃO: Memoizar agrupamento de produtos
   const groups = useMemo(() => groupProductsBySku(props.products), [props.products]);
@@ -332,10 +385,23 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                               )}
                             </div>
                             
-                            {/* Linha 4: Estoque Total - apenas mobile e se tiver filhos */}
+                            {/* Linha 4: Estoque Total com ícones de filtro - apenas mobile e se tiver filhos */}
                             {hasChildren && (
-                              <div className="text-xs font-semibold text-foreground pt-0.5">
-                                Estoque Total: {group.totalStock}
+                              <div className="flex items-center gap-2 pt-0.5">
+                                <span className="text-xs font-semibold text-foreground">
+                                  Estoque Total: {group.totalStock}
+                                </span>
+                                <Button
+                                  variant={activeFilters.has(group.parentSku) ? "default" : "ghost"}
+                                  size="sm"
+                                  className="h-6 w-6 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    toggleFilter(group.parentSku);
+                                  }}
+                                >
+                                  <Filter className="w-3 h-3" />
+                                </Button>
                               </div>
                             )}
                           </div>
@@ -442,7 +508,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       const valorTotalVenda = avgPrecoVenda * group.totalStock;
                       
                       return (
-                        <div className="text-right flex gap-6">
+                        <div className="text-right flex gap-6 items-center">
                           <div className="text-xs text-muted-foreground">
                             Custo Total: <span className="font-semibold text-foreground">R$ {valorTotalCusto.toFixed(2)}</span>
                           </div>
@@ -452,6 +518,17 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                           <div className="text-sm font-semibold">
                             Estoque Total: {group.totalStock}
                           </div>
+                          <Button
+                            variant={activeFilters.has(group.parentSku) ? "default" : "ghost"}
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFilter(group.parentSku);
+                            }}
+                          >
+                            <Filter className="w-4 h-4" />
+                          </Button>
                         </div>
                       );
                     })()}
@@ -462,6 +539,82 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 {hasChildren && (
                   <CollapsibleContent>
                     <div className="border-t border-l-4 border-l-blue-500/50 bg-blue-500/5">
+                      {/* Área de filtros */}
+                      {activeFilters.has(group.parentSku) && (() => {
+                        const uniqueCategories = [...new Set(group.children.map(c => c.categoria).filter(Boolean))];
+                        const filters = activeFilters.get(group.parentSku);
+                        
+                        return (
+                          <div className="p-3 border-b border-border bg-muted/50">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Filter className="w-4 h-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">Filtros</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 ml-auto"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleFilter(group.parentSku);
+                                }}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                            
+                            <div className="flex flex-wrap gap-2">
+                              {/* Filtros de categoria */}
+                              {uniqueCategories.length > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-xs text-muted-foreground">Categoria:</span>
+                                  {uniqueCategories.map(cat => (
+                                    <Button
+                                      key={cat}
+                                      variant={filters?.categoria === cat ? "default" : "outline"}
+                                      size="sm"
+                                      className="h-6 text-xs"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        updateFilter(group.parentSku, 'categoria', cat!);
+                                      }}
+                                    >
+                                      {cat}
+                                    </Button>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {/* Filtros de status */}
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-muted-foreground">Status:</span>
+                                <Button
+                                  variant={filters?.status === 'low_stock' ? "destructive" : "outline"}
+                                  size="sm"
+                                  className="h-6 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateFilter(group.parentSku, 'status', 'low_stock');
+                                  }}
+                                >
+                                  Estoque Baixo
+                                </Button>
+                                <Button
+                                  variant={filters?.status === 'normal' ? "default" : "outline"}
+                                  size="sm"
+                                  className="h-6 text-xs"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateFilter(group.parentSku, 'status', 'normal');
+                                  }}
+                                >
+                                  Normal
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      
                       <div className={isMobile ? "p-2 pl-2" : "p-2 pl-8"}>
                         {!isMobile && (
                           <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
@@ -472,7 +625,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         <div className={isMobile ? "border-l-2 border-blue-500/30 pl-2" : "ml-4 border-l-2 border-blue-500/30 pl-4"}>
                           <EstoqueTable
                             {...props}
-                            products={group.children}
+                            products={getFilteredChildren(group)}
                             rowClassName="!border-l-4 !border-l-blue-500 !bg-blue-500/10 hover:!bg-blue-500/15"
                             parentSkus={parentSkusSet}
                             allProducts={props.products}
