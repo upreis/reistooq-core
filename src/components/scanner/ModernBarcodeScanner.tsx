@@ -118,7 +118,7 @@ export function ModernBarcodeScanner({
     if (isScanning) return 'Escaneamento ativo';
     if (scanner.hasPermission === false) return 'Permissão de câmera necessária';
     if (scanner.hasPermission === null) return 'Verificando permissões...';
-    return 'Pronto para escanear';
+    return '';
   };
 
   return (

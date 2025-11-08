@@ -229,12 +229,8 @@ const Scanner = () => {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-lg mx-auto space-y-6">
         
-        {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold">Escanear código de barras</h1>
-          <p className="text-muted-foreground text-sm">
-            Escaneie códigos de barras para consultar produtos
-          </p>
         </div>
 
         {/* Scanner Component */}
