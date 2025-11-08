@@ -440,12 +440,12 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                 {hasChildren && (
                   <CollapsibleContent>
                     <div className="border-t border-l-4 border-l-blue-500/50 bg-blue-500/5">
-                      <div className="p-2 pl-8">
-                        <div className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5 text-blue-400" />
+                      <div className={isMobile ? "p-2 pl-2" : "p-2 pl-8"}>
+                        <div className={isMobile ? "text-[10px] text-muted-foreground mb-1 flex items-center gap-1.5" : "text-xs text-muted-foreground mb-2 flex items-center gap-2"}>
+                          <Layers className={isMobile ? "w-3 h-3 text-blue-400" : "w-3.5 h-3.5 text-blue-400"} />
                           <span>Variações do {group.parentSku}:</span>
                         </div>
-                        <div className="ml-4 border-l-2 border-blue-500/30 pl-4">
+                        <div className={isMobile ? "border-l-2 border-blue-500/30 pl-2" : "ml-4 border-l-2 border-blue-500/30 pl-4"}>
                           <EstoqueTable
                             {...props}
                             products={group.children}
