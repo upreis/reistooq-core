@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, TrendingUp } from "lucide-react";
 import { toast } from 'sonner';
-import { MobileScanner } from "@/components/scanner/MobileScanner";
+import { ModernBarcodeScanner } from "@/components/scanner/ModernBarcodeScanner";
+import { ScannerErrorBoundary } from "@/components/scanner/ScannerErrorBoundary";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
 import { CreateChildProductModal } from "@/components/estoque/CreateChildProductModal";
@@ -237,10 +238,13 @@ const Scanner = () => {
         </div>
 
         {/* Scanner Component */}
-        <MobileScanner 
-          onScanResult={handleScanResult}
-          onError={handleScanError}
-        />
+        <ScannerErrorBoundary>
+          <ModernBarcodeScanner 
+            onScan={handleScanResult}
+            onError={handleScanError}
+            preferredCamera="back"
+          />
+        </ScannerErrorBoundary>
 
         {/* Seletor de Tipo de Produto */}
         <ProductTypeSelector
