@@ -47,7 +47,8 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const lastScanTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
   const isScanningRef = useRef<boolean>(false);
-  const scanSafetyTimeoutRef = useRef<NodeJS.Timeout>(); // ✅ NOVO: Timeout de segurança
+  const scanSafetyTimeoutRef = useRef<NodeJS.Timeout>();
+  const isCallbackActiveRef = useRef<boolean>(false); // ✅ BUG 3: Controla se callback pode executar
 
   // Cleanup function - ORDEM CRÍTICA!
   const cleanup = useCallback(() => {
@@ -105,7 +106,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       console.log('✅ Video element cleaned');
     }
 
-    // 4. QUARTO: Limpar timeouts
+    // 4. QUARTO: Limpar timeouts E desativar callback
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = undefined;
@@ -115,6 +116,9 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       clearTimeout(scanSafetyTimeoutRef.current);
       scanSafetyTimeoutRef.current = undefined;
     }
+    
+    // ✅ BUG 3: CRITICAL - Desativar callback para prevenir execução após cleanup
+    isCallbackActiveRef.current = false;
 
     // 5. QUINTO: Reset states apenas se montado
     if (isMountedRef.current) {
@@ -313,10 +317,19 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         }
       }, 60000); // 60 segundos
 
+      // ✅ BUG 3: Ativar callback antes de iniciar decode
+      isCallbackActiveRef.current = true;
+
       readerRef.current.decodeFromVideoDevice(
         state.currentDevice,
         videoRef.current,
         (result: any, error: any) => {
+          // ✅ BUG 3: CRITICAL - Verificar se callback ainda é válido
+          if (!isCallbackActiveRef.current) {
+            console.warn('⚠️ Callback ignorado - componente desmontado ou scanning parado');
+            return;
+          }
+
           // ✅ CORREÇÃO A: Try/catch dentro do callback para proteger contra erros
           try {
             if (result) {
@@ -374,6 +387,9 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       // ✅ Resetar AMBOS ref e state em caso de erro
       isScanningRef.current = false;
       setState(prev => ({ ...prev, isScanning: false }));
+      
+      // ✅ BUG 3: Desativar callback em caso de erro
+      isCallbackActiveRef.current = false;
       
       // Limpar timeout de segurança
       if (scanSafetyTimeoutRef.current) {
