@@ -150,23 +150,23 @@ export function useEstoquePagination(products: Product[]) {
       }
     });
     
-    // Combinar produtos da página + relacionados e ordenar
+    // Combinar produtos da página + relacionados
     const allProducts = [...pageSlice, ...relatedProducts];
     
-    // Ordenar: pais primeiro, depois seus filhos
+    // Ordenar mantendo hierarquia pai-filho mas preservando ordem cronológica
     return allProducts.sort((a, b) => {
       // Se A é pai de B, A vem primeiro
       if (a.eh_produto_pai && b.sku_pai === a.sku_interno) return -1;
       if (b.eh_produto_pai && a.sku_pai === b.sku_interno) return 1;
       
-      // Se têm o mesmo pai, manter ordem original
+      // Se têm o mesmo pai, manter ordem por SKU
       if (a.sku_pai && b.sku_pai && a.sku_pai === b.sku_pai) {
         return a.sku_interno.localeCompare(b.sku_interno);
       }
       
-      // Manter ordem da fatia original
-      const indexA = pageSlice.findIndex(p => p.id === a.id);
-      const indexB = pageSlice.findIndex(p => p.id === b.id);
+      // Para produtos sem relação pai-filho, manter ordem original (created_at DESC)
+      const indexA = finalFilteredProducts.findIndex(p => p.id === a.id);
+      const indexB = finalFilteredProducts.findIndex(p => p.id === b.id);
       
       if (indexA !== -1 && indexB !== -1) return indexA - indexB;
       if (indexA !== -1) return -1;
