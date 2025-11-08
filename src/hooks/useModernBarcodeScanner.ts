@@ -194,6 +194,10 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const startCamera = useCallback(async (deviceId?: string) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
+    // ✅ CORREÇÃO BUG 2: Resetar isScanning quando iniciar câmera
+    // Isso garante estado limpo ao reiniciar
+    isScanningRef.current = false;
+    
     try {
       // Stop any existing stream first
       cleanup();
@@ -240,6 +244,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       setState(prev => ({
         ...prev,
         isActive: true,
+        isScanning: false, // ✅ CORREÇÃO BUG 2: Resetar isScanning quando câmera inicia
         isLoading: false,
         currentDevice: deviceId || prev.currentDevice,
         torchSupported,
@@ -261,8 +266,10 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         errorMessage = 'HTTPS required for camera access';
       }
 
+      // ✅ CORREÇÃO BUG 2: Garantir que isScanning também está false em caso de erro
       setState(prev => ({
         ...prev,
+        isScanning: false, // ✅ Estado limpo mesmo com erro
         isLoading: false,
         error: errorMessage,
         hasPermission: false
