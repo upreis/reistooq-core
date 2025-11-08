@@ -275,19 +275,22 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     <div className="flex-1 min-w-0 flex gap-2">
                       {isMobile ? (
                         <>
-                          {/* Foto do primeiro filho - 25% */}
-                          {hasChildren && group.children[0]?.url_imagem && (
-                            <div className="w-[25%] flex-shrink-0">
-                              <img 
-                                src={group.children[0].url_imagem} 
-                                alt={group.children[0].nome || group.parentSku}
-                                className="w-full h-full object-cover rounded-md border border-border"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                          )}
+                          {/* Foto do primeiro filho com imagem - 25% */}
+                          {(() => {
+                            const firstChildWithImage = hasChildren ? group.children.find(c => c.url_imagem) : null;
+                            return firstChildWithImage?.url_imagem ? (
+                              <div className="w-[25%] flex-shrink-0">
+                                <img 
+                                  src={firstChildWithImage.url_imagem} 
+                                  alt={firstChildWithImage.nome || group.parentSku}
+                                  className="w-full h-full object-cover rounded-md border border-border"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            ) : null;
+                          })()}
                           
                           {/* Informações - 75% */}
                           <div className="flex-1 min-w-0 space-y-1">
