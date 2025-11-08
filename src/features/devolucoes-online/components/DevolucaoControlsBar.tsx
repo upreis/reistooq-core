@@ -30,7 +30,7 @@ interface DevolucaoControlsBarProps {
   className?: string;
 }
 
-export const DevolucaoControlsBar = memo<DevolucaoControlsBarProps>(({
+export const DevolucaoControlsBar = memo(({
   autoRefreshEnabled,
   autoRefreshInterval,
   onAutoRefreshToggle,
@@ -41,7 +41,7 @@ export const DevolucaoControlsBar = memo<DevolucaoControlsBarProps>(({
   totalRecords,
   isRefreshing = false,
   className
-}) => {
+}: DevolucaoControlsBarProps) => {
   const formatInterval = (ms: number) => {
     if (ms < 3600000) return `${ms / 60000}min`;
     return `${ms / 3600000}h`;
