@@ -54,8 +54,9 @@ export function ModernBarcodeScanner({
   };
 
   const handleStopScanning = () => {
-    setIsScanning(false);
-    scanner.stopCamera();
+    console.log('🛑 [ModernBarcodeScanner] Stop button clicked');
+    scanner.stopCamera(); // Para a câmera PRIMEIRO
+    setIsScanning(false); // Depois atualiza o estado
   };
 
   const handleManualSubmit = () => {

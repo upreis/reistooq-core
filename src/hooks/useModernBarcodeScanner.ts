@@ -144,16 +144,25 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         }
       });
       
-      // Verify all tracks are stopped
+      // Verify all tracks are stopped after a delay
       setTimeout(() => {
         tracks.forEach((track, index) => {
           console.log(`   Verification ${index + 1}: ${track.kind} - ReadyState: ${track.readyState}`);
+          if (track.readyState !== 'ended') {
+            console.error(`   ❌ WARNING: Track ${index + 1} still active!`);
+            try {
+              track.stop(); // Force stop again
+            } catch (e) {
+              console.error('Failed to force stop:', e);
+            }
+          }
         });
       }, 100);
       
       streamRef.current = null;
+      console.log('✅ [Scanner] Stream reference cleared');
     } else {
-      console.log('⚠️ [Scanner] No stream to stop');
+      console.warn('⚠️ [Scanner] No stream to stop');
     }
 
     // Clear video element thoroughly
@@ -173,8 +182,12 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         console.log('[Scanner] Video already paused');
       }
       
-      // Clear all sources
-      video.srcObject = null;
+      // CRITICAL: Clear srcObject FIRST to release camera
+      if (video.srcObject) {
+        video.srcObject = null;
+        console.log('✅ [Scanner] srcObject cleared');
+      }
+      
       video.src = '';
       video.removeAttribute('src');
       
