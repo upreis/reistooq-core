@@ -278,10 +278,10 @@ export default function MobileTable({
                       className="mt-0.5 h-4 w-4"
                     />
                   )}
-                  <div className="min-w-0 flex-1 space-y-1">
+                  <div className="min-w-0 flex-1 space-y-0.5">
                     {/* Primary info - título mais compacto */}
                     {primaryColumn && (
-                      <h3 className="font-medium text-sm leading-tight text-foreground">
+                      <h3 className="font-medium text-xs leading-tight text-foreground">
                         {primaryColumn.render 
                           ? primaryColumn.render(item[primaryColumn.key], item)
                           : item[primaryColumn.key]
@@ -290,13 +290,13 @@ export default function MobileTable({
                     )}
                     
                     {/* Secondary info - layout em grid compacto */}
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
                       {secondaryColumns.slice(0, 6).map((column) => (
                         <div key={column.key} className="min-w-0">
-                          <span className="text-muted-foreground block leading-tight">
+                          <span className="text-muted-foreground/80 block leading-tight">
                             {column.label}:
                           </span>
-                          <div className="text-foreground font-medium leading-tight">
+                          <div className="text-foreground font-medium leading-tight text-[11px]">
                             {column.render 
                               ? column.render(item[column.key], item)
                               : <span className="truncate block">{item[column.key] || "N/A"}</span>
