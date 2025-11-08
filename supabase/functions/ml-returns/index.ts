@@ -230,6 +230,9 @@ Deno.serve(async (req) => {
                 const firstReview = reviewData?.resource_reviews?.[0];
                 
                 allReturns.push({
+                  // ID da conta de integração para identificar a origem
+                  integration_account_id: accountId,
+                  
                   // Campos principais
                   id: returnData.id,
                   claim_id: returnData.claim_id,
@@ -262,12 +265,12 @@ Deno.serve(async (req) => {
                   destination_zip: shippingAddress?.zip_code || null,
                   destination_neighborhood: shippingAddress?.neighborhood?.name || null,
                   destination_country: shippingAddress?.country?.name || null,
-                  destination_comment: shippingAddress?.comment || null, // ✅ Corrigido
+                  destination_comment: shippingAddress?.comment || null,
                   destination_street_name: shippingAddress?.street_name || null,
                   destination_street_number: shippingAddress?.street_number || null,
                   
                   // Motivo da devolução - NÃO vem na API de returns, precisa buscar do claim
-                  reason_id: claim.reason_id || null, // ✅ Vem do claim, não do return
+                  reason_id: claim.reason_id || null,
                   
                   // Dados de revisão (quando related_entities inclui "reviews")
                   review_method: firstReview?.method || null,
