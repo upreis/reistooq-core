@@ -355,7 +355,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       isMountedRef.current = false;
       cleanup();
     };
-  }, []);
+  }, [loadDevices, checkPermissions, autoStart, startCamera, cleanup]);
 
   return {
     ...state,
