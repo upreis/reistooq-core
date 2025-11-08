@@ -60,7 +60,7 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[86vw] p-0">
+          <SheetContent side="left" className="w-[75vw] max-w-[320px] p-0">
             <UserProfileSidebar
               user={{
                 name: user?.email?.split('@')[0] || 'Usuário',
