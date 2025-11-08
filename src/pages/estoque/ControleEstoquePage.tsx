@@ -148,8 +148,6 @@ export default function ControleEstoquePage() {
         onLocalChange={loadProducts} 
         onTransferClick={() => setTransferenciaModalOpen(true)}
         selectedProductsCount={selectedProducts.length}
-        onCreateParent={() => setParentProductModalOpen(true)}
-        onCreateChild={() => setChildProductModalOpen(true)}
       />
 
       <EstoqueNotifications 
