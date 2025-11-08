@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Plus, Settings, LinkIcon, Trash2, Upload, Filter } from "lucide-react";
+import { Plus, Settings, LinkIcon, Trash2, Upload, Filter, Search, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Package, AlertTriangle, TrendingUp, TrendingDown, X } from "lucide-react";
+import { Package, AlertTriangle, TrendingUp, TrendingDown } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ImportModal } from "@/components/estoque/ImportModal";
 import { EstoqueExport } from "@/components/estoque/EstoqueExport";
@@ -49,6 +49,8 @@ interface EstoqueActionButtonsProps {
   onClearFilters: () => void;
   hasActiveFilters: boolean;
   onSearch: () => void;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
 }
 
 export function EstoqueActionButtons({
@@ -69,7 +71,9 @@ export function EstoqueActionButtons({
   categories,
   onClearFilters,
   hasActiveFilters,
-  onSearch
+  onSearch,
+  searchTerm,
+  onSearchChange
 }: EstoqueActionButtonsProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
@@ -86,10 +90,38 @@ export function EstoqueActionButtons({
     { value: "critical", label: "Crítico", icon: TrendingDown },
   ];
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      onSearch();
+    }
+  };
+
   return (
     <>
       {!isMobile && (
         <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
+          {/* Campo de busca */}
+          <div className="relative flex-1 min-w-[350px] max-w-[450px]">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input 
+              placeholder="Buscar por nome, SKU, código de barras..." 
+              className="pl-10 h-9" 
+              value={searchTerm}
+              onChange={(e) => onSearchChange(e.target.value)}
+              onKeyPress={handleKeyPress}
+            />
+            {searchTerm && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                onClick={() => onSearchChange("")}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </div>
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="default" size="sm">
