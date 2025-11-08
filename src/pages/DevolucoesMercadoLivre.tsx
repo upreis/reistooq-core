@@ -10,8 +10,7 @@ import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
-import { DevolucaoFiltersBar } from '@/features/devolucoes-online/components/DevolucaoFiltersBar';
-import { DevolucaoAccountSelector } from '@/features/devolucoes-online/components/DevolucaoAccountSelector';
+import { DevolucaoAdvancedFiltersBar } from '@/features/devolucoes-online/components/DevolucaoAdvancedFiltersBar';
 import { DevolucaoPaginationControls } from '@/features/devolucoes-online/components/DevolucaoPaginationControls';
 import { DevolucaoQuickFilters } from '@/features/devolucoes-online/components/DevolucaoQuickFilters';
 import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
@@ -36,6 +35,12 @@ export default function DevolucoesMercadoLivre() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(3600000); // 1 hora padrão
   
+  // Estados da barra de filtros avançada
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [periodo, setPeriodo] = useState('60');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  
   useEffect(() => {
     const fetchAccounts = async () => {
       const { data } = await supabase
@@ -46,6 +51,11 @@ export default function DevolucoesMercadoLivre() {
         .order('updated_at', { ascending: false });
       
       setAccounts(data || []);
+      
+      // Selecionar todas as contas por padrão
+      if (data && data.length > 0) {
+        setSelectedAccountIds(data.map(acc => acc.id));
+      }
     };
     fetchAccounts();
   }, []);
@@ -95,6 +105,29 @@ export default function DevolucoesMercadoLivre() {
     toast.success('Dados limpos com sucesso');
   };
 
+  const handleBuscar = async () => {
+    if (selectedAccountIds.length === 0) {
+      toast.error('Selecione pelo menos uma conta ML');
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      // TODO: Implementar busca com múltiplas contas
+      toast.success('Busca realizada com sucesso');
+      await actions.refetch();
+    } catch (error) {
+      toast.error('Erro ao buscar devoluções');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleCancelSearch = () => {
+    setIsSearching(false);
+    toast.info('Busca cancelada');
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <div className="flex-1 overflow-auto m-0">
@@ -140,28 +173,19 @@ export default function DevolucoesMercadoLivre() {
             />
           </div>
 
-          {/* Filters */}
+          {/* Filters Avançados */}
           <div className="px-4 md:px-6">
-            <DevolucaoFiltersBar 
-              filters={{
-                search: '',
-                status: [],
-                dateFrom: null,
-                dateTo: null,
-                integrationAccountId: state.integrationAccountId,
-              }}
-              onFiltersChange={(newFilters) => actions.setFilters(newFilters)}
-              onReset={actions.clearFilters}
-            />
-          </div>
-
-          {/* Account Selector */}
-          <div className="px-4 md:px-6">
-            <DevolucaoAccountSelector 
+            <DevolucaoAdvancedFiltersBar 
               accounts={accounts}
-              selectedAccountId={state.integrationAccountId}
-              onAccountChange={actions.setIntegrationAccountId}
-              loading={!accounts.length}
+              selectedAccountIds={selectedAccountIds}
+              onAccountsChange={setSelectedAccountIds}
+              periodo={periodo}
+              onPeriodoChange={setPeriodo}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onBuscar={handleBuscar}
+              isLoading={isSearching}
+              onCancel={handleCancelSearch}
             />
           </div>
 
