@@ -275,7 +275,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     <div className="flex-1 min-w-0">
                       {isMobile ? (
                         // Layout mobile: mais compacto e organizado
-                        <div className="space-y-1 min-h-[60px]">
+                        <div className="space-y-1 min-h-[60px] w-full">
                           <div 
                             className="cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={(e) => {
@@ -313,6 +313,13 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                               </p>
                             )}
                           </div>
+                          
+                          {/* Linha 4: Estoque Total - apenas mobile e se tiver filhos */}
+                          {hasChildren && (
+                            <div className="text-xs font-semibold text-foreground pt-0.5">
+                              Estoque Total: {group.totalStock}
+                            </div>
+                          )}
                         </div>
                       ) : (
                         // Layout desktop: original
@@ -401,8 +408,8 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       )}
                     </div>
                     
-                    {/* Mostrar estoque APENAS se tiver filhos (agrupador) */}
-                    {hasChildren && (() => {
+                    {/* Mostrar estoque APENAS se tiver filhos (agrupador) - DESKTOP */}
+                    {!isMobile && hasChildren && (() => {
                       // Calcular preços médios dos filhos
                       const avgPrecoCusto = group.children.length > 0
                         ? group.children.reduce((sum, child) => sum + (child.preco_custo || 0), 0) / group.children.length
@@ -417,17 +424,13 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       
                       return (
                         <div className="text-right flex gap-6">
-                          {!isMobile && (
-                            <>
-                              <div className="text-xs text-muted-foreground">
-                                Custo Total: <span className="font-semibold text-foreground">R$ {valorTotalCusto.toFixed(2)}</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Venda Total: <span className="font-semibold text-foreground">R$ {valorTotalVenda.toFixed(2)}</span>
-                              </div>
-                            </>
-                          )}
-                          <div className={isMobile ? "text-xs font-semibold" : "text-sm font-semibold"}>
+                          <div className="text-xs text-muted-foreground">
+                            Custo Total: <span className="font-semibold text-foreground">R$ {valorTotalCusto.toFixed(2)}</span>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Venda Total: <span className="font-semibold text-foreground">R$ {valorTotalVenda.toFixed(2)}</span>
+                          </div>
+                          <div className="text-sm font-semibold">
                             Estoque Total: {group.totalStock}
                           </div>
                         </div>
