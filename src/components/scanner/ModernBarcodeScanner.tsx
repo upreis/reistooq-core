@@ -186,9 +186,14 @@ export function ModernBarcodeScanner({
 
                 {/* Instructions */}
                 <div className="absolute bottom-4 left-0 right-0 text-center">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/70 backdrop-blur-sm rounded-full text-white text-sm font-medium">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                    Posicione o código na área marcada
+                  <div className="inline-flex flex-col items-center gap-1 px-4 py-2 bg-black/70 backdrop-blur-sm rounded-full text-white text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                      Centralize todo o código na área marcada
+                    </div>
+                    <div className="text-xs opacity-75">
+                      Mantenha o código visível por completo
+                    </div>
                   </div>
                 </div>
               </div>

@@ -63,7 +63,7 @@ interface ScannerState {
 export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const {
     preferredCamera = 'back',
-    scanDelay = 500,
+    scanDelay = 200,  // ← Reduzido de 500ms para 200ms para scanner mais responsivo
     autoStart = false,
   } = config;
 
@@ -280,6 +280,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       const hints = new Map();
       hints.set(DecodeHintType.TRY_HARDER, true);
       hints.set(DecodeHintType.ASSUME_GS1, false);
+      hints.set(DecodeHintType.ASSUME_CODE_39_CHECK_DIGIT, true);
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [
         BarcodeFormat.EAN_13, 
         BarcodeFormat.EAN_8, 
@@ -294,23 +295,23 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       ]);
       
       readerRef.current = new BrowserMultiFormatReader(hints);
-      console.log('✅ [Scanner] ZXing reader configured with multiple formats');
+      console.log('✅ [Scanner] ZXing reader configured with enhanced detection');
 
-      // ✅ CONFIGURAÇÃO OTIMIZADA: Resolução balanceada para desktop
+      // ✅ CONFIGURAÇÃO OTIMIZADA: Resolução melhorada para desktop
       const constraints: MediaStreamConstraints = {
         video: deviceId 
           ? { 
               deviceId: { exact: deviceId },
-              width: { ideal: 1280, min: 640 },
-              height: { ideal: 720, min: 480 },
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
               facingMode: preferredCamera === 'back' ? 'environment' : 'user',
-              aspectRatio: { ideal: 1.7777777778 }
+              frameRate: { ideal: 30 }
             }
           : { 
               facingMode: preferredCamera === 'back' ? 'environment' : 'user',
-              width: { ideal: 1280, min: 640 },
-              height: { ideal: 720, min: 480 },
-              aspectRatio: { ideal: 1.7777777778 }
+              width: { ideal: 1920, min: 1280 },
+              height: { ideal: 1080, min: 720 },
+              frameRate: { ideal: 30 }
             },
         audio: false  // ← EXPLICITLY NO AUDIO
       };
@@ -413,18 +414,24 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         videoRef.current,
         (result: any, error: any) => {
           if (!isCallbackActiveRef.current || !isScanningRef.current) {
-            console.log('⚠️ [Scanner] Callback called but scanning inactive');
             return;
           }
 
           try {
             if (result) {
-              const code = result.getText();
+              const code = result.getText().trim();
               const format = result.getBarcodeFormat();
               const now = Date.now();
               
-              console.log(`🎯 [Scanner] BARCODE DETECTED! Code: ${code}, Format: ${format}`);
+              // ✅ VALIDAÇÃO: Código muito curto pode ser leitura parcial
+              if (code.length < 3) {
+                console.warn(`⚠️ [Scanner] Code too short (${code.length} chars), ignoring: ${code}`);
+                return;
+              }
               
+              console.log(`🎯 [Scanner] BARCODE DETECTED! Code: "${code}" (${code.length} chars), Format: ${format}`);
+              
+              // Anti-duplicate com delay menor para desktop
               if (code === lastScanRef.current && now - lastScanTimeRef.current < scanDelay) {
                 console.log('⏭️ [Scanner] Skipping duplicate scan');
                 return;
@@ -441,7 +448,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               // Play success sound
               playSuccessBeep();
               
-              console.log('✅ [Scanner] Processing scanned code:', code);
+              console.log('✅ [Scanner] Processing valid scanned code:', code);
               
               if (scanSafetyTimeoutRef.current) {
                 clearTimeout(scanSafetyTimeoutRef.current);
@@ -449,15 +456,13 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               }
               
               onScan(code);
-            } else {
-              // Log decode attempts every 5 seconds to avoid spam
-              if (Date.now() % 5000 < 100) {
-                console.log('🔍 [Scanner] Searching for barcodes...');
-              }
             }
             
             if (error && !error.name?.includes('NotFound')) {
-              console.warn('[Scanner] Decode error:', error.message);
+              // Log errors occasionally, not every frame
+              if (Date.now() % 3000 < 100) {
+                console.warn('[Scanner] Decode error:', error.message);
+              }
             }
           } catch (callbackError) {
             console.error('❌ [Scanner] Callback error:', callbackError);
