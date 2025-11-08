@@ -46,6 +46,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const lastScanRef = useRef<string>('');
   const lastScanTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
+  const isScanningRef = useRef<boolean>(false); // ✅ NOVO: Ref síncrona para prevenir race condition
 
   // Cleanup function - ORDEM CRÍTICA!
   const cleanup = useCallback(() => {
@@ -111,10 +112,13 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
     // 5. QUINTO: Reset states apenas se montado
     if (isMountedRef.current) {
+      // ✅ Resetar ref síncrona PRIMEIRO
+      isScanningRef.current = false;
+      
       setState(prev => ({
         ...prev,
         isActive: false,
-        isScanning: false, // ✅ IMPORTANTE: Resetar isScanning
+        isScanning: false,
         isLoading: false,
         currentDevice: null,
         torchEnabled: false,
@@ -265,16 +269,19 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       return;
     }
 
-    // ✅ Verificar se já está escaneando
-    if (state.isScanning) {
-      console.warn('⚠️ Scanner already scanning');
+    // ✅ CORREÇÃO BUG 1: Verificar ref SÍNCRONA antes de state assíncrono
+    if (isScanningRef.current) {
+      console.warn('⚠️ Scanner already scanning (prevented race condition)');
       return;
     }
 
     console.log('🔍 Starting barcode scanning...');
 
     try {
-      // ✅ Marcar como escaneando ANTES de iniciar
+      // ✅ Setar ref IMEDIATAMENTE (síncrono) - protege contra duplo clique
+      isScanningRef.current = true;
+      
+      // ✅ Depois atualizar state (assíncrono) - para UI
       setState(prev => ({ ...prev, isScanning: true }));
 
       readerRef.current.decodeFromVideoDevice(
@@ -312,10 +319,12 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       console.log('✅ Barcode scanning started successfully');
     } catch (error) {
       console.error('❌ Failed to start scanning:', error);
-      setState(prev => ({ ...prev, isScanning: false })); // ✅ Resetar em caso de erro
+      // ✅ Resetar AMBOS ref e state em caso de erro
+      isScanningRef.current = false;
+      setState(prev => ({ ...prev, isScanning: false }));
       toast.error('Falha ao iniciar escaneamento');
     }
-  }, [state.currentDevice, state.isScanning, scanDelay]);
+  }, [state.currentDevice, scanDelay]);
 
   // Toggle torch
   const toggleTorch = useCallback(async () => {
@@ -361,6 +370,9 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     return () => {
       console.log('🧹 Unmounting - Cleaning up scanner...');
       isMountedRef.current = false;
+      
+      // ✅ Resetar ref síncrona no unmount também
+      isScanningRef.current = false;
       
       // Cleanup inline - executa na desmontagem do componente
       // 1. Parar scanner ZXing
