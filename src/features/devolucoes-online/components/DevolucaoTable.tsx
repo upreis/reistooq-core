@@ -10,14 +10,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MLReturn } from '../types/devolucao.types';
+import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import type { StatusAnalise } from '../types/devolucao-analise.types';
 
-interface DevolucaoTableProps {
-  devolucoes: MLReturn[];
-  isLoading: boolean;
-  error: string | null;
+interface DevolucaoTableWithAnalise extends MLReturn {
+  status_analise?: StatusAnalise;
 }
 
-export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoTableProps) => {
+interface DevolucaoTableProps {
+  devolucoes: DevolucaoTableWithAnalise[];
+  isLoading: boolean;
+  error: string | null;
+  onStatusChange?: (devolucaoId: string, newStatus: StatusAnalise) => void;
+}
+
+export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChange }: DevolucaoTableProps) => {
 
   if (error) {
     return (
@@ -141,6 +148,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
+            <TableHead className="font-semibold sticky left-0 bg-muted/50 z-10">Análise</TableHead>
             <TableHead className="font-semibold">ID Devolução</TableHead>
             <TableHead className="font-semibold">Claim ID</TableHead>
             <TableHead className="font-semibold">Order ID</TableHead>
@@ -184,8 +192,18 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error }: DevolucaoT
         <TableBody>
           {devolucoes.map((dev) => {
             const firstOrder = dev.orders?.[0];
+            const currentStatus = dev.status_analise || ('pendente' as StatusAnalise);
+            
             return (
               <TableRow key={dev.id} className="hover:bg-muted/50 transition-colors">
+                <TableCell className="sticky left-0 bg-background z-10">
+                  {onStatusChange && (
+                    <StatusAnaliseSelect
+                      value={currentStatus}
+                      onChange={(newStatus) => onStatusChange(String(dev.id), newStatus)}
+                    />
+                  )}
+                </TableCell>
                 <TableCell className="font-medium text-xs">
                   {dev.id}
                 </TableCell>

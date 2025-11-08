@@ -1,12 +1,13 @@
 /**
- * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA PRINCIPAL REFATORADA
- * Arquitetura robusta com manager centralizado, cache e persistência
+ * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA COM TABS E ANÁLISE
+ * Sistema completo com tabs Ativas/Histórico e status de análise
  */
 
 import { useEffect, useMemo, useState } from 'react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useDevolucaoManager } from '@/features/devolucoes-online/hooks/useDevolucaoManager';
 import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/usePersistentDevolucaoState';
+import { useDevolucaoStorage } from '@/features/devolucoes-online/hooks/useDevolucaoStorage';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
@@ -14,8 +15,12 @@ import { DevolucaoAdvancedFiltersBar } from '@/features/devolucoes-online/compon
 import { DevolucaoPaginationControls } from '@/features/devolucoes-online/components/DevolucaoPaginationControls';
 import { DevolucaoQuickFilters } from '@/features/devolucoes-online/components/DevolucaoQuickFilters';
 import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import type { StatusAnalise, STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/devolucoes-online/types/devolucao-analise.types';
+import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '@/features/devolucoes-online/types/devolucao-analise.types';
 
 export default function DevolucoesMercadoLivre() {
   // Manager centralizado
@@ -24,6 +29,9 @@ export default function DevolucoesMercadoLivre() {
   
   // Persistência de estado
   const persistentState = usePersistentDevolucaoState();
+  
+  // Storage para status de análise
+  const { analiseStatus, setAnaliseStatus, clearOldData, clearStorage } = useDevolucaoStorage();
   
   // Carregar contas ML com nome
   const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
@@ -40,6 +48,9 @@ export default function DevolucoesMercadoLivre() {
   const [periodo, setPeriodo] = useState('60');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Tab ativa (Ativas/Histórico)
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -59,6 +70,11 @@ export default function DevolucoesMercadoLivre() {
     };
     fetchAccounts();
   }, []);
+
+  // Limpar dados antigos ao montar
+  useEffect(() => {
+    clearOldData();
+  }, [clearOldData]);
 
   // Restaurar estado persistido
   useEffect(() => {
@@ -89,10 +105,27 @@ export default function DevolucoesMercadoLivre() {
     refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
   }), [state.devolucoes, state.total]);
 
-  // Determinar dados para exibição (filtro rápido tem prioridade)
-  const displayData = useMemo(() => {
-    return filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
-  }, [filteredByQuickFilter, state.devolucoes]);
+  // Adicionar status de análise às devoluções
+  const devolucoesComAnalise = useMemo(() => {
+    const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
+    
+    return dataToUse.map((dev) => ({
+      ...dev,
+      status_analise: analiseStatus[dev.id]?.status || ('pendente' as StatusAnalise),
+    }));
+  }, [filteredByQuickFilter, state.devolucoes, analiseStatus]);
+
+  // Separar em Ativas e Histórico
+  const devolucoesFiltradas = useMemo(() => {
+    const ativas = devolucoesComAnalise.filter((dev) =>
+      ACTIVE_STATUSES.includes(dev.status_analise)
+    );
+    const historico = devolucoesComAnalise.filter((dev) =>
+      HISTORIC_STATUSES.includes(dev.status_analise)
+    );
+    
+    return { ativas, historico };
+  }, [devolucoesComAnalise]);
 
   // Handlers para controles
   const handleExport = () => {
@@ -102,7 +135,17 @@ export default function DevolucoesMercadoLivre() {
   const handleClear = () => {
     actions.clearFilters();
     setFilteredByQuickFilter([]);
+    clearStorage();
     toast.success('Dados limpos com sucesso');
+  };
+
+  const handleStatusChange = (devolucaoId: string, newStatus: StatusAnalise) => {
+    setAnaliseStatus(devolucaoId, newStatus);
+    
+    // Se mudou para histórico e está na tab ativas, mostrar mensagem
+    if (HISTORIC_STATUSES.includes(newStatus) && activeTab === 'ativas') {
+      toast.success('Devolução movida para Histórico');
+    }
   };
 
   const handleBuscar = async () => {
@@ -189,13 +232,40 @@ export default function DevolucoesMercadoLivre() {
             />
           </div>
 
-          {/* Table */}
+          {/* Tabs Ativas/Histórico */}
           <div className="px-4 md:px-6">
-            <DevolucaoTable 
-              devolucoes={displayData}
-              isLoading={state.loading}
-              error={state.error}
-            />
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="ativas">
+                  Ativas ({devolucoesFiltradas.ativas.length})
+                </TabsTrigger>
+                <TabsTrigger value="historico">
+                  Histórico ({devolucoesFiltradas.historico.length})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="ativas">
+                <Card>
+                  <DevolucaoTable 
+                    devolucoes={devolucoesFiltradas.ativas}
+                    isLoading={state.loading}
+                    error={state.error}
+                    onStatusChange={handleStatusChange}
+                  />
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="historico">
+                <Card>
+                  <DevolucaoTable 
+                    devolucoes={devolucoesFiltradas.historico}
+                    isLoading={state.loading}
+                    error={state.error}
+                    onStatusChange={handleStatusChange}
+                  />
+                </Card>
+              </TabsContent>
+            </Tabs>
           </div>
 
           {/* Pagination */}
