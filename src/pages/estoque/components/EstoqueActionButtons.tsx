@@ -7,6 +7,7 @@ import { EstoqueReports } from "@/components/estoque/EstoqueReports";
 import { EstoqueSettings } from "@/components/estoque/EstoqueSettings";
 import { Product } from "@/hooks/useProducts";
 import { useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EstoqueActionButtonsProps {
   selectedProducts: string[];
@@ -30,6 +31,7 @@ export function EstoqueActionButtons({
   onImportSuccess
 }: EstoqueActionButtonsProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   return (
     <>
@@ -73,30 +75,35 @@ export function EstoqueActionButtons({
         </>
       )}
       
-      <Button 
-        variant="outline" 
-        size="sm"
-        onClick={() => setImportModalOpen(true)}
-      >
-        <Upload className="h-4 w-4 mr-2" />
-        Importar
-      </Button>
-      
-      <EstoqueExport 
-        products={products}
-        filteredProducts={finalFilteredProducts}
-      />
-      
-      <EstoqueReports products={products} />
-      
-      <EstoqueSettings />
-      
-      <Button variant="outline" size="sm" asChild>
-        <Link to="/category-manager">
-          <Settings className="h-4 w-4 mr-2" />
-          Gerenciar Categorias
-        </Link>
-      </Button>
+      {/* Ocultar botões adicionais em mobile */}
+      {!isMobile && (
+        <>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setImportModalOpen(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Importar
+          </Button>
+          
+          <EstoqueExport 
+            products={products}
+            filteredProducts={finalFilteredProducts}
+          />
+          
+          <EstoqueReports products={products} />
+          
+          <EstoqueSettings />
+          
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/category-manager">
+              <Settings className="h-4 w-4 mr-2" />
+              Gerenciar Categorias
+            </Link>
+          </Button>
+        </>
+      )}
     </div>
 
     <ImportModal
