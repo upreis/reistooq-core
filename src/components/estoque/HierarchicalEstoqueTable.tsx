@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Filter, Plus } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -332,10 +332,36 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                               )}
                             </div>
                             
-                            {/* Linha 4: Estoque Total - apenas mobile e se tiver filhos */}
+                            {/* Linha 4: Estoque Total com ícones - apenas mobile e se tiver filhos */}
                             {hasChildren && (
-                              <div className="text-xs font-semibold text-foreground pt-0.5">
-                                Estoque Total: {group.totalStock}
+                              <div className="flex items-center gap-2 pt-0.5">
+                                <span className="text-xs font-semibold text-foreground">
+                                  Estoque Total: {group.totalStock}
+                                </span>
+                                <div className="flex items-center gap-1.5 ml-auto">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    className="h-8 w-8 p-0 rounded-lg bg-muted hover:bg-muted/80"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // TODO: Implementar filtro
+                                    }}
+                                  >
+                                    <Filter className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="default" 
+                                    size="sm" 
+                                    className="h-8 w-8 p-0 rounded-lg bg-primary hover:bg-primary/90"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // TODO: Implementar adicionar
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
