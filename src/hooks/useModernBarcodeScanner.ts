@@ -10,6 +10,7 @@ interface ScannerConfig {
 
 interface ScannerState {
   isActive: boolean;
+  isScanning: boolean; // ✅ NOVO: Estado de scanning separado
   isLoading: boolean;
   hasPermission: boolean | null;
   error: string | null;
@@ -28,6 +29,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
   const [state, setState] = useState<ScannerState>({
     isActive: false,
+    isScanning: false, // ✅ NOVO: Inicializa isScanning
     isLoading: false,
     hasPermission: null,
     error: null,
@@ -112,6 +114,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       setState(prev => ({
         ...prev,
         isActive: false,
+        isScanning: false, // ✅ IMPORTANTE: Resetar isScanning
         isLoading: false,
         currentDevice: null,
         torchEnabled: false,
@@ -257,11 +260,23 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   // Start scanning
   const startScanning = useCallback((onScan: (code: string) => void) => {
     if (!readerRef.current || !videoRef.current) {
-      console.error('Scanner not initialized');
+      console.error('❌ Scanner not initialized - cannot start scanning');
+      toast.error('Câmera não está ativa');
       return;
     }
 
+    // ✅ Verificar se já está escaneando
+    if (state.isScanning) {
+      console.warn('⚠️ Scanner already scanning');
+      return;
+    }
+
+    console.log('🔍 Starting barcode scanning...');
+
     try {
+      // ✅ Marcar como escaneando ANTES de iniciar
+      setState(prev => ({ ...prev, isScanning: true }));
+
       readerRef.current.decodeFromVideoDevice(
         state.currentDevice,
         videoRef.current,
@@ -293,11 +308,14 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
           }
         }
       );
+
+      console.log('✅ Barcode scanning started successfully');
     } catch (error) {
-      console.error('Failed to start scanning:', error);
-      toast.error('Failed to start barcode scanning');
+      console.error('❌ Failed to start scanning:', error);
+      setState(prev => ({ ...prev, isScanning: false })); // ✅ Resetar em caso de erro
+      toast.error('Falha ao iniciar escaneamento');
     }
-  }, [state.currentDevice, scanDelay]);
+  }, [state.currentDevice, state.isScanning, scanDelay]);
 
   // Toggle torch
   const toggleTorch = useCallback(async () => {
