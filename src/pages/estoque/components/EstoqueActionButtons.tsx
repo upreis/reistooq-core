@@ -5,7 +5,6 @@ import { ImportModal } from "@/components/estoque/ImportModal";
 import { EstoqueExport } from "@/components/estoque/EstoqueExport";
 import { EstoqueReports } from "@/components/estoque/EstoqueReports";
 import { EstoqueSettings } from "@/components/estoque/EstoqueSettings";
-import { EstoqueScannerButton } from "@/components/estoque/EstoqueScannerButton";
 import { Product } from "@/hooks/useProducts";
 import { useState } from "react";
 
@@ -18,7 +17,6 @@ interface EstoqueActionButtonsProps {
   onLinkChild: () => void;
   onDelete: () => void;
   onImportSuccess: () => void;
-  onScanResult: (code: string) => void;
 }
 
 export function EstoqueActionButtons({
@@ -29,16 +27,13 @@ export function EstoqueActionButtons({
   onCreateChild,
   onLinkChild,
   onDelete,
-  onImportSuccess,
-  onScanResult
+  onImportSuccess
 }: EstoqueActionButtonsProps) {
   const [importModalOpen, setImportModalOpen] = useState(false);
 
   return (
     <>
       <div className="flex flex-wrap gap-2 p-4 bg-card/50 border border-border rounded-lg shadow-sm">
-      <EstoqueScannerButton onScanResult={onScanResult} />
-      
       <Button 
         variant="default" 
         size="sm"

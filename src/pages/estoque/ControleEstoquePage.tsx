@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { Product, useProducts } from "@/hooks/useProducts";
+import { Product } from "@/hooks/useProducts";
 import { EstoqueFilters } from "@/components/estoque/EstoqueFilters";
 import { HierarchicalEstoqueTable } from "@/components/estoque/HierarchicalEstoqueTable";
 import { EstoqueNotifications } from "@/components/estoque/EstoqueNotifications";
@@ -15,8 +15,6 @@ import { EstoqueActionButtons } from "./components/EstoqueActionButtons";
 import { EstoquePagination } from "./components/EstoquePagination";
 import { EstoqueModals } from "./components/EstoqueModals";
 import { TransferenciaEstoqueModal } from "@/components/estoque/TransferenciaEstoqueModal";
-import { ProductTypeSelectionDialog } from "@/components/estoque/ProductTypeSelectionDialog";
-import { toast as toastSonner } from 'sonner';
 
 export default function ControleEstoquePage() {
   // Modal states
@@ -28,13 +26,8 @@ export default function ControleEstoquePage() {
   const [transferenciaModalOpen, setTransferenciaModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [editingParentProduct, setEditingParentProduct] = useState<Product | null>(null);
-  
-  // Scanner states
-  const [typeSelectionOpen, setTypeSelectionOpen] = useState(false);
-  const [scannedCode, setScannedCode] = useState<string>("");
 
   const { toast } = useToast();
-  const { getProducts } = useProducts();
   
   // Custom hooks
   const {
@@ -149,68 +142,6 @@ export default function ControleEstoquePage() {
     });
   };
 
-  // Scanner handlers
-  const findProductByCode = async (code: string): Promise<Product | null> => {
-    try {
-      console.log('🔍 Buscando produto por código:', code);
-      
-      const products = await getProducts({
-        search: code,
-        limit: 10
-      });
-      
-      const exactMatch = products.find(p => 
-        p.codigo_barras === code || p.sku_interno === code
-      );
-      
-      console.log(exactMatch ? '✅ Produto encontrado!' : '❌ Produto não encontrado');
-      return exactMatch || null;
-      
-    } catch (error) {
-      console.error('Erro ao buscar produto:', error);
-      return null;
-    }
-  };
-
-  const handleScanResult = async (code: string) => {
-    console.log('📱 Código escaneado:', code);
-    setScannedCode(code);
-    
-    try {
-      const existingProduct = await findProductByCode(code);
-      
-      if (existingProduct) {
-        // Produto existe - abrir modal para editar
-        setEditingProduct(existingProduct);
-        setEditModalOpen(true);
-        toastSonner.success(`Produto encontrado: ${existingProduct.nome}`);
-        
-        // Vibração
-        if ('vibrate' in navigator) {
-          navigator.vibrate([100, 50, 100]);
-        }
-      } else {
-        // Produto não existe - abrir diálogo de seleção de tipo
-        setTypeSelectionOpen(true);
-      }
-      
-    } catch (error: any) {
-      console.error('❌ Erro ao processar código:', error);
-      toastSonner.error('Erro ao processar código');
-    }
-  };
-
-  const handleCreateParent = () => {
-    setTypeSelectionOpen(false);
-    setEditingParentProduct(null);
-    setParentProductModalOpen(true);
-  };
-
-  const handleCreateChild = () => {
-    setTypeSelectionOpen(false);
-    setChildProductModalOpen(true);
-  };
-
   return (
     <div className="space-y-6">
       <EstoqueHeader 
@@ -258,7 +189,6 @@ export default function ControleEstoquePage() {
         onLinkChild={() => setLinkChildModalOpen(true)}
         onDelete={handleDeleteSelected}
         onImportSuccess={loadProducts}
-        onScanResult={handleScanResult}
       />
 
       <EstoqueFilters
@@ -338,7 +268,6 @@ export default function ControleEstoquePage() {
         setDeleteConfirmOpen={setDeleteConfirmOpen}
         deleteErrors={deleteErrors}
         setDeleteErrors={setDeleteErrors}
-        scannedBarcode={scannedCode}
       />
 
       <TransferenciaEstoqueModal
@@ -353,14 +282,6 @@ export default function ControleEstoquePage() {
           setSelectedProducts([]);
           loadProducts();
         }}
-      />
-
-      <ProductTypeSelectionDialog
-        open={typeSelectionOpen}
-        onOpenChange={setTypeSelectionOpen}
-        scannedCode={scannedCode}
-        onSelectParent={handleCreateParent}
-        onSelectChild={handleCreateChild}
       />
     </div>
   );
