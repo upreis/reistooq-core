@@ -126,7 +126,8 @@ export function CreateChildProductModal({
         });
       }
     }
-  }, [open, initialBarcode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialBarcode]); // loadParentProducts e refreshCategories são estáveis
 
   // Separate useEffect for cleanup to avoid dependencies issues
   useEffect(() => {
@@ -179,7 +180,6 @@ export function CreateChildProductModal({
   };
 
   const handleAddVariation = () => {
-    const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
     setVariations([...variations, { 
       suffix: '', 
       nome: '',
@@ -190,7 +190,7 @@ export function CreateChildProductModal({
       localizacao: '',
       estoque_minimo: 0,
       estoque_maximo: 0,
-      unidade_medida_id: unidadePadrao?.id || '',
+      unidade_medida_id: '',
       sob_encomenda: false,
       dias_preparacao: 0,
       peso_liquido: 0,
@@ -318,7 +318,6 @@ export function CreateChildProductModal({
   };
 
   const handleClose = () => {
-    const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
     setSelectedCategoriaPrincipal('');
     setSelectedCategoria('');
     setSelectedParentSku('');
@@ -332,7 +331,7 @@ export function CreateChildProductModal({
       localizacao: '',
       estoque_minimo: 0,
       estoque_maximo: 0,
-      unidade_medida_id: unidadePadrao?.id || '',
+      unidade_medida_id: '',
       sob_encomenda: false,
       dias_preparacao: 0,
       peso_liquido: 0,
