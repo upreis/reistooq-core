@@ -8,6 +8,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { EstoqueTable } from "./EstoqueTable";
 import { Product } from "@/hooks/useProducts";
 import { SkuGroup, groupProductsBySku } from "@/utils/skuGrouping";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HierarchicalEstoqueTableProps {
   products: Product[];
@@ -26,6 +27,7 @@ interface HierarchicalEstoqueTableProps {
 export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [showHierarchy, setShowHierarchy] = useState(true);
+  const isMobile = useIsMobile();
 
   // 🚀 OTIMIZAÇÃO: Memoizar agrupamento de produtos
   const groups = useMemo(() => groupProductsBySku(props.products), [props.products]);
@@ -130,19 +132,21 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   if (!showHierarchy) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowHierarchy(true)}
-          >
-            <Users className="w-4 h-4 mr-2" />
-            Visualização Hierárquica
-          </Button>
-          <div className="text-sm text-muted-foreground">
-            {props.products.length} produtos
+        {!isMobile && (
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHierarchy(true)}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Visualização Hierárquica
+            </Button>
+            <div className="text-sm text-muted-foreground">
+              {props.products.length} produtos
+            </div>
           </div>
-        </div>
+        )}
         <EstoqueTable 
           {...props} 
           products={organizedProducts}
@@ -159,44 +163,46 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
   return (
     <div className="space-y-4">
       {/* Controles de visualização */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {/* Checkbox para selecionar todos */}
-          <div className="flex items-center gap-2 border-r pr-3">
-            <Checkbox
-              checked={props.selectedProducts.length === props.products.length && props.products.length > 0}
-              onCheckedChange={props.onSelectAll}
-            />
-            <span className="text-sm text-muted-foreground">
-              Selecionar Todos ({props.selectedProducts.length}/{props.products.length})
-            </span>
+      {!isMobile && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {/* Checkbox para selecionar todos */}
+            <div className="flex items-center gap-2 border-r pr-3">
+              <Checkbox
+                checked={props.selectedProducts.length === props.products.length && props.products.length > 0}
+                onCheckedChange={props.onSelectAll}
+              />
+              <span className="text-sm text-muted-foreground">
+                Selecionar Todos ({props.selectedProducts.length}/{props.products.length})
+              </span>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowHierarchy(!showHierarchy)}
+            >
+              {showHierarchy ? <Package className="w-4 h-4 mr-2" /> : <Users className="w-4 h-4 mr-2" />}
+              {showHierarchy ? "Visualização Hierárquica" : "Visualização Tradicional"}
+            </Button>
+            
+            {showHierarchy && (
+              <>
+                <Button variant="ghost" size="sm" onClick={expandAll}>
+                  Expandir Todos
+                </Button>
+                <Button variant="ghost" size="sm" onClick={collapseAll}>
+                  Recolher Todos
+                </Button>
+              </>
+            )}
           </div>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowHierarchy(!showHierarchy)}
-          >
-            {showHierarchy ? <Package className="w-4 h-4 mr-2" /> : <Users className="w-4 h-4 mr-2" />}
-            {showHierarchy ? "Visualização Hierárquica" : "Visualização Tradicional"}
-          </Button>
-          
-          {showHierarchy && (
-            <>
-              <Button variant="ghost" size="sm" onClick={expandAll}>
-                Expandir Todos
-              </Button>
-              <Button variant="ghost" size="sm" onClick={collapseAll}>
-                Recolher Todos
-              </Button>
-            </>
-          )}
+          <div className="text-sm text-muted-foreground">
+            {groups.length} grupos • {props.products.length} produtos
+          </div>
         </div>
-        
-        <div className="text-sm text-muted-foreground">
-          {groups.length} grupos • {props.products.length} produtos
-        </div>
-      </div>
+      )}
 
       {/* Grupos hierárquicos */}
       <div className="space-y-3">
