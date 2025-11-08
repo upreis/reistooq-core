@@ -297,7 +297,7 @@ export default function MobileTable({
                       .filter(col => 
                         col.key === 'sku_interno' || 
                         col.key === 'nome' || 
-                        col.key === 'categoria_principal' || 
+                        col.key === 'categoria' || 
                         col.key === 'quantidade_atual' ||
                         col.key === 'estoque_range'
                       )
