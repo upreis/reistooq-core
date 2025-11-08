@@ -108,9 +108,19 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
   };
 
   // Filtrar apenas De-Para, Estoque e Scanner
-  const filteredNavItems = ENHANCED_NAV_ITEMS[0].items.filter(
-    item => item.id === 'depara' || item.id === 'estoque' || item.id === 'scanner'
-  );
+  const filteredNavItems = ENHANCED_NAV_ITEMS[0].items
+    .filter(item => item.id === 'depara' || item.id === 'estoque' || item.id === 'scanner')
+    .map(item => {
+      // Se for o item Estoque, remover os children (Composições e Histórico)
+      if (item.id === 'estoque') {
+        return {
+          ...item,
+          children: undefined,
+          path: '/estoque' // Adicionar path direto
+        };
+      }
+      return item;
+    });
 
   return (
     <div className="md:hidden sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b safe-area-top">
