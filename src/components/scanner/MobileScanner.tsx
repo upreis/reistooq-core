@@ -28,18 +28,25 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   const scannerRef = useRef<any>(null);
   const lastScanRef = useRef<string>('');
   const scanTimeoutRef = useRef<NodeJS.Timeout>();
+  const isMountedRef = useRef<boolean>(true);
+  const isInitializingRef = useRef<boolean>(false);
 
   useEffect(() => {
+    isMountedRef.current = true;
     setIsNative(Capacitor.isNativePlatform());
     
     return () => {
+      isMountedRef.current = false;
       cleanup();
     };
   }, []);
 
   const cleanup = () => {
+    console.log('🧹 Limpando recursos da câmera...');
+    
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = undefined;
     }
     
     if (scannerRef.current) {
@@ -52,14 +59,19 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
     }
     
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log('🔴 Track parado:', track.kind);
+      });
       setStream(null);
     }
     
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      videoRef.current.pause();
     }
     
+    isInitializingRef.current = false;
     setIsScanning(false);
     setTorchEnabled(false);
   };
@@ -101,24 +113,36 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   };
 
   const startWebCamera = async () => {
+    // Prevenir inicializações simultâneas
+    if (isInitializingRef.current) {
+      console.log('⚠️ Inicialização já em andamento, ignorando...');
+      return;
+    }
+
     try {
       console.log('🚀 Iniciando câmera web...');
+      isInitializingRef.current = true;
 
       if (!window.isSecureContext && location.hostname !== 'localhost') {
         const msg = 'HTTPS necessário para acessar câmera';
         toast.error(msg);
         onError?.(msg);
+        isInitializingRef.current = false;
         return;
       }
 
-      // Configurar vídeo para iOS
-      if (videoRef.current) {
-        videoRef.current.setAttribute('autoplay', 'true');
-        videoRef.current.setAttribute('muted', 'true');
-        videoRef.current.setAttribute('playsinline', 'true');
+      // Limpar recursos anteriores antes de iniciar novos
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if (scannerRef.current) {
+        try {
+          scannerRef.current.reset();
+        } catch (e) {}
+        scannerRef.current = null;
       }
 
-      cleanup();
+      // Setar estado de scanning
       setIsScanning(true);
 
       // Solicitar permissão e stream
@@ -131,28 +155,56 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
         audio: false
       });
 
+      // Verificar se componente ainda está montado
+      if (!isMountedRef.current) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
+      console.log('✅ Stream obtido:', mediaStream.getVideoTracks().length, 'video tracks');
       setStream(mediaStream);
 
       if (videoRef.current) {
+        // Configurar vídeo ANTES de atribuir o stream
+        videoRef.current.muted = true;
+        videoRef.current.playsInline = true;
+        
+        // Atribuir stream
         videoRef.current.srcObject = mediaStream;
         
-        videoRef.current.onloadedmetadata = async () => {
+        // Handler único para loadedmetadata
+        const handleMetadata = async () => {
+          if (!isMountedRef.current || !videoRef.current) return;
+          
           try {
-            await videoRef.current?.play();
-            console.log('✅ Vídeo iniciado');
+            await videoRef.current.play();
+            console.log('✅ Vídeo reproduzindo');
             
-            // Iniciar decodificação após vídeo carregar
-            setTimeout(() => startDecoding(), 300);
+            // Aguardar um frame antes de iniciar decodificação
+            requestAnimationFrame(() => {
+              if (isMountedRef.current) {
+                startDecoding();
+              }
+            });
           } catch (err) {
             console.error('❌ Erro ao reproduzir:', err);
-            toast.error('Erro ao iniciar vídeo');
-            cleanup();
+            if (isMountedRef.current) {
+              toast.error('Erro ao iniciar vídeo');
+              cleanup();
+            }
           }
         };
+
+        // Remover listeners anteriores
+        videoRef.current.onloadedmetadata = null;
+        // Adicionar novo listener
+        videoRef.current.addEventListener('loadedmetadata', handleMetadata, { once: true });
       }
 
     } catch (error: any) {
       console.error('❌ Erro ao acessar câmera:', error);
+      
+      if (!isMountedRef.current) return;
       
       let errorMessage = 'Erro ao acessar câmera';
       if (error.name === 'NotAllowedError') {
@@ -166,18 +218,31 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
       toast.error(errorMessage);
       onError?.(errorMessage);
       cleanup();
+    } finally {
+      isInitializingRef.current = false;
     }
   };
 
   const startDecoding = async () => {
+    if (!isMountedRef.current || !videoRef.current) {
+      console.log('⚠️ Componente desmontado, cancelando decodificação');
+      return;
+    }
+
     try {
+      console.log('📸 Iniciando decodificação...');
       const { BrowserMultiFormatReader } = await import('@zxing/browser');
+      
+      if (!isMountedRef.current) return;
+      
       scannerRef.current = new BrowserMultiFormatReader();
 
-      scannerRef.current.decodeFromVideoDevice(
+      await scannerRef.current.decodeFromVideoDevice(
         undefined,
         videoRef.current,
         (result: any, error: any) => {
+          if (!isMountedRef.current) return;
+
           if (result) {
             const code = result.getText();
             
@@ -206,8 +271,10 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
       
     } catch (error) {
       console.error('❌ Erro ao inicializar scanner:', error);
-      toast.error('Erro ao inicializar scanner');
-      onError?.('Erro ao inicializar scanner');
+      if (isMountedRef.current) {
+        toast.error('Erro ao inicializar scanner');
+        onError?.('Erro ao inicializar scanner');
+      }
     }
   };
 
@@ -263,6 +330,11 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   };
 
   const handleStartCamera = () => {
+    if (isInitializingRef.current) {
+      console.log('⚠️ Câmera já está sendo inicializada');
+      return;
+    }
+    
     if (isNative) {
       startNativeCamera();
     } else {
