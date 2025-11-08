@@ -131,37 +131,42 @@ export function CreateChildProductModal({
   // Separate useEffect for cleanup to avoid dependencies issues
   useEffect(() => {
     if (!open) {
-      // Reset apenas quando modal fecha
-      const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
-      const defaultVariation = { 
-        suffix: '', 
-        nome: '',
-        quantity: 0, 
-        barcode: '',
-        preco_custo: 0,
-        preco_venda: 0,
-        localizacao: '',
-        estoque_minimo: 0,
-        estoque_maximo: 0,
-        unidade_medida_id: unidadePadrao?.id || '',
-        sob_encomenda: false,
-        dias_preparacao: 0,
-        peso_liquido: 0,
-        peso_bruto: 0,
-        numero_volumes: 1,
-        tipo_embalagem: '',
-        largura: 0,
-        altura: 0,
-        comprimento: 0,
-        ncm: '',
-        codigo_cest: '',
-        origem: null,
-        descricao: '',
-        imagem: null,
-        url_imagem: '',
-      };
+      // Reset apenas quando modal fecha - usando callback para evitar dependências
+      setVariations(prev => {
+        // Só resetar se realmente precisa (evita loops)
+        if (prev.length !== 1 || prev[0].suffix !== '' || prev[0].barcode !== '') {
+          const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
+          return [{ 
+            suffix: '', 
+            nome: '',
+            quantity: 0, 
+            barcode: '',
+            preco_custo: 0,
+            preco_venda: 0,
+            localizacao: '',
+            estoque_minimo: 0,
+            estoque_maximo: 0,
+            unidade_medida_id: unidadePadrao?.id || '',
+            sob_encomenda: false,
+            dias_preparacao: 0,
+            peso_liquido: 0,
+            peso_bruto: 0,
+            numero_volumes: 1,
+            tipo_embalagem: '',
+            largura: 0,
+            altura: 0,
+            comprimento: 0,
+            ncm: '',
+            codigo_cest: '',
+            origem: null,
+            descricao: '',
+            imagem: null,
+            url_imagem: '',
+          }];
+        }
+        return prev;
+      });
       
-      setVariations([defaultVariation]);
       setSelectedCategoriaPrincipal('');
       setSelectedCategoria('');
       setSelectedParentSku('');

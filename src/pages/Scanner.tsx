@@ -26,17 +26,39 @@ const Scanner = () => {
 
   const findProductByCode = async (code: string): Promise<Product | null> => {
     try {
-      console.log('🔍 Buscando produto por código:', code);
+      // Validar e sanitizar input
+      const sanitizedCode = code.trim();
+      
+      // Validação de segurança
+      if (!sanitizedCode) {
+        console.warn('⚠️ Código vazio ignorado');
+        return null;
+      }
+      
+      if (sanitizedCode.length > 100) {
+        console.warn('⚠️ Código muito longo ignorado:', sanitizedCode.length);
+        toast.error('Código de barras inválido (muito longo)');
+        return null;
+      }
+      
+      // Permitir apenas caracteres alfanuméricos, hífens e underscores
+      if (!/^[A-Za-z0-9\-_]+$/.test(sanitizedCode)) {
+        console.warn('⚠️ Código com caracteres inválidos');
+        toast.error('Código de barras contém caracteres inválidos');
+        return null;
+      }
+      
+      console.log('🔍 Buscando produto por código:', sanitizedCode.substring(0, 20) + '...');
       
       // Busca direta no banco por código de barras ou SKU
       const products = await getProducts({
-        search: code,
+        search: sanitizedCode,
         limit: 10
       });
       
       // Encontrar produto que tenha exatamente esse código
       const exactMatch = products.find(p => 
-        p.codigo_barras === code || p.sku_interno === code
+        p.codigo_barras === sanitizedCode || p.sku_interno === sanitizedCode
       );
       
       console.log(exactMatch ? '✅ Produto encontrado!' : '❌ Produto não encontrado');
@@ -44,6 +66,7 @@ const Scanner = () => {
       
     } catch (error) {
       console.error('Erro ao buscar produto:', error);
+      toast.error('Erro ao buscar produto no banco de dados');
       return null;
     }
   };

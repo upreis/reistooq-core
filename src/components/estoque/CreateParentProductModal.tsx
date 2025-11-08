@@ -40,27 +40,29 @@ export function CreateParentProductModal({
 
   // Preencher campos quando editando ou com código escaneado
   useEffect(() => {
-    if (editProduct && open) {
-      // Modo edição - preencher todos os campos
-      setSkuInterno(editProduct.sku_interno || '');
-      setNome(editProduct.nome || '');
-      setCodigoBarras(editProduct.codigo_barras || '');
-      setImageUrl(editProduct.url_imagem || '');
-      setImageFile(null);
-    } else if (open && initialBarcode && !editProduct) {
-      // Modo criação com código escaneado - apenas código de barras
-      setSkuInterno('');
-      setNome('');
-      setCodigoBarras(initialBarcode);
-      setImageUrl('');
-      setImageFile(null);
-    } else if (!open) {
-      // Limpar quando fechar
-      setSkuInterno('');
-      setNome('');
-      setCodigoBarras('');
-      setImageUrl('');
-      setImageFile(null);
+    if (open) {
+      if (editProduct) {
+        // Modo edição - preencher todos os campos
+        setSkuInterno(editProduct.sku_interno || '');
+        setNome(editProduct.nome || '');
+        setCodigoBarras(editProduct.codigo_barras || '');
+        setImageUrl(editProduct.url_imagem || '');
+        setImageFile(null);
+      } else if (initialBarcode) {
+        // Modo criação com código escaneado - apenas código de barras
+        setSkuInterno('');
+        setNome('');
+        setCodigoBarras(initialBarcode);
+        setImageUrl('');
+        setImageFile(null);
+      } else {
+        // Modo criação sem código - limpar tudo
+        setSkuInterno('');
+        setNome('');
+        setCodigoBarras('');
+        setImageUrl('');
+        setImageFile(null);
+      }
     }
   }, [editProduct, open, initialBarcode]);
 
