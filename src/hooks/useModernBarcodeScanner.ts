@@ -46,7 +46,8 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const lastScanRef = useRef<string>('');
   const lastScanTimeRef = useRef<number>(0);
   const isMountedRef = useRef<boolean>(true);
-  const isScanningRef = useRef<boolean>(false); // ✅ NOVO: Ref síncrona para prevenir race condition
+  const isScanningRef = useRef<boolean>(false);
+  const scanSafetyTimeoutRef = useRef<NodeJS.Timeout>(); // ✅ NOVO: Timeout de segurança
 
   // Cleanup function - ORDEM CRÍTICA!
   const cleanup = useCallback(() => {
@@ -109,11 +110,22 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       clearTimeout(scanTimeoutRef.current);
       scanTimeoutRef.current = undefined;
     }
+    
+    if (scanSafetyTimeoutRef.current) {
+      clearTimeout(scanSafetyTimeoutRef.current);
+      scanSafetyTimeoutRef.current = undefined;
+    }
 
     // 5. QUINTO: Reset states apenas se montado
     if (isMountedRef.current) {
       // ✅ Resetar ref síncrona PRIMEIRO
       isScanningRef.current = false;
+      
+      // ✅ Limpar timeout de segurança
+      if (scanSafetyTimeoutRef.current) {
+        clearTimeout(scanSafetyTimeoutRef.current);
+        scanSafetyTimeoutRef.current = undefined;
+      }
       
       setState(prev => ({
         ...prev,
@@ -284,34 +296,67 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       // ✅ Depois atualizar state (assíncrono) - para UI
       setState(prev => ({ ...prev, isScanning: true }));
 
+      // ✅ CORREÇÃO B: Timeout de segurança - resetar após 60s sem atividade
+      scanSafetyTimeoutRef.current = setTimeout(() => {
+        if (isScanningRef.current) {
+          console.warn('⚠️ Scanner safety timeout reached - resetting');
+          isScanningRef.current = false;
+          setState(prev => ({ ...prev, isScanning: false }));
+          toast.warning('Scanner reiniciado por segurança');
+        }
+      }, 60000); // 60 segundos
+
       readerRef.current.decodeFromVideoDevice(
         state.currentDevice,
         videoRef.current,
         (result: any, error: any) => {
-          if (result) {
-            const code = result.getText();
-            const now = Date.now();
-            
-            // Prevent duplicate scans
-            if (code === lastScanRef.current && now - lastScanTimeRef.current < scanDelay) {
-              return;
+          // ✅ CORREÇÃO A: Try/catch dentro do callback para proteger contra erros
+          try {
+            if (result) {
+              const code = result.getText();
+              const now = Date.now();
+              
+              // Prevent duplicate scans
+              if (code === lastScanRef.current && now - lastScanTimeRef.current < scanDelay) {
+                return;
+              }
+              
+              lastScanRef.current = code;
+              lastScanTimeRef.current = now;
+              
+              // Immediate feedback
+              if ('vibrate' in navigator) {
+                navigator.vibrate([50, 50, 100]);
+              }
+              
+              console.log('📱 Code scanned:', code);
+              
+              // ✅ Resetar timeout de segurança quando há scan bem-sucedido
+              if (scanSafetyTimeoutRef.current) {
+                clearTimeout(scanSafetyTimeoutRef.current);
+                scanSafetyTimeoutRef.current = undefined;
+              }
+              
+              onScan(code);
             }
             
-            lastScanRef.current = code;
-            lastScanTimeRef.current = now;
+            // Ignore common scanning errors
+            if (error && !error.name?.includes('NotFound')) {
+              console.warn('Scanner error:', error);
+            }
+          } catch (callbackError) {
+            // ✅ CORREÇÃO A: Capturar erros dentro do callback ZXing
+            console.error('❌ Error in scan callback:', callbackError);
+            isScanningRef.current = false;
+            setState(prev => ({ ...prev, isScanning: false }));
             
-            // Immediate feedback
-            if ('vibrate' in navigator) {
-              navigator.vibrate([50, 50, 100]);
+            // Limpar timeout de segurança
+            if (scanSafetyTimeoutRef.current) {
+              clearTimeout(scanSafetyTimeoutRef.current);
+              scanSafetyTimeoutRef.current = undefined;
             }
             
-            console.log('📱 Code scanned:', code);
-            onScan(code);
-          }
-          
-          // Ignore common scanning errors
-          if (error && !error.name?.includes('NotFound')) {
-            console.warn('Scanner error:', error);
+            toast.error('Erro ao processar código escaneado');
           }
         }
       );
@@ -322,6 +367,13 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       // ✅ Resetar AMBOS ref e state em caso de erro
       isScanningRef.current = false;
       setState(prev => ({ ...prev, isScanning: false }));
+      
+      // Limpar timeout de segurança
+      if (scanSafetyTimeoutRef.current) {
+        clearTimeout(scanSafetyTimeoutRef.current);
+        scanSafetyTimeoutRef.current = undefined;
+      }
+      
       toast.error('Falha ao iniciar escaneamento');
     }
   }, [state.currentDevice, scanDelay]);
@@ -373,6 +425,12 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       
       // ✅ Resetar ref síncrona no unmount também
       isScanningRef.current = false;
+      
+      // ✅ Limpar timeout de segurança no unmount
+      if (scanSafetyTimeoutRef.current) {
+        clearTimeout(scanSafetyTimeoutRef.current);
+        scanSafetyTimeoutRef.current = undefined;
+      }
       
       // Cleanup inline - executa na desmontagem do componente
       // 1. Parar scanner ZXing
