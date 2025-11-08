@@ -114,17 +114,26 @@ export function CreateChildProductModal({
       // Se tiver código de barras inicial, preencher na primeira variação
       if (initialBarcode) {
         setVariations(prev => {
-          const updated = [...prev];
-          if (updated.length > 0) {
-            updated[0] = { ...updated[0], barcode: initialBarcode };
+          // Só atualizar se o código de barras for diferente
+          if (prev[0]?.barcode !== initialBarcode) {
+            const updated = [...prev];
+            if (updated.length > 0) {
+              updated[0] = { ...updated[0], barcode: initialBarcode };
+            }
+            return updated;
           }
-          return updated;
+          return prev; // Não atualizar se já tem o mesmo código
         });
       }
-    } else {
-      // Limpar ao fechar o modal
+    }
+  }, [open, initialBarcode]);
+
+  // Separate useEffect for cleanup to avoid dependencies issues
+  useEffect(() => {
+    if (!open) {
+      // Reset apenas quando modal fecha
       const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
-      setVariations([{ 
+      const defaultVariation = { 
         suffix: '', 
         nome: '',
         quantity: 0, 
@@ -150,12 +159,14 @@ export function CreateChildProductModal({
         descricao: '',
         imagem: null,
         url_imagem: '',
-      }]);
+      };
+      
+      setVariations([defaultVariation]);
       setSelectedCategoriaPrincipal('');
       setSelectedCategoria('');
       setSelectedParentSku('');
     }
-  }, [open, initialBarcode, refreshCategories]);
+  }, [open]);
 
   const loadParentProducts = async () => {
     try {
