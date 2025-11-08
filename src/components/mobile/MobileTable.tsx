@@ -305,7 +305,7 @@ export default function MobileTable({
                         // Para quantidade_atual, alinhar label e valor na mesma linha
                         if (column.key === 'quantidade_atual') {
                           return (
-                            <div key={column.key} className="min-w-0 flex items-center justify-between">
+                            <div key={column.key} className="min-w-0 flex items-center gap-1">
                               <span className="text-muted-foreground/70 text-[9px]">
                                 {column.label}:
                               </span>
