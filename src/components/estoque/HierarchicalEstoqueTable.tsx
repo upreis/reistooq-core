@@ -272,55 +272,71 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       )
                     )}
                     
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 flex gap-2">
                       {isMobile ? (
-                        // Layout mobile: mais compacto e organizado
-                        <div className="space-y-1 min-h-[60px] w-full">
-                          <div 
-                            className="cursor-pointer hover:opacity-80 transition-opacity"
-                            onClick={(e) => {
-                              if (group.parentProduct) {
-                                e.stopPropagation();
-                                if (group.parentProduct.eh_produto_pai && props.onEditParentProduct) {
-                                  props.onEditParentProduct(group.parentProduct);
-                                } else {
-                                  props.onEditProduct(group.parentProduct);
-                                }
-                              }
-                            }}
-                          >
-                            {/* Linha 1: SKU e Badge */}
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                              <span className="font-semibold text-xs">
-                                {group.parentSku}
-                              </span>
-                              <Badge variant={status.variant} className="text-[10px] px-1.5 py-0">
-                                {status.label}
-                              </Badge>
-                            </div>
-                            
-                            {/* Linha 2: Nome do produto */}
-                            {group.parentProduct && (
-                              <p className="text-[11px] text-muted-foreground line-clamp-1">
-                                {group.parentProduct.nome}
-                              </p>
-                            )}
-                            
-                            {/* Linha 3: Categoria */}
-                            {group.parentProduct?.categoria && (
-                              <p className="text-[10px] text-muted-foreground/80">
-                                {group.parentProduct.categoria}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {/* Linha 4: Estoque Total - apenas mobile e se tiver filhos */}
-                          {hasChildren && (
-                            <div className="text-xs font-semibold text-foreground pt-0.5">
-                              Estoque Total: {group.totalStock}
+                        <>
+                          {/* Foto do primeiro filho - 25% */}
+                          {hasChildren && group.children[0]?.url_imagem && (
+                            <div className="w-[25%] flex-shrink-0">
+                              <img 
+                                src={group.children[0].url_imagem} 
+                                alt={group.children[0].nome || group.parentSku}
+                                className="w-full h-full object-cover rounded-md border border-border"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
                             </div>
                           )}
-                        </div>
+                          
+                          {/* Informações - 75% */}
+                          <div className="flex-1 min-w-0 space-y-1">
+                            <div 
+                              className="cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={(e) => {
+                                if (group.parentProduct) {
+                                  e.stopPropagation();
+                                  if (group.parentProduct.eh_produto_pai && props.onEditParentProduct) {
+                                    props.onEditParentProduct(group.parentProduct);
+                                  } else {
+                                    props.onEditProduct(group.parentProduct);
+                                  }
+                                }
+                              }}
+                            >
+                              {/* Linha 1: SKU e Badge */}
+                              <div className="flex items-center gap-1.5 mb-0.5">
+                                <span className="font-semibold text-xs">
+                                  {group.parentSku}
+                                </span>
+                                <Badge variant={status.variant} className="text-[10px] px-1.5 py-0">
+                                  {status.label}
+                                </Badge>
+                              </div>
+                              
+                              {/* Linha 2: Nome do produto */}
+                              {group.parentProduct && (
+                                <p className="text-[11px] text-muted-foreground line-clamp-1">
+                                  {group.parentProduct.nome}
+                                </p>
+                              )}
+                              
+                              {/* Linha 3: Categoria */}
+                              {group.parentProduct?.categoria && (
+                                <p className="text-[10px] text-muted-foreground/80">
+                                  {group.parentProduct.categoria}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Linha 4: Estoque Total - apenas mobile e se tiver filhos */}
+                            {hasChildren && (
+                              <div className="text-xs font-semibold text-foreground pt-0.5">
+                                Estoque Total: {group.totalStock}
+                              </div>
+                            )}
+                          </div>
+                        </>
                       ) : (
                         // Layout desktop: original
                         <div 
