@@ -41,13 +41,19 @@ export function CreateParentProductModal({
   // Preencher campos quando editando ou com código escaneado
   useEffect(() => {
     if (editProduct && open) {
+      // Modo edição - preencher todos os campos
       setSkuInterno(editProduct.sku_interno || '');
       setNome(editProduct.nome || '');
       setCodigoBarras(editProduct.codigo_barras || '');
       setImageUrl(editProduct.url_imagem || '');
       setImageFile(null);
-    } else if (open && initialBarcode) {
+    } else if (open && initialBarcode && !editProduct) {
+      // Modo criação com código escaneado - apenas código de barras
+      setSkuInterno('');
+      setNome('');
       setCodigoBarras(initialBarcode);
+      setImageUrl('');
+      setImageFile(null);
     } else if (!open) {
       // Limpar quando fechar
       setSkuInterno('');
@@ -74,23 +80,30 @@ export function CreateParentProductModal({
 
       // Upload da imagem se fornecida
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `product-images/${fileName}`;
+        try {
+          const fileExt = imageFile.name.split('.').pop();
+          const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `product-images/${fileName}`;
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('product-images')
-          .upload(filePath, imageFile);
+          const { error: uploadError } = await supabase.storage
+            .from('product-images')
+            .upload(filePath, imageFile);
 
-        if (uploadError) {
-          throw new Error(`Erro ao fazer upload da imagem: ${uploadError.message}`);
+          if (uploadError) {
+            console.warn('Erro ao fazer upload da imagem:', uploadError);
+            // Continuar sem imagem se o upload falhar
+            uploadedImageUrl = '';
+          } else {
+            const { data: urlData } = supabase.storage
+              .from('product-images')
+              .getPublicUrl(filePath);
+
+            uploadedImageUrl = urlData.publicUrl;
+          }
+        } catch (imgError) {
+          console.error('Erro no processo de upload:', imgError);
+          uploadedImageUrl = '';
         }
-
-        const { data: urlData } = supabase.storage
-          .from('product-images')
-          .getPublicUrl(filePath);
-
-        uploadedImageUrl = urlData.publicUrl;
       }
 
       if (editProduct) {

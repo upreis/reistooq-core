@@ -122,6 +122,10 @@ const Scanner = () => {
 
   const handleProductTypeSelect = (type: 'parent' | 'child') => {
     setIsTypeSelectorOpen(false);
+    // Limpar o card de produto escaneado ao criar novo produto
+    setScannedProduct(null);
+    setCurrentProduct(null);
+    
     if (type === 'parent') {
       setIsParentModalOpen(true);
     } else {
@@ -170,6 +174,8 @@ const Scanner = () => {
   const handleParentModalSuccess = async () => {
     setIsParentModalOpen(false);
     setScannedCode("");
+    setScannedProduct(null);
+    setCurrentProduct(null);
     
     toast.success('✅ Produto PAI criado com sucesso!', {
       duration: 3000,
@@ -183,6 +189,8 @@ const Scanner = () => {
   const handleChildModalSuccess = async () => {
     setIsChildModalOpen(false);
     setScannedCode("");
+    setScannedProduct(null);
+    setCurrentProduct(null);
     
     toast.success('✅ Produto FILHO criado com sucesso!', {
       duration: 3000,

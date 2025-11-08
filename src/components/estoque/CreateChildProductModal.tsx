@@ -112,13 +112,50 @@ export function CreateChildProductModal({
       loadParentProducts();
       
       // Se tiver código de barras inicial, preencher na primeira variação
-      if (initialBarcode && variations.length > 0) {
-        const updated = [...variations];
-        updated[0].barcode = initialBarcode;
-        setVariations(updated);
+      if (initialBarcode) {
+        setVariations(prev => {
+          const updated = [...prev];
+          if (updated.length > 0) {
+            updated[0] = { ...updated[0], barcode: initialBarcode };
+          }
+          return updated;
+        });
       }
+    } else {
+      // Limpar ao fechar o modal
+      const unidadePadrao = getUnidadeBasePorTipo('contagem') || unidades.find(u => u.abreviacao === 'un') || unidades[0];
+      setVariations([{ 
+        suffix: '', 
+        nome: '',
+        quantity: 0, 
+        barcode: '',
+        preco_custo: 0,
+        preco_venda: 0,
+        localizacao: '',
+        estoque_minimo: 0,
+        estoque_maximo: 0,
+        unidade_medida_id: unidadePadrao?.id || '',
+        sob_encomenda: false,
+        dias_preparacao: 0,
+        peso_liquido: 0,
+        peso_bruto: 0,
+        numero_volumes: 1,
+        tipo_embalagem: '',
+        largura: 0,
+        altura: 0,
+        comprimento: 0,
+        ncm: '',
+        codigo_cest: '',
+        origem: null,
+        descricao: '',
+        imagem: null,
+        url_imagem: '',
+      }]);
+      setSelectedCategoriaPrincipal('');
+      setSelectedCategoria('');
+      setSelectedParentSku('');
     }
-  }, [open, initialBarcode]);
+  }, [open, initialBarcode, refreshCategories]);
 
   const loadParentProducts = async () => {
     try {
