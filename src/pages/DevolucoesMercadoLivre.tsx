@@ -13,7 +13,10 @@ import { DevolucaoTable } from '@/features/devolucoes-online/components/Devoluca
 import { DevolucaoFiltersBar } from '@/features/devolucoes-online/components/DevolucaoFiltersBar';
 import { DevolucaoAccountSelector } from '@/features/devolucoes-online/components/DevolucaoAccountSelector';
 import { DevolucaoPaginationControls } from '@/features/devolucoes-online/components/DevolucaoPaginationControls';
+import { DevolucaoQuickFilters } from '@/features/devolucoes-online/components/DevolucaoQuickFilters';
+import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function DevolucoesMercadoLivre() {
   // Manager centralizado
@@ -25,6 +28,13 @@ export default function DevolucoesMercadoLivre() {
   
   // Carregar contas ML com nome
   const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
+  
+  // Estado dos filtros rápidos
+  const [filteredByQuickFilter, setFilteredByQuickFilter] = useState<any[]>([]);
+  
+  // Estado do auto-refresh
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(3600000); // 1 hora padrão
   
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -69,6 +79,22 @@ export default function DevolucoesMercadoLivre() {
     refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
   }), [state.devolucoes, state.total]);
 
+  // Determinar dados para exibição (filtro rápido tem prioridade)
+  const displayData = useMemo(() => {
+    return filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
+  }, [filteredByQuickFilter, state.devolucoes]);
+
+  // Handlers para controles
+  const handleExport = () => {
+    toast.info('Exportação em desenvolvimento');
+  };
+
+  const handleClear = () => {
+    actions.clearFilters();
+    setFilteredByQuickFilter([]);
+    toast.success('Dados limpos com sucesso');
+  };
+
   return (
     <div className="h-screen flex flex-col">
       <div className="flex-1 overflow-auto m-0">
@@ -89,13 +115,28 @@ export default function DevolucoesMercadoLivre() {
             <DevolucaoStatsCards stats={stats} />
           </div>
 
-          {/* Account Selector */}
-          <div className="px-4 md:px-6">
-            <DevolucaoAccountSelector 
-              accounts={accounts}
-              selectedAccountId={state.integrationAccountId}
-              onAccountChange={actions.setIntegrationAccountId}
-              loading={!accounts.length}
+          {/* Quick Filters + Controls */}
+          {state.devolucoes.length > 0 && (
+            <div className="px-4 md:px-6">
+              <DevolucaoQuickFilters 
+                devolucoes={state.devolucoes}
+                onFilteredDataChange={setFilteredByQuickFilter}
+              />
+            </div>
+          )}
+
+          {/* Controls Bar */}
+          <div className="px-4 md:px-6 flex justify-end">
+            <DevolucaoControlsBar 
+              autoRefreshEnabled={autoRefreshEnabled}
+              autoRefreshInterval={autoRefreshInterval}
+              onAutoRefreshToggle={setAutoRefreshEnabled}
+              onAutoRefreshIntervalChange={setAutoRefreshInterval}
+              onExport={handleExport}
+              onClear={handleClear}
+              onRefresh={actions.refetch}
+              totalRecords={state.total}
+              isRefreshing={state.isRefreshing}
             />
           </div>
 
@@ -114,10 +155,20 @@ export default function DevolucoesMercadoLivre() {
             />
           </div>
 
+          {/* Account Selector */}
+          <div className="px-4 md:px-6">
+            <DevolucaoAccountSelector 
+              accounts={accounts}
+              selectedAccountId={state.integrationAccountId}
+              onAccountChange={actions.setIntegrationAccountId}
+              loading={!accounts.length}
+            />
+          </div>
+
           {/* Table */}
           <div className="px-4 md:px-6">
             <DevolucaoTable 
-              devolucoes={state.devolucoes}
+              devolucoes={displayData}
               isLoading={state.loading}
               error={state.error}
             />
