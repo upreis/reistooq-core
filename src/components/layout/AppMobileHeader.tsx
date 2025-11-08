@@ -88,8 +88,9 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
           )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           {actions}
+          <Logo size="sm" className="h-8 w-8" />
         </div>
       </div>
     </div>
