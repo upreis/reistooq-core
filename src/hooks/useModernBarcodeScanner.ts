@@ -105,7 +105,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const isCallbackActiveRef = useRef<boolean>(false);
   const isInitializingRef = useRef<boolean>(false);
 
-  // Cleanup function
+  // Cleanup function - ENHANCED to properly stop camera
   const cleanup = useCallback(() => {
     console.log('🧹 [Scanner] Cleaning up...');
     
@@ -117,16 +117,59 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     if (readerRef.current) {
       try {
         readerRef.current.reset();
-        console.log('✅ [Scanner] ZXing decoder stopped');
+        console.log('✅ [Scanner] Decoder stopped');
       } catch (e) {
         console.log('[Scanner] Decoder already stopped');
       }
       readerRef.current = null;
     }
 
-    // CRITICAL: Stop all media tracks with enhanced verification
-    if (streamRef.current) {
-      const tracks = streamRef.current.getTracks();
+    // ⚠️ CRITICAL FIX: Capture stream BEFORE clearing video element
+    let streamToStop: MediaStream | null = streamRef.current;
+    
+    // Also check video element's srcObject if streamRef is null
+    if (!streamToStop && videoRef.current && videoRef.current.srcObject) {
+      console.log('🔍 [Scanner] Stream found in video element srcObject');
+      streamToStop = videoRef.current.srcObject as MediaStream;
+    }
+
+    // Clear video element FIRST
+    if (videoRef.current) {
+      const video = videoRef.current;
+      
+      // Remove all event listeners
+      video.onloadedmetadata = null;
+      video.onerror = null;
+      video.onplay = null;
+      video.onpause = null;
+      
+      try {
+        video.pause();
+        console.log('✅ [Scanner] Video paused');
+      } catch (e) {
+        console.log('[Scanner] Video already paused');
+      }
+      
+      // Clear srcObject
+      if (video.srcObject) {
+        video.srcObject = null;
+        console.log('✅ [Scanner] srcObject cleared');
+      }
+      
+      video.src = '';
+      video.removeAttribute('src');
+      
+      try {
+        video.load();
+        console.log('✅ [Scanner] Video element reset');
+      } catch (e) {
+        console.log('[Scanner] Error resetting video:', e);
+      }
+    }
+
+    // NOW stop all media tracks from the captured stream
+    if (streamToStop) {
+      const tracks = streamToStop.getTracks();
       console.log(`🛑 [Scanner] Found ${tracks.length} track(s) to stop`);
       
       tracks.forEach((track, index) => {
@@ -144,60 +187,33 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         }
       });
       
-      // Verify all tracks are stopped after a delay
+      // Verify all tracks are stopped
       setTimeout(() => {
-        tracks.forEach((track, index) => {
-          console.log(`   Verification ${index + 1}: ${track.kind} - ReadyState: ${track.readyState}`);
-          if (track.readyState !== 'ended') {
-            console.error(`   ❌ WARNING: Track ${index + 1} still active!`);
-            try {
-              track.stop(); // Force stop again
-            } catch (e) {
-              console.error('Failed to force stop:', e);
+        const allStopped = tracks.every(track => track.readyState === 'ended');
+        if (allStopped) {
+          console.log('✅ [Scanner] All tracks successfully stopped');
+        } else {
+          console.error('❌ [Scanner] WARNING: Some tracks still active!');
+          tracks.forEach((track, index) => {
+            if (track.readyState !== 'ended') {
+              console.error(`   Track ${index + 1}: ${track.kind} - ReadyState: ${track.readyState}`);
+              try {
+                track.stop(); // Force stop again
+                console.log(`   ⚠️ Force stopped track ${index + 1}`);
+              } catch (e) {
+                console.error('Failed to force stop:', e);
+              }
             }
-          }
-        });
+          });
+        }
       }, 100);
-      
-      streamRef.current = null;
-      console.log('✅ [Scanner] Stream reference cleared');
     } else {
-      console.warn('⚠️ [Scanner] No stream to stop');
+      console.warn('⚠️ [Scanner] No stream to stop (already released)');
     }
-
-    // Clear video element thoroughly
-    if (videoRef.current) {
-      const video = videoRef.current;
-      
-      // Remove all event listeners
-      video.onloadedmetadata = null;
-      video.onerror = null;
-      video.onplay = null;
-      video.onpause = null;
-      
-      try {
-        video.pause();
-        console.log('✅ [Scanner] Video paused');
-      } catch (e) {
-        console.log('[Scanner] Video already paused');
-      }
-      
-      // CRITICAL: Clear srcObject FIRST to release camera
-      if (video.srcObject) {
-        video.srcObject = null;
-        console.log('✅ [Scanner] srcObject cleared');
-      }
-      
-      video.src = '';
-      video.removeAttribute('src');
-      
-      try {
-        video.load();
-        console.log('✅ [Scanner] Video element reset');
-      } catch (e) {
-        console.log('[Scanner] Error resetting video:', e);
-      }
-    }
+    
+    // Clear stream reference
+    streamRef.current = null;
+    console.log('✅ [Scanner] Stream reference cleared');
 
     // Clear timeouts
     if (scanTimeoutRef.current) {
@@ -263,17 +279,20 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   // Check permissions
   const checkPermissions = useCallback(async () => {
     try {
+      // ⚠️ CRITICAL: ONLY request video, NEVER audio
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: preferredCamera === 'back' ? 'environment' : 'user' }
-        // NO AUDIO - omitted intentionally
+        video: { facingMode: preferredCamera === 'back' ? 'environment' : 'user' },
+        audio: false  // Explicitly FALSE
       });
       
       const tracks = stream.getTracks();
       console.log(`🔍 Permission check - found ${tracks.length} track(s)`);
+      
+      // Stop all tracks and verify NO audio
       tracks.forEach(track => {
         console.log(`   Stopping ${track.kind} track from permission check`);
         if (track.kind === 'audio') {
-          console.error('❌ Audio track in permission check - should not happen!');
+          console.error('❌ CRITICAL: Audio track detected in permission check!');
         }
         track.stop();
       });
@@ -346,27 +365,22 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               width: { ideal: 1920, min: 1280 },
               height: { ideal: 1080, min: 720 },
               frameRate: { ideal: 30 }
-            }
-        // ⚠️ CRITICAL: NO AUDIO - explicitly undefined to prevent any audio access
+            },
+        audio: false  // ⚠️ CRITICAL: Explicitly FALSE - no audio!
       };
-      
-      // Double-check: ensure no audio property exists
-      if ('audio' in constraints) {
-        delete (constraints as any).audio;
-      }
 
-      console.log('📷 [Scanner] Requesting camera access (VIDEO ONLY)...', JSON.stringify(constraints));
+      console.log('📷 [Scanner] Requesting camera access (VIDEO ONLY)...');
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       
-      // ✅ VERIFICATION: Log all tracks to confirm NO AUDIO
+      // ✅ VERIFICATION: Log all tracks and STOP any audio tracks immediately
       const allTracks = stream.getTracks();
       console.log(`📊 [Scanner] Stream has ${allTracks.length} track(s):`);
       allTracks.forEach((track, index) => {
         console.log(`   Track ${index + 1}: ${track.kind} - ${track.label}`);
         if (track.kind === 'audio') {
-          console.error('❌ CRITICAL: Audio track detected! This should NEVER happen!');
-          track.stop(); // Stop it immediately
+          console.error('❌ CRITICAL: Audio track detected! Stopping immediately!');
+          track.stop();
         }
       });
 
