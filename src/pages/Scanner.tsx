@@ -134,10 +134,28 @@ const Scanner = () => {
   };
 
   const handleModalSuccess = async () => {
-    // Não precisa recarregar todos os produtos
+    // Feedback visual claro para mobile
+    const wasCreating = !currentProduct;
+    
     setIsModalOpen(false);
     setCurrentProduct(null);
     setScannedProduct(null);
+    
+    // Toast de sucesso com vibração
+    if (wasCreating) {
+      toast.success('✅ Produto criado com sucesso!', {
+        duration: 3000,
+      });
+    } else {
+      toast.success('✅ Produto atualizado com sucesso!', {
+        duration: 3000,
+      });
+    }
+    
+    // Vibração de confirmação
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
   };
 
   return (
