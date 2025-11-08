@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useMemo, useEffect } from 'react';
+import React, { memo, useRef, useCallback, useMemo, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
@@ -22,13 +22,13 @@ const getIconComponent = (iconName: string) => {
   return IconComponent || LucideIcons.Package;
 };
 
-export function SidebarItemWithChildren({
+export const SidebarItemWithChildren = memo(({
   item,
   isCollapsed,
   isMobile,
   pointerType,
   calculateFlyoutPosition
-}: SidebarItemWithChildrenProps) {
+}: SidebarItemWithChildrenProps) => {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const hasAutoExpandedRef = useRef(false);
   
@@ -333,4 +333,6 @@ export function SidebarItemWithChildren({
 
     </div>
   );
-}
+});
+
+SidebarItemWithChildren.displayName = 'SidebarItemWithChildren';
