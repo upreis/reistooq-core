@@ -39,18 +39,19 @@ interface Notification {
 }
 
 export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal, onOrphanProductClick }: EstoqueNotificationsProps) {
+  const isMobile = useIsMobile();
+  
+  // Ocultar notificações em mobile - ANTES de qualquer outro hook
+  if (isMobile) {
+    return null;
+  }
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const hierarchy = useProductHierarchy(products);
   const { config } = useEstoqueSettings();
-  const isMobile = useIsMobile();
-
-  // Ocultar notificações em mobile
-  if (isMobile) {
-    return null;
-  }
 
   useEffect(() => {
     generateNotifications();
