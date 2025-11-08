@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
+import { subDays, startOfDay, endOfDay, format } from 'date-fns';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useDevolucaoManager } from '@/features/devolucoes-online/hooks/useDevolucaoManager';
 import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/usePersistentDevolucaoState';
@@ -162,19 +163,15 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // ✅ Calcular datas usando date-fns (mais confiável)
+      // ✅ Calcular datas usando date-fns (exatamente como /reclamacoes)
       const days = parseInt(periodo);
       const hoje = new Date();
-      const dataInicio = new Date();
-      dataInicio.setDate(hoje.getDate() - days);
-      dataInicio.setHours(0, 0, 0, 0); // 00:00:00
+      const dataInicio = startOfDay(subDays(hoje, days)); // 00:00:00 de X dias atrás
+      const dataFim = endOfDay(hoje); // 23:59:59 de hoje
       
-      const dataFim = new Date();
-      dataFim.setHours(23, 59, 59, 999); // 23:59:59
-      
-      // Converter para ISO strings (formato YYYY-MM-DD apenas)
-      const dateFromISO = dataInicio.toISOString().split('T')[0];
-      const dateToISO = dataFim.toISOString().split('T')[0];
+      // ✅ Converter para formato YYYY-MM-DD (extraindo apenas a data)
+      const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
+      const dateToISO = format(dataFim, 'yyyy-MM-dd');
       
       console.log('📅 Aplicando filtros de data (ISO strings):', {
         periodo: `${days} dias`,
@@ -184,10 +181,10 @@ export default function DevolucoesMercadoLivre() {
         dateToFull: dataFim.toISOString(),
       });
       
-      // ✅ Aplicar filtros de data como strings ISO (YYYY-MM-DD)
+      // ✅ Aplicar filtros de data como strings YYYY-MM-DD
       actions.setFilters({
-        dateFrom: dateFromISO,  // ✅ String ISO format
-        dateTo: dateToISO,      // ✅ String ISO format
+        dateFrom: dateFromISO,  // ✅ String format YYYY-MM-DD
+        dateTo: dateToISO,      // ✅ String format YYYY-MM-DD
         search: searchTerm,
       });
       
