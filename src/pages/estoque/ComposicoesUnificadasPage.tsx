@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocalEstoqueAtivo } from "@/hooks/useLocalEstoqueAtivo";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function ComposicoesUnificadasPage() {
   const location = useLocation();
@@ -18,6 +19,7 @@ export default function ComposicoesUnificadasPage() {
   const [reloadKey, setReloadKey] = useState(0);
   const { toast } = useToast();
   const { localAtivo } = useLocalEstoqueAtivo();
+  const isMobile = useIsMobile();
 
   // Sync tab with route
   useEffect(() => {
@@ -58,21 +60,23 @@ export default function ComposicoesUnificadasPage() {
 
   return (
     <div className="space-y-6">
-      {/* Seletor de Local de Estoque */}
-      <div className="flex items-center justify-between gap-4 pb-4 border-b">
-        <div className="flex items-center gap-3">
-          <LocalEstoqueSelector key={`selector-${Date.now()}`} />
-          {localAtivo && (
-            <span className="text-sm text-muted-foreground">
-              📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
-            </span>
-          )}
+      {/* Seletor de Local de Estoque - Ocultar no mobile */}
+      {!isMobile && (
+        <div className="flex items-center justify-between gap-4 pb-4 border-b">
+          <div className="flex items-center gap-3">
+            <LocalEstoqueSelector key={`selector-${Date.now()}`} />
+            {localAtivo && (
+              <span className="text-sm text-muted-foreground">
+                📍 Visualizando: <strong className="text-foreground">{localAtivo.nome}</strong>
+              </span>
+            )}
+          </div>
+          <GerenciarLocaisModal onSuccess={handleLocalChange} />
         </div>
-        <GerenciarLocaisModal onSuccess={handleLocalChange} />
-      </div>
+      )}
 
-      {/* Alerta se nenhum local selecionado */}
-      {!localAtivo && (
+      {/* Alerta se nenhum local selecionado - Ocultar no mobile */}
+      {!isMobile && !localAtivo && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
