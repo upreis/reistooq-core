@@ -41,6 +41,11 @@ export const MATERIALM_DARK = {
   '--warning': '43 96% 56%', // #F59E0B
   '--danger': '0 84% 60%', // #EF4444
 
+  // Brand colors for sidebar active states
+  '--brand-yellow': '43 89% 61%', // Same as primary Gold
+  '--brand-yellow-glow': '43 89% 71%', // Lighter variant
+  '--brand-yellow-foreground': '213 42% 7%', // Dark text on gold
+
   '--radius': '12px',
 } as const;
 
@@ -85,6 +90,11 @@ export const MATERIALM_LIGHT = {
   '--success': '142 71% 45%', // #22C55E
   '--warning': '43 96% 56%', // #F59E0B
   '--danger': '0 84% 60%', // #EF4444
+
+  // Brand colors for sidebar active states
+  '--brand-yellow': '210 73% 15%', // Same as primary Navy
+  '--brand-yellow-glow': '210 73% 25%', // Lighter variant
+  '--brand-yellow-foreground': '0 0% 100%', // White text on navy
 
   '--radius': '12px',
 } as const;
