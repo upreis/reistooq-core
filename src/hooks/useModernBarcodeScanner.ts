@@ -49,6 +49,7 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const isScanningRef = useRef<boolean>(false);
   const scanSafetyTimeoutRef = useRef<NodeJS.Timeout>();
   const isCallbackActiveRef = useRef<boolean>(false); // ✅ BUG 3: Controla se callback pode executar
+  const isInitializingRef = useRef<boolean>(false); // ✅ PROBLEMA 3: Previne race condition em startCamera
 
   // Cleanup function - ORDEM CRÍTICA!
   const cleanup = useCallback(() => {
@@ -196,6 +197,15 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
   // Start camera
   const startCamera = useCallback(async (deviceId?: string) => {
+    // ✅ PROBLEMA 3: Prevenir race condition - bloquear chamadas simultâneas
+    if (isInitializingRef.current) {
+      console.warn('⚠️ Camera already initializing - prevented race condition');
+      return false;
+    }
+
+    // ✅ Marcar como inicializando IMEDIATAMENTE (síncrono)
+    isInitializingRef.current = true;
+    
     setState(prev => ({ ...prev, isLoading: true, error: null }));
     
     // ✅ CORREÇÃO BUG 2: Resetar isScanning quando iniciar câmera
@@ -256,6 +266,10 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
       }));
 
       console.log('✅ Camera started successfully');
+      
+      // ✅ PROBLEMA 3: Liberar flag de inicialização após sucesso
+      isInitializingRef.current = false;
+      
       return true;
 
     } catch (error: any) {
@@ -278,6 +292,9 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
         error: errorMessage,
         hasPermission: false
       }));
+
+      // ✅ PROBLEMA 3: Liberar flag de inicialização após erro
+      isInitializingRef.current = false;
 
       toast.error(errorMessage);
       return false;
