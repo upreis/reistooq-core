@@ -48,28 +48,25 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   const cleanup = () => {
     console.log('🧹 Cleaning up scanner resources...');
     
-    // Clear timeouts
-    if (scanTimeoutRef.current) {
-      clearTimeout(scanTimeoutRef.current);
-      scanTimeoutRef.current = undefined;
+    // 1. PRIMEIRO: Parar TODOS os tracks de mídia
+    if (streamRef.current) {
+      const tracks = streamRef.current.getTracks();
+      console.log('🛑 Stopping media tracks:', tracks.length);
+      
+      tracks.forEach(track => {
+        console.log(`  Stopping ${track.kind} track: ${track.label} (state: ${track.readyState})`);
+        try {
+          track.stop();
+        } catch (e) {
+          console.error('Erro ao parar track:', e);
+        }
+      });
+      
+      streamRef.current = null;
+      console.log('✅ All tracks stopped and stream cleared');
     }
     
-    if (inactivityTimeoutRef.current) {
-      clearTimeout(inactivityTimeoutRef.current);
-      inactivityTimeoutRef.current = undefined;
-    }
-    
-    // Stop scanner
-    if (scannerRef.current) {
-      try {
-        scannerRef.current.reset();
-      } catch (e) {
-        console.log('Scanner já parado');
-      }
-      scannerRef.current = null;
-    }
-    
-    // Stop and remove video
+    // 2. SEGUNDO: Limpar o elemento de vídeo
     if (videoRef.current) {
       // Remove event listeners
       videoRef.current.onloadedmetadata = null;
@@ -82,29 +79,47 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
         console.log('Video já pausado');
       }
       
-      // Clear source
+      // Clear source DEPOIS de parar tracks
       videoRef.current.srcObject = null;
       videoRef.current.src = '';
-      videoRef.current.load(); // Reset video element
+      
+      try {
+        videoRef.current.load(); // Reset video element
+      } catch (e) {
+        console.log('Erro ao resetar video element:', e);
+      }
+      
+      console.log('✅ Video element cleaned');
     }
     
-    // Stop ALL media tracks (camera AND microphone)
-    if (streamRef.current) {
-      console.log('🛑 Stopping media tracks:', streamRef.current.getTracks().length);
-      streamRef.current.getTracks().forEach(track => {
-        console.log(`  Stopping ${track.kind} track:`, track.label);
-        track.stop();
-      });
-      streamRef.current = null;
+    // 3. TERCEIRO: Parar scanner
+    if (scannerRef.current) {
+      try {
+        scannerRef.current.reset();
+      } catch (e) {
+        console.log('Scanner já parado');
+      }
+      scannerRef.current = null;
     }
     
-    // Reset states only if mounted
+    // 4. QUARTO: Limpar timeouts
+    if (scanTimeoutRef.current) {
+      clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = undefined;
+    }
+    
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = undefined;
+    }
+    
+    // 5. QUINTO: Reset states
     if (isMountedRef.current) {
       setIsScanning(false);
       setTorchEnabled(false);
     }
     
-    console.log('✅ Cleanup complete');
+    console.log('✅ Cleanup complete - all resources released');
   };
 
   // Reset inactivity timer - agora é uma função simples que não causa re-renders
