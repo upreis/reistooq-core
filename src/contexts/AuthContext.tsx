@@ -80,10 +80,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null);
           setLoading(false);
 
-          // Handle auth events
-          if (event === 'SIGNED_IN') {
+          // Handle auth events - não mostrar toast em mobile
+          const isMobile = window.innerWidth < 768;
+          if (event === 'SIGNED_IN' && !isMobile) {
             toast.success("Login realizado com sucesso! Bem-vindo ao REISTOQ");
-          } else if (event === 'SIGNED_OUT') {
+          } else if (event === 'SIGNED_OUT' && !isMobile) {
             toast.error("Logout realizado. Até logo!");
           }
         }
