@@ -344,7 +344,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                         <Badge variant={status.variant} className="text-xs">
                           {status.label}
                         </Badge>
-                        {hasChildren && (
+                        {hasChildren && !isMobile && (
                           <Badge variant="outline" className="text-xs">
                             {group.children.length} variações
                           </Badge>
@@ -374,12 +374,16 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                       
                       return (
                         <div className="text-right flex gap-6">
-                          <div className="text-xs text-muted-foreground">
-                            Custo Total: <span className="font-semibold text-foreground">R$ {valorTotalCusto.toFixed(2)}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            Venda Total: <span className="font-semibold text-foreground">R$ {valorTotalVenda.toFixed(2)}</span>
-                          </div>
+                          {!isMobile && (
+                            <>
+                              <div className="text-xs text-muted-foreground">
+                                Custo Total: <span className="font-semibold text-foreground">R$ {valorTotalCusto.toFixed(2)}</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Venda Total: <span className="font-semibold text-foreground">R$ {valorTotalVenda.toFixed(2)}</span>
+                              </div>
+                            </>
+                          )}
                           <div className="text-sm font-semibold">
                             Estoque Total: {group.totalStock}
                           </div>
