@@ -336,26 +336,92 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
     }
   }, [state.isActive, startCamera]);
 
-  // Initialize on mount
+  // Mount/Unmount effect - Cleanup inline para evitar dependências
   useEffect(() => {
     isMountedRef.current = true;
     
+    return () => {
+      console.log('🧹 Unmounting - Cleaning up scanner...');
+      isMountedRef.current = false;
+      
+      // Cleanup inline - executa na desmontagem do componente
+      // 1. Parar scanner ZXing
+      if (readerRef.current) {
+        try {
+          readerRef.current.reset();
+          console.log('✅ Scanner ZXing stopped');
+        } catch (e) {
+          console.log('Scanner already stopped');
+        }
+        readerRef.current = null;
+      }
+
+      // 2. Parar TODOS os tracks de mídia
+      if (streamRef.current) {
+        const tracks = streamRef.current.getTracks();
+        console.log(`🛑 Stopping ${tracks.length} media tracks`);
+        
+        tracks.forEach(track => {
+          console.log(`  Stopping ${track.kind} track: ${track.label}`);
+          try {
+            track.stop();
+          } catch (e) {
+            console.error('Error stopping track:', e);
+          }
+        });
+        
+        streamRef.current = null;
+        console.log('✅ All tracks stopped and stream cleared');
+      }
+
+      // 3. Limpar o elemento de vídeo
+      if (videoRef.current) {
+        videoRef.current.onloadedmetadata = null;
+        videoRef.current.onerror = null;
+        
+        try {
+          videoRef.current.pause();
+        } catch (e) {
+          console.log('Video already paused');
+        }
+        
+        videoRef.current.srcObject = null;
+        videoRef.current.src = '';
+        
+        try {
+          videoRef.current.load();
+        } catch (e) {
+          console.log('Error resetting video element:', e);
+        }
+        
+        console.log('✅ Video element cleaned');
+      }
+
+      // 4. Limpar timeouts
+      if (scanTimeoutRef.current) {
+        clearTimeout(scanTimeoutRef.current);
+        scanTimeoutRef.current = undefined;
+      }
+
+      console.log('✅ Unmount cleanup complete');
+    };
+  }, []); // Array vazio - só executa no mount/unmount
+
+  // Initialization effect - Separado para evitar loop
+  useEffect(() => {
     const init = async () => {
+      console.log('🚀 Initializing scanner...');
       await loadDevices();
       await checkPermissions();
       
       if (autoStart) {
+        console.log('📸 Auto-starting camera...');
         await startCamera();
       }
     };
     
     init();
-    
-    return () => {
-      isMountedRef.current = false;
-      cleanup();
-    };
-  }, [loadDevices, checkPermissions, autoStart, startCamera, cleanup]);
+  }, [autoStart]); // Só depende de autoStart
 
   return {
     ...state,
