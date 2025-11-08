@@ -21,27 +21,36 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [torchEnabled, setTorchEnabled] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [isNative, setIsNative] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerRef = useRef<any>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const lastScanRef = useRef<string>('');
   const scanTimeoutRef = useRef<NodeJS.Timeout>();
+  const isMountedRef = useRef<boolean>(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     setIsNative(Capacitor.isNativePlatform());
     
     return () => {
+      console.log('🧹 Component unmounting - cleaning up resources');
+      isMountedRef.current = false;
       cleanup();
     };
   }, []);
 
   const cleanup = () => {
+    console.log('🧹 Cleaning up scanner resources...');
+    
+    // Clear timeout
     if (scanTimeoutRef.current) {
       clearTimeout(scanTimeoutRef.current);
+      scanTimeoutRef.current = undefined;
     }
     
+    // Stop scanner
     if (scannerRef.current) {
       try {
         scannerRef.current.reset();
@@ -51,17 +60,42 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
       scannerRef.current = null;
     }
     
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-      setStream(null);
-    }
-    
+    // Stop and remove video
     if (videoRef.current) {
+      // Remove event listeners
+      videoRef.current.onloadedmetadata = null;
+      videoRef.current.onerror = null;
+      
+      // Pause video
+      try {
+        videoRef.current.pause();
+      } catch (e) {
+        console.log('Video já pausado');
+      }
+      
+      // Clear source
       videoRef.current.srcObject = null;
+      videoRef.current.src = '';
+      videoRef.current.load(); // Reset video element
     }
     
-    setIsScanning(false);
-    setTorchEnabled(false);
+    // Stop ALL media tracks (camera AND microphone)
+    if (streamRef.current) {
+      console.log('🛑 Stopping media tracks:', streamRef.current.getTracks().length);
+      streamRef.current.getTracks().forEach(track => {
+        console.log(`  Stopping ${track.kind} track:`, track.label);
+        track.stop();
+      });
+      streamRef.current = null;
+    }
+    
+    // Reset states only if mounted
+    if (isMountedRef.current) {
+      setIsScanning(false);
+      setTorchEnabled(false);
+    }
+    
+    console.log('✅ Cleanup complete');
   };
 
   const startNativeCamera = async () => {
@@ -111,43 +145,87 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
         return;
       }
 
-      // Configurar vídeo para iOS
-      if (videoRef.current) {
-        videoRef.current.setAttribute('autoplay', 'true');
-        videoRef.current.setAttribute('muted', 'true');
-        videoRef.current.setAttribute('playsinline', 'true');
-      }
-
+      // Limpar recursos anteriores ANTES de iniciar
       cleanup();
+      
+      if (!isMountedRef.current) {
+        console.log('Component unmounted, aborting camera start');
+        return;
+      }
+      
       setIsScanning(true);
 
-      // Solicitar permissão e stream
+      // Solicitar APENAS vídeo, SEM áudio
+      console.log('📹 Solicitando acesso à câmera (SEM microfone)...');
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: { 
           facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
-        audio: false
+        audio: false // CRÍTICO: Garantir que não solicita microfone
       });
 
-      setStream(mediaStream);
+      // Verificar se apenas vídeo foi obtido
+      const videoTracks = mediaStream.getVideoTracks();
+      const audioTracks = mediaStream.getAudioTracks();
+      
+      console.log(`📊 Tracks obtidos: ${videoTracks.length} vídeo, ${audioTracks.length} áudio`);
+      
+      // Se obteve áudio por engano, parar e remover
+      if (audioTracks.length > 0) {
+        console.warn('⚠️ Áudio foi obtido por engano, removendo...');
+        audioTracks.forEach(track => {
+          track.stop();
+          mediaStream.removeTrack(track);
+        });
+      }
+
+      if (!isMountedRef.current) {
+        console.log('Component unmounted during camera init, cleaning up');
+        mediaStream.getTracks().forEach(track => track.stop());
+        return;
+      }
+
+      streamRef.current = mediaStream;
 
       if (videoRef.current) {
+        // Configurar vídeo para iOS
+        videoRef.current.setAttribute('autoplay', 'true');
+        videoRef.current.setAttribute('muted', 'true');
+        videoRef.current.setAttribute('playsinline', 'true');
+        
         videoRef.current.srcObject = mediaStream;
         
         videoRef.current.onloadedmetadata = async () => {
+          if (!isMountedRef.current) {
+            console.log('Component unmounted, skipping video play');
+            cleanup();
+            return;
+          }
+          
           try {
             await videoRef.current?.play();
             console.log('✅ Vídeo iniciado');
             
             // Iniciar decodificação após vídeo carregar
-            setTimeout(() => startDecoding(), 300);
+            if (isMountedRef.current) {
+              setTimeout(() => {
+                if (isMountedRef.current) {
+                  startDecoding();
+                }
+              }, 300);
+            }
           } catch (err) {
             console.error('❌ Erro ao reproduzir:', err);
             toast.error('Erro ao iniciar vídeo');
             cleanup();
           }
+        };
+        
+        videoRef.current.onerror = (err) => {
+          console.error('❌ Erro no vídeo:', err);
+          cleanup();
         };
       }
 
@@ -224,13 +302,18 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   };
 
   const toggleTorch = async () => {
-    if (!stream) {
+    if (!streamRef.current) {
       toast.warning('Inicie a câmera primeiro');
       return;
     }
     
     try {
-      const videoTrack = stream.getVideoTracks()[0];
+      const videoTrack = streamRef.current.getVideoTracks()[0];
+      if (!videoTrack) {
+        toast.warning('Track de vídeo não encontrado');
+        return;
+      }
+      
       const capabilities = videoTrack.getCapabilities() as any;
       
       if (capabilities.torch) {
