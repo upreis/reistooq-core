@@ -125,7 +125,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
     if (group.hasLowStock) {
       return { variant: "destructive" as const, label: "Estoque Baixo" };
     }
-    return { variant: "default" as const, label: "Normal" };
+    return { variant: "default" as const, label: "Estoque Normal" };
   };
 
   // 🎯 Modo tabela tradicional
