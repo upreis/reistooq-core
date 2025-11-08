@@ -305,9 +305,16 @@ export default function DevolucoesMercadoLivre() {
           </div>
 
           {/* Pagination */}
-          <div className="px-4 md:px-6 pb-6">
-            <DevolucaoPaginationControls />
-          </div>
+          {totalPages > 1 && (
+            <div className="px-4 md:px-6 pb-6">
+              <DevolucaoPaginationControls 
+                currentPage={state.currentPage}
+                totalPages={totalPages}
+                onPageChange={actions.setPage}
+                isLoading={state.loading}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

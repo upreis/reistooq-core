@@ -5,30 +5,37 @@
 
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useDevolucaoStore } from '../store/useDevolucaoStore';
 
-export const DevolucaoPaginationControls = () => {
-  const pagination = useDevolucaoStore(state => state.pagination);
-  const setPage = useDevolucaoStore(state => state.setPage);
-  
-  const totalPages = Math.ceil(pagination.total / pagination.itemsPerPage);
-  const canGoPrev = pagination.currentPage > 1;
-  const canGoNext = pagination.currentPage < totalPages;
+interface DevolucaoPaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  isLoading?: boolean;
+}
+
+export const DevolucaoPaginationControls = ({ 
+  currentPage, 
+  totalPages, 
+  onPageChange,
+  isLoading = false 
+}: DevolucaoPaginationControlsProps) => {
+  const canGoPrev = currentPage > 1;
+  const canGoNext = currentPage < totalPages;
 
   if (totalPages <= 1) return null;
 
   return (
     <div className="flex items-center justify-between">
       <p className="text-sm text-muted-foreground">
-        Página {pagination.currentPage} de {totalPages}
+        Página {currentPage} de {totalPages}
       </p>
       
       <div className="flex gap-2">
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPage(pagination.currentPage - 1)}
-          disabled={!canGoPrev}
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={!canGoPrev || isLoading}
         >
           <ChevronLeft className="h-4 w-4 mr-1" />
           Anterior
@@ -37,8 +44,8 @@ export const DevolucaoPaginationControls = () => {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setPage(pagination.currentPage + 1)}
-          disabled={!canGoNext}
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={!canGoNext || isLoading}
         >
           Próxima
           <ChevronRight className="h-4 w-4 ml-1" />
