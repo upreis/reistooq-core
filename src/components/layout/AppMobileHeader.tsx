@@ -1,8 +1,7 @@
 import React from "react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, Bell, LogOut, Package, QrCode, ArrowLeftRight } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Menu, LogOut, Package, QrCode, ArrowLeftRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
@@ -91,19 +90,6 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
 
         <div className="flex items-center gap-1 shrink-0">
           {actions}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative h-10 w-10 touch-manipulation"
-          >
-            <Bell className="h-4 w-4" />
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-            >
-              3
-            </Badge>
-          </Button>
         </div>
       </div>
     </div>
