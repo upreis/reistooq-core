@@ -244,12 +244,37 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
 
       console.log('📷 [Scanner] Loading ZXing...');
       const { BrowserMultiFormatReader } = await import('@zxing/browser');
-      readerRef.current = new BrowserMultiFormatReader();
+      const { DecodeHintType, BarcodeFormat } = await import('@zxing/library');
+      
+      // ✅ CONFIGURAÇÃO OTIMIZADA: Melhor detecção de códigos
+      const hints = new Map();
+      hints.set(DecodeHintType.TRY_HARDER, true);
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        BarcodeFormat.EAN_13, 
+        BarcodeFormat.EAN_8, 
+        BarcodeFormat.CODE_128, 
+        BarcodeFormat.CODE_39,
+        BarcodeFormat.UPC_A, 
+        BarcodeFormat.UPC_E, 
+        BarcodeFormat.ITF, 
+        BarcodeFormat.QR_CODE
+      ]);
+      
+      readerRef.current = new BrowserMultiFormatReader(hints);
 
+      // ✅ CONFIGURAÇÃO OTIMIZADA: Maior resolução para melhor leitura
       const constraints: MediaStreamConstraints = {
         video: deviceId 
-          ? { deviceId: { exact: deviceId } }
-          : { facingMode: preferredCamera === 'back' ? 'environment' : 'user' }
+          ? { 
+              deviceId: { exact: deviceId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            }
+          : { 
+              facingMode: preferredCamera === 'back' ? 'environment' : 'user',
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            }
       };
 
       console.log('📷 [Scanner] Requesting camera access...', constraints);
