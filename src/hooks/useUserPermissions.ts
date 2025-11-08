@@ -68,14 +68,26 @@ export function useUserPermissions() {
 
   // Helper functions
   const hasPermission = (permission: string): boolean => {
+    // Administradores têm acesso total a tudo
+    if (permissions.includes('admin:access')) {
+      return true;
+    }
     return permissions.includes(permission);
   };
 
   const hasAnyPermission = (perms: string[]): boolean => {
+    // Administradores têm acesso total a tudo
+    if (permissions.includes('admin:access')) {
+      return true;
+    }
     return perms.some(perm => permissions.includes(perm));
   };
 
   const hasAllPermissions = (perms: string[]): boolean => {
+    // Administradores têm acesso total a tudo
+    if (permissions.includes('admin:access')) {
+      return true;
+    }
     return perms.every(perm => permissions.includes(perm));
   };
 
