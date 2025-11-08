@@ -70,6 +70,9 @@ export function useDevolucaoManager(initialAccountId?: string) {
   const [integrationAccountId, setIntegrationAccountId] = useState(initialAccountId || '');
   const [cachedAt, setCachedAt] = useState<Date>();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // NOVO: Suporte para múltiplas contas
+  const [multipleAccountIds, setMultipleAccountIds] = useState<string[]>([]);
 
   // Controle de requests concorrentes
   const requestIdRef = useRef<number>(0);
@@ -112,11 +115,19 @@ export function useDevolucaoManager(initialAccountId?: string) {
     return () => { active = false; };
   }, []);
 
-  // Build API params
-  const buildApiParams = useCallback((filters: DevolucaoFilters, page: number, size: number) => {
-    const accountIds = filters.integrationAccountId 
-      ? [filters.integrationAccountId] 
-      : availableMlAccounts;
+  // Build API params - SUPORTE PARA MÚLTIPLAS CONTAS
+  const buildApiParams = useCallback((filters: DevolucaoFilters, page: number, size: number, multipleAccounts: string[] = []) => {
+    // Se foram passadas múltiplas contas explicitamente, usar elas
+    // Senão, usar a conta do filtro ou todas as disponíveis
+    let accountIds: string[] = [];
+    
+    if (multipleAccounts.length > 0) {
+      accountIds = multipleAccounts;
+    } else if (filters.integrationAccountId) {
+      accountIds = [filters.integrationAccountId];
+    } else {
+      accountIds = availableMlAccounts;
+    }
 
     if (accountIds.length === 0) {
       console.warn('[buildApiParams] Nenhuma conta disponível');
@@ -130,7 +141,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
     };
 
     const params: any = {
-      accountIds,
+      accountIds, // Sempre array, pode ter 1 ou mais contas
       filters: {
         search: filters.search || undefined,
         status: filters.status && filters.status.length > 0 ? filters.status : undefined,
@@ -146,14 +157,18 @@ export function useDevolucaoManager(initialAccountId?: string) {
     return params;
   }, [availableMlAccounts]);
 
-  // Fetcher function para SWR
-  const fetcher = useCallback(async ([_key, accountId, filters, page, size]: [string, string, DevolucaoFilters, number, number]) => {
-    const params = buildApiParams(filters, page, size);
+  // Fetcher function para SWR - suporte para múltiplas contas
+  const fetcher = useCallback(async ([_key, accountKey, filters, page, size]: [string, string, DevolucaoFilters, number, number]) => {
+    // Se accountKey contém vírgulas, são múltiplas contas
+    const isMultiple = accountKey.includes(',');
+    const accountsToFetch = isMultiple ? accountKey.split(',') : [accountKey];
+    
+    const params = buildApiParams(filters, page, size, accountsToFetch);
     if (!params) {
       throw new Error('Nenhuma conta ML disponível');
     }
 
-    console.log('🔄 [ml-returns] Buscando devoluções para conta:', accountId, 'params:', params);
+    console.log('🔄 [ml-returns] Buscando devoluções de', accountsToFetch.length, 'conta(s):', params);
 
     const { data, error: err } = await supabase.functions.invoke('ml-returns', {
       body: params,
@@ -164,7 +179,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
       throw err;
     }
 
-    console.log('✅ [ml-returns] Retornado:', data?.returns?.length || 0, 'devoluções de', accountId);
+    console.log('✅ [ml-returns] Retornado:', data?.returns?.length || 0, 'devoluções de', accountsToFetch.length, 'conta(s)');
 
     return {
       returns: data?.returns || [],
@@ -172,18 +187,24 @@ export function useDevolucaoManager(initialAccountId?: string) {
     };
   }, [buildApiParams]);
 
-  // SWR key baseada em filtros debounced E integrationAccountId
+  // SWR key baseada em filtros debounced E integrationAccountId OU múltiplas contas
   const swrKey = useMemo(() => {
-    // Verificar se há conta selecionada
+    // Se tem múltiplas contas selecionadas, usar elas na key
+    if (multipleAccountIds.length > 0) {
+      const accountsKey = multipleAccountIds.sort().join(',');
+      return ['devolucoes', accountsKey, debouncedFilters, currentPage, pageSize] as const;
+    }
+    
+    // Senão, usar conta única
     const accountToUse = integrationAccountId || (availableMlAccounts.length > 0 ? availableMlAccounts[0] : null);
     
-    if (!accountToUse) {
+    if (!accountToUse && multipleAccountIds.length === 0) {
       return null;
     }
     
     // Incluir explicitamente integrationAccountId na key para forçar refetch ao trocar de conta
     return ['devolucoes', accountToUse, debouncedFilters, currentPage, pageSize] as const;
-  }, [integrationAccountId, debouncedFilters, currentPage, pageSize, availableMlAccounts]);
+  }, [integrationAccountId, multipleAccountIds, debouncedFilters, currentPage, pageSize, availableMlAccounts]);
 
   // SWR com cache inteligente
   const { data, error: swrError, isLoading, mutate } = useSWR(
@@ -241,6 +262,15 @@ export function useDevolucaoManager(initialAccountId?: string) {
   const setAccountId = useCallback((id: string) => {
     setIntegrationAccountId(id);
     setFiltersState(prev => ({ ...prev, integrationAccountId: id }));
+    setMultipleAccountIds([]); // Limpar múltiplas contas ao selecionar uma única
+    setCurrentPage(1);
+  }, []);
+
+  // NOVA ACTION: Buscar de múltiplas contas
+  const setMultipleAccounts = useCallback((ids: string[]) => {
+    setMultipleAccountIds(ids);
+    setIntegrationAccountId(''); // Limpar conta única ao selecionar múltiplas
+    setFiltersState(prev => ({ ...prev, integrationAccountId: '' }));
     setCurrentPage(1);
   }, []);
 
@@ -269,6 +299,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
       currentPage,
       pageSize,
       integrationAccountId,
+      multipleAccountIds, // NOVO
       cachedAt,
       isRefreshing,
     },
@@ -279,6 +310,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
       setPage,
       setPageSize,
       setIntegrationAccountId: setAccountId,
+      setMultipleAccounts, // NOVA ACTION
       refetch,
       restorePersistedData,
     },

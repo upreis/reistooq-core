@@ -63,11 +63,13 @@ export default function DevolucoesMercadoLivre() {
       
       setAccounts(data || []);
       
-      // Selecionar a primeira conta por padrão (não todas, pois o manager suporta apenas 1)
+      // Por padrão, selecionar TODAS as contas
       if (data && data.length > 0) {
-        const firstAccountId = data[0].id;
-        setSelectedAccountIds([firstAccountId]);
-        actions.setIntegrationAccountId(firstAccountId);
+        const allAccountIds = data.map(acc => acc.id);
+        setSelectedAccountIds(allAccountIds);
+        
+        // No manager, iniciar com a primeira conta
+        actions.setIntegrationAccountId(data[0].id);
       }
     };
     fetchAccounts();
@@ -112,16 +114,26 @@ export default function DevolucoesMercadoLivre() {
     const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
     
     return dataToUse.map((dev) => {
-      // Encontrar nome da empresa/conta
-      const account = accounts.find(acc => acc.id === state.integrationAccountId);
+      // Determinar nome da empresa:
+      // Se estamos buscando múltiplas contas, não temos como saber qual é qual
+      // sem um campo adicional na resposta da API
+      let empresaNome = 'N/A';
+      
+      if (state.multipleAccountIds && state.multipleAccountIds.length > 1) {
+        empresaNome = 'Múltiplas Contas';
+      } else {
+        const accountId = state.integrationAccountId || state.multipleAccountIds[0];
+        const account = accounts.find(acc => acc.id === accountId);
+        empresaNome = account?.name || 'N/A';
+      }
       
       return {
         ...dev,
         status_analise: analiseStatus[dev.id]?.status || ('pendente' as StatusAnalise),
-        empresa: account?.name || 'N/A',
+        empresa: empresaNome,
       };
     });
-  }, [filteredByQuickFilter, state.devolucoes, analiseStatus, accounts, state.integrationAccountId]);
+  }, [filteredByQuickFilter, state.devolucoes, state.multipleAccountIds, state.integrationAccountId, analiseStatus, accounts]);
 
   // Separar em Ativas e Histórico
   const devolucoesFiltradas = useMemo(() => {
@@ -164,21 +176,24 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // Usar a primeira conta selecionada
-      const accountId = selectedAccountIds[0];
-      console.log('🔍 Buscando devoluções da conta:', accountId);
-      
-      // Atualizar a conta no manager - isso vai disparar um novo fetch automaticamente
-      actions.setIntegrationAccountId(accountId);
+      if (selectedAccountIds.length === 1) {
+        // Busca de conta única
+        console.log('🔍 Buscando devoluções da conta:', selectedAccountIds[0]);
+        actions.setIntegrationAccountId(selectedAccountIds[0]);
+      } else {
+        // Busca de múltiplas contas
+        console.log('🔍 Buscando devoluções de', selectedAccountIds.length, 'contas:', selectedAccountIds);
+        actions.setMultipleAccounts(selectedAccountIds);
+      }
       
       // Aguardar um pouco para o SWR processar
       await new Promise(resolve => setTimeout(resolve, 100));
       
-      if (selectedAccountIds.length > 1) {
-        toast.info(`Buscando da conta selecionada. Suporte para múltiplas contas em breve.`);
-      } else {
-        toast.success('Busca iniciada');
-      }
+      const contasTexto = selectedAccountIds.length === 1 
+        ? 'conta selecionada' 
+        : `${selectedAccountIds.length} contas selecionadas`;
+      
+      toast.success(`Buscando devoluções de ${contasTexto}...`);
     } catch (error) {
       console.error('Erro ao buscar:', error);
       toast.error('Erro ao buscar devoluções');
