@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { FolderOpen, Box, Package, Layers, AlertTriangle } from "lucide-react";
+import { FolderOpen, Box, Package, Layers, AlertTriangle, Filter, Plus } from "lucide-react";
 import { ChevronRight, ChevronDown, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -340,10 +340,36 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                               )}
                             </div>
                             
-                            {/* Linha 4: Estoque Total - apenas mobile e se tiver filhos */}
+                            {/* Linha 4: Estoque Total com ícones - apenas mobile e se tiver filhos */}
                             {hasChildren && (
-                              <div className="text-xs font-semibold text-foreground pt-0.5">
-                                Estoque Total: {group.totalStock}
+                              <div className="flex items-center justify-between pt-0.5">
+                                <span className="text-xs font-semibold text-foreground">
+                                  Estoque Total: {group.totalStock}
+                                </span>
+                                <div className="flex gap-2 ml-auto">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log("Filtro clicado");
+                                    }}
+                                  >
+                                    <Filter className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      console.log("Nova composição");
+                                    }}
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>
