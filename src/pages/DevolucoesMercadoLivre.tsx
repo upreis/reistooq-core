@@ -84,19 +84,9 @@ export default function DevolucoesMercadoLivre() {
     clearOldData();
   }, [clearOldData]);
 
-  // Restaurar estado persistido
-  useEffect(() => {
-    if (persistentState.isStateLoaded && persistentState.hasValidPersistedState()) {
-      const persisted = persistentState.persistedState!;
-      console.log('🔄 Restaurando estado:', persisted.devolucoes.length, 'devoluções');
-      
-      actions.restorePersistedData(persisted.devolucoes, persisted.total, persisted.currentPage);
-      
-      if (persisted.integrationAccountId) {
-        actions.setIntegrationAccountId(persisted.integrationAccountId);
-      }
-    }
-  }, [persistentState.isStateLoaded]);
+  // NÃO restaurar dados antigos automaticamente
+  // Isso causava o bug de mostrar 25 devoluções antigas quando havia 90 novas
+  // O sistema agora sempre busca dados frescos da API
 
   // Salvar dados ao mudar (com debounce automático no manager)
   useEffect(() => {

@@ -24,38 +24,20 @@ export function usePersistentDevolucaoState() {
   const [persistedState, setPersistedState] = useState<PersistedDevolucaoState | null>(null);
   const [isStateLoaded, setIsStateLoaded] = useState(false);
 
-  // Carregar estado ao montar
+  // Limpar cache antigo ao montar
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         
-        // Validar versão e timestamp (expirar após 1 hora)
-        if (parsed.version === STORAGE_VERSION && (Date.now() - parsed.timestamp) < 3600000) {
-          console.log('✅ Estado persistido restaurado:', {
-            devolucoes: parsed.devolucoes?.length || 0,
-            timestamp: new Date(parsed.timestamp).toLocaleString(),
-          });
-          
-          // Restaurar datas como objetos Date
-          if (parsed.filters) {
-            if (parsed.filters.dateFrom) {
-              parsed.filters.dateFrom = new Date(parsed.filters.dateFrom);
-            }
-            if (parsed.filters.dateTo) {
-              parsed.filters.dateTo = new Date(parsed.filters.dateTo);
-            }
-          }
-          
-          setPersistedState(parsed);
-        } else {
-          console.log('⏱️ Estado persistido expirado ou versão incompatível');
-          localStorage.removeItem(STORAGE_KEY);
-        }
+        // Sempre limpar dados antigos para evitar mostrar cache desatualizado
+        // que causava o bug de mostrar 25 devoluções quando havia 90 novas
+        console.log('🗑️ Limpando cache antigo de devoluções');
+        localStorage.removeItem(STORAGE_KEY);
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar estado persistido:', error);
+      console.error('❌ Erro ao limpar cache:', error);
       localStorage.removeItem(STORAGE_KEY);
     } finally {
       setIsStateLoaded(true);
