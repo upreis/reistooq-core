@@ -275,7 +275,7 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     <div className="flex-1 min-w-0">
                       {isMobile ? (
                         // Layout mobile: mais compacto e organizado
-                        <div className="space-y-1">
+                        <div className="space-y-1 min-h-[60px]">
                           <div 
                             className="cursor-pointer hover:opacity-80 transition-opacity"
                             onClick={(e) => {
