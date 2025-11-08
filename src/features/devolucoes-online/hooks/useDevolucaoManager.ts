@@ -147,13 +147,13 @@ export function useDevolucaoManager(initialAccountId?: string) {
   }, [availableMlAccounts]);
 
   // Fetcher function para SWR
-  const fetcher = useCallback(async ([_key, filters, page, size]: [string, DevolucaoFilters, number, number]) => {
+  const fetcher = useCallback(async ([_key, accountId, filters, page, size]: [string, string, DevolucaoFilters, number, number]) => {
     const params = buildApiParams(filters, page, size);
     if (!params) {
       throw new Error('Nenhuma conta ML disponível');
     }
 
-    console.log('🔄 [ml-returns] Buscando devoluções:', params);
+    console.log('🔄 [ml-returns] Buscando devoluções para conta:', accountId, 'params:', params);
 
     const { data, error: err } = await supabase.functions.invoke('ml-returns', {
       body: params,
@@ -164,7 +164,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
       throw err;
     }
 
-    console.log('✅ [ml-returns] Retornado:', data?.returns?.length || 0, 'devoluções');
+    console.log('✅ [ml-returns] Retornado:', data?.returns?.length || 0, 'devoluções de', accountId);
 
     return {
       returns: data?.returns || [],
@@ -172,13 +172,18 @@ export function useDevolucaoManager(initialAccountId?: string) {
     };
   }, [buildApiParams]);
 
-  // SWR key baseada em filtros debounced
+  // SWR key baseada em filtros debounced E integrationAccountId
   const swrKey = useMemo(() => {
-    if (!integrationAccountId && availableMlAccounts.length === 0) {
+    // Verificar se há conta selecionada
+    const accountToUse = integrationAccountId || (availableMlAccounts.length > 0 ? availableMlAccounts[0] : null);
+    
+    if (!accountToUse) {
       return null;
     }
-    return ['devolucoes', debouncedFilters, currentPage, pageSize] as const;
-  }, [debouncedFilters, currentPage, pageSize, integrationAccountId, availableMlAccounts]);
+    
+    // Incluir explicitamente integrationAccountId na key para forçar refetch ao trocar de conta
+    return ['devolucoes', accountToUse, debouncedFilters, currentPage, pageSize] as const;
+  }, [integrationAccountId, debouncedFilters, currentPage, pageSize, availableMlAccounts]);
 
   // SWR com cache inteligente
   const { data, error: swrError, isLoading, mutate } = useSWR(

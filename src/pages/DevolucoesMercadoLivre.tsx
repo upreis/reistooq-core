@@ -164,18 +164,20 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // Usar as contas selecionadas para buscar
-      // Como o manager atual suporta apenas 1 conta, vamos usar a primeira
-      // TODO: Refatorar manager para suportar múltiplas contas
-      if (selectedAccountIds.length > 0) {
-        actions.setIntegrationAccountId(selectedAccountIds[0]);
-        await actions.refetch();
-        
-        if (selectedAccountIds.length > 1) {
-          toast.info(`Buscando apenas da primeira conta selecionada. Suporte para múltiplas contas em breve.`);
-        } else {
-          toast.success('Busca realizada com sucesso');
-        }
+      // Usar a primeira conta selecionada
+      const accountId = selectedAccountIds[0];
+      console.log('🔍 Buscando devoluções da conta:', accountId);
+      
+      // Atualizar a conta no manager - isso vai disparar um novo fetch automaticamente
+      actions.setIntegrationAccountId(accountId);
+      
+      // Aguardar um pouco para o SWR processar
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      if (selectedAccountIds.length > 1) {
+        toast.info(`Buscando da conta selecionada. Suporte para múltiplas contas em breve.`);
+      } else {
+        toast.success('Busca iniciada');
       }
     } catch (error) {
       console.error('Erro ao buscar:', error);
