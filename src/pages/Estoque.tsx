@@ -12,7 +12,7 @@ const EstoqueContent = () => {
     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
       <Package className="h-4 w-4" />
       <span>/</span>
-      <span className="text-primary">Gestão de Estoque</span>
+      <span className="text-primary">Estoque Principal</span>
     </div>
   );
 
