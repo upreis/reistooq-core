@@ -201,7 +201,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
       dedupingInterval: 30000, // 30s deduping
       revalidateOnFocus: false,
       errorRetryCount: 2,
-      keepPreviousData: true,
+      keepPreviousData: false, // NÃO manter dados anteriores para evitar mostrar dados da conta errada
       onSuccess: (data) => {
         if (data) {
           setDevolucoes(data.returns);
@@ -217,6 +217,12 @@ export function useDevolucaoManager(initialAccountId?: string) {
       },
     }
   );
+
+  // Limpar dados quando a conta mudar para evitar mostrar dados antigos
+  useEffect(() => {
+    setDevolucoes([]);
+    setTotal(0);
+  }, [integrationAccountId, multipleAccountIds]);
 
   // Sync loading state
   useEffect(() => {
