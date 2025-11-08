@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Package, Search, TrendingUp } from "lucide-react";
 import { toast } from 'sonner';
-import { SimpleMobileScanner } from "@/components/scanner/SimpleMobileScanner";
+import { MobileScanner } from "@/components/scanner/MobileScanner";
 import { ProductModal } from "@/components/estoque/ProductModal";
 import { productService } from "@/features/scanner/services/ProductService";
 import { ScannedProduct } from "@/features/scanner/types/scanner.types";
@@ -153,7 +153,7 @@ const Scanner = () => {
         </div>
 
         {/* Scanner Component */}
-        <SimpleMobileScanner 
+        <MobileScanner 
           onScanResult={handleScanResult}
           onError={handleScanError}
         />
