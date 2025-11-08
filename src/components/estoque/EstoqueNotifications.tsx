@@ -17,6 +17,7 @@ import { Product } from "@/hooks/useProducts";
 import { useProductHierarchy } from "@/hooks/useProductHierarchy";
 import { useEstoqueSettings } from "@/hooks/useEstoqueSettings";
 import { EstoqueSettings } from "./EstoqueSettings";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface EstoqueNotificationsProps {
   products: Product[];
@@ -44,6 +45,12 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const [isCollapsed, setIsCollapsed] = useState(false);
   const hierarchy = useProductHierarchy(products);
   const { config } = useEstoqueSettings();
+  const isMobile = useIsMobile();
+
+  // Ocultar notificações em mobile
+  if (isMobile) {
+    return null;
+  }
 
   useEffect(() => {
     generateNotifications();
