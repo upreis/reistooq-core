@@ -39,13 +39,8 @@ interface Notification {
 }
 
 export function EstoqueNotifications({ products, onProductClick, onFilterByStock, onOpenPriceModal, onOpenOrphanModal, onOrphanProductClick }: EstoqueNotificationsProps) {
+  // ✅ CRÍTICO: Todos os hooks devem ser executados SEMPRE, independente de qualquer condição
   const isMobile = useIsMobile();
-  
-  // Ocultar notificações em mobile - ANTES de qualquer outro hook
-  if (isMobile) {
-    return null;
-  }
-
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -54,8 +49,11 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   const { config } = useEstoqueSettings();
 
   useEffect(() => {
-    generateNotifications();
-  }, [products, config]);
+    // Só gera notificações se não for mobile
+    if (!isMobile) {
+      generateNotifications();
+    }
+  }, [products, config, isMobile]);
 
   const generateNotifications = () => {
     const newNotifications: Notification[] = [];
@@ -163,6 +161,11 @@ export function EstoqueNotifications({ products, onProductClick, onFilterByStock
   };
 
   const visibleNotifications = notifications.filter(n => !dismissed.has(n.id));
+
+  // ✅ CRÍTICO: Ocultar em mobile - retorna null DEPOIS de todos os hooks serem executados
+  if (isMobile) {
+    return null;
+  }
 
   if (visibleNotifications.length === 0) {
     if (isCollapsed) {
