@@ -1037,7 +1037,6 @@ useEffect(() => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const isDevolucoesRoute = location.pathname === '/ml-orders-completas';
 
   // Render principal
   return (

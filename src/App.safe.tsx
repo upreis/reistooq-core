@@ -19,7 +19,7 @@ import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import Scanner from "./pages/Scanner";
-import MLOrdersCompletas from "./pages/MLOrdersCompletas";
+
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
 import ComprasPage from "./pages/Compras";
@@ -107,8 +107,6 @@ function SafeApp() {
                     <Route path="compras/*" element={<ComprasPage />} />
                     <Route path="compras/cotacoes" element={<CotacoesPage />} />
                     
-                    {/* Rota de pedidos ML completas */}
-                    <Route path="ml-orders-completas" element={<MLOrdersCompletas />} />
                   </Route>
                   
                   {/* Rota 404 */}

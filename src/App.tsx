@@ -23,7 +23,7 @@ import Pedidos from "./pages/Pedidos";
 import VendasOnline from "./pages/VendasOnline";
 import DevolucoesMercadoLivre from "./pages/DevolucoesMercadoLivre";
 import Scanner from "./pages/Scanner";
-import MLOrdersCompletas from "./pages/MLOrdersCompletas";
+
 import Reclamacoes from "./pages/Reclamacoes";
 import DePara from "./pages/DePara";
 import Alertas from "./pages/Alertas";
@@ -181,11 +181,6 @@ function App() {
                          <DevolucoesMercadoLivre />
                        </PermissionRoute>
                      } />
-                    <Route path="/ml-orders-completas" element={
-                      <PermissionRoute requiredPermissions={['integrations:manage']}>
-                        <MLOrdersCompletas />
-                      </PermissionRoute>
-                    } />
                     <Route path="/reclamacoes" element={
                       <PermissionRoute requiredPermissions={['integrations:manage']}>
                         <Reclamacoes />

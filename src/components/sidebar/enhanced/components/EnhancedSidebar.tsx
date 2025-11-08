@@ -164,7 +164,6 @@ const SidebarContent = memo(({
     
     // Configurações permissions - todas sob configuracoes:view
     if (path.startsWith('/configuracoes')) return 'configuracoes:view';
-    if (path.startsWith('/ml-orders-completas')) return 'integrations:manage';
     
     // Admin permissions
     if (path.startsWith('/admin')) return 'admin:access';

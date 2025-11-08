@@ -10,11 +10,6 @@ const subNavItems = [
     preserveSearch: true,
   },
   {
-    path: "/ml-orders-completas",
-    label: "Devoluções de Vendas",
-    icon: RefreshCcw,
-  },
-  {
     path: "/reclamacoes",
     label: "Reclamações",
     icon: AlertCircle,

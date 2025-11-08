@@ -93,10 +93,7 @@ export const PermissoesMLGuide: React.FC = () => {
           </h3>
           <div className="pl-8 space-y-2">
             <p className="text-sm text-muted-foreground">
-              Clique no botão <strong>"Atualizar Cargo"</strong> para salvar
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Recarregue a página <strong>/ml-orders-completas</strong>
+              Clique no botão <strong>"Atualizar Cargo"</strong> para salvar e recarregue a página
             </p>
           </div>
         </div>
