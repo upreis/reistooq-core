@@ -207,6 +207,16 @@ export default function ControleEstoquePage() {
         onLinkChild={() => setLinkChildModalOpen(true)}
         onDelete={handleDeleteSelected}
         onImportSuccess={loadProducts}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        selectedStatus={paginationSelectedStatus}
+        onStatusChange={setPaginationSelectedStatus}
+        selectedProductType={selectedProductType}
+        onProductTypeChange={setSelectedProductType}
+        categories={categories}
+        onClearFilters={handleClearFilters}
+        hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
+        onSearch={handleSearch}
       />
 
       <TableWrapper>
