@@ -19,11 +19,6 @@ const NAV_ITEMS = [
     href: "/scanner",
     icon: QrCode,
   },
-  {
-    label: "Mais",
-    href: "/apps/notes", // página temporária, será acessível via menu hambúrguer
-    icon: BarChart3,
-  },
 ];
 
 export default function MobileBottomNav() {
@@ -31,7 +26,7 @@ export default function MobileBottomNav() {
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t safe-area-bottom">
-      <nav className="grid grid-cols-4 h-16 min-h-[64px]">
+      <nav className="grid grid-cols-3 h-16 min-h-[64px]">
         {NAV_ITEMS.map((item) => {
           const isActive = location.pathname === item.href;
           const Icon = item.icon;
