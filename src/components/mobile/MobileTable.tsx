@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Box } from "lucide-react";
 
 interface MobileTableColumn {
   key: string;
@@ -268,62 +267,50 @@ export default function MobileTable({
             )}
             onClick={() => onRowClick?.(item)}
           >
-            <CardContent className="p-2">
-              <div className="flex items-start gap-2">
-                {selectableItems && (
-                  <Checkbox
-                    checked={isSelected}
-                    onCheckedChange={() => onSelectItem(item[keyField])}
-                    onClick={(e) => e.stopPropagation()}
-                    className="mt-0.5 h-4 w-4"
-                  />
-                )}
-                
-                {/* Imagem do produto */}
-                {item.url_imagem ? (
-                  <img 
-                    src={item.url_imagem} 
-                    alt={item.nome || item[keyField]}
-                    className="w-10 h-10 object-cover rounded-md border border-border flex-shrink-0"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-10 h-10 flex items-center justify-center bg-muted rounded-md border border-border flex-shrink-0">
-                    <Box className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                )}
-                
-                <div className="min-w-0 flex-1 space-y-0.5">
-                  {/* SKU */}
-                  <div className="font-semibold text-xs leading-tight">
-                    {item.sku_interno || item[keyField]}
-                  </div>
-                  
-                  {/* Nome */}
-                  <p className="text-[11px] text-muted-foreground line-clamp-1">
-                    {item.nome || "Sem nome"}
-                  </p>
-                  
-                  {/* Categoria Principal */}
-                  {item.categoria_principal && (
-                    <p className="text-[10px] text-muted-foreground/80">
-                      {item.categoria_principal}
-                    </p>
+            <CardContent className="p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 min-w-0 flex-1">
+                  {selectableItems && (
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onSelectItem(item[keyField])}
+                      onClick={(e) => e.stopPropagation()}
+                      className="mt-0.5 h-4 w-4"
+                    />
                   )}
-                </div>
-                
-                {/* Estoque */}
-                <div className="text-right flex-shrink-0">
-                  <div className="text-xs font-semibold">
-                    Estoque: {item.quantidade_estoque || 0}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    {/* Primary info - título mais compacto */}
+                    {primaryColumn && (
+                      <h3 className="font-medium text-xs leading-tight text-foreground">
+                        {primaryColumn.render 
+                          ? primaryColumn.render(item[primaryColumn.key], item)
+                          : item[primaryColumn.key]
+                        }
+                      </h3>
+                    )}
+                    
+                    {/* Secondary info - layout em grid compacto */}
+                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
+                      {secondaryColumns.slice(0, 6).map((column) => (
+                        <div key={column.key} className="min-w-0">
+                          <span className="text-muted-foreground/80 block leading-tight">
+                            {column.label}:
+                          </span>
+                          <div className="text-foreground font-medium leading-tight text-[11px]">
+                            {column.render 
+                              ? column.render(item[column.key], item)
+                              : <span className="truncate block">{item[column.key] || "N/A"}</span>
+                            }
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
                 
                 {/* Actions - mais compactas */}
                 {actions.length > 0 && (
-                  <div className="flex flex-col gap-1 ml-1">
+                  <div className="flex flex-col gap-1 ml-2">
                     {actions.map((action, index) => (
                       <Button
                         key={index}
