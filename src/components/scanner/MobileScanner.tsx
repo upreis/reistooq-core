@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Camera as CameraIcon, X, Flashlight, Keyboard, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,39 +107,42 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
     console.log('✅ Cleanup complete');
   };
 
-  // Reset inactivity timer
-  const resetInactivityTimer = () => {
+  // Reset inactivity timer - usando useCallback para estabilizar a função
+  const resetInactivityTimer = useCallback(() => {
     console.log('🔄 Resetting inactivity timer');
     
     if (inactivityTimeoutRef.current) {
       clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = undefined;
     }
 
-    if (isScanning) {
-      inactivityTimeoutRef.current = setTimeout(() => {
-        console.log('⏰ Auto-desligamento por inatividade (2 minutos)');
-        
-        toast.info('Câmera desligada por inatividade', {
-          description: 'A câmera foi desligada automaticamente após 2 minutos sem uso para economizar bateria.',
-          duration: 5000,
-        });
-        
-        cleanup();
-      }, INACTIVITY_TIMEOUT);
-    }
-  };
+    // Apenas criar novo timer se estiver escaneando
+    inactivityTimeoutRef.current = setTimeout(() => {
+      console.log('⏰ Auto-desligamento por inatividade (2 minutos)');
+      
+      toast.info('Câmera desligada por inatividade', {
+        description: 'A câmera foi desligada automaticamente após 2 minutos sem uso para economizar bateria.',
+        duration: 5000,
+      });
+      
+      cleanup();
+    }, INACTIVITY_TIMEOUT);
+  }, []);
 
   // Start inactivity timer when scanning starts
   useEffect(() => {
     if (isScanning) {
       resetInactivityTimer();
-    } else {
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-        inactivityTimeoutRef.current = undefined;
-      }
+      
+      return () => {
+        // Cleanup timer quando scanner para
+        if (inactivityTimeoutRef.current) {
+          clearTimeout(inactivityTimeoutRef.current);
+          inactivityTimeoutRef.current = undefined;
+        }
+      };
     }
-  }, [isScanning]);
+  }, [isScanning, resetInactivityTimer]);
 
   const startNativeCamera = async () => {
     try {
