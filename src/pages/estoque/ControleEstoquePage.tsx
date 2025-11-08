@@ -217,8 +217,6 @@ export default function ControleEstoquePage() {
         onClearFilters={handleClearFilters}
         hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
         onSearch={handleSearch}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
       />
 
       <TableWrapper>
