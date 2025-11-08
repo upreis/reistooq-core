@@ -57,12 +57,14 @@ interface CreateChildProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  initialBarcode?: string;
 }
 
 export function CreateChildProductModal({ 
   open, 
   onOpenChange, 
-  onSuccess 
+  onSuccess,
+  initialBarcode 
 }: CreateChildProductModalProps) {
   const [selectedCategoriaPrincipal, setSelectedCategoriaPrincipal] = useState<string>("");
   const [selectedCategoria, setSelectedCategoria] = useState<string>("");
@@ -108,8 +110,15 @@ export function CreateChildProductModal({
     if (open) {
       refreshCategories?.();
       loadParentProducts();
+      
+      // Se tiver código de barras inicial, preencher na primeira variação
+      if (initialBarcode && variations.length > 0) {
+        const updated = [...variations];
+        updated[0].barcode = initialBarcode;
+        setVariations(updated);
+      }
     }
-  }, [open]);
+  }, [open, initialBarcode]);
 
   const loadParentProducts = async () => {
     try {

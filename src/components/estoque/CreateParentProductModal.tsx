@@ -19,37 +19,44 @@ interface CreateParentProductModalProps {
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
   editProduct?: Product | null;
+  initialBarcode?: string;
 }
 
 export function CreateParentProductModal({ 
   open, 
   onOpenChange, 
   onSuccess,
-  editProduct 
+  editProduct,
+  initialBarcode 
 }: CreateParentProductModalProps) {
   const [skuInterno, setSkuInterno] = useState('');
   const [nome, setNome] = useState('');
+  const [codigoBarras, setCodigoBarras] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
 
-  // Preencher campos quando editando
+  // Preencher campos quando editando ou com código escaneado
   useEffect(() => {
     if (editProduct && open) {
       setSkuInterno(editProduct.sku_interno || '');
       setNome(editProduct.nome || '');
+      setCodigoBarras(editProduct.codigo_barras || '');
       setImageUrl(editProduct.url_imagem || '');
       setImageFile(null);
+    } else if (open && initialBarcode) {
+      setCodigoBarras(initialBarcode);
     } else if (!open) {
       // Limpar quando fechar
       setSkuInterno('');
       setNome('');
+      setCodigoBarras('');
       setImageUrl('');
       setImageFile(null);
     }
-  }, [editProduct, open]);
+  }, [editProduct, open, initialBarcode]);
 
   const handleCreateParent = async () => {
     if (!skuInterno.trim() || !nome.trim()) {
@@ -91,6 +98,7 @@ export function CreateParentProductModal({
         await updateProduct(editProduct.id, {
           sku_interno: skuInterno.trim().toUpperCase(),
           nome: nome.trim(),
+          codigo_barras: codigoBarras.trim() || null,
           url_imagem: uploadedImageUrl,
         });
 
@@ -122,7 +130,7 @@ export function CreateParentProductModal({
           preco_custo: 0,
           preco_venda: 0,
           localizacao: '',
-          codigo_barras: '',
+          codigo_barras: codigoBarras.trim() || null,
           unidade_medida_id: unidadePadrao.id,
           categoria: null,
           descricao: null,
@@ -179,6 +187,7 @@ export function CreateParentProductModal({
   const handleClose = () => {
     setSkuInterno('');
     setNome('');
+    setCodigoBarras('');
     setImageUrl('');
     setImageFile(null);
     onOpenChange(false);
@@ -223,6 +232,21 @@ export function CreateParentProductModal({
               placeholder="Ex: Camiseta Básica"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleCreateParent();
+                }
+              }}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="parent-barcode">Código de Barras</Label>
+            <Input
+              id="parent-barcode"
+              placeholder="Ex: 7891234567890"
+              value={codigoBarras}
+              onChange={(e) => setCodigoBarras(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   handleCreateParent();

@@ -3,18 +3,23 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Package, Search, TrendingUp } from "lucide-react";
+import { Package, TrendingUp } from "lucide-react";
 import { toast } from 'sonner';
 import { MobileScanner } from "@/components/scanner/MobileScanner";
 import { ProductModal } from "@/components/estoque/ProductModal";
-import { productService } from "@/features/scanner/services/ProductService";
+import { CreateParentProductModal } from "@/components/estoque/CreateParentProductModal";
+import { CreateChildProductModal } from "@/components/estoque/CreateChildProductModal";
+import { ProductTypeSelector } from "@/components/scanner/ProductTypeSelector";
 import { ScannedProduct } from "@/features/scanner/types/scanner.types";
 import { useProducts, Product } from "@/hooks/useProducts";
 
 const Scanner = () => {
   const [scannedProduct, setScannedProduct] = useState<ScannedProduct | null>(null);
   const [scanHistory, setScanHistory] = useState<{ code: string; timestamp: Date; product?: ScannedProduct }[]>([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isTypeSelectorOpen, setIsTypeSelectorOpen] = useState(false);
+  const [isParentModalOpen, setIsParentModalOpen] = useState(false);
+  const [isChildModalOpen, setIsChildModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [scannedCode, setScannedCode] = useState<string>("");
   const { getProducts } = useProducts();
@@ -73,19 +78,19 @@ const Scanner = () => {
           updated_at: existingProduct.updated_at,
           organization_id: existingProduct.organization_id
         });
-        setIsModalOpen(true);
-        toast.success(`Produto encontrado: ${existingProduct.nome} - Toque para editar`);
+        setIsEditModalOpen(true);
+        toast.success(`Produto encontrado: ${existingProduct.nome}`);
         
         // Vibração de sucesso
         if ('vibrate' in navigator) {
           navigator.vibrate([100, 50, 100]);
         }
       } else {
-        // Produto não existe - abrir modal para criar novo com código preenchido
+        // Produto não existe - abrir seletor de tipo
         setCurrentProduct(null);
         setScannedProduct(null);
-        setIsModalOpen(true);
-        toast.success(`Código: ${code} - Criar novo produto`);
+        setIsTypeSelectorOpen(true);
+        toast.info(`Código não encontrado: ${code}`);
       }
       
       // Adicionar ao histórico
@@ -115,6 +120,20 @@ const Scanner = () => {
     }
   };
 
+  const handleProductTypeSelect = (type: 'parent' | 'child') => {
+    setIsTypeSelectorOpen(false);
+    if (type === 'parent') {
+      setIsParentModalOpen(true);
+    } else {
+      setIsChildModalOpen(true);
+    }
+  };
+
+  const handleTypeSelectorCancel = () => {
+    setIsTypeSelectorOpen(false);
+    setScannedCode("");
+  };
+
   const handleScanError = (error: string) => {
     toast.error(error);
   };
@@ -133,26 +152,42 @@ const Scanner = () => {
     }).format(price);
   };
 
-  const handleModalSuccess = async () => {
-    // Feedback visual claro para mobile
-    const wasCreating = !currentProduct;
-    
-    setIsModalOpen(false);
+  const handleEditModalSuccess = async () => {
+    setIsEditModalOpen(false);
     setCurrentProduct(null);
     setScannedProduct(null);
     
-    // Toast de sucesso com vibração
-    if (wasCreating) {
-      toast.success('✅ Produto criado com sucesso!', {
-        duration: 3000,
-      });
-    } else {
-      toast.success('✅ Produto atualizado com sucesso!', {
-        duration: 3000,
-      });
-    }
+    toast.success('✅ Produto atualizado com sucesso!', {
+      duration: 3000,
+    });
     
     // Vibração de confirmação
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  };
+
+  const handleParentModalSuccess = async () => {
+    setIsParentModalOpen(false);
+    setScannedCode("");
+    
+    toast.success('✅ Produto PAI criado com sucesso!', {
+      duration: 3000,
+    });
+    
+    if ('vibrate' in navigator) {
+      navigator.vibrate([200, 100, 200]);
+    }
+  };
+
+  const handleChildModalSuccess = async () => {
+    setIsChildModalOpen(false);
+    setScannedCode("");
+    
+    toast.success('✅ Produto FILHO criado com sucesso!', {
+      duration: 3000,
+    });
+    
     if ('vibrate' in navigator) {
       navigator.vibrate([200, 100, 200]);
     }
@@ -176,13 +211,36 @@ const Scanner = () => {
           onError={handleScanError}
         />
 
-        {/* Modal do Produto */}
+        {/* Seletor de Tipo de Produto */}
+        <ProductTypeSelector
+          open={isTypeSelectorOpen}
+          barcode={scannedCode}
+          onSelectType={handleProductTypeSelect}
+          onCancel={handleTypeSelectorCancel}
+        />
+
+        {/* Modal de Edição de Produto */}
         <ProductModal
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
           product={currentProduct}
-          onSuccess={handleModalSuccess}
-          initialBarcode={!currentProduct ? scannedCode : undefined}
+          onSuccess={handleEditModalSuccess}
+        />
+
+        {/* Modal de Criação de Produto PAI */}
+        <CreateParentProductModal
+          open={isParentModalOpen}
+          onOpenChange={setIsParentModalOpen}
+          onSuccess={handleParentModalSuccess}
+          initialBarcode={scannedCode}
+        />
+
+        {/* Modal de Criação de Produto FILHO */}
+        <CreateChildProductModal
+          open={isChildModalOpen}
+          onOpenChange={setIsChildModalOpen}
+          onSuccess={handleChildModalSuccess}
+          initialBarcode={scannedCode}
         />
 
         {/* Product Info */}
@@ -236,7 +294,7 @@ const Scanner = () => {
                 <Button 
                   size="sm" 
                   className="flex-1"
-                  onClick={() => setIsModalOpen(true)}
+                  onClick={() => setIsEditModalOpen(true)}
                 >
                   <TrendingUp className="w-4 h-4 mr-2" />
                   Editar Produto
