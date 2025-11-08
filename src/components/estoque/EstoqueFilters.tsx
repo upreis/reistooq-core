@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { HierarchicalCategoryFilter } from '@/features/products/components/HierarchicalCategoryFilter';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { EstoqueFilterSheet } from "./EstoqueFilterSheet";
 
 interface EstoqueFiltersProps {
   searchTerm: string;
@@ -131,13 +132,18 @@ export function EstoqueFilters({
               )}
             </div>
             
-            {/* Ícone de filtro compacto */}
-            <Button variant="outline" size="sm" className="p-2 h-10 w-10">
-              <Filter className="w-4 h-4" />
-              {hasActiveFilters && (
-                <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-              )}
-            </Button>
+            {/* Sheet de Filtros para Mobile */}
+            <EstoqueFilterSheet
+              selectedCategory={selectedCategory}
+              onCategoryChange={onCategoryChange}
+              selectedStatus={selectedStatus}
+              onStatusChange={onStatusChange}
+              selectedProductType={selectedProductType}
+              onProductTypeChange={onProductTypeChange}
+              categories={categories}
+              onClearFilters={onClearFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
             
             {/* Dropdown + Produto compacto */}
             {onCreateParent && onCreateChild && (
