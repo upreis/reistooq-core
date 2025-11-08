@@ -251,23 +251,25 @@ export function HierarchicalEstoqueTable(props: HierarchicalEstoqueTableProps) {
                     </CollapsibleTrigger>
                     
                     {/* Imagem do produto pai */}
-                    {group.parentProduct?.url_imagem ? (
-                      <img 
-                        src={group.parentProduct.url_imagem} 
-                        alt={group.parentProduct.nome || group.parentSku}
-                        className="w-12 h-12 object-cover rounded-md border border-border"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    ) : (
-                      <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md border border-border">
-                        {group.parentProduct?.eh_produto_pai ? (
-                          <FolderOpen className="w-6 h-6 text-primary" />
-                        ) : (
-                          <Box className="w-6 h-6 text-muted-foreground" />
-                        )}
-                      </div>
+                    {!isMobile && (
+                      group.parentProduct?.url_imagem ? (
+                        <img 
+                          src={group.parentProduct.url_imagem} 
+                          alt={group.parentProduct.nome || group.parentSku}
+                          className="w-12 h-12 object-cover rounded-md border border-border"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 flex items-center justify-center bg-muted rounded-md border border-border">
+                          {group.parentProduct?.eh_produto_pai ? (
+                            <FolderOpen className="w-6 h-6 text-primary" />
+                          ) : (
+                            <Box className="w-6 h-6 text-muted-foreground" />
+                          )}
+                        </div>
+                      )
                     )}
                     
                     <div className="flex-1">
