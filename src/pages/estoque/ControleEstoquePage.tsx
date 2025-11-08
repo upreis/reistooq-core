@@ -205,6 +205,8 @@ export default function ControleEstoquePage() {
         onSearch={handleSearch}
         useHierarchicalCategories={false}
         hasActiveFilters={searchTerm !== "" || selectedCategory !== "all" || paginationSelectedStatus !== "all" || selectedProductType !== "all"}
+        onCreateParent={() => setParentProductModalOpen(true)}
+        onCreateChild={() => setChildProductModalOpen(true)}
       />
 
       <TableWrapper>

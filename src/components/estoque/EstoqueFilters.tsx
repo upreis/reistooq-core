@@ -3,6 +3,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,7 +27,8 @@ import {
   Package,
   AlertTriangle,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Plus
 } from "lucide-react";
 import { HierarchicalCategoryFilter } from '@/features/products/components/HierarchicalCategoryFilter';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -51,6 +58,9 @@ interface EstoqueFiltersProps {
     categoria?: string;
     subcategoria?: string;
   }) => void;
+  // Callbacks para criar produtos
+  onCreateParent?: () => void;
+  onCreateChild?: () => void;
 }
 
 export function EstoqueFilters({
@@ -69,6 +79,8 @@ export function EstoqueFilters({
   useHierarchicalCategories = false,
   hierarchicalFilters,
   onHierarchicalFiltersChange,
+  onCreateParent,
+  onCreateChild,
 }: EstoqueFiltersProps) {
   const [priceRange, setPriceRange] = useState({ min: "", max: "" });
   const [stockRange, setStockRange] = useState({ min: "", max: "" });
@@ -127,10 +139,24 @@ export function EstoqueFilters({
               )}
             </Button>
             
-            {/* Ícone de categorias compacto */}
-            <Button variant="outline" size="sm" className="p-2 h-10 w-10">
-              <Package className="w-4 h-4" />
-            </Button>
+            {/* Dropdown + Produto compacto */}
+            {onCreateParent && onCreateChild && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="default" size="sm" className="p-2 h-10 w-10">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-background z-50">
+                  <DropdownMenuItem onClick={onCreateParent}>
+                    + Criar Produto Pai
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={onCreateChild}>
+                    + Criar Produto Filho
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </>
         ) : (
           <>
