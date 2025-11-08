@@ -264,13 +264,20 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
   const checkPermissions = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: preferredCamera === 'back' ? 'environment' : 'user' },
-        audio: false  // ← NO AUDIO
+        video: { facingMode: preferredCamera === 'back' ? 'environment' : 'user' }
+        // NO AUDIO - omitted intentionally
       });
-      stream.getTracks().forEach(track => {
-        console.log(`🔍 Permission check - stopping ${track.kind} track`);
+      
+      const tracks = stream.getTracks();
+      console.log(`🔍 Permission check - found ${tracks.length} track(s)`);
+      tracks.forEach(track => {
+        console.log(`   Stopping ${track.kind} track from permission check`);
+        if (track.kind === 'audio') {
+          console.error('❌ Audio track in permission check - should not happen!');
+        }
         track.stop();
       });
+      
       setState(prev => ({ ...prev, hasPermission: true }));
       return true;
     } catch (error) {
@@ -339,13 +346,29 @@ export function useModernBarcodeScanner(config: ScannerConfig = {}) {
               width: { ideal: 1920, min: 1280 },
               height: { ideal: 1080, min: 720 },
               frameRate: { ideal: 30 }
-            },
-        audio: false  // ← EXPLICITLY NO AUDIO
+            }
+        // ⚠️ CRITICAL: NO AUDIO - explicitly undefined to prevent any audio access
       };
+      
+      // Double-check: ensure no audio property exists
+      if ('audio' in constraints) {
+        delete (constraints as any).audio;
+      }
 
-      console.log('📷 [Scanner] Requesting camera access...', constraints);
+      console.log('📷 [Scanner] Requesting camera access (VIDEO ONLY)...', JSON.stringify(constraints));
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
+      
+      // ✅ VERIFICATION: Log all tracks to confirm NO AUDIO
+      const allTracks = stream.getTracks();
+      console.log(`📊 [Scanner] Stream has ${allTracks.length} track(s):`);
+      allTracks.forEach((track, index) => {
+        console.log(`   Track ${index + 1}: ${track.kind} - ${track.label}`);
+        if (track.kind === 'audio') {
+          console.error('❌ CRITICAL: Audio track detected! This should NEVER happen!');
+          track.stop(); // Stop it immediately
+        }
+      });
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
