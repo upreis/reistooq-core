@@ -162,30 +162,32 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // ✅ Calcular datas e converter para ISO strings (igual /reclamacoes)
-      const calcularDataInicio = (periodoDias: string) => {
-        const hoje = new Date();
-        const dias = parseInt(periodoDias);
-        hoje.setDate(hoje.getDate() - dias);
-        return hoje.toISOString(); // ✅ Retorna ISO string
-      };
-
+      // ✅ Calcular datas usando date-fns (mais confiável)
       const days = parseInt(periodo);
-      const dataInicio = calcularDataInicio(periodo); // ✅ String ISO
-      const dataFim = new Date().toISOString(); // ✅ String ISO
+      const hoje = new Date();
+      const dataInicio = new Date();
+      dataInicio.setDate(hoje.getDate() - days);
+      dataInicio.setHours(0, 0, 0, 0); // 00:00:00
+      
+      const dataFim = new Date();
+      dataFim.setHours(23, 59, 59, 999); // 23:59:59
+      
+      // Converter para ISO strings (formato YYYY-MM-DD apenas)
+      const dateFromISO = dataInicio.toISOString().split('T')[0];
+      const dateToISO = dataFim.toISOString().split('T')[0];
       
       console.log('📅 Aplicando filtros de data (ISO strings):', {
         periodo: `${days} dias`,
-        dateFrom: dataInicio.split('T')[0],
-        dateTo: dataFim.split('T')[0],
-        dateFromFull: dataInicio,
-        dateToFull: dataFim,
+        dateFrom: dateFromISO,
+        dateTo: dateToISO,
+        dateFromFull: dataInicio.toISOString(),
+        dateToFull: dataFim.toISOString(),
       });
       
-      // ✅ Aplicar filtros de data como strings ISO
+      // ✅ Aplicar filtros de data como strings ISO (YYYY-MM-DD)
       actions.setFilters({
-        dateFrom: dataInicio,  // ✅ String ISO
-        dateTo: dataFim,       // ✅ String ISO
+        dateFrom: dateFromISO,  // ✅ String ISO format
+        dateTo: dateToISO,      // ✅ String ISO format
         search: searchTerm,
       });
       
