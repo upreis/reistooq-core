@@ -18,7 +18,7 @@ const EstoqueContent = () => {
 
   return (
     <MobileAppShell 
-      title="Gestão de Estoque" 
+      title="Estoque Principal" 
       breadcrumb={breadcrumb}
     >
       <Routes>
