@@ -267,67 +267,69 @@ export default function MobileTable({
             )}
             onClick={() => onRowClick?.(item)}
           >
-            <CardContent className="p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex items-start gap-2 min-w-0 flex-1">
-                  {selectableItems && (
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => onSelectItem(item[keyField])}
-                      onClick={(e) => e.stopPropagation()}
-                      className="mt-0.5 h-4 w-4"
-                    />
-                  )}
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    {/* Primary info - título mais compacto */}
-                    {primaryColumn && (
-                      <h3 className="font-medium text-xs leading-tight text-foreground">
-                        {primaryColumn.render 
-                          ? primaryColumn.render(item[primaryColumn.key], item)
-                          : item[primaryColumn.key]
-                        }
-                      </h3>
-                    )}
-                    
-                    {/* Secondary info - layout em grid compacto */}
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[10px]">
-                      {secondaryColumns.slice(0, 6).map((column) => (
-                        <div key={column.key} className="min-w-0">
-                          <span className="text-muted-foreground/80 block leading-tight">
-                            {column.label}:
-                          </span>
-                          <div className="text-foreground font-medium leading-tight text-[11px]">
-                            {column.render 
-                              ? column.render(item[column.key], item)
-                              : <span className="truncate block">{item[column.key] || "N/A"}</span>
-                            }
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+            <CardContent className="p-2">
+              <div className="flex items-start gap-2">
+                {selectableItems && (
+                  <Checkbox
+                    checked={isSelected}
+                    onCheckedChange={() => onSelectItem(item[keyField])}
+                    onClick={(e) => e.stopPropagation()}
+                    className="mt-0.5 h-3.5 w-3.5 flex-shrink-0"
+                  />
+                )}
                 
-                {/* Actions - mais compactas */}
-                {actions.length > 0 && (
-                  <div className="flex flex-col gap-1 ml-2">
-                    {actions.map((action, index) => (
-                      <Button
-                        key={index}
-                        variant={action.variant || "outline"}
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          action.onClick(item);
-                        }}
-                        className="h-6 w-6 p-0 flex-shrink-0"
-                        title={action.label}
-                      >
-                        {action.icon}
-                      </Button>
+                <div className="min-w-0 flex-1 space-y-1">
+                  {/* Primary info - título compacto */}
+                  {primaryColumn && (
+                    <h3 className="font-medium text-[10px] leading-tight text-foreground">
+                      {primaryColumn.render 
+                        ? primaryColumn.render(item[primaryColumn.key], item)
+                        : item[primaryColumn.key]
+                      }
+                    </h3>
+                  )}
+                  
+                  {/* Secondary info - grid 2 colunas super compacto */}
+                  <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px]">
+                    {secondaryColumns.slice(0, 6).map((column) => (
+                      <div key={column.key} className="min-w-0">
+                        <span className="text-muted-foreground/70 block leading-tight">
+                          {column.label}:
+                        </span>
+                        <div className="text-foreground font-medium leading-tight text-[10px]">
+                          {column.render 
+                            ? column.render(item[column.key], item)
+                            : <span className="truncate block">{item[column.key] || "N/A"}</span>
+                          }
+                        </div>
+                      </div>
                     ))}
                   </div>
-                )}
+                  
+                  {/* Actions - horizontal na base do card */}
+                  {actions.length > 0 && (
+                    <div className="flex gap-1 pt-1 border-t border-border/50 mt-1">
+                      {actions.map((action, index) => (
+                        <Button
+                          key={index}
+                          variant={action.variant || "outline"}
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            action.onClick(item);
+                          }}
+                          className="h-6 px-2 text-[9px] flex-1"
+                          title={action.label}
+                        >
+                          <span className="flex items-center gap-1">
+                            {action.icon}
+                            <span className="hidden xs:inline">{action.label}</span>
+                          </span>
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
