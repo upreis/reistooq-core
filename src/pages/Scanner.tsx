@@ -231,7 +231,7 @@ const Scanner = () => {
         
         {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold">Scanner Mobile</h1>
+          <h1 className="text-2xl font-bold">Escanear código de barras</h1>
           <p className="text-muted-foreground text-sm">
             Escaneie códigos de barras para consultar produtos
           </p>
