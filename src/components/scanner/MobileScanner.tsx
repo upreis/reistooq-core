@@ -383,13 +383,6 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
           </div>
         </Card>
       )}
-
-      {/* Instructions */}
-      <div className="text-center text-sm text-muted-foreground space-y-1">
-        <p>• Aponte para o código de barras</p>
-        <p>• Mantenha dentro da área marcada</p>
-        <p>• O reconhecimento é automático</p>
-      </div>
     </div>
   );
 };
