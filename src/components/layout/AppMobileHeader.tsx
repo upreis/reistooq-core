@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import jonathanAvatar from "@/assets/jonathan-avatar.jpg";
 import { ENHANCED_NAV_ITEMS } from "@/config/enhanced-nav";
+import { Logo } from "@/components/ui/Logo";
 
 interface AppMobileHeaderProps {
   title: string;
@@ -169,6 +170,9 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
             </div>
           </SheetContent>
         </Sheet>
+
+        {/* Logo REISTOQ */}
+        <Logo size="sm" className="h-8 w-8" />
 
         <div className="min-w-0 flex-1">
           {breadcrumb || (
