@@ -106,6 +106,11 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
     navigate("/auth");
   };
 
+  // Filtrar apenas De-Para, Estoque e Scanner
+  const filteredNavItems = ENHANCED_NAV_ITEMS[0].items.filter(
+    item => item.id === 'depara' || item.id === 'estoque' || item.id === 'scanner'
+  );
+
   return (
     <div className="md:hidden sticky top-0 z-40 bg-background/95 backdrop-blur-sm border-b safe-area-top">
       <div className="flex items-center gap-2 px-3 h-12 min-h-[48px]">
@@ -139,17 +144,8 @@ export default function AppMobileHeader({ title, actions, breadcrumb }: AppMobil
               {/* Navegação */}
               <div className="flex-1 py-4 overflow-y-auto">
                 <nav className="space-y-1 px-4">
-                  {ENHANCED_NAV_ITEMS.map((section) => (
-                    <div key={section.id} className="mb-6">
-                      <h3 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                        {section.group}
-                      </h3>
-                      <div className="space-y-1">
-                        {section.items.map((item) => (
-                          <MobileNavItem key={item.id} item={item} />
-                        ))}
-                      </div>
-                    </div>
+                  {filteredNavItems.map((item) => (
+                    <MobileNavItem key={item.id} item={item} />
                   ))}
                 </nav>
               </div>
