@@ -407,11 +407,25 @@ export const MobileScanner: React.FC<MobileScannerProps> = ({
   };
 
   const handleManualSubmit = () => {
-    if (manualCode.trim()) {
-      handleScanSuccess(manualCode.trim());
-      setManualCode('');
-      setShowManualInput(false);
+    const code = manualCode.trim();
+    
+    if (!code) return;
+    
+    // ✅ PROBLEMA 4: Validação de segurança - limite de tamanho
+    if (code.length > 100) {
+      toast.error('Código de barras inválido (muito longo)');
+      return;
     }
+    
+    // ✅ PROBLEMA 4: Validação de segurança - apenas caracteres seguros
+    if (!/^[A-Za-z0-9\-_]+$/.test(code)) {
+      toast.error('Código de barras contém caracteres inválidos');
+      return;
+    }
+    
+    handleScanSuccess(code);
+    setManualCode('');
+    setShowManualInput(false);
   };
 
   const handleStartCamera = () => {
