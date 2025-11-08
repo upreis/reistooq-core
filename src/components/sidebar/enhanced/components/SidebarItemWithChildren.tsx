@@ -268,20 +268,16 @@ export function SidebarItemWithChildren({
         button
       )}
 
-      {/* Regular submenu when expanded */}
-      {!isCollapsed && (
+      {!isCollapsed && isOpen && (
         <div
           id={`submenu-${item.id}`}
           className={cn(
             'mt-2 ml-4 pl-4 space-y-1 overflow-hidden transition-all duration-300 ease-out',
             'border-l-2 border-[hsl(var(--border))]/50',
-            isOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            'max-h-96 opacity-100'
           )}
         >
-          {(() => {
-            console.log(`📋 Item "${item.label}" tem ${item.children?.length || 0} filhos:`, item.children);
-            return item.children?.map((child) => {
-              console.log(`🔍 Renderizando filho de "${item.label}":`, child.label, child.path);
+          {item.children?.map((child) => {
             const ChildIcon = getIconComponent(child.icon);
             // Verificação precisa: exact match ou startsWith para subpaths
             const childActive = child.path ? (
@@ -331,7 +327,7 @@ export function SidebarItemWithChildren({
                 )}
               </NavLink>
             );
-          })})()}
+          })}
         </div>
       )}
 
