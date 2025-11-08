@@ -208,18 +208,20 @@ export function useDevolucaoManager(initialAccountId?: string) {
 
   // SWR com cache inteligente
   const { data, error: swrError, isLoading, mutate } = useSWR(
-    swrKey,
-    fetcher,
+    swrKey || null,
+    swrKey ? fetcher : null,
     {
       dedupingInterval: 30000, // 30s deduping
       revalidateOnFocus: false,
       errorRetryCount: 2,
       keepPreviousData: true,
       onSuccess: (data) => {
-        setDevolucoes(data.returns);
-        setTotal(data.total);
-        setCachedAt(new Date());
-        setError(null);
+        if (data) {
+          setDevolucoes(data.returns);
+          setTotal(data.total);
+          setCachedAt(new Date());
+          setError(null);
+        }
       },
       onError: (err) => {
         console.error('[SWR] Erro:', err);

@@ -186,8 +186,8 @@ export default function DevolucoesMercadoLivre() {
         actions.setMultipleAccounts(selectedAccountIds);
       }
       
-      // Aguardar um pouco para o SWR processar
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Forçar refetch imediato
+      actions.refetch();
       
       const contasTexto = selectedAccountIds.length === 1 
         ? 'conta selecionada' 
