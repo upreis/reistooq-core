@@ -5,6 +5,7 @@ import { format, subMonths, addMonths } from 'date-fns';
 interface ContributionDay {
   date: string;
   count: number;
+  returns: any[]; // Array de devoluções daquele dia
 }
 
 /**
@@ -79,8 +80,8 @@ export function useDevolucaoCalendarData() {
         const returns = (response as any)?.returns || [];
         console.log(`📦 [CALENDAR] ${returns.length} devoluções recebidas da API`);
 
-        // Processar dados: agrupar por data
-        const dateCountMap = new Map<string, number>();
+        // Processar dados: agrupar por data E armazenar as devoluções
+        const dateReturnsMap = new Map<string, any[]>();
 
         returns.forEach((dev: any) => {
           // Usar estimated_delivery_date ou estimated_delivery_limit
@@ -97,23 +98,31 @@ export function useDevolucaoCalendarData() {
           // Adicionar data de entrega
           if (deliveryDate) {
             const dateStr = format(new Date(deliveryDate), 'yyyy-MM-dd');
-            dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
-            console.log(`✅ [CALENDAR] Data adicionada: ${dateStr}, count: ${dateCountMap.get(dateStr)}`);
+            const existing = dateReturnsMap.get(dateStr) || [];
+            existing.push({ ...dev, dateType: 'delivery' });
+            dateReturnsMap.set(dateStr, existing);
+            console.log(`✅ [CALENDAR] Data adicionada: ${dateStr}, count: ${existing.length}`);
           }
 
           // Adicionar data de revisão (se diferente)
           if (reviewDate && reviewDate !== deliveryDate) {
             const dateStr = format(new Date(reviewDate), 'yyyy-MM-dd');
-            dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
-            console.log(`✅ [CALENDAR] Data de revisão adicionada: ${dateStr}, count: ${dateCountMap.get(dateStr)}`);
+            const existing = dateReturnsMap.get(dateStr) || [];
+            // Só adiciona se ainda não estiver na lista (evitar duplicatas)
+            if (!existing.find(r => r.id === dev.id)) {
+              existing.push({ ...dev, dateType: 'review' });
+              dateReturnsMap.set(dateStr, existing);
+              console.log(`✅ [CALENDAR] Data de revisão adicionada: ${dateStr}, count: ${existing.length}`);
+            }
           }
         });
 
-        // Converter para array
-        const calendarData: ContributionDay[] = Array.from(dateCountMap.entries()).map(
-          ([date, count]) => ({
+        // Converter para array com detalhes
+        const calendarData: ContributionDay[] = Array.from(dateReturnsMap.entries()).map(
+          ([date, returns]) => ({
             date: new Date(date).toISOString(),
-            count
+            count: returns.length,
+            returns: returns
           })
         );
 
