@@ -76,16 +76,25 @@ const ActivityCalendar = ({
         <div key={i} className={`flex flex-col gap-1 ${isNewMonth ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
           {weekDays.map((day, index) => {
             const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
-            const colorClass = getColorClass(contribution?.count || 0);
+            const count = contribution?.count || 0;
             const dayNumber = getDate(day);
             const isFirstOfMonth = getDate(day) === 1;
             const isTodayDay = isToday(day);
+            
+            // Get ring color based on contribution count
+            const getRingColor = (count: number) => {
+              if (count === 0) return "ring-muted/30";
+              if (count <= 2) return "ring-primary/30";
+              if (count <= 5) return "ring-primary/50";
+              if (count <= 10) return "ring-primary/70";
+              return "ring-primary";
+            };
 
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-full ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500' : colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center ring-1 ${isTodayDay ? 'ring-yellow-600 dark:ring-yellow-700' : 'ring-border/30'}`}
-                title={`${format(day, "PPP", { locale: ptBR })}: ${contribution?.count || 0} atividades`}
+                className={`w-8 h-8 rounded-full ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500 ring-2 ring-yellow-600 dark:ring-yellow-700' : `${getRingColor(count)} ring-2`} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center`}
+                title={`${format(day, "PPP", { locale: ptBR })}: ${count} atividades`}
                 onClick={() => handleDayClick(contribution, day)}
               >
                 <span className={`text-[9px] font-medium ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
@@ -157,11 +166,11 @@ const ActivityCalendar = ({
         <div className="flex gap-3 text-xs items-center text-muted-foreground">
           <span>Menos</span>
           <div className="flex gap-1">
-            <div className="w-8 h-8 rounded-full bg-muted/30 ring-1 ring-border/30" />
-            <div className="w-8 h-8 rounded-full bg-primary/20 ring-1 ring-border/30" />
-            <div className="w-8 h-8 rounded-full bg-primary/40 ring-1 ring-border/30" />
-            <div className="w-8 h-8 rounded-full bg-primary/60 ring-1 ring-border/30" />
-            <div className="w-8 h-8 rounded-full bg-primary/80 ring-1 ring-border/30" />
+            <div className="w-8 h-8 rounded-full ring-2 ring-muted/30" />
+            <div className="w-8 h-8 rounded-full ring-2 ring-primary/30" />
+            <div className="w-8 h-8 rounded-full ring-2 ring-primary/50" />
+            <div className="w-8 h-8 rounded-full ring-2 ring-primary/70" />
+            <div className="w-8 h-8 rounded-full ring-2 ring-primary" />
           </div>
           <span>Mais</span>
         </div>
