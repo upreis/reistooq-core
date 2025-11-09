@@ -57,9 +57,9 @@ export function useDevolucaoCalendarData() {
           accountIds
         });
 
-        // Criar promise com timeout
+        // Criar promise com timeout de 90 segundos (edge function pode processar muitos dados)
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: A requisição demorou mais de 30 segundos')), 30000)
+          setTimeout(() => reject(new Error('Timeout: A requisição demorou mais de 90 segundos. Tente novamente.')), 90000)
         );
 
         const apiPromise = supabase.functions.invoke('ml-returns', {
