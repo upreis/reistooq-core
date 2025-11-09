@@ -30,6 +30,7 @@ const ActivityCalendar = ({
   const [contributions, setContributions] = useState<ContributionDay[]>([]);
   const [selectedDay, setSelectedDay] = useState<ContributionDay | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'delivery' | 'review'>('all');
   const today = new Date();
   const startDate = subDays(today, monthsBack * 30); // Aproximado
   const endDate = addDays(today, monthsForward * 30); // Aproximado
@@ -84,14 +85,26 @@ const ActivityCalendar = ({
             const isTodayDay = isToday(day);
             
             // Contar tipos de eventos
-            const deliveryCount = contribution?.returns?.filter(r => r.dateType === 'delivery').length || 0;
-            const reviewCount = contribution?.returns?.filter(r => r.dateType === 'review').length || 0;
+            const allDeliveries = contribution?.returns?.filter(r => r.dateType === 'delivery') || [];
+            const allReviews = contribution?.returns?.filter(r => r.dateType === 'review') || [];
+            
+            // Aplicar filtro
+            let deliveryCount = allDeliveries.length;
+            let reviewCount = allReviews.length;
+            
+            if (filterType === 'delivery') {
+              reviewCount = 0;
+            } else if (filterType === 'review') {
+              deliveryCount = 0;
+            }
+            
             const hasMultipleTypes = deliveryCount > 0 && reviewCount > 0;
             const totalCount = deliveryCount + reviewCount;
             
             // Determinar estilo do quadrado
             let borderStyle = '';
             let backgroundStyle = '';
+            let borderWidth = hasMultipleTypes ? 'border-[3px]' : 'border-2';
             
             if (isTodayDay) {
               backgroundStyle = 'bg-yellow-400 dark:bg-yellow-500';
@@ -99,7 +112,7 @@ const ActivityCalendar = ({
             } else if (hasMultipleTypes) {
               // Gradiente diagonal para múltiplos tipos
               backgroundStyle = 'bg-gradient-to-br from-blue-500 via-blue-500 to-orange-500 [background-size:100%_100%] from-[0%] via-[50%] to-[50%]';
-              borderStyle = 'border-blue-500';
+              borderStyle = 'border-blue-600';
             } else if (deliveryCount > 0) {
               // Apenas entregas - borda azul
               borderStyle = deliveryCount <= 2 ? 'border-blue-400/60' : 
@@ -112,15 +125,30 @@ const ActivityCalendar = ({
                            'border-orange-600';
             } else {
               borderStyle = 'border-border';
+              borderWidth = 'border-2';
             }
 
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-md border-2 ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex items-center justify-center`}
+                className={`w-8 h-8 rounded-md ${borderWidth} ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex flex-col items-center justify-center overflow-hidden`}
                 title={`${format(day, "PPP", { locale: ptBR })}`}
                 onClick={() => handleDayClick(contribution, day)}
               >
+                {/* Ícones pequenos quando há eventos */}
+                {!isTodayDay && deliveryCount > 0 && reviewCount > 0 && (
+                  <div className="absolute top-0 left-0 right-0 flex justify-between px-0.5">
+                    <span className="text-[6px]">📦</span>
+                    <span className="text-[6px]">⏰</span>
+                  </div>
+                )}
+                {!isTodayDay && deliveryCount > 0 && reviewCount === 0 && (
+                  <span className="absolute top-0 left-0.5 text-[6px]">📦</span>
+                )}
+                {!isTodayDay && reviewCount > 0 && deliveryCount === 0 && (
+                  <span className="absolute top-0 left-0.5 text-[6px]">⏰</span>
+                )}
+                
                 <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
                   {dayNumber}
                 </span>
@@ -189,6 +217,42 @@ const ActivityCalendar = ({
     <>
       <div className="space-y-4">
         {title && <h3 className="text-sm font-medium text-foreground">{title}</h3>}
+        
+        {/* Filtros */}
+        <div className="flex gap-2 items-center flex-wrap">
+          <span className="text-xs text-muted-foreground font-medium">Filtrar por:</span>
+          <button
+            onClick={() => setFilterType('all')}
+            className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+              filterType === 'all' 
+                ? 'bg-primary text-primary-foreground border-primary' 
+                : 'bg-background border-border hover:bg-accent'
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setFilterType('delivery')}
+            className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+              filterType === 'delivery' 
+                ? 'bg-blue-500 text-white border-blue-500' 
+                : 'bg-background border-blue-400/50 hover:bg-blue-50 dark:hover:bg-blue-950'
+            }`}
+          >
+            📦 Entregas
+          </button>
+          <button
+            onClick={() => setFilterType('review')}
+            className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+              filterType === 'review' 
+                ? 'bg-orange-500 text-white border-orange-500' 
+                : 'bg-background border-orange-400/50 hover:bg-orange-50 dark:hover:bg-orange-950'
+            }`}
+          >
+            ⏰ Revisões
+          </button>
+        </div>
+        
         <div className="overflow-x-auto pb-2">
           <div className="flex min-w-max">
             <div className="flex flex-col justify-between mt-6 mr-2 gap-1">
