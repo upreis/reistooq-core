@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { format, subDays, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, getDate } from "date-fns";
+import { format, subDays, addDays, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, getDate, getMonth, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,7 @@ const ActivityCalendar = ({
   const renderWeeks = () => {
     const weeksArray = [];
     let currentWeekStart = startOfWeek(startDate, { weekStartsOn: 0 });
+    let lastMonth: number | null = null;
 
     for (let i = 0; i < weeks; i++) {
       const weekDays = eachDayOfInterval({
@@ -66,21 +67,29 @@ const ActivityCalendar = ({
         end: endOfWeek(currentWeekStart, { weekStartsOn: 0 }),
       });
 
+      // Check if this week starts a new month
+      const firstDayOfWeek = weekDays[0];
+      const currentMonth = getMonth(firstDayOfWeek);
+      const isNewMonth = lastMonth !== null && currentMonth !== lastMonth;
+      
       weeksArray.push(
-        <div key={i} className="flex flex-col gap-1">
+        <div key={i} className={`flex flex-col gap-1 ${isNewMonth ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
           {weekDays.map((day, index) => {
             const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
             const colorClass = getColorClass(contribution?.count || 0);
             const dayNumber = getDate(day);
+            const isFirstOfMonth = getDate(day) === 1;
 
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-sm ${colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center`}
+                className={`w-8 h-8 rounded-sm ${colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center ${isFirstOfMonth ? 'ring-1 ring-primary/50' : ''}`}
                 title={`${format(day, "PPP", { locale: ptBR })}: ${contribution?.count || 0} atividades`}
                 onClick={() => handleDayClick(contribution, day)}
               >
-                <span className="text-[9px] font-medium text-foreground/70">{dayNumber}</span>
+                <span className={`text-[9px] font-medium ${isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
+                  {dayNumber}
+                </span>
                 
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10 border">
@@ -96,6 +105,9 @@ const ActivityCalendar = ({
           })}
         </div>
       );
+      
+      // Update lastMonth for next iteration
+      lastMonth = currentMonth;
       currentWeekStart = addDays(currentWeekStart, 7);
     }
 
