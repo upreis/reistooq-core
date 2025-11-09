@@ -142,10 +142,11 @@ export default function DevolucoesMercadoLivre() {
     fetchAccounts();
   }, [persistentState.isStateLoaded]);
 
-  // Limpar dados antigos ao montar
+  // ✅ FIX: Limpar dados antigos APENAS na montagem inicial
+  // Usar useEffect vazio para evitar loop infinito
   useEffect(() => {
     clearOldData();
-  }, [clearOldData]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ✅ Salvar dados quando mudar (mas só se não estiver restaurando)
   useEffect(() => {

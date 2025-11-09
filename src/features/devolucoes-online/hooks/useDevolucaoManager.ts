@@ -33,6 +33,7 @@ export interface DevolucaoManagerActions {
   setPage: (page: number) => void;
   setPageSize: (size: number) => void;
   setIntegrationAccountId: (id: string) => void;
+  setMultipleAccounts: (ids: string[]) => void; // ✅ ADICIONAR
   refetch: () => void;
   restorePersistedData: (devolucoes: MLReturn[], total: number, page: number) => void;
 }
