@@ -91,17 +91,19 @@ export default function DevolucoesMercadoLivre() {
         if (cached.filters) {
           if (cached.filters.search) setSearchTerm(cached.filters.search);
           if (cached.filters.dateFrom && cached.filters.dateTo) {
-            // ✅ FIX: Calcular período corretamente (diferença + 1)
+            // ✅ FIX: Calcular período corretamente (apenas arredondar)
             const from = new Date(cached.filters.dateFrom);
             const to = new Date(cached.filters.dateTo);
-            const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+            const diffMs = to.getTime() - from.getTime();
+            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
             setPeriodo(diffDays.toString());
             console.log('📅 Período restaurado:', diffDays, 'dias');
           }
         }
         
-        // ✅ FIX: Restaurar contas SEM disparar setMultipleAccounts/setIntegrationAccountId
-        // para evitar race condition com limpeza de dados
+        // ✅ FIX: Restaurar contas E sincronizar com manager
+        // Importante: Isso NÃO vai limpar dados pois o useEffect do manager agora
+        // verifica se já tem dados antes de limpar
         if (cached.integrationAccountId) {
           const accountIds = cached.integrationAccountId.includes(',') 
             ? cached.integrationAccountId.split(',')
@@ -109,11 +111,12 @@ export default function DevolucoesMercadoLivre() {
           
           setSelectedAccountIds(accountIds);
           
-          // Apenas atualizar estado interno do manager sem limpar dados
+          // ✅ Sincronizar com manager (necessário para SWR key funcionar)
           if (accountIds.length > 1) {
-            // Não chamar actions, apenas setar estado local
+            actions.setMultipleAccounts(accountIds);
             console.log('✅ Múltiplas contas restauradas:', accountIds.length);
           } else {
+            actions.setIntegrationAccountId(accountIds[0]);
             console.log('✅ Conta única restaurada:', accountIds[0]);
           }
         }

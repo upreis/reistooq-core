@@ -218,9 +218,27 @@ export function useDevolucaoManager(initialAccountId?: string) {
     }
   );
 
-  // ❌ REMOVIDO: Este useEffect causava limpeza de dados ao restaurar cache
-  // Não devemos limpar dados automaticamente ao trocar conta pois isso interfere
-  // com a restauração de cache. A limpeza deve ser manual via botão "Limpar".
+  // ✅ CORREÇÃO: Limpar dados APENAS quando trocar conta DEPOIS de já ter dados
+  // Isso evita limpar durante restauração de cache mas limpa ao trocar conta manualmente
+  const prevAccountsRef = useRef<string>('');
+  
+  useEffect(() => {
+    const currentKey = multipleAccountIds.length > 0 
+      ? multipleAccountIds.sort().join(',') 
+      : integrationAccountId;
+    
+    // Só limpar se:
+    // 1. Já temos dados carregados
+    // 2. A conta mudou de fato
+    // 3. Não é a primeira montagem
+    if (prevAccountsRef.current && currentKey !== prevAccountsRef.current && devolucoes.length > 0) {
+      console.log('🗑️ Limpando dados devido a mudança de conta');
+      setDevolucoes([]);
+      setTotal(0);
+    }
+    
+    prevAccountsRef.current = currentKey;
+  }, [integrationAccountId, multipleAccountIds, devolucoes.length]);
 
   // Sync loading state
   useEffect(() => {
