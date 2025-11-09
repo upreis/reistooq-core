@@ -12,6 +12,14 @@ import { ptBR } from 'date-fns/locale';
 import { MLReturn } from '../types/devolucao.types';
 import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { 
+  EstimatedDeliveryCell, 
+  DeliveryLimitCell, 
+  ShipmentStatusCell, 
+  RefundAtCell, 
+  ReviewStatusCell, 
+  QuantityCell 
+} from '@/components/ml/devolucao/cells/DeliveryCells';
 
 interface DevolucaoTableWithAnalise extends MLReturn {
   status_analise?: StatusAnalise;
@@ -168,6 +176,13 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             <TableHead className="font-semibold">Tipo Envio</TableHead>
             <TableHead className="font-semibold">Destino</TableHead>
             <TableHead className="font-semibold">Rastreio</TableHead>
+            {/* ✅ FASE 4: Novas colunas de dados enriquecidos */}
+            <TableHead className="font-semibold">📅 Previsão Entrega</TableHead>
+            <TableHead className="font-semibold">⏰ Prazo Limite</TableHead>
+            <TableHead className="font-semibold">🚚 Status Envio ML</TableHead>
+            <TableHead className="font-semibold">💰 Reembolso Quando</TableHead>
+            <TableHead className="font-semibold">🔍 Revisão</TableHead>
+            <TableHead className="font-semibold">📦 Quantidade</TableHead>
             <TableHead className="font-semibold">Endereço</TableHead>
             <TableHead className="font-semibold">Cidade</TableHead>
             <TableHead className="font-semibold">Estado</TableHead>
@@ -275,6 +290,42 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell className="text-xs font-mono">
                   {dev.tracking_number || '-'}
                 </TableCell>
+                
+                {/* ✅ FASE 4: Novas células de dados enriquecidos */}
+                <TableCell>
+                  <EstimatedDeliveryCell 
+                    date={dev.estimated_delivery_date} 
+                    hasDelay={dev.has_delay} 
+                  />
+                </TableCell>
+                
+                <TableCell>
+                  <DeliveryLimitCell date={dev.estimated_delivery_limit} />
+                </TableCell>
+                
+                <TableCell>
+                  <ShipmentStatusCell status={dev.shipment_status} />
+                </TableCell>
+                
+                <TableCell>
+                  <RefundAtCell refundAt={dev.refund_at} />
+                </TableCell>
+                
+                <TableCell>
+                  <ReviewStatusCell 
+                    status={dev.review_status}
+                    method={dev.review_method}
+                    stage={dev.review_stage}
+                  />
+                </TableCell>
+                
+                <TableCell>
+                  <QuantityCell 
+                    returned={dev.return_quantity}
+                    total={dev.total_quantity}
+                  />
+                </TableCell>
+                
                 <TableCell className="text-xs max-w-[200px] truncate" title={dev.destination_address || '-'}>
                   {dev.destination_address || '-'}
                 </TableCell>
