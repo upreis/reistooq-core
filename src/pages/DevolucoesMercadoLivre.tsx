@@ -188,7 +188,8 @@ export default function DevolucoesMercadoLivre() {
     refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
   }), [state.devolucoes, state.total]);
 
-  // Adicionar status de análise e empresa às devoluções
+  // ✅ Adicionar status de análise e empresa às devoluções
+  // IMPORTANTE: Sempre preserva os status de análise salvos localmente, mesmo após refetch
   const devolucoesComAnalise = useMemo(() => {
     const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
     
@@ -198,9 +199,12 @@ export default function DevolucoesMercadoLivre() {
       const account = accounts.find(acc => acc.id === accountId);
       const empresaNome = account?.name || 'N/A';
       
+      // ✅ PRESERVAR status de análise salvo no localStorage
+      const savedStatus = analiseStatus[dev.id]?.status;
+      
       return {
         ...dev,
-        status_analise: analiseStatus[dev.id]?.status || ('pendente' as StatusAnalise),
+        status_analise: savedStatus || ('pendente' as StatusAnalise),
         empresa: empresaNome,
       };
     });
@@ -242,7 +246,11 @@ export default function DevolucoesMercadoLivre() {
     
     // Se mudou para histórico e está na tab ativas, mostrar mensagem
     if (HISTORIC_STATUSES.includes(newStatus) && activeTab === 'ativas') {
-      toast.success('Devolução movida para Histórico');
+      toast.success('Devolução movida para Histórico - Status será preservado mesmo após aplicar novos filtros');
+    } else if (ACTIVE_STATUSES.includes(newStatus) && activeTab === 'historico') {
+      toast.success('Devolução movida para Ativas - Status será preservado mesmo após aplicar novos filtros');
+    } else {
+      toast.success('Status de análise atualizado - Será preservado mesmo após aplicar novos filtros');
     }
   };
 
