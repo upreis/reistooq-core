@@ -76,10 +76,12 @@ const ActivityCalendar = ({
             return (
               <div
                 key={index}
-                className={`w-3 h-3 rounded-sm ${colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative`}
+                className={`w-8 h-8 rounded-sm ${colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center`}
                 title={`${format(day, "PPP", { locale: ptBR })}: ${contribution?.count || 0} atividades`}
                 onClick={() => handleDayClick(contribution, day)}
               >
+                <span className="text-[9px] font-medium text-foreground/70">{dayNumber}</span>
+                
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10 border">
                   {format(day, "dd/MM/yyyy", { locale: ptBR })}: {contribution?.count || 0}
@@ -117,16 +119,8 @@ const ActivityCalendar = ({
     return months;
   };
 
-  // Render day labels (only show Mon, Wed, Fri to save space)
-  const dayLabels = [
-    { day: "Dom", show: false },
-    { day: "Seg", show: true },
-    { day: "Ter", show: false },
-    { day: "Qua", show: true },
-    { day: "Qui", show: false },
-    { day: "Sex", show: true },
-    { day: "Sáb", show: false },
-  ];
+  // Render day labels (all days)
+  const dayLabels = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
   return (
     <>
@@ -136,8 +130,8 @@ const ActivityCalendar = ({
           <div className="flex min-w-max">
             <div className="flex flex-col justify-between mt-6 mr-2 gap-1">
               {dayLabels.map((label, index) => (
-                <div key={index} className="text-xs text-muted-foreground h-3 flex items-center">
-                  {label.show ? label.day : ""}
+                <div key={index} className="text-xs text-muted-foreground h-8 flex items-center">
+                  {label}
                 </div>
               ))}
             </div>
@@ -150,11 +144,11 @@ const ActivityCalendar = ({
         <div className="flex gap-3 text-xs items-center text-muted-foreground">
           <span>Menos</span>
           <div className="flex gap-1">
-            <div className="w-3 h-3 rounded-sm bg-muted/30" />
-            <div className="w-3 h-3 rounded-sm bg-primary/20" />
-            <div className="w-3 h-3 rounded-sm bg-primary/40" />
-            <div className="w-3 h-3 rounded-sm bg-primary/60" />
-            <div className="w-3 h-3 rounded-sm bg-primary/80" />
+            <div className="w-8 h-8 rounded-sm bg-muted/30" />
+            <div className="w-8 h-8 rounded-sm bg-primary/20" />
+            <div className="w-8 h-8 rounded-sm bg-primary/40" />
+            <div className="w-8 h-8 rounded-sm bg-primary/60" />
+            <div className="w-8 h-8 rounded-sm bg-primary/80" />
           </div>
           <span>Mais</span>
         </div>
