@@ -51,13 +51,15 @@ export function useDevolucaoCalendarData() {
         // Chamar edge function ml-returns para buscar devoluções
         const { data: response, error: apiError } = await supabase.functions.invoke('ml-returns', {
           body: {
-            integration_account_ids: accountIds,
+            accountIds: accountIds, // ✅ Corrigido: usar 'accountIds' ao invés de 'integration_account_ids'
             filters: {
               dateFrom: startDate,
               dateTo: endDate,
             },
-            limit: 1000, // Buscar todas para o calendário
-            offset: 0,
+            pagination: {
+              limit: 1000,
+              offset: 0,
+            }
           }
         });
 
