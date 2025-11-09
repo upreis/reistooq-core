@@ -23,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { StatusAnalise, STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/devolucoes-online/types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '@/features/devolucoes-online/types/devolucao-analise.types';
+import { DevolucaoCalendars } from '@/components/devolucoes/DevolucaoCalendars';
 
 export default function DevolucoesMercadoLivre() {
   // Manager centralizado
@@ -372,6 +373,13 @@ export default function DevolucoesMercadoLivre() {
               onCancel={handleCancelSearch}
             />
           </div>
+
+          {/* Calendários de Devoluções */}
+          {state.devolucoes.length > 0 && (
+            <div className="px-4 md:px-6">
+              <DevolucaoCalendars devolucoes={state.devolucoes} />
+            </div>
+          )}
 
           {/* Tabs Ativas/Histórico */}
           <div className="px-4 md:px-6">
