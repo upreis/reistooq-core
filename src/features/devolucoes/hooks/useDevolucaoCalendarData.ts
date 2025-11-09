@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, addMonths } from 'date-fns';
-import { logger } from '@/utils/logger';
 
 interface ContributionDay {
   date: string;
@@ -42,10 +41,11 @@ export function useDevolucaoCalendarData() {
         const startDate = format(subMonths(new Date(), 3), 'yyyy-MM-dd');
         const endDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
 
-        logger.info('📅 Buscando dados de devoluções para calendário', {
+        console.log('📅 [CALENDAR] Buscando dados de devoluções para calendário', {
           startDate,
           endDate,
-          accountsCount: accountIds.length
+          accountsCount: accountIds.length,
+          accountIds
         });
 
         // Chamar edge function ml-returns para buscar devoluções
@@ -64,17 +64,21 @@ export function useDevolucaoCalendarData() {
         });
 
         if (apiError) {
+          console.error('❌ [CALENDAR] Erro na API ml-returns:', apiError);
           throw apiError;
         }
 
+        console.log('✅ [CALENDAR] Resposta da API:', response);
+
         if (!response?.success || !response?.data) {
-          logger.warn('Resposta vazia da API ml-returns');
+          console.warn('⚠️ [CALENDAR] Resposta vazia da API ml-returns', response);
           setData([]);
           setLoading(false);
           return;
         }
 
         const devolucoes = response.data.devolucoes || [];
+        console.log(`📦 [CALENDAR] ${devolucoes.length} devoluções recebidas da API`);
 
         // Processar dados: agrupar por data
         const dateCountMap = new Map<string, number>();
@@ -84,16 +88,25 @@ export function useDevolucaoCalendarData() {
           const deliveryDate = dev.estimated_delivery_date || dev.estimated_delivery_limit;
           const reviewDate = dev.estimated_delivery_limit;
 
+          console.log(`🔍 [CALENDAR] Processando devolução ${dev.id}:`, {
+            deliveryDate,
+            reviewDate,
+            estimated_delivery_date: dev.estimated_delivery_date,
+            estimated_delivery_limit: dev.estimated_delivery_limit
+          });
+
           // Adicionar data de entrega
           if (deliveryDate) {
             const dateStr = format(new Date(deliveryDate), 'yyyy-MM-dd');
             dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
+            console.log(`✅ [CALENDAR] Data adicionada: ${dateStr}, count: ${dateCountMap.get(dateStr)}`);
           }
 
           // Adicionar data de revisão (se diferente)
           if (reviewDate && reviewDate !== deliveryDate) {
             const dateStr = format(new Date(reviewDate), 'yyyy-MM-dd');
             dateCountMap.set(dateStr, (dateCountMap.get(dateStr) || 0) + 1);
+            console.log(`✅ [CALENDAR] Data de revisão adicionada: ${dateStr}, count: ${dateCountMap.get(dateStr)}`);
           }
         });
 
@@ -105,14 +118,15 @@ export function useDevolucaoCalendarData() {
           })
         );
 
-        logger.info('📊 Dados do calendário processados', {
+        console.log('📊 [CALENDAR] Dados do calendário processados:', {
           totalDays: calendarData.length,
-          totalDevolucoes: devolucoes.length
+          totalDevolucoes: devolucoes.length,
+          calendarData: calendarData.slice(0, 5) // Primeiras 5 datas para debug
         });
 
         setData(calendarData);
       } catch (err: any) {
-        logger.error('Erro ao buscar dados do calendário', err);
+        console.error('❌ [CALENDAR] Erro ao buscar dados do calendário:', err);
         setError(err.message || 'Erro ao carregar dados');
         setData([]);
       } finally {
