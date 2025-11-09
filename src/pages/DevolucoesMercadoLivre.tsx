@@ -55,7 +55,7 @@ export default function DevolucoesMercadoLivre() {
   // Tab ativa (Ativas/Histórico)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
-  // ✅ Carregar contas E restaurar estado persistido
+  // ✅ Carregar contas E restaurar estado persistido OU iniciar busca automática
   useEffect(() => {
     const fetchAccounts = async () => {
       const { data } = await supabase
@@ -90,6 +90,13 @@ export default function DevolucoesMercadoLivre() {
         // Restaurar filtros UI
         if (cached.filters) {
           if (cached.filters.search) setSearchTerm(cached.filters.search);
+          if (cached.filters.dateFrom && cached.filters.dateTo) {
+            // Calcular período baseado nas datas
+            const from = new Date(cached.filters.dateFrom);
+            const to = new Date(cached.filters.dateTo);
+            const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+            setPeriodo(diffDays.toString());
+          }
         }
         
         // Restaurar contas selecionadas
@@ -108,18 +115,40 @@ export default function DevolucoesMercadoLivre() {
         }
         
         setHasRestoredFromCache(true);
-        toast.success('Filtros e dados restaurados');
+        toast.success('Dados restaurados do cache');
       } else if (data && data.length > 0 && !hasRestoredFromCache && !persistentState.hasValidPersistedState()) {
-        // Por padrão, selecionar TODAS as contas (se não restaurou do cache)
+        // ✅ PRIMEIRA VEZ: selecionar todas as contas e buscar automaticamente
         const allAccountIds = data.map(acc => acc.id);
         setSelectedAccountIds(allAccountIds);
         
-        // No manager, iniciar com múltiplas contas se houver mais de uma
+        // Aplicar filtros padrão (últimos 60 dias)
+        const days = 60;
+        const hoje = new Date();
+        const dataInicio = startOfDay(subDays(hoje, days));
+        const dataFim = endOfDay(hoje);
+        const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
+        const dateToISO = format(dataFim, 'yyyy-MM-dd');
+        
+        const defaultFilters: Partial<DevolucaoFilters> = {
+          dateFrom: dateFromISO,
+          dateTo: dateToISO,
+          search: '',
+        };
+        
+        actions.setFilters(defaultFilters);
+        
+        // Configurar múltiplas contas e buscar
         if (allAccountIds.length > 1) {
           actions.setMultipleAccounts(allAccountIds);
         } else {
           actions.setIntegrationAccountId(allAccountIds[0]);
         }
+        
+        // Forçar busca inicial
+        setTimeout(() => {
+          actions.refetch();
+          console.log('🚀 Busca automática iniciada para', allAccountIds.length, 'contas');
+        }, 100);
         
         setHasRestoredFromCache(true);
       }
