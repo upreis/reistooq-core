@@ -117,40 +117,19 @@ export default function DevolucoesMercadoLivre() {
         setHasRestoredFromCache(true);
         toast.success('Dados restaurados do cache');
       } else if (data && data.length > 0 && !hasRestoredFromCache && !persistentState.hasValidPersistedState()) {
-        // ✅ PRIMEIRA VEZ: selecionar todas as contas e buscar automaticamente
+        // ✅ PRIMEIRA VEZ: apenas selecionar contas, NÃO buscar automaticamente
         const allAccountIds = data.map(acc => acc.id);
         setSelectedAccountIds(allAccountIds);
         
-        // Aplicar filtros padrão (últimos 60 dias)
-        const days = 60;
-        const hoje = new Date();
-        const dataInicio = startOfDay(subDays(hoje, days));
-        const dataFim = endOfDay(hoje);
-        const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
-        const dateToISO = format(dataFim, 'yyyy-MM-dd');
-        
-        const defaultFilters: Partial<DevolucaoFilters> = {
-          dateFrom: dateFromISO,
-          dateTo: dateToISO,
-          search: '',
-        };
-        
-        actions.setFilters(defaultFilters);
-        
-        // Configurar múltiplas contas e buscar
+        // Configurar contas no manager sem buscar
         if (allAccountIds.length > 1) {
           actions.setMultipleAccounts(allAccountIds);
         } else {
           actions.setIntegrationAccountId(allAccountIds[0]);
         }
         
-        // Forçar busca inicial
-        setTimeout(() => {
-          actions.refetch();
-          console.log('🚀 Busca automática iniciada para', allAccountIds.length, 'contas');
-        }, 100);
-        
         setHasRestoredFromCache(true);
+        console.log('✅ Contas carregadas. Clique em "Buscar" para carregar dados.');
       }
     };
     fetchAccounts();
@@ -223,17 +202,18 @@ export default function DevolucoesMercadoLivre() {
   };
 
   const handleClear = () => {
+    // ✅ Limpar TUDO: dados, filtros, cache e status de análise
     actions.clearFilters();
     setFilteredByQuickFilter([]);
     clearStorage();
-    persistentState.clearPersistedState(); // ✅ Limpar cache também
+    persistentState.clearPersistedState();
     
     // Resetar UI
     setSearchTerm('');
     setPeriodo('60');
     setSelectedAccountIds(accounts.map(acc => acc.id));
     
-    toast.success('Dados e filtros limpos com sucesso');
+    toast.success('Todos os dados foram removidos. Clique em "Buscar" para carregar novamente.');
   };
 
   const handleStatusChange = (devolucaoId: string, newStatus: StatusAnalise) => {
