@@ -68,22 +68,21 @@ export function useDevolucaoCalendarData() {
           throw apiError;
         }
 
-        console.log('✅ [CALENDAR] Resposta da API:', response);
+        console.log('✅ [CALENDAR] Resposta da API:', {
+          success: response?.success,
+          hasData: !!response?.data,
+          hasReturns: !!(response as any)?.returns,
+          keys: response ? Object.keys(response) : []
+        });
 
-        if (!response?.success || !response?.data) {
-          console.warn('⚠️ [CALENDAR] Resposta vazia da API ml-returns', response);
-          setData([]);
-          setLoading(false);
-          return;
-        }
-
-        const devolucoes = response.data.devolucoes || [];
-        console.log(`📦 [CALENDAR] ${devolucoes.length} devoluções recebidas da API`);
+        // A API ml-returns retorna { returns: [...] } ao invés de { data: { devolucoes: [...] } }
+        const returns = (response as any)?.returns || [];
+        console.log(`📦 [CALENDAR] ${returns.length} devoluções recebidas da API`);
 
         // Processar dados: agrupar por data
         const dateCountMap = new Map<string, number>();
 
-        devolucoes.forEach((dev: any) => {
+        returns.forEach((dev: any) => {
           // Usar estimated_delivery_date ou estimated_delivery_limit
           const deliveryDate = dev.estimated_delivery_date || dev.estimated_delivery_limit;
           const reviewDate = dev.estimated_delivery_limit;
@@ -120,7 +119,7 @@ export function useDevolucaoCalendarData() {
 
         console.log('📊 [CALENDAR] Dados do calendário processados:', {
           totalDays: calendarData.length,
-          totalDevolucoes: devolucoes.length,
+          totalReturns: returns.length,
           calendarData: calendarData.slice(0, 5) // Primeiras 5 datas para debug
         });
 
