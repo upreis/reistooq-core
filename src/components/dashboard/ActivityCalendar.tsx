@@ -81,19 +81,19 @@ const ActivityCalendar = ({
             const isFirstOfMonth = getDate(day) === 1;
             const isTodayDay = isToday(day);
             
-            // Get ring color based on contribution count
-            const getRingColor = (count: number) => {
-              if (count === 0) return "ring-muted/40";
-              if (count <= 2) return "ring-primary/40";
-              if (count <= 5) return "ring-primary/60";
-              if (count <= 10) return "ring-primary/80";
-              return "ring-primary";
+            // Get border color based on contribution count
+            const getBorderColor = (count: number) => {
+              if (count === 0) return "border-muted";
+              if (count <= 2) return "border-primary/40";
+              if (count <= 5) return "border-primary/60";
+              if (count <= 10) return "border-primary/80";
+              return "border-primary";
             };
 
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-full ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500 ring-2 ring-yellow-600 dark:ring-yellow-700' : `ring-2 ${getRingColor(count)}`} hover:ring-offset-2 hover:ring-primary transition-all cursor-pointer group relative flex items-center justify-center`}
+                className={`w-8 h-8 rounded-md border-2 ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500 border-yellow-600 dark:border-yellow-700' : `${getBorderColor(count)}`} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex items-center justify-center`}
                 title={`${format(day, "PPP", { locale: ptBR })}: ${count} atividades`}
                 onClick={() => handleDayClick(contribution, day)}
               >
@@ -166,11 +166,11 @@ const ActivityCalendar = ({
         <div className="flex gap-3 text-xs items-center text-muted-foreground">
           <span>Menos</span>
           <div className="flex gap-1">
-            <div className="w-8 h-8 rounded-full ring-2 ring-muted/40" />
-            <div className="w-8 h-8 rounded-full ring-2 ring-primary/40" />
-            <div className="w-8 h-8 rounded-full ring-2 ring-primary/60" />
-            <div className="w-8 h-8 rounded-full ring-2 ring-primary/80" />
-            <div className="w-8 h-8 rounded-full ring-2 ring-primary" />
+            <div className="w-8 h-8 rounded-md border-2 border-muted" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary/40" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary/60" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary/80" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary" />
           </div>
           <span>Mais</span>
         </div>
