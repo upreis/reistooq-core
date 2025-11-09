@@ -9,6 +9,7 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useDevolucaoManager } from '@/features/devolucoes-online/hooks/useDevolucaoManager';
 import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/usePersistentDevolucaoState';
 import { useDevolucaoStorage } from '@/features/devolucoes-online/hooks/useDevolucaoStorage';
+import type { DevolucaoFilters } from '@/features/devolucoes-online/types/devolucao.types';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
@@ -44,15 +45,17 @@ export default function DevolucoesMercadoLivre() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [autoRefreshInterval, setAutoRefreshInterval] = useState(3600000); // 1 hora padrão
   
-  // Estados da barra de filtros avançada
+  // Estados da barra de filtros avançada (restaurados do cache se existir)
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [periodo, setPeriodo] = useState('60');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [hasRestoredFromCache, setHasRestoredFromCache] = useState(false);
   
   // Tab ativa (Ativas/Histórico)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
+  // ✅ Carregar contas E restaurar estado persistido
   useEffect(() => {
     const fetchAccounts = async () => {
       const { data } = await supabase
@@ -64,8 +67,48 @@ export default function DevolucoesMercadoLivre() {
       
       setAccounts(data || []);
       
-      // Por padrão, selecionar TODAS as contas
-      if (data && data.length > 0) {
+      // ✅ RESTAURAR ESTADO PERSISTIDO SE EXISTIR
+      if (persistentState.hasValidPersistedState() && !hasRestoredFromCache) {
+        const cached = persistentState.persistedState;
+        
+        console.log('🔄 Restaurando estado persistido:', {
+          devolucoes: cached.devolucoes?.length || 0,
+          total: cached.total,
+          page: cached.currentPage,
+          quickFilter: cached.quickFilter,
+          integrationAccountId: cached.integrationAccountId,
+          cacheAge: cached.cachedAt ? `${Math.round((Date.now() - new Date(cached.cachedAt).getTime()) / 1000)}s` : 'N/A',
+        });
+        
+        // Restaurar dados no manager
+        if (cached.devolucoes && cached.devolucoes.length > 0) {
+          actions.restorePersistedData(cached.devolucoes, cached.total, cached.currentPage);
+        }
+        
+        // Restaurar filtros UI
+        if (cached.filters) {
+          if (cached.filters.search) setSearchTerm(cached.filters.search);
+        }
+        
+        // Restaurar contas selecionadas
+        if (cached.integrationAccountId) {
+          const accountIds = cached.integrationAccountId.includes(',') 
+            ? cached.integrationAccountId.split(',')
+            : [cached.integrationAccountId];
+          
+          setSelectedAccountIds(accountIds);
+          
+          if (accountIds.length > 1) {
+            actions.setMultipleAccounts(accountIds);
+          } else {
+            actions.setIntegrationAccountId(accountIds[0]);
+          }
+        }
+        
+        setHasRestoredFromCache(true);
+        toast.success('Filtros e dados restaurados');
+      } else if (data && data.length > 0 && !hasRestoredFromCache) {
+        // Por padrão, selecionar TODAS as contas (se não restaurou do cache)
         const allAccountIds = data.map(acc => acc.id);
         setSelectedAccountIds(allAccountIds);
         
@@ -78,23 +121,31 @@ export default function DevolucoesMercadoLivre() {
       }
     };
     fetchAccounts();
-  }, []);
+  }, [hasRestoredFromCache]);
 
   // Limpar dados antigos ao montar
   useEffect(() => {
     clearOldData();
   }, [clearOldData]);
 
-  // NÃO restaurar dados antigos automaticamente
-  // Isso causava o bug de mostrar 25 devoluções antigas quando havia 90 novas
-  // O sistema agora sempre busca dados frescos da API
-
-  // Salvar dados ao mudar (com debounce automático no manager)
+  // ✅ Salvar dados quando mudar (mas só se não estiver restaurando)
   useEffect(() => {
-    if (state.devolucoes.length > 0 && !state.loading) {
+    if (state.devolucoes.length > 0 && !state.loading && hasRestoredFromCache) {
+      const accountKey = selectedAccountIds.length > 1 
+        ? selectedAccountIds.sort().join(',')
+        : selectedAccountIds[0] || '';
+      
       persistentState.saveOrdersData(state.devolucoes, state.total, state.currentPage);
+      persistentState.saveIntegrationAccountId(accountKey);
+      
+      console.log('💾 Estado persistido salvo:', {
+        devolucoes: state.devolucoes.length,
+        total: state.total,
+        page: state.currentPage,
+        accounts: accountKey,
+      });
     }
-  }, [state.devolucoes, state.total, state.currentPage, state.loading]);
+  }, [state.devolucoes, state.total, state.currentPage, state.loading, hasRestoredFromCache, selectedAccountIds]);
 
   // Calcular estatísticas (memoizado)
   const stats = useMemo(() => ({
@@ -143,7 +194,14 @@ export default function DevolucoesMercadoLivre() {
     actions.clearFilters();
     setFilteredByQuickFilter([]);
     clearStorage();
-    toast.success('Dados limpos com sucesso');
+    persistentState.clearPersistedState(); // ✅ Limpar cache também
+    
+    // Resetar UI
+    setSearchTerm('');
+    setPeriodo('60');
+    setSelectedAccountIds(accounts.map(acc => acc.id));
+    
+    toast.success('Dados e filtros limpos com sucesso');
   };
 
   const handleStatusChange = (devolucaoId: string, newStatus: StatusAnalise) => {
@@ -182,20 +240,32 @@ export default function DevolucoesMercadoLivre() {
       });
       
       // ✅ Aplicar filtros de data como strings YYYY-MM-DD
-      actions.setFilters({
+      const newFilters: Partial<DevolucaoFilters> = {
         dateFrom: dateFromISO,  // ✅ String format YYYY-MM-DD
         dateTo: dateToISO,      // ✅ String format YYYY-MM-DD
         search: searchTerm,
-      });
+      };
+      
+      actions.setFilters(newFilters);
+      
+      // ✅ Salvar filtros aplicados (criar objeto completo)
+      persistentState.saveAppliedFilters({
+        ...newFilters,
+        status: [],
+        integrationAccountId: selectedAccountIds.length === 1 ? selectedAccountIds[0] : selectedAccountIds.join(','),
+      } as DevolucaoFilters);
       
       if (selectedAccountIds.length === 1) {
         // Busca de conta única
         console.log('🔍 Buscando devoluções da conta:', selectedAccountIds[0]);
         actions.setIntegrationAccountId(selectedAccountIds[0]);
+        persistentState.saveIntegrationAccountId(selectedAccountIds[0]);
       } else {
         // Busca de múltiplas contas
         console.log('🔍 Buscando devoluções de', selectedAccountIds.length, 'contas:', selectedAccountIds);
         actions.setMultipleAccounts(selectedAccountIds);
+        const accountsKey = selectedAccountIds.sort().join(',');
+        persistentState.saveIntegrationAccountId(accountsKey);
       }
       
       // Forçar refetch imediato

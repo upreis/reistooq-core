@@ -8,6 +8,7 @@ import { MLReturn, DevolucaoFilters } from '../types/devolucao.types';
 
 const STORAGE_KEY = 'devolucoes_persistent_state';
 const STORAGE_VERSION = 1;
+const CACHE_DURATION = 60 * 60 * 1000; // 60 minutos (1 hora)
 
 interface PersistedDevolucaoState {
   version: number;
@@ -18,26 +19,43 @@ interface PersistedDevolucaoState {
   integrationAccountId: string;
   timestamp: number;
   quickFilter?: string;
+  cachedAt?: string;
 }
 
 export function usePersistentDevolucaoState() {
   const [persistedState, setPersistedState] = useState<PersistedDevolucaoState | null>(null);
   const [isStateLoaded, setIsStateLoaded] = useState(false);
 
-  // Limpar cache antigo ao montar
+  // Carregar estado do localStorage na inicialização
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         
-        // Sempre limpar dados antigos para evitar mostrar cache desatualizado
-        // que causava o bug de mostrar 25 devoluções quando havia 90 novas
-        console.log('🗑️ Limpando cache antigo de devoluções');
-        localStorage.removeItem(STORAGE_KEY);
+        // Validar versão
+        if (parsed.version !== STORAGE_VERSION) {
+          console.log('🗑️ Versão de cache antiga, limpando...');
+          localStorage.removeItem(STORAGE_KEY);
+          setIsStateLoaded(true);
+          return;
+        }
+        
+        // Verificar expiração
+        const age = Date.now() - parsed.timestamp;
+        if (age > CACHE_DURATION) {
+          console.log('⏰ Cache expirado, limpando...');
+          localStorage.removeItem(STORAGE_KEY);
+          setIsStateLoaded(true);
+          return;
+        }
+        
+        // Estado válido - carregar
+        console.log('✅ Estado válido carregado do cache');
+        setPersistedState(parsed);
       }
     } catch (error) {
-      console.error('❌ Erro ao limpar cache:', error);
+      console.error('❌ Erro ao carregar cache:', error);
       localStorage.removeItem(STORAGE_KEY);
     } finally {
       setIsStateLoaded(true);
@@ -57,12 +75,33 @@ export function usePersistentDevolucaoState() {
         total,
         currentPage,
         timestamp: Date.now(),
+        cachedAt: new Date().toISOString(),
       };
       
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       setPersistedState(updated);
     } catch (error) {
       console.error('❌ Erro ao salvar dados:', error);
+    }
+  }, []);
+
+  // Salvar ID de conta de integração
+  const saveIntegrationAccountId = useCallback((integrationAccountId: string) => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const current = stored ? JSON.parse(stored) : {};
+      
+      const updated = {
+        ...current,
+        version: STORAGE_VERSION,
+        integrationAccountId,
+        timestamp: Date.now(),
+      };
+      
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setPersistedState(updated);
+    } catch (error) {
+      console.error('❌ Erro ao salvar account ID:', error);
     }
   }, []);
 
@@ -123,6 +162,7 @@ export function usePersistentDevolucaoState() {
     saveOrdersData,
     saveAppliedFilters,
     saveQuickFilter,
+    saveIntegrationAccountId,
     clearPersistedState,
     hasValidPersistedState,
   };
