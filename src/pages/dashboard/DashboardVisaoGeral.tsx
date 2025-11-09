@@ -93,25 +93,23 @@ export default function DashboardVisaoGeral() {
           <CardTitle>Calendário de Devoluções</CardTitle>
         </CardHeader>
         <CardContent>
+          <ActivityCalendar 
+            data={calendarLoading ? [] : calendarData}
+            title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
+            monthsBack={3}
+            monthsForward={3}
+          />
+          
           {calendarLoading && (
-            <div className="text-center py-8 text-muted-foreground">
-              Carregando dados do calendário...
+            <div className="text-center text-sm text-muted-foreground mt-4">
+              Carregando dados de devoluções...
             </div>
           )}
           
           {calendarError && (
-            <div className="text-center py-8 text-destructive">
-              Erro ao carregar calendário: {calendarError}
+            <div className="text-center text-sm text-destructive mt-4">
+              ⚠️ {calendarError}
             </div>
-          )}
-          
-          {!calendarLoading && !calendarError && (
-            <ActivityCalendar 
-              data={calendarData}
-              title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
-              monthsBack={3}
-              monthsForward={3}
-            />
           )}
         </CardContent>
       </Card>
