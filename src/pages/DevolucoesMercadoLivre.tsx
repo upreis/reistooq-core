@@ -68,8 +68,10 @@ export default function DevolucoesMercadoLivre() {
       setAccounts(data || []);
       
       // ✅ RESTAURAR ESTADO PERSISTIDO SE EXISTIR
-      if (persistentState.hasValidPersistedState() && !hasRestoredFromCache) {
+      if (persistentState.isStateLoaded && persistentState.hasValidPersistedState() && !hasRestoredFromCache) {
         const cached = persistentState.persistedState;
+        
+        if (!cached) return;
         
         console.log('🔄 Restaurando estado persistido:', {
           devolucoes: cached.devolucoes?.length || 0,
@@ -107,7 +109,7 @@ export default function DevolucoesMercadoLivre() {
         
         setHasRestoredFromCache(true);
         toast.success('Filtros e dados restaurados');
-      } else if (data && data.length > 0 && !hasRestoredFromCache) {
+      } else if (data && data.length > 0 && !hasRestoredFromCache && !persistentState.hasValidPersistedState()) {
         // Por padrão, selecionar TODAS as contas (se não restaurou do cache)
         const allAccountIds = data.map(acc => acc.id);
         setSelectedAccountIds(allAccountIds);
@@ -118,10 +120,12 @@ export default function DevolucoesMercadoLivre() {
         } else {
           actions.setIntegrationAccountId(allAccountIds[0]);
         }
+        
+        setHasRestoredFromCache(true);
       }
     };
     fetchAccounts();
-  }, [hasRestoredFromCache]);
+  }, [persistentState.isStateLoaded]);
 
   // Limpar dados antigos ao montar
   useEffect(() => {
