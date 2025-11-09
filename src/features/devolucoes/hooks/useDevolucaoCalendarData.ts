@@ -19,16 +19,17 @@ export function useDevolucaoCalendarData() {
   const hasFetched = useRef(false);
 
   useEffect(() => {
-    // Evitar chamadas duplicadas
-    if (hasFetched.current) {
-      console.log('⏭️ [CALENDAR] Chamada ignorada - já foi executada');
-      return;
-    }
-
-    hasFetched.current = true;
     let timeoutId: NodeJS.Timeout;
+    let isCancelled = false;
 
     const fetchCalendarData = async () => {
+      // Evitar chamadas duplicadas
+      if (hasFetched.current) {
+        console.log('⏭️ [CALENDAR] Chamada ignorada - já foi executada');
+        return;
+      }
+
+      hasFetched.current = true;
       setLoading(true);
       setError(null);
 
@@ -175,19 +176,27 @@ export function useDevolucaoCalendarData() {
           primeiras5Datas: calendarData.slice(0, 5)
         });
 
-        setData(calendarData);
         console.log('🎉 [CALENDAR] SUCESSO - Calendário carregado com sucesso!');
+        
+        // Só atualizar se não foi cancelado
+        if (!isCancelled) {
+          setData(calendarData);
+        }
       } catch (err: any) {
         console.error('❌ [CALENDAR] ERRO FATAL:', {
           message: err.message,
           stack: err.stack,
           error: err
         });
-        setError(err.message || 'Erro ao carregar dados');
-        setData([]);
+        if (!isCancelled) {
+          setError(err.message || 'Erro ao carregar dados');
+          setData([]);
+        }
       } finally {
         console.log('🏁 [CALENDAR] Finalizando (loading = false)');
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
         if (timeoutId) clearTimeout(timeoutId);
       }
     };
@@ -196,6 +205,7 @@ export function useDevolucaoCalendarData() {
 
     // Cleanup function
     return () => {
+      isCancelled = true;
       if (timeoutId) {
         clearTimeout(timeoutId);
         console.log('🧹 [CALENDAR] Limpeza: timeout cancelado');

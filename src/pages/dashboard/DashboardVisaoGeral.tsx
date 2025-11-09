@@ -6,7 +6,7 @@ import { useDevolucaoCalendarData } from '@/features/devolucoes/hooks/useDevoluc
 
 export default function DashboardVisaoGeral() {
   // Buscar dados reais de devoluções para o calendário
-  const { data: calendarData, loading: calendarLoading } = useDevolucaoCalendarData();
+  const { data: calendarData, loading: calendarLoading, error: calendarError } = useDevolucaoCalendarData();
 
   return (
     <div className="space-y-6">
@@ -93,11 +93,19 @@ export default function DashboardVisaoGeral() {
           <CardTitle>Calendário de Devoluções</CardTitle>
         </CardHeader>
         <CardContent>
-          {calendarLoading ? (
-            <div className="flex items-center justify-center py-8 text-muted-foreground">
+          {calendarLoading && (
+            <div className="text-center py-8 text-muted-foreground">
               Carregando dados do calendário...
             </div>
-          ) : (
+          )}
+          
+          {calendarError && (
+            <div className="text-center py-8 text-destructive">
+              Erro ao carregar calendário: {calendarError}
+            </div>
+          )}
+          
+          {!calendarLoading && !calendarError && (
             <ActivityCalendar 
               data={calendarData}
               title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
