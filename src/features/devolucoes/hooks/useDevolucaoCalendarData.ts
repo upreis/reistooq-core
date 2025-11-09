@@ -24,35 +24,47 @@ export function useDevolucaoCalendarData() {
 
       try {
         // Buscar contas ML ativas
-        const { data: accounts } = await supabase
+        console.log('📅 [CALENDAR] Passo 1: Buscando contas ML ativas...');
+        const { data: accounts, error: accountsError } = await supabase
           .from('integration_accounts')
           .select('id')
           .eq('provider', 'mercadolivre')
           .eq('is_active', true);
 
+        if (accountsError) {
+          console.error('❌ [CALENDAR] Erro ao buscar contas:', accountsError);
+          throw accountsError;
+        }
+
         if (!accounts || accounts.length === 0) {
+          console.log('⚠️ [CALENDAR] Nenhuma conta ML ativa encontrada');
           setData([]);
           setLoading(false);
           return;
         }
 
         const accountIds = accounts.map(acc => acc.id);
+        console.log('✅ [CALENDAR] Passo 1 concluído:', accountIds.length, 'contas encontradas');
 
         // Calcular período: 3 meses atrás até 3 meses para frente
         const startDate = format(subMonths(new Date(), 3), 'yyyy-MM-dd');
         const endDate = format(addMonths(new Date(), 3), 'yyyy-MM-dd');
 
-        console.log('📅 [CALENDAR] Buscando dados de devoluções para calendário', {
+        console.log('📅 [CALENDAR] Passo 2: Chamando edge function ml-returns...', {
           startDate,
           endDate,
           accountsCount: accountIds.length,
           accountIds
         });
 
-        // Chamar edge function ml-returns para buscar devoluções
-        const { data: response, error: apiError } = await supabase.functions.invoke('ml-returns', {
+        // Criar promise com timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: A requisição demorou mais de 30 segundos')), 30000)
+        );
+
+        const apiPromise = supabase.functions.invoke('ml-returns', {
           body: {
-            accountIds: accountIds, // ✅ Corrigido: usar 'accountIds' ao invés de 'integration_account_ids'
+            accountIds: accountIds,
             filters: {
               dateFrom: startDate,
               dateTo: endDate,
@@ -64,21 +76,36 @@ export function useDevolucaoCalendarData() {
           }
         });
 
+        // Chamar edge function com timeout
+        const { data: response, error: apiError } = await Promise.race([
+          apiPromise,
+          timeoutPromise
+        ]) as any;
+
+        console.log('✅ [CALENDAR] Passo 2 concluído - Resposta recebida');
+
         if (apiError) {
           console.error('❌ [CALENDAR] Erro na API ml-returns:', apiError);
           throw apiError;
         }
 
-        console.log('✅ [CALENDAR] Resposta da API:', {
+        if (!response) {
+          console.error('❌ [CALENDAR] Resposta da API está vazia');
+          throw new Error('Resposta da API está vazia');
+        }
+
+        console.log('📦 [CALENDAR] Passo 3: Processando resposta da API...', {
           success: response?.success,
           hasData: !!response?.data,
           hasReturns: !!(response as any)?.returns,
           keys: response ? Object.keys(response) : []
         });
 
-        // A API ml-returns retorna { returns: [...] } ao invés de { data: { devolucoes: [...] } }
+        // A API ml-returns retorna { returns: [...] }
         const returns = (response as any)?.returns || [];
-        console.log(`📦 [CALENDAR] ${returns.length} devoluções recebidas da API`);
+        console.log(`✅ [CALENDAR] Passo 3 concluído: ${returns.length} devoluções recebidas`);
+
+        console.log('🔄 [CALENDAR] Passo 4: Agrupando devoluções por data...');
 
         // Processar dados: agrupar por data E armazenar as devoluções
         const dateReturnsMap = new Map<string, any[]>();
@@ -126,18 +153,25 @@ export function useDevolucaoCalendarData() {
           })
         );
 
-        console.log('📊 [CALENDAR] Dados do calendário processados:', {
+        console.log('✅ [CALENDAR] Passo 4 concluído - Dados agrupados');
+        console.log('📊 [CALENDAR] Passo 5: Finalizando...', {
           totalDays: calendarData.length,
           totalReturns: returns.length,
-          calendarData: calendarData.slice(0, 5) // Primeiras 5 datas para debug
+          primeiras5Datas: calendarData.slice(0, 5)
         });
 
         setData(calendarData);
+        console.log('🎉 [CALENDAR] SUCESSO - Calendário carregado com sucesso!');
       } catch (err: any) {
-        console.error('❌ [CALENDAR] Erro ao buscar dados do calendário:', err);
+        console.error('❌ [CALENDAR] ERRO FATAL:', {
+          message: err.message,
+          stack: err.stack,
+          error: err
+        });
         setError(err.message || 'Erro ao carregar dados');
         setData([]);
       } finally {
+        console.log('🏁 [CALENDAR] Finalizando (loading = false)');
         setLoading(false);
       }
     };
