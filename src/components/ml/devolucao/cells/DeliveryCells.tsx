@@ -51,20 +51,20 @@ export const EstimatedDeliveryCell = ({
   hasDelay?: boolean;
 }) => {
   if (!date) {
-    return <span className="text-muted-foreground">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 min-w-[140px]">
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-sm">{formatDate(date)}</span>
+              <Calendar className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm whitespace-nowrap">{formatDate(date)}</span>
             </div>
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="top">
             <p>Previsão de entrega</p>
           </TooltipContent>
         </Tooltip>
@@ -74,13 +74,13 @@ export const EstimatedDeliveryCell = ({
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                <AlertCircle className="h-3 w-3 mr-1" />
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5 animate-pulse">
+                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
                 Atraso
               </Badge>
             </TooltipTrigger>
-            <TooltipContent>
-              <p>Há atraso na entrega</p>
+            <TooltipContent side="top">
+              <p>⚠️ Há atraso na entrega</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -99,19 +99,19 @@ export const DeliveryLimitCell = ({
   date?: string | null;
 }) => {
   if (!date) {
-    return <span className="text-muted-foreground">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-sm">{formatDate(date)}</span>
+          <div className="flex items-center gap-1.5 min-w-[130px]">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm whitespace-nowrap">{formatDate(date)}</span>
           </div>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent side="top">
           <p>Data limite para entrega</p>
         </TooltipContent>
       </Tooltip>
@@ -129,7 +129,7 @@ export const ShipmentStatusCell = ({
   status?: string | null;
 }) => {
   if (!status) {
-    return <span className="text-muted-foreground">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
 
   const translated = translateShipmentStatus(status);
@@ -139,12 +139,12 @@ export const ShipmentStatusCell = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant={variant} className="whitespace-nowrap">
+          <Badge variant={variant} className="whitespace-nowrap text-xs font-medium">
             {translated}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>
-          <p>Status original: {status}</p>
+        <TooltipContent side="top">
+          <p className="text-xs">Status original: <span className="font-mono">{status}</span></p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -161,7 +161,7 @@ export const RefundAtCell = ({
   refundAt?: string | null;
 }) => {
   if (!refundAt) {
-    return <span className="text-muted-foreground">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
 
   const translated = translateRefundAt(refundAt);
@@ -171,12 +171,12 @@ export const RefundAtCell = ({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant={variant} className="whitespace-nowrap">
+          <Badge variant={variant} className="whitespace-nowrap text-xs font-medium">
             {translated}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>
-          <p>Momento do reembolso</p>
+        <TooltipContent side="top">
+          <p>💰 Momento do reembolso</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -197,7 +197,7 @@ export const ReviewStatusCell = ({
   stage?: string | null;
 }) => {
   if (!status) {
-    return <span className="text-muted-foreground">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
 
   const translated = translateReviewStatus(status);
@@ -207,18 +207,18 @@ export const ReviewStatusCell = ({
     status && `Status: ${translated}`,
     method && `Método: ${method}`,
     stage && `Etapa: ${stage}`,
-  ].filter(Boolean).join(' | ');
+  ].filter(Boolean).join('\n');
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant={variant} className="whitespace-nowrap">
+          <Badge variant={variant} className="whitespace-nowrap text-xs font-medium">
             {translated}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>
-          <p>{tooltipContent}</p>
+        <TooltipContent side="top" className="max-w-[200px]">
+          <p className="whitespace-pre-line text-xs">{tooltipContent}</p>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -237,36 +237,37 @@ export const QuantityCell = ({
   total?: number | null;
 }) => {
   if (!returned && !total) {
-    return <span className="text-muted-foreground">-</span>;
+    return <span className="text-muted-foreground text-xs">-</span>;
   }
 
   const returnedQty = returned || 0;
   const totalQty = total || 0;
-  const isPartial = returnedQty < totalQty;
+  const isPartial = returnedQty < totalQty && totalQty > 0;
+  const isTotal = returnedQty === totalQty && totalQty > 0;
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="flex items-center gap-1.5">
-            <Package className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-sm font-medium">
+          <div className="flex items-center gap-1.5 min-w-[60px]">
+            <Package className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            <span className="text-sm font-medium whitespace-nowrap">
               {returnedQty}/{totalQty}
             </span>
-            {isPartial && totalQty > 0 && (
-              <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
+            {isPartial && (
+              <AlertCircle className="h-3.5 w-3.5 text-orange-500 flex-shrink-0 animate-pulse" />
             )}
-            {returnedQty === totalQty && totalQty > 0 && (
-              <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+            {isTotal && (
+              <CheckCircle className="h-3.5 w-3.5 text-green-500 flex-shrink-0" />
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent>
-          <p>
-            {isPartial && totalQty > 0 
-              ? `Devolução parcial: ${returnedQty} de ${totalQty} itens`
-              : returnedQty === totalQty && totalQty > 0
-              ? `Devolução total: ${totalQty} itens`
+        <TooltipContent side="top">
+          <p className="text-xs">
+            {isPartial
+              ? `⚠️ Devolução parcial: ${returnedQty} de ${totalQty} itens`
+              : isTotal
+              ? `✅ Devolução total: ${totalQty} itens`
               : `${returnedQty} devolvidos de ${totalQty} totais`
             }
           </p>

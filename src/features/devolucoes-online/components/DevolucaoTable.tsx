@@ -154,35 +154,60 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="font-semibold sticky left-0 bg-muted/50 z-10">Análise</TableHead>
-            <TableHead className="font-semibold">Empresa</TableHead>
-            <TableHead className="font-semibold">ID Devolução</TableHead>
-            <TableHead className="font-semibold">Claim ID</TableHead>
-            <TableHead className="font-semibold">Order ID</TableHead>
-            <TableHead className="font-semibold">Item ID</TableHead>
-            <TableHead className="font-semibold">Variação ID</TableHead>
-            <TableHead className="font-semibold">Status</TableHead>
-            <TableHead className="font-semibold">Status $</TableHead>
-            <TableHead className="font-semibold">Subtipo</TableHead>
-            <TableHead className="font-semibold">Tipo Recurso</TableHead>
-            <TableHead className="font-semibold">Contexto</TableHead>
-            <TableHead className="font-semibold">Qtd Total</TableHead>
-            <TableHead className="font-semibold">Qtd Devolver</TableHead>
-            <TableHead className="font-semibold">Shipment ID</TableHead>
-            <TableHead className="font-semibold">Status Envio</TableHead>
-            <TableHead className="font-semibold">Tipo Envio</TableHead>
-            <TableHead className="font-semibold">Destino</TableHead>
-            <TableHead className="font-semibold">Rastreio</TableHead>
-            {/* ✅ FASE 4: Novas colunas de dados enriquecidos */}
-            <TableHead className="font-semibold">📅 Previsão Entrega</TableHead>
-            <TableHead className="font-semibold">⏰ Prazo Limite</TableHead>
-            <TableHead className="font-semibold">🚚 Status Envio ML</TableHead>
-            <TableHead className="font-semibold">💰 Reembolso Quando</TableHead>
-            <TableHead className="font-semibold">🔍 Revisão</TableHead>
-            <TableHead className="font-semibold">📦 Quantidade</TableHead>
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="font-semibold sticky left-0 bg-muted/50 z-10">Análise</TableHead>
+              <TableHead className="font-semibold">Empresa</TableHead>
+              <TableHead className="font-semibold">ID Devolução</TableHead>
+              <TableHead className="font-semibold">Claim ID</TableHead>
+              <TableHead className="font-semibold">Order ID</TableHead>
+              <TableHead className="font-semibold">Item ID</TableHead>
+              <TableHead className="font-semibold">Variação ID</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold">Status $</TableHead>
+              <TableHead className="font-semibold">Subtipo</TableHead>
+              <TableHead className="font-semibold">Tipo Recurso</TableHead>
+              <TableHead className="font-semibold">Contexto</TableHead>
+              <TableHead className="font-semibold">Qtd Total</TableHead>
+              <TableHead className="font-semibold">Qtd Devolver</TableHead>
+              <TableHead className="font-semibold">Shipment ID</TableHead>
+              <TableHead className="font-semibold">Status Envio</TableHead>
+              <TableHead className="font-semibold">Tipo Envio</TableHead>
+              <TableHead className="font-semibold">Destino</TableHead>
+              <TableHead className="font-semibold">Rastreio</TableHead>
+              {/* ✅ FASE 6: Novas colunas de dados enriquecidos com responsividade */}
+              <TableHead className="font-semibold whitespace-nowrap">
+                <span className="flex items-center gap-1.5">
+                  📅 Previsão Entrega
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold whitespace-nowrap">
+                <span className="flex items-center gap-1.5">
+                  ⏰ Prazo Limite
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold whitespace-nowrap">
+                <span className="flex items-center gap-1.5">
+                  🚚 Status Envio
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold whitespace-nowrap">
+                <span className="flex items-center gap-1.5">
+                  💰 Reembolso
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold whitespace-nowrap">
+                <span className="flex items-center gap-1.5">
+                  🔍 Revisão
+                </span>
+              </TableHead>
+              <TableHead className="font-semibold whitespace-nowrap">
+                <span className="flex items-center gap-1.5">
+                  📦 Qtd
+                </span>
+              </TableHead>
             <TableHead className="font-semibold">Endereço</TableHead>
             <TableHead className="font-semibold">Cidade</TableHead>
             <TableHead className="font-semibold">Estado</TableHead>
@@ -401,9 +426,10 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 </TableCell>
               </TableRow>
             );
-          })}
+        })}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 });
