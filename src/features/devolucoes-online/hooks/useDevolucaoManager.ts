@@ -292,11 +292,12 @@ export function useDevolucaoManager(initialAccountId?: string) {
   }, [mutate]);
 
   const restorePersistedData = useCallback((restoredDevolucoes: MLReturn[], restoredTotal: number, page: number) => {
-    console.log('🔄 Restaurando dados persistidos:', restoredDevolucoes.length, 'devoluções');
+    console.log('✅ Restaurando dados persistidos (exibindo instantaneamente):', restoredDevolucoes.length, 'devoluções');
     setDevolucoes(restoredDevolucoes);
     setTotal(restoredTotal);
     setCurrentPage(page);
     setCachedAt(new Date());
+    setLoading(false); // ✅ FIX: Desligar loading para mostrar dados em cache imediatamente
   }, []);
 
   // Calcular total de páginas

@@ -82,8 +82,9 @@ export default function DevolucoesMercadoLivre() {
           cacheAge: cached.cachedAt ? `${Math.round((Date.now() - new Date(cached.cachedAt).getTime()) / 1000)}s` : 'N/A',
         });
         
-        // Restaurar dados no manager
+        // ✅ FIX: Restaurar dados no manager SEM loading (aparece instantaneamente)
         if (cached.devolucoes && cached.devolucoes.length > 0) {
+          console.log('⚡ Exibindo dados em cache INSTANTANEAMENTE');
           actions.restorePersistedData(cached.devolucoes, cached.total, cached.currentPage);
         }
         
@@ -390,7 +391,7 @@ export default function DevolucoesMercadoLivre() {
                 <Card>
                   <DevolucaoTable 
                     devolucoes={devolucoesFiltradas.ativas}
-                    isLoading={state.loading}
+                    isLoading={state.loading && state.devolucoes.length === 0}
                     error={state.error}
                     onStatusChange={handleStatusChange}
                   />
@@ -401,7 +402,7 @@ export default function DevolucoesMercadoLivre() {
                 <Card>
                   <DevolucaoTable 
                     devolucoes={devolucoesFiltradas.historico}
-                    isLoading={state.loading}
+                    isLoading={state.loading && state.devolucoes.length === 0}
                     error={state.error}
                     onStatusChange={handleStatusChange}
                   />
