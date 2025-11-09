@@ -83,7 +83,7 @@ const ActivityCalendar = ({
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-sm ${colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center ${isFirstOfMonth ? 'ring-1 ring-primary/50' : ''}`}
+                className={`w-8 h-8 rounded-sm ${colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center ring-1 ring-border/30`}
                 title={`${format(day, "PPP", { locale: ptBR })}: ${contribution?.count || 0} atividades`}
                 onClick={() => handleDayClick(contribution, day)}
               >
