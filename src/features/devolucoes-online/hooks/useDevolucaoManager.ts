@@ -218,11 +218,9 @@ export function useDevolucaoManager(initialAccountId?: string) {
     }
   );
 
-  // Limpar dados quando a conta mudar para evitar mostrar dados antigos
-  useEffect(() => {
-    setDevolucoes([]);
-    setTotal(0);
-  }, [integrationAccountId, multipleAccountIds]);
+  // ❌ REMOVIDO: Este useEffect causava limpeza de dados ao restaurar cache
+  // Não devemos limpar dados automaticamente ao trocar conta pois isso interfere
+  // com a restauração de cache. A limpeza deve ser manual via botão "Limpar".
 
   // Sync loading state
   useEffect(() => {

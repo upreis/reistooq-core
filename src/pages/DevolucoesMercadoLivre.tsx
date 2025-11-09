@@ -91,15 +91,17 @@ export default function DevolucoesMercadoLivre() {
         if (cached.filters) {
           if (cached.filters.search) setSearchTerm(cached.filters.search);
           if (cached.filters.dateFrom && cached.filters.dateTo) {
-            // Calcular período baseado nas datas
+            // ✅ FIX: Calcular período corretamente (diferença + 1)
             const from = new Date(cached.filters.dateFrom);
             const to = new Date(cached.filters.dateTo);
-            const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+            const diffDays = Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1;
             setPeriodo(diffDays.toString());
+            console.log('📅 Período restaurado:', diffDays, 'dias');
           }
         }
         
-        // Restaurar contas selecionadas
+        // ✅ FIX: Restaurar contas SEM disparar setMultipleAccounts/setIntegrationAccountId
+        // para evitar race condition com limpeza de dados
         if (cached.integrationAccountId) {
           const accountIds = cached.integrationAccountId.includes(',') 
             ? cached.integrationAccountId.split(',')
@@ -107,10 +109,12 @@ export default function DevolucoesMercadoLivre() {
           
           setSelectedAccountIds(accountIds);
           
+          // Apenas atualizar estado interno do manager sem limpar dados
           if (accountIds.length > 1) {
-            actions.setMultipleAccounts(accountIds);
+            // Não chamar actions, apenas setar estado local
+            console.log('✅ Múltiplas contas restauradas:', accountIds.length);
           } else {
-            actions.setIntegrationAccountId(accountIds[0]);
+            console.log('✅ Conta única restaurada:', accountIds[0]);
           }
         }
         
@@ -167,6 +171,9 @@ export default function DevolucoesMercadoLivre() {
     refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
   }), [state.devolucoes, state.total]);
 
+  // ✅ FIX: Usar timestamp para forçar re-render quando status mudar
+  const [analiseUpdateTrigger, setAnaliseUpdateTrigger] = useState(0);
+  
   // Adicionar status de análise e empresa às devoluções
   const devolucoesComAnalise = useMemo(() => {
     const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
@@ -182,7 +189,7 @@ export default function DevolucoesMercadoLivre() {
         empresa: empresaNome,
       };
     });
-  }, [filteredByQuickFilter, state.devolucoes, analiseStatus, accounts]);
+  }, [filteredByQuickFilter, state.devolucoes, analiseStatus, accounts, analiseUpdateTrigger]); // ✅ Adicionar trigger
 
   // Separar em Ativas e Histórico
   const devolucoesFiltradas = useMemo(() => {
@@ -202,11 +209,12 @@ export default function DevolucoesMercadoLivre() {
   };
 
   const handleClear = () => {
-    // ✅ Limpar TUDO: dados, filtros, cache e status de análise
+    // ✅ FIX: Limpar TUDO incluindo dados do manager
     actions.clearFilters();
+    actions.restorePersistedData([], 0, 1); // ✅ Limpar dados do manager
     setFilteredByQuickFilter([]);
-    clearStorage();
-    persistentState.clearPersistedState();
+    clearStorage(); // Limpar status de análise
+    persistentState.clearPersistedState(); // Limpar cache
     
     // Resetar UI
     setSearchTerm('');
@@ -218,6 +226,7 @@ export default function DevolucoesMercadoLivre() {
 
   const handleStatusChange = (devolucaoId: string, newStatus: StatusAnalise) => {
     setAnaliseStatus(devolucaoId, newStatus);
+    setAnaliseUpdateTrigger(prev => prev + 1); // ✅ FIX: Disparar re-render
     
     if (HISTORIC_STATUSES.includes(newStatus) && activeTab === 'ativas') {
       toast.success('Devolução movida para Histórico');
