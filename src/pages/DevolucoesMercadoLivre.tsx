@@ -55,7 +55,60 @@ export default function DevolucoesMercadoLivre() {
   // Tab ativa (Ativas/Histórico)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
-  // ✅ Carregar contas E restaurar estado persistido OU iniciar busca automática
+  // ✅ PRIMEIRO: Restaurar cache IMEDIATAMENTE (síncrono)
+  useEffect(() => {
+    if (!persistentState.isStateLoaded || hasRestoredFromCache) return;
+    
+    if (persistentState.hasValidPersistedState()) {
+      const cached = persistentState.persistedState;
+      if (!cached) return;
+      
+      console.log('⚡ RESTAURAÇÃO INSTANTÂNEA do cache:', {
+        devolucoes: cached.devolucoes?.length || 0,
+        total: cached.total,
+        cacheAge: cached.cachedAt ? `${Math.round((Date.now() - new Date(cached.cachedAt).getTime()) / 1000)}s` : 'N/A',
+      });
+      
+      // ✅ Restaurar dados PRIMEIRO (sem loading)
+      if (cached.devolucoes && cached.devolucoes.length > 0) {
+        actions.restorePersistedData(cached.devolucoes, cached.total, cached.currentPage);
+      }
+      
+      // ✅ Restaurar contas
+      if (cached.integrationAccountId) {
+        const accountIds = cached.integrationAccountId.includes(',') 
+          ? cached.integrationAccountId.split(',')
+          : [cached.integrationAccountId];
+        
+        setSelectedAccountIds(accountIds);
+        
+        // Sincronizar com manager
+        if (accountIds.length > 1) {
+          actions.setMultipleAccounts(accountIds);
+        } else {
+          actions.setIntegrationAccountId(accountIds[0]);
+        }
+      }
+      
+      // ✅ Restaurar filtros UI
+      if (cached.filters) {
+        if (cached.filters.search) setSearchTerm(cached.filters.search);
+        if (cached.filters.dateFrom && cached.filters.dateTo) {
+          const diffDays = Math.round(
+            (new Date(cached.filters.dateTo).getTime() - 
+             new Date(cached.filters.dateFrom).getTime()) / 
+            (1000 * 60 * 60 * 24)
+          );
+          setPeriodo(diffDays.toString());
+        }
+      }
+      
+      setHasRestoredFromCache(true);
+      toast.success('Dados restaurados', { duration: 2000 });
+    }
+  }, [persistentState.isStateLoaded, hasRestoredFromCache]);
+  
+  // ✅ SEGUNDO: Carregar contas do banco (assíncrono)
   useEffect(() => {
     const fetchAccounts = async () => {
       const { data } = await supabase
@@ -67,69 +120,11 @@ export default function DevolucoesMercadoLivre() {
       
       setAccounts(data || []);
       
-      // ✅ RESTAURAR ESTADO PERSISTIDO SE EXISTIR
-      if (persistentState.isStateLoaded && persistentState.hasValidPersistedState() && !hasRestoredFromCache) {
-        const cached = persistentState.persistedState;
-        
-        if (!cached) return;
-        
-        console.log('🔄 Restaurando estado persistido:', {
-          devolucoes: cached.devolucoes?.length || 0,
-          total: cached.total,
-          page: cached.currentPage,
-          quickFilter: cached.quickFilter,
-          integrationAccountId: cached.integrationAccountId,
-          cacheAge: cached.cachedAt ? `${Math.round((Date.now() - new Date(cached.cachedAt).getTime()) / 1000)}s` : 'N/A',
-        });
-        
-        // ✅ FIX: Restaurar dados no manager SEM loading (aparece instantaneamente)
-        if (cached.devolucoes && cached.devolucoes.length > 0) {
-          console.log('⚡ Exibindo dados em cache INSTANTANEAMENTE');
-          actions.restorePersistedData(cached.devolucoes, cached.total, cached.currentPage);
-        }
-        
-        // Restaurar filtros UI
-        if (cached.filters) {
-          if (cached.filters.search) setSearchTerm(cached.filters.search);
-          if (cached.filters.dateFrom && cached.filters.dateTo) {
-            // ✅ FIX: Calcular período corretamente (apenas arredondar)
-            const from = new Date(cached.filters.dateFrom);
-            const to = new Date(cached.filters.dateTo);
-            const diffMs = to.getTime() - from.getTime();
-            const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-            setPeriodo(diffDays.toString());
-            console.log('📅 Período restaurado:', diffDays, 'dias');
-          }
-        }
-        
-        // ✅ FIX: Restaurar contas E sincronizar com manager
-        // Importante: Isso NÃO vai limpar dados pois o useEffect do manager agora
-        // verifica se já tem dados antes de limpar
-        if (cached.integrationAccountId) {
-          const accountIds = cached.integrationAccountId.includes(',') 
-            ? cached.integrationAccountId.split(',')
-            : [cached.integrationAccountId];
-          
-          setSelectedAccountIds(accountIds);
-          
-          // ✅ Sincronizar com manager (necessário para SWR key funcionar)
-          if (accountIds.length > 1) {
-            actions.setMultipleAccounts(accountIds);
-            console.log('✅ Múltiplas contas restauradas:', accountIds.length);
-          } else {
-            actions.setIntegrationAccountId(accountIds[0]);
-            console.log('✅ Conta única restaurada:', accountIds[0]);
-          }
-        }
-        
-        setHasRestoredFromCache(true);
-        toast.success('Dados restaurados do cache');
-      } else if (data && data.length > 0 && !hasRestoredFromCache && !persistentState.hasValidPersistedState()) {
-        // ✅ PRIMEIRA VEZ: apenas selecionar contas, NÃO buscar automaticamente
+      // ✅ PRIMEIRA VEZ (sem cache): apenas selecionar contas
+      if (data && data.length > 0 && !hasRestoredFromCache && !persistentState.hasValidPersistedState()) {
         const allAccountIds = data.map(acc => acc.id);
         setSelectedAccountIds(allAccountIds);
         
-        // Configurar contas no manager sem buscar
         if (allAccountIds.length > 1) {
           actions.setMultipleAccounts(allAccountIds);
         } else {
@@ -137,11 +132,14 @@ export default function DevolucoesMercadoLivre() {
         }
         
         setHasRestoredFromCache(true);
-        console.log('✅ Contas carregadas. Clique em "Buscar" para carregar dados.');
       }
     };
-    fetchAccounts();
+    
+    if (persistentState.isStateLoaded) {
+      fetchAccounts();
+    }
   }, [persistentState.isStateLoaded]);
+
 
   // ✅ FIX: Limpar dados antigos APENAS na montagem inicial
   // Usar useEffect vazio para evitar loop infinito
