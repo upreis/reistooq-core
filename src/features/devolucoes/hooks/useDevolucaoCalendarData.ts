@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, addMonths } from 'date-fns';
 
@@ -16,8 +16,18 @@ export function useDevolucaoCalendarData() {
   const [data, setData] = useState<ContributionDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
+    // Evitar chamadas duplicadas
+    if (hasFetched.current) {
+      console.log('⏭️ [CALENDAR] Chamada ignorada - já foi executada');
+      return;
+    }
+
+    hasFetched.current = true;
+    let timeoutId: NodeJS.Timeout;
+
     const fetchCalendarData = async () => {
       setLoading(true);
       setError(null);
@@ -57,10 +67,12 @@ export function useDevolucaoCalendarData() {
           accountIds
         });
 
-        // Criar promise com timeout de 90 segundos (edge function pode processar muitos dados)
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: A requisição demorou mais de 90 segundos. Tente novamente.')), 90000)
-        );
+        // Criar promise com timeout de 120 segundos
+        const timeoutPromise = new Promise((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error('Timeout: A requisição demorou mais de 120 segundos. Tente recarregar a página.'));
+          }, 120000);
+        });
 
         const apiPromise = supabase.functions.invoke('ml-returns', {
           body: {
@@ -81,6 +93,9 @@ export function useDevolucaoCalendarData() {
           apiPromise,
           timeoutPromise
         ]) as any;
+
+        // Limpar timeout se sucesso
+        if (timeoutId) clearTimeout(timeoutId);
 
         console.log('✅ [CALENDAR] Passo 2 concluído - Resposta recebida');
 
@@ -173,10 +188,19 @@ export function useDevolucaoCalendarData() {
       } finally {
         console.log('🏁 [CALENDAR] Finalizando (loading = false)');
         setLoading(false);
+        if (timeoutId) clearTimeout(timeoutId);
       }
     };
 
     fetchCalendarData();
+
+    // Cleanup function
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        console.log('🧹 [CALENDAR] Limpeza: timeout cancelado');
+      }
+    };
   }, []);
 
   return { data, loading, error };
