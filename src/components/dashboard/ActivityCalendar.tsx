@@ -84,7 +84,7 @@ const ActivityCalendar = ({
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-sm ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500' : colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center ring-1 ring-border/30`}
+                className={`w-8 h-8 rounded-full ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500' : colorClass} hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer group relative flex items-center justify-center ring-1 ${isTodayDay ? 'ring-yellow-600 dark:ring-yellow-700' : 'ring-border/30'}`}
                 title={`${format(day, "PPP", { locale: ptBR })}: ${contribution?.count || 0} atividades`}
                 onClick={() => handleDayClick(contribution, day)}
               >
@@ -157,11 +157,11 @@ const ActivityCalendar = ({
         <div className="flex gap-3 text-xs items-center text-muted-foreground">
           <span>Menos</span>
           <div className="flex gap-1">
-            <div className="w-8 h-8 rounded-sm bg-muted/30" />
-            <div className="w-8 h-8 rounded-sm bg-primary/20" />
-            <div className="w-8 h-8 rounded-sm bg-primary/40" />
-            <div className="w-8 h-8 rounded-sm bg-primary/60" />
-            <div className="w-8 h-8 rounded-sm bg-primary/80" />
+            <div className="w-8 h-8 rounded-full bg-muted/30 ring-1 ring-border/30" />
+            <div className="w-8 h-8 rounded-full bg-primary/20 ring-1 ring-border/30" />
+            <div className="w-8 h-8 rounded-full bg-primary/40 ring-1 ring-border/30" />
+            <div className="w-8 h-8 rounded-full bg-primary/60 ring-1 ring-border/30" />
+            <div className="w-8 h-8 rounded-full bg-primary/80 ring-1 ring-border/30" />
           </div>
           <span>Mais</span>
         </div>
