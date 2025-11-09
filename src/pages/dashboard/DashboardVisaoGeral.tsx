@@ -2,29 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
-import { subDays } from 'date-fns';
+import { useDevolucaoCalendarData } from '@/features/devolucoes/hooks/useDevolucaoCalendarData';
 
 export default function DashboardVisaoGeral() {
-  // Dados de exemplo para o calendário de atividade (simulando vendas/pedidos)
-  const generateMockActivityData = () => {
-    const data = [];
-    const today = new Date();
-    
-    // Gerar dados dos últimos 365 dias
-    for (let i = 0; i < 365; i++) {
-      const date = subDays(today, i);
-      // Simular variação aleatória de atividades (0-15)
-      const count = Math.floor(Math.random() * 16);
-      data.push({
-        date: date.toISOString(),
-        count: count
-      });
-    }
-    
-    return data;
-  };
-
-  const activityData = generateMockActivityData();
+  // Buscar dados reais de devoluções para o calendário
+  const { data: calendarData, loading: calendarLoading } = useDevolucaoCalendarData();
 
   return (
     <div className="space-y-6">
@@ -105,16 +87,24 @@ export default function DashboardVisaoGeral() {
         </CardContent>
       </Card>
 
-      {/* Calendário de Atividade */}
+      {/* Calendário de Devoluções */}
       <Card>
         <CardHeader>
-          <CardTitle>Histórico de Atividade</CardTitle>
+          <CardTitle>Calendário de Devoluções</CardTitle>
         </CardHeader>
         <CardContent>
-          <ActivityCalendar 
-            data={activityData}
-            title="Vendas e Pedidos dos Últimos 12 Meses"
-          />
+          {calendarLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              Carregando dados do calendário...
+            </div>
+          ) : (
+            <ActivityCalendar 
+              data={calendarData}
+              title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
+              monthsBack={3}
+              monthsForward={3}
+            />
+          )}
         </CardContent>
       </Card>
     </div>

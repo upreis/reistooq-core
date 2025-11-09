@@ -10,13 +10,22 @@ interface ContributionDay {
 interface ActivityCalendarProps {
   data: ContributionDay[]; // Contribution data
   title?: string;
+  monthsBack?: number; // Meses para trás (padrão: 12)
+  monthsForward?: number; // Meses para frente (padrão: 0)
 }
 
-const ActivityCalendar = ({ data, title = "Atividade dos Últimos 12 Meses" }: ActivityCalendarProps) => {
+const ActivityCalendar = ({ 
+  data, 
+  title = "Atividade dos Últimos 12 Meses",
+  monthsBack = 12,
+  monthsForward = 0 
+}: ActivityCalendarProps) => {
   const [contributions, setContributions] = useState<ContributionDay[]>([]);
   const today = new Date();
-  const startDate = subDays(today, 364); // One year back
-  const weeks = 53;
+  const startDate = subDays(today, monthsBack * 30); // Aproximado
+  const endDate = addDays(today, monthsForward * 30); // Aproximado
+  const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+  const weeks = Math.ceil(totalDays / 7);
 
   // Process data prop
   useEffect(() => {
@@ -75,9 +84,9 @@ const ActivityCalendar = ({ data, title = "Atividade dos Últimos 12 Meses" }: A
   const renderMonthLabels = () => {
     const months = [];
     let currentMonth = startDate;
-    const monthsInYear = 12;
+    const totalMonths = monthsBack + monthsForward;
     
-    for (let i = 0; i < monthsInYear; i++) {
+    for (let i = 0; i < totalMonths; i++) {
       months.push(
         <div key={i} className="text-xs text-muted-foreground min-w-[60px]">
           {format(currentMonth, "MMM", { locale: ptBR })}
