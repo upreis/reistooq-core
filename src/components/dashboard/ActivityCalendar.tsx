@@ -8,7 +8,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface ContributionDay {
   date: string; // ISO date string (e.g., "2025-09-13")
   count: number;
-  returns?: any[]; // Array de devoluções (opcional para compatibilidade)
+  returns?: Array<{
+    dateType: 'delivery' | 'review';
+    [key: string]: any;
+  }>; // Array de devoluções com tipo
 }
 
 interface ActivityCalendarProps {
@@ -76,38 +79,76 @@ const ActivityCalendar = ({
         <div key={i} className={`flex flex-col gap-1 ${isNewMonth ? 'ml-3 pl-3 border-l-2 border-primary/30' : ''}`}>
           {weekDays.map((day, index) => {
             const contribution = contributions.find((c) => isSameDay(new Date(c.date), day));
-            const count = contribution?.count || 0;
             const dayNumber = getDate(day);
             const isFirstOfMonth = getDate(day) === 1;
             const isTodayDay = isToday(day);
             
-            // Get border color based on contribution count
-            const getBorderColor = (count: number) => {
-              if (count === 0) return "border-border";
-              if (count <= 2) return "border-primary/50";
-              if (count <= 5) return "border-primary/70";
-              if (count <= 10) return "border-primary/90";
-              return "border-primary";
-            };
+            // Contar tipos de eventos
+            const deliveryCount = contribution?.returns?.filter(r => r.dateType === 'delivery').length || 0;
+            const reviewCount = contribution?.returns?.filter(r => r.dateType === 'review').length || 0;
+            const hasMultipleTypes = deliveryCount > 0 && reviewCount > 0;
+            const totalCount = deliveryCount + reviewCount;
+            
+            // Determinar estilo do quadrado
+            let borderStyle = '';
+            let backgroundStyle = '';
+            
+            if (isTodayDay) {
+              backgroundStyle = 'bg-yellow-400 dark:bg-yellow-500';
+              borderStyle = 'border-yellow-600 dark:border-yellow-700';
+            } else if (hasMultipleTypes) {
+              // Gradiente diagonal para múltiplos tipos
+              backgroundStyle = 'bg-gradient-to-br from-blue-500 via-blue-500 to-orange-500 [background-size:100%_100%] from-[0%] via-[50%] to-[50%]';
+              borderStyle = 'border-blue-500';
+            } else if (deliveryCount > 0) {
+              // Apenas entregas - borda azul
+              borderStyle = deliveryCount <= 2 ? 'border-blue-400/60' : 
+                           deliveryCount <= 5 ? 'border-blue-500/80' : 
+                           'border-blue-600';
+            } else if (reviewCount > 0) {
+              // Apenas revisões - borda laranja
+              borderStyle = reviewCount <= 2 ? 'border-orange-400/60' : 
+                           reviewCount <= 5 ? 'border-orange-500/80' : 
+                           'border-orange-600';
+            } else {
+              borderStyle = 'border-border';
+            }
 
             return (
               <div
                 key={index}
-                className={`w-8 h-8 rounded-md border-2 ${isTodayDay ? 'bg-yellow-400 dark:bg-yellow-500 border-yellow-600 dark:border-yellow-700' : `${getBorderColor(count)}`} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex items-center justify-center`}
-                title={`${format(day, "PPP", { locale: ptBR })}: ${count} atividades`}
+                className={`w-8 h-8 rounded-md border-2 ${borderStyle} ${backgroundStyle} hover:border-primary hover:shadow-md transition-all cursor-pointer group relative flex items-center justify-center`}
+                title={`${format(day, "PPP", { locale: ptBR })}`}
                 onClick={() => handleDayClick(contribution, day)}
               >
-                <span className={`text-[9px] font-medium ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
+                <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
                   {dayNumber}
                 </span>
                 
-                {/* Tooltip on hover */}
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded shadow-lg opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-10 border">
-                  {format(day, "dd/MM/yyyy", { locale: ptBR })}: {contribution?.count || 0}
-                  {contribution && contribution.count > 0 && (
-                    <span className="block text-muted-foreground text-[10px] mt-0.5">
-                      Clique para ver detalhes
-                    </span>
+                {/* Tooltip detalhado */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-popover text-popover-foreground text-xs rounded-lg shadow-xl opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-20 border min-w-[200px]">
+                  <div className="font-semibold mb-1 border-b pb-1">
+                    {format(day, "dd/MM/yyyy", { locale: ptBR })}
+                  </div>
+                  {deliveryCount > 0 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 rounded-sm bg-blue-500"></div>
+                      <span>📦 {deliveryCount} Entrega{deliveryCount > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {reviewCount > 0 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
+                      <span>⏰ {reviewCount} Revisã{reviewCount > 1 ? 'ões' : 'o'}</span>
+                    </div>
+                  )}
+                  {totalCount === 0 && (
+                    <div className="text-muted-foreground">Sem devoluções</div>
+                  )}
+                  {totalCount > 0 && (
+                    <div className="text-[10px] text-muted-foreground mt-1.5 pt-1 border-t">
+                      Clique para detalhes
+                    </div>
                   )}
                 </div>
               </div>
@@ -163,16 +204,38 @@ const ActivityCalendar = ({
             </div>
           </div>
         </div>
-        <div className="flex gap-3 text-xs items-center text-muted-foreground">
-          <span>Menos</span>
-          <div className="flex gap-1">
-            <div className="w-8 h-8 rounded-md border-2 border-border" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary/50" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary/70" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary/90" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary" />
+        <div className="space-y-3">
+          <div className="flex gap-4 text-xs items-center text-muted-foreground flex-wrap">
+            <span className="font-medium">Tipos de Evento:</span>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md border-2 border-blue-500"></div>
+              <span>📦 Previsão Entrega</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md border-2 border-orange-500"></div>
+              <span>⏰ Prazo Limite Revisão</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md border-2 border-blue-500 bg-gradient-to-br from-blue-500 via-blue-500 to-orange-500 [background-size:100%_100%] from-[0%] via-[50%] to-[50%]"></div>
+              <span>Ambos</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md border-2 border-yellow-600 bg-yellow-400"></div>
+              <span>⭐ Hoje</span>
+            </div>
           </div>
-          <span>Mais</span>
+          
+          <div className="flex gap-3 text-xs items-center text-muted-foreground">
+            <span className="font-medium">Intensidade:</span>
+            <div className="flex gap-1">
+              <div className="w-6 h-6 rounded-md border-2 border-border" />
+              <div className="w-6 h-6 rounded-md border-2 border-primary/50" />
+              <div className="w-6 h-6 rounded-md border-2 border-primary/70" />
+              <div className="w-6 h-6 rounded-md border-2 border-primary/90" />
+              <div className="w-6 h-6 rounded-md border-2 border-primary" />
+            </div>
+            <span>(1-2, 3-5, 6-10, 10+)</span>
+          </div>
         </div>
       </div>
 
