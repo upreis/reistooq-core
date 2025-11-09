@@ -56,6 +56,10 @@ export interface MLReturn {
   estimated_delivery_to?: number | null;
   estimated_delivery_limit?: string | null;
   has_delay?: boolean;
+  
+  // ✅ FASE 2: Quantidade da devolução (campos diretos para facilitar acesso)
+  return_quantity?: number | null;
+  total_quantity?: number | null;
 }
 
 export interface ReturnStatus {

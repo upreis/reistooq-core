@@ -16,6 +16,9 @@ export const mapTrackingData = (item: any) => {
   const returnTracking = item.shipment_tracking?.return_tracking?.tracking_number || 
                         returnShipment?.tracking_number;
   
+  // ✅ FASE 2: Extrair quantidade do primeiro item do pedido
+  const firstOrderItem = item.return_details_v2?.orders?.[0];
+  
   return {
     // ✅ FASE 1.5: ID único do return
     return_id: item.return_details_v2?.id?.toString() || null,
@@ -104,6 +107,17 @@ export const mapTrackingData = (item: any) => {
     problemas_encontrados: item.problemas_encontrados || [],
     data_inicio_review: item.claim_details?.date_created || null,
     observacoes_review: item.claim_details?.resolution?.reason || null,
-    revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
+    revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
+    
+    // ✅ FASE 2: Novos campos que JÁ vem da API (ml-returns edge function)
+    estimated_delivery_date: item.estimated_delivery_date || null,
+    estimated_delivery_limit: item.estimated_delivery_limit || null,
+    has_delay: item.has_delay || false,
+    shipment_status: item.shipment_status || returnShipment?.status || null,
+    refund_at: item.refund_at || null,
+    review_method: item.review_method || null,
+    review_stage: item.review_stage || null,
+    return_quantity: firstOrderItem?.return_quantity ? parseInt(firstOrderItem.return_quantity) : null,
+    total_quantity: firstOrderItem?.total_quantity ? parseInt(firstOrderItem.total_quantity) : null,
   };
 };
