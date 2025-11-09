@@ -101,7 +101,7 @@ async function fetchCalendarData(): Promise<ContributionDay[]> {
 
 export function useDevolucaoCalendarData() {
   // Usar SWR com cache e revalidação automática
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     'calendar-devolucoes',
     fetchCalendarData,
     {
@@ -122,6 +122,7 @@ export function useDevolucaoCalendarData() {
   return {
     data: data || [],
     loading: isLoading,
-    error: error?.message || null
+    error: error?.message || null,
+    refresh: () => mutate() // Função de refresh manual
   };
 }

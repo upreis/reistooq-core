@@ -6,7 +6,7 @@ import { useDevolucaoCalendarData } from '@/features/devolucoes/hooks/useDevoluc
 
 export default function DashboardVisaoGeral() {
   // Buscar dados reais de devoluções para o calendário
-  const { data: calendarData, loading: calendarLoading, error: calendarError } = useDevolucaoCalendarData();
+  const { data: calendarData, loading: calendarLoading, error: calendarError, refresh } = useDevolucaoCalendarData();
 
   return (
     <div className="space-y-6">
@@ -89,8 +89,23 @@ export default function DashboardVisaoGeral() {
 
       {/* Calendário de Devoluções */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Calendário de Devoluções</CardTitle>
+          <button
+            onClick={() => refresh()}
+            disabled={calendarLoading}
+            className="px-3 py-1.5 text-xs font-medium rounded-md bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <svg 
+              className={`w-3 h-3 ${calendarLoading ? 'animate-spin' : ''}`} 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {calendarLoading ? 'Atualizando...' : 'Atualizar'}
+          </button>
         </CardHeader>
         <CardContent>
           <ActivityCalendar 
