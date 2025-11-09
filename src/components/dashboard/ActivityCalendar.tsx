@@ -83,10 +83,10 @@ const ActivityCalendar = ({
             
             // Get border color based on contribution count
             const getBorderColor = (count: number) => {
-              if (count === 0) return "border-muted";
-              if (count <= 2) return "border-primary/40";
-              if (count <= 5) return "border-primary/60";
-              if (count <= 10) return "border-primary/80";
+              if (count === 0) return "border-border";
+              if (count <= 2) return "border-primary/50";
+              if (count <= 5) return "border-primary/70";
+              if (count <= 10) return "border-primary/90";
               return "border-primary";
             };
 
@@ -166,10 +166,10 @@ const ActivityCalendar = ({
         <div className="flex gap-3 text-xs items-center text-muted-foreground">
           <span>Menos</span>
           <div className="flex gap-1">
-            <div className="w-8 h-8 rounded-md border-2 border-muted" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary/40" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary/60" />
-            <div className="w-8 h-8 rounded-md border-2 border-primary/80" />
+            <div className="w-8 h-8 rounded-md border-2 border-border" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary/50" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary/70" />
+            <div className="w-8 h-8 rounded-md border-2 border-primary/90" />
             <div className="w-8 h-8 rounded-md border-2 border-primary" />
           </div>
           <span>Mais</span>
