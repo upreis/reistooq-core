@@ -1,16 +1,16 @@
 /**
- * ⏰ DEADLINES CELL - FASE 8
- * Exibe prazos e deadlines com alertas visuais
- * ⚡ OTIMIZADO: React.memo + useMemo
+ * ⏰ DEADLINES CELL - FASE 8 + SPRINT 1
+ * Exibe prazos e deadlines com badges de urgência otimizados
+ * ⚡ OTIMIZADO: React.memo + useMemo + UrgencyBadge
  */
 
 import { memo, useMemo } from 'react';
-import { Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { Clock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Deadlines } from '../../types/devolucao.types';
+import { UrgencyBadge } from '../badges/UrgencyBadge';
 
 interface DeadlinesCellProps {
   deadlines?: Deadlines;
@@ -51,35 +51,20 @@ const DeadlinesCellComponent = ({ deadlines, status }: DeadlinesCellProps) => {
   
   return (
     <div className="flex flex-col gap-1.5">
-      {/* Prazo de Envio - mostrar apenas se status = pending */}
+      {/* ✅ SPRINT 1: Prazo de Envio com UrgencyBadge */}
       {deadlines.shipment_deadline && status === 'pending' && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-xs">
-                  Envio: {format(new Date(deadlines.shipment_deadline), 'dd/MM', { locale: ptBR })}
+              <div className="flex items-center gap-1">
+                <UrgencyBadge 
+                  hoursLeft={deadlines.shipment_deadline_hours_left}
+                  label="Envio"
+                  showIcon={true}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(deadlines.shipment_deadline), 'dd/MM', { locale: ptBR })}
                 </span>
-                
-                {shipmentStatus === 'critical' && (
-                  <Badge variant="destructive" className="text-[10px] px-1 py-0 animate-pulse">
-                    <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
-                    {deadlines.shipment_deadline_hours_left}h
-                  </Badge>
-                )}
-                
-                {shipmentStatus === 'warning' && (
-                  <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                    Atenção
-                  </Badge>
-                )}
-                
-                {shipmentStatus === 'expired' && (
-                  <Badge variant="destructive" className="text-[10px] px-1 py-0">
-                    Vencido
-                  </Badge>
-                )}
               </div>
             </TooltipTrigger>
             <TooltipContent>
@@ -95,39 +80,20 @@ const DeadlinesCellComponent = ({ deadlines, status }: DeadlinesCellProps) => {
         </TooltipProvider>
       )}
       
-      {/* Prazo de Avaliação do Vendedor - mostrar se tiver */}
+      {/* ✅ SPRINT 1: Prazo de Avaliação com UrgencyBadge */}
       {deadlines.seller_review_deadline && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className="flex items-center gap-2">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                <span className="text-xs">
-                  Avaliar: {format(new Date(deadlines.seller_review_deadline), 'dd/MM HH:mm', { locale: ptBR })}
+              <div className="flex items-center gap-1">
+                <UrgencyBadge 
+                  hoursLeft={deadlines.seller_review_deadline_hours_left}
+                  label="Avaliar"
+                  showIcon={true}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {format(new Date(deadlines.seller_review_deadline), 'dd/MM HH:mm', { locale: ptBR })}
                 </span>
-                
-                {reviewStatus === 'critical' && (
-                  <Badge variant="destructive" className="text-[10px] px-1 py-0 animate-pulse">
-                    <AlertTriangle className="h-2.5 w-2.5 mr-0.5" />
-                    {deadlines.seller_review_deadline_hours_left}h
-                  </Badge>
-                )}
-                
-                {reviewStatus === 'warning' && (
-                  <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                    {Math.floor((deadlines.seller_review_deadline_hours_left || 0) / 24)}d
-                  </Badge>
-                )}
-                
-                {reviewStatus === 'ok' && (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-                )}
-                
-                {reviewStatus === 'expired' && (
-                  <Badge variant="destructive" className="text-[10px] px-1 py-0">
-                    Expirado
-                  </Badge>
-                )}
               </div>
             </TooltipTrigger>
             <TooltipContent>

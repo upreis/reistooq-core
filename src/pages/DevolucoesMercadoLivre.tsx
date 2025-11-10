@@ -1,6 +1,7 @@
 /**
  * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA COM TABS E ANÁLISE
  * Sistema completo com tabs Ativas/Histórico e status de análise
+ * ✅ SPRINT 1: Alertas de Deadlines Críticos implementados
  */
 
 import { useEffect, useMemo, useState } from 'react';
@@ -9,7 +10,7 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useDevolucaoManager } from '@/features/devolucoes-online/hooks/useDevolucaoManager';
 import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/usePersistentDevolucaoState';
 import { useDevolucaoStorage } from '@/features/devolucoes-online/hooks/useDevolucaoStorage';
-import type { DevolucaoFilters } from '@/features/devolucoes-online/types/devolucao.types';
+import type { DevolucaoFilters, MLReturn } from '@/features/devolucoes-online/types/devolucao.types';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
@@ -17,6 +18,8 @@ import { DevolucaoAdvancedFiltersBar } from '@/features/devolucoes-online/compon
 import { DevolucaoPaginationControls } from '@/features/devolucoes-online/components/DevolucaoPaginationControls';
 import { DevolucaoQuickFilters } from '@/features/devolucoes-online/components/DevolucaoQuickFilters';
 import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
+import { UrgencyFilters } from '@/features/devolucoes-online/components/filters/UrgencyFilters';
+import { CriticalDeadlinesNotification } from '@/features/devolucoes-online/components/notifications/CriticalDeadlinesNotification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +43,10 @@ export default function DevolucoesMercadoLivre() {
   
   // Estado dos filtros rápidos
   const [filteredByQuickFilter, setFilteredByQuickFilter] = useState<any[]>([]);
+  
+  // ✅ SPRINT 1: Estado do filtro de urgência
+  const [urgencyFilter, setUrgencyFilter] = useState<((dev: MLReturn) => boolean) | null>(null);
+  const [currentUrgencyFilter, setCurrentUrgencyFilter] = useState<string>('all');
   
   // Estado do auto-refresh
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
@@ -177,11 +184,21 @@ export default function DevolucoesMercadoLivre() {
   // ✅ FIX: Usar timestamp para forçar re-render quando status mudar
   const [analiseUpdateTrigger, setAnaliseUpdateTrigger] = useState(0);
   
-  // Adicionar status de análise e empresa às devoluções
-  const devolucoesComAnalise = useMemo(() => {
+  // ✅ SPRINT 1: Aplicar filtro de urgência PRIMEIRO, depois status de análise
+  const devolucoesComUrgencyFilter = useMemo(() => {
     const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
     
-    return dataToUse.map((dev: any) => {
+    // Aplicar filtro de urgência se houver
+    if (urgencyFilter) {
+      return dataToUse.filter(urgencyFilter);
+    }
+    
+    return dataToUse;
+  }, [filteredByQuickFilter, state.devolucoes, urgencyFilter]);
+  
+  // Adicionar status de análise e empresa às devoluções (após filtro de urgência)
+  const devolucoesComAnalise = useMemo(() => {
+    return devolucoesComUrgencyFilter.map((dev: any) => {
       const accountId = dev.integration_account_id;
       const account = accounts.find(acc => acc.id === accountId);
       const empresaNome = account?.name || 'N/A';
@@ -192,7 +209,7 @@ export default function DevolucoesMercadoLivre() {
         empresa: empresaNome,
       };
     });
-  }, [filteredByQuickFilter, state.devolucoes, analiseStatus, accounts, analiseUpdateTrigger]); // ✅ Adicionar trigger
+  }, [devolucoesComUrgencyFilter, analiseStatus, accounts, analiseUpdateTrigger]);
 
   // Separar em Ativas e Histórico
   const devolucoesFiltradas = useMemo(() => {
@@ -319,18 +336,47 @@ export default function DevolucoesMercadoLivre() {
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* Header */}
+          {/* Header com Notificação de Críticos */}
           <div className="px-4 md:px-6">
-            <DevolucaoHeaderSection 
-              isRefreshing={state.isRefreshing}
-              onRefresh={actions.refetch}
-            />
+            <div className="flex items-center justify-between">
+              <DevolucaoHeaderSection 
+                isRefreshing={state.isRefreshing}
+                onRefresh={actions.refetch}
+              />
+              {/* ✅ SPRINT 1: Notificação de Deadlines Críticos */}
+              <CriticalDeadlinesNotification 
+                devolucoes={state.devolucoes}
+                onClick={() => {
+                  // Ativar filtro de críticos
+                  setCurrentUrgencyFilter('critical');
+                  setUrgencyFilter((dev: MLReturn) => {
+                    const shipmentHours = dev.deadlines?.shipment_deadline_hours_left;
+                    const reviewHours = dev.deadlines?.seller_review_deadline_hours_left;
+                    return (shipmentHours !== null && shipmentHours < 24) ||
+                           (reviewHours !== null && reviewHours < 24);
+                  });
+                  toast.info('Mostrando apenas devoluções críticas');
+                }}
+              />
+            </div>
           </div>
 
           {/* Stats Cards */}
           <div className="px-4 md:px-6">
             <DevolucaoStatsCards stats={stats} />
           </div>
+
+          {/* ✅ SPRINT 1: Filtros de Urgência */}
+          {state.devolucoes.length > 0 && (
+            <div className="px-4 md:px-6">
+              <UrgencyFilters 
+                devolucoes={state.devolucoes}
+                onFilterChange={setUrgencyFilter}
+                currentFilter={currentUrgencyFilter}
+                onCurrentFilterChange={setCurrentUrgencyFilter}
+              />
+            </div>
+          )}
 
           {/* Quick Filters + Controls */}
           {state.devolucoes.length > 0 && (

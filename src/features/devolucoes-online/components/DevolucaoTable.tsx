@@ -298,8 +298,23 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             // Usar dev.id + index como key única para evitar duplicatas
             const uniqueKey = `${dev.id}-${i}`;
             
+            // ✅ SPRINT 1: Detectar se devolução é crítica ou urgente
+            const shipmentHours = dev.deadlines?.shipment_deadline_hours_left;
+            const reviewHours = dev.deadlines?.seller_review_deadline_hours_left;
+            const isCritical = (shipmentHours !== null && shipmentHours < 24) ||
+                              (reviewHours !== null && reviewHours < 24);
+            const isUrgent = (shipmentHours !== null && shipmentHours >= 24 && shipmentHours < 48) ||
+                            (reviewHours !== null && reviewHours >= 24 && reviewHours < 48);
+            
+            // ✅ SPRINT 1: Classes de destaque visual
+            const rowClasses = isCritical 
+              ? 'bg-red-50 dark:bg-red-950/10 hover:bg-red-100 dark:hover:bg-red-950/20 border-l-4 border-l-red-500'
+              : isUrgent
+              ? 'bg-orange-50 dark:bg-orange-950/10 hover:bg-orange-100 dark:hover:bg-orange-950/20 border-l-4 border-l-orange-500'
+              : 'hover:bg-muted/50';
+            
             return (
-              <TableRow key={uniqueKey} className="hover:bg-muted/50 transition-colors">
+              <TableRow key={uniqueKey} className={`transition-colors ${rowClasses}`}>
                 <TableCell className="sticky left-0 bg-background z-10">
                   {onStatusChange && (
                     <StatusAnaliseSelect
