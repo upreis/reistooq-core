@@ -226,6 +226,16 @@ async function getDevolucoes(
       date_closed: item.data_fechamento_claim,
       last_updated: item.updated_at,
       
+      // ⚡ DADOS DE ENTREGA (extrair de JSONB dados_lead_time)
+      estimated_delivery_date: item.dados_lead_time?.estimated_delivery_time?.date || 
+                                item.dados_lead_time?.estimated_delivery_date || null,
+      estimated_delivery_from: item.dados_lead_time?.estimated_delivery_time?.shipping || null,
+      estimated_delivery_to: item.dados_lead_time?.estimated_delivery_time?.handling || null,
+      estimated_delivery_limit: item.dados_lead_time?.estimated_schedule_limit?.date || 
+                                 item.dados_lead_time?.delivery_limit || null,
+      delivery_limit: item.dados_lead_time?.delivery_limit || null,
+      has_delay: item.has_delay || false,
+      
       // Buyer info
       buyer_info: item.dados_buyer_info || {
         id: item.dados_order?.buyer?.id || null,
@@ -275,9 +285,9 @@ async function getDevolucoes(
         return_quantity: item.quantidade || 1,
       }] : [],
       
-      // Shipment
+      // Shipment (STATUS DIRETO DO CAMPO)
       shipment_id: item.shipment_id_devolucao || item.shipment_id,
-      shipment_status: item.status_envio_devolucao || null,
+      shipment_status: item.status_envio_devolucao || item.status_rastreamento || null,
       shipment_type: item.tipo_envio_devolucao || null,
       shipment_destination: item.destino_devolucao || null,
       tracking_number: item.codigo_rastreamento_devolucao || item.codigo_rastreamento,
@@ -329,6 +339,11 @@ async function getDevolucoes(
       estimated_delivery_limit: item.dados_lead_time?.delivery_limit || null,
       delivery_limit: item.dados_lead_time?.delivery_limit || null,
       
+      // ⚡ REFUND AT (extrair de JSONB dados_refund_info)
+      refund_at: item.dados_refund_info?.when || 
+                 item.dados_refund_info?.refund_at || 
+                 item.reembolso_quando || null,
+      
       // Product condition (retornar STRING ao invés de objeto)
       product_condition: item.dados_product_condition?.status || null,
       product_destination: item.dados_product_condition?.destination || null,
@@ -337,6 +352,16 @@ async function getDevolucoes(
       benefited: Array.isArray(item.responsavel_custo) 
         ? item.responsavel_custo[0] 
         : item.responsavel_custo || null,
+      
+      // ⚡ REVIEW STATUS (extrair de dados_review OU campo direto)
+      review_status: item.review_status || item.dados_review?.status || null,
+      review_method: item.dados_review?.method || null,
+      review_stage: item.dados_review?.stage || null,
+      seller_status: item.review_status || item.seller_status || null,
+      
+      // ⚡ QUANTIDADE (campos diretos)
+      return_quantity: item.quantidade || null,
+      total_quantity: item.quantidade_total || null,
       
       // Substatus
       substatus: item.descricao_ultimo_status || null,
