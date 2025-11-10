@@ -1,10 +1,13 @@
 /**
  * 🔄 ML RETURNS - Edge Function
  * Busca devoluções através de Claims do Mercado Livre
+ * 
+ * FASE 2: Implementa salvamento automático de dados enriquecidos via UPSERT
  */
 
 import { corsHeaders, makeServiceClient } from '../_shared/client.ts';
 import { getErrorMessage } from '../_shared/error-handler.ts';
+import { calculateDeadlines, type LeadTimeData, type ClaimData, type Deadlines } from './utils/deadlineCalculator.ts';
 
 interface RequestBody {
   accountIds: string[];
@@ -740,6 +743,30 @@ Deno.serve(async (req) => {
                   trackingInfo = await fetchShipmentTracking(firstShipment.shipment_id, accessToken);
                 }
                 
+                // ✅ FASE 14: Calcular deadlines (prazos) usando dados de lead time e claim
+                let deadlines: Deadlines | null = null;
+                try {
+                  console.log(`📅 Calculando deadlines para return ${returnData.id}...`);
+                  
+                  deadlines = calculateDeadlines(
+                    returnData,
+                    leadTimeData as LeadTimeData | null,
+                    claim as ClaimData | null
+                  );
+                  
+                  console.log(`✅ Deadlines calculados:`, JSON.stringify(deadlines, null, 2));
+                  
+                  // Log de alertas críticos
+                  if (deadlines.is_shipment_critical) {
+                    console.warn(`🚨 ALERTA: Prazo de envio CRÍTICO! ${deadlines.hours_to_shipment}h restantes`);
+                  }
+                  if (deadlines.is_review_critical) {
+                    console.warn(`🚨 ALERTA: Prazo de review CRÍTICO! ${deadlines.hours_to_review}h restantes`);
+                  }
+                } catch (error) {
+                  console.error(`❌ Erro ao calcular deadlines para return ${returnData.id}:`, getErrorMessage(error));
+                }
+                
                 // ✅ FASE 10: Extrair dados completos da review incluindo anexos e quantidades
                 const firstReviewContainer = reviewData?.reviews?.[0];
                 const firstReview = firstReviewContainer?.resource_reviews?.[0];
@@ -975,7 +1002,9 @@ Deno.serve(async (req) => {
                   
                   // ✅ FASE 13: Fulfillment Info
                   fulfillment_info: fulfillmentInfo,
-
+                  
+                  // ✅ FASE 14: Deadlines (prazos)
+                  deadlines: deadlines,
 
                   // Order info (legacy)
                   order: orderData ? {
@@ -986,6 +1015,60 @@ Deno.serve(async (req) => {
                   } : null,
                   resource: returnData.resource_type,
                 });
+                
+                // ✅ FASE 15: UPSERT - Salvar dados enriquecidos no banco
+                try {
+                  console.log(`💾 Salvando dados enriquecidos no banco para order ${returnData.resource_id}...`);
+                  
+                  const { error: upsertError } = await supabase
+                    .from('devolucoes_avancadas')
+                    .upsert({
+                      // Chaves primárias
+                      order_id: returnData.resource_id,
+                      integration_account_id: accountId,
+                      
+                      // Campos básicos
+                      return_id: returnData.id,
+                      claim_id: claim.id,
+                      status_devolucao: returnData.status,
+                      data_criacao: returnData.date_created,
+                      data_fechamento_devolucao: returnData.date_closed,
+                      data_ultima_movimentacao: returnData.last_updated,
+                      
+                      // ✅ NOVOS CAMPOS JSONB - Dados enriquecidos da AUDITORIA
+                      dados_review: reviewInfo || {},
+                      dados_comunicacao: communicationInfo || {},
+                      dados_deadlines: deadlines || {},
+                      dados_acoes_disponiveis: availableActions || {},
+                      dados_custos_logistica: shippingCosts || {},
+                      dados_fulfillment: fulfillmentInfo || {},
+                      dados_lead_time: leadTimeData || {},
+                      dados_available_actions: availableActions || {},
+                      dados_shipping_costs: shippingCosts || {},
+                      dados_refund_info: financialInfo || {},
+                      dados_product_condition: firstReview ? {
+                        condition: firstReview.product_condition,
+                        benefited: firstReview.benefited,
+                        seller_status: firstReview.seller_status,
+                        product_destination: firstReview.product_destination,
+                      } : {},
+                      
+                      // Timestamps
+                      updated_at: new Date().toISOString(),
+                      ultima_sincronizacao: new Date().toISOString(),
+                    }, {
+                      onConflict: 'order_id,integration_account_id'
+                    });
+                  
+                  if (upsertError) {
+                    console.error(`❌ Erro ao salvar dados enriquecidos para order ${returnData.resource_id}:`, upsertError);
+                  } else {
+                    console.log(`✅ Dados enriquecidos salvos no banco para order ${returnData.resource_id}`);
+                  }
+                } catch (dbError) {
+                  console.error(`❌ Erro de banco ao salvar order ${returnData.resource_id}:`, getErrorMessage(dbError));
+                  // Não quebra a execução - continua retornando dados
+                }
               } else if (returnResponse.status === 404) {
                 // 404 = claim não tem devolução (normal)
                 // Não loga para não poluir

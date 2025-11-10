@@ -493,10 +493,32 @@ Os dados enriquecidos são automaticamente salvos no banco pela edge function `m
 
 ---
 
+## ✅ STATUS DE IMPLEMENTAÇÃO
+
+### FASE 1: Preparação do Banco ✅ CONCLUÍDA
+- ✅ Migration SQL executada com 11 campos JSONB
+- ✅ Índices GIN criados para otimização
+- ✅ Comentários de documentação adicionados
+
+### FASE 2: Edge Function ml-returns ✅ CONCLUÍDA
+- ✅ Arquivo `deadlineCalculator.ts` criado
+- ✅ Função `calculateDeadlines()` implementada
+- ✅ Lógica de UPSERT implementada
+- ✅ Logs de sucesso/erro adicionados
+- ✅ Tratamento de erros não-bloqueante
+
+### FASE 3: Testes e Validação ⏳ PENDENTE
+- ⏳ Aguardando execução de testes
+- ⏳ Validação de dados no banco
+- ⏳ Testes de performance
+
+---
+
 ## 🎯 PRÓXIMOS PASSOS IMEDIATOS
 
-1. **HOJE**: Executar migration para adicionar campos JSONB
-2. **DIA 2**: Implementar lógica de UPSERT na edge function
-3. **DIA 3**: Implementar cálculo de deadlines
+1. **AGORA**: Testar edge function ml-returns com dados reais
+2. **DEPOIS**: Validar que dados estão sendo salvos no banco via queries SQL
+3. **EM SEGUIDA**: Atualizar frontend para exibir dados dos novos campos JSONB
+4. **POR ÚLTIMO**: Configurar monitoramento e alertas
 4. **DIA 4**: Testes completos
 5. **DIA 5**: Deploy em produção + monitoramento
