@@ -259,6 +259,13 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   dados_reviews?: any | null; // Dados completos de reviews da API ML
   dados_costs?: any | null; // Custos detalhados de envio
   dados_reasons?: any | null; // Detalhes completos de reasons/motivos
+  
+  // 🆕 AVAILABLE ACTIONS - Ações disponíveis para o seller
+  available_actions?: Array<{
+    action: string;
+    mandatory?: boolean;
+    due_date?: string | null;
+  }> | null;
 }
 
 // ===== TIPOS AUXILIARES =====

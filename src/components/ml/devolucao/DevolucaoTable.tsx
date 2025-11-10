@@ -57,10 +57,12 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>📅 Data Inicial da Devolução</th>
             {/* ❌ REMOVIDO: 📅 Última Movimentação - vazio */}
             
-            {/* GRUPO 3: STATUS E ESTADO (3 colunas) */}
+            {/* GRUPO 3: STATUS E ESTADO (4 colunas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Status da Devolução</th>
             {/* ❌ REMOVIDO: Etapa - excluído conforme solicitação do usuário */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Resolução</th>
+            {/* 🆕 AÇÃO OBRIGATÓRIA - Destaca ações mandatory do seller */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>🚨 Ação Obrigatória</th>
             {/* ❌ REMOVIDO: Status Rastreio - vazio */}
             {/* ❌ REMOVIDO: Status Review - vazio */}
             {/* ❌ REMOVIDO: Status Moderação - excluído conforme solicitação do usuário */}

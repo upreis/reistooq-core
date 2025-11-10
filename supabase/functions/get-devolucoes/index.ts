@@ -330,11 +330,24 @@ async function getDevolucoes(
       // ✅ Available actions (campo já populado por sync-devolucoes)
       available_actions: (() => {
         try {
-          // Tentar parsear se for string JSONB
-          if (typeof item.dados_acoes_disponiveis === 'string') {
-            return JSON.parse(item.dados_acoes_disponiveis);
+          // PRIORIDADE 1: dados_acoes_disponiveis ou dados_available_actions (direto)
+          if (item.dados_acoes_disponiveis || item.dados_available_actions) {
+            const data = item.dados_acoes_disponiveis || item.dados_available_actions;
+            if (typeof data === 'string') {
+              return JSON.parse(data);
+            }
+            return data || [];
           }
-          return item.dados_acoes_disponiveis || item.dados_available_actions || [];
+          
+          // PRIORIDADE 2: Extrair de dados_claim.players (seller/respondent)
+          if (item.dados_claim?.players) {
+            const sellerPlayer = item.dados_claim.players.find((p: any) => 
+              p.role === 'respondent' || p.role === 'seller' || p.type === 'seller'
+            );
+            return sellerPlayer?.available_actions || [];
+          }
+          
+          return [];
         } catch {
           return [];
         }
