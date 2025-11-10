@@ -1159,7 +1159,7 @@ Deno.serve(async (req) => {
               return null;
             }
           }) // Fecha limit async
-          ); // Fecha map
+        ); // Fecha map
           
           // ✅ FASE 2: Aguardar TODOS os claims processarem em paralelo
           const claimResults = await Promise.all(claimPromises);
