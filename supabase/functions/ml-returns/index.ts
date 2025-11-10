@@ -748,7 +748,6 @@ Deno.serve(async (req) => {
                 }
                 
                 // ✅ FASE 14: Calcular deadlines (prazos) usando dados de lead time e claim
-                let deadlines: Deadlines | null = null;
                 try {
                   console.log(`📅 Calculando deadlines para return ${returnData.id}...`);
                   
