@@ -23,6 +23,7 @@ import {
 import { BuyerInfoCell } from './cells/BuyerInfoCell';
 import { ProductInfoCell } from './cells/ProductInfoCell';
 import { FinancialInfoCell } from './cells/FinancialInfoCell';
+import { OrderInfoCell } from './cells/OrderInfoCell';
 import {
   translateStatus,
   translateStatusMoney,
@@ -174,9 +175,11 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
               <TableHead className="font-semibold sticky left-0 bg-muted/50 z-10">Análise</TableHead>
               <TableHead className="font-semibold">Empresa</TableHead>
               <TableHead className="font-semibold min-w-[200px]">👤 Comprador</TableHead>
+              <TableHead className="font-semibold min-w-[300px]">📦 Produto</TableHead>
+              <TableHead className="font-semibold min-w-[220px]">💰 Financeiro</TableHead>
+              <TableHead className="font-semibold min-w-[200px]">📋 Pedido</TableHead>
               <TableHead className="font-semibold">ID Devolução</TableHead>
               <TableHead className="font-semibold">Claim ID</TableHead>
-              <TableHead className="font-semibold">Order ID</TableHead>
               <TableHead className="font-semibold">Item ID</TableHead>
               <TableHead className="font-semibold">Variação ID</TableHead>
               <TableHead className="font-semibold">Status</TableHead>
@@ -283,15 +286,27 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     statusMoney={dev.status_money?.id}
                   />
                 </TableCell>
+                
+                {/* ✅ FASE 4: Dados do Pedido */}
+                <TableCell>
+                  {dev.order ? (
+                    <OrderInfoCell 
+                      orderId={dev.order.id}
+                      dateCreated={dev.order.date_created}
+                      sellerId={dev.order.seller_id}
+                    />
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      Pedido #{dev.order_id || '-'}
+                    </div>
+                  )}
+                </TableCell>
 
                 <TableCell className="font-medium text-xs">
                   {dev.id}
                 </TableCell>
                 <TableCell className="text-xs">
                   {dev.claim_id || '-'}
-                </TableCell>
-                <TableCell className="text-xs">
-                  {dev.order_id || '-'}
                 </TableCell>
                 <TableCell className="text-xs font-mono">
                   {firstOrder?.item_id || '-'}
