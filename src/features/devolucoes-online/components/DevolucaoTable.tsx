@@ -373,7 +373,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   />
                 </TableCell>
                 
-                <TableCell className="text-xs max-w-[200px]">
+                <TableCell className="text-xs max-w-[250px]">
                   <div className="whitespace-pre-wrap break-words" title={dev.destination_address || '-'}>
                     {dev.destination_address || '-'}
                   </div>
