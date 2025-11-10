@@ -1,0 +1,49 @@
+/**
+ * 🔄 USE SYNC DEVOLUCOES - FASE 4
+ * Hook React Query mutation para sincronizar devoluções
+ */
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { devolucaoService } from '../../services/DevolucaoService';
+import { DEVOLUCOES_QUERY_KEY } from '../queries/useGetDevolucoes';
+import { SYNC_STATUS_QUERY_KEY } from '../queries/useSyncStatus';
+
+export function useSyncDevolucoes() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      integrationAccountId,
+      batchSize = 100,
+    }: {
+      integrationAccountId: string;
+      batchSize?: number;
+    }) => devolucaoService.syncDevolucoes(integrationAccountId, batchSize),
+
+    onMutate: () => {
+      toast.loading('Sincronização iniciada...', {
+        id: 'sync-devolucoes',
+        description: 'Buscando devoluções do Mercado Livre em background',
+      });
+    },
+
+    onSuccess: (data) => {
+      toast.success('Sincronização concluída!', {
+        id: 'sync-devolucoes',
+        description: `${data.totalProcessed} devoluções processadas em ${(data.durationMs / 1000).toFixed(1)}s`,
+      });
+
+      // Invalidar queries para atualizar dados
+      queryClient.invalidateQueries({ queryKey: [DEVOLUCOES_QUERY_KEY] });
+      queryClient.invalidateQueries({ queryKey: [SYNC_STATUS_QUERY_KEY] });
+    },
+
+    onError: (error: Error) => {
+      toast.error('Erro na sincronização', {
+        id: 'sync-devolucoes',
+        description: error.message,
+      });
+    },
+  });
+}
