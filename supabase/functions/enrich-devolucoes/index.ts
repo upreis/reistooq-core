@@ -138,21 +138,84 @@ async function enrichProductData(itemId: string, accessToken: string) {
   }
 }
 
+// 🔍 Enriquecer dados de revisão (reviews)
+async function enrichReviewData(returnId: string, accessToken: string) {
+  try {
+    const url = `https://api.mercadolibre.com/post-purchase/v1/returns/${returnId}/reviews`;
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+
+    // 404 é esperado quando não há reviews
+    if (response.status === 404) {
+      logger.info(`Sem reviews para return_id ${returnId}`);
+      return null;
+    }
+
+    if (!response.ok) {
+      logger.warn(`Falha ao buscar reviews do return ${returnId}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    // Extrair primeira revisão (mais recente)
+    const firstReview = data.reviews?.[0];
+    if (!firstReview) return null;
+
+    const resourceReview = firstReview.resource_reviews?.[0];
+    
+    return {
+      // Review completo
+      full_review: data,
+      
+      // Dados estruturados para consulta rápida
+      method: firstReview.method, // 'triage', 'none'
+      stage: resourceReview?.stage || null, // 'closed', 'pending', 'seller_review_pending', 'timeout'
+      status: resourceReview?.status || null, // 'success', 'failed'
+      
+      // Product condition e destination
+      product_condition: resourceReview?.product_condition || null, // 'saleable', 'unsaleable', 'discard', 'missing'
+      product_destination: resourceReview?.product_destination || null, // 'meli', 'buyer', 'seller'
+      
+      // Beneficiado e seller
+      benefited: resourceReview?.benefited || null, // 'buyer', 'seller', 'both'
+      seller_status: resourceReview?.seller_status || null, // 'pending', 'success', 'failed', 'claimed'
+      seller_reason: resourceReview?.seller_reason || null, // 'SRF2', 'SRF3', etc.
+      
+      // Quantidades e datas
+      missing_quantity: resourceReview?.missing_quantity || 0,
+      reason_id: resourceReview?.reason_id || null,
+      date_created: firstReview.date_created,
+      last_updated: firstReview.last_updated
+    };
+  } catch (error) {
+    logger.error(`Erro ao enriquecer reviews do return ${returnId}`, error);
+    return null;
+  }
+}
+
 // 🎨 Processar enriquecimento de uma devolução
 async function enrichDevolucao(
   devolucao: any,
   accessToken: string,
   supabase: any
 ) {
-  const { id, buyer_id, item_id, claim_id } = devolucao;
+  const { id, buyer_id, item_id, claim_id, return_id, related_entities } = devolucao;
   
   logger.info(`Enriquecendo claim ${claim_id}...`);
 
   try {
-    // Buscar dados adicionais
-    const [buyerData, productData] = await Promise.all([
+    // Verificar se tem reviews
+    const hasReviews = related_entities?.includes?.('reviews') || false;
+    
+    // Buscar dados adicionais em paralelo
+    const [buyerData, productData, reviewData] = await Promise.all([
       buyer_id ? enrichBuyerData(buyer_id, accessToken) : null,
-      item_id ? enrichProductData(item_id, accessToken) : null
+      item_id ? enrichProductData(item_id, accessToken) : null,
+      (hasReviews && return_id) ? enrichReviewData(return_id, accessToken) : null
     ]);
 
     // Atualizar no banco
@@ -166,6 +229,25 @@ async function enrichDevolucao(
 
     if (productData) {
       updateData.dados_product_info = productData;
+    }
+
+    if (reviewData) {
+      // Salvar review completo no JSONB dados_review
+      updateData.dados_review = reviewData.full_review;
+      
+      // Salvar dados estruturados de product condition
+      updateData.dados_product_condition = {
+        status: reviewData.product_condition,
+        destination: reviewData.product_destination
+      };
+      
+      // Atualizar campos diretos para queries rápidas
+      updateData.review_status = reviewData.status;
+      updateData.review_method = reviewData.method;
+      updateData.review_stage = reviewData.stage;
+      updateData.seller_status = reviewData.seller_status;
+      
+      logger.success(`Reviews encontrados para claim ${claim_id}: ${reviewData.product_condition}`);
     }
 
     const { error } = await supabase
@@ -200,7 +282,7 @@ async function enrichDevolucoesBatch(
   // 1. Buscar devoluções pendentes de enriquecimento
   const { data: devolucoes, error: fetchError } = await supabase
     .from('devolucoes_avancadas')
-    .select('id, buyer_id, item_id, claim_id')
+    .select('id, buyer_id, item_id, claim_id, return_id, related_entities')
     .eq('integration_account_id', integrationAccountId)
     .is('dados_buyer_info', null) // Ainda não enriquecida
     .order('created_at', { ascending: false })
