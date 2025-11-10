@@ -211,8 +211,8 @@ async function getDevolucoes(
       order_id: item.order_id,
       claim_id: item.claim_id,
       return_id: item.return_id,
-      item_id: item.dados_order?.order_items?.[0]?.item?.id || null,
-      variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || null,
+      item_id: item.dados_order?.order_items?.[0]?.item?.id || item.item_id || null,
+      variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || item.variation_id || null,
       integration_account_id: item.integration_account_id,
       
       // Status
