@@ -121,6 +121,83 @@ async function fetchProductInfo(itemId: string, accessToken: string): Promise<an
   }
 }
 
+/**
+ * 📍 FASE 5: Buscar dados de tracking do shipment
+ * Função OPCIONAL - se falhar, não quebra o sistema
+ */
+async function fetchShipmentTracking(shipmentId: number, accessToken: string): Promise<any | null> {
+  try {
+    console.log(`📍 Buscando tracking do shipment ${shipmentId}...`);
+    
+    // Buscar dados básicos do shipment
+    const shipmentResponse = await fetch(`https://api.mercadolibre.com/shipments/${shipmentId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!shipmentResponse.ok) {
+      console.warn(`⚠️ Não foi possível buscar shipment ${shipmentId}: ${shipmentResponse.status}`);
+      return null;
+    }
+
+    const shipmentData = await shipmentResponse.json();
+    
+    // Extrair informações de tracking
+    const trackingNumber = shipmentData.tracking_number || null;
+    const currentStatus = shipmentData.status || 'unknown';
+    const substatus = shipmentData.substatus?.description || null;
+    
+    // Histórico de tracking
+    const trackingHistory: any[] = [];
+    
+    if (shipmentData.tracking_method === 'ML' && shipmentData.status_history) {
+      // Tracking gerenciado pelo ML
+      shipmentData.status_history.forEach((event: any) => {
+        trackingHistory.push({
+          date: event.date_shipped || event.date_created || new Date().toISOString(),
+          status: event.status || 'unknown',
+          description: event.status_detail || substatus || 'Status atualizado',
+          location: event.receiver_address?.city?.name || null,
+          checkpoint: event.checkpoint || null,
+        });
+      });
+    }
+    
+    // Dados do carrier (transportadora)
+    const carrier = shipmentData.shipping_option?.name || 
+                    shipmentData.logistic_type || 
+                    null;
+    
+    // Localização atual
+    let currentLocation = null;
+    if (shipmentData.receiver_address) {
+      const addr = shipmentData.receiver_address;
+      currentLocation = `${addr.city?.name || ''}, ${addr.state?.name || ''}`.trim();
+      if (currentLocation === ',') currentLocation = null;
+    }
+    
+    console.log(`✅ Tracking obtido para shipment ${shipmentId}: ${trackingHistory.length} eventos`);
+    
+    return {
+      shipment_id: shipmentId,
+      current_status: currentStatus,
+      current_status_description: substatus || currentStatus,
+      current_location: currentLocation,
+      estimated_delivery: shipmentData.status_history?.estimated_delivery?.date || null,
+      tracking_number: trackingNumber,
+      carrier: carrier,
+      last_update: shipmentData.last_updated || shipmentData.date_created,
+      tracking_history: trackingHistory,
+    };
+  } catch (error) {
+    console.error(`❌ Erro ao buscar tracking ${shipmentId}:`, error);
+    return null;
+  }
+}
+
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -383,11 +460,12 @@ Deno.serve(async (req) => {
                   console.log(`ℹ️ Return ${returnData.id} não tem shipment_id válido`);
                 }
                 
-                // ✅ FASE 1, 2 & 3: Buscar dados do pedido para obter buyer_id, item_id e dados financeiros
+                // ✅ FASE 1, 2, 3 & 5: Buscar dados do pedido para obter buyer_id, item_id, dados financeiros e tracking
                 let orderData: any = null;
                 let buyerInfo: any = null;
                 let productInfo: any = null;
                 let financialInfo: any = null;
+                let trackingInfo: any = null;
                 
                 if (returnData.resource_type === 'order' && returnData.resource_id) {
                   try {
@@ -456,6 +534,11 @@ Deno.serve(async (req) => {
                     console.warn(`⚠️ Erro ao buscar dados do pedido ${returnData.resource_id}:`, error);
                     // Continua mesmo se falhar - não quebra o sistema
                   }
+                }
+                
+                // ✅ FASE 5: Buscar tracking do shipment se disponível
+                if (firstShipment?.shipment_id) {
+                  trackingInfo = await fetchShipmentTracking(firstShipment.shipment_id, accessToken);
                 }
 
                 // Extrair dados da primeira review se existir
@@ -538,6 +621,9 @@ Deno.serve(async (req) => {
                   
                   // ✅ FASE 3: Dados financeiros enriquecidos
                   financial_info: financialInfo,
+                  
+                  // ✅ FASE 5: Dados de tracking enriquecidos
+                  tracking_info: trackingInfo,
 
                   // Order info (legacy)
                   order: orderData ? {

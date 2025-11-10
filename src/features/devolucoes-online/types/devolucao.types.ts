@@ -69,6 +69,9 @@ export interface MLReturn {
   
   // ✅ FASE 3: Dados financeiros enriquecidos
   financial_info?: FinancialInfo;
+  
+  // ✅ FASE 5: Dados de tracking enriquecidos
+  tracking_info?: ShipmentTracking;
 }
 
 export interface ReturnStatus {
@@ -191,6 +194,27 @@ export interface FinancialInfo {
   payment_method: string | null;
   payment_type: string | null;
   shipping_cost: number;
+}
+
+// ✅ FASE 5: Dados de Tracking Enriquecidos
+export interface ShipmentTracking {
+  shipment_id: number;
+  current_status: string;
+  current_status_description: string;
+  current_location?: string | null;
+  estimated_delivery: string | null;
+  tracking_number: string | null;
+  carrier?: string | null;
+  last_update: string;
+  tracking_history: TrackingEvent[];
+}
+
+export interface TrackingEvent {
+  date: string;
+  status: string;
+  description: string;
+  location?: string | null;
+  checkpoint?: string | null;
 }
 
 // Filtros
