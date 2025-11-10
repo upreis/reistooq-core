@@ -88,6 +88,9 @@ export interface MLReturn {
   
   // ✅ FASE 12: Custos detalhados de logística
   shipping_costs?: ShippingCosts;
+  
+  // ✅ FASE 13: Fulfillment Info
+  fulfillment_info?: FulfillmentInfo;
 }
 
 // ✅ FASE 11: Ações disponíveis
@@ -143,6 +146,26 @@ export interface CostBreakdown {
     currency_id: string;
     description?: string;
   }>;
+}
+
+// ✅ FASE 13: Fulfillment Info
+export interface FulfillmentInfo {
+  tipo_logistica?: 'FBM' | 'FULL' | 'FLEX' | 'COLETA' | 'CROSS_DOCKING' | 'DROP_SHIPPING';
+  warehouse_id?: string;
+  warehouse_nome?: string;
+  centro_distribuicao?: string;
+  destino_retorno?: string;
+  endereco_retorno?: {
+    rua?: string;
+    numero?: string;
+    cidade?: string;
+    estado?: string;
+    cep?: string;
+    pais?: string;
+  };
+  status_reingresso?: 'pending' | 'received' | 'processing' | 'restocked' | 'rejected';
+  data_reingresso?: string;
+  fulfillment_last_updated?: string;
 }
 
 // ✅ FASE 8: Lead Time Data

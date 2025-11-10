@@ -68,6 +68,36 @@ const fetchDevolucoes = async (params: FetchDevolucaoParams): Promise<DevolucaoR
         }
       }
       
+      // ✅ FASE 12: Parsear dados_custos_logistica se existir
+      if (devolucao.dados_custos_logistica && typeof devolucao.dados_custos_logistica === 'string') {
+        try {
+          devolucao.shipping_costs = JSON.parse(devolucao.dados_custos_logistica);
+        } catch (e) {
+          console.warn('Erro ao parsear shipping_costs:', e);
+        }
+      }
+      
+      // ✅ FASE 13: Parsear dados_fulfillment se existir
+      if (devolucao.dados_fulfillment && typeof devolucao.dados_fulfillment === 'string') {
+        try {
+          devolucao.fulfillment_info = JSON.parse(devolucao.dados_fulfillment);
+        } catch (e) {
+          console.warn('Erro ao parsear fulfillment_info:', e);
+        }
+      }
+      
+      // ✅ MAPEAR CAMPOS DA API PARA INTERFACE DO FRONTEND
+      // Se a devolução veio direto da API (sem parsing do banco)
+      if (!devolucao.fulfillment_info && devolucao.fulfillment_info !== undefined) {
+        devolucao.fulfillment_info = devolucao.fulfillment_info;
+      }
+      if (!devolucao.shipping_costs && devolucao.shipping_costs !== undefined) {
+        devolucao.shipping_costs = devolucao.shipping_costs;
+      }
+      if (!devolucao.available_actions && devolucao.available_actions !== undefined) {
+        devolucao.available_actions = devolucao.available_actions;
+      }
+      
       return devolucao;
     });
   }

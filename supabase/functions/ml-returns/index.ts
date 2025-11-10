@@ -563,6 +563,65 @@ Deno.serve(async (req) => {
                   console.log(`ℹ️ Return ${returnData.id} não tem shipment_id para buscar custos`);
                 }
                 
+                // ✅ FASE 13: Buscar informações de fulfillment
+                let fulfillmentInfo: any = null;
+                if (firstShipment?.shipment_id) {
+                  try {
+                    console.log(`📦 Buscando informações de fulfillment para shipment ${firstShipment.shipment_id}...`);
+                    const shipmentUrl = `https://api.mercadolibre.com/shipments/${firstShipment.shipment_id}`;
+                    const shipmentResponse = await fetch(shipmentUrl, {
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    if (shipmentResponse.ok) {
+                      const shipmentData = await shipmentResponse.json();
+                      console.log(`✅ Detalhes do shipment ${firstShipment.shipment_id} obtidos:`, JSON.stringify(shipmentData, null, 2));
+                      
+                      // Mapear tipo de logística
+                      const logisticType = shipmentData.logistic_type || shipmentData.shipping_option?.logistic_type;
+                      const tipoLogistica = logisticType === 'fulfillment' ? 'FULL' : 
+                                           logisticType === 'xd_drop_off' ? 'FLEX' :
+                                           logisticType === 'cross_docking' ? 'CROSS_DOCKING' :
+                                           logisticType === 'drop_off' ? 'COLETA' :
+                                           logisticType === 'drop_shipping' ? 'DROP_SHIPPING' :
+                                           'FBM';
+                      
+                      fulfillmentInfo = {
+                        tipo_logistica: tipoLogistica,
+                        warehouse_id: shipmentData.sender_address?.warehouse_id || null,
+                        warehouse_nome: shipmentData.sender_address?.warehouse_name || null,
+                        centro_distribuicao: shipmentData.sender_address?.distribution_center_name || null,
+                        destino_retorno: shipmentData.return_details?.address?.address_line || null,
+                        endereco_retorno: shipmentData.return_details?.address ? {
+                          rua: shipmentData.return_details.address.street_name,
+                          numero: shipmentData.return_details.address.street_number,
+                          cidade: shipmentData.return_details.address.city?.name,
+                          estado: shipmentData.return_details.address.state?.name,
+                          cep: shipmentData.return_details.address.zip_code,
+                          pais: shipmentData.return_details.address.country?.name,
+                        } : null,
+                        status_reingresso: shipmentData.return_details?.status || 
+                                           (shipmentData.substatus === 'returned_to_seller' ? 'received' : 
+                                            shipmentData.substatus === 'ready_to_ship' ? 'processing' :
+                                            'pending'),
+                        data_reingresso: shipmentData.return_details?.date_delivered || null,
+                        fulfillment_last_updated: new Date().toISOString(),
+                      };
+                      
+                      console.log(`📦 Fulfillment Info mapeado:`, fulfillmentInfo);
+                    } else {
+                      console.warn(`⚠️ Detalhes do shipment não disponíveis (${shipmentResponse.status}) para shipment ${firstShipment.shipment_id}`);
+                    }
+                  } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar fulfillment do shipment ${firstShipment.shipment_id}:`, getErrorMessage(error));
+                  }
+                } else {
+                  console.log(`ℹ️ Return ${returnData.id} não tem shipment_id para buscar fulfillment`);
+                }
+                
                 
                 // ✅ FASE 1, 2, 3 & 5: Buscar dados do pedido para obter buyer_id, item_id, dados financeiros e tracking
                 let orderData: any = null;
@@ -840,6 +899,9 @@ Deno.serve(async (req) => {
                   
                   // ✅ FASE 12: Custos detalhados de logística
                   shipping_costs: shippingCosts,
+                  
+                  // ✅ FASE 13: Fulfillment Info
+                  fulfillment_info: fulfillmentInfo,
 
 
                   // Order info (legacy)
