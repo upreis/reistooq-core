@@ -45,35 +45,37 @@ async function syncDevolucoes(
   supabase: any,
   batchSize: number = 100
 ) {
+  const startTime = Date.now(); // ✅ Rastrear tempo de início
   logger.section('INICIANDO SINCRONIZAÇÃO');
   
-  // 1. Obter seller_id da conta de integração
-  const { data: account, error: accountError } = await supabase
-    .from('integration_accounts')
-    .select('seller_id, organization_id')
-    .eq('id', integrationAccountId)
-    .single();
-
-  if (accountError || !account) {
-    throw new Error(`Conta de integração não encontrada: ${accountError?.message}`);
-  }
-
-  logger.info(`Seller ID: ${account.seller_id}`);
-
-  // 2. Iniciar registro de sync
-  const { data: syncRecord, error: syncError } = await supabase.rpc('start_devolucoes_sync', {
-    p_integration_account_id: integrationAccountId,
-    p_batch_size: batchSize
-  });
-
-  if (syncError) {
-    throw new Error(`Erro ao iniciar sync: ${syncError.message}`);
-  }
-
-  const syncId = syncRecord;
-  logger.success(`Sync iniciado: ${syncId}`);
-
+  let syncId: string | null = null;
+  
   try {
+    // 1. Obter seller_id da conta de integração
+    const { data: account, error: accountError } = await supabase
+      .from('integration_accounts')
+      .select('seller_id, organization_id')
+      .eq('id', integrationAccountId)
+      .single();
+
+    if (accountError || !account) {
+      throw new Error(`Conta de integração não encontrada: ${accountError?.message}`);
+    }
+
+    logger.info(`Seller ID: ${account.seller_id}`);
+
+    // 2. Iniciar registro de sync - ✅ CORRIGIDO: usar assinatura correta
+    const { data: syncIdData, error: syncError } = await supabase.rpc('start_devolucoes_sync', {
+      p_integration_account_id: integrationAccountId
+    });
+
+    if (syncError) {
+      throw new Error(`Erro ao iniciar sync: ${syncError.message}`);
+    }
+
+    syncId = syncIdData;
+    logger.success(`Sync iniciado: ${syncId}`);
+
     // 3. Chamar ml-api-direct para buscar dados
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -81,7 +83,8 @@ async function syncDevolucoes(
     let offset = 0;
     let hasMore = true;
     let totalProcessed = 0;
-    let totalSaved = 0;
+    let totalCreated = 0;
+    let totalUpdated = 0;
 
     // 4. Processar em lotes
     while (hasMore) {
@@ -120,11 +123,14 @@ async function syncDevolucoes(
       const { claims, total, hasMore: apiHasMore } = apiData;
       
       totalProcessed += claims.length;
-      totalSaved += claims.length; // ml-api-direct já salva os dados
+      // ml-api-direct retorna info de criados/atualizados
+      if (apiData.created) totalCreated += apiData.created;
+      if (apiData.updated) totalUpdated += apiData.updated;
+      
       hasMore = apiHasMore;
       offset += batchSize;
 
-      logger.success(`✅ Lote processado: ${claims.length} claims salvos (Total: ${totalProcessed}/${total})`);
+      logger.success(`✅ Lote processado: ${claims.length} claims (Total: ${totalProcessed}/${total})`);
 
       // Atualizar progresso
       await supabase
@@ -142,29 +148,40 @@ async function syncDevolucoes(
       }
     }
 
-    // 5. Completar sync com sucesso
+    // 5. Completar sync com sucesso - ✅ CORRIGIDO: incluir duration_ms
+    const durationMs = Date.now() - startTime;
     await supabase.rpc('complete_devolucoes_sync', {
       p_sync_id: syncId,
-      p_records_processed: totalProcessed,
-      p_error_message: null
+      p_total_processed: totalProcessed,
+      p_total_created: totalCreated,
+      p_total_updated: totalUpdated,
+      p_duration_ms: durationMs
     });
 
     logger.section('SINCRONIZAÇÃO CONCLUÍDA');
     logger.success(`Total processado: ${totalProcessed} devoluções`);
+    logger.success(`Criados: ${totalCreated} | Atualizados: ${totalUpdated}`);
+    logger.success(`Tempo: ${durationMs}ms`);
 
     return {
       success: true,
       syncId,
       totalProcessed,
-      totalSaved
+      totalCreated,
+      totalUpdated,
+      durationMs
     };
 
   } catch (error) {
-    // Marcar sync como falhado
-    await supabase.rpc('fail_devolucoes_sync', {
-      p_sync_id: syncId,
-      p_error_message: error instanceof Error ? error.message : 'Erro desconhecido'
-    });
+    // Marcar sync como falhado - ✅ CORRIGIDO: incluir duration_ms
+    const durationMs = Date.now() - startTime;
+    if (syncId) {
+      await supabase.rpc('fail_devolucoes_sync', {
+        p_sync_id: syncId,
+        p_error_message: error instanceof Error ? error.message : 'Erro desconhecido',
+        p_duration_ms: durationMs
+      });
+    }
 
     throw error;
   }

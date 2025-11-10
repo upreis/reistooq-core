@@ -6378,17 +6378,28 @@ export type Database = {
         Args: { p_error_message?: string; p_job_id: string; p_success: boolean }
         Returns: undefined
       }
-      complete_devolucoes_sync: {
-        Args: {
-          p_account_id: string
-          p_duration_ms: number
-          p_items_failed: number
-          p_items_synced: number
-          p_items_total: number
-          p_sync_type: string
-        }
-        Returns: undefined
-      }
+      complete_devolucoes_sync:
+        | {
+            Args: {
+              p_duration_ms: number
+              p_sync_id: string
+              p_total_created: number
+              p_total_processed: number
+              p_total_updated: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_account_id: string
+              p_duration_ms: number
+              p_items_failed: number
+              p_items_synced: number
+              p_items_total: number
+              p_sync_type: string
+            }
+            Returns: undefined
+          }
       complete_onboarding: {
         Args: {
           org_cnpj: string
@@ -6508,15 +6519,24 @@ export type Database = {
         Args: never
         Returns: Json
       }
-      fail_devolucoes_sync: {
-        Args: {
-          p_account_id: string
-          p_error_details?: Json
-          p_error_message: string
-          p_sync_type: string
-        }
-        Returns: undefined
-      }
+      fail_devolucoes_sync:
+        | {
+            Args: {
+              p_duration_ms: number
+              p_error_message: string
+              p_sync_id: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_account_id: string
+              p_error_details?: Json
+              p_error_message: string
+              p_sync_type: string
+            }
+            Returns: undefined
+          }
       fix_historico_integration_accounts: { Args: never; Returns: Json }
       fix_produtos_organization_id: { Args: never; Returns: Json }
       generate_category_hierarchy_from_products: { Args: never; Returns: Json }
@@ -7550,10 +7570,12 @@ export type Database = {
       }
       sincronizar_componentes_em_uso: { Args: never; Returns: undefined }
       split_existing_categories: { Args: never; Returns: undefined }
-      start_devolucoes_sync: {
-        Args: { p_account_id: string; p_sync_type?: string }
-        Returns: string
-      }
+      start_devolucoes_sync:
+        | {
+            Args: { p_account_id: string; p_sync_type?: string }
+            Returns: string
+          }
+        | { Args: { p_integration_account_id: string }; Returns: string }
       sync_cliente_from_pedido:
         | {
             Args: {
