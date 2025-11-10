@@ -27,6 +27,7 @@ import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
+import { NotificacoesPanel } from "@/features/devolucoes-online/components/NotificacoesPanel";
 
 export default function Header() {
   const location = useLocation();
@@ -198,6 +199,9 @@ export default function Header() {
               <Megaphone className="h-4 w-4" strokeWidth={2.5} />
             </Button>
           )}
+
+          {/* 🔔 Painel de Notificações de Devoluções */}
+          <NotificacoesPanel />
 
           {/* User menu */}
           <DropdownMenu>

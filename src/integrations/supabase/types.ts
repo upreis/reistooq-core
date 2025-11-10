@@ -1585,6 +1585,90 @@ export type Database = {
         }
         Relationships: []
       }
+      devolucoes_notificacoes: {
+        Row: {
+          claim_id: number
+          created_at: string | null
+          dados_contexto: Json | null
+          deadline_date: string | null
+          expires_at: string | null
+          horas_restantes: number | null
+          id: string
+          integration_account_id: string
+          lida: boolean | null
+          lida_em: string | null
+          lida_por: string | null
+          mensagem: string
+          order_id: string
+          organization_id: string
+          prioridade: string
+          resolvida: boolean | null
+          resolvida_em: string | null
+          return_id: number
+          tipo_notificacao: string
+          titulo: string
+        }
+        Insert: {
+          claim_id: number
+          created_at?: string | null
+          dados_contexto?: Json | null
+          deadline_date?: string | null
+          expires_at?: string | null
+          horas_restantes?: number | null
+          id?: string
+          integration_account_id: string
+          lida?: boolean | null
+          lida_em?: string | null
+          lida_por?: string | null
+          mensagem: string
+          order_id: string
+          organization_id: string
+          prioridade?: string
+          resolvida?: boolean | null
+          resolvida_em?: string | null
+          return_id: number
+          tipo_notificacao: string
+          titulo: string
+        }
+        Update: {
+          claim_id?: number
+          created_at?: string | null
+          dados_contexto?: Json | null
+          deadline_date?: string | null
+          expires_at?: string | null
+          horas_restantes?: number | null
+          id?: string
+          integration_account_id?: string
+          lida?: boolean | null
+          lida_em?: string | null
+          lida_por?: string | null
+          mensagem?: string
+          order_id?: string
+          organization_id?: string
+          prioridade?: string
+          resolvida?: boolean | null
+          resolvida_em?: string | null
+          return_id?: number
+          tipo_notificacao?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devolucoes_notificacoes_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devolucoes_notificacoes_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estoque_por_local: {
         Row: {
           created_at: string
@@ -7037,6 +7121,7 @@ export type Database = {
           resource_type: string
         }[]
       }
+      get_notificacoes_nao_lidas_count: { Args: never; Returns: number }
       get_org_id_from_oauth_state: {
         Args: { p_state_value: string }
         Returns: string
@@ -7149,6 +7234,7 @@ export type Database = {
       hv_fix_orphans: { Args: { default_account_id?: string }; Returns: number }
       hv_insert: { Args: { p_data: Json }; Returns: Json }
       hv_orphaned_stats: { Args: never; Returns: Json }
+      limpar_notificacoes_expiradas: { Args: never; Returns: Json }
       log_audit_enhanced: {
         Args: {
           p_action: string
@@ -7210,6 +7296,11 @@ export type Database = {
         }
         Returns: undefined
       }
+      marcar_notificacao_lida: {
+        Args: { p_notificacao_id: string }
+        Returns: Json
+      }
+      marcar_todas_notificacoes_lidas: { Args: never; Returns: Json }
       mark_oauth_state_used: {
         Args: { p_state_value: string }
         Returns: boolean
