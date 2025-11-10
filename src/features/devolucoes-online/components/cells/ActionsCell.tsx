@@ -11,15 +11,17 @@ import {
   Loader2
 } from 'lucide-react';
 import { useConfirmationDialog } from '@/components/ui/confirmation-dialog';
-import type { AvailableActions } from '@/features/devolucoes-online/types/devolucao.types';
+import type { AvailableActions, ReviewReason } from '@/features/devolucoes-online/types/devolucao.types';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoStore } from '@/features/devolucoes-online/store/useDevolucaoStore';
+import { ReviewRejectModal } from '../ReviewRejectModal';
 
 interface ActionsCellProps {
   returnId: number;
   claimId: number;
   availableActions?: AvailableActions;
+  availableReasons?: ReviewReason[];
   onActionExecuted?: () => void;
 }
 
@@ -27,9 +29,11 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
   returnId, 
   claimId, 
   availableActions,
+  availableReasons,
   onActionExecuted 
 }) => {
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const { showConfirmation, dialog } = useConfirmationDialog();
   const { filters } = useDevolucaoStore();
 
@@ -43,60 +47,74 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
     );
   }
 
+  const executeAction = async (actionType: string, actionName: string, actionData?: any) => {
+    setLoadingAction(actionType);
+    
+    try {
+      console.log(`🎬 Executando ação ${actionType} para return ${returnId}, claim ${claimId}`);
+      
+      // Chamar edge function real
+      const { data, error } = await supabase.functions.invoke('ml-execute-action', {
+        body: { 
+          returnId, 
+          claimId, 
+          actionType,
+          actionData,
+          integrationAccountId: filters.integrationAccountId 
+        }
+      });
+      
+      if (error) {
+        console.error('Erro ao executar ação:', error);
+        toast.error(`Erro ao executar ação "${actionName}": ${error.message}`);
+        return;
+      }
+
+      if (!data.success) {
+        console.error('Ação falhou:', data.error);
+        toast.error(`Erro: ${data.error}`);
+        return;
+      }
+
+      console.log(`✅ Ação executada com sucesso:`, data);
+      
+      // Para print_label, abrir em nova aba
+      if (actionType === 'print_label' && data.data?.label_url) {
+        window.open(data.data.label_url, '_blank');
+        toast.success('Etiqueta aberta em nova aba!');
+      } else {
+        toast.success(`Ação "${actionName}" executada com sucesso!`);
+      }
+      
+      onActionExecuted?.();
+    } catch (error) {
+      console.error('Erro ao executar ação:', error);
+      toast.error(`Erro ao executar ação "${actionName}"`);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
   const handleAction = async (actionType: string, actionName: string) => {
+    // Se for reprovação, mostrar modal
+    if (actionType === 'review_fail') {
+      setShowRejectModal(true);
+      return;
+    }
+
+    // Para outras ações, mostrar confirmação padrão
     showConfirmation({
       title: `Confirmar ${actionName}`,
       description: `Tem certeza que deseja executar a ação "${actionName}" para a devolução #${returnId}?`,
       confirmText: 'Executar',
       cancelText: 'Cancelar',
-      variant: actionType.includes('fail') || actionType.includes('appeal') ? 'warning' : 'default',
-      onConfirm: async () => {
-        setLoadingAction(actionType);
-        
-        try {
-          console.log(`🎬 Executando ação ${actionType} para return ${returnId}, claim ${claimId}`);
-          
-          // Chamar edge function real
-          const { data, error } = await supabase.functions.invoke('ml-execute-action', {
-            body: { 
-              returnId, 
-              claimId, 
-              actionType,
-              integrationAccountId: filters.integrationAccountId 
-            }
-          });
-          
-          if (error) {
-            console.error('Erro ao executar ação:', error);
-            toast.error(`Erro ao executar ação "${actionName}": ${error.message}`);
-            return;
-          }
-
-          if (!data.success) {
-            console.error('Ação falhou:', data.error);
-            toast.error(`Erro: ${data.error}`);
-            return;
-          }
-
-          console.log(`✅ Ação executada com sucesso:`, data);
-          
-          // Para print_label, abrir em nova aba
-          if (actionType === 'print_label' && data.data?.label_url) {
-            window.open(data.data.label_url, '_blank');
-            toast.success('Etiqueta aberta em nova aba!');
-          } else {
-            toast.success(`Ação "${actionName}" executada com sucesso!`);
-          }
-          
-          onActionExecuted?.();
-        } catch (error) {
-          console.error('Erro ao executar ação:', error);
-          toast.error(`Erro ao executar ação "${actionName}"`);
-        } finally {
-          setLoadingAction(null);
-        }
-      }
+      variant: actionType.includes('appeal') ? 'warning' : 'default',
+      onConfirm: () => executeAction(actionType, actionName)
     });
+  };
+
+  const handleRejectConfirm = async (reasonId: string, message: string) => {
+    await executeAction('review_fail', 'Reprovar Revisão', { reasonId, message });
   };
 
   const actions = [
@@ -165,6 +183,13 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
   return (
     <td className="px-3 py-3">
       {dialog}
+      <ReviewRejectModal
+        open={showRejectModal}
+        onOpenChange={setShowRejectModal}
+        onConfirm={handleRejectConfirm}
+        returnId={returnId}
+        availableReasons={availableReasons}
+      />
       <div className="flex flex-col gap-2 min-w-[180px]">
         {availableActionsList.map((action) => {
           const Icon = action.icon;

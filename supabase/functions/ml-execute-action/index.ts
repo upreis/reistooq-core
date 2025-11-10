@@ -11,12 +11,12 @@ interface RequestBody {
   claimId: number;
   actionType: 'review_ok' | 'review_fail' | 'print_label' | 'appeal' | 'refund' | 'ship';
   integrationAccountId: string;
-  
-  // Campos opcionais para ações específicas
-  reason?: string; // Para review_fail e appeal
-  reasonId?: string; // Para review_fail (ex: "SRF2", "SRF3")
-  message?: string; // Mensagem adicional para review_fail ou appeal
-  attachments?: string[]; // URLs de anexos para review_fail
+  actionData?: {
+    reasonId?: string;
+    message?: string;
+    attachments?: string[];
+    reason?: string;
+  };
 }
 
 Deno.serve(async (req) => {
@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body: RequestBody = await req.json();
-    const { returnId, claimId, actionType, integrationAccountId, reason, reasonId, message, attachments } = body;
+    const { returnId, claimId, actionType, integrationAccountId, actionData } = body;
 
     if (!returnId || !claimId || !actionType || !integrationAccountId) {
       return new Response(
@@ -105,7 +105,13 @@ Deno.serve(async (req) => {
         break;
       
       case 'review_fail':
-        result = await executeReviewFail(returnId, accessToken, reasonId, message, attachments);
+        result = await executeReviewFail(
+          returnId, 
+          accessToken, 
+          actionData?.reasonId, 
+          actionData?.message, 
+          actionData?.attachments
+        );
         break;
       
       case 'print_label':
@@ -113,7 +119,7 @@ Deno.serve(async (req) => {
         break;
       
       case 'appeal':
-        result = await executeAppeal(claimId, accessToken, reason, message);
+        result = await executeAppeal(claimId, accessToken, actionData?.reason, actionData?.message);
         break;
       
       case 'ship':
@@ -133,6 +139,26 @@ Deno.serve(async (req) => {
 
     if (result.success) {
       console.log(`✅ Ação "${actionType}" executada com sucesso para return ${returnId}`);
+      
+      // Registrar no histórico
+      try {
+        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+        
+        await supabase.from('ml_devolucoes_historico_acoes').insert({
+          return_id: returnId,
+          claim_id: claimId,
+          integration_account_id: integrationAccountId,
+          action_type: actionType,
+          action_name: getActionName(actionType),
+          action_status: 'success',
+          action_data: actionData || null,
+          api_response: result.data,
+          executed_by: user?.id || null
+        });
+      } catch (historyError) {
+        console.error('⚠️ Erro ao registrar histórico (não crítico):', historyError);
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -143,6 +169,26 @@ Deno.serve(async (req) => {
       );
     } else {
       console.error(`❌ Falha ao executar ação "${actionType}":`, result.error);
+      
+      // Registrar erro no histórico
+      try {
+        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
+        
+        await supabase.from('ml_devolucoes_historico_acoes').insert({
+          return_id: returnId,
+          claim_id: claimId,
+          integration_account_id: integrationAccountId,
+          action_type: actionType,
+          action_name: getActionName(actionType),
+          action_status: 'error',
+          action_data: actionData || null,
+          api_response: { error: result.error },
+          executed_by: user?.id || null
+        });
+      } catch (historyError) {
+        console.error('⚠️ Erro ao registrar histórico de erro:', historyError);
+      }
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -489,4 +535,19 @@ async function executeRefund(returnId: number, accessToken: string) {
     console.error('❌ Erro ao executar refund:', error);
     return { success: false, error: getErrorMessage(error) };
   }
+}
+
+/**
+ * Mapear nome amigável da ação
+ */
+function getActionName(actionType: string): string {
+  const names: Record<string, string> = {
+    review_ok: 'Aprovar Revisão',
+    review_fail: 'Reprovar Revisão',
+    print_label: 'Imprimir Etiqueta',
+    appeal: 'Apelar Decisão',
+    ship: 'Marcar como Enviado',
+    refund: 'Reembolsar'
+  };
+  return names[actionType] || actionType;
 }

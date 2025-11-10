@@ -2856,6 +2856,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_devolucoes_historico_acoes: {
+        Row: {
+          action_data: Json | null
+          action_name: string
+          action_status: string
+          action_type: string
+          api_response: Json | null
+          claim_id: number
+          executed_at: string
+          executed_by: string | null
+          id: string
+          integration_account_id: string
+          return_id: number
+        }
+        Insert: {
+          action_data?: Json | null
+          action_name: string
+          action_status?: string
+          action_type: string
+          api_response?: Json | null
+          claim_id: number
+          executed_at?: string
+          executed_by?: string | null
+          id?: string
+          integration_account_id: string
+          return_id: number
+        }
+        Update: {
+          action_data?: Json | null
+          action_name?: string
+          action_status?: string
+          action_type?: string
+          api_response?: Json | null
+          claim_id?: number
+          executed_at?: string
+          executed_by?: string | null
+          id?: string
+          integration_account_id?: string
+          return_id?: number
+        }
+        Relationships: []
+      }
       ml_devolucoes_reclamacoes: {
         Row: {
           amount_claimed: number | null
