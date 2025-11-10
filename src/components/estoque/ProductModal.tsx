@@ -72,6 +72,13 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// Função para calcular cubagem (m³)
+const calcularCubagem = (largura: number, altura: number, comprimento: number): number => {
+  if (!largura || !altura || !comprimento) return 0;
+  // Dimensões em cm, converter para m³
+  return (largura * altura * comprimento) / 1000000;
+};
+
 interface ProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1003,6 +1010,25 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                   )}
                 />
               </div>
+
+              {/* Exibir cubagem calculada */}
+              {(form.watch('largura') > 0 && form.watch('altura') > 0 && form.watch('comprimento') > 0) && (
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Cubagem Calculada:</span>
+                    <span className="text-lg font-bold text-primary">
+                      {calcularCubagem(
+                        form.watch('largura') || 0,
+                        form.watch('altura') || 0,
+                        form.watch('comprimento') || 0
+                      ).toFixed(6)} m³
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {form.watch('largura')} × {form.watch('altura')} × {form.watch('comprimento')} cm
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Seção: Informações Fiscais */}

@@ -41,6 +41,13 @@ interface ProductFormData {
   origem: number | null;
 }
 
+// Função para calcular cubagem (m³)
+const calcularCubagem = (largura: number, altura: number, comprimento: number): number => {
+  if (!largura || !altura || !comprimento) return 0;
+  // Dimensões em cm, converter para m³
+  return (largura * altura * comprimento) / 1000000;
+};
+
 export function CreateParentProductModal({ 
   open, 
   onOpenChange, 
@@ -468,6 +475,21 @@ export function CreateParentProductModal({
               />
             </div>
           </div>
+
+          {/* Exibir cubagem calculada */}
+          {(formData.largura > 0 && formData.altura > 0 && formData.comprimento > 0) && (
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-foreground">Cubagem Calculada:</span>
+                <span className="text-lg font-bold text-primary">
+                  {calcularCubagem(formData.largura, formData.altura, formData.comprimento).toFixed(6)} m³
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.largura} × {formData.altura} × {formData.comprimento} cm
+              </p>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
