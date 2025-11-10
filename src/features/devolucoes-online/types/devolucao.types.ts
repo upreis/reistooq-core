@@ -75,6 +75,9 @@ export interface MLReturn {
   
   // ✅ FASE 6: Dados de revisão e qualidade
   review_info?: ReviewInfo;
+  
+  // ✅ FASE 7: Dados de comunicação e mensagens
+  communication_info?: CommunicationInfo;
 }
 
 export interface ReturnStatus {
@@ -231,6 +234,34 @@ export interface ReviewInfo {
   benefited?: string | null;
   seller_status?: string | null;
   is_intermediate_check?: boolean;
+}
+
+// ✅ FASE 7: Dados de comunicação e mensagens
+export interface CommunicationInfo {
+  total_messages: number;
+  total_interactions: number;
+  last_message_date?: string | null;
+  last_message_sender?: string | null;
+  communication_quality?: 'excellent' | 'good' | 'moderate' | 'poor' | null;
+  moderation_status?: 'clean' | 'moderated' | 'rejected' | null;
+  has_attachments: boolean;
+  messages: ClaimMessage[];
+}
+
+export interface ClaimMessage {
+  id: string;
+  date: string;
+  sender_role: 'buyer' | 'seller' | 'mediator';
+  message: string;
+  status?: string;
+  attachments?: MessageAttachment[];
+}
+
+export interface MessageAttachment {
+  id: string;
+  url: string;
+  type: string;
+  filename?: string;
 }
 
 // Filtros

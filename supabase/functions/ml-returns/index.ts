@@ -556,6 +556,76 @@ Deno.serve(async (req) => {
                   seller_status: firstReview?.seller_status || null,
                   is_intermediate_check: returnData.intermediate_check || false,
                 };
+                
+                // ✅ FASE 7: Montar dados de comunicação e mensagens do claim
+                let communicationInfo: any = null;
+                try {
+                  const messagesUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`;
+                  const messagesResponse = await fetch(messagesUrl, {
+                    headers: {
+                      'Authorization': `Bearer ${accessToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+                  
+                  if (messagesResponse.ok) {
+                    const messagesData = await messagesResponse.json();
+                    const messages = messagesData.messages || [];
+                    
+                    // Processar mensagens
+                    const processedMessages = messages.map((msg: any) => ({
+                      id: msg.id || String(Date.now()),
+                      date: msg.date_created || msg.date || new Date().toISOString(),
+                      sender_role: msg.sender_role || 'mediator',
+                      message: msg.text || msg.message || '',
+                      status: msg.status || null,
+                      attachments: msg.attachments?.map((att: any) => ({
+                        id: att.id || String(Date.now()),
+                        url: att.url || '',
+                        type: att.type || 'file',
+                        filename: att.filename || null,
+                      })) || [],
+                    }));
+                    
+                    // Calcular métricas de qualidade
+                    const moderatedCount = messages.filter((m: any) => m.status === 'moderated' || m.status === 'rejected').length;
+                    const totalMessages = messages.length;
+                    const cleanPercentage = totalMessages > 0 ? ((totalMessages - moderatedCount) / totalMessages) * 100 : 100;
+                    
+                    let quality = null;
+                    if (totalMessages > 0) {
+                      if (cleanPercentage >= 90) quality = 'excellent';
+                      else if (cleanPercentage >= 70) quality = 'good';
+                      else if (cleanPercentage >= 50) quality = 'moderate';
+                      else quality = 'poor';
+                    }
+                    
+                    let moderationStatus = 'clean';
+                    if (messages.some((m: any) => m.status === 'rejected')) moderationStatus = 'rejected';
+                    else if (messages.some((m: any) => m.status === 'moderated')) moderationStatus = 'moderated';
+                    
+                    const lastMessage = messages[messages.length - 1];
+                    const hasAttachments = messages.some((m: any) => m.attachments && m.attachments.length > 0);
+                    
+                    communicationInfo = {
+                      total_messages: totalMessages,
+                      total_interactions: messages.filter((m: any) => m.sender_role !== 'mediator').length,
+                      last_message_date: lastMessage?.date_created || lastMessage?.date || null,
+                      last_message_sender: lastMessage?.sender_role || null,
+                      communication_quality: quality,
+                      moderation_status: moderationStatus,
+                      has_attachments: hasAttachments,
+                      messages: processedMessages.slice(-10), // Últimas 10 mensagens apenas
+                    };
+                    
+                    console.log(`💬 Comunicação do claim ${claim.id}: ${totalMessages} mensagens, qualidade: ${quality}`);
+                  } else {
+                    console.warn(`⚠️ Mensagens não disponíveis para claim ${claim.id}: ${messagesResponse.status}`);
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Erro ao buscar mensagens do claim ${claim.id}:`, error);
+                }
+
 
                   // ID da conta de integração para identificar a origem
                   integration_account_id: accountId,
@@ -634,8 +704,14 @@ Deno.serve(async (req) => {
                   // ✅ FASE 3: Dados financeiros enriquecidos
                   financial_info: financialInfo,
                   
+                  // ✅ FASE 5: Dados de tracking enriquecidos
+                  tracking_info: trackingInfo,
+                  
                   // ✅ FASE 6: Dados de revisão e qualidade enriquecidos
                   review_info: reviewInfo,
+                  
+                  // ✅ FASE 7: Dados de comunicação e mensagens enriquecidos
+                  communication_info: communicationInfo,
 
                   // Order info (legacy)
                   order: orderData ? {
