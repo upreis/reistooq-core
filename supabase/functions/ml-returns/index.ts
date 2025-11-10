@@ -231,6 +231,19 @@ Deno.serve(async (req) => {
 
     const offset = pagination.offset || 0;
     const limit = pagination.limit || 50;
+    
+    // ⚠️ SAFETY: Se não houver filtros de data, aplicar limite de 90 dias
+    const safeFilters = { ...filters };
+    if (!safeFilters.dateFrom && !safeFilters.dateTo) {
+      const today = new Date();
+      const ninetyDaysAgo = new Date(today);
+      ninetyDaysAgo.setDate(today.getDate() - 90);
+      
+      safeFilters.dateFrom = ninetyDaysAgo.toISOString().split('T')[0];
+      safeFilters.dateTo = today.toISOString().split('T')[0];
+      
+      console.log(`⚠️ FILTRO DE SEGURANÇA aplicado: últimos 90 dias (${safeFilters.dateFrom} a ${safeFilters.dateTo})`);
+    }
 
     console.log(`🔍 Buscando devoluções para ${accountIds.length} conta(s)`);
 
@@ -305,14 +318,14 @@ Deno.serve(async (req) => {
         params.append('offset', '0');
         params.append('sort', 'date_created:desc');
         
-        // APLICAR FILTROS DE DATA (date_created)
-        if (filters.dateFrom) {
-          params.append('date_created_from', `${filters.dateFrom}T00:00:00.000Z`);
-          console.log(`📅 Filtro dateFrom aplicado: ${filters.dateFrom}`);
+        // APLICAR FILTROS DE DATA (date_created) - Usando safeFilters com proteção de 90 dias
+        if (safeFilters.dateFrom) {
+          params.append('date_created_from', `${safeFilters.dateFrom}T00:00:00.000Z`);
+          console.log(`📅 Filtro dateFrom aplicado: ${safeFilters.dateFrom}`);
         }
-        if (filters.dateTo) {
-          params.append('date_created_to', `${filters.dateTo}T23:59:59.999Z`);
-          console.log(`📅 Filtro dateTo aplicado: ${filters.dateTo}`);
+        if (safeFilters.dateTo) {
+          params.append('date_created_to', `${safeFilters.dateTo}T23:59:59.999Z`);
+          console.log(`📅 Filtro dateTo aplicado: ${safeFilters.dateTo}`);
         }
 
         const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
@@ -1162,8 +1175,8 @@ Deno.serve(async (req) => {
     }
 
     // Aplicar filtro de busca local se necessário
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase();
+    if (safeFilters.search) {
+      const searchLower = safeFilters.search.toLowerCase();
       filteredReturns = filteredReturns.filter((ret: any) =>
         ret.order_id?.toString().includes(searchLower) ||
         ret.claim_id?.toString().includes(searchLower) ||
