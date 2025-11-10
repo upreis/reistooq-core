@@ -226,16 +226,6 @@ async function getDevolucoes(
       date_closed: item.data_fechamento_claim,
       last_updated: item.updated_at,
       
-      // ⚡ DADOS DE ENTREGA (extrair de JSONB dados_lead_time)
-      estimated_delivery_date: item.dados_lead_time?.estimated_delivery_time?.date || 
-                                item.dados_lead_time?.estimated_delivery_date || null,
-      estimated_delivery_from: item.dados_lead_time?.estimated_delivery_time?.shipping || null,
-      estimated_delivery_to: item.dados_lead_time?.estimated_delivery_time?.handling || null,
-      estimated_delivery_limit: item.dados_lead_time?.estimated_schedule_limit?.date || 
-                                 item.dados_lead_time?.delivery_limit || null,
-      delivery_limit: item.dados_lead_time?.delivery_limit || null,
-      has_delay: item.has_delay || false,
-      
       // Buyer info
       buyer_info: item.dados_buyer_info || {
         id: item.dados_order?.buyer?.id || null,
@@ -307,16 +297,16 @@ async function getDevolucoes(
       // Costs
       shipping_costs: item.dados_shipping_costs || item.shipment_costs || {},
       
-      // Review
+      // Review (⚡ EXTRAIR DE dados_review JSONB)
       review_info: item.dados_review || {
         id: item.review_id || null,
         status: item.review_status || null,
         result: item.review_result || null,
       },
-      review_status: item.review_status || null,
-      review_method: null,
-      review_stage: null,
-      seller_status: item.review_status || null,
+      review_status: item.review_status || item.dados_review?.status || null,
+      review_method: item.dados_review?.method || null,
+      review_stage: item.dados_review?.stage || null,
+      seller_status: item.review_status || item.seller_status || null,
       
       // Communication
       communication_info: item.dados_comunicacao || {
@@ -331,13 +321,15 @@ async function getDevolucoes(
       // Actions
       available_actions: item.dados_available_actions || item.dados_acoes_disponiveis || {},
       
-      // Context
-      refund_at: item.reembolso_quando || null,
-      estimated_delivery_date: item.dados_lead_time?.estimated_delivery_date || null,
-      estimated_delivery_from: item.dados_lead_time?.estimated_delivery_from || null,
-      estimated_delivery_to: item.dados_lead_time?.estimated_delivery_to || null,
-      estimated_delivery_limit: item.dados_lead_time?.delivery_limit || null,
+      // ⚡ DELIVERY DATES (extrair de JSONB dados_lead_time)
+      estimated_delivery_date: item.dados_lead_time?.estimated_delivery_time?.date || 
+                                item.dados_lead_time?.estimated_delivery_date || null,
+      estimated_delivery_from: item.dados_lead_time?.estimated_delivery_time?.shipping || null,
+      estimated_delivery_to: item.dados_lead_time?.estimated_delivery_time?.handling || null,
+      estimated_delivery_limit: item.dados_lead_time?.estimated_schedule_limit?.date || 
+                                 item.dados_lead_time?.delivery_limit || null,
       delivery_limit: item.dados_lead_time?.delivery_limit || null,
+      has_delay: item.has_delay || false,
       
       // ⚡ REFUND AT (extrair de JSONB dados_refund_info)
       refund_at: item.dados_refund_info?.when || 
@@ -352,12 +344,6 @@ async function getDevolucoes(
       benefited: Array.isArray(item.responsavel_custo) 
         ? item.responsavel_custo[0] 
         : item.responsavel_custo || null,
-      
-      // ⚡ REVIEW STATUS (extrair de dados_review OU campo direto)
-      review_status: item.review_status || item.dados_review?.status || null,
-      review_method: item.dados_review?.method || null,
-      review_stage: item.dados_review?.stage || null,
-      seller_status: item.review_status || item.seller_status || null,
       
       // ⚡ QUANTIDADE (campos diretos)
       return_quantity: item.quantidade || null,
