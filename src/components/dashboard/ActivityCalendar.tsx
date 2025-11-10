@@ -4,6 +4,10 @@ import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  translateStatus, 
+  translateStatusMoney 
+} from "@/features/devolucoes-online/utils/translations";
 
 interface ContributionDay {
   date: string; // ISO date string (e.g., "2025-09-13")
@@ -345,11 +349,11 @@ const ActivityCalendar = ({
                             'outline'
                           }
                         >
-                          {ret.status?.id || 'N/A'}
+                          {ret.status?.id ? translateStatus(ret.status.id) : 'N/A'}
                         </Badge>
                         {ret.status_money?.id && (
                           <Badge variant="outline" className="block mt-1">
-                            {ret.status_money.id}
+                            {translateStatusMoney(ret.status_money.id)}
                           </Badge>
                         )}
                       </div>

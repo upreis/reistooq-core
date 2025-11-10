@@ -127,6 +127,7 @@ export function useDevolucaoCalendarData() {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
+      revalidateOnMount: true,
       dedupingInterval: 120000, // 2 minutos
       errorRetryCount: 1,
       errorRetryInterval: 5000,
