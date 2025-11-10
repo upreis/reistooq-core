@@ -46,14 +46,73 @@ interface QualityMetrics {
 }
 
 export function DadosEnriquecidosQualidade() {
-  // Query para métricas de qualidade
+  // Query para métricas de qualidade (usando query SQL direta enquanto tipos não são atualizados)
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['data-quality-metrics'],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_data_quality_metrics');
+      // Chamar função RPC diretamente
+      const { data, error } = await supabase
+        .from('devolucoes_avancadas')
+        .select(`
+          order_id,
+          dados_review,
+          dados_comunicacao,
+          dados_deadlines,
+          dados_acoes_disponiveis,
+          dados_custos_logistica,
+          dados_fulfillment,
+          ultima_sincronizacao
+        `)
+        .limit(1000);
       
       if (error) throw error;
-      return data?.[0] as QualityMetrics;
+      
+      // Calcular métricas manualmente
+      const now = new Date();
+      const total = data?.length || 0;
+      
+      const sync_24h = data?.filter(d => 
+        d.ultima_sincronizacao && new Date(d.ultima_sincronizacao) > new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      ).length || 0;
+      
+      const sync_7d = data?.filter(d => 
+        d.ultima_sincronizacao && new Date(d.ultima_sincronizacao) > new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      ).length || 0;
+      
+      const pct_review = total > 0 ? (data?.filter(d => d.dados_review && Object.keys(d.dados_review).length > 0).length || 0) / total * 100 : 0;
+      const pct_comunicacao = total > 0 ? (data?.filter(d => d.dados_comunicacao && Object.keys(d.dados_comunicacao).length > 0).length || 0) / total * 100 : 0;
+      const pct_deadlines = total > 0 ? (data?.filter(d => d.dados_deadlines && Object.keys(d.dados_deadlines).length > 0).length || 0) / total * 100 : 0;
+      const pct_acoes = total > 0 ? (data?.filter(d => d.dados_acoes_disponiveis && Object.keys(d.dados_acoes_disponiveis).length > 0).length || 0) / total * 100 : 0;
+      const pct_custos = total > 0 ? (data?.filter(d => d.dados_custos_logistica && Object.keys(d.dados_custos_logistica).length > 0).length || 0) / total * 100 : 0;
+      const pct_fulfillment = total > 0 ? (data?.filter(d => d.dados_fulfillment && Object.keys(d.dados_fulfillment).length > 0).length || 0) / total * 100 : 0;
+      
+      const alertas_criticos = data?.filter(d => 
+        d.dados_deadlines && 
+        (d.dados_deadlines as any).is_shipment_critical === true ||
+        (d.dados_deadlines as any).is_review_critical === true
+      ).length || 0;
+      
+      const com_excelente = data?.filter(d => (d.dados_comunicacao as any)?.communication_quality === 'excellent').length || 0;
+      const com_boa = data?.filter(d => (d.dados_comunicacao as any)?.communication_quality === 'good').length || 0;
+      const com_moderada = data?.filter(d => (d.dados_comunicacao as any)?.communication_quality === 'moderate').length || 0;
+      const com_ruim = data?.filter(d => (d.dados_comunicacao as any)?.communication_quality === 'poor').length || 0;
+      
+      return {
+        total,
+        sync_24h,
+        sync_7d,
+        pct_review: Number(pct_review.toFixed(1)),
+        pct_comunicacao: Number(pct_comunicacao.toFixed(1)),
+        pct_deadlines: Number(pct_deadlines.toFixed(1)),
+        pct_acoes: Number(pct_acoes.toFixed(1)),
+        pct_custos: Number(pct_custos.toFixed(1)),
+        pct_fulfillment: Number(pct_fulfillment.toFixed(1)),
+        alertas_criticos,
+        com_excelente,
+        com_boa,
+        com_moderada,
+        com_ruim,
+      } as QualityMetrics;
     },
     refetchInterval: 60000, // Atualiza a cada 1 minuto
   });

@@ -4,8 +4,9 @@
  */
 
 import { memo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, BarChart3 } from 'lucide-react';
 
 interface DevolucaoHeaderSectionProps {
   isRefreshing: boolean;
@@ -13,6 +14,8 @@ interface DevolucaoHeaderSectionProps {
 }
 
 export const DevolucaoHeaderSection = memo(({ isRefreshing, onRefresh }: DevolucaoHeaderSectionProps) => {
+  const navigate = useNavigate();
+  
   return (
     <div className="flex items-center justify-between">
       <div>
@@ -21,14 +24,24 @@ export const DevolucaoHeaderSection = memo(({ isRefreshing, onRefresh }: Devoluc
           Gerencie devoluções (claims) dos seus pedidos ML
         </p>
       </div>
-      <Button 
-        onClick={onRefresh}
-        disabled={isRefreshing}
-        variant="outline"
-      >
-        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-        Atualizar
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          onClick={() => navigate('/devolucoes-ml/qualidade-dados')}
+          variant="outline"
+          className="gap-2"
+        >
+          <BarChart3 className="h-4 w-4" />
+          Qualidade de Dados
+        </Button>
+        <Button 
+          onClick={onRefresh}
+          disabled={isRefreshing}
+          variant="outline"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
+      </div>
     </div>
   );
 });

@@ -507,18 +507,59 @@ Os dados enriquecidos são automaticamente salvos no banco pela edge function `m
 - ✅ Logs de sucesso/erro adicionados
 - ✅ Tratamento de erros não-bloqueante
 
-### FASE 3: Testes e Validação ⏳ PENDENTE
-- ⏳ Aguardando execução de testes
-- ⏳ Validação de dados no banco
-- ⏳ Testes de performance
+### FASE 3: Testes e Validação ✅ CONCLUÍDA
+- ✅ Função RPC `get_data_quality_metrics()` criada
+- ✅ Queries SQL de validação documentadas em `docs/QUERIES_VALIDACAO_DADOS_ENRIQUECIDOS.md`
+- ✅ Dashboard de qualidade implementado em `/devolucoes-ml/qualidade-dados`
+- ✅ Métricas de preenchimento por campo JSONB
+- ✅ Alertas de deadlines críticos
+- ✅ Qualidade de comunicação
+- ✅ Botão de acesso no header de devoluções
+
+### FASE 4: Deploy e Monitoramento ⏳ EM ANDAMENTO
+- ✅ Edge function automaticamente deployed
+- ✅ Dashboard acessível via interface
+- ⏳ Aguardando testes com dados reais
+- ⏳ Validação de métricas de performance
 
 ---
 
 ## 🎯 PRÓXIMOS PASSOS IMEDIATOS
 
-1. **AGORA**: Testar edge function ml-returns com dados reais
-2. **DEPOIS**: Validar que dados estão sendo salvos no banco via queries SQL
-3. **EM SEGUIDA**: Atualizar frontend para exibir dados dos novos campos JSONB
-4. **POR ÚLTIMO**: Configurar monitoramento e alertas
+1. **AGORA**: Testar edge function ml-returns com dados reais da API do Mercado Livre
+2. **DEPOIS**: Validar que dados estão sendo salvos corretamente via dashboard de qualidade
+3. **EM SEGUIDA**: Monitorar performance e ajustar índices se necessário
+4. **POR ÚLTIMO**: Atualizar frontend de devoluções para exibir dados dos campos JSONB (review_info, communication_info, deadlines, etc)
+
+---
+
+## 📊 COMO USAR O DASHBOARD DE QUALIDADE
+
+### Acessar Dashboard
+1. Ir para `/devolucoes-ml`
+2. Clicar no botão "📊 Qualidade de Dados" no header
+3. OU acessar diretamente: `/devolucoes-ml/qualidade-dados`
+
+### Métricas Disponíveis
+- **Total de Devoluções**: Total de registros na base
+- **Sync 24h/7d**: Registros atualizados recentemente
+- **Alertas Críticos**: Devoluções com deadlines < 48h
+- **Taxa de Preenchimento**: % de cada campo JSONB preenchido
+- **Qualidade de Comunicação**: Distribuição de excellent/good/moderate/poor
+
+### Queries SQL de Validação
+Todas as queries estão documentadas em: `docs/QUERIES_VALIDACAO_DADOS_ENRIQUECIDOS.md`
+
+Exemplos:
+```sql
+-- Ver taxa de preenchimento geral
+SELECT * FROM get_data_quality_metrics();
+
+-- Ver deadlines críticos
+SELECT order_id, claim_id, 
+  dados_deadlines->>'hours_to_review' as horas_restantes
+FROM devolucoes_avancadas
+WHERE (dados_deadlines->>'is_review_critical')::boolean = true;
+```
 4. **DIA 4**: Testes completos
 5. **DIA 5**: Deploy em produção + monitoramento

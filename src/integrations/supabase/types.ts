@@ -6315,6 +6315,25 @@ export type Database = {
           valor_total_gasto: number
         }[]
       }
+      get_data_quality_metrics: {
+        Args: never
+        Returns: {
+          alertas_criticos: number
+          com_boa: number
+          com_excelente: number
+          com_moderada: number
+          com_ruim: number
+          pct_acoes: number
+          pct_comunicacao: number
+          pct_custos: number
+          pct_deadlines: number
+          pct_fulfillment: number
+          pct_review: number
+          sync_24h: number
+          sync_7d: number
+          total: number
+        }[]
+      }
       get_historico_venda_by_id: {
         Args: { p_id: string }
         Returns: {

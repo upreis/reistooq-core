@@ -22,6 +22,7 @@ import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import VendasOnline from "./pages/VendasOnline";
 import DevolucoesMercadoLivre from "./pages/DevolucoesMercadoLivre";
+import { DadosEnriquecidosQualidade } from "./features/devolucoes/pages/DadosEnriquecidosQualidade";
 import Scanner from "./pages/Scanner";
 
 import Reclamacoes from "./pages/Reclamacoes";
@@ -176,11 +177,16 @@ function App() {
                          <VendasOnline />
                        </PermissionRoute>
                      } />
-                     <Route path="/devolucoes-ml" element={
-                       <PermissionRoute requiredPermissions={['orders:read']}>
-                         <DevolucoesMercadoLivre />
-                       </PermissionRoute>
-                     } />
+                      <Route path="/devolucoes-ml" element={
+                        <PermissionRoute requiredPermissions={['orders:read']}>
+                          <DevolucoesMercadoLivre />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/devolucoes-ml/qualidade-dados" element={
+                        <PermissionRoute requiredPermissions={['orders:read']}>
+                          <DadosEnriquecidosQualidade />
+                        </PermissionRoute>
+                      } />
                     <Route path="/reclamacoes" element={
                       <PermissionRoute requiredPermissions={['integrations:manage']}>
                         <Reclamacoes />
