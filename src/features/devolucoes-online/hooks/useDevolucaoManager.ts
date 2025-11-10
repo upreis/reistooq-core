@@ -10,7 +10,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import useSWR from 'swr';
-import { useDebounce } from '@/hooks/useDebounce';
 import { toast } from 'react-hot-toast';
 import { MLReturn, DevolucaoFilters } from '../types/devolucao.types';
 
@@ -78,9 +77,6 @@ export function useDevolucaoManager(initialAccountId?: string) {
   // Controle de requests concorrentes
   const requestIdRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
-
-  // Debounce para filtros (500ms como em pedidos)
-  const debouncedFilters = useDebounce(filters, 500);
 
   // Carregar contas ML ativas
   const [availableMlAccounts, setAvailableMlAccounts] = useState<string[]>([]);
@@ -176,12 +172,12 @@ export function useDevolucaoManager(initialAccountId?: string) {
     };
   }, [buildApiParams]);
 
-  // ✅ SWR key estabilizada com useMemo para evitar recalculações
+  // ✅ SWR key estabilizada com useMemo
   const swrKey = useMemo(() => {
     // Se tem múltiplas contas selecionadas, usar elas na key
     if (multipleAccountIds.length > 0) {
       const accountsKey = multipleAccountIds.sort().join(',');
-      const filtersKey = stableSerializeFilters(debouncedFilters);
+      const filtersKey = stableSerializeFilters(filters);
       return ['devolucoes', accountsKey, filtersKey, currentPage, pageSize] as const;
     }
     
@@ -192,9 +188,9 @@ export function useDevolucaoManager(initialAccountId?: string) {
       return null;
     }
     
-    const filtersKey = stableSerializeFilters(debouncedFilters);
+    const filtersKey = stableSerializeFilters(filters);
     return ['devolucoes', accountToUse, filtersKey, currentPage, pageSize] as const;
-  }, [integrationAccountId, multipleAccountIds, debouncedFilters, currentPage, pageSize, availableMlAccounts]);
+  }, [integrationAccountId, multipleAccountIds, filters, currentPage, pageSize, availableMlAccounts]);
 
   // ✅ SWR com cache inteligente - SWR já gerencia deduplicação
   const { data, error: swrError, isLoading, mutate } = useSWR(
