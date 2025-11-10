@@ -105,3 +105,13 @@ verify_jwt = true
 [functions.ml-returns]
 verify_jwt = true
 
+# ============================================
+# FASE 2: Edge Functions Background
+# ============================================
+
+[functions.sync-devolucoes]
+verify_jwt = true
+
+[functions.enrich-devolucoes]
+verify_jwt = true
+
