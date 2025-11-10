@@ -12,4 +12,4 @@ export * from './mutations/useSyncDevolucoes';
 export * from './mutations/useEnrichDevolucoes';
 
 // Auto-enrichment
-export { useAutoEnrichment } from './useAutoEnrichment';
+export * from './useAutoEnrichment';
