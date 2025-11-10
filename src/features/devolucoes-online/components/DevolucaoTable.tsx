@@ -22,6 +22,7 @@ import {
 } from '@/components/ml/devolucao/cells/DeliveryCells';
 import { BuyerInfoCell } from './cells/BuyerInfoCell';
 import { ProductInfoCell } from './cells/ProductInfoCell';
+import { FinancialInfoCell } from './cells/FinancialInfoCell';
 import {
   translateStatus,
   translateStatusMoney,
