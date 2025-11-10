@@ -20,7 +20,7 @@ import { DevolucaoQuickFilters } from '@/features/devolucoes-online/components/D
 import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
 import { UrgencyFilters } from '@/features/devolucoes-online/components/filters/UrgencyFilters';
 import { CriticalDeadlinesNotification } from '@/features/devolucoes-online/components/notifications/CriticalDeadlinesNotification';
-import { SearchProgressBar } from '@/features/devolucoes-online/components/SearchProgressBar';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
@@ -346,9 +346,6 @@ export default function DevolucoesMercadoLivre() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Barra de Progresso Fixa no Topo */}
-      <SearchProgressBar isActive={isSearching || state.loading} />
-      
       <div className="flex-1 overflow-auto m-0">
         <div className="space-y-6">
           {/* Sub-navegação */}
