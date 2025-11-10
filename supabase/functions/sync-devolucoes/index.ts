@@ -74,7 +74,7 @@ async function syncDevolucoes(
         items_synced: 0,
         items_total: 0,
         items_failed: 0,
-        sync_type: 'api' // ✅ CORRIGIDO: usar 'api' ao invés de 'manual' (valor permitido pelo constraint)
+        sync_type: 'full' // ✅ CORRIGIDO: usar 'full' (valores permitidos: 'full', 'incremental', 'enrichment')
       })
       .select()
       .single();
