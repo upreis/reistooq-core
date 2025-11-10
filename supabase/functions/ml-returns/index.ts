@@ -1064,7 +1064,13 @@ Deno.serve(async (req) => {
                       data_fechamento_devolucao: returnData.date_closed,
                       data_ultima_movimentacao: returnData.last_updated,
                       
-                      // ✅ NOVOS CAMPOS JSONB - Dados enriquecidos da AUDITORIA
+                      // ✅ FIX AUDITORIA: Salvar buyer_info, product_info, financial_info separadamente
+                      dados_buyer_info: buyerInfo || {},
+                      dados_product_info: productInfo || {},
+                      dados_financial_info: financialInfo || {},
+                      dados_tracking_info: trackingInfo || {},
+                      
+                      // ✅ NOVOS CAMPOS JSONB - Dados enriquecidos
                       dados_review: reviewInfo || {},
                       dados_comunicacao: communicationInfo || {},
                       dados_deadlines: deadlines || {},
@@ -1072,9 +1078,6 @@ Deno.serve(async (req) => {
                       dados_custos_logistica: shippingCosts || {},
                       dados_fulfillment: fulfillmentInfo || {},
                       dados_lead_time: leadTimeData || {},
-                      dados_available_actions: availableActions || {},
-                      dados_shipping_costs: shippingCosts || {},
-                      dados_refund_info: financialInfo || {},
                       dados_product_condition: firstReview ? {
                         condition: firstReview.product_condition,
                         benefited: firstReview.benefited,
@@ -1141,7 +1144,7 @@ Deno.serve(async (req) => {
     } else {
       console.log(`✅ ${dbReturns.length} devoluções encontradas no banco com dados JSONB`);
       
-      // ✅ MAPEAMENTO: Converter campos do banco para formato esperado pelo frontend
+      // ✅ FIX AUDITORIA: Mapear corretamente os campos JSONB do banco
       filteredReturns = dbReturns.map(dbRet => ({
         // Campos diretos
         id: dbRet.return_id,
@@ -1149,23 +1152,25 @@ Deno.serve(async (req) => {
         order_id: dbRet.order_id,
         integration_account_id: dbRet.integration_account_id,
         status: { id: dbRet.status_devolucao, description: dbRet.status_devolucao },
-        status_money: { id: null, description: null }, // TODO: adicionar ao banco
-        subtype: { id: null, description: null }, // TODO: adicionar ao banco
+        status_money: { id: null, description: null },
+        subtype: { id: null, description: null },
         date_created: dbRet.data_criacao,
         date_closed: dbRet.data_fechamento_devolucao,
         last_updated: dbRet.data_ultima_movimentacao,
         
-        // ✅ CAMPOS JSONB MAPEADOS para os nomes esperados pelo frontend
+        // ✅ FIX CRÍTICO: Campos JSONB corretos (salvos separadamente)
+        buyer_info: dbRet.dados_buyer_info || null,
+        product_info: dbRet.dados_product_info || null,
+        financial_info: dbRet.dados_financial_info || null,
+        tracking_info: dbRet.dados_tracking_info || null,
+        
+        // ✅ Outros campos JSONB
         review_info: dbRet.dados_review || null,
         communication_info: dbRet.dados_comunicacao || null,
         deadlines: dbRet.dados_deadlines || null,
-        available_actions: dbRet.dados_acoes_disponiveis || dbRet.dados_available_actions || null,
-        shipping_costs: dbRet.dados_custos_logistica || dbRet.dados_shipping_costs || null,
+        available_actions: dbRet.dados_acoes_disponiveis || null,
+        shipping_costs: dbRet.dados_custos_logistica || null,
         fulfillment_info: dbRet.dados_fulfillment || null,
-        buyer_info: dbRet.dados_review?.buyer_info || null, // Se não tiver campo separado
-        product_info: dbRet.dados_review?.product_info || null, // Se não tiver campo separado  
-        financial_info: dbRet.dados_refund_info || null,
-        tracking_info: dbRet.dados_lead_time?.tracking || null,
         
         // Campos legados para compatibilidade
         ...dbRet,
