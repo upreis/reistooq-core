@@ -39,7 +39,9 @@ export const TrackingInfoCell = memo<TrackingInfoCellProps>(({ trackingInfo }) =
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
+    if (!status) return 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
+    
     const colors: Record<string, string> = {
       'pending': 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400',
       'ready_to_ship': 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
@@ -52,7 +54,9 @@ export const TrackingInfoCell = memo<TrackingInfoCellProps>(({ trackingInfo }) =
     return colors[status.toLowerCase()] || 'bg-gray-500/10 text-gray-600 dark:text-gray-400';
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status?: string) => {
+    if (!status) return 'Sem Status';
+    
     const labels: Record<string, string> = {
       'pending': 'Pendente',
       'ready_to_ship': 'Pronto',
