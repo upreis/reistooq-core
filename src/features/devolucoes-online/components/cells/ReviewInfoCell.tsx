@@ -1,18 +1,25 @@
 /**
- * 🔍 REVIEW INFO CELL - FASE 6
+ * 🔍 REVIEW INFO CELL - FASE 6 + 10
  * Exibe dados de revisão e qualidade do produto devolvido
+ * Clicável para abrir modal detalhado (Fase 10)
  */
 
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, XCircle, AlertCircle, Package, TrendingDown, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, XCircle, AlertCircle, Package, TrendingDown, Users, ExternalLink } from 'lucide-react';
 import type { ReviewInfo } from '../../types/devolucao.types';
+import { FullfilmentReviewModal } from '../modals/FullfilmentReviewModal';
 
 interface ReviewInfoCellProps {
   reviewInfo?: ReviewInfo | null;
+  returnId?: number;
+  claimId?: number;
 }
 
-export const ReviewInfoCell = memo<ReviewInfoCellProps>(({ reviewInfo }) => {
+export const ReviewInfoCell = memo<ReviewInfoCellProps>(({ reviewInfo, returnId, claimId }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  
   // Se não há dados de revisão
   if (!reviewInfo || !reviewInfo.has_review) {
     return (
@@ -22,6 +29,15 @@ export const ReviewInfoCell = memo<ReviewInfoCellProps>(({ reviewInfo }) => {
       </div>
     );
   }
+
+  // ✅ FASE 10: Verificar se tem dados detalhados para mostrar modal
+  const hasDetailedReview = !!(
+    reviewInfo.seller_reason_id ||
+    reviewInfo.seller_attachments?.length ||
+    reviewInfo.meli_resolution ||
+    reviewInfo.missing_quantity ||
+    reviewInfo.damaged_quantity
+  );
 
   // Traduções e cores para condição do produto
   const getProductConditionInfo = (condition: string | null) => {
@@ -88,71 +104,106 @@ export const ReviewInfoCell = memo<ReviewInfoCellProps>(({ reviewInfo }) => {
   const reviewStatusInfo = getReviewStatusInfo(reviewInfo.review_status);
 
   return (
-    <div className="space-y-1.5 min-w-[200px]">
-      {/* Status da Revisão */}
-      {reviewStatusInfo && (
-        <Badge className={`text-xs ${reviewStatusInfo.color}`}>
-          <CheckCircle2 className="w-3 h-3 mr-1" />
-          {reviewStatusInfo.label}
-        </Badge>
-      )}
-
-      {/* Condição do Produto */}
-      {conditionInfo && (
-        <div className="flex items-center gap-2">
-          <Package className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-          <Badge className={`text-xs ${conditionInfo.color}`}>
-            {conditionInfo.icon}
-            <span className="ml-1">{conditionInfo.label}</span>
+    <>
+      <div className="space-y-1.5 min-w-[200px]">
+        {/* Status da Revisão */}
+        {reviewStatusInfo && (
+          <Badge className={`text-xs ${reviewStatusInfo.color}`}>
+            <CheckCircle2 className="w-3 h-3 mr-1" />
+            {reviewStatusInfo.label}
           </Badge>
-        </div>
-      )}
+        )}
 
-      {/* Destino do Produto */}
-      {destination && (
-        <div className="flex items-center gap-2 text-xs">
-          <TrendingDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-          <span className="text-muted-foreground">Destino:</span>
-          <span className="font-medium">{destination}</span>
-        </div>
-      )}
+        {/* Condição do Produto */}
+        {conditionInfo && (
+          <div className="flex items-center gap-2">
+            <Package className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            <Badge className={`text-xs ${conditionInfo.color}`}>
+              {conditionInfo.icon}
+              <span className="ml-1">{conditionInfo.label}</span>
+            </Badge>
+          </div>
+        )}
 
-      {/* Beneficiado */}
-      {benefitedInfo && (
-        <div className="flex items-center gap-2">
-          <Users className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-          <Badge variant="outline" className={`text-xs ${benefitedInfo.color}`}>
-            {benefitedInfo.text}
+        {/* Destino do Produto */}
+        {destination && (
+          <div className="flex items-center gap-2 text-xs">
+            <TrendingDown className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-muted-foreground">Destino:</span>
+            <span className="font-medium">{destination}</span>
+          </div>
+        )}
+
+        {/* Beneficiado */}
+        {benefitedInfo && (
+          <div className="flex items-center gap-2">
+            <Users className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            <Badge variant="outline" className={`text-xs ${benefitedInfo.color}`}>
+              {benefitedInfo.text}
+            </Badge>
+          </div>
+        )}
+
+        {/* ✅ FASE 10: Indicador de Review Detalhada */}
+        {hasDetailedReview && (
+          <div className="pt-2 border-t border-border/40">
+            <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+              📋 Revisão Completa Disponível
+            </Badge>
+          </div>
+        )}
+
+        {/* Método e Estágio da Revisão */}
+        {(reviewInfo.review_method || reviewInfo.review_stage) && (
+          <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
+            {reviewInfo.review_method && (
+              <div>Método: {reviewInfo.review_method}</div>
+            )}
+            {reviewInfo.review_stage && (
+              <div>Estágio: {reviewInfo.review_stage}</div>
+            )}
+          </div>
+        )}
+
+        {/* Verificação Intermediária */}
+        {reviewInfo.is_intermediate_check && (
+          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+            ⚡ Verificação Intermediária
           </Badge>
-        </div>
-      )}
+        )}
 
-      {/* Método e Estágio da Revisão */}
-      {(reviewInfo.review_method || reviewInfo.review_stage) && (
-        <div className="text-xs text-muted-foreground pt-1 border-t border-border/40">
-          {reviewInfo.review_method && (
-            <div>Método: {reviewInfo.review_method}</div>
-          )}
-          {reviewInfo.review_stage && (
-            <div>Estágio: {reviewInfo.review_stage}</div>
-          )}
-        </div>
-      )}
+        {/* Status do Vendedor */}
+        {reviewInfo.seller_status && (
+          <div className="text-xs text-muted-foreground">
+            Vendedor: {reviewInfo.seller_status}
+          </div>
+        )}
 
-      {/* Verificação Intermediária */}
-      {reviewInfo.is_intermediate_check && (
-        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-          ⚡ Verificação Intermediária
-        </Badge>
-      )}
+        {/* ✅ FASE 10: Botão para abrir modal detalhado */}
+        {hasDetailedReview && returnId && claimId && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-2 text-xs h-7"
+            onClick={() => setModalOpen(true)}
+          >
+            <ExternalLink className="w-3 h-3 mr-1.5" />
+            Ver Detalhes Completos
+          </Button>
+        )}
+      </div>
 
-      {/* Status do Vendedor */}
-      {reviewInfo.seller_status && (
-        <div className="text-xs text-muted-foreground">
-          Vendedor: {reviewInfo.seller_status}
-        </div>
+      {/* ✅ FASE 10: Modal Detalhado */}
+      {hasDetailedReview && returnId && claimId && (
+        <FullfilmentReviewModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          reviewInfo={reviewInfo}
+          returnId={returnId}
+          claimId={claimId}
+        />
       )}
-    </div>
+    </>
   );
 });
 

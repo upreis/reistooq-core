@@ -29,10 +29,11 @@
  * }
  */
 
-export function mapReviewsData(reviewsData: any) {
+export function mapReviewsData(reviewsData: any, reviewReasons: any[] = []) {
   console.log(`🔍 [MAPPER REVIEWS] Input:`, {
     hasReviews: !!reviewsData?.reviews,
-    reviewsCount: reviewsData?.reviews?.length || 0
+    reviewsCount: reviewsData?.reviews?.length || 0,
+    hasReasons: reviewReasons.length > 0
   });
   
   if (!reviewsData?.reviews || reviewsData.reviews.length === 0) {
@@ -47,8 +48,24 @@ export function mapReviewsData(reviewsData: any) {
     hasFirstReview: !!firstReview,
     hasResourceReviews: !!resourceReview,
     stage: resourceReview?.stage,
-    status: resourceReview?.status
+    status: resourceReview?.status,
+    sellerReason: resourceReview?.seller_reason
   });
+
+  // ✅ FASE 10: Extrair anexos se existirem
+  const attachments = resourceReview?.attachments?.map((att: any) => ({
+    id: att.id || att.attachment_id,
+    url: att.url || att.attachment_url,
+    type: att.type || att.content_type || 'unknown',
+    filename: att.filename || att.name,
+    description: att.description
+  })) || [];
+
+  // ✅ FASE 10: Buscar descrição da razão de falha
+  const sellerReasonId = resourceReview?.seller_reason;
+  const sellerReasonDescription = sellerReasonId 
+    ? reviewReasons.find(r => r.id === sellerReasonId)?.detail 
+    : null;
 
   return {
     // ✅ Identificação (nível do review)
@@ -70,10 +87,28 @@ export function mapReviewsData(reviewsData: any) {
     
     // ✅ Status do vendedor
     seller_status: resourceReview?.seller_status || null, // 'pending', 'success', 'failed', 'claimed'
-    seller_reason: resourceReview?.seller_reason || null, // 'SRF2', 'SRF3', 'SRF6', 'SRF7'
+    seller_reason: sellerReasonId, // 'SRF2', 'SRF3', 'SRF6', 'SRF7'
     
-    // ✅ Quantidade faltante (quando produto não chegou)
+    // ✅ FASE 10: Dados detalhados da revisão do vendedor
+    seller_reason_description: sellerReasonDescription,
+    seller_message: resourceReview?.seller_message || resourceReview?.message || null,
+    seller_attachments: attachments,
+    
+    // ✅ Quantidade faltante/danificada (quando produto não chegou)
     missing_quantity: resourceReview?.missing_quantity || 0,
+    damaged_quantity: resourceReview?.damaged_quantity || 0,
+    
+    // ✅ FASE 10: Decisão do MELI (se houver)
+    meli_resolution: resourceReview?.meli_decision ? {
+      date: resourceReview.meli_decision.date || new Date().toISOString(),
+      reason: resourceReview.meli_decision.reason,
+      final_benefited: resourceReview.meli_decision.benefited || resourceReview.benefited,
+      comments: resourceReview.meli_decision.comments,
+      decided_by: resourceReview.meli_decision.decided_by || 'MELI'
+    } : null,
+    
+    // ✅ FASE 10: Razões disponíveis para o vendedor
+    available_reasons: reviewReasons,
     
     // ✅ Datas
     date_created: firstReview.date_created || null,

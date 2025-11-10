@@ -328,9 +328,13 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   <TrackingInfoCell trackingInfo={dev.tracking_info} />
                 </TableCell>
                 
-                {/* ✅ FASE 6: Dados de Revisão */}
+                {/* ✅ FASE 6 + 10: Dados de Revisão */}
                 <TableCell>
-                  <ReviewInfoCell reviewInfo={dev.review_info} />
+                  <ReviewInfoCell 
+                    reviewInfo={dev.review_info}
+                    returnId={dev.id}
+                    claimId={dev.claim_id}
+                  />
                 </TableCell>
                 
                 {/* ✅ FASE 7: Dados de Comunicação */}

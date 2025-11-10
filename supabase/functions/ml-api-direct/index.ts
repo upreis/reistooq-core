@@ -2099,15 +2099,48 @@ async function buscarPedidosCancelados(
                 let mappedReviews = null;
                 let extractedReviewsFields = {};
                 
-                // Buscar reviews dos returns se existirem
+                // ✅ FASE 10: Buscar reviews detalhados dos returns se existirem
                 let returnReviews = []
+                let reviewReasons = [] // Razões de falha disponíveis
+                
                 if (returnsV2?.results?.length > 0) {
                   const reviewPromises = returnsV2.results.map(async (returnItem: any) => {
                     try {
+                      // Buscar review do return
                       const response = await fetch(`https://api.mercadolibre.com/post-purchase/v1/returns/${returnItem.id}/reviews`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` }
                       })
-                      return response.ok ? await response.json() : null
+                      
+                      if (!response.ok) {
+                        if (response.status === 400) {
+                          console.log(`ℹ️ Review não encontrada (400) para return ${returnItem.id}`)
+                        }
+                        return null
+                      }
+                      
+                      const reviewData = await response.json()
+                      
+                      // ✅ FASE 10: Se houver intermediate_check, buscar razões de falha disponíveis
+                      if (returnItem.intermediate_check) {
+                        try {
+                          const reasonsUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/reasons?flow=seller_return_failed&claim_id=${mediationId}`
+                          const reasonsResponse = await fetch(reasonsUrl, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                          })
+                          
+                          if (reasonsResponse.ok) {
+                            const reasonsData = await reasonsResponse.json()
+                            if (reasonsData?.reasons && Array.isArray(reasonsData.reasons)) {
+                              reviewReasons = reasonsData.reasons
+                              console.log(`✅ ${reviewReasons.length} razões de falha encontradas para claim ${mediationId}`)
+                            }
+                          }
+                        } catch (e) {
+                          console.warn(`⚠️ Erro ao buscar razões de falha:`, e)
+                        }
+                      }
+                      
+                      return reviewData
                     } catch (error) {
                       console.warn(`⚠️ Erro ao buscar review do return ${returnItem.id}:`, error)
                       return null
@@ -2134,8 +2167,8 @@ async function buscarPedidosCancelados(
                         } : 'sem reviews'
                       });
                       
-                      // Aplicar mappers
-                      mappedReviews = mapReviewsData(reviewData);
+                      // Aplicar mappers com razões de falha
+                      mappedReviews = mapReviewsData(reviewData, reviewReasons);
                       extractedReviewsFields = extractReviewsFields(reviewData);
                       
                       console.log(`✅ Reviews mapeados com sucesso:`, {

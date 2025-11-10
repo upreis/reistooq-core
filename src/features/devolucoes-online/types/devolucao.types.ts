@@ -274,6 +274,44 @@ export interface ReviewInfo {
   benefited?: string | null;
   seller_status?: string | null;
   is_intermediate_check?: boolean;
+  
+  // ✅ FASE 10: Dados detalhados de Fullfilment Review
+  seller_reason_id?: string | null;
+  seller_reason_description?: string | null;
+  seller_message?: string | null;
+  seller_attachments?: ReviewAttachment[];
+  missing_quantity?: number;
+  damaged_quantity?: number;
+  meli_resolution?: MeliResolution | null;
+  seller_evaluation_status?: 'pending' | 'completed' | 'expired' | null;
+  seller_evaluation_deadline?: string | null;
+  available_reasons?: ReviewReason[];
+}
+
+// ✅ FASE 10: Attachment da revisão
+export interface ReviewAttachment {
+  id: string;
+  url: string;
+  type: string;
+  filename?: string;
+  description?: string;
+}
+
+// ✅ FASE 10: Razão de falha do vendedor
+export interface ReviewReason {
+  id: string; // ex: "SRF2", "SRF3"
+  detail: string;
+  name: string;
+  category?: string;
+}
+
+// ✅ FASE 10: Resolução do MELI
+export interface MeliResolution {
+  date: string;
+  reason?: string;
+  final_benefited: 'buyer' | 'seller';
+  comments?: string | null;
+  decided_by?: string;
 }
 
 // ✅ FASE 7: Dados de comunicação e mensagens
