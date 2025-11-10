@@ -90,7 +90,14 @@ export default function DashboardVisaoGeral() {
       {/* Calendário de Devoluções */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Calendário de Devoluções</CardTitle>
+          <div className="space-y-1">
+            <CardTitle>Calendário de Devoluções</CardTitle>
+            {!calendarLoading && calendarData.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                📦 {calendarData.reduce((sum, day) => sum + day.count, 0)} devoluções em {calendarData.length} dias
+              </p>
+            )}
+          </div>
           <button
             onClick={() => refresh()}
             disabled={calendarLoading}
@@ -108,17 +115,56 @@ export default function DashboardVisaoGeral() {
           </button>
         </CardHeader>
         <CardContent>
-          <ActivityCalendar 
-            data={calendarLoading ? [] : calendarData}
-            title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
-            monthsBack={3}
-            monthsForward={3}
-          />
-          
-          {calendarLoading && (
-            <div className="text-center text-sm text-muted-foreground mt-4">
-              Carregando dados de devoluções...
+          {calendarLoading ? (
+            <div className="space-y-4">
+              {/* Loading Skeleton */}
+              <div className="flex gap-2 items-center">
+                <div className="h-4 w-24 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+              </div>
+              
+              <div className="overflow-x-auto pb-2">
+                <div className="flex min-w-max gap-2">
+                  <div className="flex flex-col gap-1">
+                    {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                      <div key={i} className="h-8 w-8 bg-muted animate-pulse rounded" />
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    {Array.from({ length: 26 }).map((_, weekIndex) => (
+                      <div key={weekIndex} className="flex flex-col gap-1">
+                        {[1, 2, 3, 4, 5, 6, 7].map((dayIndex) => (
+                          <div 
+                            key={dayIndex} 
+                            className="w-8 h-8 bg-muted animate-pulse rounded-md"
+                            style={{ animationDelay: `${(weekIndex * 7 + dayIndex) * 20}ms` }}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 items-center">
+                <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-40 bg-muted animate-pulse rounded" />
+                <div className="h-6 w-40 bg-muted animate-pulse rounded" />
+              </div>
+              
+              <div className="text-center text-sm text-muted-foreground mt-4">
+                Carregando dados de devoluções...
+              </div>
             </div>
+          ) : (
+            <ActivityCalendar 
+              data={calendarData}
+              title="Prazos de Entrega e Revisão (3 meses atrás - 3 meses à frente)"
+              monthsBack={3}
+              monthsForward={3}
+            />
           )}
           
           {calendarError && (
