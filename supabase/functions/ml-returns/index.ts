@@ -907,7 +907,8 @@ Deno.serve(async (req) => {
                   console.warn(`⚠️ Erro ao buscar mensagens do claim ${claim.id}:`, getErrorMessage(error));
                 }
 
-
+                // ✅ FASE 8: Montar objeto completo enriquecido
+                const enrichedReturn = {
                   // ID da conta de integração para identificar a origem
                   integration_account_id: accountId,
                   
@@ -1014,7 +1015,10 @@ Deno.serve(async (req) => {
                     buyer_id: orderData.buyer?.id || null,
                   } : null,
                   resource: returnData.resource_type,
-                });
+                };
+                
+                // Adicionar ao array de retornos
+                allReturns.push(enrichedReturn);
                 
                 // ✅ FASE 15: UPSERT - Salvar dados enriquecidos no banco
                 try {
