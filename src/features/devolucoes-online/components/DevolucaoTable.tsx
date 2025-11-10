@@ -20,6 +20,16 @@ import {
   ReviewStatusCell, 
   QuantityCell 
 } from '@/components/ml/devolucao/cells/DeliveryCells';
+import { 
+  translateStatus,
+  translateStatusMoney,
+  translateSubtype,
+  translateResourceType,
+  translateShipmentStatus,
+  getStatusVariant,
+  getStatusMoneyVariant,
+  getShipmentStatusVariant
+} from '../utils/translations';
 
 interface DevolucaoTableWithAnalise extends MLReturn {
   status_analise?: StatusAnalise;
@@ -268,22 +278,29 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    variant="outline" 
-                    className={`text-xs ${getStatusColor(dev.status?.id || '')}`}
+                    variant={getStatusVariant(dev.status?.id || null)}
+                    className="text-xs"
                   >
-                    {dev.status?.description || dev.status?.id || '-'}
+                    {translateStatus(dev.status?.id || null)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge 
+                    variant={getStatusMoneyVariant(dev.status_money?.id || null)}
+                    className="text-xs"
+                  >
+                    {translateStatusMoney(dev.status_money?.id || null)}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs">
-                    {dev.status_money?.description || dev.status_money?.id || '-'}
+                    {translateSubtype(dev.subtype?.id || null)}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs">
-                  {dev.subtype?.description || dev.subtype?.id || '-'}
-                </TableCell>
-                <TableCell className="text-xs">
-                  {dev.resource_type || '-'}
+                <TableCell>
+                  <Badge variant="secondary" className="text-xs">
+                    {translateResourceType(dev.resource_type || null)}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs">
@@ -299,8 +316,13 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell className="text-xs">
                   {dev.shipment_id || '-'}
                 </TableCell>
-                <TableCell className="text-xs">
-                  {dev.shipment_status || '-'}
+                <TableCell>
+                  <Badge 
+                    variant={getShipmentStatusVariant(dev.shipment_status || null)}
+                    className="text-xs"
+                  >
+                    {translateShipmentStatus(dev.shipment_status || null)}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="text-xs">
