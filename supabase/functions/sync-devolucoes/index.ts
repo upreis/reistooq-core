@@ -51,10 +51,10 @@ async function syncDevolucoes(
   let syncId: string | null = null;
   
   try {
-    // 1. Obter ml_user_id da conta de integração
+    // 1. Obter account_identifier (ML user_id) da conta de integração
     const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
-      .select('ml_user_id, organization_id')
+      .select('account_identifier, organization_id')
       .eq('id', integrationAccountId)
       .single();
 
@@ -62,7 +62,7 @@ async function syncDevolucoes(
       throw new Error(`Conta de integração não encontrada: ${accountError?.message}`);
     }
 
-    logger.info(`ML User ID: ${account.ml_user_id}`);
+    logger.info(`ML User ID: ${account.account_identifier}`);
 
     // 2. Criar registro de sync inicial
     const { data: syncRecord, error: syncInsertError } = await supabase
@@ -110,7 +110,7 @@ async function syncDevolucoes(
         body: JSON.stringify({
           action: 'get_claims_and_returns',
           integration_account_id: integrationAccountId,
-          seller_id: account.ml_user_id,
+          seller_id: account.account_identifier,
           limit: batchSize,
           offset: offset,
           filters: {
