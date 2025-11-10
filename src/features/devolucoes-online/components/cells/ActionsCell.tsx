@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -13,6 +13,8 @@ import {
 import { useConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import type { AvailableActions } from '@/features/devolucoes-online/types/devolucao.types';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useDevolucaoStore } from '@/features/devolucoes-online/store/useDevolucaoStore';
 
 interface ActionsCellProps {
   returnId: number;
@@ -27,8 +29,9 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
   availableActions,
   onActionExecuted 
 }) => {
-  const [loadingAction, setLoadingAction] = React.useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<string | null>(null);
   const { showConfirmation, dialog } = useConfirmationDialog();
+  const { filters } = useDevolucaoStore();
 
   if (!availableActions) {
     return (
@@ -51,15 +54,40 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
         setLoadingAction(actionType);
         
         try {
-          // TODO: Implementar chamada para edge function que executará a ação
-          // const { error } = await supabase.functions.invoke('ml-execute-action', {
-          //   body: { returnId, claimId, actionType }
-          // });
+          console.log(`🎬 Executando ação ${actionType} para return ${returnId}, claim ${claimId}`);
           
-          // Simulação temporária
-          await new Promise(resolve => setTimeout(resolve, 1500));
+          // Chamar edge function real
+          const { data, error } = await supabase.functions.invoke('ml-execute-action', {
+            body: { 
+              returnId, 
+              claimId, 
+              actionType,
+              integrationAccountId: filters.integrationAccountId 
+            }
+          });
           
-          toast.success(`Ação "${actionName}" executada com sucesso!`);
+          if (error) {
+            console.error('Erro ao executar ação:', error);
+            toast.error(`Erro ao executar ação "${actionName}": ${error.message}`);
+            return;
+          }
+
+          if (!data.success) {
+            console.error('Ação falhou:', data.error);
+            toast.error(`Erro: ${data.error}`);
+            return;
+          }
+
+          console.log(`✅ Ação executada com sucesso:`, data);
+          
+          // Para print_label, abrir em nova aba
+          if (actionType === 'print_label' && data.data?.label_url) {
+            window.open(data.data.label_url, '_blank');
+            toast.success('Etiqueta aberta em nova aba!');
+          } else {
+            toast.success(`Ação "${actionName}" executada com sucesso!`);
+          }
+          
           onActionExecuted?.();
         } catch (error) {
           console.error('Erro ao executar ação:', error);
