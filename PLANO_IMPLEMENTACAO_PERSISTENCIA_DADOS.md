@@ -548,9 +548,58 @@ Os dados enriquecidos são automaticamente salvos no banco pela edge function `m
 #### ⏳ Semana 3: Monitoramento e Documentação (0% completo)
 - [ ] Monitoramento ativo 24h
 - [ ] Ajustes baseados em feedback
-- [ ] Documentação de troubleshooting
 - [ ] Treinamento de usuários
 - [ ] Retrospectiva e planejamento futuro
+
+### FASE 5: Documentação ✅ CONCLUÍDA
+**Status:** 100% Completo
+
+- ✅ Arquitetura do sistema documentada
+- ✅ Guia do desenvolvedor criado
+- ✅ API Reference das edge functions
+- ✅ Exemplos de código e queries
+- ✅ Troubleshooting guide
+- ✅ Diagramas de fluxo (Mermaid)
+
+**Documentos Criados:**
+
+1. **[ARQUITETURA_DADOS_ENRIQUECIDOS.md](./docs/ARQUITETURA_DADOS_ENRIQUECIDOS.md)**
+   - 🏗️ Visão geral da arquitetura
+   - 🗄️ Estrutura da tabela e modelo de dados JSONB
+   - 🔄 Fluxo de dados end-to-end (API → Edge Function → DB → Frontend)
+   - 🧩 Componentes principais (Edge Function, Hooks, Células)
+   - ⚡ Performance e otimização (índices GIN, caching)
+   - 🔒 Segurança e RLS
+   - 📊 Monitoramento e métricas
+   - Diagrama Mermaid da arquitetura
+   
+2. **[GUIA_DESENVOLVEDOR.md](./docs/GUIA_DESENVOLVEDOR.md)**
+   - 🚀 Início rápido e setup local
+   - 📁 Estrutura do projeto
+   - 🛠️ Tarefas comuns:
+     - Adicionar novo campo JSONB (6 passos)
+     - Debugar dados não aparecem
+     - Otimizar performance
+     - Testar localmente
+   - 🧪 Testes e validação
+   - 🔧 Ferramentas de desenvolvimento
+   - 📊 Queries úteis (50+ exemplos)
+   - 🚨 Troubleshooting comum
+   - ✅ Checklist de deploy
+   
+3. **[API_EDGE_FUNCTIONS.md](./docs/API_EDGE_FUNCTIONS.md)**
+   - 📡 Documentação completa da edge function `ml-returns`
+   - 📥 Request schema e exemplos (curl)
+   - 📤 Response schema com todos os tipos
+   - ❌ Error responses (400, 401, 500, 503)
+   - 🔧 Internal functions documentadas:
+     - `calculateDeadlines()`
+     - `extractReviewInfo()`
+     - `extractCommunicationInfo()`
+   - 📊 Database UPSERT logic
+   - ⚡ Performance metrics e rate limiting
+   - 🔍 Debugging guide com logs
+   - 🧪 Testing examples
 
 ---
 
@@ -559,7 +608,7 @@ Os dados enriquecidos são automaticamente salvos no banco pela edge function `m
 1. **AGORA**: Testar edge function ml-returns com dados reais da API do Mercado Livre
 2. **DEPOIS**: Executar queries de validação SQL (ver `docs/QUERIES_VALIDACAO_DADOS_ENRIQUECIDOS.md`)
 3. **EM SEGUIDA**: Validar taxa de preenchimento via dashboard (`/devolucoes-ml/qualidade-dados`)
-4. **POR ÚLTIMO**: Testar componentes de visualização e modals
+4. **POR ÚLTIMO**: Completar Semana 2 e 3 da FASE 4 (testes, otimização, monitoramento)
 
 ---
 
