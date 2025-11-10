@@ -85,6 +85,9 @@ export interface MLReturn {
   
   // ✅ FASE 11: Ações disponíveis do vendedor
   available_actions?: AvailableActions;
+  
+  // ✅ FASE 12: Custos detalhados de logística
+  shipping_costs?: ShippingCosts;
 }
 
 // ✅ FASE 11: Ações disponíveis
@@ -96,6 +99,50 @@ export interface AvailableActions {
   can_refund?: boolean;
   can_ship?: boolean;
   actions_last_updated?: string;
+}
+
+// ✅ FASE 12: Custos detalhados de logística
+export interface ShippingCosts {
+  custo_envio_ida: number | null;
+  custo_envio_retorno: number | null;
+  custo_total_logistica: number | null;
+  currency_id: string;
+  breakdown?: CostBreakdown;
+  costs_last_updated?: string;
+}
+
+export interface CostBreakdown {
+  forward_shipping?: {
+    amount: number;
+    currency_id: string;
+    description?: string;
+  };
+  return_shipping?: {
+    amount: number;
+    currency_id: string;
+    description?: string;
+  };
+  handling_fee?: {
+    amount: number;
+    currency_id: string;
+    description?: string;
+  };
+  storage_fee?: {
+    amount: number;
+    currency_id: string;
+    description?: string;
+  };
+  insurance?: {
+    amount: number;
+    currency_id: string;
+    description?: string;
+  };
+  other_costs?: Array<{
+    type: string;
+    amount: number;
+    currency_id: string;
+    description?: string;
+  }>;
 }
 
 // ✅ FASE 8: Lead Time Data

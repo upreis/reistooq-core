@@ -30,6 +30,7 @@ import { CommunicationInfoCell } from './cells/CommunicationInfoCell';
 import { DeadlinesCell } from './cells/DeadlinesCell';
 import { SubstatusCell } from './cells/SubstatusCell';
 import { ActionsCell } from './cells/ActionsCell';
+import { ShippingCostsCell } from './cells/ShippingCostsCell';
 import {
   translateStatus,
   translateStatusMoney,
@@ -266,6 +267,18 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             <TableHead className="font-semibold whitespace-nowrap">
               <span className="flex items-center gap-1.5">
                 📍 Substatus
+              </span>
+            </TableHead>
+            {/* ✅ FASE 12: Custos Logística */}
+            <TableHead className="font-semibold whitespace-nowrap min-w-[200px]">
+              <span className="flex items-center gap-1.5">
+                💰 Custos Logística
+              </span>
+            </TableHead>
+            {/* ✅ FASE 11: Ações Disponíveis */}
+            <TableHead className="font-semibold whitespace-nowrap min-w-[200px]">
+              <span className="flex items-center gap-1.5">
+                🎬 Ações Disponíveis
               </span>
             </TableHead>
             <TableHead className="font-semibold">Análise</TableHead>
@@ -545,6 +558,12 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     trackingInfo={dev.tracking_info}
                   />
                 </TableCell>
+                {/* ✅ FASE 12: Custos de Logística */}
+                <ShippingCostsCell 
+                  shippingCosts={dev.shipping_costs}
+                  returnId={dev.id}
+                  claimId={dev.claim_id}
+                />
                 {/* ✅ FASE 11: Ações Disponíveis */}
                 <TableCell>
                   <ActionsCell 

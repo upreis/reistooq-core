@@ -495,6 +495,74 @@ Deno.serve(async (req) => {
                   console.warn(`⚠️ Erro ao buscar ações do claim ${claim.id}:`, getErrorMessage(error));
                 }
                 
+                // ✅ FASE 12: Buscar custos detalhados de logística
+                let shippingCosts: any = null;
+                if (firstShipment?.shipment_id) {
+                  try {
+                    console.log(`💰 Buscando custos de logística para shipment ${firstShipment.shipment_id}...`);
+                    const costsUrl = `https://api.mercadolibre.com/shipments/${firstShipment.shipment_id}/costs`;
+                    const costsResponse = await fetch(costsUrl, {
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    if (costsResponse.ok) {
+                      const costsData = await costsResponse.json();
+                      console.log(`✅ Custos obtidos para shipment ${firstShipment.shipment_id}:`, JSON.stringify(costsData, null, 2));
+                      
+                      // Extrair valores principais
+                      const forwardShipping = costsData.forward_shipping || costsData.shipping?.forward;
+                      const returnShipping = costsData.return_shipping || costsData.shipping?.return;
+                      
+                      shippingCosts = {
+                        custo_envio_ida: forwardShipping?.amount || null,
+                        custo_envio_retorno: returnShipping?.amount || null,
+                        custo_total_logistica: (forwardShipping?.amount || 0) + (returnShipping?.amount || 0),
+                        currency_id: costsData.currency_id || forwardShipping?.currency_id || 'BRL',
+                        breakdown: {
+                          forward_shipping: forwardShipping ? {
+                            amount: forwardShipping.amount,
+                            currency_id: forwardShipping.currency_id || 'BRL',
+                            description: forwardShipping.description || 'Frete original do pedido',
+                          } : undefined,
+                          return_shipping: returnShipping ? {
+                            amount: returnShipping.amount,
+                            currency_id: returnShipping.currency_id || 'BRL',
+                            description: returnShipping.description || 'Frete da devolução',
+                          } : undefined,
+                          handling_fee: costsData.handling_fee ? {
+                            amount: costsData.handling_fee.amount,
+                            currency_id: costsData.handling_fee.currency_id || 'BRL',
+                            description: costsData.handling_fee.description,
+                          } : undefined,
+                          storage_fee: costsData.storage_fee ? {
+                            amount: costsData.storage_fee.amount,
+                            currency_id: costsData.storage_fee.currency_id || 'BRL',
+                            description: costsData.storage_fee.description,
+                          } : undefined,
+                          insurance: costsData.insurance ? {
+                            amount: costsData.insurance.amount,
+                            currency_id: costsData.insurance.currency_id || 'BRL',
+                            description: costsData.insurance.description,
+                          } : undefined,
+                          other_costs: costsData.other_costs || [],
+                        },
+                        costs_last_updated: new Date().toISOString(),
+                      };
+                      
+                      console.log(`💰 Custos mapeados:`, shippingCosts);
+                    } else {
+                      console.warn(`⚠️ Custos não disponíveis (${costsResponse.status}) para shipment ${firstShipment.shipment_id}`);
+                    }
+                  } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar custos do shipment ${firstShipment.shipment_id}:`, getErrorMessage(error));
+                  }
+                } else {
+                  console.log(`ℹ️ Return ${returnData.id} não tem shipment_id para buscar custos`);
+                }
+                
                 
                 // ✅ FASE 1, 2, 3 & 5: Buscar dados do pedido para obter buyer_id, item_id, dados financeiros e tracking
                 let orderData: any = null;
@@ -769,6 +837,9 @@ Deno.serve(async (req) => {
                   
                   // ✅ FASE 11: Ações disponíveis do vendedor
                   available_actions: availableActions,
+                  
+                  // ✅ FASE 12: Custos detalhados de logística
+                  shipping_costs: shippingCosts,
 
 
                   // Order info (legacy)
