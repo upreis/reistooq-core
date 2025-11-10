@@ -1,4 +1,4 @@
-// 📦 ML API DIRECT - Fase 4 Implementada: Endpoints + Mappers Integrados
+// 📦 ML API DIRECT - Fase 8: Deadlines e Lead Time
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { mapReasonWithApiData } from './mappers/reason-mapper.ts'
@@ -11,6 +11,7 @@ import { mapShipmentCostsData, extractCostsFields } from './mappers/costs-mapper
 import { mapDetailedReasonsData, extractDetailedReasonsFields } from './mappers/reasons-detailed-mapper.ts'
 import { fetchMLWithRetry } from './utils/retryHandler.ts'
 import { ReasonsService } from './services/reasonsService.ts'
+import { calculateDeadlines } from './utils/deadlineCalculator.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1983,7 +1984,63 @@ async function buscarPedidosCancelados(
                 })()
               )
               
-              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails, shipmentCosts, shipmentTracking] = await Promise.all(claimPromises)
+              // 🆕 11. BUSCAR LEAD TIME E CLAIM PARA DEADLINES (FASE 8)
+              claimPromises.push(
+                (async () => {
+                  let leadTime = null
+                  let claimData = null
+                  
+                  // Buscar lead_time do shipment de devolução
+                  try {
+                    const returnsResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v2/claims/${mediationId}/returns`,
+                      accessToken,
+                      integrationAccountId
+                    )
+                    if (returnsResponse.ok) {
+                      const returnsData = await returnsResponse.json()
+                      const shipmentId = returnsData?.results?.[0]?.shipments?.[0]?.id || 
+                                        returnsData?.results?.[0]?.shipments?.[0]?.shipment_id
+                      if (shipmentId) {
+                        console.log(`⏰ Buscando lead_time do shipment ${shipmentId}...`)
+                        const leadTimeResponse = await fetchMLWithRetry(
+                          `https://api.mercadolibre.com/shipments/${shipmentId}/lead_time`,
+                          accessToken,
+                          integrationAccountId,
+                          { 'x-format-new': 'true' }
+                        )
+                        if (leadTimeResponse.ok) {
+                          leadTime = await leadTimeResponse.json()
+                          console.log(`⏰ Lead time encontrado`)
+                        } else if (leadTimeResponse.status === 404) {
+                          console.log(`ℹ️  Lead time não disponível (404)`)
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    console.warn(`⚠️ Erro ao buscar lead_time:`, e)
+                  }
+                  
+                  // Buscar claim completo para pegar available_actions e deadlines
+                  try {
+                    const claimResponse = await fetchMLWithRetry(
+                      `https://api.mercadolibre.com/post-purchase/v1/claims/${mediationId}`,
+                      accessToken,
+                      integrationAccountId
+                    )
+                    if (claimResponse.ok) {
+                      claimData = await claimResponse.json()
+                      console.log(`⏰ Claim completo encontrado para deadlines`)
+                    }
+                  } catch (e) {
+                    console.warn(`⚠️ Erro ao buscar claim para deadlines:`, e)
+                  }
+                  
+                  return { leadTime, claimData }
+                })()
+              )
+              
+              const [claimDetails, claimMessagesDirect, claimMessagesPack, mediationDetails, returnsV2, returnsV1, shipmentHistory, changeDetails, shipmentCosts, shipmentTracking, deadlineData] = await Promise.all(claimPromises)
                 
                 // Consolidar mensagens de ambas as fontes
                 const allMessages = [
@@ -2700,6 +2757,51 @@ async function buscarPedidosCancelados(
                 const item = safeOrderDetail?.order_items?.[0]?.item
                 return item?.thumbnail || item?.picture_url || null
               })(),
+              
+              // ============================================
+              // ⏰ FASE 8: PRAZOS E DEADLINES
+              // ============================================
+              
+              // 🆕 Calcular todos os deadlines usando dados de lead_time e claim
+              ...((() => {
+                // Pegar dados básicos do return
+                const returnBasicData = {
+                  id: returnsV2?.results?.[0]?.id || returnsV1?.results?.[0]?.id,
+                  date_created: returnsV2?.results?.[0]?.date_created || returnsV1?.results?.[0]?.date_created,
+                  intermediate_check: returnsV2?.results?.[0]?.intermediate_check || returnsV1?.results?.[0]?.intermediate_check,
+                  expiration_date: returnsV2?.results?.[0]?.expiration_date || returnsV1?.results?.[0]?.expiration_date || null
+                }
+                
+                // Calcular deadlines
+                const deadlines = calculateDeadlines(
+                  returnBasicData,
+                  deadlineData?.leadTime || null,
+                  deadlineData?.claimData || null
+                )
+                
+                return {
+                  // Deadlines
+                  prazo_envio_comprador: deadlines.shipment_deadline,
+                  prazo_recebimento_vendedor: deadlines.seller_receive_deadline,
+                  prazo_avaliacao_vendedor: deadlines.seller_review_deadline,
+                  prazo_decisao_meli: deadlines.meli_decision_deadline,
+                  data_expiracao: deadlines.expiration_date,
+                  
+                  // Horas restantes
+                  horas_restantes_envio: deadlines.shipment_deadline_hours_left,
+                  horas_restantes_avaliacao: deadlines.seller_review_deadline_hours_left,
+                  
+                  // Flags de urgência
+                  prazo_envio_critico: deadlines.is_shipment_deadline_critical,
+                  prazo_avaliacao_critico: deadlines.is_review_deadline_critical,
+                  
+                  // Dados completos do lead_time (JSON)
+                  dados_lead_time: deadlineData?.leadTime ? JSON.stringify(deadlineData.leadTime) : null,
+                  
+                  // Dados de deadlines (JSON para frontend)
+                  dados_deadlines: JSON.stringify(deadlines)
+                }
+              })()),
               
               // 4. ANÁLISE E QUALIDADE - Agora via utilitário
               ...analyzeInternalTags(safeClaimData, safeOrderDetail, safeShipmentData),

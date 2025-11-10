@@ -1,6 +1,6 @@
 /**
- * 📊 DEVOLUÇÃO TABLE - OTIMIZADA
- * Tabela de devoluções com memoização
+ * 📊 DEVOLUÇÃO TABLE - OTIMIZADA COM DEADLINES
+ * Tabela de devoluções com memoização e prazos
  */
 
 import { memo } from 'react';
@@ -27,6 +27,7 @@ import { OrderInfoCell } from './cells/OrderInfoCell';
 import { TrackingInfoCell } from './cells/TrackingInfoCell';
 import { ReviewInfoCell } from './cells/ReviewInfoCell';
 import { CommunicationInfoCell } from './cells/CommunicationInfoCell';
+import { DeadlinesCell } from './cells/DeadlinesCell';
 import {
   translateStatus,
   translateStatusMoney,
@@ -252,6 +253,13 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             <TableHead className="font-semibold">Criação</TableHead>
             <TableHead className="font-semibold">Atualização</TableHead>
             <TableHead className="font-semibold">Fechamento</TableHead>
+            {/* ✅ FASE 8: Prazos */}
+            <TableHead className="font-semibold whitespace-nowrap">
+              <span className="flex items-center gap-1.5">
+                ⏰ Prazos
+              </span>
+            </TableHead>
+            <TableHead className="font-semibold">Análise</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -508,6 +516,22 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 </TableCell>
                 <TableCell className="text-xs">
                   {formatDate(dev.date_closed)}
+                </TableCell>
+                {/* ✅ FASE 8: Prazos */}
+                <TableCell>
+                  <DeadlinesCell 
+                    deadlines={dev.deadlines}
+                    status={dev.status?.id || 'pending'}
+                  />
+                </TableCell>
+                {/* Status Análise */}
+                <TableCell>
+                  {onStatusChange && (
+                    <StatusAnaliseSelect
+                      value={dev.status_analise || 'pendente'}
+                      onChange={(newStatus) => onStatusChange(String(dev.id), newStatus)}
+                    />
+                  )}
                 </TableCell>
               </TableRow>
             );

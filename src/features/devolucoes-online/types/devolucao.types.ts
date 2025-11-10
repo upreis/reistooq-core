@@ -78,6 +78,44 @@ export interface MLReturn {
   
   // ✅ FASE 7: Dados de comunicação e mensagens
   communication_info?: CommunicationInfo;
+  
+  // ✅ FASE 8: Prazos e Deadlines
+  deadlines?: Deadlines;
+  lead_time?: LeadTimeData;
+}
+
+// ✅ FASE 8: Lead Time Data
+export interface LeadTimeData {
+  estimated_delivery_time: {
+    date: string;
+    unit: 'hour' | 'day';
+    shipping: number;
+    handling: number;
+    schedule?: {
+      from: string;
+      to: string;
+    };
+  };
+  estimated_schedule_limit?: {
+    date: string;
+  };
+  delivery_promise: 'estimated' | 'guaranteed';
+  cost: number;
+  currency_id: string;
+}
+
+// ✅ FASE 8: Deadlines
+export interface Deadlines {
+  shipment_deadline: string | null;
+  seller_receive_deadline: string | null;
+  seller_review_deadline: string | null;
+  meli_decision_deadline: string | null;
+  expiration_date: string | null;
+  
+  shipment_deadline_hours_left: number | null;
+  seller_review_deadline_hours_left: number | null;
+  is_shipment_deadline_critical: boolean;
+  is_review_deadline_critical: boolean;
 }
 
 export interface ReturnStatus {

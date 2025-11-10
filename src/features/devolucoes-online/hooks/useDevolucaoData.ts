@@ -38,6 +38,31 @@ const fetchDevolucoes = async (params: FetchDevolucaoParams): Promise<DevolucaoR
     throw new Error(error.message || 'Erro ao buscar devoluções');
   }
 
+  // ✅ FASE 8: Parsear dados de deadlines do JSON retornado
+  if (data?.returns && Array.isArray(data.returns)) {
+    data.returns = data.returns.map((devolucao: any) => {
+      // Parsear dados_deadlines se existir
+      if (devolucao.dados_deadlines && typeof devolucao.dados_deadlines === 'string') {
+        try {
+          devolucao.deadlines = JSON.parse(devolucao.dados_deadlines);
+        } catch (e) {
+          console.warn('Erro ao parsear deadlines:', e);
+        }
+      }
+      
+      // Parsear dados_lead_time se existir
+      if (devolucao.dados_lead_time && typeof devolucao.dados_lead_time === 'string') {
+        try {
+          devolucao.lead_time = JSON.parse(devolucao.dados_lead_time);
+        } catch (e) {
+          console.warn('Erro ao parsear lead_time:', e);
+        }
+      }
+      
+      return devolucao;
+    });
+  }
+
   return data;
 };
 
