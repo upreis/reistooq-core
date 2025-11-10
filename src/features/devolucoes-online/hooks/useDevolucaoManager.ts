@@ -78,6 +78,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
   // Controle de requests concorrentes
   const requestIdRef = useRef<number>(0);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const isRequestInProgressRef = useRef<boolean>(false); // ✅ Flag para prevenir duplicação
 
   // Debounce para filtros (500ms como em pedidos)
   const debouncedFilters = useDebounce(filters, 500);
@@ -146,42 +147,55 @@ export function useDevolucaoManager(initialAccountId?: string) {
     return params;
   }, []);
 
-  // Fetcher function para SWR - suporte para múltiplas contas
+  // Fetcher function para SWR - suporte para múltiplas contas com proteção anti-duplicação
   const fetcher = useCallback(async ([_key, accountKey, filters, page, size]: [string, string, DevolucaoFilters, number, number]) => {
-    // Se accountKey contém vírgulas, são múltiplas contas
-    const isMultiple = accountKey.includes(',');
-    const accountsToFetch = isMultiple ? accountKey.split(',') : [accountKey];
+    // ✅ Prevenir chamadas simultâneas
+    if (isRequestInProgressRef.current) {
+      console.warn('⚠️ Requisição já em andamento, ignorando duplicação');
+      throw new Error('Request already in progress');
+    }
     
-    const params = buildApiParams(filters, page, size, accountsToFetch);
-    if (!params) {
-      throw new Error('Nenhuma conta ML disponível');
+    isRequestInProgressRef.current = true;
+    
+    try {
+      // Se accountKey contém vírgulas, são múltiplas contas
+      const isMultiple = accountKey.includes(',');
+      const accountsToFetch = isMultiple ? accountKey.split(',') : [accountKey];
+      
+      const params = buildApiParams(filters, page, size, accountsToFetch);
+      if (!params) {
+        throw new Error('Nenhuma conta ML disponível');
+      }
+
+      console.log('🔄 [ml-returns] Buscando devoluções de', accountsToFetch.length, 'conta(s):', params);
+
+      const { data, error: err } = await supabase.functions.invoke('ml-returns', {
+        body: params,
+      });
+
+      if (err) {
+        console.error('❌ [ml-returns] Erro:', err);
+        throw err;
+      }
+
+      console.log('✅ [ml-returns] Retornado:', data?.returns?.length || 0, 'devoluções');
+
+      return {
+        returns: data?.returns || [],
+        total: data?.total || 0,
+      };
+    } finally {
+      isRequestInProgressRef.current = false;
     }
-
-    console.log('🔄 [ml-returns] Buscando devoluções de', accountsToFetch.length, 'conta(s):', params);
-
-    const { data, error: err } = await supabase.functions.invoke('ml-returns', {
-      body: params,
-    });
-
-    if (err) {
-      console.error('❌ [ml-returns] Erro:', err);
-      throw err;
-    }
-
-    console.log('✅ [ml-returns] Retornado:', data?.returns?.length || 0, 'devoluções');
-
-    return {
-      returns: data?.returns || [],
-      total: data?.total || 0,
-    };
   }, [buildApiParams]);
 
-  // SWR key baseada em filtros debounced E integrationAccountId OU múltiplas contas
+  // ✅ SWR key estabilizada com useMemo para evitar recalculações
   const swrKey = useMemo(() => {
     // Se tem múltiplas contas selecionadas, usar elas na key
     if (multipleAccountIds.length > 0) {
       const accountsKey = multipleAccountIds.sort().join(',');
-      return ['devolucoes', accountsKey, debouncedFilters, currentPage, pageSize] as const;
+      const filtersKey = stableSerializeFilters(debouncedFilters);
+      return ['devolucoes', accountsKey, filtersKey, currentPage, pageSize] as const;
     }
     
     // Senão, usar conta única
@@ -191,19 +205,23 @@ export function useDevolucaoManager(initialAccountId?: string) {
       return null;
     }
     
-    return ['devolucoes', accountToUse, debouncedFilters, currentPage, pageSize] as const;
+    const filtersKey = stableSerializeFilters(debouncedFilters);
+    return ['devolucoes', accountToUse, filtersKey, currentPage, pageSize] as const;
   }, [integrationAccountId, multipleAccountIds, debouncedFilters, currentPage, pageSize, availableMlAccounts]);
 
-  // SWR com cache inteligente e proteção contra duplicação
+  // ✅ SWR com cache inteligente e proteção máxima contra duplicação
   const { data, error: swrError, isLoading, mutate } = useSWR(
     swrKey || null,
     swrKey ? fetcher : null,
     {
-      dedupingInterval: 60000, // ✅ 60s de deduplicação (evita chamadas duplicadas)
+      dedupingInterval: 120000, // ✅ 120s = 2 minutos de deduplicação
       revalidateOnFocus: false,
-      revalidateOnReconnect: false, // ✅ Não revalidar ao reconectar
-      errorRetryCount: 2,
-      keepPreviousData: true, // ✅ Manter dados anteriores durante loading
+      revalidateOnReconnect: false,
+      revalidateOnMount: true, // ✅ Apenas revalidar na montagem inicial
+      revalidateIfStale: false, // ✅ Não revalidar se dados estão stale
+      errorRetryCount: 1, // ✅ Reduzir tentativas de retry
+      errorRetryInterval: 5000,
+      keepPreviousData: true,
       onSuccess: (data) => {
         if (data) {
           setDevolucoes(data.returns);
@@ -214,8 +232,10 @@ export function useDevolucaoManager(initialAccountId?: string) {
       },
       onError: (err) => {
         console.error('[SWR] Erro:', err);
-        setError(err?.message || 'Erro ao carregar devoluções');
-        toast.error('Erro ao carregar devoluções');
+        if (err?.message !== 'Request already in progress') {
+          setError(err?.message || 'Erro ao carregar devoluções');
+          toast.error('Erro ao carregar devoluções');
+        }
       },
     }
   );
