@@ -409,6 +409,19 @@ Deno.serve(async (req) => {
                 
                 console.log(`✅ Claim ${claim.id} TEM devolução! ID: ${returnData.id}, Status: ${returnData.status}, reason_id: ${claim.reason_id || 'NULL'}`);
                 
+                // ✅ FIX CRÍTICO: Declarar TODAS as variáveis no INÍCIO para evitar escopo local
+                let availableActions: any = null;
+                let shippingCosts: any = null;
+                let fulfillmentInfo: any = null;
+                let leadTimeData: any = null;
+                let orderData: any = null;
+                let buyerInfo: any = null;
+                let productInfo: any = null;
+                let financialInfo: any = null;
+                let trackingInfo: any = null;
+                let communicationInfo: any = null;
+                let deadlines: any = null;
+                
                 // Mapear TODOS os dados da devolução conforme documentação
                 const firstShipment = returnData.shipments?.[0];
                 const shippingAddress = firstShipment?.destination?.shipping_address;
@@ -475,7 +488,6 @@ Deno.serve(async (req) => {
                 }
                 
                 // Buscar lead time (data estimada) se tiver shipment_id
-                let leadTimeData: any = null;
                 if (firstShipment?.shipment_id) {
                   try {
                     const leadTimeUrl = `https://api.mercadolibre.com/shipments/${firstShipment.shipment_id}/lead_time`;
@@ -498,7 +510,6 @@ Deno.serve(async (req) => {
                 }
                 
                 // ✅ FASE 11: Buscar ações disponíveis do vendedor
-                let availableActions: any = null;
                 try {
                   console.log(`🎬 Buscando ações disponíveis para claim ${claim.id}...`);
                   const claimDetailUrl = `https://api.mercadolibre.com/claims/${claim.id}`;
@@ -535,7 +546,6 @@ Deno.serve(async (req) => {
                 }
                 
                 // ✅ FASE 12: Buscar custos detalhados de logística
-                let shippingCosts: any = null;
                 if (firstShipment?.shipment_id) {
                   try {
                     console.log(`💰 Buscando custos de logística para shipment ${firstShipment.shipment_id}...`);
@@ -603,7 +613,6 @@ Deno.serve(async (req) => {
                 }
                 
                 // ✅ FASE 13: Buscar informações de fulfillment
-                let fulfillmentInfo: any = null;
                 if (firstShipment?.shipment_id) {
                   try {
                     console.log(`📦 Buscando informações de fulfillment para shipment ${firstShipment.shipment_id}...`);
@@ -663,11 +672,6 @@ Deno.serve(async (req) => {
                 
                 
                 // ✅ FASE 1, 2, 3 & 5: Buscar dados do pedido para obter buyer_id, item_id, dados financeiros e tracking
-                let orderData: any = null;
-                let buyerInfo: any = null;
-                let productInfo: any = null;
-                let financialInfo: any = null;
-                let trackingInfo: any = null;
                 
                 if (returnData.resource_type === 'order' && returnData.resource_id) {
                   try {
@@ -821,7 +825,6 @@ Deno.serve(async (req) => {
                 };
                 
                 // ✅ FASE 7: Montar dados de comunicação e mensagens do claim
-                let communicationInfo: any = null;
                 try {
                   const messagesUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`;
                   const messagesResponse = await fetch(messagesUrl, {
@@ -1023,6 +1026,16 @@ Deno.serve(async (req) => {
                 // ✅ FASE 15: UPSERT - Salvar dados enriquecidos no banco
                 try {
                   console.log(`💾 Salvando dados enriquecidos no banco para order ${returnData.resource_id}...`);
+                  
+                  // 🐛 DEBUG: Validar dados antes do UPSERT
+                  console.log(`🔍 VALIDAÇÃO PRÉ-UPSERT:`, {
+                    reviewInfo: reviewInfo ? 'PREENCHIDO' : 'VAZIO',
+                    communicationInfo: communicationInfo ? 'PREENCHIDO' : 'VAZIO',
+                    deadlines: deadlines ? 'PREENCHIDO' : 'VAZIO',
+                    availableActions: availableActions ? 'PREENCHIDO' : 'VAZIO',
+                    shippingCosts: shippingCosts ? 'PREENCHIDO' : 'VAZIO',
+                    fulfillmentInfo: fulfillmentInfo ? 'PREENCHIDO' : 'VAZIO',
+                  });
                   
                   const { error: upsertError } = await supabase
                     .from('devolucoes_avancadas')
