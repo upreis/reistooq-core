@@ -204,6 +204,117 @@ async function getDevolucoes(
     const queryTime = Date.now() - startTime;
     logger.success(`Query executada em ${queryTime}ms - ${data?.length || 0} registros`);
 
+    // 🔄 Mapear dados do banco para formato esperado pelo frontend
+    const mappedData = (data || []).map((item: any) => ({
+      // IDs e identificadores
+      id: item.id,
+      order_id: item.order_id,
+      claim_id: item.claim_id,
+      return_id: item.return_id,
+      item_id: item.dados_order?.order_items?.[0]?.item?.id || null,
+      variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || null,
+      integration_account_id: item.integration_account_id,
+      
+      // Status
+      status: item.dados_claim?.status ? { id: item.dados_claim.status } : { id: 'unknown' },
+      status_money: item.status_dinheiro ? { id: item.status_dinheiro } : null,
+      subtype: item.subtipo_devolucao ? { id: item.subtipo_devolucao } : null,
+      resource_type: item.return_resource_type ? { id: item.return_resource_type } : null,
+      
+      // Datas
+      date_created: item.data_criacao_claim,
+      date_closed: item.data_fechamento_claim,
+      
+      // Buyer info
+      buyer_info: item.dados_buyer_info || {
+        id: item.dados_order?.buyer?.id || null,
+        nickname: item.comprador_nickname || item.dados_order?.buyer?.nickname || null,
+      },
+      
+      // Product info
+      product_info: item.dados_product_info || {
+        id: item.dados_order?.order_items?.[0]?.item?.id || null,
+        title: item.produto_titulo || item.dados_order?.order_items?.[0]?.item?.title || null,
+        variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || null,
+        sku: item.sku || item.dados_order?.order_items?.[0]?.item?.seller_sku || null,
+      },
+      
+      // Financial info
+      financial_info: item.dados_financial_info || {
+        total_amount: item.dados_order?.total_amount || null,
+        currency_id: item.moeda_reembolso || 'BRL',
+      },
+      
+      // Tracking info
+      tracking_info: item.dados_tracking_info || {
+        tracking_number: item.codigo_rastreamento_devolucao || null,
+        carrier: item.transportadora_devolucao || null,
+        shipment_status: item.status_rastreamento_devolucao || null,
+      },
+      
+      // Quantidade
+      quantity: {
+        type: item.claim_quantity_type || 'total',
+        value: item.quantidade || 1,
+      },
+      
+      // Shipment
+      shipment: {
+        destination: item.destino_devolucao || null,
+        type: item.tipo_envio_devolucao || null,
+        status: item.status_envio_devolucao ? { id: item.status_envio_devolucao } : null,
+      },
+      
+      // Deadlines
+      deadlines: item.dados_deadlines || {},
+      
+      // Costs
+      shipping_costs: item.dados_shipping_costs || item.shipment_costs || {},
+      
+      // Review
+      review_info: item.dados_review || {
+        id: item.review_id || null,
+        status: item.review_status || null,
+        result: item.review_result || null,
+      },
+      
+      // Communication
+      communication_info: item.dados_comunicacao || {
+        messages_count: item.numero_interacoes || 0,
+        last_message_date: item.ultima_mensagem_data || null,
+        last_message_sender: item.ultima_mensagem_remetente || null,
+      },
+      
+      // Fulfillment
+      fulfillment: item.dados_fulfillment || {},
+      
+      // Actions
+      available_actions: item.dados_available_actions || item.dados_acoes_disponiveis || {},
+      
+      // Context
+      refund_at: item.reembolso_quando || null,
+      estimated_delivery_date: item.dados_lead_time?.estimated_delivery_date || null,
+      estimated_delivery_from: item.dados_lead_time?.estimated_delivery_from || null,
+      estimated_delivery_to: item.dados_lead_time?.estimated_delivery_to || null,
+      delivery_limit: item.dados_lead_time?.delivery_limit || null,
+      product_condition: item.dados_product_condition || {},
+      benefited: item.responsavel_custo || null,
+      
+      // Substatus
+      substatus: item.descricao_ultimo_status || null,
+      
+      // Status análise (campo customizado)
+      status_analise: item.status_analise || 'pendente',
+      
+      // Raw data para referência
+      raw: {
+        dados_order: item.dados_order,
+        dados_claim: item.dados_claim,
+        dados_return: item.dados_return,
+        dados_mensagens: item.dados_mensagens,
+      }
+    }));
+
     // 📊 Buscar estatísticas se solicitado
     let stats = null;
     if (includeStats) {
@@ -217,7 +328,7 @@ async function getDevolucoes(
 
     return {
       success: true,
-      data: data || [],
+      data: mappedData,
       pagination: {
         page,
         limit,
