@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAutoRefreshDevolucoes } from '../hooks/useAutoRefreshDevolucoes';
+import { useGetDevolucoes } from '@/features/devolucoes-online/hooks';
 import { StatusAnalise } from '../types/devolucao-analise.types';
 import { DevolucaoTableRowEnhanced } from '../components/DevolucaoTableRowEnhanced';
 import { Card } from '@/components/ui/card';
@@ -32,21 +32,49 @@ interface DevolucoesMelhoradaPageProps {
 export function DevolucoesMelhoradaPage({ selectedAccountIds }: DevolucoesMelhoradaPageProps) {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
 
+  // Query para devoluções ativas
   const {
-    devolucoesAtivas,
-    devolucoesHistorico,
-    isLoadingAtivas,
-    isLoadingHistorico,
-    errorAtivas,
-    errorHistorico,
-    refetchAtivas,
-    refetchHistorico,
-    refetchAll
-  } = useAutoRefreshDevolucoes({
-    accountIds: selectedAccountIds,
-    autoRefreshEnabled,
-    refreshIntervalMs: 30000
-  });
+    data: ativasData,
+    isLoading: isLoadingAtivas,
+    error: errorAtivas,
+    refetch: refetchAtivas
+  } = useGetDevolucoes(
+    {
+      integrationAccountId: selectedAccountIds[0] || '',
+      status_devolucao: 'opened',
+    },
+    {},
+    {
+      enabled: selectedAccountIds.length > 0,
+      refetchInterval: autoRefreshEnabled ? 30000 : undefined,
+    }
+  );
+
+  // Query para histórico (devoluções fechadas)
+  const {
+    data: historicoData,
+    isLoading: isLoadingHistorico,
+    error: errorHistorico,
+    refetch: refetchHistorico
+  } = useGetDevolucoes(
+    {
+      integrationAccountId: selectedAccountIds[0] || '',
+      status_devolucao: 'closed',
+    },
+    { limit: 200 },
+    {
+      enabled: selectedAccountIds.length > 0,
+      refetchInterval: autoRefreshEnabled ? 30000 : undefined,
+    }
+  );
+
+  const devolucoesAtivas = ativasData?.data || [];
+  const devolucoesHistorico = historicoData?.data || [];
+
+  const refetchAll = () => {
+    refetchAtivas();
+    refetchHistorico();
+  };
 
   // Handler para mudança de status
   const handleStatusChange = async (devolucaoId: string, newStatus: StatusAnalise) => {
