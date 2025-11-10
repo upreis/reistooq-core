@@ -516,20 +516,50 @@ Os dados enriquecidos são automaticamente salvos no banco pela edge function `m
 - ✅ Qualidade de comunicação
 - ✅ Botão de acesso no header de devoluções
 
-### FASE 4: Deploy e Monitoramento ⏳ EM ANDAMENTO
+### FASE 4: Deploy e Integração Frontend 🔄 75% COMPLETO
+**Cronograma:** 3 semanas  
+**Documento Detalhado:** [CRONOGRAMA_DEPLOY_FASE4.md](./docs/CRONOGRAMA_DEPLOY_FASE4.md)  
+**Validação:** [VALIDACAO_INTEGRACAO_FRONTEND.md](./docs/VALIDACAO_INTEGRACAO_FRONTEND.md)
+
+#### ✅ Semana 1: Integração Frontend (75% completo)
 - ✅ Edge function automaticamente deployed
-- ✅ Dashboard acessível via interface
-- ⏳ Aguardando testes com dados reais
-- ⏳ Validação de métricas de performance
+- ✅ Dashboard de qualidade acessível via interface
+- ✅ Hook `useDevolucaoData.ts` atualizado com parsing de 7 campos JSONB
+- ✅ Componentes integrados na tabela:
+  - ✅ `ReviewInfoCell` → `dados_review`
+  - ✅ `CommunicationInfoCell` → `dados_comunicacao`
+  - ✅ `DeadlinesCell` → `dados_deadlines`
+  - ✅ `ShippingCostsCell` → `dados_custos_logistica`
+  - ✅ `FulfillmentCell` → `dados_fulfillment`
+  - ✅ `ActionsCell` → `dados_acoes_disponiveis`
+- ✅ Fallbacks implementados para ambos formatos (string JSON e objeto JSONB)
+- ⏳ **PENDENTE**: Testar edge function com dados reais
+- ⏳ **PENDENTE**: Executar queries SQL de validação
+- ⏳ **PENDENTE**: Verificar taxa de preenchimento > 80%
+
+#### ⏳ Semana 2: Otimização e Testes (0% completo)
+- [ ] Testar modals de detalhes
+- [ ] Verificar responsividade em mobile
+- [ ] Performance testing (< 100ms render time)
+- [ ] Implementar loading states
+- [ ] Adicionar error boundaries
+- [ ] Otimizar re-renders com memoização
+
+#### ⏳ Semana 3: Monitoramento e Documentação (0% completo)
+- [ ] Monitoramento ativo 24h
+- [ ] Ajustes baseados em feedback
+- [ ] Documentação de troubleshooting
+- [ ] Treinamento de usuários
+- [ ] Retrospectiva e planejamento futuro
 
 ---
 
 ## 🎯 PRÓXIMOS PASSOS IMEDIATOS
 
 1. **AGORA**: Testar edge function ml-returns com dados reais da API do Mercado Livre
-2. **DEPOIS**: Validar que dados estão sendo salvos corretamente via dashboard de qualidade
-3. **EM SEGUIDA**: Monitorar performance e ajustar índices se necessário
-4. **POR ÚLTIMO**: Atualizar frontend de devoluções para exibir dados dos campos JSONB (review_info, communication_info, deadlines, etc)
+2. **DEPOIS**: Executar queries de validação SQL (ver `docs/QUERIES_VALIDACAO_DADOS_ENRIQUECIDOS.md`)
+3. **EM SEGUIDA**: Validar taxa de preenchimento via dashboard (`/devolucoes-ml/qualidade-dados`)
+4. **POR ÚLTIMO**: Testar componentes de visualização e modals
 
 ---
 

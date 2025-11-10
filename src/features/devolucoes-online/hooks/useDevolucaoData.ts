@@ -38,64 +38,106 @@ const fetchDevolucoes = async (params: FetchDevolucaoParams): Promise<DevolucaoR
     throw new Error(error.message || 'Erro ao buscar devoluções');
   }
 
-  // ✅ FASE 8: Parsear dados de deadlines do JSON retornado
+  // ✅ FASE 4: Parsear TODOS os campos JSONB enriquecidos
   if (data?.returns && Array.isArray(data.returns)) {
     data.returns = data.returns.map((devolucao: any) => {
-      // Parsear dados_deadlines se existir
+      // Parsear dados_review (review_info)
+      if (devolucao.dados_review && typeof devolucao.dados_review === 'string') {
+        try {
+          devolucao.review_info = JSON.parse(devolucao.dados_review);
+        } catch (e) {
+          console.warn('❌ Erro ao parsear review_info:', e);
+        }
+      } else if (devolucao.dados_review && typeof devolucao.dados_review === 'object') {
+        devolucao.review_info = devolucao.dados_review;
+      }
+      
+      // Parsear dados_comunicacao (communication_info)
+      if (devolucao.dados_comunicacao && typeof devolucao.dados_comunicacao === 'string') {
+        try {
+          devolucao.communication_info = JSON.parse(devolucao.dados_comunicacao);
+        } catch (e) {
+          console.warn('❌ Erro ao parsear communication_info:', e);
+        }
+      } else if (devolucao.dados_comunicacao && typeof devolucao.dados_comunicacao === 'object') {
+        devolucao.communication_info = devolucao.dados_comunicacao;
+      }
+      
+      // Parsear dados_deadlines
       if (devolucao.dados_deadlines && typeof devolucao.dados_deadlines === 'string') {
         try {
           devolucao.deadlines = JSON.parse(devolucao.dados_deadlines);
         } catch (e) {
-          console.warn('Erro ao parsear deadlines:', e);
+          console.warn('❌ Erro ao parsear deadlines:', e);
         }
+      } else if (devolucao.dados_deadlines && typeof devolucao.dados_deadlines === 'object') {
+        devolucao.deadlines = devolucao.dados_deadlines;
       }
       
-      // Parsear dados_lead_time se existir
+      // Parsear dados_lead_time
       if (devolucao.dados_lead_time && typeof devolucao.dados_lead_time === 'string') {
         try {
           devolucao.lead_time = JSON.parse(devolucao.dados_lead_time);
         } catch (e) {
-          console.warn('Erro ao parsear lead_time:', e);
+          console.warn('❌ Erro ao parsear lead_time:', e);
         }
+      } else if (devolucao.dados_lead_time && typeof devolucao.dados_lead_time === 'object') {
+        devolucao.lead_time = devolucao.dados_lead_time;
       }
       
-      // ✅ FASE 11: Parsear dados_acoes_disponiveis se existir
+      // Parsear dados_acoes_disponiveis (available_actions)
       if (devolucao.dados_acoes_disponiveis && typeof devolucao.dados_acoes_disponiveis === 'string') {
         try {
           devolucao.available_actions = JSON.parse(devolucao.dados_acoes_disponiveis);
         } catch (e) {
-          console.warn('Erro ao parsear available_actions:', e);
+          console.warn('❌ Erro ao parsear available_actions:', e);
         }
+      } else if (devolucao.dados_acoes_disponiveis && typeof devolucao.dados_acoes_disponiveis === 'object') {
+        devolucao.available_actions = devolucao.dados_acoes_disponiveis;
       }
       
-      // ✅ FASE 12: Parsear dados_custos_logistica se existir
+      // Parsear dados_custos_logistica (shipping_costs)
       if (devolucao.dados_custos_logistica && typeof devolucao.dados_custos_logistica === 'string') {
         try {
           devolucao.shipping_costs = JSON.parse(devolucao.dados_custos_logistica);
         } catch (e) {
-          console.warn('Erro ao parsear shipping_costs:', e);
+          console.warn('❌ Erro ao parsear shipping_costs:', e);
         }
+      } else if (devolucao.dados_custos_logistica && typeof devolucao.dados_custos_logistica === 'object') {
+        devolucao.shipping_costs = devolucao.dados_custos_logistica;
       }
       
-      // ✅ FASE 13: Parsear dados_fulfillment se existir
+      // Parsear dados_fulfillment (fulfillment_info)
       if (devolucao.dados_fulfillment && typeof devolucao.dados_fulfillment === 'string') {
         try {
           devolucao.fulfillment_info = JSON.parse(devolucao.dados_fulfillment);
         } catch (e) {
-          console.warn('Erro ao parsear fulfillment_info:', e);
+          console.warn('❌ Erro ao parsear fulfillment_info:', e);
+        }
+      } else if (devolucao.dados_fulfillment && typeof devolucao.dados_fulfillment === 'object') {
+        devolucao.fulfillment_info = devolucao.dados_fulfillment;
+      }
+      
+      // Parsear dados_available_actions (redundância, caso exista)
+      if (devolucao.dados_available_actions && typeof devolucao.dados_available_actions === 'string') {
+        try {
+          if (!devolucao.available_actions) {
+            devolucao.available_actions = JSON.parse(devolucao.dados_available_actions);
+          }
+        } catch (e) {
+          console.warn('❌ Erro ao parsear dados_available_actions:', e);
         }
       }
       
-      // ✅ MAPEAR CAMPOS DA API PARA INTERFACE DO FRONTEND
-      // Se a devolução veio direto da API (sem parsing do banco)
-      if (!devolucao.fulfillment_info && devolucao.fulfillment_info !== undefined) {
-        devolucao.fulfillment_info = devolucao.fulfillment_info;
-      }
-      if (!devolucao.shipping_costs && devolucao.shipping_costs !== undefined) {
-        devolucao.shipping_costs = devolucao.shipping_costs;
-      }
-      if (!devolucao.available_actions && devolucao.available_actions !== undefined) {
-        devolucao.available_actions = devolucao.available_actions;
+      // Parsear dados_shipping_costs (redundância, caso exista)
+      if (devolucao.dados_shipping_costs && typeof devolucao.dados_shipping_costs === 'string') {
+        try {
+          if (!devolucao.shipping_costs) {
+            devolucao.shipping_costs = JSON.parse(devolucao.dados_shipping_costs);
+          }
+        } catch (e) {
+          console.warn('❌ Erro ao parsear dados_shipping_costs:', e);
+        }
       }
       
       return devolucao;
