@@ -20,6 +20,56 @@ interface RequestBody {
   };
 }
 
+/**
+ * 🧑 FASE 1: Buscar dados do comprador da API do ML
+ * Função OPCIONAL - se falhar, não quebra o sistema
+ */
+async function fetchBuyerInfo(buyerId: number, accessToken: string): Promise<any | null> {
+  try {
+    console.log(`👤 Buscando dados do comprador ${buyerId}...`);
+    
+    const response = await fetch(`https://api.mercadolibre.com/users/${buyerId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Não foi possível buscar buyer ${buyerId}: ${response.status}`);
+      return null;
+    }
+
+    const buyerData = await response.json();
+    
+    console.log(`✅ Buyer ${buyerId} encontrado: ${buyerData.nickname}`);
+    
+    return {
+      id: buyerData.id,
+      nickname: buyerData.nickname || 'N/A',
+      first_name: buyerData.first_name || null,
+      last_name: buyerData.last_name || null,
+      email: buyerData.email || null, // Pode não estar disponível
+      phone: buyerData.phone ? {
+        area_code: buyerData.phone.area_code || null,
+        number: buyerData.phone.number || null,
+        verified: buyerData.phone.verified || false,
+      } : null,
+      permalink: buyerData.permalink || `https://www.mercadolivre.com.br/perfil/${buyerData.id}`,
+      registration_date: buyerData.registration_date || null,
+      country_id: buyerData.country_id || null,
+      site_id: buyerData.site_id || null,
+      buyer_reputation: buyerData.buyer_reputation ? {
+        tags: buyerData.buyer_reputation.tags || [],
+        canceled_transactions: buyerData.buyer_reputation.canceled_transactions || 0,
+      } : null,
+    };
+  } catch (error) {
+    console.error(`❌ Erro ao buscar buyer ${buyerId}:`, error);
+    return null; // Retorna null se falhar - não quebra o sistema
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -282,6 +332,41 @@ Deno.serve(async (req) => {
                   console.log(`ℹ️ Return ${returnData.id} não tem shipment_id válido`);
                 }
                 
+                // ✅ FASE 1: Buscar dados do pedido para obter buyer_id
+                let orderData: any = null;
+                let buyerInfo: any = null;
+                
+                if (returnData.resource_type === 'order' && returnData.resource_id) {
+                  try {
+                    console.log(`📦 Buscando dados do pedido ${returnData.resource_id}...`);
+                    
+                    const orderResponse = await fetch(
+                      `https://api.mercadolibre.com/orders/${returnData.resource_id}`,
+                      {
+                        headers: {
+                          'Authorization': `Bearer ${accessToken}`,
+                          'Content-Type': 'application/json',
+                        },
+                      }
+                    );
+                    
+                    if (orderResponse.ok) {
+                      orderData = await orderResponse.json();
+                      console.log(`✅ Pedido ${returnData.resource_id} obtido! Buyer ID: ${orderData.buyer?.id || 'N/A'}`);
+                      
+                      // Se temos buyer_id, buscar dados do comprador
+                      if (orderData.buyer?.id) {
+                        buyerInfo = await fetchBuyerInfo(orderData.buyer.id, accessToken);
+                      }
+                    } else {
+                      console.warn(`⚠️ Não foi possível buscar pedido ${returnData.resource_id}: ${orderResponse.status}`);
+                    }
+                  } catch (error) {
+                    console.warn(`⚠️ Erro ao buscar dados do pedido ${returnData.resource_id}:`, error);
+                    // Continua mesmo se falhar - não quebra o sistema
+                  }
+                }
+                
                 // Extrair dados da primeira review se existir
                 const firstReview = reviewData?.resource_reviews?.[0];
                 
@@ -354,8 +439,16 @@ Deno.serve(async (req) => {
                   // Outros
                   intermediate_check: returnData.intermediate_check,
                   
+                  // ✅ FASE 1: Dados do comprador enriquecidos
+                  buyer_info: buyerInfo,
+                  
                   // Order info (legacy)
-                  order: null,
+                  order: orderData ? {
+                    id: orderData.id,
+                    date_created: orderData.date_created,
+                    seller_id: orderData.seller?.id || null,
+                    buyer_id: orderData.buyer?.id || null,
+                  } : null,
                   resource: returnData.resource_type,
                 });
               } else if (returnResponse.status === 404) {

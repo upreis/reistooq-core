@@ -60,6 +60,9 @@ export interface MLReturn {
   // ✅ FASE 2: Quantidade da devolução (campos diretos para facilitar acesso)
   return_quantity?: number | null;
   total_quantity?: number | null;
+  
+  // ✅ FASE 1: Dados do comprador enriquecidos
+  buyer_info?: BuyerInfo;
 }
 
 export interface ReturnStatus {
@@ -134,6 +137,28 @@ export interface ReturnOrder {
   date_created: string;
   seller_id: number;
   buyer_id: number;
+}
+
+// ✅ FASE 1: Dados do Comprador
+export interface BuyerInfo {
+  id: number;
+  nickname: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: {
+    area_code?: string;
+    number?: string;
+    verified?: boolean;
+  };
+  permalink: string;
+  registration_date?: string;
+  country_id?: string;
+  site_id?: string;
+  buyer_reputation?: {
+    tags?: string[];
+    canceled_transactions?: number;
+  };
 }
 
 // Filtros
