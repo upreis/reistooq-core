@@ -217,9 +217,11 @@ async function getDevolucoes(
       
       // Status
       status: item.dados_claim?.status ? { id: item.dados_claim.status } : { id: 'unknown' },
-      status_money: item.status_dinheiro ? { id: item.status_dinheiro } : null,
+      // ✅ Status do dinheiro (campo já populado por sync-devolucoes)
+      status_money: item.status_dinheiro || null,
       subtype: item.subtipo_devolucao ? { id: item.subtipo_devolucao } : null,
-      resource_type: item.return_resource_type ? { id: item.return_resource_type } : null,
+      // ✅ Tipo de recurso (campo já populado por sync-devolucoes)
+      resource_type: item.return_resource_type || null,
       
       // Datas
       date_created: item.data_criacao_claim,
@@ -275,7 +277,7 @@ async function getDevolucoes(
         return_quantity: item.quantidade || 1,
       }] : [],
       
-      // Shipment (STATUS DIRETO DO CAMPO)
+      // ✅ Shipment info (campos já populados por sync-devolucoes)
       shipment_id: item.shipment_id_devolucao || item.shipment_id,
       shipment_status: item.status_envio_devolucao || item.status_rastreamento || null,
       shipment_type: item.tipo_envio_devolucao || null,
@@ -297,16 +299,18 @@ async function getDevolucoes(
       // Costs
       shipping_costs: item.dados_shipping_costs || item.shipment_costs || {},
       
-      // Review (⚡ EXTRAIR DE dados_review JSONB)
-      review_info: item.dados_review || {
+      // ✅ Review info (populado por enrich-devolucoes via /reviews)
+      review_info: item.full_review || item.dados_review || {
         id: item.review_id || null,
         status: item.review_status || null,
         result: item.review_result || null,
+        method: item.review_method || null,
+        stage: item.review_stage || null
       },
       review_status: item.review_status || item.dados_review?.status || null,
-      review_method: item.dados_review?.method || null,
-      review_stage: item.dados_review?.stage || null,
-      seller_status: item.review_status || item.seller_status || null,
+      review_method: item.review_method || item.dados_review?.method || null,
+      review_stage: item.review_stage || item.dados_review?.stage || null,
+      seller_status: item.seller_status || null,
       
       // Communication
       communication_info: item.dados_comunicacao || {
@@ -318,8 +322,18 @@ async function getDevolucoes(
       // Fulfillment
       fulfillment_info: item.dados_fulfillment || {},
       
-      // Actions
-      available_actions: item.dados_available_actions || item.dados_acoes_disponiveis || {},
+      // ✅ Available actions (campo já populado por sync-devolucoes)
+      available_actions: (() => {
+        try {
+          // Tentar parsear se for string JSONB
+          if (typeof item.dados_acoes_disponiveis === 'string') {
+            return JSON.parse(item.dados_acoes_disponiveis);
+          }
+          return item.dados_acoes_disponiveis || item.dados_available_actions || [];
+        } catch {
+          return [];
+        }
+      })(),
       
       // ⚡ DELIVERY DATES (extrair de JSONB dados_lead_time)
       estimated_delivery_date: item.dados_lead_time?.estimated_delivery_time?.date || 
@@ -328,24 +342,39 @@ async function getDevolucoes(
       estimated_delivery_to: item.dados_lead_time?.estimated_delivery_time?.handling || null,
       estimated_delivery_limit: item.dados_lead_time?.estimated_schedule_limit?.date || 
                                  item.dados_lead_time?.delivery_limit || null,
-      delivery_limit: item.dados_lead_time?.delivery_limit || null,
-      has_delay: item.has_delay || false,
       
-      // ⚡ REFUND AT (extrair de JSONB dados_refund_info)
-      refund_at: item.dados_refund_info?.when || 
+      // ✅ Delivery limit (campo já populado por sync-devolucoes)
+      delivery_limit: item.prazo_limite_entrega || item.dados_lead_time?.delivery_limit || null,
+      
+      // ✅ Delay calculation (implementado)
+      has_delay: (() => {
+        const deliveryLimit = item.prazo_limite_entrega || item.dados_lead_time?.delivery_limit;
+        if (!deliveryLimit) return false;
+        
+        try {
+          const limitDate = new Date(deliveryLimit);
+          const now = new Date();
+          return now > limitDate;
+        } catch {
+          return false;
+        }
+      })(),
+      
+      // ✅ Refund info (campo já populado por sync-devolucoes)
+      refund_at: item.reembolso_quando || 
                  item.dados_refund_info?.refund_at || 
-                 item.reembolso_quando || null,
+                 item.dados_refund_info?.when || null,
       
-      // Product condition (retornar STRING ao invés de objeto)
-      product_condition: item.dados_product_condition?.status || null,
-      product_destination: item.dados_product_condition?.destination || null,
+      // ✅ Product condition e destination (populado por enrich-devolucoes via /reviews)
+      product_condition: item.product_condition || item.dados_product_condition?.status || null,
+      product_destination: item.product_destination || item.dados_product_condition?.destination || null,
       
       // Benefited (retornar STRING ao invés de objeto/array)
       benefited: Array.isArray(item.responsavel_custo) 
         ? item.responsavel_custo[0] 
         : item.responsavel_custo || null,
       
-      // ⚡ QUANTIDADE (campo direto - quantidade_total NÃO existe no banco)
+      // ✅ QUANTIDADE (campo direto - usar 'quantidade' que existe no banco)
       return_quantity: item.quantidade || null,
       total_quantity: item.quantidade || null,
       
@@ -359,7 +388,6 @@ async function getDevolucoes(
       
       // Campos adicionais
       reason_id: item.reason_id || null,
-      has_delay: false, // TODO: calcular com base em prazos
       intermediate_check: item.return_intermediate_check || false,
       related_entities: item.related_entities || [],
       
