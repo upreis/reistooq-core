@@ -540,11 +540,23 @@ Deno.serve(async (req) => {
                 if (firstShipment?.shipment_id) {
                   trackingInfo = await fetchShipmentTracking(firstShipment.shipment_id, accessToken);
                 }
-
+                
                 // Extrair dados da primeira review se existir
                 const firstReview = reviewData?.resource_reviews?.[0];
                 
-                allReturns.push({
+                // ✅ FASE 6: Montar dados de revisão e qualidade
+                const reviewInfo = {
+                  has_review: !!reviewData || returnData.related_entities?.includes('reviews') || false,
+                  review_method: firstReview?.method || null,
+                  review_stage: firstReview?.stage || null,
+                  review_status: firstReview?.status || null,
+                  product_condition: firstReview?.product_condition || null,
+                  product_destination: firstReview?.product_destination || null,
+                  benefited: firstReview?.benefited || null,
+                  seller_status: firstReview?.seller_status || null,
+                  is_intermediate_check: returnData.intermediate_check || false,
+                };
+
                   // ID da conta de integração para identificar a origem
                   integration_account_id: accountId,
                   
@@ -622,8 +634,8 @@ Deno.serve(async (req) => {
                   // ✅ FASE 3: Dados financeiros enriquecidos
                   financial_info: financialInfo,
                   
-                  // ✅ FASE 5: Dados de tracking enriquecidos
-                  tracking_info: trackingInfo,
+                  // ✅ FASE 6: Dados de revisão e qualidade enriquecidos
+                  review_info: reviewInfo,
 
                   // Order info (legacy)
                   order: orderData ? {

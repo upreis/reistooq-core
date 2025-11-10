@@ -72,6 +72,9 @@ export interface MLReturn {
   
   // ✅ FASE 5: Dados de tracking enriquecidos
   tracking_info?: ShipmentTracking;
+  
+  // ✅ FASE 6: Dados de revisão e qualidade
+  review_info?: ReviewInfo;
 }
 
 export interface ReturnStatus {
@@ -215,6 +218,19 @@ export interface TrackingEvent {
   description: string;
   location?: string | null;
   checkpoint?: string | null;
+}
+
+// ✅ FASE 6: Dados de Revisão e Qualidade
+export interface ReviewInfo {
+  has_review: boolean;
+  review_method?: string | null;
+  review_stage?: string | null;
+  review_status?: string | null;
+  product_condition?: string | null;
+  product_destination?: string | null;
+  benefited?: string | null;
+  seller_status?: string | null;
+  is_intermediate_check?: boolean;
 }
 
 // Filtros

@@ -3,3 +3,4 @@ export { ProductInfoCell } from './ProductInfoCell';
 export { FinancialInfoCell } from './FinancialInfoCell';
 export { OrderInfoCell } from './OrderInfoCell';
 export { TrackingInfoCell } from './TrackingInfoCell';
+export { ReviewInfoCell } from './ReviewInfoCell';

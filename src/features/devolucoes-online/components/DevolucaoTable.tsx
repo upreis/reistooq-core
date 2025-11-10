@@ -25,6 +25,7 @@ import { ProductInfoCell } from './cells/ProductInfoCell';
 import { FinancialInfoCell } from './cells/FinancialInfoCell';
 import { OrderInfoCell } from './cells/OrderInfoCell';
 import { TrackingInfoCell } from './cells/TrackingInfoCell';
+import { ReviewInfoCell } from './cells/ReviewInfoCell';
 import {
   translateStatus,
   translateStatusMoney,
@@ -180,6 +181,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
               <TableHead className="font-semibold min-w-[220px]">💰 Financeiro</TableHead>
               <TableHead className="font-semibold min-w-[200px]">📋 Pedido</TableHead>
               <TableHead className="font-semibold min-w-[220px]">📍 Tracking</TableHead>
+              <TableHead className="font-semibold min-w-[200px]">🔍 Revisão</TableHead>
               <TableHead className="font-semibold">ID Devolução</TableHead>
               <TableHead className="font-semibold">Claim ID</TableHead>
               <TableHead className="font-semibold">Item ID</TableHead>
@@ -307,6 +309,11 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 {/* ✅ FASE 5: Dados de Tracking */}
                 <TableCell>
                   <TrackingInfoCell trackingInfo={dev.tracking_info} />
+                </TableCell>
+                
+                {/* ✅ FASE 6: Dados de Revisão */}
+                <TableCell>
+                  <ReviewInfoCell reviewInfo={dev.review_info} />
                 </TableCell>
 
                 <TableCell className="font-medium text-xs">
