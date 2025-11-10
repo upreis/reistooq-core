@@ -217,11 +217,16 @@ async function getDevolucoes(
       
       // Status
       status: item.dados_claim?.status ? { id: item.dados_claim.status } : { id: 'unknown' },
+      status_devolucao: item.status_devolucao || item.dados_claim?.status || null,
       // ✅ Status do dinheiro (campo já populado por sync-devolucoes)
       status_money: item.status_dinheiro || null,
       subtype: item.subtipo_devolucao ? { id: item.subtipo_devolucao } : null,
       // ✅ Tipo de recurso (campo já populado por sync-devolucoes)
       resource_type: item.return_resource_type || null,
+      // ✅ RESOLUÇÃO - Capturar resolution.reason (timeout, warehouse_timeout, etc)
+      resultado_final: item.resolution_reason || 
+                       item.dados_claim?.resolution?.reason || 
+                       item.resultado_final || null,
       
       // Datas
       date_created: item.data_criacao_claim,
