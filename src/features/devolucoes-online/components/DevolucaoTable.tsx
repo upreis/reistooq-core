@@ -274,6 +274,14 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell>
                   <ProductInfoCell productInfo={dev.product_info} />
                 </TableCell>
+                
+                {/* ✅ FASE 3: Dados Financeiros */}
+                <TableCell>
+                  <FinancialInfoCell 
+                    financialInfo={dev.financial_info} 
+                    statusMoney={dev.status_money?.id}
+                  />
+                </TableCell>
 
                 <TableCell className="font-medium text-xs">
                   {dev.id}

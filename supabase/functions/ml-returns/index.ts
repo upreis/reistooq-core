@@ -383,10 +383,11 @@ Deno.serve(async (req) => {
                   console.log(`ℹ️ Return ${returnData.id} não tem shipment_id válido`);
                 }
                 
-                // ✅ FASE 1 & 2: Buscar dados do pedido para obter buyer_id e item_id
+                // ✅ FASE 1, 2 & 3: Buscar dados do pedido para obter buyer_id, item_id e dados financeiros
                 let orderData: any = null;
                 let buyerInfo: any = null;
                 let productInfo: any = null;
+                let financialInfo: any = null;
                 
                 if (returnData.resource_type === 'order' && returnData.resource_id) {
                   try {
@@ -416,6 +417,38 @@ Deno.serve(async (req) => {
                       if (firstOrderItem?.item_id) {
                         productInfo = await fetchProductInfo(firstOrderItem.item_id, accessToken);
                       }
+                      
+                      // ✅ FASE 3: Extrair dados financeiros do pedido
+                      if (orderData) {
+                        const payments = orderData.payments || [];
+                        const firstPayment = payments[0] || {};
+                        
+                        // Calcular valor total pago
+                        const totalPaid = payments.reduce((sum: number, payment: any) => {
+                          return sum + (payment.total_paid_amount || 0);
+                        }, 0);
+                        
+                        // Valor que será reembolsado (pode variar conforme status da devolução)
+                        let refundAmount = 0;
+                        if (returnData.status_money === 'refunded') {
+                          refundAmount = totalPaid; // Já foi reembolsado
+                        } else if (returnData.status_money === 'retained') {
+                          refundAmount = totalPaid; // Será reembolsado após entrega
+                        }
+                        
+                        financialInfo = {
+                          total_amount: orderData.total_amount || 0,
+                          paid_amount: totalPaid,
+                          currency_id: orderData.currency_id || 'BRL',
+                          refund_amount: refundAmount,
+                          payment_status: firstPayment.status || null,
+                          payment_method: firstPayment.payment_method_id || null,
+                          payment_type: firstPayment.payment_type_id || null,
+                          shipping_cost: orderData.shipping?.cost || 0,
+                        };
+                        
+                        console.log(`💰 Dados financeiros extraídos: Total ${financialInfo.total_amount} ${financialInfo.currency_id}`);
+                      }
                     } else {
                       console.warn(`⚠️ Não foi possível buscar pedido ${returnData.resource_id}: ${orderResponse.status}`);
                     }
@@ -424,7 +457,7 @@ Deno.serve(async (req) => {
                     // Continua mesmo se falhar - não quebra o sistema
                   }
                 }
-                
+
                 // Extrair dados da primeira review se existir
                 const firstReview = reviewData?.resource_reviews?.[0];
                 
@@ -502,6 +535,9 @@ Deno.serve(async (req) => {
                   
                   // ✅ FASE 2: Dados do produto enriquecidos
                   product_info: productInfo,
+                  
+                  // ✅ FASE 3: Dados financeiros enriquecidos
+                  financial_info: financialInfo,
 
                   // Order info (legacy)
                   order: orderData ? {

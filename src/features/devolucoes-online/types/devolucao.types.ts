@@ -66,6 +66,9 @@ export interface MLReturn {
   
   // ✅ FASE 2: Dados do produto enriquecidos
   product_info?: ProductInfo;
+  
+  // ✅ FASE 3: Dados financeiros enriquecidos
+  financial_info?: FinancialInfo;
 }
 
 export interface ReturnStatus {
@@ -176,6 +179,18 @@ export interface ProductInfo {
   condition: string | null;
   available_quantity: number;
   sold_quantity: number;
+}
+
+// ✅ FASE 3: Dados Financeiros
+export interface FinancialInfo {
+  total_amount: number;
+  paid_amount: number;
+  currency_id: string;
+  refund_amount: number;
+  payment_status: string | null;
+  payment_method: string | null;
+  payment_type: string | null;
+  shipping_cost: number;
 }
 
 // Filtros
