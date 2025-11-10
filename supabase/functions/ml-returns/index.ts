@@ -410,11 +410,32 @@ Deno.serve(async (req) => {
                 const firstShipment = returnData.shipments?.[0];
                 const shippingAddress = firstShipment?.destination?.shipping_address;
                 
-                // Buscar dados de review se disponível
+                // ✅ FASE 10: Buscar dados avançados de review com anexos e quantidades
                 let reviewData: any = null;
+                let reviewReasons: any[] = [];
+                
                 if (returnData.related_entities?.includes('reviews')) {
                   try {
-                    const reviewUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns/reviews`;
+                    // 1️⃣ Buscar razões disponíveis para o vendedor
+                    console.log(`📋 Buscando razões de review disponíveis...`);
+                    const reasonsUrl = `https://api.mercadolibre.com/post-purchase/v1/returns/reasons`;
+                    const reasonsResponse = await fetch(reasonsUrl, {
+                      headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    if (reasonsResponse.ok) {
+                      const reasonsData = await reasonsResponse.json();
+                      reviewReasons = reasonsData.reasons || [];
+                      console.log(`✅ ${reviewReasons.length} razões de review obtidas`);
+                    } else {
+                      console.warn(`⚠️ Razões de review não disponíveis (${reasonsResponse.status})`);
+                    }
+                    
+                    // 2️⃣ Buscar dados completos da review com anexos
+                    const reviewUrl = `https://api.mercadolibre.com/post-purchase/v2/returns/${returnData.id}/reviews`;
                     const reviewResponse = await fetch(reviewUrl, {
                       headers: {
                         'Authorization': `Bearer ${accessToken}`,
@@ -424,15 +445,30 @@ Deno.serve(async (req) => {
                     
                     if (reviewResponse.ok) {
                       reviewData = await reviewResponse.json();
-                      console.log(`✅ Review obtida para claim ${claim.id}:`, JSON.stringify(reviewData, null, 2));
+                      console.log(`✅ Review detalhada obtida para return ${returnData.id}:`, JSON.stringify(reviewData, null, 2));
+                      
+                      // Log de anexos encontrados
+                      const firstReviewDetail = reviewData?.reviews?.[0]?.resource_reviews?.[0];
+                      if (firstReviewDetail?.attachments?.length > 0) {
+                        console.log(`📎 ${firstReviewDetail.attachments.length} anexos encontrados na review`);
+                      }
+                      if (firstReviewDetail?.missing_quantity) {
+                        console.log(`⚠️ Quantidade faltante: ${firstReviewDetail.missing_quantity}`);
+                      }
+                      if (firstReviewDetail?.damaged_quantity) {
+                        console.log(`💔 Quantidade danificada: ${firstReviewDetail.damaged_quantity}`);
+                      }
+                      if (firstReviewDetail?.meli_decision) {
+                        console.log(`⚖️ Decisão MELI encontrada: ${firstReviewDetail.meli_decision.benefited || 'N/A'}`);
+                      }
                     } else {
-                      console.warn(`⚠️ Review não encontrada (${reviewResponse.status}) para claim ${claim.id}`);
+                      console.warn(`⚠️ Review não encontrada (${reviewResponse.status}) para return ${returnData.id}`);
                     }
                   } catch (error) {
-                    console.warn(`⚠️ Erro ao buscar review do claim ${claim.id}:`, error);
+                    console.warn(`⚠️ Erro ao buscar review do return ${returnData.id}:`, error);
                   }
                 } else {
-                  console.log(`ℹ️ Claim ${claim.id} não tem reviews (related_entities: ${returnData.related_entities})`);
+                  console.log(`ℹ️ Return ${returnData.id} não tem reviews (related_entities: ${returnData.related_entities})`);
                 }
                 
                 // Buscar lead time (data estimada) se tiver shipment_id
@@ -704,13 +740,38 @@ Deno.serve(async (req) => {
                   trackingInfo = await fetchShipmentTracking(firstShipment.shipment_id, accessToken);
                 }
                 
-                // Extrair dados da primeira review se existir
-                const firstReview = reviewData?.resource_reviews?.[0];
+                // ✅ FASE 10: Extrair dados completos da review incluindo anexos e quantidades
+                const firstReviewContainer = reviewData?.reviews?.[0];
+                const firstReview = firstReviewContainer?.resource_reviews?.[0];
                 
-                // ✅ FASE 6: Montar dados de revisão e qualidade
+                // ✅ FASE 10: Processar anexos/evidências
+                const reviewAttachments = firstReview?.attachments?.map((att: any, idx: number) => ({
+                  id: att.id || att.attachment_id || `att-${returnData.id}-${idx}`,
+                  url: att.url || att.attachment_url || '',
+                  type: att.type || att.content_type || 'unknown',
+                  filename: att.filename || att.name || `anexo-${idx + 1}`,
+                  description: att.description || null,
+                })) || [];
+                
+                // ✅ FASE 10: Buscar descrição da razão de falha do vendedor
+                const sellerReasonId = firstReview?.seller_reason;
+                const sellerReasonDescription = sellerReasonId 
+                  ? reviewReasons.find((r: any) => r.id === sellerReasonId)?.detail 
+                  : null;
+                
+                // ✅ FASE 10: Processar decisão do MELI (se existir)
+                const meliResolution = firstReview?.meli_decision ? {
+                  date: firstReview.meli_decision.date || new Date().toISOString(),
+                  reason: firstReview.meli_decision.reason || null,
+                  final_benefited: firstReview.meli_decision.benefited || firstReview.benefited || null,
+                  comments: firstReview.meli_decision.comments || null,
+                  decided_by: firstReview.meli_decision.decided_by || 'MELI',
+                } : null;
+                
+                // ✅ FASE 6+10: Montar dados de revisão e qualidade COMPLETOS
                 const reviewInfo = {
                   has_review: !!reviewData || returnData.related_entities?.includes('reviews') || false,
-                  review_method: firstReview?.method || null,
+                  review_method: firstReviewContainer?.method || null,
                   review_stage: firstReview?.stage || null,
                   review_status: firstReview?.status || null,
                   product_condition: firstReview?.product_condition || null,
@@ -718,6 +779,18 @@ Deno.serve(async (req) => {
                   benefited: firstReview?.benefited || null,
                   seller_status: firstReview?.seller_status || null,
                   is_intermediate_check: returnData.intermediate_check || false,
+                  
+                  // ✅ FASE 10: Dados avançados da revisão do vendedor
+                  seller_reason_id: sellerReasonId || null,
+                  seller_reason_description: sellerReasonDescription,
+                  seller_message: firstReview?.seller_message || firstReview?.message || null,
+                  seller_attachments: reviewAttachments,
+                  missing_quantity: firstReview?.missing_quantity || 0,
+                  damaged_quantity: firstReview?.damaged_quantity || 0,
+                  meli_resolution: meliResolution,
+                  seller_evaluation_status: firstReview?.seller_status || null,
+                  seller_evaluation_deadline: firstReviewContainer?.last_updated || null,
+                  available_reasons: reviewReasons,
                 };
                 
                 // ✅ FASE 7: Montar dados de comunicação e mensagens do claim
