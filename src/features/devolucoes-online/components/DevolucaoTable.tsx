@@ -20,16 +20,6 @@ import {
   ReviewStatusCell, 
   QuantityCell 
 } from '@/components/ml/devolucao/cells/DeliveryCells';
-import { 
-  translateStatus,
-  translateStatusMoney,
-  translateSubtype,
-  translateResourceType,
-  translateShipmentStatus,
-  getStatusVariant,
-  getStatusMoneyVariant,
-  getShipmentStatusVariant
-} from '../utils/translations';
 
 interface DevolucaoTableWithAnalise extends MLReturn {
   status_analise?: StatusAnalise;
@@ -278,29 +268,22 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 </TableCell>
                 <TableCell>
                   <Badge 
-                    variant={getStatusVariant(dev.status?.id || null)}
-                    className="text-xs"
+                    variant="outline" 
+                    className={`text-xs ${getStatusColor(dev.status?.id || '')}`}
                   >
-                    {translateStatus(dev.status?.id || null)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={getStatusMoneyVariant(dev.status_money?.id || null)}
-                    className="text-xs"
-                  >
-                    {translateStatusMoney(dev.status_money?.id || null)}
+                    {dev.status?.description || dev.status?.id || '-'}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs">
-                    {translateSubtype(dev.subtype?.id || null)}
+                    {dev.status_money?.description || dev.status_money?.id || '-'}
                   </Badge>
                 </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    {translateResourceType(dev.resource_type || null)}
-                  </Badge>
+                <TableCell className="text-xs">
+                  {dev.subtype?.description || dev.subtype?.id || '-'}
+                </TableCell>
+                <TableCell className="text-xs">
+                  {dev.resource_type || '-'}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="text-xs">
@@ -316,13 +299,8 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell className="text-xs">
                   {dev.shipment_id || '-'}
                 </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant={getShipmentStatusVariant(dev.shipment_status || null)}
-                    className="text-xs"
-                  >
-                    {translateShipmentStatus(dev.shipment_status || null)}
-                  </Badge>
+                <TableCell className="text-xs">
+                  {dev.shipment_status || '-'}
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary" className="text-xs">
@@ -373,10 +351,8 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   />
                 </TableCell>
                 
-                <TableCell className="text-xs w-[200px] min-w-[200px]">
-                  <div className="whitespace-pre-wrap break-words" title={dev.destination_address || '-'}>
-                    {dev.destination_address || '-'}
-                  </div>
+                <TableCell className="text-xs max-w-[200px] truncate" title={dev.destination_address || '-'}>
+                  {dev.destination_address || '-'}
                 </TableCell>
                 <TableCell className="text-xs">
                   {dev.destination_city || '-'}
@@ -393,10 +369,8 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell className="text-xs">
                   {dev.destination_country || '-'}
                 </TableCell>
-                <TableCell className="text-xs max-w-[150px]">
-                  <div className="whitespace-pre-wrap break-words" title={dev.destination_comment || '-'}>
-                    {dev.destination_comment || '-'}
-                  </div>
+                <TableCell className="text-xs max-w-[150px] truncate" title={dev.destination_comment || '-'}>
+                  {dev.destination_comment || '-'}
                 </TableCell>
                 <TableCell className="text-xs font-mono">
                   {dev.reason_id || '-'}
