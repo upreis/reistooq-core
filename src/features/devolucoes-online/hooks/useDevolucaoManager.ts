@@ -172,13 +172,12 @@ export function useDevolucaoManager(initialAccountId?: string) {
     };
   }, [buildApiParams]);
 
-  // ✅ SWR key estabilizada com useMemo
+  // ✅ SWR key estabilizada com useMemo - passa o objeto de filtros diretamente
   const swrKey = useMemo(() => {
     // Se tem múltiplas contas selecionadas, usar elas na key
     if (multipleAccountIds.length > 0) {
       const accountsKey = multipleAccountIds.sort().join(',');
-      const filtersKey = stableSerializeFilters(filters);
-      return ['devolucoes', accountsKey, filtersKey, currentPage, pageSize] as const;
+      return ['devolucoes', accountsKey, filters, currentPage, pageSize] as const;
     }
     
     // Senão, usar conta única
@@ -188,8 +187,7 @@ export function useDevolucaoManager(initialAccountId?: string) {
       return null;
     }
     
-    const filtersKey = stableSerializeFilters(filters);
-    return ['devolucoes', accountToUse, filtersKey, currentPage, pageSize] as const;
+    return ['devolucoes', accountToUse, filters, currentPage, pageSize] as const;
   }, [integrationAccountId, multipleAccountIds, filters, currentPage, pageSize, availableMlAccounts]);
 
   // ✅ SWR com cache inteligente - SWR já gerencia deduplicação
