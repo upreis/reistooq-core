@@ -1,7 +1,7 @@
 # 🔍 AUDITORIA COMPLETA - Sistema de Devoluções ML
-**Data**: 10/11/2025 às 14:30 
+**Data**: 10/11/2025 às 17:40  
 **Página**: `/devolucoes-ml`  
-**Status**: ✅ FASE 1 COMPLETA | ✅ FASE 2 COMPLETA | ⏳ FASE 3 PENDENTE
+**Status**: ✅ FASE 1 COMPLETA | ✅ FASE 2 COMPLETA | ✅ FASE 3 COMPLETA
 
 ---
 
@@ -398,52 +398,97 @@ if (existingEnrichment && isRecent(existingEnrichment.updated_at)) {
 
 ---
 
-### 🎨 FASE 3: MELHORIAS DE UX
+### 🎨 FASE 3: MELHORIAS DE UX (✅ COMPLETA)
 
 #### 3.1 - Loading Detalhado com Progresso
 **Prioridade**: 🟢 MÉDIA  
 **Tempo**: 30 minutos  
-**Complexidade**: Baixa
+**Complexidade**: Baixa  
+**Status**: ✅ IMPLEMENTADO
 
-**Implementar:**
+**Implementado:**
 ```typescript
-// Edge function envia eventos de progresso
-console.log(JSON.stringify({
-  type: 'progress',
-  current: 25,
-  total: 50,
-  message: 'Enriquecendo claims...'
-}));
+// Frontend com toasts progressivos
+const loadingToastId = toast.loading('🔍 Iniciando busca...', {
+  description: 'Preparando busca para N conta(s)'
+});
 
-// Frontend captura e exibe
-toast.loading(`Processando: ${current}/${total} devoluções`, {
-  id: 'buscar-progress'
+// Atualizar progresso
+toast.loading('🌐 Conectando com API do Mercado Livre...', {
+  id: loadingToastId,
+  description: 'Buscando claims e devoluções'
+});
+
+// Toast de sucesso com métricas
+toast.success('✅ Busca concluída!', {
+  id: loadingToastId,
+  description: `X devolução(ões) encontrada(s)`,
+  duration: 4000
 });
 ```
 
-**Arquivos afetados:**
-- `supabase/functions/ml-returns/index.ts` (adicionar logs de progresso)
-- `src/pages/DevolucoesMercadoLivre.tsx` (exibir progresso)
+**Arquivos modificados:**
+- ✅ `src/pages/DevolucoesMercadoLivre.tsx` (linhas 257-336) - **APLICADO**
 
 ---
 
 #### 3.2 - Notificação de Filtro de 90 Dias
 **Prioridade**: 🟢 BAIXA  
 **Tempo**: 10 minutos  
-**Complexidade**: Baixa
+**Complexidade**: Baixa  
+**Status**: ✅ IMPLEMENTADO
 
-**Implementar:**
+**Implementado:**
 ```typescript
-// Se aplicou filtro de segurança, avisar usuário
-if (appliedSafetyFilter) {
-  toast.info('Período ajustado para 90 dias para melhor performance', {
+// Se período > 90 dias, avisar usuário
+if (days > 90) {
+  toast.info('📅 Filtro de segurança aplicado', {
+    description: 'Período ajustado para 90 dias para melhor performance',
     duration: 5000
   });
 }
 ```
 
-**Arquivos afetados:**
-- `src/pages/DevolucoesMercadoLivre.tsx` (após receber resposta)
+**Arquivos modificados:**
+- ✅ `src/pages/DevolucoesMercadoLivre.tsx` (linhas 285-290) - **APLICADO**
+
+---
+
+#### 3.3 - Cache de Enriquecimento
+**Prioridade**: 🟢 ALTA  
+**Tempo**: 45 minutos  
+**Complexidade**: Alta  
+**Status**: ✅ IMPLEMENTADO
+
+**Implementado:**
+```typescript
+// Verificar se já está enriquecido (TTL 1 hora)
+const { data: existingEnrichment } = await supabase
+  .from('devolucoes_avancadas')
+  .select('dados_review, dados_comunicacao, ..., updated_at')
+  .eq('order_id', returnData.resource_id)
+  .maybeSingle();
+
+const cacheIsRecent = existingEnrichment && 
+  (Date.now() - new Date(existingEnrichment.updated_at).getTime()) < 3600000;
+
+if (cacheIsRecent && existingEnrichment.dados_review) {
+  console.log(`💾 Usando CACHE para order ${returnData.resource_id}`);
+  return existingEnrichment; // Usar cache
+}
+
+// Caso contrário, enriquecer novamente
+console.log(`🔄 Enriquecendo order ${returnData.resource_id}`);
+```
+
+**Arquivos modificados:**
+- ✅ `supabase/functions/ml-returns/index.ts` (linhas 433-491) - **APLICADO**
+
+**Benefícios:**
+- ✅ Evita refazer enriquecimento de dados recentes
+- ✅ Reduz chamadas à API do ML
+- ✅ Melhora performance em buscas repetidas
+- ✅ TTL de 1 hora garante dados atualizados
 
 ---
 

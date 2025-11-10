@@ -440,6 +440,38 @@ Deno.serve(async (req) => {
                 let communicationInfo: any = null;
                 let deadlines: any = null;
                 
+                // ✅ FASE 3: CACHE - Verificar se já existe enriquecimento no banco
+                const { data: existingEnrichment } = await supabase
+                  .from('devolucoes_avancadas')
+                  .select('dados_review, dados_comunicacao, dados_deadlines, dados_tracking_info, dados_buyer_info, dados_product_info, dados_financial_info, updated_at')
+                  .eq('order_id', returnData.resource_id)
+                  .eq('integration_account_id', accountId)
+                  .maybeSingle();
+                
+                // ✅ FASE 3: Se cache existe e é recente (< 1 hora), usar cache
+                const cacheIsRecent = existingEnrichment && existingEnrichment.updated_at && 
+                  (Date.now() - new Date(existingEnrichment.updated_at).getTime()) < 3600000;
+                
+                if (cacheIsRecent && existingEnrichment.dados_review) {
+                  console.log(`💾 Usando CACHE para order ${returnData.resource_id} (idade: ${Math.round((Date.now() - new Date(existingEnrichment.updated_at).getTime()) / 1000)}s)`);
+                  
+                  // Retornar dados do cache sem refazer enriquecimento
+                  return {
+                    ...returnData,
+                    integration_account_id: accountId,
+                    review_info: existingEnrichment.dados_review,
+                    communication_info: existingEnrichment.dados_comunicacao,
+                    deadlines: existingEnrichment.dados_deadlines,
+                    tracking_info: existingEnrichment.dados_tracking_info,
+                    buyer_info: existingEnrichment.dados_buyer_info,
+                    product_info: existingEnrichment.dados_product_info,
+                    financial_info: existingEnrichment.dados_financial_info,
+                  };
+                }
+                
+                // Se não tem cache ou é antigo, fazer enriquecimento completo
+                console.log(`🔄 Enriquecendo order ${returnData.resource_id} (sem cache ou cache antigo)`);
+                
                 // Mapear TODOS os dados da devolução conforme documentação
                 const firstShipment = returnData.shipments?.[0];
                 const shippingAddress = firstShipment?.destination?.shipping_address;

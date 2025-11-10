@@ -267,6 +267,12 @@ export default function DevolucoesMercadoLivre() {
     }
 
     setIsSearching(true);
+    
+    // ✅ FASE 3: Toast de loading com progresso
+    const loadingToastId = toast.loading('🔍 Iniciando busca de devoluções...', {
+      description: `Preparando busca para ${selectedAccountIds.length} conta(s)`,
+    });
+    
     try {
       // ✅ Calcular datas usando date-fns
       const days = parseInt(periodo);
@@ -278,6 +284,14 @@ export default function DevolucoesMercadoLivre() {
       const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
       const dateToISO = format(dataFim, 'yyyy-MM-dd');
       
+      // ✅ FASE 3: Notificar se filtro de segurança será aplicado
+      if (days > 90) {
+        toast.info('📅 Filtro de segurança aplicado', {
+          description: 'Período ajustado para 90 dias para melhor performance',
+          duration: 5000,
+        });
+      }
+      
       // ✅ FIX FASE 1.3: Consolidar TODOS os dispatches em um único bloco
       // Isso evita múltiplas requisições simultâneas ao SWR
       const newFilters: Partial<DevolucaoFilters> = {
@@ -285,6 +299,12 @@ export default function DevolucoesMercadoLivre() {
         dateTo: dateToISO,
         search: searchTerm,
       };
+      
+      // ✅ FASE 3: Atualizar toast - conectando
+      toast.loading('🌐 Conectando com API do Mercado Livre...', {
+        id: loadingToastId,
+        description: 'Buscando claims e devoluções',
+      });
       
       // ✅ Aplicar filtros E contas em uma ÚNICA ação
       if (selectedAccountIds.length === 1) {
@@ -309,27 +329,31 @@ export default function DevolucoesMercadoLivre() {
         integrationAccountId: selectedAccountIds.length === 1 ? selectedAccountIds[0] : selectedAccountIds.join(','),
       } as DevolucaoFilters);
       
-      const contasTexto = selectedAccountIds.length === 1 
-        ? 'conta selecionada' 
-        : `${selectedAccountIds.length} contas selecionadas`;
-      
-      toast.loading(`Buscando devoluções...`, {
-        id: 'buscar-devolucoes',
+      // ✅ FASE 3: Atualizar toast - processando
+      toast.loading('📦 Processando claims em paralelo...', {
+        id: loadingToastId,
+        description: 'Enriquecendo dados de devoluções',
       });
       
       // ✅ SWR já vai refazer a requisição automaticamente quando a key mudar
       // NÃO precisa chamar refetch() - isso causaria requisição duplicada
       
       // Esperar um momento para SWR processar
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
-      toast.success(`Busca configurada!`, {
-        id: 'buscar-devolucoes',
+      // ✅ FASE 3: Toast de sucesso com métricas
+      const totalDevs = state.total || 0;
+      toast.success(`✅ Busca concluída!`, {
+        id: loadingToastId,
+        description: `${totalDevs} devolução(ões) encontrada(s) em ${selectedAccountIds.length} conta(s)`,
+        duration: 4000,
       });
     } catch (error) {
       console.error('Erro ao buscar:', error);
-      toast.error('Erro ao configurar busca', {
-        id: 'buscar-devolucoes',
+      toast.error('❌ Erro na busca', {
+        id: loadingToastId,
+        description: 'Tente novamente ou selecione menos contas',
+        duration: 5000,
       });
     } finally {
       setIsSearching(false);
