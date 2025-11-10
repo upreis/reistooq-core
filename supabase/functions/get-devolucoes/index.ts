@@ -42,7 +42,7 @@ interface DevolucaoFilters {
   status_devolucao?: string[];
   date_from?: string;
   date_to?: string;
-  integration_account_id: string;
+  integration_account_id?: string | string[]; // Aceitar string única ou array
   claim_id?: string;
   order_id?: string;
   buyer_id?: number;
@@ -65,8 +65,20 @@ function buildQuery(
 ) {
   let query = supabase
     .from('devolucoes_avancadas')
-    .select('*', { count: 'exact' })
-    .eq('integration_account_id', filters.integration_account_id);
+    .select('*', { count: 'exact' });
+
+  // 🔍 Filtro por integration_account_id (aceitar string ou array)
+  if (filters.integration_account_id) {
+    if (Array.isArray(filters.integration_account_id)) {
+      query = query.in('integration_account_id', filters.integration_account_id);
+    } else if (typeof filters.integration_account_id === 'string' && filters.integration_account_id.includes(',')) {
+      // Se vier como string com vírgulas, converter para array
+      const accountIds = filters.integration_account_id.split(',').map(id => id.trim());
+      query = query.in('integration_account_id', accountIds);
+    } else {
+      query = query.eq('integration_account_id', filters.integration_account_id);
+    }
+  }
 
   // 🔍 Filtro de busca (claim_id, order_id, item_title, buyer)
   if (filters.search && filters.search.trim() !== '') {
@@ -125,13 +137,24 @@ function buildQuery(
 // 📊 Buscar estatísticas agregadas
 async function getAggregatedStats(
   supabase: any,
-  integrationAccountId: string
+  integrationAccountId: string | string[]
 ) {
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('devolucoes_avancadas')
-      .select('status, status_devolucao, total_amount')
-      .eq('integration_account_id', integrationAccountId);
+      .select('status, status_devolucao, total_amount');
+
+    // Aplicar filtro baseado no tipo de integrationAccountId
+    if (Array.isArray(integrationAccountId)) {
+      query = query.in('integration_account_id', integrationAccountId);
+    } else if (typeof integrationAccountId === 'string' && integrationAccountId.includes(',')) {
+      const accountIds = integrationAccountId.split(',').map(id => id.trim());
+      query = query.in('integration_account_id', accountIds);
+    } else {
+      query = query.eq('integration_account_id', integrationAccountId);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
