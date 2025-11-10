@@ -3,11 +3,13 @@
  * Busca devoluções através de Claims do Mercado Livre
  * 
  * FASE 2: Implementa salvamento automático de dados enriquecidos via UPSERT
+ * FASE 3: Throttling para evitar rate limit 429 da API ML
  */
 
 import { corsHeaders, makeServiceClient } from '../_shared/client.ts';
 import { getErrorMessage } from '../_shared/error-handler.ts';
 import { calculateDeadlines, type LeadTimeData, type ClaimData, type Deadlines } from './utils/deadlineCalculator.ts';
+import pLimit from 'npm:p-limit@5';
 
 interface RequestBody {
   accountIds: string[];
@@ -401,10 +403,14 @@ Deno.serve(async (req) => {
         // PASSO 2: Para CADA claim, tentar buscar devolução
         // (já que related_entities vem undefined na API de busca)
         if (claimsData.data && Array.isArray(claimsData.data)) {
-          console.log(`📦 Verificando devoluções em ${claimsData.data.length} claims... (PARALELO)`);
+          console.log(`📦 Verificando devoluções em ${claimsData.data.length} claims... (THROTTLED: 10 simultâneos)`);
           
-          // ✅ FASE 2: Processar claims em PARALELO (não sequencial)
-          const claimPromises = claimsData.data.map(async (claim: any) => {
+          // ✅ FASE 3: Throttling - máximo 10 requests simultâneos para evitar rate limit
+          const limit = pLimit(10);
+          
+          // ✅ FASE 2: Processar claims em PARALELO com throttling
+          const claimPromises = claimsData.data.map((claim: any) => 
+            limit(async () => {
             try {
               const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
               
@@ -1152,7 +1158,8 @@ Deno.serve(async (req) => {
               console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
               return null;
             }
-          });
+          }) // Fecha limit async
+          ); // Fecha map
           
           // ✅ FASE 2: Aguardar TODOS os claims processarem em paralelo
           const claimResults = await Promise.all(claimPromises);
