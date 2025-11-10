@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Package, Upload, X, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useProducts, Product } from "@/hooks/useProducts";
@@ -24,6 +25,22 @@ interface CreateParentProductModalProps {
   initialBarcode?: string;
 }
 
+interface ProductFormData {
+  categoria_principal: string;
+  categoria_nivel2: string;
+  descricao: string;
+  peso_bruto_kg: number;
+  peso_liquido_kg: number;
+  largura: number;
+  altura: number;
+  comprimento: number;
+  dias_preparacao: number;
+  tipo_embalagem: string;
+  ncm: string;
+  codigo_cest: string;
+  origem: number | null;
+}
+
 export function CreateParentProductModal({ 
   open, 
   onOpenChange, 
@@ -37,6 +54,21 @@ export function CreateParentProductModal({
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [formData, setFormData] = useState<ProductFormData>({
+    categoria_principal: '',
+    categoria_nivel2: '',
+    descricao: '',
+    peso_bruto_kg: 0,
+    peso_liquido_kg: 0,
+    largura: 0,
+    altura: 0,
+    comprimento: 0,
+    dias_preparacao: 0,
+    tipo_embalagem: '',
+    ncm: '',
+    codigo_cest: '',
+    origem: null,
+  });
   const { toast } = useToast();
   const { createProduct, updateProduct } = useProducts();
   const { hasPermission, loading: permissionsLoading } = useUserPermissions();
@@ -51,6 +83,21 @@ export function CreateParentProductModal({
         setCodigoBarras(editProduct.codigo_barras || '');
         setImageUrl(editProduct.url_imagem || '');
         setImageFile(null);
+        setFormData({
+          categoria_principal: editProduct.categoria_principal || '',
+          categoria_nivel2: editProduct.categoria_nivel2 || '',
+          descricao: editProduct.descricao || '',
+          peso_bruto_kg: editProduct.peso_bruto_kg || 0,
+          peso_liquido_kg: editProduct.peso_liquido_kg || 0,
+          largura: editProduct.largura || 0,
+          altura: editProduct.altura || 0,
+          comprimento: editProduct.comprimento || 0,
+          dias_preparacao: editProduct.dias_preparacao || 0,
+          tipo_embalagem: editProduct.tipo_embalagem || '',
+          ncm: editProduct.ncm || '',
+          codigo_cest: editProduct.codigo_cest || '',
+          origem: editProduct.origem || null,
+        });
       } else if (initialBarcode) {
         // Modo criação com código escaneado - apenas código de barras
         setSkuInterno('');
@@ -58,6 +105,21 @@ export function CreateParentProductModal({
         setCodigoBarras(initialBarcode);
         setImageUrl('');
         setImageFile(null);
+        setFormData({
+          categoria_principal: '',
+          categoria_nivel2: '',
+          descricao: '',
+          peso_bruto_kg: 0,
+          peso_liquido_kg: 0,
+          largura: 0,
+          altura: 0,
+          comprimento: 0,
+          dias_preparacao: 0,
+          tipo_embalagem: '',
+          ncm: '',
+          codigo_cest: '',
+          origem: null,
+        });
       } else {
         // Modo criação sem código - limpar tudo
         setSkuInterno('');
@@ -65,6 +127,21 @@ export function CreateParentProductModal({
         setCodigoBarras('');
         setImageUrl('');
         setImageFile(null);
+        setFormData({
+          categoria_principal: '',
+          categoria_nivel2: '',
+          descricao: '',
+          peso_bruto_kg: 0,
+          peso_liquido_kg: 0,
+          largura: 0,
+          altura: 0,
+          comprimento: 0,
+          dias_preparacao: 0,
+          tipo_embalagem: '',
+          ncm: '',
+          codigo_cest: '',
+          origem: null,
+        });
       }
     }
   }, [editProduct, open, initialBarcode]);
@@ -161,7 +238,19 @@ export function CreateParentProductModal({
           codigo_barras: codigoBarras.trim() || null,
           unidade_medida_id: unidadePadrao.id,
           categoria: null,
-          descricao: null,
+          categoria_principal: formData.categoria_principal || null,
+          categoria_nivel2: formData.categoria_nivel2 || null,
+          descricao: formData.descricao || null,
+          peso_bruto_kg: formData.peso_bruto_kg || null,
+          peso_liquido_kg: formData.peso_liquido_kg || null,
+          largura: formData.largura || null,
+          altura: formData.altura || null,
+          comprimento: formData.comprimento || null,
+          dias_preparacao: formData.dias_preparacao || null,
+          tipo_embalagem: formData.tipo_embalagem || null,
+          ncm: formData.ncm || null,
+          codigo_cest: formData.codigo_cest || null,
+          origem: formData.origem || null,
           status: 'ativo',
           ativo: true,
           sku_pai: null,
@@ -218,6 +307,21 @@ export function CreateParentProductModal({
     setCodigoBarras('');
     setImageUrl('');
     setImageFile(null);
+    setFormData({
+      categoria_principal: '',
+      categoria_nivel2: '',
+      descricao: '',
+      peso_bruto_kg: 0,
+      peso_liquido_kg: 0,
+      largura: 0,
+      altura: 0,
+      comprimento: 0,
+      dias_preparacao: 0,
+      tipo_embalagem: '',
+      ncm: '',
+      codigo_cest: '',
+      origem: null,
+    });
     onOpenChange(false);
   };
 
@@ -291,6 +395,133 @@ export function CreateParentProductModal({
                 }
               }}
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="parent-descricao">Descrição</Label>
+            <Textarea
+              id="parent-descricao"
+              placeholder="Descrição do produto"
+              value={formData.descricao}
+              onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+              rows={3}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="parent-peso-bruto">Peso Bruto (kg)</Label>
+              <Input
+                id="parent-peso-bruto"
+                type="number"
+                step="0.001"
+                placeholder="0.000"
+                value={formData.peso_bruto_kg || ''}
+                onChange={(e) => setFormData({ ...formData, peso_bruto_kg: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent-peso-liquido">Peso Líquido (kg)</Label>
+              <Input
+                id="parent-peso-liquido"
+                type="number"
+                step="0.001"
+                placeholder="0.000"
+                value={formData.peso_liquido_kg || ''}
+                onChange={(e) => setFormData({ ...formData, peso_liquido_kg: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="parent-largura">Largura (cm)</Label>
+              <Input
+                id="parent-largura"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                value={formData.largura || ''}
+                onChange={(e) => setFormData({ ...formData, largura: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent-altura">Altura (cm)</Label>
+              <Input
+                id="parent-altura"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                value={formData.altura || ''}
+                onChange={(e) => setFormData({ ...formData, altura: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent-comprimento">Comprimento (cm)</Label>
+              <Input
+                id="parent-comprimento"
+                type="number"
+                step="0.1"
+                placeholder="0.0"
+                value={formData.comprimento || ''}
+                onChange={(e) => setFormData({ ...formData, comprimento: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="parent-dias-prep">Dias Preparação</Label>
+              <Input
+                id="parent-dias-prep"
+                type="number"
+                placeholder="0"
+                value={formData.dias_preparacao || ''}
+                onChange={(e) => setFormData({ ...formData, dias_preparacao: parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent-tipo-embalagem">Tipo Embalagem</Label>
+              <Input
+                id="parent-tipo-embalagem"
+                placeholder="Ex: Caixa, Envelope"
+                value={formData.tipo_embalagem}
+                onChange={(e) => setFormData({ ...formData, tipo_embalagem: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="parent-ncm">NCM</Label>
+              <Input
+                id="parent-ncm"
+                placeholder="00000000"
+                value={formData.ncm}
+                onChange={(e) => setFormData({ ...formData, ncm: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent-cest">Código CEST</Label>
+              <Input
+                id="parent-cest"
+                placeholder="0000000"
+                value={formData.codigo_cest}
+                onChange={(e) => setFormData({ ...formData, codigo_cest: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="parent-origem">Origem</Label>
+              <Input
+                id="parent-origem"
+                type="number"
+                placeholder="0"
+                min="0"
+                max="8"
+                value={formData.origem ?? ''}
+                onChange={(e) => setFormData({ ...formData, origem: parseInt(e.target.value) || null })}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
