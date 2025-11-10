@@ -572,20 +572,26 @@ Deno.serve(async (req) => {
                     const messagesData = await messagesResponse.json();
                     const messages = messagesData.messages || [];
                     
+                    // 🐛 FIX 1: Evitar IDs duplicados usando timestamp único
+                    let uniqueIdCounter = 0;
+                    
                     // Processar mensagens
-                    const processedMessages = messages.map((msg: any) => ({
-                      id: msg.id || String(Date.now()),
-                      date: msg.date_created || msg.date || new Date().toISOString(),
-                      sender_role: msg.sender_role || 'mediator',
-                      message: msg.text || msg.message || '',
-                      status: msg.status || null,
-                      attachments: msg.attachments?.map((att: any) => ({
-                        id: att.id || String(Date.now()),
-                        url: att.url || '',
-                        type: att.type || 'file',
-                        filename: att.filename || null,
-                      })) || [],
-                    }));
+                    const processedMessages = messages.map((msg: any) => {
+                      uniqueIdCounter++;
+                      return {
+                        id: msg.id || `msg-${claim.id}-${uniqueIdCounter}-${Date.now()}`,
+                        date: msg.date_created || msg.date || new Date().toISOString(),
+                        sender_role: msg.sender_role || 'mediator',
+                        message: msg.text || msg.message || '',
+                        status: msg.status || null,
+                        attachments: msg.attachments?.map((att: any, attIdx: number) => ({
+                          id: att.id || `att-${claim.id}-${uniqueIdCounter}-${attIdx}-${Date.now()}`,
+                          url: att.url || '',
+                          type: att.type || 'file',
+                          filename: att.filename || null,
+                        })) || [],
+                      };
+                    });
                     
                     // Calcular métricas de qualidade
                     const moderatedCount = messages.filter((m: any) => m.status === 'moderated' || m.status === 'rejected').length;
@@ -600,11 +606,19 @@ Deno.serve(async (req) => {
                       else quality = 'poor';
                     }
                     
-                    let moderationStatus = 'clean';
+                    // 🐛 FIX 2: Garantir que moderationStatus seja sempre string válida
+                    let moderationStatus: 'clean' | 'moderated' | 'rejected' = 'clean';
                     if (messages.some((m: any) => m.status === 'rejected')) moderationStatus = 'rejected';
                     else if (messages.some((m: any) => m.status === 'moderated')) moderationStatus = 'moderated';
                     
-                    const lastMessage = messages[messages.length - 1];
+                    // 🐛 FIX 3: Ordenar mensagens por data antes de pegar a última
+                    const sortedMessages = [...messages].sort((a: any, b: any) => {
+                      const dateA = new Date(a.date_created || a.date || 0).getTime();
+                      const dateB = new Date(b.date_created || b.date || 0).getTime();
+                      return dateA - dateB;
+                    });
+                    
+                    const lastMessage = sortedMessages[sortedMessages.length - 1];
                     const hasAttachments = messages.some((m: any) => m.attachments && m.attachments.length > 0);
                     
                     communicationInfo = {
@@ -615,15 +629,19 @@ Deno.serve(async (req) => {
                       communication_quality: quality,
                       moderation_status: moderationStatus,
                       has_attachments: hasAttachments,
-                      messages: processedMessages.slice(-10), // Últimas 10 mensagens apenas
+                      messages: processedMessages.slice(-10).reverse(), // 🐛 FIX 4: Reverter para mostrar mais recentes primeiro
                     };
                     
                     console.log(`💬 Comunicação do claim ${claim.id}: ${totalMessages} mensagens, qualidade: ${quality}`);
+                  } else if (messagesResponse.status === 404) {
+                    // 🐛 FIX 5: 404 é normal (claim sem mensagens), não logar como warning
+                    console.log(`ℹ️ Claim ${claim.id} não tem mensagens`);
                   } else {
                     console.warn(`⚠️ Mensagens não disponíveis para claim ${claim.id}: ${messagesResponse.status}`);
                   }
                 } catch (error) {
-                  console.warn(`⚠️ Erro ao buscar mensagens do claim ${claim.id}:`, error);
+                  // 🐛 FIX 6: Melhorar tratamento de erro com detalhes
+                  console.warn(`⚠️ Erro ao buscar mensagens do claim ${claim.id}:`, getErrorMessage(error));
                 }
 
 

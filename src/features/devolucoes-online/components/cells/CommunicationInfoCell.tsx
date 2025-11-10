@@ -23,7 +23,8 @@ interface CommunicationInfoCellProps {
 }
 
 export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellProps) => {
-  if (!communication || communication.total_messages === 0) {
+  // 🐛 FIX 7: Verificação mais robusta - pode ser null, undefined ou ter total_messages = 0
+  if (!communication || !communication.total_messages || communication.total_messages === 0) {
     return (
       <div className="text-xs text-muted-foreground">
         Sem mensagens
@@ -91,7 +92,14 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
           {communication.last_message_date && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              {format(new Date(communication.last_message_date), 'dd/MM/yy HH:mm', { locale: ptBR })}
+              {/* 🐛 FIX 8: Try-catch para evitar erro de data inválida */}
+              {(() => {
+                try {
+                  return format(new Date(communication.last_message_date), 'dd/MM/yy HH:mm', { locale: ptBR });
+                } catch {
+                  return communication.last_message_date;
+                }
+              })()}
             </div>
           )}
 
@@ -137,57 +145,71 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
 
         <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-4">
-            {communication.messages.map((message, index) => (
-              <div
-                key={message.id || index}
-                className={`p-4 rounded-lg border ${
-                  message.sender_role === 'seller'
-                    ? 'bg-primary/5 border-primary/20 ml-8'
-                    : message.sender_role === 'mediator'
-                    ? 'bg-accent border-accent-foreground/20'
-                    : 'bg-muted border-border mr-8'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      {getSenderLabel(message.sender_role)}
-                    </Badge>
-                    {message.status && (
-                      <Badge variant="secondary" className="text-xs">
-                        {message.status}
+            {/* 🐛 FIX 9: Garantir que messages existe antes de mapear */}
+            {communication.messages && communication.messages.length > 0 ? (
+              communication.messages.map((message, index) => (
+                <div
+                  key={message.id || index}
+                  className={`p-4 rounded-lg border ${
+                    message.sender_role === 'seller'
+                      ? 'bg-primary/5 border-primary/20 ml-8'
+                      : message.sender_role === 'mediator'
+                      ? 'bg-accent border-accent-foreground/20'
+                      : 'bg-muted border-border mr-8'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {getSenderLabel(message.sender_role)}
                       </Badge>
-                    )}
+                      {message.status && (
+                        <Badge variant="secondary" className="text-xs">
+                          {message.status}
+                        </Badge>
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {/* 🐛 FIX 10: Try-catch para data também no modal */}
+                      {(() => {
+                        try {
+                          return format(new Date(message.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+                        } catch {
+                          return message.date;
+                        }
+                      })()}
+                    </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(message.date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                  </span>
-                </div>
-                
-                <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                  
+                  <p className="text-sm whitespace-pre-wrap">{message.message}</p>
 
-                {message.attachments && message.attachments.length > 0 && (
-                  <div className="mt-3 pt-3 border-t">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">
-                      Anexos ({message.attachments.length})
+                  {message.attachments && message.attachments.length > 0 && (
+                    <div className="mt-3 pt-3 border-t">
+                      <div className="text-xs font-medium text-muted-foreground mb-2">
+                        Anexos ({message.attachments.length})
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {message.attachments.map((att, attIndex) => (
+                          <a
+                            key={att.id || attIndex}
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary hover:underline"
+                          >
+                            {att.filename || `Anexo ${attIndex + 1}`}
+                          </a>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      {message.attachments.map((att, attIndex) => (
-                        <a
-                          key={att.id || attIndex}
-                          href={att.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          {att.filename || `Anexo ${attIndex + 1}`}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                Nenhuma mensagem para exibir
               </div>
-            ))}
+            )}
           </div>
         </ScrollArea>
       </DialogContent>
