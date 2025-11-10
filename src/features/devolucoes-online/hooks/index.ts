@@ -10,3 +10,6 @@ export * from './queries/useSyncStatus';
 // Mutation hooks
 export * from './mutations/useSyncDevolucoes';
 export * from './mutations/useEnrichDevolucoes';
+
+// Auto-enrichment
+export { useAutoEnrichment } from './useAutoEnrichment';

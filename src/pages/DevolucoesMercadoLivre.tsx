@@ -12,7 +12,8 @@ import {
   useGetDevolucoes, 
   useSyncDevolucoes, 
   useEnrichDevolucoes,
-  useSyncStatus 
+  useSyncStatus,
+  useAutoEnrichment
 } from '@/features/devolucoes-online/hooks';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
@@ -81,6 +82,13 @@ function DevolucoesMercadoLivreContent() {
   
   // ⚡ Estado para sincronização completa
   const [isFullSyncing, setIsFullSyncing] = useState(false);
+
+  // 🤖 Auto-enriquecimento: detecta dados faltantes e dispara em background
+  useAutoEnrichment({
+    integrationAccountId: selectedAccountIds[0] || '',
+    enabled: selectedAccountIds.length > 0 && !isLoading,
+    data: devolucoesData?.data || [],
+  });
 
   // Carregar contas na montagem
   useEffect(() => {
