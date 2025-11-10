@@ -224,6 +224,7 @@ async function getDevolucoes(
       // Datas
       date_created: item.data_criacao_claim,
       date_closed: item.data_fechamento_claim,
+      last_updated: item.updated_at,
       
       // Buyer info
       buyer_info: item.dados_buyer_info || {
@@ -258,12 +259,37 @@ async function getDevolucoes(
         value: item.quantidade || 1,
       },
       
+      // Order (para compatibilidade)
+      order: item.dados_order ? {
+        id: item.order_id,
+        date_created: item.dados_order.date_created,
+        seller_id: item.dados_order.seller_id,
+      } : null,
+      
+      // Orders array (para compatibilidade com campos antigos)
+      orders: item.dados_order ? [{
+        item_id: item.dados_order?.order_items?.[0]?.item?.id || null,
+        variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || null,
+        context_type: item.claim_quantity_type || 'total',
+        total_quantity: item.dados_order?.order_items?.[0]?.quantity || 1,
+        return_quantity: item.quantidade || 1,
+      }] : [],
+      
       // Shipment
-      shipment: {
-        destination: item.destino_devolucao || null,
-        type: item.tipo_envio_devolucao || null,
-        status: item.status_envio_devolucao ? { id: item.status_envio_devolucao } : null,
-      },
+      shipment_id: item.shipment_id_devolucao || item.shipment_id,
+      shipment_status: item.status_envio_devolucao || null,
+      shipment_type: item.tipo_envio_devolucao || null,
+      shipment_destination: item.destino_devolucao || null,
+      tracking_number: item.codigo_rastreamento_devolucao || item.codigo_rastreamento,
+      
+      // Endereço de destino (extrair do JSONB)
+      destination_address: item.endereco_destino?.street_name || item.endereco_destino_devolucao || null,
+      destination_city: item.endereco_destino?.city?.name || null,
+      destination_state: item.endereco_destino?.state?.name || null,
+      destination_zip: item.endereco_destino?.zip_code || null,
+      destination_neighborhood: item.endereco_destino?.neighborhood?.name || null,
+      destination_country: item.endereco_destino?.country?.name || 'Brasil',
+      destination_comment: item.endereco_destino?.comment || null,
       
       // Deadlines
       deadlines: item.dados_deadlines || {},
@@ -277,6 +303,10 @@ async function getDevolucoes(
         status: item.review_status || null,
         result: item.review_result || null,
       },
+      review_status: item.review_status || null,
+      review_method: null,
+      review_stage: null,
+      seller_status: item.review_status || null,
       
       // Communication
       communication_info: item.dados_comunicacao || {
@@ -286,7 +316,7 @@ async function getDevolucoes(
       },
       
       // Fulfillment
-      fulfillment: item.dados_fulfillment || {},
+      fulfillment_info: item.dados_fulfillment || {},
       
       // Actions
       available_actions: item.dados_available_actions || item.dados_acoes_disponiveis || {},
@@ -296,12 +326,31 @@ async function getDevolucoes(
       estimated_delivery_date: item.dados_lead_time?.estimated_delivery_date || null,
       estimated_delivery_from: item.dados_lead_time?.estimated_delivery_from || null,
       estimated_delivery_to: item.dados_lead_time?.estimated_delivery_to || null,
+      estimated_delivery_limit: item.dados_lead_time?.delivery_limit || null,
       delivery_limit: item.dados_lead_time?.delivery_limit || null,
-      product_condition: item.dados_product_condition || {},
-      benefited: item.responsavel_custo || null,
+      
+      // Product condition (retornar STRING ao invés de objeto)
+      product_condition: item.dados_product_condition?.status || null,
+      product_destination: item.dados_product_condition?.destination || null,
+      
+      // Benefited (retornar STRING ao invés de objeto/array)
+      benefited: Array.isArray(item.responsavel_custo) 
+        ? item.responsavel_custo[0] 
+        : item.responsavel_custo || null,
       
       // Substatus
       substatus: item.descricao_ultimo_status || null,
+      
+      // Shipments array (para SubstatusCell)
+      shipments: item.dados_tracking_info ? [{
+        substatus: item.status_rastreamento_devolucao || null,
+      }] : [],
+      
+      // Campos adicionais
+      reason_id: item.reason_id || null,
+      has_delay: false, // TODO: calcular com base em prazos
+      intermediate_check: item.return_intermediate_check || false,
+      related_entities: item.related_entities || [],
       
       // Status análise (campo customizado)
       status_analise: item.status_analise || 'pendente',
