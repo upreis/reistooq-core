@@ -54,6 +54,7 @@ export const translateStatusMoney = (statusMoneyId: string | null): string => {
     'completed': 'Completo',
     'waiting_refund': 'Aguardando Reembolso',
     'refund_pending': 'Reembolso Pendente',
+    'retained': 'Retido',
   };
   
   return translations[statusMoneyId] || statusMoneyId;
@@ -84,6 +85,9 @@ export const translateSubtype = (subtypeId: string | null): string => {
     'duplicate_order': 'Pedido Duplicado',
     'seller_request': 'Solicitação do Vendedor',
     'buyer_request': 'Solicitação do Comprador',
+    'low_cost': 'Baixo Custo',
+    'return_total': 'Devolução Total',
+    'return_partial': 'Devolução Parcial',
   };
   
   return translations[subtypeId] || subtypeId;
@@ -106,6 +110,7 @@ export const translateResourceType = (resourceType: string | null): string => {
     'return_partial': 'Devolução Parcial',
     'return_full': 'Devolução Completa',
     'exchange': 'Troca',
+    'order': 'Pedido',
   };
   
   return translations[resourceType] || resourceType;
@@ -191,6 +196,7 @@ export const getStatusMoneyVariant = (statusMoneyId: string | null): 'default' |
     'in_process': 'secondary',
     'processing': 'secondary',
     'waiting_refund': 'secondary',
+    'retained': 'secondary',
     'pending': 'outline',
     'refund_pending': 'outline',
     'not_refunded': 'destructive',
