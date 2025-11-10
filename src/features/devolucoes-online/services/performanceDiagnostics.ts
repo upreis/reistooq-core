@@ -34,30 +34,35 @@ export interface JsonbFillRateStats {
 export class PerformanceDiagnostics {
   /**
    * Verifica o uso dos índices JSONB criados
-   * NOTA: Requer função RPC get_jsonb_index_stats() no Supabase
+   * Utiliza função RPC get_jsonb_index_stats() no Supabase
    */
   static async getIndexUsageStats(): Promise<IndexUsageStats[]> {
-    // Mock data até função RPC ser criada
-    return [
-      {
-        index_name: 'idx_devolucoes_avancadas_review_status',
-        table_name: 'devolucoes_avancadas',
-        index_scans: 1250,
-        rows_read: 45000,
-        rows_fetched: 12000,
-        size_mb: 2.4,
-        efficiency_score: 85.5
-      },
-      {
-        index_name: 'idx_devolucoes_avancadas_deadlines_critical',
-        table_name: 'devolucoes_avancadas',
-        index_scans: 980,
-        rows_read: 32000,
-        rows_fetched: 8500,
-        size_mb: 1.8,
-        efficiency_score: 78.2
+    try {
+      const { data, error } = await supabase.rpc('get_jsonb_index_stats');
+      
+      if (error) {
+        console.error('Erro ao buscar estatísticas de índices:', error);
+        return [];
       }
-    ];
+      
+      if (!data || data.length === 0) {
+        console.warn('Nenhum índice JSONB encontrado. Certifique-se de que os índices foram criados.');
+        return [];
+      }
+      
+      return data.map(row => ({
+        index_name: row.index_name,
+        table_name: row.table_name,
+        index_scans: Number(row.index_scans),
+        rows_read: Number(row.rows_read),
+        rows_fetched: Number(row.rows_fetched),
+        size_mb: Number(row.size_mb),
+        efficiency_score: Number(row.efficiency_score)
+      }));
+    } catch (err) {
+      console.error('Erro ao executar get_jsonb_index_stats:', err);
+      return [];
+    }
   }
 
   /**

@@ -6799,6 +6799,18 @@ export type Database = {
           refresh_token: string
         }[]
       }
+      get_jsonb_index_stats: {
+        Args: never
+        Returns: {
+          efficiency_score: number
+          index_name: string
+          index_scans: number
+          rows_fetched: number
+          rows_read: number
+          size_mb: number
+          table_name: string
+        }[]
+      }
       get_low_stock_products: {
         Args: never
         Returns: {
