@@ -18,8 +18,13 @@ export function useSyncStatus(
   return useQuery({
     queryKey: [SYNC_STATUS_QUERY_KEY, integrationAccountId],
     queryFn: () => devolucaoService.getSyncStatus(integrationAccountId),
-    enabled: options.enabled ?? true,
-    refetchInterval: options.refetchInterval ?? 5000, // Atualizar a cada 5s durante sync
+    enabled: (options.enabled ?? true) && !!integrationAccountId,
+    refetchInterval: (query) => {
+      // Polling rápido (5s) quando sync está rodando, lento (30s) quando idle
+      const status = query.state.data?.last_sync_status;
+      if (status === 'running' || status === 'in_progress') return 5000;
+      return options.refetchInterval ?? 30000;
+    },
     staleTime: 3000,
     gcTime: 60000,
   });

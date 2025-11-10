@@ -40,7 +40,7 @@ export function SyncStatusIndicator({
       );
     }
 
-    if (syncStatus.status === 'running') {
+    if (syncStatus.last_sync_status === 'running' || syncStatus.last_sync_status === 'in_progress') {
       return (
         <Badge variant="default" className="gap-1 animate-pulse">
           <RefreshCw className="h-3 w-3 animate-spin" />
@@ -49,16 +49,16 @@ export function SyncStatusIndicator({
       );
     }
 
-    if (syncStatus.status === 'completed') {
+    if (syncStatus.last_sync_status === 'completed' || syncStatus.last_sync_status === 'success') {
       return (
-        <Badge variant="success" className="gap-1">
+        <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600 text-white">
           <RefreshCw className="h-3 w-3" />
           Sincronizado
         </Badge>
       );
     }
 
-    if (syncStatus.status === 'failed') {
+    if (syncStatus.last_sync_status === 'failed' || syncStatus.last_sync_status === 'error') {
       return (
         <Badge variant="destructive" className="gap-1">
           <RefreshCw className="h-3 w-3" />
@@ -71,12 +71,12 @@ export function SyncStatusIndicator({
   };
 
   const getSyncInfo = () => {
-    if (!syncStatus || !syncStatus.started_at) return null;
+    if (!syncStatus || !syncStatus.last_sync_at) return null;
 
     return (
       <div className="text-xs text-muted-foreground">
         Última sincronização:{' '}
-        {formatDistanceToNow(new Date(syncStatus.started_at), {
+        {formatDistanceToNow(new Date(syncStatus.last_sync_at), {
           addSuffix: true,
           locale: ptBR,
         })}
@@ -98,9 +98,14 @@ export function SyncStatusIndicator({
               {syncStatus && (
                 <>
                   <div className="text-xs">
-                    Processados: {syncStatus.records_processed || 0} /{' '}
-                    {syncStatus.records_total || 0}
+                    Processados: {syncStatus.items_synced || 0}
+                    {syncStatus.items_total && syncStatus.items_total > 0 && ` / ${syncStatus.items_total}`}
                   </div>
+                  {syncStatus.items_failed && syncStatus.items_failed > 0 && (
+                    <div className="text-xs text-destructive">
+                      Falhas: {syncStatus.items_failed}
+                    </div>
+                  )}
                   {syncStatus.duration_ms && (
                     <div className="text-xs">
                       Duração: {(syncStatus.duration_ms / 1000).toFixed(1)}s
@@ -117,7 +122,7 @@ export function SyncStatusIndicator({
       <div className="flex gap-2">
         <Button
           onClick={onSync}
-          disabled={isSyncing || syncStatus?.status === 'running'}
+          disabled={isSyncing || syncStatus?.last_sync_status === 'running' || syncStatus?.last_sync_status === 'in_progress'}
           size="sm"
           variant="outline"
           className="gap-2"

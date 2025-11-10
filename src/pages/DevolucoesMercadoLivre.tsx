@@ -72,7 +72,7 @@ function DevolucoesMercadoLivreContent() {
   // ✅ REACT QUERY: Sync status
   const { data: syncStatus } = useSyncStatus(
     selectedAccountIds[0] || '',
-    { enabled: selectedAccountIds.length === 1 }
+    { enabled: selectedAccountIds.length > 0 }
   );
   
   // ✅ REACT QUERY: Mutations
@@ -162,7 +162,7 @@ function DevolucoesMercadoLivreContent() {
     const dateToISO = format(dataFim, 'yyyy-MM-dd');
     
     setFilters({
-      integrationAccountId: selectedAccountIds.join(','),
+      integrationAccountId: selectedAccountIds[0], // Usar apenas primeira conta
       search: searchTerm,
       dateFrom: dateFromISO,
       dateTo: dateToISO,
@@ -170,7 +170,10 @@ function DevolucoesMercadoLivreContent() {
     
     setPagination({ ...pagination, page: 1 });
     
-    refetch();
+    const result = await refetch();
+    if (result.isError) {
+      toast.error('Erro ao buscar devoluções');
+    }
   };
 
   const handleSync = () => {

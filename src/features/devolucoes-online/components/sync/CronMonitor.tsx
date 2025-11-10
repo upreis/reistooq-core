@@ -33,7 +33,7 @@ export function CronMonitor() {
       case 'success':
       case 'completed':
         return (
-          <Badge variant="success" className="gap-1">
+          <Badge variant="default" className="gap-1 bg-green-500 hover:bg-green-600 text-white">
             <CheckCircle className="h-3 w-3" />
             Concluído
           </Badge>
@@ -117,8 +117,8 @@ export function CronMonitor() {
                     <div className="text-sm space-y-1">
                       <p className="text-muted-foreground">
                         ✅ {sync.items_synced || 0} devoluções sincronizadas
-                        {sync.items_total > 0 && ` de ${sync.items_total} total`}
-                        {sync.items_failed > 0 && ` (${sync.items_failed} falharam)`}
+                        {sync.items_total && sync.items_total > 0 && ` de ${sync.items_total} total`}
+                        {sync.items_failed && sync.items_failed > 0 && ` (${sync.items_failed} falharam)`}
                       </p>
                       {sync.duration_ms && (
                         <p className="text-muted-foreground">
@@ -150,9 +150,9 @@ export function CronMonitor() {
                   {sync.last_sync_at && (
                     <div>{new Date(sync.last_sync_at).toLocaleString('pt-BR')}</div>
                   )}
-                  {sync.created_at && (
+                  {sync.updated_at && (
                     <div className="text-xs opacity-70">
-                      Criado: {new Date(sync.created_at).toLocaleDateString('pt-BR')}
+                      Atualizado: {new Date(sync.updated_at).toLocaleString('pt-BR')}
                     </div>
                   )}
                 </div>
