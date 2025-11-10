@@ -1091,18 +1091,39 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ✅ CRITICAL FIX: Buscar dados do BANCO (com JSONB) ao invés de retornar dados direto da API
+    console.log(`\n🔍 Buscando ${allReturns.length} devoluções do banco com dados JSONB enriquecidos...`);
+    
+    const orderIds = allReturns.map(r => r.order_id);
+    const accountIds = Array.from(new Set(allReturns.map(r => r.integration_account_id as string)));
+    
+    const { data: dbReturns, error: selectError } = await supabase
+      .from('devolucoes_avancadas')
+      .select('*')
+      .in('order_id', orderIds)
+      .in('integration_account_id', accountIds);
+    
+    if (selectError) {
+      console.error('❌ Erro ao buscar devoluções do banco:', selectError);
+      // Fallback: retornar dados da API se SELECT falhar
+      filteredReturns = allReturns;
+    } else {
+      console.log(`✅ ${dbReturns.length} devoluções encontradas no banco com dados JSONB`);
+      // Retornar dados do banco (com campos JSONB)
+      filteredReturns = dbReturns;
+    }
+
     // Aplicar filtro de busca local se necessário
-    let filteredReturns = allReturns;
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filteredReturns = allReturns.filter((ret) =>
-        ret.id?.toString().includes(searchLower) ||
+      filteredReturns = filteredReturns.filter((ret: any) =>
+        ret.order_id?.toString().includes(searchLower) ||
         ret.claim_id?.toString().includes(searchLower) ||
-        ret.order_id?.toString().includes(searchLower)
+        ret.id?.toString().includes(searchLower)
       );
     }
 
-    console.log(`📦 Retornando ${filteredReturns.length} devoluções de ${totalReturns} claims totais`);
+    console.log(`📦 Retornando ${filteredReturns.length} devoluções de ${totalReturns} claims totais COM DADOS JSONB`);
 
     return new Response(
       JSON.stringify({
