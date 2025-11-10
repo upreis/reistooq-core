@@ -1,4 +1,5 @@
 import useSWR from 'swr';
+import { useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, subMonths, addMonths } from 'date-fns';
 
@@ -100,21 +101,43 @@ async function fetchCalendarData(): Promise<ContributionDay[]> {
 }
 
 export function useDevolucaoCalendarData() {
+  const requestInProgressRef = useRef(false);
+
+  // Fetcher com proteção contra duplicação
+  const protectedFetcher = async () => {
+    if (requestInProgressRef.current) {
+      console.warn('⚠️ [CALENDAR] Requisição bloqueada - já existe uma em andamento');
+      throw new Error('Request already in progress');
+    }
+
+    requestInProgressRef.current = true;
+    try {
+      const result = await fetchCalendarData();
+      return result;
+    } finally {
+      requestInProgressRef.current = false;
+    }
+  };
+
   // Usar SWR com cache e revalidação automática
   const { data, error, isLoading, mutate } = useSWR(
     'calendar-devolucoes',
-    fetchCalendarData,
+    protectedFetcher,
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      dedupingInterval: 60000, // Não buscar novamente por 1 minuto
-      errorRetryCount: 2,
+      revalidateIfStale: false,
+      dedupingInterval: 120000, // 2 minutos
+      errorRetryCount: 1,
       errorRetryInterval: 5000,
       onSuccess: (data) => {
         console.log('🎉 [CALENDAR] Cache atualizado com sucesso!', data.length, 'dias');
       },
       onError: (err) => {
-        console.error('❌ [CALENDAR] Erro:', err);
+        // Ignorar erro de "Request already in progress"
+        if (err.message !== 'Request already in progress') {
+          console.error('❌ [CALENDAR] Erro:', err);
+        }
       }
     }
   );
@@ -122,7 +145,7 @@ export function useDevolucaoCalendarData() {
   return {
     data: data || [],
     loading: isLoading,
-    error: error?.message || null,
-    refresh: () => mutate() // Função de refresh manual
+    error: error?.message === 'Request already in progress' ? null : error?.message || null,
+    refresh: () => mutate()
   };
 }
