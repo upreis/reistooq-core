@@ -190,19 +190,19 @@ export function useDevolucaoManager(initialAccountId?: string) {
     return ['devolucoes', accountToUse, filters, currentPage, pageSize] as const;
   }, [integrationAccountId, multipleAccountIds, filters, currentPage, pageSize, availableMlAccounts]);
 
-  // ✅ SWR com cache inteligente - SWR já gerencia deduplicação
+  // ✅ SWR com cache inteligente otimizado - evita duplicação
   const { data, error: swrError, isLoading, mutate } = useSWR(
     swrKey || null,
     swrKey ? fetcher : null,
     {
-      dedupingInterval: 2000, // 2 segundos de deduplicação (reduzido)
+      dedupingInterval: 30000, // ✅ 30 segundos - evita múltiplas requests
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
-      revalidateOnMount: true,
-      revalidateIfStale: false,
+      revalidateOnMount: false, // ✅ NÃO buscar automaticamente ao montar
+      revalidateIfStale: false, // ✅ Respeitar cache mesmo se stale
       errorRetryCount: 2,
       errorRetryInterval: 3000,
-      keepPreviousData: true,
+      keepPreviousData: true, // ✅ Manter dados anteriores durante loading
       onSuccess: (data) => {
         if (data) {
           setDevolucoes(data.returns);

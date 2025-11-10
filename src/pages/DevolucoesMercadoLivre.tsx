@@ -255,9 +255,10 @@ export default function DevolucoesMercadoLivre() {
   };
 
   const handleBuscar = async () => {
-    // Prevenir múltiplos cliques
+    // ✅ Prevenir múltiplos cliques com debounce visual
     if (isSearching || state.loading) {
       console.warn('⚠️ Busca já em andamento, ignorando clique');
+      toast.warning('Aguarde a busca atual finalizar', { duration: 2000 });
       return;
     }
 
@@ -306,7 +307,7 @@ export default function DevolucoesMercadoLivre() {
         description: 'Buscando claims e devoluções',
       });
       
-      // ✅ Aplicar filtros E contas em uma ÚNICA ação
+      // ✅ FASE 3B: Aplicar filtros E contas + FORÇAR refetch do SWR
       if (selectedAccountIds.length === 1) {
         // Busca de conta única
         console.log('🔍 Configurando busca para 1 conta:', selectedAccountIds[0]);
@@ -322,6 +323,9 @@ export default function DevolucoesMercadoLivre() {
         persistentState.saveIntegrationAccountId(accountsKey);
       }
       
+      // ✅ CRÍTICO: Forçar refetch EXPLÍCITO após atualizar filtros
+      await actions.refetch();
+      
       // ✅ Salvar filtros aplicados
       persistentState.saveAppliedFilters({
         ...newFilters,
@@ -335,19 +339,37 @@ export default function DevolucoesMercadoLivre() {
         description: 'Enriquecendo dados de devoluções',
       });
       
-      // ✅ SWR já vai refazer a requisição automaticamente quando a key mudar
-      // NÃO precisa chamar refetch() - isso causaria requisição duplicada
+      // ✅ FASE 3D: Aguardar resposta com timeout de segurança
+      const timeout = setTimeout(() => {
+        toast.loading('⏱️ Ainda processando... Pode levar até 60 segundos', {
+          id: loadingToastId,
+          description: 'Edge function enriquecendo dados de múltiplas APIs',
+        });
+      }, 10000); // Atualizar toast após 10s
       
-      // Esperar um momento para SWR processar
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Esperar SWR refetch completar (máximo 65 segundos)
+      const maxWait = 65000;
+      const startTime = Date.now();
+      while (state.loading && (Date.now() - startTime) < maxWait) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
       
-      // ✅ FASE 3: Toast de sucesso com métricas
+      clearTimeout(timeout);
+      
+      // ✅ FASE 3E: Toast de sucesso com métricas
       const totalDevs = state.total || 0;
-      toast.success(`✅ Busca concluída!`, {
-        id: loadingToastId,
-        description: `${totalDevs} devolução(ões) encontrada(s) em ${selectedAccountIds.length} conta(s)`,
-        duration: 4000,
-      });
+      if (totalDevs > 0) {
+        toast.success(`✅ Busca concluída!`, {
+          id: loadingToastId,
+          description: `${totalDevs} devolução(ões) encontrada(s) em ${selectedAccountIds.length} conta(s)`,
+          duration: 4000,
+        });
+      } else {
+        toast.info('Nenhuma devolução encontrada no período', {
+          id: loadingToastId,
+          duration: 4000,
+        });
+      }
     } catch (error) {
       console.error('Erro ao buscar:', error);
       toast.error('❌ Erro na busca', {
