@@ -21,7 +21,8 @@ import {
   QuantityCell 
 } from '@/components/ml/devolucao/cells/DeliveryCells';
 import { BuyerInfoCell } from './cells/BuyerInfoCell';
-import { 
+import { ProductInfoCell } from './cells/ProductInfoCell';
+import {
   translateStatus,
   translateStatusMoney,
   translateSubtype,
@@ -269,6 +270,11 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   <BuyerInfoCell buyerInfo={dev.buyer_info} />
                 </TableCell>
                 
+                {/* ✅ FASE 2: Dados do Produto */}
+                <TableCell>
+                  <ProductInfoCell productInfo={dev.product_info} />
+                </TableCell>
+
                 <TableCell className="font-medium text-xs">
                   {dev.id}
                 </TableCell>

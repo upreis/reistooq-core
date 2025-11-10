@@ -49,7 +49,7 @@ async function fetchBuyerInfo(buyerId: number, accessToken: string): Promise<any
       nickname: buyerData.nickname || 'N/A',
       first_name: buyerData.first_name || null,
       last_name: buyerData.last_name || null,
-      email: buyerData.email || null, // Pode não estar disponível
+      email: buyerData.email || null,
       phone: buyerData.phone ? {
         area_code: buyerData.phone.area_code || null,
         number: buyerData.phone.number || null,
@@ -66,7 +66,58 @@ async function fetchBuyerInfo(buyerId: number, accessToken: string): Promise<any
     };
   } catch (error) {
     console.error(`❌ Erro ao buscar buyer ${buyerId}:`, error);
-    return null; // Retorna null se falhar - não quebra o sistema
+    return null;
+  }
+}
+
+/**
+ * 📦 FASE 2: Buscar dados do produto da API do ML
+ * Função OPCIONAL - se falhar, não quebra o sistema
+ */
+async function fetchProductInfo(itemId: string, accessToken: string): Promise<any | null> {
+  try {
+    console.log(`📦 Buscando dados do produto ${itemId}...`);
+    
+    const response = await fetch(`https://api.mercadolibre.com/items/${itemId}`, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Não foi possível buscar item ${itemId}: ${response.status}`);
+      return null;
+    }
+
+    const itemData = await response.json();
+    
+    console.log(`✅ Item ${itemId} encontrado: ${itemData.title}`);
+    
+    // Buscar SKU dos atributos ou seller_custom_field
+    let sku = itemData.seller_custom_field || null;
+    if (!sku && itemData.attributes) {
+      const skuAttr = itemData.attributes.find((attr: any) => 
+        attr.id === 'SELLER_SKU' || attr.name === 'SKU'
+      );
+      sku = skuAttr?.value_name || null;
+    }
+    
+    return {
+      id: itemData.id,
+      title: itemData.title || 'Produto sem título',
+      price: itemData.price || 0,
+      currency_id: itemData.currency_id || 'BRL',
+      thumbnail: itemData.thumbnail || itemData.pictures?.[0]?.url || null,
+      permalink: itemData.permalink || `https://produto.mercadolivre.com.br/${itemData.id}`,
+      sku: sku,
+      condition: itemData.condition || null,
+      available_quantity: itemData.available_quantity || 0,
+      sold_quantity: itemData.sold_quantity || 0,
+    };
+  } catch (error) {
+    console.error(`❌ Erro ao buscar item ${itemId}:`, error);
+    return null;
   }
 }
 
@@ -332,9 +383,10 @@ Deno.serve(async (req) => {
                   console.log(`ℹ️ Return ${returnData.id} não tem shipment_id válido`);
                 }
                 
-                // ✅ FASE 1: Buscar dados do pedido para obter buyer_id
+                // ✅ FASE 1 & 2: Buscar dados do pedido para obter buyer_id e item_id
                 let orderData: any = null;
                 let buyerInfo: any = null;
+                let productInfo: any = null;
                 
                 if (returnData.resource_type === 'order' && returnData.resource_id) {
                   try {
@@ -354,9 +406,15 @@ Deno.serve(async (req) => {
                       orderData = await orderResponse.json();
                       console.log(`✅ Pedido ${returnData.resource_id} obtido! Buyer ID: ${orderData.buyer?.id || 'N/A'}`);
                       
-                      // Se temos buyer_id, buscar dados do comprador
+                      // FASE 1: Se temos buyer_id, buscar dados do comprador
                       if (orderData.buyer?.id) {
                         buyerInfo = await fetchBuyerInfo(orderData.buyer.id, accessToken);
+                      }
+                      
+                      // FASE 2: Se temos item_id, buscar dados do produto
+                      const firstOrderItem = returnData.orders?.[0];
+                      if (firstOrderItem?.item_id) {
+                        productInfo = await fetchProductInfo(firstOrderItem.item_id, accessToken);
                       }
                     } else {
                       console.warn(`⚠️ Não foi possível buscar pedido ${returnData.resource_id}: ${orderResponse.status}`);
@@ -442,6 +500,9 @@ Deno.serve(async (req) => {
                   // ✅ FASE 1: Dados do comprador enriquecidos
                   buyer_info: buyerInfo,
                   
+                  // ✅ FASE 2: Dados do produto enriquecidos
+                  product_info: productInfo,
+
                   // Order info (legacy)
                   order: orderData ? {
                     id: orderData.id,

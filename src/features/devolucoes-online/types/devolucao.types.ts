@@ -63,6 +63,9 @@ export interface MLReturn {
   
   // ✅ FASE 1: Dados do comprador enriquecidos
   buyer_info?: BuyerInfo;
+  
+  // ✅ FASE 2: Dados do produto enriquecidos
+  product_info?: ProductInfo;
 }
 
 export interface ReturnStatus {
@@ -159,6 +162,20 @@ export interface BuyerInfo {
     tags?: string[];
     canceled_transactions?: number;
   };
+}
+
+// ✅ FASE 2: Dados do Produto
+export interface ProductInfo {
+  id: string;
+  title: string;
+  price: number;
+  currency_id: string;
+  thumbnail: string | null;
+  permalink: string;
+  sku: string | null;
+  condition: string | null;
+  available_quantity: number;
+  sold_quantity: number;
 }
 
 // Filtros
