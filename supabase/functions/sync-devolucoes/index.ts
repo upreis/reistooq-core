@@ -64,16 +64,26 @@ async function syncDevolucoes(
 
     logger.info(`Seller ID: ${account.seller_id}`);
 
-    // 2. Iniciar registro de sync - ✅ CORRIGIDO: usar assinatura correta
-    const { data: syncIdData, error: syncError } = await supabase.rpc('start_devolucoes_sync', {
-      p_integration_account_id: integrationAccountId
-    });
+    // 2. Criar registro de sync inicial
+    const { data: syncRecord, error: syncInsertError } = await supabase
+      .from('devolucoes_sync_status')
+      .insert({
+        integration_account_id: integrationAccountId,
+        last_sync_status: 'running',
+        last_sync_at: new Date().toISOString(),
+        items_synced: 0,
+        items_total: 0,
+        items_failed: 0,
+        sync_type: 'manual'
+      })
+      .select()
+      .single();
 
-    if (syncError) {
-      throw new Error(`Erro ao iniciar sync: ${syncError.message}`);
+    if (syncInsertError || !syncRecord) {
+      throw new Error(`Erro ao criar registro de sync: ${syncInsertError?.message}`);
     }
 
-    syncId = syncIdData;
+    syncId = syncRecord.id;
     logger.success(`Sync iniciado: ${syncId}`);
 
     // 3. Chamar ml-api-direct para buscar dados
@@ -136,8 +146,8 @@ async function syncDevolucoes(
       await supabase
         .from('devolucoes_sync_status')
         .update({
-          records_processed: totalProcessed,
-          records_total: total,
+          items_synced: totalProcessed,
+          items_total: total,
           updated_at: new Date().toISOString()
         })
         .eq('id', syncId);
@@ -148,15 +158,19 @@ async function syncDevolucoes(
       }
     }
 
-    // 5. Completar sync com sucesso - ✅ CORRIGIDO: incluir duration_ms
+    // 5. Completar sync com sucesso
     const durationMs = Date.now() - startTime;
-    await supabase.rpc('complete_devolucoes_sync', {
-      p_sync_id: syncId,
-      p_total_processed: totalProcessed,
-      p_total_created: totalCreated,
-      p_total_updated: totalUpdated,
-      p_duration_ms: durationMs
-    });
+    await supabase
+      .from('devolucoes_sync_status')
+      .update({
+        last_sync_status: 'completed',
+        items_synced: totalProcessed,
+        items_total: totalProcessed,
+        items_failed: 0,
+        duration_ms: durationMs,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', syncId);
 
     logger.section('SINCRONIZAÇÃO CONCLUÍDA');
     logger.success(`Total processado: ${totalProcessed} devoluções`);
@@ -173,14 +187,18 @@ async function syncDevolucoes(
     };
 
   } catch (error) {
-    // Marcar sync como falhado - ✅ CORRIGIDO: incluir duration_ms
+    // Marcar sync como falhado
     const durationMs = Date.now() - startTime;
     if (syncId) {
-      await supabase.rpc('fail_devolucoes_sync', {
-        p_sync_id: syncId,
-        p_error_message: error instanceof Error ? error.message : 'Erro desconhecido',
-        p_duration_ms: durationMs
-      });
+      await supabase
+        .from('devolucoes_sync_status')
+        .update({
+          last_sync_status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Erro desconhecido',
+          duration_ms: durationMs,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', syncId);
     }
 
     throw error;
