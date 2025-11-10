@@ -3,7 +3,7 @@
  * Componente para mostrar status de sincronização e ações
  */
 
-import { RefreshCw, Download, Sparkles } from 'lucide-react';
+import { RefreshCw, Download, Sparkles, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -19,16 +19,20 @@ interface SyncStatusIndicatorProps {
   syncStatus: any;
   onSync: () => void;
   onEnrich: () => void;
+  onFullSync?: () => void; // Nova prop para sincronização completa
   isSyncing: boolean;
   isEnriching: boolean;
+  isFullSyncing?: boolean; // Novo estado
 }
 
 export function SyncStatusIndicator({
   syncStatus,
   onSync,
   onEnrich,
+  onFullSync,
   isSyncing,
   isEnriching,
+  isFullSyncing = false,
 }: SyncStatusIndicatorProps) {
   const getStatusBadge = () => {
     if (!syncStatus) {
@@ -120,9 +124,32 @@ export function SyncStatusIndicator({
 
       {/* Botões de Ação */}
       <div className="flex gap-2">
+        {/* Sincronização Completa (Sync + Enrich) */}
+        {onFullSync && (
+          <Button
+            onClick={onFullSync}
+            disabled={isFullSyncing || isSyncing || isEnriching}
+            size="sm"
+            variant="default"
+            className="gap-2"
+          >
+            {isFullSyncing ? (
+              <>
+                <Zap className="h-4 w-4 animate-pulse" />
+                Sincronizando...
+              </>
+            ) : (
+              <>
+                <Zap className="h-4 w-4" />
+                Sinc. Completa
+              </>
+            )}
+          </Button>
+        )}
+
         <Button
           onClick={onSync}
-          disabled={isSyncing || syncStatus?.last_sync_status === 'running' || syncStatus?.last_sync_status === 'in_progress'}
+          disabled={isSyncing || isFullSyncing || syncStatus?.last_sync_status === 'running' || syncStatus?.last_sync_status === 'in_progress'}
           size="sm"
           variant="outline"
           className="gap-2"
@@ -142,7 +169,7 @@ export function SyncStatusIndicator({
 
         <Button
           onClick={onEnrich}
-          disabled={isEnriching}
+          disabled={isEnriching || isFullSyncing}
           size="sm"
           variant="outline"
           className="gap-2"

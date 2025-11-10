@@ -78,6 +78,9 @@ function DevolucoesMercadoLivreContent() {
   // ✅ REACT QUERY: Mutations
   const syncMutation = useSyncDevolucoes();
   const enrichMutation = useEnrichDevolucoes();
+  
+  // ⚡ Estado para sincronização completa
+  const [isFullSyncing, setIsFullSyncing] = useState(false);
 
   // Carregar contas na montagem
   useEffect(() => {
@@ -200,6 +203,50 @@ function DevolucoesMercadoLivreContent() {
     });
   };
 
+  // ⚡ Handler para sincronização completa (sync + enrich)
+  const handleFullSync = async () => {
+    if (selectedAccountIds.length === 0) {
+      toast.error('Selecione uma conta ML');
+      return;
+    }
+    
+    setIsFullSyncing(true);
+    
+    try {
+      // 1️⃣ Sincronizar devoluções primeiro
+      toast.loading('Iniciando sincronização completa...', { id: 'full-sync' });
+      
+      await syncMutation.mutateAsync({
+        integrationAccountId: selectedAccountIds[0],
+        batchSize: 100,
+      });
+      
+      toast.success('Sincronização concluída! Iniciando enriquecimento...', { id: 'full-sync' });
+      
+      // 2️⃣ Aguardar 2 segundos antes de enriquecer
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // 3️⃣ Enriquecer devoluções
+      toast.loading('Enriquecendo dados...', { id: 'full-sync' });
+      
+      await enrichMutation.mutateAsync({
+        integrationAccountId: selectedAccountIds[0],
+        limit: 50,
+      });
+      
+      toast.success('Sincronização completa concluída! 🎉', { id: 'full-sync' });
+      
+      // 4️⃣ Atualizar dados
+      setTimeout(() => refetch(), 1000);
+      
+    } catch (error) {
+      console.error('Erro na sincronização completa:', error);
+      toast.error('Erro na sincronização completa', { id: 'full-sync' });
+    } finally {
+      setIsFullSyncing(false);
+    }
+  };
+
   const handleExport = () => {
     toast.info('Exportação em desenvolvimento');
   };
@@ -238,13 +285,15 @@ function DevolucoesMercadoLivreContent() {
                 onRefresh={() => refetch()}
               />
               
-              {/* ✅ NOVO: Indicador de Sync */}
+              {/* ✅ NOVO: Indicador de Sync com Sincronização Completa */}
               <SyncStatusIndicator 
                 syncStatus={syncStatus}
                 onSync={handleSync}
                 onEnrich={handleEnrich}
+                onFullSync={handleFullSync}
                 isSyncing={syncMutation.isPending}
                 isEnriching={enrichMutation.isPending}
+                isFullSyncing={isFullSyncing}
               />
               
               <CriticalDeadlinesNotification 
