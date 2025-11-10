@@ -86,10 +86,10 @@ function buildQuery(
 
   // 🔍 Filtro por período
   if (filters.date_from) {
-    query = query.gte('date_created', filters.date_from);
+    query = query.gte('data_criacao_claim', filters.date_from);
   }
   if (filters.date_to) {
-    query = query.lte('date_created', filters.date_to);
+    query = query.lte('data_criacao_claim', filters.date_to);
   }
 
   // 🔍 Filtros específicos
@@ -107,7 +107,7 @@ function buildQuery(
   }
 
   // 📊 Ordenação
-  const sortBy = pagination.sortBy || 'date_created';
+  const sortBy = pagination.sortBy || 'data_criacao_claim';
   const sortOrder = pagination.sortOrder || 'desc';
   query = query.order(sortBy, { ascending: sortOrder === 'asc' });
 
