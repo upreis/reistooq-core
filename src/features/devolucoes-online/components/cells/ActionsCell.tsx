@@ -115,56 +115,63 @@ const ActionsCellComponent: React.FC<ActionsCellProps> = ({
   }, [executeAction]);
 
   // Memoize actions configuration
-  const actions = useMemo(() => [
-    {
-      key: 'review_ok',
-      available: availableActions.can_review_ok,
-      icon: CheckCircle2,
-      label: 'Aprovar Revisão',
-      variant: 'default' as const,
-      className: 'bg-green-600 hover:bg-green-700 text-white'
-    },
-    {
-      key: 'review_fail',
-      available: availableActions.can_review_fail,
-      icon: XCircle,
-      label: 'Reprovar Revisão',
-      variant: 'destructive' as const,
-      className: 'bg-red-600 hover:bg-red-700 text-white'
-    },
-    {
-      key: 'print_label',
-      available: availableActions.can_print_label,
-      icon: Printer,
-      label: 'Imprimir Etiqueta',
-      variant: 'outline' as const,
-      className: ''
-    },
-    {
-      key: 'appeal',
-      available: availableActions.can_appeal,
-      icon: Scale,
-      label: 'Apelar',
-      variant: 'outline' as const,
-      className: ''
-    },
-    {
-      key: 'ship',
-      available: availableActions.can_ship,
-      icon: Package,
-      label: 'Enviar',
-      variant: 'default' as const,
-      className: ''
-    },
-    {
-      key: 'refund',
-      available: availableActions.can_refund,
-      icon: DollarSign,
-      label: 'Reembolsar',
-      variant: 'outline' as const,
-      className: ''
+  const actions = useMemo(() => {
+    // ✅ FIX: Verificar se availableActions existe antes de acessar propriedades
+    if (!availableActions) {
+      return [];
     }
-  ], [availableActions]);
+    
+    return [
+      {
+        key: 'review_ok',
+        available: availableActions.can_review_ok,
+        icon: CheckCircle2,
+        label: 'Aprovar Revisão',
+        variant: 'default' as const,
+        className: 'bg-green-600 hover:bg-green-700 text-white'
+      },
+      {
+        key: 'review_fail',
+        available: availableActions.can_review_fail,
+        icon: XCircle,
+        label: 'Reprovar Revisão',
+        variant: 'destructive' as const,
+        className: 'bg-red-600 hover:bg-red-700 text-white'
+      },
+      {
+        key: 'print_label',
+        available: availableActions.can_print_label,
+        icon: Printer,
+        label: 'Imprimir Etiqueta',
+        variant: 'outline' as const,
+        className: ''
+      },
+      {
+        key: 'appeal',
+        available: availableActions.can_appeal,
+        icon: Scale,
+        label: 'Apelar',
+        variant: 'outline' as const,
+        className: ''
+      },
+      {
+        key: 'ship',
+        available: availableActions.can_ship,
+        icon: Package,
+        label: 'Enviar',
+        variant: 'default' as const,
+        className: ''
+      },
+      {
+        key: 'refund',
+        available: availableActions.can_refund,
+        icon: DollarSign,
+        label: 'Reembolsar',
+        variant: 'outline' as const,
+        className: ''
+      }
+    ];
+  }, [availableActions]);
 
   const availableActionsList = useMemo(
     () => actions.filter(action => action.available),
