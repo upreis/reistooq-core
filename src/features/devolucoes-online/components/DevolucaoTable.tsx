@@ -373,8 +373,10 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   />
                 </TableCell>
                 
-                <TableCell className="text-xs max-w-[200px] truncate" title={dev.destination_address || '-'}>
-                  {dev.destination_address || '-'}
+                <TableCell className="text-xs max-w-[200px]">
+                  <div className="whitespace-pre-wrap break-words" title={dev.destination_address || '-'}>
+                    {dev.destination_address || '-'}
+                  </div>
                 </TableCell>
                 <TableCell className="text-xs">
                   {dev.destination_city || '-'}
@@ -391,8 +393,10 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell className="text-xs">
                   {dev.destination_country || '-'}
                 </TableCell>
-                <TableCell className="text-xs max-w-[150px] truncate" title={dev.destination_comment || '-'}>
-                  {dev.destination_comment || '-'}
+                <TableCell className="text-xs max-w-[150px]">
+                  <div className="whitespace-pre-wrap break-words" title={dev.destination_comment || '-'}>
+                    {dev.destination_comment || '-'}
+                  </div>
                 </TableCell>
                 <TableCell className="text-xs font-mono">
                   {dev.reason_id || '-'}
