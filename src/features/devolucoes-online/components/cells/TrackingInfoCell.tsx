@@ -65,14 +65,17 @@ export const TrackingInfoCell = memo<TrackingInfoCellProps>(({ trackingInfo }) =
     return labels[status.toLowerCase()] || status;
   };
 
+  // Verificar se tracking_history existe e é array
+  const trackingHistory = trackingInfo.tracking_history || [];
+  
   // Criar conteúdo do histórico para tooltip
   const historyContent = (
     <div className="space-y-2 max-w-xs">
       <div className="font-semibold text-xs border-b pb-1">Histórico de Rastreamento</div>
-      {trackingInfo.tracking_history.length === 0 ? (
+      {trackingHistory.length === 0 ? (
         <div className="text-xs text-muted-foreground">Sem eventos registrados</div>
       ) : (
-        trackingInfo.tracking_history.slice(0, 5).map((event, idx) => (
+        trackingHistory.slice(0, 5).map((event, idx) => (
           <div key={idx} className="text-xs space-y-0.5">
             <div className="flex items-center gap-1.5">
               <Clock className="w-3 h-3 text-muted-foreground" />
@@ -88,9 +91,9 @@ export const TrackingInfoCell = memo<TrackingInfoCellProps>(({ trackingInfo }) =
           </div>
         ))
       )}
-      {trackingInfo.tracking_history.length > 5 && (
+      {trackingHistory.length > 5 && (
         <div className="text-xs text-muted-foreground italic pt-1 border-t">
-          + {trackingInfo.tracking_history.length - 5} eventos anteriores
+          + {trackingHistory.length - 5} eventos anteriores
         </div>
       )}
     </div>
@@ -161,9 +164,9 @@ export const TrackingInfoCell = memo<TrackingInfoCellProps>(({ trackingInfo }) =
       </div>
 
       {/* Badge com quantidade de eventos */}
-      {trackingInfo.tracking_history.length > 0 && (
+      {trackingHistory.length > 0 && (
         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-          {trackingInfo.tracking_history.length} evento{trackingInfo.tracking_history.length !== 1 ? 's' : ''}
+          {trackingHistory.length} evento{trackingHistory.length !== 1 ? 's' : ''}
         </Badge>
       )}
     </div>
