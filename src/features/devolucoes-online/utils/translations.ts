@@ -18,6 +18,19 @@ export const translateStatus = (statusId: string | null): string => {
     'approved': 'Aprovado',
     'rejected': 'Rejeitado',
     'in_process': 'Em Processo',
+    'opened': 'Aberto',
+    'closed': 'Fechado',
+    'waiting_buyer': 'Aguardando Comprador',
+    'waiting_seller': 'Aguardando Vendedor',
+    'waiting_resolution': 'Aguardando Resolução',
+    'resolved': 'Resolvido',
+    'return_opened': 'Devolução Aberta',
+    'return_closed': 'Devolução Fechada',
+    'return_partial': 'Devolução Parcial',
+    'completed': 'Completo',
+    'processing': 'Processando',
+    'authorized': 'Autorizado',
+    'finalized': 'Finalizado',
   };
   
   return translations[statusId] || statusId;
@@ -35,6 +48,12 @@ export const translateStatusMoney = (statusMoneyId: string | null): string => {
     'not_refunded': 'Não Reembolsado',
     'to_be_refunded': 'A Reembolsar',
     'partially_refunded': 'Parcialmente Reembolsado',
+    'in_process': 'Em Processo',
+    'cancelled': 'Cancelado',
+    'processing': 'Processando',
+    'completed': 'Completo',
+    'waiting_refund': 'Aguardando Reembolso',
+    'refund_pending': 'Reembolso Pendente',
   };
   
   return translations[statusMoneyId] || statusMoneyId;
@@ -56,6 +75,15 @@ export const translateSubtype = (subtypeId: string | null): string => {
     'not_received': 'Não Recebido',
     'arrived_late': 'Chegou Tarde',
     'other': 'Outro',
+    'quality_issue': 'Problema de Qualidade',
+    'size_issue': 'Problema de Tamanho',
+    'color_issue': 'Problema de Cor',
+    'packaging_issue': 'Problema de Embalagem',
+    'incomplete': 'Incompleto',
+    'unauthorized_purchase': 'Compra Não Autorizada',
+    'duplicate_order': 'Pedido Duplicado',
+    'seller_request': 'Solicitação do Vendedor',
+    'buyer_request': 'Solicitação do Comprador',
   };
   
   return translations[subtypeId] || subtypeId;
@@ -72,6 +100,12 @@ export const translateResourceType = (resourceType: string | null): string => {
     'warranty': 'Garantia',
     'mediation': 'Mediação',
     'cancellation': 'Cancelamento',
+    'chargeback': 'Estorno',
+    'dispute': 'Disputa',
+    'complaint': 'Queixa',
+    'return_partial': 'Devolução Parcial',
+    'return_full': 'Devolução Completa',
+    'exchange': 'Troca',
   };
   
   return translations[resourceType] || resourceType;
@@ -97,6 +131,15 @@ export const translateShipmentStatus = (shipmentStatus: string | null): string =
     'ready_to_print': 'Pronto p/ Imprimir',
     'stale': 'Parado',
     'delayed': 'Atrasado',
+    'picked_up': 'Coletado',
+    'returned_to_sender': 'Devolvido ao Remetente',
+    'failed_delivery': 'Falha na Entrega',
+    'out_for_delivery': 'Saiu para Entrega',
+    'awaiting_pickup': 'Aguardando Coleta',
+    'return_initiated': 'Devolução Iniciada',
+    'return_in_transit': 'Devolução em Trânsito',
+    'return_delivered': 'Devolução Entregue',
+    'closed': 'Fechado',
   };
   
   return translations[shipmentStatus] || shipmentStatus;
@@ -109,15 +152,28 @@ export const getStatusVariant = (statusId: string | null): 'default' | 'secondar
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     'delivered': 'default',
     'approved': 'default',
+    'resolved': 'default',
+    'completed': 'default',
+    'finalized': 'default',
+    'closed': 'default',
     'shipped': 'secondary',
     'in_transit': 'secondary',
     'label_generated': 'secondary',
+    'processing': 'secondary',
+    'authorized': 'secondary',
+    'return_partial': 'secondary',
+    'opened': 'outline',
     'pending': 'outline',
     'ready_to_ship': 'outline',
+    'waiting_buyer': 'outline',
+    'waiting_seller': 'outline',
+    'waiting_resolution': 'outline',
+    'return_opened': 'outline',
     'not_delivered': 'destructive',
     'cancelled': 'destructive',
     'expired': 'destructive',
     'rejected': 'destructive',
+    'return_closed': 'destructive',
   };
   
   return variants[statusId] || 'outline';
@@ -129,11 +185,17 @@ export const getStatusMoneyVariant = (statusMoneyId: string | null): 'default' |
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     'refunded': 'default',
     'approved': 'default',
+    'completed': 'default',
     'partially_refunded': 'secondary',
     'to_be_refunded': 'secondary',
+    'in_process': 'secondary',
+    'processing': 'secondary',
+    'waiting_refund': 'secondary',
     'pending': 'outline',
+    'refund_pending': 'outline',
     'not_refunded': 'destructive',
     'rejected': 'destructive',
+    'cancelled': 'destructive',
   };
   
   return variants[statusMoneyId] || 'outline';
@@ -144,20 +206,29 @@ export const getShipmentStatusVariant = (shipmentStatus: string | null): 'defaul
   
   const variants: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
     'delivered': 'default',
+    'return_delivered': 'default',
+    'closed': 'default',
     'shipped': 'secondary',
     'in_transit': 'secondary',
     'label_generated': 'secondary',
     'processing': 'secondary',
     'handling': 'secondary',
+    'picked_up': 'secondary',
+    'out_for_delivery': 'secondary',
+    'return_initiated': 'secondary',
+    'return_in_transit': 'secondary',
     'pending': 'outline',
     'ready_to_ship': 'outline',
     'ready_to_print': 'outline',
     'to_be_agreed': 'outline',
+    'awaiting_pickup': 'outline',
     'not_delivered': 'destructive',
     'cancelled': 'destructive',
     'expired': 'destructive',
     'delayed': 'destructive',
     'stale': 'destructive',
+    'failed_delivery': 'destructive',
+    'returned_to_sender': 'destructive',
   };
   
   return variants[shipmentStatus] || 'outline';
