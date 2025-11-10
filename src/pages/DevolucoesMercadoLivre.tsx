@@ -392,6 +392,7 @@ export default function DevolucoesMercadoLivre() {
                     isLoading={state.loading && state.devolucoes.length === 0}
                     error={state.error}
                     onStatusChange={handleStatusChange}
+                    onRefresh={() => window.location.reload()}
                   />
                 </Card>
               </TabsContent>
@@ -403,6 +404,7 @@ export default function DevolucoesMercadoLivre() {
                     isLoading={state.loading && state.devolucoes.length === 0}
                     error={state.error}
                     onStatusChange={handleStatusChange}
+                    onRefresh={() => window.location.reload()}
                   />
                 </Card>
               </TabsContent>

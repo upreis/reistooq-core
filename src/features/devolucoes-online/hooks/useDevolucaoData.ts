@@ -59,6 +59,15 @@ const fetchDevolucoes = async (params: FetchDevolucaoParams): Promise<DevolucaoR
         }
       }
       
+      // ✅ FASE 11: Parsear dados_acoes_disponiveis se existir
+      if (devolucao.dados_acoes_disponiveis && typeof devolucao.dados_acoes_disponiveis === 'string') {
+        try {
+          devolucao.available_actions = JSON.parse(devolucao.dados_acoes_disponiveis);
+        } catch (e) {
+          console.warn('Erro ao parsear available_actions:', e);
+        }
+      }
+      
       return devolucao;
     });
   }

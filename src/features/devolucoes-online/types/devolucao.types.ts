@@ -82,6 +82,20 @@ export interface MLReturn {
   // ✅ FASE 8: Prazos e Deadlines
   deadlines?: Deadlines;
   lead_time?: LeadTimeData;
+  
+  // ✅ FASE 11: Ações disponíveis do vendedor
+  available_actions?: AvailableActions;
+}
+
+// ✅ FASE 11: Ações disponíveis
+export interface AvailableActions {
+  can_review_ok?: boolean;
+  can_review_fail?: boolean;
+  can_print_label?: boolean;
+  can_appeal?: boolean;
+  can_refund?: boolean;
+  can_ship?: boolean;
+  actions_last_updated?: string;
 }
 
 // ✅ FASE 8: Lead Time Data

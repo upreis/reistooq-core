@@ -456,9 +456,45 @@ Deno.serve(async (req) => {
                   } catch (error) {
                     console.warn(`⚠️ Erro ao buscar lead time do shipment ${firstShipment.shipment_id}:`, error);
                   }
-                } else {
-                  console.log(`ℹ️ Return ${returnData.id} não tem shipment_id válido`);
                 }
+                
+                // ✅ FASE 11: Buscar ações disponíveis do vendedor
+                let availableActions: any = null;
+                try {
+                  console.log(`🎬 Buscando ações disponíveis para claim ${claim.id}...`);
+                  const claimDetailUrl = `https://api.mercadolibre.com/claims/${claim.id}`;
+                  const claimDetailResponse = await fetch(claimDetailUrl, {
+                    headers: {
+                      'Authorization': `Bearer ${accessToken}`,
+                      'Content-Type': 'application/json',
+                    },
+                  });
+                  
+                  if (claimDetailResponse.ok) {
+                    const claimDetail = await claimDetailResponse.json();
+                    
+                    if (claimDetail.available_actions) {
+                      availableActions = {
+                        can_review_ok: claimDetail.available_actions.can_review_ok || false,
+                        can_review_fail: claimDetail.available_actions.can_review_fail || false,
+                        can_print_label: claimDetail.available_actions.can_print_label || false,
+                        can_appeal: claimDetail.available_actions.can_appeal || false,
+                        can_refund: claimDetail.available_actions.can_refund || false,
+                        can_ship: claimDetail.available_actions.can_ship || false,
+                        actions_last_updated: new Date().toISOString(),
+                      };
+                      
+                      console.log(`✅ Ações disponíveis para claim ${claim.id}:`, availableActions);
+                    } else {
+                      console.log(`ℹ️ Claim ${claim.id} não possui ações disponíveis`);
+                    }
+                  } else {
+                    console.warn(`⚠️ Não foi possível buscar detalhes do claim ${claim.id}: ${claimDetailResponse.status}`);
+                  }
+                } catch (error) {
+                  console.warn(`⚠️ Erro ao buscar ações do claim ${claim.id}:`, getErrorMessage(error));
+                }
+                
                 
                 // ✅ FASE 1, 2, 3 & 5: Buscar dados do pedido para obter buyer_id, item_id, dados financeiros e tracking
                 let orderData: any = null;
@@ -730,6 +766,10 @@ Deno.serve(async (req) => {
                   
                   // ✅ FASE 7: Dados de comunicação e mensagens enriquecidos
                   communication_info: communicationInfo,
+                  
+                  // ✅ FASE 11: Ações disponíveis do vendedor
+                  available_actions: availableActions,
+
 
                   // Order info (legacy)
                   order: orderData ? {

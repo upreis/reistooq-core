@@ -29,6 +29,7 @@ import { ReviewInfoCell } from './cells/ReviewInfoCell';
 import { CommunicationInfoCell } from './cells/CommunicationInfoCell';
 import { DeadlinesCell } from './cells/DeadlinesCell';
 import { SubstatusCell } from './cells/SubstatusCell';
+import { ActionsCell } from './cells/ActionsCell';
 import {
   translateStatus,
   translateStatusMoney,
@@ -50,9 +51,10 @@ interface DevolucaoTableProps {
   isLoading: boolean;
   error: string | null;
   onStatusChange?: (devolucaoId: string, newStatus: StatusAnalise) => void;
+  onRefresh?: () => void;
 }
 
-export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChange }: DevolucaoTableProps) => {
+export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChange, onRefresh }: DevolucaoTableProps) => {
 
   if (error) {
     return (
@@ -541,6 +543,15 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     status={dev.shipment_status} 
                     substatus={dev.shipments?.[0]?.substatus}
                     trackingInfo={dev.tracking_info}
+                  />
+                </TableCell>
+                {/* ✅ FASE 11: Ações Disponíveis */}
+                <TableCell>
+                  <ActionsCell 
+                    returnId={dev.id}
+                    claimId={dev.claim_id}
+                    availableActions={dev.available_actions}
+                    onActionExecuted={onRefresh}
                   />
                 </TableCell>
                 {/* Status Análise */}
