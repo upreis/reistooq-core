@@ -35,18 +35,18 @@ const logger = {
   error: (msg: string, error?: any) => console.error(`❌ ${msg}`, error || ''),
 };
 
-// 🔍 Interface de filtros
+// 🔍 Interface de filtros (snake_case como recebido do frontend)
 interface DevolucaoFilters {
   search?: string;
   status?: string[];
   status_devolucao?: string[];
-  dateFrom?: string;
-  dateTo?: string;
-  integrationAccountId: string;
-  claimId?: string;
-  orderId?: string;
-  buyerId?: number;
-  itemId?: string;
+  date_from?: string;
+  date_to?: string;
+  integration_account_id: string;
+  claim_id?: string;
+  order_id?: string;
+  buyer_id?: number;
+  item_id?: string;
 }
 
 // 📄 Interface de paginação
@@ -66,7 +66,7 @@ function buildQuery(
   let query = supabase
     .from('devolucoes_avancadas')
     .select('*', { count: 'exact' })
-    .eq('integration_account_id', filters.integrationAccountId);
+    .eq('integration_account_id', filters.integration_account_id);
 
   // 🔍 Filtro de busca (claim_id, order_id, item_title, buyer)
   if (filters.search && filters.search.trim() !== '') {
@@ -85,25 +85,25 @@ function buildQuery(
   }
 
   // 🔍 Filtro por período
-  if (filters.dateFrom) {
-    query = query.gte('date_created', filters.dateFrom);
+  if (filters.date_from) {
+    query = query.gte('date_created', filters.date_from);
   }
-  if (filters.dateTo) {
-    query = query.lte('date_created', filters.dateTo);
+  if (filters.date_to) {
+    query = query.lte('date_created', filters.date_to);
   }
 
   // 🔍 Filtros específicos
-  if (filters.claimId) {
-    query = query.eq('claim_id', filters.claimId);
+  if (filters.claim_id) {
+    query = query.eq('claim_id', filters.claim_id);
   }
-  if (filters.orderId) {
-    query = query.eq('order_id', filters.orderId);
+  if (filters.order_id) {
+    query = query.eq('order_id', filters.order_id);
   }
-  if (filters.buyerId) {
-    query = query.eq('buyer_id', filters.buyerId);
+  if (filters.buyer_id) {
+    query = query.eq('buyer_id', filters.buyer_id);
   }
-  if (filters.itemId) {
-    query = query.eq('item_id', filters.itemId);
+  if (filters.item_id) {
+    query = query.eq('item_id', filters.item_id);
   }
 
   // 📊 Ordenação
@@ -184,7 +184,7 @@ async function getDevolucoes(
     // 📊 Buscar estatísticas se solicitado
     let stats = null;
     if (includeStats) {
-      stats = await getAggregatedStats(supabase, filters.integrationAccountId);
+      stats = await getAggregatedStats(supabase, filters.integration_account_id);
     }
 
     // 📄 Calcular informações de paginação
@@ -226,7 +226,7 @@ serve(async (req) => {
     const { filters, pagination, includeStats } = body;
 
     // Validação
-    if (!filters?.integrationAccountId) {
+    if (!filters?.integration_account_id) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -239,7 +239,7 @@ serve(async (req) => {
       );
     }
 
-    logger.info(`Buscando devoluções - Account: ${filters.integrationAccountId}`, {
+    logger.info(`Buscando devoluções - Account: ${filters.integration_account_id}`, {
       filters,
       pagination
     });
