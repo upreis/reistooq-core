@@ -1102,13 +1102,24 @@ export type Database = {
           comprador_nickname: string | null
           comprador_nome_completo: string | null
           created_at: string | null
+          dados_acoes_disponiveis: Json | null
+          dados_available_actions: Json | null
           dados_claim: Json | null
+          dados_comunicacao: Json | null
           dados_costs: Json | null
+          dados_custos_logistica: Json | null
+          dados_deadlines: Json | null
+          dados_fulfillment: Json | null
+          dados_lead_time: Json | null
           dados_mensagens: Json | null
           dados_order: Json | null
+          dados_product_condition: Json | null
           dados_reasons: Json | null
+          dados_refund_info: Json | null
           dados_return: Json | null
+          dados_review: Json | null
           dados_reviews: Json | null
+          dados_shipping_costs: Json | null
           data_atualizacao_devolucao: string | null
           data_criacao: string | null
           data_criacao_claim: string | null
@@ -1239,13 +1250,24 @@ export type Database = {
           comprador_nickname?: string | null
           comprador_nome_completo?: string | null
           created_at?: string | null
+          dados_acoes_disponiveis?: Json | null
+          dados_available_actions?: Json | null
           dados_claim?: Json | null
+          dados_comunicacao?: Json | null
           dados_costs?: Json | null
+          dados_custos_logistica?: Json | null
+          dados_deadlines?: Json | null
+          dados_fulfillment?: Json | null
+          dados_lead_time?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
+          dados_product_condition?: Json | null
           dados_reasons?: Json | null
+          dados_refund_info?: Json | null
           dados_return?: Json | null
+          dados_review?: Json | null
           dados_reviews?: Json | null
+          dados_shipping_costs?: Json | null
           data_atualizacao_devolucao?: string | null
           data_criacao?: string | null
           data_criacao_claim?: string | null
@@ -1376,13 +1398,24 @@ export type Database = {
           comprador_nickname?: string | null
           comprador_nome_completo?: string | null
           created_at?: string | null
+          dados_acoes_disponiveis?: Json | null
+          dados_available_actions?: Json | null
           dados_claim?: Json | null
+          dados_comunicacao?: Json | null
           dados_costs?: Json | null
+          dados_custos_logistica?: Json | null
+          dados_deadlines?: Json | null
+          dados_fulfillment?: Json | null
+          dados_lead_time?: Json | null
           dados_mensagens?: Json | null
           dados_order?: Json | null
+          dados_product_condition?: Json | null
           dados_reasons?: Json | null
+          dados_refund_info?: Json | null
           dados_return?: Json | null
+          dados_review?: Json | null
           dados_reviews?: Json | null
+          dados_shipping_costs?: Json | null
           data_atualizacao_devolucao?: string | null
           data_criacao?: string | null
           data_criacao_claim?: string | null
