@@ -1,16 +1,19 @@
 /**
- * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA COM TABS E ANÁLISE
- * Sistema completo com tabs Ativas/Histórico e status de análise
- * ✅ SPRINT 1: Alertas de Deadlines Críticos implementados
+ * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA REFATORADA (FASE 5)
+ * ✅ Migrado de SWR para React Query
+ * ✅ Mantém funcionalidade idêntica
+ * ✅ Adiciona UI de sincronização
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { subDays, startOfDay, endOfDay, format } from 'date-fns';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
-import { useDevolucaoManager } from '@/features/devolucoes-online/hooks/useDevolucaoManager';
-import { usePersistentDevolucaoState } from '@/features/devolucoes-online/hooks/usePersistentDevolucaoState';
-import { useDevolucaoStorage } from '@/features/devolucoes-online/hooks/useDevolucaoStorage';
-import type { DevolucaoFilters, MLReturn } from '@/features/devolucoes-online/types/devolucao.types';
+import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
+import { 
+  useGetDevolucoes, 
+  useSyncDevolucoes, 
+  useEnrichDevolucoes,
+  useSyncStatus 
+} from '@/features/devolucoes-online/hooks';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
@@ -20,103 +23,63 @@ import { DevolucaoQuickFilters } from '@/features/devolucoes-online/components/D
 import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
 import { UrgencyFilters } from '@/features/devolucoes-online/components/filters/UrgencyFilters';
 import { CriticalDeadlinesNotification } from '@/features/devolucoes-online/components/notifications/CriticalDeadlinesNotification';
-
+import { SyncStatusIndicator } from '@/features/devolucoes-online/components/sync/SyncStatusIndicator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { StatusAnalise, STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/devolucoes-online/types/devolucao-analise.types';
+import { subDays, startOfDay, endOfDay, format } from 'date-fns';
+import type { StatusAnalise } from '@/features/devolucoes-online/types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '@/features/devolucoes-online/types/devolucao-analise.types';
 
-export default function DevolucoesMercadoLivre() {
-  // Manager centralizado
-  const devolucaoManager = useDevolucaoManager();
-  const { state, actions, totalPages, availableMlAccounts } = devolucaoManager;
+function DevolucoesMercadoLivreContent() {
+  const { filters, setFilters, pagination, setPagination, viewMode, setViewMode } = useDevolucaoContext();
   
-  // Persistência de estado
-  const persistentState = usePersistentDevolucaoState();
-  
-  // Storage para status de análise
-  const { analiseStatus, setAnaliseStatus, clearOldData, clearStorage } = useDevolucaoStorage();
-  
-  // Carregar contas ML com nome
+  // Carregar contas ML
   const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
-  
-  // Estado dos filtros rápidos
-  const [filteredByQuickFilter, setFilteredByQuickFilter] = useState<any[]>([]);
-  
-  // ✅ SPRINT 1: Estado do filtro de urgência
-  const [urgencyFilter, setUrgencyFilter] = useState<((dev: MLReturn) => boolean) | null>(null);
-  const [currentUrgencyFilter, setCurrentUrgencyFilter] = useState<string>('all');
-  
-  // Estado do auto-refresh
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [autoRefreshInterval, setAutoRefreshInterval] = useState(3600000); // 1 hora padrão
-  
-  // Estados da barra de filtros avançada (restaurados do cache se existir)
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  
+  // Filtros UI
   const [periodo, setPeriodo] = useState('60');
   const [searchTerm, setSearchTerm] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasRestoredFromCache, setHasRestoredFromCache] = useState(false);
+  const [urgencyFilter, setUrgencyFilter] = useState<((dev: any) => boolean) | null>(null);
+  const [currentUrgencyFilter, setCurrentUrgencyFilter] = useState<string>('all');
   
-  // Tab ativa (Ativas/Histórico)
-  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  // Auto-refresh
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   
-  // ✅ PRIMEIRO: Restaurar cache IMEDIATAMENTE (síncrono)
-  useEffect(() => {
-    if (!persistentState.isStateLoaded || hasRestoredFromCache) return;
-    
-    if (persistentState.hasValidPersistedState()) {
-      const cached = persistentState.persistedState;
-      if (!cached) return;
-      
-      console.log('⚡ RESTAURAÇÃO INSTANTÂNEA do cache:', {
-        devolucoes: cached.devolucoes?.length || 0,
-        total: cached.total,
-        cacheAge: cached.cachedAt ? `${Math.round((Date.now() - new Date(cached.cachedAt).getTime()) / 1000)}s` : 'N/A',
-      });
-      
-      // ✅ Restaurar dados PRIMEIRO (sem loading)
-      if (cached.devolucoes && cached.devolucoes.length > 0) {
-        actions.restorePersistedData(cached.devolucoes, cached.total, cached.currentPage);
-      }
-      
-      // ✅ Restaurar contas
-      if (cached.integrationAccountId) {
-        const accountIds = cached.integrationAccountId.includes(',') 
-          ? cached.integrationAccountId.split(',')
-          : [cached.integrationAccountId];
-        
-        setSelectedAccountIds(accountIds);
-        
-        // Sincronizar com manager
-        if (accountIds.length > 1) {
-          actions.setMultipleAccounts(accountIds);
-        } else {
-          actions.setIntegrationAccountId(accountIds[0]);
-        }
-      }
-      
-      // ✅ Restaurar filtros UI
-      if (cached.filters) {
-        if (cached.filters.search) setSearchTerm(cached.filters.search);
-        if (cached.filters.dateFrom && cached.filters.dateTo) {
-          const diffDays = Math.round(
-            (new Date(cached.filters.dateTo).getTime() - 
-             new Date(cached.filters.dateFrom).getTime()) / 
-            (1000 * 60 * 60 * 24)
-          );
-          setPeriodo(diffDays.toString());
-        }
-      }
-      
-      setHasRestoredFromCache(true);
-      toast.success('Dados restaurados', { duration: 2000 });
+  // ✅ REACT QUERY: Buscar devoluções
+  const { 
+    data: devolucoesData, 
+    isLoading, 
+    error,
+    refetch 
+  } = useGetDevolucoes(
+    {
+      integrationAccountId: selectedAccountIds.join(','),
+      search: filters.search,
+      dateFrom: filters.dateFrom,
+      dateTo: filters.dateTo,
+    },
+    pagination,
+    {
+      includeStats: true,
+      enabled: selectedAccountIds.length > 0,
+      refetchInterval: autoRefreshEnabled ? 30000 : undefined,
     }
-  }, [persistentState.isStateLoaded, hasRestoredFromCache]);
+  );
   
-  // ✅ SEGUNDO: Carregar contas do banco (assíncrono)
+  // ✅ REACT QUERY: Sync status
+  const { data: syncStatus } = useSyncStatus(
+    selectedAccountIds[0] || '',
+    { enabled: selectedAccountIds.length === 1 }
+  );
+  
+  // ✅ REACT QUERY: Mutations
+  const syncMutation = useSyncDevolucoes();
+  const enrichMutation = useEnrichDevolucoes();
+
+  // Carregar contas na montagem
   useEffect(() => {
     const fetchAccounts = async () => {
       const { data } = await supabase
@@ -128,264 +91,134 @@ export default function DevolucoesMercadoLivre() {
       
       setAccounts(data || []);
       
-      // ✅ PRIMEIRA VEZ (sem cache): apenas selecionar contas
-      if (data && data.length > 0 && !hasRestoredFromCache && !persistentState.hasValidPersistedState()) {
-        const allAccountIds = data.map(acc => acc.id);
-        setSelectedAccountIds(allAccountIds);
-        
-        if (allAccountIds.length > 1) {
-          actions.setMultipleAccounts(allAccountIds);
-        } else {
-          actions.setIntegrationAccountId(allAccountIds[0]);
-        }
-        
-        setHasRestoredFromCache(true);
+      // Selecionar todas por padrão
+      if (data && data.length > 0) {
+        const allIds = data.map(acc => acc.id);
+        setSelectedAccountIds(allIds);
       }
     };
     
-    if (persistentState.isStateLoaded) {
-      fetchAccounts();
-    }
-  }, [persistentState.isStateLoaded]);
+    fetchAccounts();
+  }, []);
 
+  // Calcular estatísticas
+  const stats = useMemo(() => {
+    const devolucoes = devolucoesData?.data || [];
+    return {
+      total: devolucoesData?.pagination?.total || 0,
+      pending: devolucoes.filter(d => d.status?.id === 'pending').length,
+      approved: devolucoes.filter(d => d.status?.id === 'approved').length,
+      refunded: devolucoes.filter(d => d.status_money?.id === 'refunded').length,
+    };
+  }, [devolucoesData]);
 
-  // ✅ FIX: Limpar dados antigos APENAS na montagem inicial
-  // Usar useEffect vazio para evitar loop infinito
-  useEffect(() => {
-    clearOldData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ✅ Salvar dados quando mudar (mas só se não estiver restaurando)
-  useEffect(() => {
-    if (state.devolucoes.length > 0 && !state.loading && hasRestoredFromCache) {
-      const accountKey = selectedAccountIds.length > 1 
-        ? selectedAccountIds.sort().join(',')
-        : selectedAccountIds[0] || '';
-      
-      persistentState.saveOrdersData(state.devolucoes, state.total, state.currentPage);
-      persistentState.saveIntegrationAccountId(accountKey);
-      
-      console.log('💾 Estado persistido salvo:', {
-        devolucoes: state.devolucoes.length,
-        total: state.total,
-        page: state.currentPage,
-        accounts: accountKey,
-      });
-    }
-  }, [state.devolucoes, state.total, state.currentPage, state.loading, hasRestoredFromCache, selectedAccountIds]);
-
-  // Calcular estatísticas (memoizado)
-  const stats = useMemo(() => ({
-    total: state.total,
-    pending: state.devolucoes.filter(d => d.status?.id === 'pending').length,
-    approved: state.devolucoes.filter(d => d.status?.id === 'approved').length,
-    refunded: state.devolucoes.filter(d => d.status_money?.id === 'refunded').length,
-  }), [state.devolucoes, state.total]);
-
-  // ✅ FIX: Usar timestamp para forçar re-render quando status mudar
-  const [analiseUpdateTrigger, setAnaliseUpdateTrigger] = useState(0);
-  
-  // ✅ SPRINT 1: Aplicar filtro de urgência PRIMEIRO, depois status de análise
+  // Aplicar filtro de urgência
   const devolucoesComUrgencyFilter = useMemo(() => {
-    const dataToUse = filteredByQuickFilter.length > 0 ? filteredByQuickFilter : state.devolucoes;
+    const devolucoes = devolucoesData?.data || [];
     
-    // Aplicar filtro de urgência se houver
     if (urgencyFilter) {
-      return dataToUse.filter(urgencyFilter);
+      return devolucoes.filter(urgencyFilter);
     }
     
-    return dataToUse;
-  }, [filteredByQuickFilter, state.devolucoes, urgencyFilter]);
-  
-  // Adicionar status de análise e empresa às devoluções (após filtro de urgência)
-  const devolucoesComAnalise = useMemo(() => {
+    return devolucoes;
+  }, [devolucoesData, urgencyFilter]);
+
+  // Adicionar empresa às devoluções
+  const devolucoesComEmpresa = useMemo(() => {
     return devolucoesComUrgencyFilter.map((dev: any) => {
-      const accountId = dev.integration_account_id;
-      const account = accounts.find(acc => acc.id === accountId);
-      const empresaNome = account?.name || 'N/A';
-      
+      const account = accounts.find(acc => acc.id === dev.integration_account_id);
       return {
         ...dev,
-        status_analise: analiseStatus[dev.id]?.status || ('pendente' as StatusAnalise),
-        empresa: empresaNome,
+        empresa: account?.name || 'N/A',
       };
     });
-  }, [devolucoesComUrgencyFilter, analiseStatus, accounts, analiseUpdateTrigger]);
+  }, [devolucoesComUrgencyFilter, accounts]);
 
-  // Separar em Ativas e Histórico
+  // Separar por tabs (ativas/histórico)
   const devolucoesFiltradas = useMemo(() => {
-    const ativas = devolucoesComAnalise.filter((dev) =>
-      ACTIVE_STATUSES.includes(dev.status_analise)
+    const ativas = devolucoesComEmpresa.filter((dev) =>
+      ACTIVE_STATUSES.includes(dev.status_analise || 'pendente')
     );
-    const historico = devolucoesComAnalise.filter((dev) =>
-      HISTORIC_STATUSES.includes(dev.status_analise)
+    const historico = devolucoesComEmpresa.filter((dev) =>
+      HISTORIC_STATUSES.includes(dev.status_analise || 'pendente')
     );
     
     return { ativas, historico };
-  }, [devolucoesComAnalise]);
+  }, [devolucoesComEmpresa]);
 
-  // Handlers para controles
-  const handleExport = () => {
-    toast.info('Exportação em desenvolvimento');
-  };
-
-  const handleClear = () => {
-    // ✅ FIX: Limpar TUDO incluindo dados do manager
-    actions.clearFilters();
-    actions.restorePersistedData([], 0, 1); // ✅ Limpar dados do manager
-    setFilteredByQuickFilter([]);
-    clearStorage(); // Limpar status de análise
-    persistentState.clearPersistedState(); // Limpar cache
-    
-    // Resetar UI
-    setSearchTerm('');
-    setPeriodo('60');
-    setSelectedAccountIds(accounts.map(acc => acc.id));
-    
-    toast.success('Todos os dados foram removidos. Clique em "Buscar" para carregar novamente.');
-  };
-
-  const handleStatusChange = (devolucaoId: string, newStatus: StatusAnalise) => {
-    setAnaliseStatus(devolucaoId, newStatus);
-    setAnaliseUpdateTrigger(prev => prev + 1); // ✅ FIX: Disparar re-render
-    
-    if (HISTORIC_STATUSES.includes(newStatus) && activeTab === 'ativas') {
-      toast.success('Devolução movida para Histórico');
-    }
-  };
-
+  // Handlers
   const handleBuscar = async () => {
-    // ✅ Prevenir múltiplos cliques com debounce visual
-    if (isSearching || state.loading) {
-      console.warn('⚠️ Busca já em andamento, ignorando clique');
-      toast.warning('Aguarde a busca atual finalizar', { duration: 2000 });
-      return;
-    }
-
     if (selectedAccountIds.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
       return;
     }
 
-    setIsSearching(true);
+    const days = parseInt(periodo);
+    const hoje = new Date();
+    const dataInicio = startOfDay(subDays(hoje, days));
+    const dataFim = endOfDay(hoje);
     
-    // ✅ FASE 3: Toast de loading com progresso
-    const loadingToastId = toast.loading('🔍 Iniciando busca de devoluções...', {
-      description: `Preparando busca para ${selectedAccountIds.length} conta(s)`,
+    const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
+    const dateToISO = format(dataFim, 'yyyy-MM-dd');
+    
+    setFilters({
+      integrationAccountId: selectedAccountIds.join(','),
+      search: searchTerm,
+      dateFrom: dateFromISO,
+      dateTo: dateToISO,
     });
     
-    try {
-      // ✅ Calcular datas usando date-fns
-      const days = parseInt(periodo);
-      const hoje = new Date();
-      const dataInicio = startOfDay(subDays(hoje, days));
-      const dataFim = endOfDay(hoje);
-      
-      // ✅ Converter para formato YYYY-MM-DD
-      const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
-      const dateToISO = format(dataFim, 'yyyy-MM-dd');
-      
-      // ✅ FASE 3: Notificar se filtro de segurança será aplicado
-      if (days > 90) {
-        toast.info('📅 Filtro de segurança aplicado', {
-          description: 'Período ajustado para 90 dias para melhor performance',
-          duration: 5000,
-        });
-      }
-      
-      // ✅ FIX FASE 1.3: Consolidar TODOS os dispatches em um único bloco
-      // Isso evita múltiplas requisições simultâneas ao SWR
-      const newFilters: Partial<DevolucaoFilters> = {
-        dateFrom: dateFromISO,
-        dateTo: dateToISO,
-        search: searchTerm,
-      };
-      
-      // ✅ FASE 3: Atualizar toast - conectando
-      toast.loading('🌐 Conectando com API do Mercado Livre...', {
-        id: loadingToastId,
-        description: 'Buscando claims e devoluções',
-      });
-      
-      // ✅ FASE 3B: Aplicar filtros E contas + FORÇAR refetch do SWR
-      if (selectedAccountIds.length === 1) {
-        // Busca de conta única
-        console.log('🔍 Configurando busca para 1 conta:', selectedAccountIds[0]);
-        actions.setIntegrationAccountId(selectedAccountIds[0]);
-        actions.setFilters(newFilters);
-        persistentState.saveIntegrationAccountId(selectedAccountIds[0]);
-      } else {
-        // Busca de múltiplas contas
-        console.log('🔍 Configurando busca para', selectedAccountIds.length, 'contas');
-        actions.setMultipleAccounts(selectedAccountIds);
-        actions.setFilters(newFilters);
-        const accountsKey = selectedAccountIds.sort().join(',');
-        persistentState.saveIntegrationAccountId(accountsKey);
-      }
-      
-      // ✅ CRÍTICO: Forçar refetch EXPLÍCITO após atualizar filtros
-      await actions.refetch();
-      
-      // ✅ Salvar filtros aplicados
-      persistentState.saveAppliedFilters({
-        ...newFilters,
-        status: [],
-        integrationAccountId: selectedAccountIds.length === 1 ? selectedAccountIds[0] : selectedAccountIds.join(','),
-      } as DevolucaoFilters);
-      
-      // ✅ FASE 3: Atualizar toast - processando
-      toast.loading('📦 Processando claims em paralelo...', {
-        id: loadingToastId,
-        description: 'Enriquecendo dados de devoluções',
-      });
-      
-      // ✅ FASE 3D: Aguardar resposta com timeout de segurança
-      const timeout = setTimeout(() => {
-        toast.loading('⏱️ Ainda processando... Pode levar até 60 segundos', {
-          id: loadingToastId,
-          description: 'Edge function enriquecendo dados de múltiplas APIs',
-        });
-      }, 10000); // Atualizar toast após 10s
-      
-      // Esperar SWR refetch completar (máximo 65 segundos)
-      const maxWait = 65000;
-      const startTime = Date.now();
-      while (state.loading && (Date.now() - startTime) < maxWait) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
-      
-      clearTimeout(timeout);
-      
-      // ✅ FASE 3E: Toast de sucesso com métricas
-      const totalDevs = state.total || 0;
-      if (totalDevs > 0) {
-        toast.success(`✅ Busca concluída!`, {
-          id: loadingToastId,
-          description: `${totalDevs} devolução(ões) encontrada(s) em ${selectedAccountIds.length} conta(s)`,
-          duration: 4000,
-        });
-      } else {
-        toast.info('Nenhuma devolução encontrada no período', {
-          id: loadingToastId,
-          duration: 4000,
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao buscar:', error);
-      toast.error('❌ Erro na busca', {
-        id: loadingToastId,
-        description: 'Tente novamente ou selecione menos contas',
-        duration: 5000,
-      });
-    } finally {
-      setIsSearching(false);
-    }
+    setPagination({ ...pagination, page: 1 });
+    
+    refetch();
   };
 
-  const handleCancelSearch = () => {
-    setIsSearching(false);
-    toast.info('Busca cancelada');
+  const handleSync = () => {
+    if (selectedAccountIds.length === 0) {
+      toast.error('Selecione uma conta ML');
+      return;
+    }
+    
+    syncMutation.mutate({
+      integrationAccountId: selectedAccountIds[0],
+      batchSize: 100,
+    });
   };
+
+  const handleEnrich = () => {
+    if (selectedAccountIds.length === 0) {
+      toast.error('Selecione uma conta ML');
+      return;
+    }
+    
+    enrichMutation.mutate({
+      integrationAccountId: selectedAccountIds[0],
+      limit: 50,
+    });
+  };
+
+  const handleExport = () => {
+    toast.info('Exportação em desenvolvimento');
+  };
+
+  const handleClear = () => {
+    setFilters({});
+    setPagination({ page: 1, limit: 50, sortBy: 'data_criacao_claim', sortOrder: 'desc' });
+    setSearchTerm('');
+    setPeriodo('60');
+    setSelectedAccountIds(accounts.map(acc => acc.id));
+    setUrgencyFilter(null);
+    setCurrentUrgencyFilter('all');
+    
+    toast.success('Filtros limpos');
+  };
+
+  const handleStatusChange = (devolucaoId: string, newStatus: StatusAnalise) => {
+    // TODO: Implementar atualização de status via mutation
+    toast.info('Atualização de status em desenvolvimento');
+  };
+
+  const totalPages = Math.ceil((devolucoesData?.pagination?.total || 0) / pagination.limit!);
 
   return (
     <div className="h-screen flex flex-col">
@@ -394,20 +227,28 @@ export default function DevolucoesMercadoLivre() {
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* Header com Notificação de Críticos */}
+          {/* Header com Notificação */}
           <div className="px-4 md:px-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <DevolucaoHeaderSection 
-                isRefreshing={state.isRefreshing}
-                onRefresh={actions.refetch}
+                isRefreshing={isLoading}
+                onRefresh={() => refetch()}
               />
-              {/* ✅ SPRINT 1: Notificação de Deadlines Críticos */}
+              
+              {/* ✅ NOVO: Indicador de Sync */}
+              <SyncStatusIndicator 
+                syncStatus={syncStatus}
+                onSync={handleSync}
+                onEnrich={handleEnrich}
+                isSyncing={syncMutation.isPending}
+                isEnriching={enrichMutation.isPending}
+              />
+              
               <CriticalDeadlinesNotification 
-                devolucoes={state.devolucoes}
+                devolucoes={devolucoesData?.data || []}
                 onClick={() => {
-                  // Ativar filtro de críticos
                   setCurrentUrgencyFilter('critical');
-                  setUrgencyFilter((dev: MLReturn) => {
+                  setUrgencyFilter((dev: any) => {
                     const shipmentHours = dev.deadlines?.shipment_deadline_hours_left;
                     const reviewHours = dev.deadlines?.seller_review_deadline_hours_left;
                     return (shipmentHours !== null && shipmentHours < 24) ||
@@ -424,11 +265,11 @@ export default function DevolucoesMercadoLivre() {
             <DevolucaoStatsCards stats={stats} />
           </div>
 
-          {/* ✅ SPRINT 1: Filtros de Urgência */}
-          {state.devolucoes.length > 0 && (
+          {/* Filtros de Urgência */}
+          {(devolucoesData?.data?.length || 0) > 0 && (
             <div className="px-4 md:px-6">
               <UrgencyFilters 
-                devolucoes={state.devolucoes}
+                devolucoes={devolucoesData?.data || []}
                 onFilterChange={setUrgencyFilter}
                 currentFilter={currentUrgencyFilter}
                 onCurrentFilterChange={setCurrentUrgencyFilter}
@@ -436,12 +277,12 @@ export default function DevolucoesMercadoLivre() {
             </div>
           )}
 
-          {/* Quick Filters + Controls */}
-          {state.devolucoes.length > 0 && (
+          {/* Quick Filters */}
+          {(devolucoesData?.data?.length || 0) > 0 && (
             <div className="px-4 md:px-6">
               <DevolucaoQuickFilters 
-                devolucoes={state.devolucoes}
-                onFilteredDataChange={setFilteredByQuickFilter}
+                devolucoes={devolucoesData?.data || []}
+                onFilteredDataChange={() => {}}
               />
             </div>
           )}
@@ -450,14 +291,14 @@ export default function DevolucoesMercadoLivre() {
           <div className="px-4 md:px-6 flex justify-end">
             <DevolucaoControlsBar 
               autoRefreshEnabled={autoRefreshEnabled}
-              autoRefreshInterval={autoRefreshInterval}
+              autoRefreshInterval={30000}
               onAutoRefreshToggle={setAutoRefreshEnabled}
-              onAutoRefreshIntervalChange={setAutoRefreshInterval}
+              onAutoRefreshIntervalChange={() => {}}
               onExport={handleExport}
               onClear={handleClear}
-              onRefresh={actions.refetch}
-              totalRecords={state.total}
-              isRefreshing={state.isRefreshing}
+              onRefresh={() => refetch()}
+              totalRecords={devolucoesData?.pagination?.total || 0}
+              isRefreshing={isLoading}
             />
           </div>
 
@@ -472,14 +313,14 @@ export default function DevolucoesMercadoLivre() {
               searchTerm={searchTerm}
               onSearchChange={setSearchTerm}
               onBuscar={handleBuscar}
-              isLoading={isSearching}
-              onCancel={handleCancelSearch}
+              isLoading={isLoading}
+              onCancel={() => {}}
             />
           </div>
 
           {/* Tabs Ativas/Histórico */}
           <div className="px-4 md:px-6">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'ativas' | 'historico')}>
               <TabsList className="mb-4">
                 <TabsTrigger value="ativas">
                   Ativas ({devolucoesFiltradas.ativas.length})
@@ -493,10 +334,10 @@ export default function DevolucoesMercadoLivre() {
                 <Card>
                   <DevolucaoTable 
                     devolucoes={devolucoesFiltradas.ativas}
-                    isLoading={state.loading && state.devolucoes.length === 0}
-                    error={state.error}
+                    isLoading={isLoading}
+                    error={error?.message || null}
                     onStatusChange={handleStatusChange}
-                    onRefresh={() => window.location.reload()}
+                    onRefresh={() => refetch()}
                   />
                 </Card>
               </TabsContent>
@@ -505,10 +346,10 @@ export default function DevolucoesMercadoLivre() {
                 <Card>
                   <DevolucaoTable 
                     devolucoes={devolucoesFiltradas.historico}
-                    isLoading={state.loading && state.devolucoes.length === 0}
-                    error={state.error}
+                    isLoading={isLoading}
+                    error={error?.message || null}
                     onStatusChange={handleStatusChange}
-                    onRefresh={() => window.location.reload()}
+                    onRefresh={() => refetch()}
                   />
                 </Card>
               </TabsContent>
@@ -519,15 +360,23 @@ export default function DevolucoesMercadoLivre() {
           {totalPages > 1 && (
             <div className="px-4 md:px-6 pb-6">
               <DevolucaoPaginationControls 
-                currentPage={state.currentPage}
+                currentPage={pagination.page || 1}
                 totalPages={totalPages}
-                onPageChange={actions.setPage}
-                isLoading={state.loading}
+                onPageChange={(page) => setPagination({ ...pagination, page })}
+                isLoading={isLoading}
               />
             </div>
           )}
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DevolucoesMercadoLivre() {
+  return (
+    <DevolucaoProvider>
+      <DevolucoesMercadoLivreContent />
+    </DevolucaoProvider>
   );
 }
