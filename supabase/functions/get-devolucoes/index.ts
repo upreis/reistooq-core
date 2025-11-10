@@ -345,9 +345,9 @@ async function getDevolucoes(
         ? item.responsavel_custo[0] 
         : item.responsavel_custo || null,
       
-      // ⚡ QUANTIDADE (campos diretos)
+      // ⚡ QUANTIDADE (campo direto - quantidade_total NÃO existe no banco)
       return_quantity: item.quantidade || null,
-      total_quantity: item.quantidade_total || null,
+      total_quantity: item.quantidade || null,
       
       // Substatus
       substatus: item.descricao_ultimo_status || null,
