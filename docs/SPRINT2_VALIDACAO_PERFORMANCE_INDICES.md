@@ -152,14 +152,20 @@ console.log('Resultados:', diagnostics);
 
 ---
 
-## ⚠️ Pendências Conhecidas
+---
 
-### Função RPC Necessária
-A função `get_jsonb_index_stats()` precisa ser criada no Supabase:
+## ✅ Função RPC Implementada
 
+### `get_jsonb_index_stats()`
+**Status**: ✅ Criada e funcional
+
+**Localização**: Banco de dados Supabase
+
+**Descrição**: Retorna estatísticas em tempo real dos índices JSONB da tabela `devolucoes_avancadas`.
+
+**Retorno**:
 ```sql
-CREATE OR REPLACE FUNCTION get_jsonb_index_stats()
-RETURNS TABLE(
+TABLE(
   index_name text,
   table_name text,
   index_scans bigint,
@@ -167,28 +173,23 @@ RETURNS TABLE(
   rows_fetched bigint,
   size_mb numeric,
   efficiency_score numeric
-) AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    i.indexrelname::text as index_name,
-    i.relname::text as table_name,
-    s.idx_scan as index_scans,
-    s.idx_tup_read as rows_read,
-    s.idx_tup_fetch as rows_fetched,
-    ROUND(pg_relation_size(i.indexrelid) / 1024.0 / 1024.0, 2) as size_mb,
-    CASE 
-      WHEN s.idx_scan > 0 THEN 
-        ROUND((s.idx_tup_fetch::numeric / s.idx_scan::numeric) * 100, 1)
-      ELSE 0
-    END as efficiency_score
-  FROM pg_stat_user_indexes s
-  JOIN pg_indexes i ON i.indexname = s.indexrelname
-  WHERE i.tablename = 'devolucoes_avancadas'
-  AND i.indexname LIKE 'idx_devolucoes_avancadas_%'
-  ORDER BY s.idx_scan DESC;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+)
+```
+
+**Métricas Calculadas**:
+- **index_scans**: Número de vezes que o índice foi utilizado
+- **rows_read**: Total de linhas lidas pelo índice
+- **rows_fetched**: Total de linhas retornadas aos clientes
+- **size_mb**: Tamanho do índice em megabytes
+- **efficiency_score**: Score de eficiência (0-100%) baseado na relação rows_fetched/rows_read
+
+**Permissões**: Acessível por usuários autenticados
+
+**Uso no Dashboard**:
+```typescript
+import { PerformanceDiagnostics } from '@/features/devolucoes-online/services/performanceDiagnostics';
+
+const stats = await PerformanceDiagnostics.getIndexUsageStats();
 ```
 
 ---
