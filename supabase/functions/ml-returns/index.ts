@@ -247,10 +247,13 @@ Deno.serve(async (req) => {
 
     console.log(`🔍 Buscando devoluções para ${accountIds.length} conta(s)`);
 
-    const allReturns: any[] = [];
     let totalReturns = 0;
 
-    for (const accountId of accountIds) {
+    // ✅ FASE 2: Processar contas em PARALELO (não sequencial)
+    const accountPromises = accountIds.map(async (accountId) => {
+      const accountReturns: any[] = []; // Array local para esta conta
+      
+      try {
       try {
         // Buscar tokens DIRETO do banco (como unified-orders faz)
         const { data: secretRow, error: secretError } = await supabase
@@ -314,8 +317,10 @@ Deno.serve(async (req) => {
         const params = new URLSearchParams();
         params.append('player_role', 'respondent');
         params.append('player_user_id', sellerId);
-        params.append('limit', '100'); // Aumentado para pegar mais claims
-        params.append('offset', '0');
+        
+        // ✅ FASE 2: Aplicar paginação REAL da API ML (não buscar tudo)
+        params.append('limit', String(limit)); // Usar limit do request
+        params.append('offset', String(offset)); // Usar offset do request
         params.append('sort', 'date_created:desc');
         
         // APLICAR FILTROS DE DATA (date_created) - Usando safeFilters com proteção de 90 dias
@@ -396,10 +401,10 @@ Deno.serve(async (req) => {
         // PASSO 2: Para CADA claim, tentar buscar devolução
         // (já que related_entities vem undefined na API de busca)
         if (claimsData.data && Array.isArray(claimsData.data)) {
-          console.log(`📦 Verificando devoluções em ${claimsData.data.length} claims...`);
-
-          // Processar cada claim para verificar se tem devolução
-          for (const claim of claimsData.data) {
+          console.log(`📦 Verificando devoluções em ${claimsData.data.length} claims... (PARALELO)`);
+          
+          // ✅ FASE 2: Processar claims em PARALELO (não sequencial)
+          const claimPromises = claimsData.data.map(async (claim: any) => {
             try {
               const returnUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`;
               
@@ -415,7 +420,7 @@ Deno.serve(async (req) => {
                 const returnData = await returnResponse.json();
                 
                 // LOG COMPLETO para análise (apenas primeira devolução para não poluir)
-                if (allReturns.length === 0) {
+                if (accountReturns.length === 0) {
                   console.log(`\n📋 ESTRUTURA COMPLETA DA API /returns:`, JSON.stringify(returnData, null, 2));
                   console.log(`\n🔑 CAMPOS DISPONÍVEIS:`, Object.keys(returnData));
                 }
@@ -1032,9 +1037,6 @@ Deno.serve(async (req) => {
                   resource: returnData.resource_type,
                 };
                 
-                // Adicionar ao array de retornos
-                allReturns.push(enrichedReturn);
-                
                 // ✅ FASE 15: UPSERT - Salvar dados enriquecidos no banco
                 try {
                   console.log(`💾 Salvando dados enriquecidos no banco para order ${returnData.resource_id}...`);
@@ -1101,27 +1103,48 @@ Deno.serve(async (req) => {
                   console.error(`❌ Erro de banco ao salvar order ${returnData.resource_id}:`, getErrorMessage(dbError));
                   // Não quebra a execução - continua retornando dados
                 }
+                
+                // ✅ Retornar a devolução enriquecida
+                return enrichedReturn;
               } else if (returnResponse.status === 404) {
                 // 404 = claim não tem devolução (normal)
                 // Não loga para não poluir
+                return null;
               } else {
                 // Outro erro
                 const errorText = await returnResponse.text();
                 console.warn(`⚠️ Erro ${returnResponse.status} ao verificar devolução do claim ${claim.id}:`, errorText.substring(0, 150));
+                return null;
               }
             } catch (error) {
               console.error(`❌ Erro ao processar claim ${claim.id}:`, error);
+              return null;
             }
-          }
-
-          console.log(`\n📦 TOTAL: ${allReturns.length} devoluções encontradas de ${claimsData.data.length} claims`);
-          totalReturns = allReturns.length;
+          });
+          
+          // ✅ FASE 2: Aguardar TODOS os claims processarem em paralelo
+          const claimResults = await Promise.all(claimPromises);
+          
+          // Filtrar nulls
+          const validAccountReturns = claimResults.filter(r => r !== null);
+          
+          console.log(`\n📦 TOTAL: ${validAccountReturns.length} devoluções encontradas de ${claimsData.data.length} claims (conta ${accountId})`);
+          
+          return validAccountReturns;
         }
       } catch (error) {
         console.error(`❌ Erro ao processar conta ${accountId}:`, error);
-        continue;
+        return []; // Retornar array vazio se falhar
       }
-    }
+    });
+    
+    // ✅ FASE 2: Aguardar TODAS as contas processarem em paralelo
+    const accountResults = await Promise.all(accountPromises);
+    
+    // Flatten results de todas as contas
+    const allReturns = accountResults.flat();
+    
+    console.log(`\n✅ TOTAL GERAL: ${allReturns.length} devoluções de ${accountIds.length} conta(s) processadas EM PARALELO`);
 
     // ✅ CRITICAL FIX: Buscar dados do BANCO (com JSONB) ao invés de retornar dados direto da API
     console.log(`\n🔍 Buscando ${allReturns.length} devoluções do banco com dados JSONB enriquecidos...`);
