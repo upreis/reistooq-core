@@ -65,16 +65,20 @@ async function syncDevolucoes(
     logger.info(`ML User ID: ${account.account_identifier}`);
 
     // 2. Criar registro de sync inicial
+    // 2. UPSERT registro de sync (insere se não existe, atualiza se existe)
     const { data: syncRecord, error: syncInsertError } = await supabase
       .from('devolucoes_sync_status')
-      .insert({
+      .upsert({
         integration_account_id: integrationAccountId,
-        last_sync_status: 'in_progress', // ✅ CORRIGIDO: usar valor permitido pelo constraint
+        last_sync_status: 'in_progress',
         last_sync_at: new Date().toISOString(),
         items_synced: 0,
         items_total: 0,
         items_failed: 0,
-        sync_type: 'full' // ✅ CORRIGIDO: usar 'full' (valores permitidos: 'full', 'incremental', 'enrichment')
+        sync_type: 'full'
+      }, {
+        onConflict: 'integration_account_id,sync_type', // Chave única da constraint
+        ignoreDuplicates: false // Atualizar se já existir
       })
       .select()
       .single();
