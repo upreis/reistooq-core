@@ -268,70 +268,67 @@ export default function DevolucoesMercadoLivre() {
 
     setIsSearching(true);
     try {
-      // ✅ Calcular datas usando date-fns (exatamente como /reclamacoes)
+      // ✅ Calcular datas usando date-fns
       const days = parseInt(periodo);
       const hoje = new Date();
-      const dataInicio = startOfDay(subDays(hoje, days)); // 00:00:00 de X dias atrás
-      const dataFim = endOfDay(hoje); // 23:59:59 de hoje
+      const dataInicio = startOfDay(subDays(hoje, days));
+      const dataFim = endOfDay(hoje);
       
-      // ✅ Converter para formato YYYY-MM-DD (extraindo apenas a data)
+      // ✅ Converter para formato YYYY-MM-DD
       const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
       const dateToISO = format(dataFim, 'yyyy-MM-dd');
       
-      console.log('📅 Aplicando filtros de data (ISO strings):', {
-        periodo: `${days} dias`,
+      // ✅ FIX FASE 1.3: Consolidar TODOS os dispatches em um único bloco
+      // Isso evita múltiplas requisições simultâneas ao SWR
+      const newFilters: Partial<DevolucaoFilters> = {
         dateFrom: dateFromISO,
         dateTo: dateToISO,
-        dateFromFull: dataInicio.toISOString(),
-        dateToFull: dataFim.toISOString(),
-      });
-      
-      // ✅ Aplicar filtros de data como strings YYYY-MM-DD
-      const newFilters: Partial<DevolucaoFilters> = {
-        dateFrom: dateFromISO,  // ✅ String format YYYY-MM-DD
-        dateTo: dateToISO,      // ✅ String format YYYY-MM-DD
         search: searchTerm,
       };
       
-      actions.setFilters(newFilters);
+      // ✅ Aplicar filtros E contas em uma ÚNICA ação
+      if (selectedAccountIds.length === 1) {
+        // Busca de conta única
+        console.log('🔍 Configurando busca para 1 conta:', selectedAccountIds[0]);
+        actions.setIntegrationAccountId(selectedAccountIds[0]);
+        actions.setFilters(newFilters);
+        persistentState.saveIntegrationAccountId(selectedAccountIds[0]);
+      } else {
+        // Busca de múltiplas contas
+        console.log('🔍 Configurando busca para', selectedAccountIds.length, 'contas');
+        actions.setMultipleAccounts(selectedAccountIds);
+        actions.setFilters(newFilters);
+        const accountsKey = selectedAccountIds.sort().join(',');
+        persistentState.saveIntegrationAccountId(accountsKey);
+      }
       
-      // ✅ Salvar filtros aplicados (criar objeto completo)
+      // ✅ Salvar filtros aplicados
       persistentState.saveAppliedFilters({
         ...newFilters,
         status: [],
         integrationAccountId: selectedAccountIds.length === 1 ? selectedAccountIds[0] : selectedAccountIds.join(','),
       } as DevolucaoFilters);
       
-      if (selectedAccountIds.length === 1) {
-        // Busca de conta única
-        console.log('🔍 Buscando devoluções da conta:', selectedAccountIds[0]);
-        actions.setIntegrationAccountId(selectedAccountIds[0]);
-        persistentState.saveIntegrationAccountId(selectedAccountIds[0]);
-      } else {
-        // Busca de múltiplas contas
-        console.log('🔍 Buscando devoluções de', selectedAccountIds.length, 'contas:', selectedAccountIds);
-        actions.setMultipleAccounts(selectedAccountIds);
-        const accountsKey = selectedAccountIds.sort().join(',');
-        persistentState.saveIntegrationAccountId(accountsKey);
-      }
-      
       const contasTexto = selectedAccountIds.length === 1 
         ? 'conta selecionada' 
         : `${selectedAccountIds.length} contas selecionadas`;
       
-      toast.loading(`Buscando devoluções de ${contasTexto} - Últimos ${days} dias...`, {
+      toast.loading(`Buscando devoluções...`, {
         id: 'buscar-devolucoes',
       });
       
-      // Forçar refetch imediato
-      await actions.refetch();
+      // ✅ SWR já vai refazer a requisição automaticamente quando a key mudar
+      // NÃO precisa chamar refetch() - isso causaria requisição duplicada
       
-      toast.success(`Busca concluída!`, {
+      // Esperar um momento para SWR processar
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      toast.success(`Busca configurada!`, {
         id: 'buscar-devolucoes',
       });
     } catch (error) {
       console.error('Erro ao buscar:', error);
-      toast.error('Erro ao buscar devoluções', {
+      toast.error('Erro ao configurar busca', {
         id: 'buscar-devolucoes',
       });
     } finally {
