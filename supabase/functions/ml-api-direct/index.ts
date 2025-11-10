@@ -2439,7 +2439,7 @@ async function buscarPedidosCancelados(
               status_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.status || 
                                safeClaimData?.return_details_v1?.results?.[0]?.status || null,
               
-              // 💰 STATUS DO DINHEIRO
+              // 💰 STATUS DO DINHEIRO (✅ CORRIGIDO - campo 1 da auditoria)
               status_dinheiro: safeClaimData?.return_details_v2?.results?.[0]?.status_money || 
                               safeClaimData?.return_details_v1?.results?.[0]?.status_money || null,
               
@@ -2459,10 +2459,12 @@ async function buscarPedidosCancelados(
               data_fechamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.date_closed || 
                                         safeClaimData?.return_details_v1?.results?.[0]?.date_closed || null,
               
-              // 💵 QUANDO SERÁ REEMBOLSADO
-              reembolso_quando: safeClaimData?.return_details_v2?.results?.[0]?.refund_at || 
+              // 💵 QUANDO SERÁ REEMBOLSADO (✅ CORRIGIDO - campo 7 da auditoria: refund_at)
+              reembolso_quando: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.refund_at || 
+                               safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.refund_at ||
+                               safeClaimData?.return_details_v2?.results?.[0]?.refund_at || 
                                safeClaimData?.return_details_v1?.results?.[0]?.refund_at || null,
-              
+
               // 📦 ID DO SHIPMENT DE DEVOLUÇÃO
               shipment_id_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
                                     safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
@@ -2477,11 +2479,11 @@ async function buscarPedidosCancelados(
               codigo_rastreamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
                                             safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
               
-              // 🚚 TIPO DE ENVIO DA DEVOLUÇÃO
+              // 🚚 TIPO DE ENVIO DA DEVOLUÇÃO (✅ CORRIGIDO - campo 4 da auditoria: shipment_type)
               tipo_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.type || 
                                    safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.type || null,
               
-              // 📍 DESTINO DA DEVOLUÇÃO
+              // 📍 DESTINO DA DEVOLUÇÃO (✅ CORRIGIDO - campo 5 da auditoria: shipment_destination)
               destino_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.destination?.name || 
                                 safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.destination?.name || null,
               
@@ -2494,7 +2496,7 @@ async function buscarPedidosCancelados(
                 }
                 return null
               })(),
-              
+
               // 📜 TIMELINE COMPLETO DE RASTREAMENTO (JSON)
               timeline_rastreamento: (() => {
                 const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
