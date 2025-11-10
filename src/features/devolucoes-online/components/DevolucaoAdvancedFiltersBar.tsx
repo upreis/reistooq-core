@@ -195,17 +195,17 @@ export function DevolucaoAdvancedFiltersBar({
             <Button
               onClick={onBuscar}
               disabled={isLoading || selectedAccountIds.length === 0}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black"
+              className="flex-1 min-w-[200px] bg-yellow-500 hover:bg-yellow-600 text-black disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <div className="animate-spin mr-2 h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
-                  Buscando...
+                  <span className="font-medium">Buscando...</span>
                 </>
               ) : (
                 <>
                   <Search className="h-4 w-4 mr-2" />
-                  Aplicar Filtros e Buscar
+                  <span className="font-medium">Aplicar Filtros e Buscar</span>
                 </>
               )}
             </Button>

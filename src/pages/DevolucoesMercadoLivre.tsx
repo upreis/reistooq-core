@@ -254,6 +254,12 @@ export default function DevolucoesMercadoLivre() {
   };
 
   const handleBuscar = async () => {
+    // Prevenir múltiplos cliques
+    if (isSearching || state.loading) {
+      console.warn('⚠️ Busca já em andamento, ignorando clique');
+      return;
+    }
+
     if (selectedAccountIds.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
       return;
@@ -308,17 +314,25 @@ export default function DevolucoesMercadoLivre() {
         persistentState.saveIntegrationAccountId(accountsKey);
       }
       
-      // Forçar refetch imediato
-      actions.refetch();
-      
       const contasTexto = selectedAccountIds.length === 1 
         ? 'conta selecionada' 
         : `${selectedAccountIds.length} contas selecionadas`;
       
-      toast.success(`Buscando devoluções de ${contasTexto} - Últimos ${days} dias`);
+      toast.loading(`Buscando devoluções de ${contasTexto} - Últimos ${days} dias...`, {
+        id: 'buscar-devolucoes',
+      });
+      
+      // Forçar refetch imediato
+      await actions.refetch();
+      
+      toast.success(`Busca concluída!`, {
+        id: 'buscar-devolucoes',
+      });
     } catch (error) {
       console.error('Erro ao buscar:', error);
-      toast.error('Erro ao buscar devoluções');
+      toast.error('Erro ao buscar devoluções', {
+        id: 'buscar-devolucoes',
+      });
     } finally {
       setIsSearching(false);
     }
