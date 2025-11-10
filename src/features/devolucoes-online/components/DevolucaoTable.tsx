@@ -28,6 +28,7 @@ import { TrackingInfoCell } from './cells/TrackingInfoCell';
 import { ReviewInfoCell } from './cells/ReviewInfoCell';
 import { CommunicationInfoCell } from './cells/CommunicationInfoCell';
 import { DeadlinesCell } from './cells/DeadlinesCell';
+import { SubstatusCell } from './cells/SubstatusCell';
 import {
   translateStatus,
   translateStatusMoney,
@@ -257,6 +258,12 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             <TableHead className="font-semibold whitespace-nowrap">
               <span className="flex items-center gap-1.5">
                 ⏰ Prazos
+              </span>
+            </TableHead>
+            {/* ✅ FASE 9: Substatus */}
+            <TableHead className="font-semibold whitespace-nowrap">
+              <span className="flex items-center gap-1.5">
+                📍 Substatus
               </span>
             </TableHead>
             <TableHead className="font-semibold">Análise</TableHead>
@@ -522,6 +529,14 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   <DeadlinesCell 
                     deadlines={dev.deadlines}
                     status={dev.status?.id || 'pending'}
+                  />
+                </TableCell>
+                {/* ✅ FASE 9: Substatus */}
+                <TableCell>
+                  <SubstatusCell 
+                    status={dev.shipment_status} 
+                    substatus={dev.shipments?.[0]?.substatus}
+                    trackingInfo={dev.tracking_info}
                   />
                 </TableCell>
                 {/* Status Análise */}

@@ -137,6 +137,7 @@ export interface ReturnShipment {
   id: number;
   shipment_id?: number;
   status: string;
+  substatus?: string | null; // ✅ FASE 9: Substatus detalhado
   tracking_number: string | null;
   type?: string;
   destination?: ShipmentDestination;
@@ -244,6 +245,7 @@ export interface FinancialInfo {
 export interface ShipmentTracking {
   shipment_id: number;
   current_status: string;
+  current_substatus?: string | null; // ✅ FASE 9: Substatus detalhado
   current_status_description: string;
   current_location?: string | null;
   estimated_delivery: string | null;

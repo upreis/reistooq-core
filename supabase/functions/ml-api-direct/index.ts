@@ -1931,14 +1931,14 @@ async function buscarPedidosCancelados(
                         { 'x-format-new': 'true' }  // ✅ Header customizado
                       )
                       if (response.ok) {
-                        const shipmentData = await response.json()
+                          const shipmentData = await response.json()
                         trackingResults.original_tracking = {
                           tracking_number: shipmentData.tracking_number,
                           tracking_method: shipmentData.tracking_method,
                           status: shipmentData.status,
-                          substatus: shipmentData.substatus
+                          substatus: shipmentData.substatus || null // ✅ FASE 9: Capturar substatus
                         }
-                        console.log(`📦 Tracking do envio original: ${shipmentData.tracking_number || 'N/A'}`)
+                        console.log(`📦 Tracking do envio original: ${shipmentData.tracking_number || 'N/A'} (substatus: ${shipmentData.substatus || 'N/A'})`)
                       }
                     } catch (e) {
                       console.warn(`⚠️ Erro ao buscar tracking do envio original:`, e)
@@ -1970,9 +1970,9 @@ async function buscarPedidosCancelados(
                             tracking_number: returnShipment.tracking_number,
                             tracking_method: returnShipment.tracking_method,
                             status: returnShipment.status,
-                            substatus: returnShipment.substatus
+                            substatus: returnShipment.substatus || null // ✅ FASE 9: Capturar substatus
                           }
-                          console.log(`📦 Tracking de devolução: ${returnShipment.tracking_number || 'N/A'}`)
+                          console.log(`📦 Tracking de devolução: ${returnShipment.tracking_number || 'N/A'} (substatus: ${returnShipment.substatus || 'N/A'})`)
                         }
                       }
                     }
