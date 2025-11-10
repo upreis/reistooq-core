@@ -194,15 +194,16 @@ export function useDevolucaoManager(initialAccountId?: string) {
     return ['devolucoes', accountToUse, debouncedFilters, currentPage, pageSize] as const;
   }, [integrationAccountId, multipleAccountIds, debouncedFilters, currentPage, pageSize, availableMlAccounts]);
 
-  // SWR com cache inteligente
+  // SWR com cache inteligente e proteção contra duplicação
   const { data, error: swrError, isLoading, mutate } = useSWR(
     swrKey || null,
     swrKey ? fetcher : null,
     {
-      dedupingInterval: 30000, // 30s deduping
+      dedupingInterval: 60000, // ✅ 60s de deduplicação (evita chamadas duplicadas)
       revalidateOnFocus: false,
+      revalidateOnReconnect: false, // ✅ Não revalidar ao reconectar
       errorRetryCount: 2,
-      keepPreviousData: false, // NÃO manter dados anteriores para evitar mostrar dados da conta errada
+      keepPreviousData: true, // ✅ Manter dados anteriores durante loading
       onSuccess: (data) => {
         if (data) {
           setDevolucoes(data.returns);
