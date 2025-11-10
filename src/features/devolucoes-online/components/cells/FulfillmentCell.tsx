@@ -1,8 +1,10 @@
 /**
  * 📦 CÉLULA: FULFILLMENT INFO
  * Exibe informações de logística e fulfillment
+ * ⚡ OTIMIZADO: React.memo + constants
  */
 
+import { memo } from 'react';
 import { Package, Warehouse, MapPin, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { FulfillmentInfo } from '../../types/devolucao.types';
@@ -17,6 +19,7 @@ interface FulfillmentCellProps {
   fulfillmentInfo?: FulfillmentInfo;
 }
 
+// Moved constants outside component to avoid recreation
 const TIPO_LOGISTICA_LABELS: Record<string, string> = {
   'FBM': 'Fulfillment by Merchant',
   'FULL': 'Mercado Livre Full',
@@ -34,7 +37,7 @@ const STATUS_REINGRESSO_LABELS: Record<string, { label: string; variant: 'defaul
   'rejected': { label: 'Rejeitado', variant: 'destructive' },
 };
 
-export function FulfillmentCell({ fulfillmentInfo }: FulfillmentCellProps) {
+const FulfillmentCellComponent = ({ fulfillmentInfo }: FulfillmentCellProps) => {
   if (!fulfillmentInfo) {
     return (
       <div className="text-xs text-muted-foreground">
@@ -120,4 +123,7 @@ export function FulfillmentCell({ fulfillmentInfo }: FulfillmentCellProps) {
       )}
     </div>
   );
-}
+};
+
+export const FulfillmentCell = memo(FulfillmentCellComponent);
+FulfillmentCell.displayName = 'FulfillmentCell';

@@ -1,4 +1,10 @@
-import React, { useState } from 'react';
+/**
+ * 🎬 ACTIONS CELL
+ * Exibe ações disponíveis para devolução
+ * ⚡ OTIMIZADO: React.memo + useCallback + useMemo
+ */
+
+import { memo, useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -25,7 +31,7 @@ interface ActionsCellProps {
   onActionExecuted?: () => void;
 }
 
-export const ActionsCell: React.FC<ActionsCellProps> = ({ 
+const ActionsCellComponent: React.FC<ActionsCellProps> = ({
   returnId, 
   claimId, 
   availableActions,
@@ -37,17 +43,8 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
   const { showConfirmation, dialog } = useConfirmationDialog();
   const { filters } = useDevolucaoStore();
 
-  if (!availableActions) {
-    return (
-      <td className="px-3 py-3 text-center">
-        <Badge variant="secondary" className="text-xs">
-          Nenhuma ação disponível
-        </Badge>
-      </td>
-    );
-  }
-
-  const executeAction = async (actionType: string, actionName: string, actionData?: any) => {
+  // Memoize executeAction to prevent recreation
+  const executeAction = useCallback(async (actionType: string, actionName: string, actionData?: any) => {
     setLoadingAction(actionType);
     
     try {
@@ -93,9 +90,9 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
     } finally {
       setLoadingAction(null);
     }
-  };
+  }, [returnId, claimId, filters.integrationAccountId, onActionExecuted]);
 
-  const handleAction = async (actionType: string, actionName: string) => {
+  const handleAction = useCallback(async (actionType: string, actionName: string) => {
     // Se for reprovação, mostrar modal
     if (actionType === 'review_fail') {
       setShowRejectModal(true);
@@ -111,13 +108,14 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
       variant: actionType.includes('appeal') ? 'warning' : 'default',
       onConfirm: () => executeAction(actionType, actionName)
     });
-  };
+  }, [returnId, executeAction, showConfirmation]);
 
-  const handleRejectConfirm = async (reasonId: string, message: string) => {
+  const handleRejectConfirm = useCallback(async (reasonId: string, message: string) => {
     await executeAction('review_fail', 'Reprovar Revisão', { reasonId, message });
-  };
+  }, [executeAction]);
 
-  const actions = [
+  // Memoize actions configuration
+  const actions = useMemo(() => [
     {
       key: 'review_ok',
       available: availableActions.can_review_ok,
@@ -166,9 +164,22 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
       variant: 'outline' as const,
       className: ''
     }
-  ];
+  ], [availableActions]);
 
-  const availableActionsList = actions.filter(action => action.available);
+  const availableActionsList = useMemo(
+    () => actions.filter(action => action.available),
+    [actions]
+  );
+
+  if (!availableActions) {
+    return (
+      <td className="px-3 py-3 text-center">
+        <Badge variant="secondary" className="text-xs">
+          Nenhuma ação disponível
+        </Badge>
+      </td>
+    );
+  }
 
   if (availableActionsList.length === 0) {
     return (
@@ -217,3 +228,6 @@ export const ActionsCell: React.FC<ActionsCellProps> = ({
     </td>
   );
 };
+
+export const ActionsCell = memo(ActionsCellComponent);
+ActionsCell.displayName = 'ActionsCell';

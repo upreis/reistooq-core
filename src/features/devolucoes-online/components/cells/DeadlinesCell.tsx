@@ -1,8 +1,10 @@
 /**
  * ⏰ DEADLINES CELL - FASE 8
  * Exibe prazos e deadlines com alertas visuais
+ * ⚡ OTIMIZADO: React.memo + useMemo
  */
 
+import { memo, useMemo } from 'react';
 import { Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -25,20 +27,27 @@ function getDeadlineStatus(hoursLeft: number | null, isCritical: boolean): Deadl
   return 'ok';
 }
 
-export function DeadlinesCell({ deadlines, status }: DeadlinesCellProps) {
+const DeadlinesCellComponent = ({ deadlines, status }: DeadlinesCellProps) => {
+  // Memoize status calculations
+  const shipmentStatus = useMemo(() => 
+    deadlines ? getDeadlineStatus(
+      deadlines.shipment_deadline_hours_left,
+      deadlines.is_shipment_deadline_critical
+    ) : null,
+    [deadlines]
+  );
+  
+  const reviewStatus = useMemo(() => 
+    deadlines ? getDeadlineStatus(
+      deadlines.seller_review_deadline_hours_left,
+      deadlines.is_review_deadline_critical
+    ) : null,
+    [deadlines]
+  );
+
   if (!deadlines) {
     return <span className="text-muted-foreground text-sm">—</span>;
   }
-  
-  const shipmentStatus = getDeadlineStatus(
-    deadlines.shipment_deadline_hours_left,
-    deadlines.is_shipment_deadline_critical
-  );
-  
-  const reviewStatus = getDeadlineStatus(
-    deadlines.seller_review_deadline_hours_left,
-    deadlines.is_review_deadline_critical
-  );
   
   return (
     <div className="flex flex-col gap-1.5">
@@ -150,4 +159,7 @@ export function DeadlinesCell({ deadlines, status }: DeadlinesCellProps) {
       )}
     </div>
   );
-}
+};
+
+export const DeadlinesCell = memo(DeadlinesCellComponent);
+DeadlinesCell.displayName = 'DeadlinesCell';

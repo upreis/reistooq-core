@@ -1,8 +1,10 @@
 /**
  * 💬 CELL - COMMUNICATION INFO
  * Exibe informações de comunicação e mensagens da devolução
+ * ⚡ OTIMIZADO: React.memo + useCallback + useMemo
  */
 
+import { memo, useMemo, useCallback } from 'react';
 import { CommunicationInfo } from '../../types/devolucao.types';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
@@ -22,7 +24,7 @@ interface CommunicationInfoCellProps {
   communication?: CommunicationInfo;
 }
 
-export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellProps) => {
+const CommunicationInfoCellComponent = ({ communication }: CommunicationInfoCellProps) => {
   // 🐛 FIX 7: Verificação mais robusta - pode ser null, undefined ou ter total_messages = 0
   if (!communication || !communication.total_messages || communication.total_messages === 0) {
     return (
@@ -32,7 +34,8 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
     );
   }
 
-  const getQualityBadge = (quality?: string | null) => {
+  // Memoize helper functions
+  const getQualityBadge = useCallback((quality?: string | null) => {
     switch (quality) {
       case 'excellent':
         return <Badge variant="default" className="text-xs">Excelente</Badge>;
@@ -45,9 +48,9 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
       default:
         return null;
     }
-  };
+  }, []);
 
-  const getModerationIcon = (status?: string | null) => {
+  const getModerationIcon = useCallback((status?: string | null) => {
     switch (status) {
       case 'clean':
         return <CheckCircle className="h-3 w-3 text-green-600" />;
@@ -58,9 +61,9 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
       default:
         return null;
     }
-  };
+  }, []);
 
-  const getSenderLabel = (role: string) => {
+  const getSenderLabel = useCallback((role: string) => {
     switch (role) {
       case 'buyer':
         return 'Comprador';
@@ -71,7 +74,17 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
       default:
         return role;
     }
-  };
+  }, []);
+
+  // Memoize formatted date
+  const formattedLastMessageDate = useMemo(() => {
+    if (!communication?.last_message_date) return null;
+    try {
+      return format(new Date(communication.last_message_date), 'dd/MM/yy HH:mm', { locale: ptBR });
+    } catch {
+      return communication.last_message_date;
+    }
+  }, [communication?.last_message_date]);
 
   return (
     <Dialog>
@@ -89,17 +102,10 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
             {getQualityBadge(communication.communication_quality)}
           </div>
 
-          {communication.last_message_date && (
+          {formattedLastMessageDate && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              {/* 🐛 FIX 8: Try-catch para evitar erro de data inválida */}
-              {(() => {
-                try {
-                  return format(new Date(communication.last_message_date), 'dd/MM/yy HH:mm', { locale: ptBR });
-                } catch {
-                  return communication.last_message_date;
-                }
-              })()}
+              {formattedLastMessageDate}
             </div>
           )}
 
@@ -216,3 +222,6 @@ export const CommunicationInfoCell = ({ communication }: CommunicationInfoCellPr
     </Dialog>
   );
 };
+
+export const CommunicationInfoCell = memo(CommunicationInfoCellComponent);
+CommunicationInfoCell.displayName = 'CommunicationInfoCell';

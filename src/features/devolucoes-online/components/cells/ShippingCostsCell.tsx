@@ -1,4 +1,10 @@
-import React, { useState } from 'react';
+/**
+ * 💰 SHIPPING COSTS CELL
+ * Exibe custos de logística
+ * ⚡ OTIMIZADO: React.memo + useCallback + useMemo
+ */
+
+import { memo, useState, useCallback, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DollarSignIcon, InfoIcon } from 'lucide-react';
@@ -11,21 +17,28 @@ interface ShippingCostsCellProps {
   claimId: number;
 }
 
-export const ShippingCostsCell: React.FC<ShippingCostsCellProps> = ({
+const ShippingCostsCellComponent: React.FC<ShippingCostsCellProps> = ({
   shippingCosts,
   returnId,
   claimId,
 }) => {
   const [modalOpen, setModalOpen] = useState(false);
 
-  const formatCurrency = (amount: number | null, currency: string = 'BRL') => {
+  // Memoize formatCurrency function
+  const formatCurrency = useCallback((amount: number | null, currency: string = 'BRL') => {
     if (amount === null || amount === undefined) return '-';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 2,
     }).format(amount);
-  };
+  }, []);
+
+  // Memoize breakdown check
+  const hasBreakdown = useMemo(() => 
+    shippingCosts?.breakdown && Object.keys(shippingCosts.breakdown).length > 0,
+    [shippingCosts]
+  );
 
   if (!shippingCosts) {
     return (
@@ -36,9 +49,6 @@ export const ShippingCostsCell: React.FC<ShippingCostsCellProps> = ({
       </td>
     );
   }
-
-  const hasBreakdown = shippingCosts.breakdown && 
-    Object.keys(shippingCosts.breakdown).length > 0;
 
   return (
     <td className="px-3 py-3">
@@ -95,3 +105,6 @@ export const ShippingCostsCell: React.FC<ShippingCostsCellProps> = ({
     </td>
   );
 };
+
+export const ShippingCostsCell = memo(ShippingCostsCellComponent);
+ShippingCostsCell.displayName = 'ShippingCostsCell';
