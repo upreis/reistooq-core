@@ -1681,6 +1681,62 @@ export type Database = {
           },
         ]
       }
+      devolucoes_sync_status: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          integration_account_id: string
+          items_failed: number | null
+          items_synced: number | null
+          items_total: number | null
+          last_sync_at: string | null
+          last_sync_status: string | null
+          sync_type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          integration_account_id: string
+          items_failed?: number | null
+          items_synced?: number | null
+          items_total?: number | null
+          last_sync_at?: string | null
+          last_sync_status?: string | null
+          sync_type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          integration_account_id?: string
+          items_failed?: number | null
+          items_synced?: number | null
+          items_total?: number | null
+          last_sync_at?: string | null
+          last_sync_status?: string | null
+          sync_type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devolucoes_sync_status_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estoque_por_local: {
         Row: {
           created_at: string
@@ -6179,6 +6235,39 @@ export type Database = {
         }
         Relationships: []
       }
+      devolucoes_sync_stats: {
+        Row: {
+          account_name: string | null
+          duration_ms: number | null
+          error_message: string | null
+          integration_account_id: string | null
+          items_failed: number | null
+          items_synced: number | null
+          items_total: number | null
+          last_sync_at: string | null
+          last_sync_status: string | null
+          minutes_since_sync: number | null
+          organization_id: string | null
+          sync_health: string | null
+          sync_type: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devolucoes_sync_status_integration_account_id_fkey"
+            columns: ["integration_account_id"]
+            isOneToOne: false
+            referencedRelation: "integration_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_accounts_org_fk"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation_secure: { Args: { _token: string }; Returns: Json }
@@ -6287,6 +6376,17 @@ export type Database = {
       cleanup_oauth_states: { Args: never; Returns: undefined }
       complete_background_job: {
         Args: { p_error_message?: string; p_job_id: string; p_success: boolean }
+        Returns: undefined
+      }
+      complete_devolucoes_sync: {
+        Args: {
+          p_account_id: string
+          p_duration_ms: number
+          p_items_failed: number
+          p_items_synced: number
+          p_items_total: number
+          p_sync_type: string
+        }
         Returns: undefined
       }
       complete_onboarding: {
@@ -6407,6 +6507,15 @@ export type Database = {
       ensure_integrations_manager_for_current_user: {
         Args: never
         Returns: Json
+      }
+      fail_devolucoes_sync: {
+        Args: {
+          p_account_id: string
+          p_error_details?: Json
+          p_error_message: string
+          p_sync_type: string
+        }
+        Returns: undefined
       }
       fix_historico_integration_accounts: { Args: never; Returns: Json }
       fix_produtos_organization_id: { Args: never; Returns: Json }
@@ -6992,6 +7101,10 @@ export type Database = {
           table_name: string
         }[]
       }
+      get_last_sync_time: {
+        Args: { p_account_id: string; p_sync_type?: string }
+        Returns: string
+      }
       get_low_stock_products: {
         Args: never
         Returns: {
@@ -7437,6 +7550,10 @@ export type Database = {
       }
       sincronizar_componentes_em_uso: { Args: never; Returns: undefined }
       split_existing_categories: { Args: never; Returns: undefined }
+      start_devolucoes_sync: {
+        Args: { p_account_id: string; p_sync_type?: string }
+        Returns: string
+      }
       sync_cliente_from_pedido:
         | {
             Args: {
