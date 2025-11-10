@@ -69,7 +69,7 @@ async function syncDevolucoes(
       .from('devolucoes_sync_status')
       .insert({
         integration_account_id: integrationAccountId,
-        last_sync_status: 'running',
+        last_sync_status: 'in_progress', // ✅ CORRIGIDO: usar valor permitido pelo constraint
         last_sync_at: new Date().toISOString(),
         items_synced: 0,
         items_total: 0,
@@ -163,7 +163,7 @@ async function syncDevolucoes(
     await supabase
       .from('devolucoes_sync_status')
       .update({
-        last_sync_status: 'completed',
+        last_sync_status: 'success', // ✅ CORRIGIDO: usar valor permitido pelo constraint
         items_synced: totalProcessed,
         items_total: totalProcessed,
         items_failed: 0,
@@ -193,7 +193,7 @@ async function syncDevolucoes(
       await supabase
         .from('devolucoes_sync_status')
         .update({
-          last_sync_status: 'failed',
+          last_sync_status: 'error', // ✅ CORRIGIDO: usar valor permitido pelo constraint
           error_message: error instanceof Error ? error.message : 'Erro desconhecido',
           duration_ms: durationMs,
           updated_at: new Date().toISOString()
