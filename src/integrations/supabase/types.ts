@@ -239,6 +239,60 @@ export type Database = {
         }
         Relationships: []
       }
+      background_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          job_type: string
+          max_retries: number | null
+          metadata: Json | null
+          priority: number | null
+          resource_id: string
+          resource_type: string
+          retry_count: number | null
+          scheduled_at: string | null
+          started_at: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_type: string
+          max_retries?: number | null
+          metadata?: Json | null
+          priority?: number | null
+          resource_id: string
+          resource_type: string
+          retry_count?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          job_type?: string
+          max_retries?: number | null
+          metadata?: Json | null
+          priority?: number | null
+          resource_id?: string
+          resource_type?: string
+          retry_count?: number | null
+          scheduled_at?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       categorias_catalogo: {
         Row: {
           ativo: boolean
@@ -6012,6 +6066,23 @@ export type Database = {
         }
         Relationships: []
       }
+      devolucoes_metrics_cache: {
+        Row: {
+          abertas: number | null
+          com_dados_claim: number | null
+          com_dados_order: number | null
+          com_dados_return: number | null
+          date: string | null
+          em_mediacao: number | null
+          fechadas: number | null
+          integration_account_id: string | null
+          total_devolucoes: number | null
+          updated_at: string | null
+          valor_medio: number | null
+          valor_total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_invitation_secure: { Args: { _token: string }; Returns: Json }
@@ -6118,6 +6189,10 @@ export type Database = {
       cleanup_expired_notifications: { Args: never; Returns: undefined }
       cleanup_expired_sensitive_data: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: never; Returns: undefined }
+      complete_background_job: {
+        Args: { p_error_message?: string; p_job_id: string; p_success: boolean }
+        Returns: undefined
+      }
       complete_onboarding: {
         Args: {
           org_cnpj: string
@@ -6222,6 +6297,16 @@ export type Database = {
         Returns: string
       }
       encrypt_simple: { Args: { data: string }; Returns: string }
+      enqueue_background_job: {
+        Args: {
+          p_job_type: string
+          p_metadata?: Json
+          p_priority?: number
+          p_resource_id: string
+          p_resource_type: string
+        }
+        Returns: string
+      }
       ensure_current_org: { Args: never; Returns: Json }
       ensure_integrations_manager_for_current_user: {
         Args: never
@@ -6942,6 +7027,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_next_background_job: {
+        Args: never
+        Returns: {
+          id: string
+          job_type: string
+          metadata: Json
+          resource_id: string
+          resource_type: string
+        }[]
+      }
       get_org_id_from_oauth_state: {
         Args: { p_state_value: string }
         Returns: string
@@ -7149,6 +7244,7 @@ export type Database = {
         Args: { p_itens: Json; p_pedido_id: string }
         Returns: Json
       }
+      refresh_devolucoes_metrics: { Args: never; Returns: undefined }
       refresh_ml_token: {
         Args: {
           p_account_id: string
