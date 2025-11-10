@@ -66,12 +66,31 @@ class DevolucaoService {
     pagination: PaginationParams = {},
     options: { includeStats?: boolean } = {}
   ): Promise<DevolucaoResponse> {
-    const { data, error } = await supabase.functions.invoke('get-devolucoes', {
-      body: {
-        ...filters,
-        ...pagination,
-        includeStats: options.includeStats ?? false,
+    // Mapear camelCase para snake_case conforme esperado pela Edge Function
+    const body: any = {
+      filters: {
+        integration_account_id: filters.integrationAccountId,
+        search: filters.search,
+        status: filters.status,
+        status_devolucao: filters.status_devolucao,
+        date_from: filters.dateFrom,
+        date_to: filters.dateTo,
+        claim_id: filters.claimId,
+        order_id: filters.orderId,
+        buyer_id: filters.buyerId,
+        item_id: filters.itemId,
       },
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+        sort_by: pagination.sortBy,
+        sort_order: pagination.sortOrder,
+      },
+      includeStats: options.includeStats ?? false,
+    };
+
+    const { data, error } = await supabase.functions.invoke('get-devolucoes', {
+      body,
     });
 
     if (error) throw error;
