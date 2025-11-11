@@ -8,6 +8,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+import { fetchWithRetry } from '../_shared/retryUtils.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -112,9 +113,10 @@ serve(async (req) => {
       
       console.log(`[get-devolucoes-direct] Buscando página offset=${offset}`);
 
-      const claimsRes = await fetch(claimsUrl, {
+      // ✅ CORREÇÃO 3: Usar fetchWithRetry para tratar 429 automaticamente
+      const claimsRes = await fetchWithRetry(claimsUrl, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
+      }, { maxRetries: 3, retryDelay: 1000, retryOnStatus: [429, 500, 502, 503, 504] });
 
       if (!claimsRes.ok) {
         const errorText = await claimsRes.text();
@@ -173,9 +175,11 @@ serve(async (req) => {
         let orderData = null;
         if (claim.resource_id) {
           try {
-            const orderRes = await fetch(
+            // ✅ CORREÇÃO 3: Usar fetchWithRetry
+            const orderRes = await fetchWithRetry(
               `https://api.mercadolibre.com/orders/${claim.resource_id}`,
-              { headers: { 'Authorization': `Bearer ${accessToken}` } }
+              { headers: { 'Authorization': `Bearer ${accessToken}` } },
+              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
             );
             if (orderRes.ok) {
               orderData = await orderRes.json();
@@ -190,9 +194,11 @@ serve(async (req) => {
         // ✅ 2. Buscar mensagens do claim
         let messagesData = null;
         try {
-          const messagesRes = await fetch(
+          // ✅ CORREÇÃO 3: Usar fetchWithRetry
+          const messagesRes = await fetchWithRetry(
             `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+            { headers: { 'Authorization': `Bearer ${accessToken}` } },
+            { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
           );
           if (messagesRes.ok) {
             messagesData = await messagesRes.json();
@@ -206,9 +212,11 @@ serve(async (req) => {
         // ✅ 3. Buscar dados COMPLETOS de return (return_details_v2)
         let returnData = null;
         try {
-          const returnRes = await fetch(
+          // ✅ CORREÇÃO 3: Usar fetchWithRetry
+          const returnRes = await fetchWithRetry(
             `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+            { headers: { 'Authorization': `Bearer ${accessToken}` } },
+            { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
           );
           if (returnRes.ok) {
             returnData = await returnRes.json();
@@ -223,9 +231,11 @@ serve(async (req) => {
         let reviewsData = null;
         if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
           try {
-            const reviewsRes = await fetch(
+            // ✅ CORREÇÃO 3: Usar fetchWithRetry
+            const reviewsRes = await fetchWithRetry(
               `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
-              { headers: { 'Authorization': `Bearer ${accessToken}` } }
+              { headers: { 'Authorization': `Bearer ${accessToken}` } },
+              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
             );
             if (reviewsRes.ok) {
               reviewsData = await reviewsRes.json();
