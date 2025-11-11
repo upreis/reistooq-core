@@ -377,6 +377,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         
         await updateProduct(product.id, {
           ...data,
+          largura_cm: data.largura || null,
+          altura_cm: data.altura || null,
+          comprimento_cm: data.comprimento || null,
           url_imagem: imageUrl,
         });
 
