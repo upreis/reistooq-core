@@ -10,6 +10,7 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
 import { 
   useGetDevolucoes,
+  useSyncDevolucoes,
   useSyncStatus,
   useAutoEnrichment
 } from '@/features/devolucoes-online/hooks';
@@ -74,7 +75,8 @@ function DevolucoesMercadoLivreContent() {
     { enabled: selectedAccountIds.length > 0 }
   );
   
-  // ❌ REMOVIDO: syncMutation e isFullSyncing - sincronização via cron automático
+  // ✅ MUTATION: Sincronizar com API antes de buscar
+  const syncMutation = useSyncDevolucoes();
 
   // 🤖 Auto-enriquecimento: detecta dados faltantes e dispara em background
   useAutoEnrichment({
@@ -157,26 +159,45 @@ function DevolucoesMercadoLivreContent() {
       return;
     }
 
-    const days = parseInt(periodo);
-    const hoje = new Date();
-    const dataInicio = startOfDay(subDays(hoje, days));
-    const dataFim = endOfDay(hoje);
-    
-    const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
-    const dateToISO = format(dataFim, 'yyyy-MM-dd');
-    
-    setFilters({
-      integrationAccountId: selectedAccountIds[0], // Usar apenas primeira conta
-      search: searchTerm,
-      dateFrom: dateFromISO,
-      dateTo: dateToISO,
-    });
-    
-    setPagination({ ...pagination, page: 1 });
-    
-    const result = await refetch();
-    if (result.isError) {
-      toast.error('Erro ao buscar devoluções');
+    try {
+      // 1️⃣ SEMPRE sincronizar com API ML primeiro (dados frescos)
+      toast.loading('Sincronizando com API do Mercado Livre...', { id: 'sync-search' });
+      
+      await syncMutation.mutateAsync({
+        integrationAccountId: selectedAccountIds[0],
+        batchSize: 100,
+      });
+
+      toast.success('Dados sincronizados! Aplicando filtros...', { id: 'sync-search' });
+
+      // 2️⃣ Configurar filtros de busca
+      const days = parseInt(periodo);
+      const hoje = new Date();
+      const dataInicio = startOfDay(subDays(hoje, days));
+      const dataFim = endOfDay(hoje);
+      
+      const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
+      const dateToISO = format(dataFim, 'yyyy-MM-dd');
+      
+      setFilters({
+        integrationAccountId: selectedAccountIds[0],
+        search: searchTerm,
+        dateFrom: dateFromISO,
+        dateTo: dateToISO,
+      });
+      
+      setPagination({ ...pagination, page: 1 });
+      
+      // 3️⃣ Buscar dados atualizados do banco
+      const result = await refetch();
+      if (result.isError) {
+        toast.error('Erro ao buscar devoluções');
+      } else {
+        toast.dismiss('sync-search');
+      }
+    } catch (error) {
+      console.error('Erro na sincronização:', error);
+      toast.error('Erro ao sincronizar dados da API', { id: 'sync-search' });
     }
   };
 
