@@ -85,7 +85,9 @@ serve(async (req) => {
         items_total: 0,
         items_failed: 0
       }, {
-        onConflict: 'integration_account_id,sync_type'
+        // ✅ CORRIGIDO: Usar nome provável da constraint gerada automaticamente
+        // PostgreSQL gera: {table}_{column}_{column}_key
+        onConflict: 'devolucoes_sync_status_integration_account_id_sync_type_key'
       })
       .select()
       .single();
