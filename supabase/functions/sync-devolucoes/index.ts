@@ -165,7 +165,7 @@ serve(async (req) => {
     while (hasMore) {
       logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
 
-      // 🔥 CHAMAR ml-api-direct (TEMPORÁRIO - será migrado na próxima fase)
+      // 🔥 CHAMAR ml-api-direct PASSANDO TOKEN JÁ DESCRIPTOGRAFADO
       const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
         method: 'POST',
         headers: {
@@ -176,8 +176,11 @@ serve(async (req) => {
           action: 'get_claims_and_returns',
           integration_account_id: integrationAccountId,
           seller_id: account.account_identifier,
+          ml_access_token: mlAccessToken, // ✅ PASSAR TOKEN JÁ DESCRIPTOGRAFADO
           limit: batchSize,
           offset: offset,
+        }),
+      });
           filters: {}
         })
       });

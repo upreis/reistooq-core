@@ -111,54 +111,63 @@ serve(async (req) => {
       const limit = Math.min(requestBody.limit || 100, 100);
       const offset = requestBody.offset || 0;
       
-      // 🔒 Obter token de forma segura usando integrations-get-secret
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
-      const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-      const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+      // 🔒 Obter token ML
+      let mlAccessToken = '';
       
-      // Fazer chamada HTTP direta para a função usando fetch
-      const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
-      const secretResponse = await fetch(secretUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-          'x-internal-call': 'true',
-          'x-internal-token': INTERNAL_TOKEN
-        },
-        body: JSON.stringify({
-          integration_account_id,
-          provider: 'mercadolivre'
-        })
-      });
-      
-      if (!secretResponse.ok) {
-        const errorText = await secretResponse.text();
-        console.error(`❌ Erro ao obter token ML (${secretResponse.status}):`, errorText)
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Token ML não disponível. Reconecte a integração.',
-            details: errorText
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-        )
+      // ✅ PRIORIDADE 1: Usar token já descriptografado se passado
+      if (requestBody.ml_access_token) {
+        mlAccessToken = requestBody.ml_access_token;
+        console.log('✅ Usando token já descriptografado passado por sync-devolucoes');
+      } else {
+        // ✅ FALLBACK: Buscar e descriptografar token (para chamadas diretas)
+        const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+        const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+        const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+        
+        const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+        const secretResponse = await fetch(secretUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${ANON_KEY}`,
+            'x-internal-call': 'true',
+            'x-internal-token': INTERNAL_TOKEN
+          },
+          body: JSON.stringify({
+            integration_account_id,
+            provider: 'mercadolivre'
+          })
+        });
+        
+        if (!secretResponse.ok) {
+          const errorText = await secretResponse.text();
+          console.error(`❌ Erro ao obter token ML (${secretResponse.status}):`, errorText)
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Token ML não disponível. Reconecte a integração.',
+              details: errorText
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          )
+        }
+        
+        const tokenData = await secretResponse.json();
+        
+        if (!tokenData?.found || !tokenData?.secret?.access_token) {
+          console.error('❌ Token ML não encontrado na resposta:', tokenData)
+          return new Response(
+            JSON.stringify({ 
+              success: false, 
+              error: 'Token ML não disponível. Reconecte a integração.' 
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+          )
+        }
+        
+        mlAccessToken = tokenData.secret.access_token;
       }
       
-      const tokenData = await secretResponse.json();
-      
-      if (!tokenData?.found || !tokenData?.secret?.access_token) {
-        console.error('❌ Token ML não encontrado na resposta:', tokenData)
-        return new Response(
-          JSON.stringify({ 
-            success: false, 
-            error: 'Token ML não disponível. Reconecte a integração.' 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
-        )
-      }
-      
-      const access_token = tokenData.secret.access_token
       logger.success(`Token ML obtido para seller: ${seller_id} (limit: ${limit}, offset: ${offset})`)
       
       // Validação crítica: seller_id deve existir
@@ -180,9 +189,9 @@ serve(async (req) => {
         setTimeout(() => reject(new Error('Timeout: A busca excedeu 5 minutos. Use filtros de data para reduzir os resultados.')), 300000)
       );
       
-      // ✅ PAGINAÇÃO: buscar com limit/offset
+      // ✅ PAGINAÇÃO: buscar com limit/offset usando mlAccessToken
       const result = await Promise.race([
-        buscarPedidosCancelados(seller_id, access_token, filters, integration_account_id, limit, offset),
+        buscarPedidosCancelados(seller_id, mlAccessToken, filters, integration_account_id, limit, offset),
         timeoutPromise
       ]) as { data: any[]; total: number; hasMore: boolean };
       
