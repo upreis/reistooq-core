@@ -143,6 +143,12 @@ async function syncDevolucoes(
       // 🔥 TRANSFORMAR NOMES DOS CAMPOS: claim_details → dados_claim, order_data → dados_order
       // ✅ ADICIONAR integration_account_id que não vem de ml-api-direct
       const transformedClaims = claims.map((claim: any) => {
+        // 🛡️ VALIDAÇÃO CRÍTICA: Garantir que order_id existe (campo obrigatório NOT NULL)
+        if (!claim.order_id) {
+          logger.warn(`⚠️ Claim sem order_id detectado, pulando...`, claim);
+          return null; // Será filtrado depois
+        }
+        
         // Criar objeto transformado
         const transformed: any = {
           ...claim,
@@ -158,7 +164,7 @@ async function syncDevolucoes(
         delete transformed.order_data;
         
         return transformed;
-      });
+      }).filter(Boolean); // 🔥 Remover nulls de claims inválidos
       
       // 🔥 UPSERT DOS DADOS EM devolucoes_avancadas
       if (transformedClaims && transformedClaims.length > 0) {
