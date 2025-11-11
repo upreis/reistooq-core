@@ -142,7 +142,7 @@ async function getAggregatedStats(
   try {
     let query = supabase
       .from('devolucoes_avancadas')
-      .select('status, status_devolucao, total_amount');
+      .select('status_devolucao, dados_financial_info');
 
     // Aplicar filtro baseado no tipo de integrationAccountId
     if (Array.isArray(integrationAccountId)) {
@@ -161,19 +161,15 @@ async function getAggregatedStats(
     // Calcular estatísticas
     const stats = {
       total: data.length,
-      por_status: data.reduce((acc: any, item: any) => {
-        const status = item.status || 'unknown';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      }, {}),
       por_status_devolucao: data.reduce((acc: any, item: any) => {
         const status = item.status_devolucao || 'unknown';
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {}),
-      valor_total: data.reduce((sum: number, item: any) => 
-        sum + (parseFloat(item.total_amount) || 0), 0
-      )
+      valor_total: data.reduce((sum: number, item: any) => {
+        const financial = item.dados_financial_info || {};
+        return sum + (parseFloat(financial.total_amount) || 0);
+      }, 0)
     };
 
     return stats;
