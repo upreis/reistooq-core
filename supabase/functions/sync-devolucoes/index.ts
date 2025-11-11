@@ -167,8 +167,9 @@ async function syncDevolucoes(
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
           .upsert(transformedClaims, {
-            // ✅ CORRIGIDO: Constraint REAL da tabela é order_id + integration_account_id
-            onConflict: 'order_id,integration_account_id',
+            // ✅ CRÍTICO: Usar NOME da constraint ao invés de colunas
+            // Isso evita conflito com múltiplas constraints UNIQUE
+            onConflict: 'devolucoes_avancadas_order_integration_key',
             ignoreDuplicates: false
           });
         
