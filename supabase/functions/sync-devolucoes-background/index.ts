@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { CRYPTO_KEY, SUPABASE_URL, SERVICE_KEY } from "../_shared/config.ts";
+import { decryptAESGCM } from "../_shared/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -129,30 +131,112 @@ async function executarSincronizacao(
   let totalProcessed = 0;
 
   try {
+    // ✅ 1. BUSCAR TOKEN DIRETO DO BANCO (padrão unified-orders)
+    const serviceClient = createClient(SUPABASE_URL, SERVICE_KEY);
+    
+    const { data: secretRow, error: secretError } = await serviceClient
+      .from('integration_secrets')
+      .select('simple_tokens, use_simple, secret_enc, provider, expires_at')
+      .eq('integration_account_id', integrationAccountId)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
+
+    console.log(`🔍 [SYNC] SECRET SEARCH:`, {
+      hasRow: !!secretRow,
+      hasSimpleTokens: !!secretRow?.simple_tokens,
+      useSimple: secretRow?.use_simple,
+      hasSecretEnc: !!secretRow?.secret_enc
+    });
+
+    if (!secretRow) {
+      throw new Error('Token ML não encontrado. Reconecte a integração.');
+    }
+
+    let mlAccessToken = '';
+
+    // ✅ 2. DESCRIPTOGRAFAR TOKEN (padrão unified-orders)
+    // Primeiro: tentar simple_tokens (nova estrutura)
+    if (secretRow.use_simple && secretRow.simple_tokens) {
+      try {
+        const simpleTokensStr = secretRow.simple_tokens as string;
+        
+        if (simpleTokensStr.startsWith('SALT2024::')) {
+          const base64Data = simpleTokensStr.replace('SALT2024::', '');
+          const jsonStr = atob(base64Data);
+          const tokensData = JSON.parse(jsonStr);
+          mlAccessToken = tokensData.access_token || '';
+          
+          console.log(`✅ [SYNC] Token obtido via simple_tokens`);
+        }
+      } catch (err) {
+        console.error(`❌ [SYNC] Erro descriptografia simple_tokens:`, err);
+      }
+    }
+
+    // Fallback: tentar secret_enc (estrutura antiga)
+    if (!mlAccessToken && secretRow.secret_enc) {
+      try {
+        const decrypted = await decryptAESGCM(secretRow.secret_enc as string);
+        const tokensData = JSON.parse(decrypted);
+        mlAccessToken = tokensData.access_token || '';
+        
+        console.log(`✅ [SYNC] Token obtido via secret_enc`);
+      } catch (err) {
+        console.error(`❌ [SYNC] Erro descriptografia secret_enc:`, err);
+      }
+    }
+
+    if (!mlAccessToken) {
+      throw new Error('Token ML não disponível. Reconecte a integração.');
+    }
+
+    // ✅ 3. BUSCAR SELLER_ID
+    const { data: accountData } = await serviceClient
+      .from('integration_accounts')
+      .select('account_identifier')
+      .eq('id', integrationAccountId)
+      .single();
+
+    if (!accountData?.account_identifier) {
+      throw new Error('Seller ID não encontrado');
+    }
+
+    const sellerId = accountData.account_identifier;
+    console.log(`🆔 [SYNC] Seller ID: ${sellerId}`);
+
+    // ✅ 4. BUSCAR DEVOLUÇÕES DIRETAMENTE DA API ML
     while (hasMore) {
       console.log(`📦 [SYNC] Processando lote ${offset / BATCH_SIZE + 1} (offset: ${offset})`);
 
-      // Buscar lote de claims da API do ML via ml-api-direct
-      const { data: claimsData, error: apiError } = await supabase.functions.invoke('ml-api-direct', {
-        body: {
-          action: 'buscar-devolucoes',
-          integration_account_id: integrationAccountId,
-          filters: {
-            limit: BATCH_SIZE,
-            offset: offset,
-            // Sincronização incremental: apenas devoluções atualizadas desde última sync
-            date_from: lastSyncDate || undefined
-          }
+      // Chamar API ML diretamente
+      const mlApiUrl = `https://api.mercadolibre.com/v1/claims/search`;
+      const params = new URLSearchParams({
+        seller_id: sellerId,
+        limit: String(BATCH_SIZE),
+        offset: String(offset),
+        sort: 'date_created_desc'
+      });
+
+      if (lastSyncDate) {
+        params.append('date_created_from', lastSyncDate);
+      }
+
+      const mlResponse = await fetch(`${mlApiUrl}?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${mlAccessToken}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      if (apiError) {
-        console.error('❌ [SYNC] Erro ao buscar claims da API:', apiError);
-        throw new Error(`Erro na API ML: ${apiError.message}`);
+      if (!mlResponse.ok) {
+        const errorText = await mlResponse.text();
+        console.error('❌ [SYNC] Erro API ML:', mlResponse.status, errorText);
+        throw new Error(`API ML error (${mlResponse.status}): ${errorText}`);
       }
 
-      const claims = claimsData?.devolucoes || [];
-      console.log(`📥 [SYNC] Recebidos ${claims.length} claims`);
+      const mlData = await mlResponse.json();
+      const claims = mlData.data || [];
+      console.log(`📥 [SYNC] Recebidos ${claims.length} claims da API ML`);
 
       if (claims.length === 0) {
         hasMore = false;
