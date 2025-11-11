@@ -30,7 +30,7 @@ serve(async (req) => {
 
     console.log('[get-devolucoes-direct] Parâmetros:', { integration_account_id, date_from, date_to });
 
-    // ✅ Buscar dados da conta
+    // ✅ Buscar dados da conta com SERVICE CLIENT
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false }
     });
@@ -42,45 +42,51 @@ serve(async (req) => {
       .eq('is_active', true)
       .single();
 
-    console.log('[get-devolucoes-direct] Query result:', { account, accountError });
-
     if (accountError || !account) {
-      console.error('[get-devolucoes-direct] Account error details:', accountError);
+      console.error('[get-devolucoes-direct] Account error:', accountError);
       throw new Error(`Conta ML não encontrada: ${accountError?.message || 'No account data'}`);
     }
 
     const sellerId = account.account_identifier;
 
-    // ✅ Buscar token via integrations-get-secret
-    const INTERNAL_TOKEN = Deno.env.get('INTERNAL_SHARED_TOKEN') || 'internal-shared-token';
-    const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
-    
-    const secretResponse = await fetch(secretUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        'x-internal-call': 'true',
-        'x-internal-token': INTERNAL_TOKEN
-      },
-      body: JSON.stringify({
-        integration_account_id,
-        provider: 'mercadolivre'
-      })
-    });
+    // ✅ Buscar integration_secrets DIRETO do banco (igual unified-orders)
+    const { data: secretRow, error: secretError } = await supabase
+      .from('integration_secrets')
+      .select('simple_tokens, use_simple, secret_enc, provider, expires_at, access_token, refresh_token')
+      .eq('integration_account_id', integration_account_id)
+      .eq('provider', 'mercadolivre')
+      .maybeSingle();
 
-    if (!secretResponse.ok) {
-      const errorText = await secretResponse.text();
-      throw new Error(`Token ML não disponível (${secretResponse.status}): ${errorText}`);
-    }
-
-    const tokenData = await secretResponse.json();
-
-    if (!tokenData?.found || !tokenData?.secret?.access_token) {
+    if (secretError || !secretRow) {
+      console.error('[get-devolucoes-direct] Erro ao buscar secrets:', secretError);
       throw new Error('Token ML não encontrado. Reconecte a integração.');
     }
 
-    const accessToken = tokenData.secret.access_token;
+    let accessToken = '';
+    
+    // ✅ Descriptografar usando método EXATO de unified-orders
+    // Primeiro: tentar nova estrutura simples
+    if (secretRow?.use_simple && secretRow?.simple_tokens) {
+      try {
+        const simpleTokensStr = secretRow.simple_tokens as string;
+        console.log('[get-devolucoes-direct] Descriptografando simple_tokens');
+        
+        // Remover prefixo SALT2024:: e descriptografar base64
+        if (simpleTokensStr.startsWith('SALT2024::')) {
+          const base64Data = simpleTokensStr.replace('SALT2024::', '');
+          const jsonStr = atob(base64Data);
+          const tokensData = JSON.parse(jsonStr);
+          accessToken = tokensData.access_token || '';
+          console.log('[get-devolucoes-direct] ✅ Token descriptografado com sucesso');
+        }
+      } catch (err) {
+        console.error('[get-devolucoes-direct] Erro descriptografia simples:', err);
+      }
+    }
+
+    if (!accessToken) {
+      throw new Error('Token ML não disponível. Reconecte a integração.');
+    }
 
     // ✅ BUSCAR CLAIMS DA API ML
     const params = new URLSearchParams({
