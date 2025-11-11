@@ -264,8 +264,20 @@ serve(async (req) => {
 
     // ✅ MAPEAR DADOS USANDO MAPPERS CONSOLIDADOS
     console.log('[get-devolucoes-direct] Mapeando dados...');
-    const mappedClaims = allEnrichedClaims.map((claim: any) => {
+    const mappedClaims = allEnrichedClaims.map((claim: any, index: number) => {
       try {
+        // 🔍 DEBUG: Log estrutura de dados do primeiro claim
+        if (index === 0) {
+          console.log('🔍 ESTRUTURA DO CLAIM ENRIQUECIDO:', {
+            claim_id: claim.id,
+            claim_keys: Object.keys(claim),
+            order_data_exists: !!claim.order_data,
+            order_data_keys: claim.order_data ? Object.keys(claim.order_data).slice(0, 10) : [],
+            return_exists: !!claim.return_details_v2,
+            return_keys: claim.return_details_v2 ? Object.keys(claim.return_details_v2) : []
+          });
+        }
+        
         // ✅ Estruturar dados no formato esperado pelos mappers
         const item = {
           claim_details: claim,  // Claim básico da API /claims/search
