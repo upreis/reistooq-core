@@ -184,6 +184,8 @@ serve(async (req) => {
             if (orderRes.ok) {
               orderData = await orderRes.json();
               console.log(`✅ Order ${claim.resource_id} buscado`);
+            } else if (orderRes.status === 404) {
+              console.log(`⚠️ Order ${claim.resource_id} não encontrado (404 - pode ter sido deletado)`);
             }
             await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
           } catch (err) {
