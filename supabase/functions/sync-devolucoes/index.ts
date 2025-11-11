@@ -152,9 +152,9 @@ async function syncDevolucoes(
       // 🔥 TRANSFORMAR NOMES DOS CAMPOS: claim_details → dados_claim, order_data → dados_order
       // ✅ ADICIONAR integration_account_id que não vem de ml-api-direct
       const transformedClaims = claims.map((claim: any) => {
-        // 🛡️ VALIDAÇÃO CRÍTICA: Garantir que order_id existe (campo obrigatório NOT NULL)
-        if (!claim.order_id) {
-          logger.warn(`⚠️ Claim sem order_id detectado, pulando...`, claim);
+        // 🛡️ VALIDAÇÃO CRÍTICA: Garantir que claim_id existe (DECISÃO FASE 1 - claim_id é chave única)
+        if (!claim.claim_id) {
+          logger.warn(`⚠️ Claim sem claim_id detectado, pulando...`, claim);
           return null; // Será filtrado depois
         }
         
@@ -182,9 +182,9 @@ async function syncDevolucoes(
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
           .upsert(transformedClaims, {
-            // ✅ CRÍTICO: onConflict aceita COLUNAS separadas por vírgula
-            // Corresponde à constraint UNIQUE (order_id, integration_account_id)
-            onConflict: 'order_id,integration_account_id',
+            // ✅ FASE 1 DECISÃO: Usar claim_id como chave única (1:1 com devoluções)
+            // Corresponde à constraint UNIQUE (claim_id) criada na migration
+            onConflict: 'claim_id',
             ignoreDuplicates: false
           });
         
