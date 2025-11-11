@@ -249,6 +249,7 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
   const MAX_CLAIMS = 300;
   const BATCH_SIZE = 50;
   let hasMore = true;
+  const allMappedClaims: any[] = []; // ✅ NOVO: Acumular todos os dados mapeados da API
 
   while (hasMore && totalProcessed < MAX_CLAIMS) {
     // ✅ Filtro de data: Incremental OU últimos 90 dias
@@ -360,12 +361,10 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
     
     const validClaims = processedClaims.filter(Boolean);
     
-    // 7️⃣ Salvar claims (filtrar campos válidos)
+    // 7️⃣ Salvar claims no banco (cache para sincronizações futuras)
     if (validClaims.length > 0) {
-      logger.info(`💾 Salvando ${validClaims.length} claims...`);
+      logger.info(`💾 Salvando ${validClaims.length} claims no cache...`);
       
-      // ✅ Campos válidos da tabela devolucoes_avancadas (ATUALIZADO PÓS-MIGRATION FASE 8)
-      // ❌ REMOVIDOS: status_devolucao, subtipo_claim, tipo_claim (deletadas na migration)
       const validColumns = [
         'claim_id', 'order_id', 'return_id', 'integration_account_id',
         'data_criacao_claim', 'data_criacao_devolucao', 'data_atualizacao_devolucao',
@@ -385,7 +384,6 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
           updated_at: new Date().toISOString(),
         };
         
-        // Copiar apenas campos válidos
         validColumns.forEach(col => {
           if (claim[col] !== undefined) {
             filtered[col] = claim[col];
@@ -403,13 +401,16 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
         });
       
       if (upsertError) {
-        logger.error(`❌ Erro ao salvar: ${upsertError.message}`);
-        throw upsertError;
+        logger.warn(`⚠️ Erro ao salvar cache: ${upsertError.message}`);
+      } else {
+        logger.success(`✅ Cache atualizado com ${validClaims.length} claims`);
       }
       
       totalCreated += validClaims.length;
-      logger.success(`✅ ${validClaims.length} claims salvos`);
     }
+    
+    // ✅ ACUMULAR dados mapeados para retornar ao frontend
+    allMappedClaims.push(...validClaims);
     
     totalProcessed += claims.length;
     offset += BATCH_SIZE;
@@ -442,11 +443,14 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
 
   logger.success(`🎉 Concluído: ${totalProcessed} claims em ${durationMs}ms`);
 
+  // ✅ RETORNAR dados mapeados DIRETO da API ML
   return {
     success: true,
     totalProcessed,
     totalCreated,
     durationMs,
-    syncId
+    syncId,
+    data: allMappedClaims, // ✅ NOVO: Retornar dados mapeados da API ML
+    message: `${totalProcessed} devoluções sincronizadas da API ML`
   };
 }

@@ -1,19 +1,12 @@
 /**
- * 📦 DEVOLUÇÕES MERCADO LIVRE - PÁGINA REFATORADA (FASE 5)
- * ✅ Migrado de SWR para React Query
- * ✅ Mantém funcionalidade idêntica
- * ✅ Adiciona UI de sincronização
+ * 📦 DEVOLUÇÕES MERCADO LIVRE - DADOS DIRETO DA API ML
+ * ✅ Modificado para buscar dados EXCLUSIVAMENTE da API ML
+ * ❌ Removida busca do banco de dados (causava confusão)
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
-import { 
-  useGetDevolucoes,
-  useSyncDevolucoes,
-  useSyncStatus,
-  useAutoEnrichment
-} from '@/features/devolucoes-online/hooks';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
@@ -50,42 +43,15 @@ function DevolucoesMercadoLivreContent() {
   // Auto-refresh
   const [autoRefreshEnabled, setAutoRefreshEnabled] = React.useState(false);
   
-  // ✅ REACT QUERY: Buscar devoluções
-  const { 
-    data: devolucoesData, 
-    isLoading, 
-    error,
-    refetch 
-  } = useGetDevolucoes(
-    {
-      integrationAccountId: selectedAccountIds.join(','),
-      search: filters.search,
-      dateFrom: filters.dateFrom,
-      dateTo: filters.dateTo,
-    },
-    pagination,
-    {
-      includeStats: true,
-      enabled: selectedAccountIds.length > 0,
-      refetchInterval: autoRefreshEnabled ? 30000 : undefined,
-    }
-  );
+  // ✅ NOVO: Dados direto da API ML (sem buscar do banco)
+  const [apiData, setApiData] = React.useState<any>(null);
+  const [isLoadingApi, setIsLoadingApi] = React.useState(false);
   
-  // ✅ REACT QUERY: Sync status
-  const { data: syncStatus } = useSyncStatus(
-    selectedAccountIds[0] || '',
-    { enabled: selectedAccountIds.length > 0 }
-  );
-  
-  // ✅ MUTATION: Sincronizar com API antes de buscar
-  const syncMutation = useSyncDevolucoes();
-
-  // 🤖 Auto-enriquecimento: detecta dados faltantes e dispara em background
-  useAutoEnrichment({
-    integrationAccountId: selectedAccountIds[0] || '',
-    enabled: selectedAccountIds.length > 0 && !isLoading,
-    data: devolucoesData?.data || [],
-  });
+  // ❌ DESATIVADO: Busca do banco de dados
+  // ✅ NOVO: Dados vêm DIRETO da API ML via sync-devolucoes
+  const devolucoesData = apiData;
+  const isLoading = isLoadingApi;
+  const error = null;
 
   // Carregar contas na montagem
   useEffect(() => {
@@ -155,6 +121,7 @@ function DevolucoesMercadoLivreContent() {
   }, [devolucoesComEmpresa]);
 
   // Handlers
+  // Handlers
   const handleBuscar = async (fullSync: boolean = false) => {
     if (selectedAccountIds.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
@@ -162,6 +129,8 @@ function DevolucoesMercadoLivreContent() {
     }
 
     try {
+      setIsLoadingApi(true);
+      
       // 1️⃣ Configurar filtros
       const days = parseInt(periodo);
       const hoje = new Date();
@@ -179,31 +148,54 @@ function DevolucoesMercadoLivreContent() {
       
       setPagination({ ...pagination, page: 1 });
 
-      // 2️⃣ Sincronizar dados da API ML
+      // 2️⃣ Buscar DIRETO da API ML (sem cache)
       const syncType = fullSync ? 'completa (últimos 90 dias)' : 'rápida (incremental)';
-      toast.loading(`🔄 Sincronização ${syncType}...`, { id: 'sync-search' });
+      toast.loading(`📡 Buscando dados DIRETO da API ML (${syncType})...`, { id: 'sync-search' });
       
-      // Sincronizar para cada conta selecionada
+      // Sincronizar para cada conta selecionada e acumular dados
+      const allData: any[] = [];
+      
       for (const accountId of selectedAccountIds) {
-        await syncMutation.mutateAsync({
-          integrationAccountId: accountId,
-          batchSize: 100,
-          incremental: !fullSync, // ✅ Inverso: fullSync=true → incremental=false
+        const result = await supabase.functions.invoke('sync-devolucoes', {
+          body: {
+            integration_account_id: accountId,
+            batch_size: 100,
+            incremental: !fullSync,
+          },
         });
+        
+        if (result.error) throw result.error;
+        if (!result.data?.success) throw new Error(result.data?.error || 'Erro ao sincronizar');
+        
+        // ✅ ACUMULAR dados retornados DIRETO da API ML
+        if (result.data.data && Array.isArray(result.data.data)) {
+          allData.push(...result.data.data);
+        }
       }
 
-      toast.success(`✅ Sincronização ${syncType} concluída!`, { id: 'sync-search' });
+      // ✅ Atualizar estado com dados DIRETO da API
+      setApiData({
+        data: allData,
+        pagination: {
+          page: 1,
+          limit: 50,
+          total: allData.length,
+          totalPages: Math.ceil(allData.length / 50),
+        },
+        stats: {
+          total: allData.length,
+          by_status: {},
+          total_amount: 0,
+        },
+      });
 
-      // 3️⃣ Buscar dados do banco com filtros
-      const result = await refetch();
-      if (result.isError) {
-        toast.error('Erro ao buscar devoluções');
-      } else {
-        toast.dismiss('sync-search');
-      }
-    } catch (error) {
-      console.error('Erro na sincronização:', error);
-      toast.error('Erro ao sincronizar dados da API', { id: 'sync-search' });
+      toast.success(`✅ ${allData.length} devoluções recebidas DIRETO da API ML!`, { id: 'sync-search' });
+      
+    } catch (error: any) {
+      console.error('Erro ao buscar da API ML:', error);
+      toast.error(`Erro ao buscar da API: ${error.message}`, { id: 'sync-search' });
+    } finally {
+      setIsLoadingApi(false);
     }
   };
 
@@ -260,7 +252,7 @@ function DevolucoesMercadoLivreContent() {
                 <div className="flex items-center justify-between gap-4">
                   <DevolucaoHeaderSection 
                     isRefreshing={isLoading}
-                    onRefresh={() => refetch()}
+                    onRefresh={handleBuscar}
                   />
                   
                   <CriticalDeadlinesNotification 
@@ -308,8 +300,8 @@ function DevolucoesMercadoLivreContent() {
                     onAutoRefreshIntervalChange={() => {}}
                     onExport={handleExport}
                     onClear={handleClear}
-                    onRefresh={() => refetch()}
-                    totalRecords={devolucoesData?.pagination?.total || 0}
+                    onRefresh={handleBuscar} 
+                    totalRecords={devolucoesData?.data?.length || 0}
                     isRefreshing={isLoading}
                   />
                 </div>
@@ -344,9 +336,9 @@ function DevolucoesMercadoLivreContent() {
                       <DevolucaoTable 
                         devolucoes={devolucoesFiltradas.ativas}
                         isLoading={isLoading}
-                        error={error?.message || null}
+                        error={null}
                         onStatusChange={handleStatusChange}
-                        onRefresh={() => refetch()}
+                        onRefresh={handleBuscar}
                       />
                     </Card>
                   </TabsContent>
@@ -356,9 +348,9 @@ function DevolucoesMercadoLivreContent() {
                       <DevolucaoTable 
                         devolucoes={devolucoesFiltradas.historico}
                         isLoading={isLoading}
-                        error={error?.message || null}
+                        error={null}
                         onStatusChange={handleStatusChange}
-                        onRefresh={() => refetch()}
+                        onRefresh={handleBuscar}
                       />
                     </Card>
                   </TabsContent>
