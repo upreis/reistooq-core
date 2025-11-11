@@ -130,10 +130,8 @@ serve(async (req) => {
           integration_account_id: account_id || requestBody.integration_account_id,
           account_name: account_name || null,
           
-          // STATUS
-          status_devolucao: safeClaimData.claim_details?.status || 
-                           safeClaimData.return_details_v2?.results?.[0]?.status || 
-                           safeClaimData.return_details_v1?.results?.[0]?.status || null,
+          // ✅ STATUS - Removido status_devolucao (deletada migration FASE 8)
+          // Dados agora em: dados_tracking_info.status_devolucao
           
           // PRODUTO
           produto_titulo: safeOrderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
@@ -141,9 +139,8 @@ serve(async (req) => {
           quantidade: safeOrderDetail.order_items?.[0]?.quantity || 1,
           valor_retido: safeOrderDetail.total_amount || 0,
           
-          // CLASSIFICAÇÃO
-          tipo_claim: safeClaimData.claim_details?.type || null,
-          subtipo_claim: safeClaimData.claim_details?.stage || safeClaimData.claim_details?.subtype || null,
+          // ✅ CLASSIFICAÇÃO - Removidos tipo_claim e subtipo_claim (deletadas migration FASE 8)
+          // Dados agora em: dados_claim.type e dados_claim.subtype
           
           // REASONS (já enriquecido no sync-devolucoes)
           reason_id: safeClaimData.dados_reasons?.reason_id || 
@@ -2369,20 +2366,17 @@ async function buscarPedidosCancelados(
               })(),
               
               // ============================================
-              // 📋 17 NOVAS COLUNAS DE STATUS DE DEVOLUÇÃO
+              // ✅ DADOS MOVIDOS PARA JSONB (Migration FASE 8)
               // ============================================
-              
-              // 🔄 STATUS DA DEVOLUÇÃO
-              status_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.status || 
-                               safeClaimData?.return_details_v1?.results?.[0]?.status || null,
-              
-              // 💰 STATUS DO DINHEIRO (✅ CORRIGIDO - campo 1 da auditoria)
-              status_dinheiro: safeClaimData?.return_details_v2?.results?.[0]?.status_money || 
-                              safeClaimData?.return_details_v1?.results?.[0]?.status_money || null,
-              
-              // 📑 SUBTIPO DA DEVOLUÇÃO
-              subtipo_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.subtype || 
-                                safeClaimData?.return_details_v1?.results?.[0]?.subtype || null,
+              // As seguintes colunas foram DELETADAS e os dados estão em campos JSONB:
+              // - status_devolucao → dados_tracking_info.status_devolucao
+              // - status_dinheiro → dados_financial_info.payment_status
+              // - subtipo_devolucao → já estava em dados_claim.subtype
+              // - reembolso_quando → dados_refund_info ou refund_at (coluna)
+              // - status_envio_devolucao → shipment_status (coluna)
+              // - destino_devolucao → shipment_destination (coluna)
+              // - endereco_destino_devolucao → endereco_destino (JSONB)
+              // - timeline_rastreamento → tracking_events (JSONB)
               
               // 📅 DATA CRIAÇÃO DA DEVOLUÇÃO
               data_criacao_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.date_created || 
@@ -2395,12 +2389,6 @@ async function buscarPedidosCancelados(
               // 📅 DATA FECHAMENTO DA DEVOLUÇÃO
               data_fechamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.date_closed || 
                                         safeClaimData?.return_details_v1?.results?.[0]?.date_closed || null,
-              
-              // 💵 QUANDO SERÁ REEMBOLSADO (✅ CORRIGIDO - campo 7 da auditoria: refund_at)
-              reembolso_quando: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.refund_at || 
-                               safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.refund_at ||
-                               safeClaimData?.return_details_v2?.results?.[0]?.refund_at || 
-                               safeClaimData?.return_details_v1?.results?.[0]?.refund_at || null,
 
               // 📦 ID DO SHIPMENT DE DEVOLUÇÃO
               shipment_id_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
@@ -2408,36 +2396,9 @@ async function buscarPedidosCancelados(
                                     safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
                                     safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id || null,
               
-              // 📊 STATUS DO ENVIO DA DEVOLUÇÃO
-              status_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.status || 
-                                     safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.status || null,
-              
               // 📦 CÓDIGO DE RASTREAMENTO DA DEVOLUÇÃO
               codigo_rastreamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
                                             safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
-              
-              // 🚚 TIPO DE ENVIO DA DEVOLUÇÃO (✅ CORRIGIDO - campo 4 da auditoria: shipment_type)
-              tipo_envio_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.type || 
-                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.type || null,
-              
-              // 📍 DESTINO DA DEVOLUÇÃO (✅ CORRIGIDO - campo 5 da auditoria: shipment_destination)
-              destino_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.destination?.name || 
-                                safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.destination?.name || null,
-              
-              // 🏠 ENDEREÇO COMPLETO DO DESTINO
-              endereco_destino_devolucao: (() => {
-                const shipment = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0] || 
-                                safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]
-                if (shipment?.destination?.shipping_address) {
-                  return JSON.stringify(shipment.destination.shipping_address)
-                }
-                return null
-              })(),
-
-              // 📜 TIMELINE COMPLETO DE RASTREAMENTO (JSON)
-              timeline_rastreamento: (() => {
-                const shipmentId = safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.shipment_id || 
-                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.shipment_id ||
                                   safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
                                   safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id
                 
@@ -2662,9 +2623,8 @@ async function buscarPedidosCancelados(
               related_entities: safeClaimData?.related_entities || [],
               has_related_return: safeClaimData?.has_related_return || false,
               
-              // CLASSIFICAÇÃO
-              tipo_claim: safeClaimData?.claim_details?.type || safeOrderDetail.status,
-              subtipo_claim: safeClaimData?.claim_details?.stage || safeClaimData?.claim_details?.subtype || null,
+              // ✅ CLASSIFICAÇÃO - Removidos tipo_claim e subtipo_claim (deletadas migration FASE 8)
+              // Dados agora em: dados_claim.type e dados_claim.subtype
               
               // ========================================
               // 🔍 REASONS - Usar dados já enriquecidos (Fase 1+2)

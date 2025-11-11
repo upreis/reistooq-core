@@ -328,12 +328,12 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
     if (validClaims.length > 0) {
       logger.info(`💾 Salvando ${validClaims.length} claims...`);
       
-      // ✅ Campos válidos da tabela devolucoes_avancadas (sem campos inexistentes)
+      // ✅ Campos válidos da tabela devolucoes_avancadas (ATUALIZADO PÓS-MIGRATION FASE 8)
+      // ❌ REMOVIDOS: status_devolucao, subtipo_claim, tipo_claim (deletadas na migration)
       const validColumns = [
         'claim_id', 'order_id', 'return_id', 'integration_account_id',
         'data_criacao_claim', 'data_criacao_devolucao', 'data_atualizacao_devolucao',
-        'claim_stage', 'status_devolucao', 'tipo_claim', 'subtipo_claim',
-        'motivo_categoria', 'reason_id', 'reason_name', 'reason_detail',
+        'claim_stage', 'motivo_categoria', 'reason_id', 'reason_name', 'reason_detail',
         'produto_titulo', 'sku', 'quantidade', 'valor_original_produto',
         'comprador_nickname', 'comprador_nome_completo', 'comprador_cpf',
         'dados_claim', 'dados_order', 'dados_return', 'dados_review',

@@ -219,10 +219,9 @@ async function getDevolucoes(
       
       integration_account_id: item.integration_account_id,
       
-      // ✅ Status - EXTRAIR DE dados_claim (claim completo) ao invés de dados_tracking_info
-      // ✅ CORREÇÃO: dados_claim agora contém o claim completo da API ML
+      // ✅ FASE 8: Status (colunas status_devolucao, tipo_claim, subtipo_claim DELETADAS)
+      // Dados agora EXCLUSIVAMENTE de dados_claim JSONB
       status: item.dados_claim?.status?.id || item.dados_claim?.status || item.dados_tracking_info?.status || 'unknown',
-      status_devolucao: item.status_devolucao || item.dados_claim?.status || null,
       status_money: item.dados_claim?.status_money || item.dados_order?.status_money || null,
       
       // ✅ Subtipo e Tipo de Recurso - EXTRAIR DE dados_claim
@@ -288,15 +287,16 @@ async function getDevolucoes(
         return_quantity: item.quantidade || item.dados_quantities?.return_quantity || 1,
       }] : [],
       
-      // ✅ Shipment info - EXTRAIR DE dados_tracking_info
+      // ✅ FASE 8: Shipment info (coluna shipment_type DELETADA)
+      // Dados de tipo agora via dados_tracking_info.shipment_type
       shipment_id: item.dados_tracking_info?.shipment_id || item.shipment_id,
       shipment_status: item.dados_tracking_info?.shipment_status || null,
-      shipment_type: item.dados_tracking_info?.shipment_type || null,
       shipment_destination: item.dados_tracking_info?.destination || null,
       tracking_number: item.dados_tracking_info?.tracking_number || item.codigo_rastreamento,
       
-      // Endereço de destino (extrair do JSONB)
-      destination_address: item.endereco_destino?.street_name || item.endereco_destino_devolucao || null,
+      // ✅ FASE 8: Endereço de destino (coluna endereco_destino_devolucao DELETADA)
+      // Dados agora exclusivamente de endereco_destino JSONB
+      destination_address: item.endereco_destino?.street_name || null,
       destination_city: item.endereco_destino?.city?.name || null,
       destination_state: item.endereco_destino?.state?.name || null,
       destination_zip: item.endereco_destino?.zip_code || null,
@@ -384,9 +384,9 @@ async function getDevolucoes(
         }
       })(),
       
-      // ✅ Refund info (campo já populado por sync-devolucoes)
-      refund_at: item.reembolso_quando || 
-                 item.dados_refund_info?.refund_at || 
+      // ✅ FASE 8: Refund info (coluna reembolso_quando DELETADA)
+      // Dados agora de refund_at (coluna preservada) ou dados_refund_info JSONB
+      refund_at: item.dados_refund_info?.refund_at || 
                  item.dados_refund_info?.when || null,
       
       // ✅ Product condition e destination (populado por enrich-devolucoes via /reviews)
