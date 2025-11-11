@@ -20,7 +20,7 @@ serve(async (req) => {
 
   try {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     
     const { 
       integration_account_id, 
@@ -30,8 +30,8 @@ serve(async (req) => {
 
     console.log('[get-devolucoes-direct] Parâmetros:', { integration_account_id, date_from, date_to });
 
-    // ✅ Buscar dados da conta
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // ✅ Buscar dados da conta com SERVICE CLIENT
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false }
     });
 
