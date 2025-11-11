@@ -93,15 +93,14 @@ export const useProducts = () => {
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
-      // Buscar produtos com estoque no local
-      // Usar select('*') na relação produtos para garantir que TODOS os campos sejam retornados
-      // incluindo campos dinâmicos que podem ser adicionados no futuro
+      // Buscar produtos com estoque no local usando LEFT JOIN
+      // Isso garante que tenhamos acesso a TODOS os campos de produtos
       let query = supabase
         .from('estoque_por_local')
         .select(`
           quantidade,
           local_id,
-          produtos!inner(*)
+          produtos (*)
         `)
         .eq('local_id', filters.local_id)
         .order('created_at', { ascending: false });
