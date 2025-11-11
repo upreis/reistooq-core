@@ -85,9 +85,9 @@ serve(async (req) => {
         items_total: 0,
         items_failed: 0
       }, {
-        // ✅ CORRIGIDO: Usar nome EXATO da constraint (igual unified-orders)
-        // PostgreSQL requer nome da constraint, não nomes de colunas
-        onConflict: 'devolucoes_sync_status_integration_account_id_sync_type_key'
+        // ✅ CORRIGIDO FINAL: Usar NOMES DAS COLUNAS diretamente
+        // PostgreSQL/Supabase JS aceita nomes de colunas separados por vírgula
+        onConflict: 'integration_account_id,sync_type'
       })
       .select()
       .single();
