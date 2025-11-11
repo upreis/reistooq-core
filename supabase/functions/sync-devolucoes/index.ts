@@ -246,7 +246,7 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
   let offset = 0;
   let totalProcessed = 0;
   let totalCreated = 0;
-  const MAX_CLAIMS = 300;
+  const MAX_CLAIMS = 5000; // ✅ Aumentado para buscar mais devoluções
   const BATCH_SIZE = 50;
   let hasMore = true;
   const allMappedClaims: any[] = []; // ✅ NOVO: Acumular todos os dados mapeados da API
