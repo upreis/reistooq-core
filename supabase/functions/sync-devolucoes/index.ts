@@ -224,9 +224,15 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
   let hasMore = true;
 
   while (hasMore && totalProcessed < MAX_CLAIMS) {
-    // ✅ CORRIGIDO: Usar endpoint v1/claims/search ao invés de v2/claims
+    // ✅ CORRIGIDO: A API ML exige pelo menos um filtro além de seller_id
+    // Vamos buscar claims dos últimos 90 dias (máximo recomendado)
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    const dateFilter = ninetyDaysAgo.toISOString();
+    
     const params = new URLSearchParams({
       seller_id: account.account_identifier,
+      'range': `date_created:after:${dateFilter}`, // ✅ Filtro obrigatório
       offset: offset.toString(),
       limit: BATCH_SIZE.toString(),
       sort: 'date_created',
