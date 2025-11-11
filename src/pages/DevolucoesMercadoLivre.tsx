@@ -248,39 +248,20 @@ function DevolucoesMercadoLivreContent() {
 
       console.log(`✅ Total acumulado: ${allData.length} devoluções de ${selectedAccountIds.length} conta(s)`);
 
-      // ✅ Aplicar filtro de data no FRONTEND (dados já vêm da API)
-      console.log('🔍 DEBUG: Primeira devolução recebida:', allData[0]);
-      console.log('🔍 DEBUG: Campos de data disponíveis:', {
-        data_criacao: allData[0]?.data_criacao,
-        date_created: allData[0]?.date_created,
-        created_at: allData[0]?.created_at,
-        data_criacao_claim: allData[0]?.data_criacao_claim
-      });
-      console.log('🔍 DEBUG: Período de filtro:', {
-        dataInicio: dataInicio.toISOString(),
-        dataFim: dataFim.toISOString(),
-        dias: days
-      });
+      // ✅ EXIBIR TODAS as devoluções retornadas pela API (sem filtro adicional de data)
+      console.log(`✅ Total de devoluções recebidas da API: ${allData.length}`);
+      
+      // DEBUG: Mostrar período das devoluções
+      if (allData.length > 0) {
+        const datas = allData.map(item => new Date(item.data_criacao || item.date_created || item.created_at));
+        const maisAntiga = new Date(Math.min(...datas.map(d => d.getTime())));
+        const maisRecente = new Date(Math.max(...datas.map(d => d.getTime())));
+        console.log(`📅 Período das devoluções: ${maisAntiga.toLocaleDateString()} até ${maisRecente.toLocaleDateString()}`);
+      }
 
-      const filteredData = allData.filter(item => {
-        // ✅ Usar data_criacao (campo em português retornado pela API)
-        const dateField = item.data_criacao || item.date_created || item.created_at || item.data_criacao_claim;
-        const itemDate = new Date(dateField);
-        
-        console.log('🔍 Item:', {
-          claim_id: item.claim_id,
-          dateField,
-          itemDate: itemDate.toISOString(),
-          isAfterStart: itemDate >= dataInicio,
-          isBeforeEnd: itemDate <= dataFim
-        });
-        
-        const isAfterStart = itemDate >= dataInicio;
-        const isBeforeEnd = itemDate <= dataFim;
-        return isAfterStart && isBeforeEnd;
-      });
+      const filteredData = allData; // ✅ SEM FILTRO - Mostrar tudo da API
 
-      console.log(`✅ Após filtro de data (${days} dias): ${filteredData.length} devoluções`);
+      console.log(`✅ Exibindo ${filteredData.length} devoluções DIRETO da API ML!`);
 
       // ✅ Atualizar estado com dados FILTRADOS
       setApiData({
@@ -298,7 +279,7 @@ function DevolucoesMercadoLivreContent() {
         },
       });
 
-      toast.success(`✅ ${filteredData.length} devoluções encontradas (${allData.length} total da API)!`, { id: 'sync-search' });
+      toast.success(`✅ ${filteredData.length} devoluções recebidas DIRETO da API ML!`, { id: 'sync-search' });
       
     } catch (error: any) {
       console.error('❌ Erro ao buscar da API ML:', error);
