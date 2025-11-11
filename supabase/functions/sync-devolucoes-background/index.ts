@@ -235,20 +235,57 @@ async function executarSincronizacao(
       }
 
       const mlData = await mlResponse.json();
-      const claims = mlData.data || [];
-      console.log(`📥 [SYNC] Recebidos ${claims.length} claims da API ML`);
+      const rawClaims = mlData.results || mlData.data || [];
+      console.log(`📥 [SYNC] Recebidos ${rawClaims.length} claims da API ML`);
 
-      if (claims.length === 0) {
+      if (rawClaims.length === 0) {
         hasMore = false;
         break;
       }
 
+      // ✅ 5. TRANSFORMAR DADOS DA API ML PARA SCHEMA DO BANCO
+      const transformedClaims = rawClaims.map((claim: any) => {
+        // Buscar dados de order se existir
+        const orderData = claim.order_id ? {
+          order_id: claim.order_id,
+          // Dados serão enriquecidos depois via enrich-devolucoes
+        } : null;
+
+        return {
+          claim_id: claim.id,
+          order_id: claim.order_id || null,
+          integration_account_id: integrationAccountId,
+          status: claim.status?.id || null,
+          status_devolucao: claim.status?.id || null,
+          status_dinheiro: claim.status_money?.id || null,
+          subtipo_devolucao: claim.subtype?.id || null,
+          tipo_claim: claim.type || null,
+          data_criacao: claim.date_created || new Date().toISOString(),
+          data_fechamento_devolucao: claim.date_closed || null,
+          data_atualizacao_devolucao: claim.last_updated || new Date().toISOString(),
+          quantidade: claim.quantity?.value || 1,
+          
+          // Salvar dados completos em JSONB
+          dados_claim: claim,
+          dados_order: orderData,
+          
+          // Campos que serão enriquecidos depois
+          dados_buyer_info: null,
+          dados_product_info: null,
+          dados_financial_info: null,
+          dados_tracking_info: null,
+          dados_review: null,
+          
+          ultima_sincronizacao: new Date().toISOString()
+        };
+      });
+
       // Salvar no Supabase (upsert)
-      if (claims.length > 0) {
+      if (transformedClaims.length > 0) {
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
-          .upsert(claims, {
-            onConflict: 'claim_id,integration_account_id',
+          .upsert(transformedClaims, {
+            onConflict: 'devolucoes_avancadas_order_integration_key',
             ignoreDuplicates: false
           });
 
@@ -257,10 +294,10 @@ async function executarSincronizacao(
           throw new Error(`Erro ao salvar no banco: ${upsertError.message}`);
         }
 
-        console.log(`✅ [SYNC] Salvos ${claims.length} claims no Supabase`);
+        console.log(`✅ [SYNC] Salvos ${transformedClaims.length} claims no Supabase`);
       }
 
-      totalProcessed += claims.length;
+      totalProcessed += rawClaims.length;
       offset += BATCH_SIZE;
 
       // Atualizar progresso
@@ -273,7 +310,7 @@ async function executarSincronizacao(
         .eq('id', syncControlId);
 
       // Se recebeu menos que o batch size, chegou ao fim
-      if (claims.length < BATCH_SIZE) {
+      if (rawClaims.length < BATCH_SIZE) {
         hasMore = false;
       }
 
