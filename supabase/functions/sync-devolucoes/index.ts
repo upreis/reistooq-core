@@ -85,8 +85,8 @@ serve(async (req) => {
         items_total: 0,
         items_failed: 0
       }, {
-        // ✅ CORRIGIDO DEFINITIVO: Usar nome EXPLÍCITO da constraint criada na migration
-        onConflict: 'devolucoes_sync_status_account_sync_type_key'
+        // ✅ SINTAXE CORRETA: Usar nomes de COLUNAS, não nome da constraint
+        onConflict: 'integration_account_id,sync_type'
       })
       .select()
       .single();
