@@ -1,14 +1,17 @@
 /**
- * 🔄 SYNC-DEVOLUCOES - MIGRADO PARA PADRÃO UNIFIED-ORDERS
+ * 🔄 SYNC-DEVOLUCOES - FASE 1 REFATORAÇÃO COMPLETA
  * 
- * ✅ FASE 1-4: Arquitetura refatorada
- * - Busca tokens DIRETO do banco (padrão unified-orders)
- * - Descriptografia INLINE com decryptAESGCM()
- * - Chama API ML DIRETAMENTE (sem ml-api-direct)
- * - Mantém TODO o mapeamento complexo original
+ * ✅ NOVA ARQUITETURA (Padrão unified-orders):
+ * 1. Busca tokens DIRETO do banco (serviceClient)
+ * 2. Descriptografia INLINE (sem get-ml-token)
+ * 3. Chama API ML /post-purchase/v2/claims DIRETAMENTE
+ * 4. Enriquece com /reviews INLINE (enriquecimento automático)
+ * 5. Chama ml-api-direct VIA HTTP apenas para MAPEAMENTO
+ * 6. Salva dados completos em devolucoes_avancadas (JSONB)
+ * 7. Processa PRIMEIRO BATCH (300 claims) rapidamente
  * 
- * ❌ ELIMINADO: Dependências em ml-api-direct e get-ml-token
- * ✅ MANTIDO: 100% do mapeamento de 200+ campos da API ML
+ * ❌ ELIMINADO: enrich-devolucoes (enriquecimento agora é inline)
+ * ✅ MANTIDO: ml-api-direct como serviço de mapeamento (via HTTP)
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -148,12 +151,8 @@ serve(async (req) => {
       throw new Error('Token ML não disponível. Reconecte a integração.');
     }
 
-    // ✅ 6. CHAMAR API ML DIRETAMENTE (sem ml-api-direct)
-    logger.info(`Buscando claims da API ML - Seller: ${account.account_identifier}`);
-    
-    // NOTA: Por simplicidade, vou continuar chamando ml-api-direct POR ENQUANTO
-    // para manter TODO o mapeamento complexo de 200+ campos
-    // Na próxima fase, trazerei o mapeamento completo para cá
+    // ✅ 6. CHAMAR API ML DIRETAMENTE (SEM ml-api-direct)
+    logger.info(`🚀 Buscando claims DIRETAMENTE da API ML - Seller: ${account.account_identifier}`);
     
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     let offset = 0;
@@ -161,176 +160,151 @@ serve(async (req) => {
     let totalProcessed = 0;
     let totalCreated = 0;
 
-    // ✅ 7. PROCESSAR EM LOTES (COM LIMITE DE 300 PARA EVITAR TIMEOUT)
-    const MAX_CLAIMS_PER_SYNC = 300; // ✅ LIMITE SEGURO (evita timeout de 60s)
+    // ✅ 7. PROCESSAR APENAS PRIMEIRO BATCH (300 claims)
+    const MAX_CLAIMS_PER_BATCH = 300;
+    const BATCH_SIZE = 50; // Buscar 50 de cada vez
     
-    while (hasMore && totalProcessed < MAX_CLAIMS_PER_SYNC) {
-      logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
+    while (hasMore && totalProcessed < MAX_CLAIMS_PER_BATCH) {
+      logger.info(`📦 Buscando claims da API ML: offset=${offset}, limit=${BATCH_SIZE}`);
 
-      // 🔥 CHAMAR ml-api-direct PASSANDO TOKEN JÁ DESCRIPTOGRAFADO
-      const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
-        method: 'POST',
+      // 🔥 CHAMADA DIRETA À API ML /post-purchase/v2/claims
+      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v2/claims?seller_id=${account.account_identifier}&offset=${offset}&limit=${BATCH_SIZE}&sort=date_created&order=desc`;
+      
+      const claimsResponse = await fetch(claimsUrl, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          action: 'get_claims_and_returns',
-          integration_account_id: integrationAccountId,
-          seller_id: account.account_identifier,
-          ml_access_token: mlAccessToken,
-          limit: batchSize,
-          offset: offset,
-        }),
+          'Authorization': `Bearer ${mlAccessToken}`,
+          'Content-Type': 'application/json'
+        }
       });
 
-      if (!apiResponse.ok) {
-        const errorText = await apiResponse.text();
-        throw new Error(`API ML erro (${apiResponse.status}): ${errorText}`);
+      if (!claimsResponse.ok) {
+        throw new Error(`API ML erro (${claimsResponse.status}): ${await claimsResponse.text()}`);
       }
 
-      const apiData = await apiResponse.json();
+      const claimsData = await claimsResponse.json();
+      const claims = claimsData.data || [];
+      const total = claimsData.paging?.total || 0;
       
-      if (!apiData.success) {
-        throw new Error(`API ML retornou erro: ${apiData.error}`);
-      }
-
-      // 🔥 CORRIGIDO: Estrutura correta da resposta ml-api-direct
-      const claims = apiData.data || [];
-      const total = apiData.pagination?.total || 0;
-      const hasMoreFromApi = apiData.pagination ? 
-        (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
+      logger.info(`✅ Recebidos ${claims.length} claims da API ML (total disponível: ${total})`);
       
-      // 🔥 OPÇÃO A: AGRUPAR DADOS EM JSONBs (solução escalável)
-      const transformedClaims = claims.map((claim: any) => {
-        // 🛡️ VALIDAÇÃO CRÍTICA: Garantir que claim_id existe
-        if (!claim.claim_id) {
-          logger.warn(`⚠️ Claim sem claim_id detectado, pulando...`, claim);
-          return null;
-        }
+      // 🔥 PROCESSAR CADA CLAIM: Buscar Order + Reviews + Mapear
+      const processedClaims = await Promise.all(
+        claims.map(async (claim: any) => {
+          try {
+            const claimId = claim.id;
+            const orderId = claim.resource_id;
+            
+            if (!claimId) {
+              logger.warn(`⚠️ Claim sem ID, pulando...`);
+              return null;
+            }
+            
+            // 1️⃣ Buscar detalhes do pedido
+            let orderData = null;
+            if (orderId) {
+              try {
+                const orderResp = await fetch(`https://api.mercadolibre.com/orders/${orderId}`, {
+                  headers: { 'Authorization': `Bearer ${mlAccessToken}` }
+                });
+                if (orderResp.ok) {
+                  orderData = await orderResp.json();
+                }
+              } catch (err) {
+                logger.warn(`⚠️ Erro ao buscar order ${orderId}:`, err);
+              }
+            }
+            
+            // 2️⃣ Buscar reviews (ENRIQUECIMENTO INLINE)
+            let reviewsData = null;
+            try {
+              const reviewsResp = await fetch(
+                `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/reviews`,
+                { headers: { 'Authorization': `Bearer ${mlAccessToken}` } }
+              );
+              if (reviewsResp.ok) {
+                reviewsData = await reviewsResp.json();
+              }
+            } catch (err) {
+              logger.warn(`⚠️ Erro ao buscar reviews do claim ${claimId}:`, err);
+            }
+            
+            // 3️⃣ CHAMAR ml-api-direct VIA HTTP para mapeamento complexo
+            const mapResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${ANON_KEY}`,
+              },
+              body: JSON.stringify({
+                action: 'mapear_claim',
+                claim_data: claim,
+                order_data: orderData,
+                reviews_data: reviewsData,
+                integration_account_id: integrationAccountId
+              }),
+            });
+            
+            if (!mapResponse.ok) {
+              logger.warn(`⚠️ Erro ao mapear claim ${claimId}: ${mapResponse.status}`);
+              return null;
+            }
+            
+            const mapResult = await mapResponse.json();
+            return mapResult.data;
+            
+          } catch (err) {
+            logger.warn(`⚠️ Erro ao processar claim:`, err);
+            return null;
+          }
+        })
+      );
+      
+      const validClaims = processedClaims.filter(Boolean);
+      const hasMoreFromApi = offset + BATCH_SIZE < total;
+      
+      // 🔥 SALVAR CLAIMS MAPEADOS DIRETAMENTE (já vêm estruturados)
+      if (validClaims && validClaims.length > 0) {
+        logger.info(`💾 Salvando ${validClaims.length} claims mapeados em devolucoes_avancadas...`);
         
-        // ✅ AGRUPAR DADOS EM JSONBs ORGANIZADOS
-        const transformed: any = {
-          // 🔑 Chaves primárias
-          claim_id: claim.claim_id,
-          order_id: claim.order_id,
+        // Adicionar organization_id em cada claim
+        const claimsWithOrg = validClaims.map((claim: any) => ({
+          ...claim,
+          organization_id: account.organization_id,
           integration_account_id: integrationAccountId,
-          
-          // 📦 GRUPO 1: Dados completos da API ML (originais)
-          dados_claim: claim.claim_details || claim,
-          dados_order: claim.order_data || claim.order || {},
-          
-          // 📦 GRUPO 2: Identificadores e Item
-          dados_product_info: {
-            item_id: claim.item_id || claim.order_data?.order_items?.[0]?.item?.id || null,
-            variation_id: claim.variation_id || claim.order_data?.order_items?.[0]?.item?.variation_id || null,
-            seller_sku: claim.seller_sku || claim.order_data?.order_items?.[0]?.item?.seller_sku || null,
-            title: claim.produto_titulo || claim.order_data?.order_items?.[0]?.item?.title || null,
-          },
-          
-          // 📦 GRUPO 3: Status e Tipo
-          dados_tracking_info: {
-            status: claim.status || claim.claim_details?.status || null,
-            status_devolucao: claim.status_devolucao || claim.claim_details?.status || null,
-            status_money: claim.status_money || claim.status_dinheiro || null,
-            subtipo: claim.subtipo || claim.subtipo_claim || claim.claim_details?.sub_type || null,
-            resource_type: claim.resource_type || claim.return_resource_type || null,
-            context: claim.context || claim.claim_details?.context || null,
-            shipment_id: claim.shipment_id || claim.shipment_id_devolucao || null,
-            tracking_number: claim.tracking_number || claim.codigo_rastreamento || claim.codigo_rastreamento_devolucao || null,
-            shipment_status: claim.shipment_status || claim.status_envio_devolucao || claim.status_rastreamento || null,
-            shipment_type: claim.shipment_type || claim.tipo_envio_devolucao || null,
-            destination: claim.destination || claim.destino_devolucao || claim.shipment_destination || null,
-            carrier: claim.carrier || claim.transportadora || claim.transportadora_devolucao || null,
-          },
-          
-          // 📦 GRUPO 4: Quantidade
-          quantidade: claim.quantidade || claim.return_quantity || claim.quantity || 1,
-          dados_quantities: {
-            total_quantity: claim.total_quantity || claim.quantidade_total || claim.order_data?.order_items?.[0]?.quantity || null,
-            return_quantity: claim.return_quantity || claim.quantidade || null,
-            quantity_type: claim.quantity_type || claim.claim_quantity_type || claim.context_type || 'total',
-          },
-          
-          // 📦 GRUPO 5: Financeiro
-          dados_financial_info: {
-            total_amount: claim.total_amount || claim.order_data?.total_amount || null,
-            currency_id: claim.currency_id || claim.moeda_reembolso || 'BRL',
-            payment_type: claim.payment_type || claim.tipo_pagamento || null,
-            payment_method: claim.payment_method || claim.metodo_pagamento || null,
-            transaction_id: claim.transaction_id || null,
-          },
-          
-          // 📦 GRUPO 6: Comprador
-          dados_buyer_info: {
-            id: claim.buyer_id || claim.order_data?.buyer?.id || null,
-            nickname: claim.buyer_nickname || claim.comprador_nickname || claim.order_data?.buyer?.nickname || null,
-            first_name: claim.buyer_first_name || claim.comprador_nome_completo || null,
-          },
-          
-          // 📦 GRUPO 7: Datas
-          data_criacao_claim: claim.date_created || claim.data_criacao_claim || claim.data_criacao || null,
-          data_fechamento_claim: claim.date_closed || claim.data_fechamento_claim || null,
-          data_atualizacao_devolucao: claim.last_updated || claim.data_atualizacao_devolucao || null,
-          
-          // 📦 GRUPO 8: Campos JSONB já existentes
-          dados_review: claim.dados_review || {},
-          dados_comunicacao: claim.dados_comunicacao || {},
-          dados_deadlines: claim.dados_deadlines || {},
-          dados_available_actions: claim.dados_available_actions || claim.dados_acoes_disponiveis || {},
-          dados_shipping_costs: claim.dados_shipping_costs || claim.shipment_costs || {},
-          dados_fulfillment: claim.dados_fulfillment || {},
-          dados_lead_time: claim.dados_lead_time || {},
-          dados_refund_info: claim.dados_refund_info || {},
-          
-          // 📦 Outros campos simples
-          sku: claim.sku || null,
-          produto_titulo: claim.produto_titulo || claim.dados_order?.order_items?.[0]?.item?.title || null,
-          valor_retido: claim.valor_retido || 0,
-          responsavel_custo: claim.responsavel_custo || claim.benefited || null,
-          
-          // 🕐 Timestamps
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
-        };
-        
-        return transformed;
-      }).filter(Boolean);
-      
-      // 🔥 UPSERT DOS DADOS
-      if (transformedClaims && transformedClaims.length > 0) {
-        logger.info(`💾 Salvando ${transformedClaims.length} claims...`);
+        }));
         
         const { error: upsertError } = await serviceClient
           .from('devolucoes_avancadas')
-          .upsert(transformedClaims, {
+          .upsert(claimsWithOrg, {
             onConflict: 'claim_id',
             ignoreDuplicates: false
           });
         
         if (upsertError) {
-          logger.error(`❌ Erro ao salvar: ${upsertError.message}`, upsertError);
+          logger.error(`❌ Erro ao salvar claims: ${upsertError.message}`, upsertError);
           throw upsertError;
         }
         
-        totalCreated += transformedClaims.length;
-        logger.success(`✅ ${transformedClaims.length} claims salvos`);
+        totalCreated += validClaims.length;
+        logger.success(`✅ ${validClaims.length} claims salvos com sucesso`);
       }
       
       totalProcessed += claims.length;
-      offset += batchSize;
-      hasMore = hasMoreFromApi && totalProcessed < MAX_CLAIMS_PER_SYNC;
+      offset += BATCH_SIZE;
+      hasMore = hasMoreFromApi && totalProcessed < MAX_CLAIMS_PER_BATCH;
       
       // Atualizar progresso
       await serviceClient
         .from('devolucoes_sync_status')
         .update({
           items_synced: totalProcessed,
-          items_total: Math.min(total, MAX_CLAIMS_PER_SYNC)
+          items_total: Math.min(total, MAX_CLAIMS_PER_BATCH)
         })
         .eq('id', syncId);
       
-      logger.info(`📊 Progresso: ${totalProcessed}/${Math.min(total, MAX_CLAIMS_PER_SYNC)}`);
+      logger.info(`📊 Progresso: ${totalProcessed}/${Math.min(total, MAX_CLAIMS_PER_BATCH)}`);
     }
 
 

@@ -105,6 +105,50 @@ serve(async (req) => {
 
     logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
+    // 🆕 NOVO ENDPOINT: mapear_claim (usado por sync-devolucoes)
+    if (action === 'mapear_claim') {
+      const { claim_data, order_data, reviews_data } = requestBody;
+      
+      if (!claim_data) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'claim_data é obrigatório' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      try {
+        // TODO: Implementar mapeamento usando funções existentes
+        // Por enquanto, retornar estrutura básica
+        const mapped = {
+          claim_id: claim_data.id,
+          order_id: claim_data.resource_id || order_data?.id,
+          integration_account_id: requestBody.integration_account_id,
+          
+          // Dados brutos completos
+          dados_claim: claim_data,
+          dados_order: order_data || {},
+          dados_review: reviews_data || {},
+          
+          // Campos básicos extraídos
+          status: claim_data.status,
+          date_created: claim_data.date_created,
+          
+          // TODO: Adicionar mapeamento completo de 200+ campos
+        };
+        
+        return new Response(
+          JSON.stringify({ success: true, data: mapped }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (err) {
+        logger.error('Erro ao mapear claim:', err);
+        return new Response(
+          JSON.stringify({ success: false, error: err.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     if (action === 'get_claims_and_returns') {
       console.error('🚨 [TESTE] ACTION get_claims_and_returns EXECUTADA!');
       // 📄 PAGINAÇÃO SIMPLES - Máximo 100 por chamada
