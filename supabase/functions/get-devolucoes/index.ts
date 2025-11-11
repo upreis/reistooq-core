@@ -211,18 +211,19 @@ async function getDevolucoes(
       order_id: item.order_id,
       claim_id: item.claim_id,
       return_id: item.return_id,
-      item_id: item.dados_order?.order_items?.[0]?.item?.id || item.item_id || null,
-      variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || item.variation_id || null,
+      
+      // ✅ EXTRAIR DE JSONB dados_product_info
+      item_id: item.dados_product_info?.item_id || null,
+      variation_id: item.dados_product_info?.variation_id || null,
+      
       integration_account_id: item.integration_account_id,
       
-      // Status
-      status: item.dados_claim?.status ? { id: item.dados_claim.status } : { id: 'unknown' },
-      status_devolucao: item.status_devolucao || item.dados_claim?.status || null,
-      // ✅ Status do dinheiro (campo já populado por sync-devolucoes)
-      status_money: item.status_dinheiro || null,
-      subtype: item.subtipo_devolucao ? { id: item.subtipo_devolucao } : null,
-      // ✅ Tipo de recurso (campo já populado por sync-devolucoes)
-      resource_type: item.return_resource_type || null,
+      // ✅ Status - EXTRAIR DE JSONB dados_tracking_info
+      status: item.dados_tracking_info?.status ? { id: item.dados_tracking_info.status } : { id: 'unknown' },
+      status_devolucao: item.status_devolucao || item.dados_tracking_info?.status_devolucao || null,
+      status_money: item.dados_tracking_info?.status_money || null,
+      subtype: item.dados_tracking_info?.subtipo ? { id: item.dados_tracking_info.subtipo } : null,
+      resource_type: item.dados_tracking_info?.resource_type || null,
       // ✅ RESOLUÇÃO - Capturar resolution.reason (timeout, warehouse_timeout, etc)
       resultado_final: item.resolution_reason || 
                        item.dados_claim?.resolution?.reason || 
@@ -233,37 +234,37 @@ async function getDevolucoes(
       date_closed: item.data_fechamento_claim,
       last_updated: item.updated_at,
       
-      // Buyer info
+      // Buyer info - ✅ EXTRAIR DE JSONB dados_buyer_info
       buyer_info: item.dados_buyer_info || {
         id: item.dados_order?.buyer?.id || null,
         nickname: item.comprador_nickname || item.dados_order?.buyer?.nickname || null,
       },
       
-      // Product info
+      // Product info - ✅ EXTRAIR DE JSONB dados_product_info
       product_info: item.dados_product_info || {
         id: item.dados_order?.order_items?.[0]?.item?.id || null,
         title: item.produto_titulo || item.dados_order?.order_items?.[0]?.item?.title || null,
-        variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || null,
-        sku: item.sku || item.dados_order?.order_items?.[0]?.item?.seller_sku || null,
+        variation_id: item.dados_product_info?.variation_id || null,
+        sku: item.sku || item.dados_product_info?.seller_sku || null,
       },
       
-      // Financial info
+      // Financial info - ✅ EXTRAIR DE JSONB dados_financial_info
       financial_info: item.dados_financial_info || {
         total_amount: item.dados_order?.total_amount || null,
         currency_id: item.moeda_reembolso || 'BRL',
       },
       
-      // Tracking info
+      // Tracking info - ✅ EXTRAIR DE JSONB dados_tracking_info
       tracking_info: item.dados_tracking_info || {
         tracking_number: item.codigo_rastreamento_devolucao || null,
         carrier: item.transportadora_devolucao || null,
         shipment_status: item.status_rastreamento_devolucao || null,
       },
       
-      // Quantidade
+      // Quantidade - ✅ EXTRAIR DE JSONB dados_quantities OU campo direto
       quantity: {
-        type: item.claim_quantity_type || 'total',
-        value: item.quantidade || 1,
+        type: item.dados_quantities?.quantity_type || 'total',
+        value: item.quantidade || item.dados_quantities?.return_quantity || 1,
       },
       
       // Order (para compatibilidade)
@@ -273,21 +274,21 @@ async function getDevolucoes(
         seller_id: item.dados_order.seller_id,
       } : null,
       
-      // Orders array (para compatibilidade com campos antigos)
+      // Orders array (para compatibilidade com campos antigos) - ✅ USAR dados_quantities
       orders: item.dados_order ? [{
-        item_id: item.dados_order?.order_items?.[0]?.item?.id || null,
-        variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || null,
-        context_type: item.claim_quantity_type || 'total',
-        total_quantity: item.dados_order?.order_items?.[0]?.quantity || 1,
-        return_quantity: item.quantidade || 1,
+        item_id: item.dados_product_info?.item_id || null,
+        variation_id: item.dados_product_info?.variation_id || null,
+        context_type: item.dados_quantities?.quantity_type || 'total',
+        total_quantity: item.dados_quantities?.total_quantity || 1,
+        return_quantity: item.quantidade || item.dados_quantities?.return_quantity || 1,
       }] : [],
       
-      // ✅ Shipment info (campos já populados por sync-devolucoes)
-      shipment_id: item.shipment_id_devolucao || item.shipment_id,
-      shipment_status: item.status_envio_devolucao || item.status_rastreamento || null,
-      shipment_type: item.tipo_envio_devolucao || null,
-      shipment_destination: item.destino_devolucao || null,
-      tracking_number: item.codigo_rastreamento_devolucao || item.codigo_rastreamento,
+      // ✅ Shipment info - EXTRAIR DE dados_tracking_info
+      shipment_id: item.dados_tracking_info?.shipment_id || item.shipment_id,
+      shipment_status: item.dados_tracking_info?.shipment_status || null,
+      shipment_type: item.dados_tracking_info?.shipment_type || null,
+      shipment_destination: item.dados_tracking_info?.destination || null,
+      tracking_number: item.dados_tracking_info?.tracking_number || item.codigo_rastreamento,
       
       // Endereço de destino (extrair do JSONB)
       destination_address: item.endereco_destino?.street_name || item.endereco_destino_devolucao || null,
@@ -392,9 +393,9 @@ async function getDevolucoes(
         ? item.responsavel_custo[0] 
         : item.responsavel_custo || null,
       
-      // ✅ QUANTIDADE (campo direto - usar 'quantidade' que existe no banco)
-      return_quantity: item.quantidade || null,
-      total_quantity: item.quantidade || null,
+      // ✅ QUANTIDADE - EXTRAIR DE dados_quantities OU campo direto 'quantidade'
+      return_quantity: item.quantidade || item.dados_quantities?.return_quantity || null,
+      total_quantity: item.dados_quantities?.total_quantity || item.quantidade || null,
       
       // Substatus
       substatus: item.descricao_ultimo_status || null,

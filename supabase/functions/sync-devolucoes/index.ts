@@ -198,7 +198,7 @@ serve(async (req) => {
       const hasMoreFromApi = apiData.pagination ? 
         (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
       
-      // 🔥 TRANSFORMAR NOMES DOS CAMPOS: claim_details → dados_claim, order_data → dados_order
+      // 🔥 OPÇÃO A: AGRUPAR DADOS EM JSONBs (solução escalável)
       const transformedClaims = claims.map((claim: any) => {
         // 🛡️ VALIDAÇÃO CRÍTICA: Garantir que claim_id existe
         if (!claim.claim_id) {
@@ -206,19 +206,107 @@ serve(async (req) => {
           return null;
         }
         
-        // Criar objeto transformado
+        // ✅ AGRUPAR DADOS EM JSONBs ORGANIZADOS
         const transformed: any = {
-          ...claim,
-          // ✅ CRÍTICO: Adicionar integration_account_id
+          // 🔑 Chaves primárias
+          claim_id: claim.claim_id,
+          order_id: claim.order_id,
           integration_account_id: integrationAccountId,
-          // ✅ Transformar nomes dos campos JSONB
-          dados_claim: claim.claim_details || null,
-          dados_order: claim.order_data || null,
+          organization_id: organizationId, // ✅ CRÍTICO: Adicionar organization_id
+          
+          // 📦 GRUPO 1: Dados completos da API ML (originais)
+          dados_claim: claim.claim_details || {},
+          dados_order: claim.order_data || {},
+          
+          // 📦 GRUPO 2: Identificadores e Item
+          dados_product_info: {
+            item_id: claim.item_id || claim.dados_order?.order_items?.[0]?.item?.id || null,
+            variation_id: claim.variation_id || claim.dados_order?.order_items?.[0]?.item?.variation_id || null,
+            seller_sku: claim.seller_sku || claim.dados_order?.order_items?.[0]?.item?.seller_sku || null,
+            title: claim.produto_titulo || claim.dados_order?.order_items?.[0]?.item?.title || null,
+          },
+          
+          // 📦 GRUPO 3: Status e Tipo
+          dados_tracking_info: {
+            // Status principal
+            status: claim.status || claim.claim_details?.status || null,
+            status_devolucao: claim.status_devolucao || claim.claim_details?.status || null,
+            status_money: claim.status_money || claim.status_dinheiro || null,
+            subtipo: claim.subtipo || claim.subtipo_claim || claim.claim_details?.sub_type || null,
+            resource_type: claim.resource_type || claim.return_resource_type || null,
+            context: claim.context || claim.claim_details?.context || null,
+            
+            // Rastreamento e envio
+            shipment_id: claim.shipment_id || claim.shipment_id_devolucao || null,
+            tracking_number: claim.tracking_number || claim.codigo_rastreamento || claim.codigo_rastreamento_devolucao || null,
+            shipment_status: claim.shipment_status || claim.status_envio_devolucao || claim.status_rastreamento || null,
+            shipment_type: claim.shipment_type || claim.tipo_envio_devolucao || null,
+            destination: claim.destination || claim.destino_devolucao || claim.shipment_destination || null,
+            carrier: claim.carrier || claim.transportadora || claim.transportadora_devolucao || null,
+          },
+          
+          // 📦 GRUPO 4: Quantidade
+          quantidade: claim.quantidade || claim.return_quantity || claim.quantity || 1,
+          dados_quantities: {
+            total_quantity: claim.total_quantity || claim.quantidade_total || claim.dados_order?.order_items?.[0]?.quantity || null,
+            return_quantity: claim.return_quantity || claim.quantidade || null,
+            quantity_type: claim.quantity_type || claim.claim_quantity_type || claim.context_type || 'total',
+          },
+          
+          // 📦 GRUPO 5: Financeiro
+          dados_financial_info: {
+            total_amount: claim.total_amount || claim.dados_order?.total_amount || null,
+            currency_id: claim.currency_id || claim.moeda_reembolso || 'BRL',
+            payment_type: claim.payment_type || claim.tipo_pagamento || null,
+            payment_method: claim.payment_method || claim.metodo_pagamento || null,
+            transaction_id: claim.transaction_id || null,
+          },
+          
+          // 📦 GRUPO 6: Comprador
+          dados_buyer_info: {
+            id: claim.buyer_id || claim.dados_order?.buyer?.id || null,
+            nickname: claim.buyer_nickname || claim.comprador_nickname || claim.dados_order?.buyer?.nickname || null,
+            first_name: claim.buyer_first_name || claim.comprador_nome_completo || null,
+          },
+          
+          // 📦 GRUPO 7: Datas
+          data_criacao_claim: claim.date_created || claim.data_criacao_claim || claim.data_criacao || null,
+          data_fechamento_claim: claim.date_closed || claim.data_fechamento_claim || null,
+          data_atualizacao_devolucao: claim.last_updated || claim.data_atualizacao_devolucao || null,
+          
+          // 📦 GRUPO 8: Outros campos importantes
+          status_devolucao: claim.status_devolucao || claim.status || claim.claim_details?.status || null,
+          subtipo_claim: claim.subtipo_claim || claim.subtipo || claim.claim_details?.sub_type || null,
+          tipo_claim: claim.tipo_claim || claim.claim_details?.type || null,
+          motivo_devolucao: claim.motivo_devolucao || claim.reason_detail || null,
+          
+          // 📦 GRUPO 9: Review (se existir)
+          review_status: claim.review_status || null,
+          review_method: claim.review_method || null,
+          review_stage: claim.review_stage || null,
+          product_condition: claim.product_condition || null,
+          product_destination: claim.product_destination || null,
+          
+          // 📦 GRUPO 10: Campos JSONB já existentes (preservar)
+          dados_review: claim.dados_review || {},
+          dados_comunicacao: claim.dados_comunicacao || {},
+          dados_deadlines: claim.dados_deadlines || {},
+          dados_available_actions: claim.dados_available_actions || claim.dados_acoes_disponiveis || {},
+          dados_shipping_costs: claim.dados_shipping_costs || claim.shipment_costs || {},
+          dados_fulfillment: claim.dados_fulfillment || {},
+          dados_lead_time: claim.dados_lead_time || {},
+          dados_refund_info: claim.dados_refund_info || {},
+          
+          // 📦 Outros campos simples (strings/booleans/numbers)
+          sku: claim.sku || null,
+          produto_titulo: claim.produto_titulo || claim.dados_order?.order_items?.[0]?.item?.title || null,
+          valor_retido: claim.valor_retido || 0,
+          responsavel_custo: claim.responsavel_custo || claim.benefited || null,
+          
+          // 🕐 Timestamps de controle
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         };
-        
-        // ✅ DELETAR campos antigos
-        delete transformed.claim_details;
-        delete transformed.order_data;
         
         return transformed;
       }).filter(Boolean);
