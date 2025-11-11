@@ -4,19 +4,12 @@
  */
 
 import { useState } from 'react';
-import { Search, CalendarIcon, ChevronDown, RefreshCw, Zap, Download } from 'lucide-react';
+import { Search, CalendarIcon, ChevronDown, RefreshCw, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 interface MLAccount {
@@ -32,7 +25,7 @@ interface DevolucaoAdvancedFiltersBarProps {
   onPeriodoChange: (periodo: string) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  onBuscar: (fullSync?: boolean) => void;
+  onBuscar: () => void;
   isLoading?: boolean;
   onCancel?: () => void;
   apiData?: any[]; // ✅ NOVO: dados brutos da API para exportação
@@ -233,59 +226,24 @@ export function DevolucaoAdvancedFiltersBar({
               </Button>
             )}
             
-            {/* Dropdown com opções de sincronização */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  disabled={isLoading || selectedAccountIds.length === 0}
-                  className="flex-1 min-w-[200px] bg-yellow-500 hover:bg-yellow-600 text-black disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
-                      <span className="font-medium">Sincronizando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      <span className="font-medium">Sincronizar</span>
-                      <ChevronDown className="h-4 w-4 ml-2" />
-                    </>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-72 bg-background">
-                <DropdownMenuItem 
-                  onClick={() => onBuscar(false)}
-                  disabled={isLoading || selectedAccountIds.length === 0}
-                  className="cursor-pointer"
-                >
-                  <Zap className="h-4 w-4 mr-2 text-yellow-500" />
-                  <div className="flex-1">
-                    <div className="font-medium">Sincronização Rápida</div>
-                    <div className="text-xs text-muted-foreground">
-                      Busca apenas dados novos (incremental)
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-                
-                <DropdownMenuSeparator />
-                
-                <DropdownMenuItem 
-                  onClick={() => onBuscar(true)}
-                  disabled={isLoading || selectedAccountIds.length === 0}
-                  className="cursor-pointer"
-                >
-                  <RefreshCw className="h-4 w-4 mr-2 text-blue-500" />
-                  <div className="flex-1">
-                    <div className="font-medium">Sincronização Completa</div>
-                    <div className="text-xs text-muted-foreground">
-                      Recarrega todos os dados (últimos 90 dias)
-                    </div>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Botão Único de Sincronização */}
+            <Button
+              onClick={() => onBuscar()}
+              disabled={isLoading || selectedAccountIds.length === 0}
+              className="flex-1 min-w-[200px] bg-yellow-500 hover:bg-yellow-600 text-black disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
+                  <span className="font-medium">Sincronizando...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <span className="font-medium">Aplicar Filtros e Buscar</span>
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>

@@ -121,7 +121,7 @@ function DevolucoesMercadoLivreContent() {
   }, [devolucoesComEmpresa]);
 
   // Handlers
-  const handleBuscar = async (fullSync: boolean = false) => {
+  const handleBuscar = async () => {
     if (selectedAccountIds.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
       return;
@@ -130,28 +130,13 @@ function DevolucoesMercadoLivreContent() {
     try {
       setIsLoadingApi(true);
       
-      // 1️⃣ Configurar filtros de data baseado no tipo de sincronização
-      let days: number;
-      let dateFromISO: string;
-      let dateToISO: string;
-      
-      if (fullSync) {
-        // ✅ FULL SYNC: SEMPRE 90 dias (ignora seleção do período)
-        days = 90;
-        const hoje = new Date();
-        const dataInicio = startOfDay(subDays(hoje, days));
-        const dataFim = endOfDay(hoje);
-        dateFromISO = format(dataInicio, 'yyyy-MM-dd');
-        dateToISO = format(dataFim, 'yyyy-MM-dd');
-      } else {
-        // ✅ SYNC RÁPIDA: USA o período selecionado (7, 15, 30, 60 dias)
-        days = parseInt(periodo);
-        const hoje = new Date();
-        const dataInicio = startOfDay(subDays(hoje, days));
-        const dataFim = endOfDay(hoje);
-        dateFromISO = format(dataInicio, 'yyyy-MM-dd');
-        dateToISO = format(dataFim, 'yyyy-MM-dd');
-      }
+      // 1️⃣ Configurar filtros de data baseado no período selecionado
+      const days = parseInt(periodo);
+      const hoje = new Date();
+      const dataInicio = startOfDay(subDays(hoje, days));
+      const dataFim = endOfDay(hoje);
+      const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
+      const dateToISO = format(dataFim, 'yyyy-MM-dd');
 
       // ✅ Atualizar filtros no contexto
       setFilters({
@@ -164,16 +149,13 @@ function DevolucoesMercadoLivreContent() {
       setPagination({ ...pagination, page: 1 });
 
       // 2️⃣ Buscar DIRETO da API ML
-      const syncType = fullSync ? 'completa (últimos 90 dias)' : `período selecionado (últimos ${days} dias)`;
-      toast.loading(`📡 Buscando dados DIRETO da API ML - ${syncType}...`, { id: 'sync-search' });
+      toast.loading(`📡 Buscando devoluções dos últimos ${days} dias...`, { id: 'sync-search' });
       
       console.log('🔍 Parâmetros de busca:', {
         contas: selectedAccountIds.length,
         periodo: `${days} dias`,
         dateFrom: dateFromISO,
         dateTo: dateToISO,
-        fullSync,
-        tipoSync: syncType,
         searchTerm
       });
       
@@ -187,8 +169,7 @@ function DevolucoesMercadoLivreContent() {
           body: {
             integration_account_id: accountId,
             batch_size: 100,
-            incremental: !fullSync, // Full sync força buscar últimos 90 dias
-            // ✅ CORREÇÃO CRÍTICA: Passar filtros de data para a Edge Function
+            incremental: false, // ✅ Sempre buscar do período selecionado
             date_from: dateFromISO,
             date_to: dateToISO,
           },
