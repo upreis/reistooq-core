@@ -318,6 +318,7 @@ function DevolucoesMercadoLivreContent() {
                   onBuscar={handleBuscar}
                   isLoading={isLoading}
                   onCancel={() => {}}
+                  apiData={apiData}
                 />
 
                 {/* Tabs Ativas/Histórico */}

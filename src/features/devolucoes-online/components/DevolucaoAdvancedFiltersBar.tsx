@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { Search, CalendarIcon, ChevronDown, RefreshCw, Zap } from 'lucide-react';
+import { Search, CalendarIcon, ChevronDown, RefreshCw, Zap, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 interface MLAccount {
   id: string;
@@ -31,9 +32,10 @@ interface DevolucaoAdvancedFiltersBarProps {
   onPeriodoChange: (periodo: string) => void;
   searchTerm: string;
   onSearchChange: (term: string) => void;
-  onBuscar: (fullSync?: boolean) => void; // ✅ ATUALIZADO: suporta fullSync
+  onBuscar: (fullSync?: boolean) => void;
   isLoading?: boolean;
   onCancel?: () => void;
+  apiData?: any[]; // ✅ NOVO: dados brutos da API para exportação
 }
 
 export function DevolucaoAdvancedFiltersBar({
@@ -46,9 +48,30 @@ export function DevolucaoAdvancedFiltersBar({
   onSearchChange,
   onBuscar,
   isLoading = false,
-  onCancel
+  onCancel,
+  apiData = []
 }: DevolucaoAdvancedFiltersBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
+
+  const handleExportJson = () => {
+    if (!apiData || apiData.length === 0) {
+      toast.error('Nenhum dado disponível para exportar');
+      return;
+    }
+
+    const jsonString = JSON.stringify(apiData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `devolucoes-ml-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast.success(`${apiData.length} devoluções exportadas em JSON`);
+  };
 
   const handleToggleAccount = (accountId: string) => {
     if (selectedAccountIds.includes(accountId)) {
@@ -182,10 +205,21 @@ export function DevolucaoAdvancedFiltersBar({
           </div>
         </div>
 
-        {/* Botão Sincronizar com Dropdown */}
+        {/* Botões de Ação */}
         <div className="md:col-span-3 space-y-2">
           <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
           <div className="flex gap-2">
+            {/* Botão Exportar JSON */}
+            <Button
+              onClick={handleExportJson}
+              disabled={!apiData || apiData.length === 0}
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              title="Exportar dados brutos JSON"
+            >
+              <Download className="h-4 w-4" />
+            </Button>
             {isLoading && onCancel && (
               <Button
                 onClick={onCancel}
