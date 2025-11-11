@@ -163,7 +163,7 @@ serve(async (req) => {
     const enrichedClaims = await Promise.all(
       claims.map(async (claim: any) => {
         try {
-          // Buscar dados do pedido
+          // ✅ 1. Buscar dados COMPLETOS do pedido (order_data)
           let orderData = null;
           if (claim.resource_id) {
             try {
@@ -179,7 +179,7 @@ serve(async (req) => {
             }
           }
 
-          // Buscar mensagens do claim
+          // ✅ 2. Buscar mensagens do claim
           let messagesData = null;
           try {
             const messagesRes = await fetch(
@@ -193,7 +193,7 @@ serve(async (req) => {
             console.error(`[get-devolucoes-direct] Erro ao buscar messages do claim ${claim.id}:`, err);
           }
 
-          // Buscar dados de return
+          // ✅ 3. Buscar dados COMPLETOS de return (return_details_v2)
           let returnData = null;
           try {
             const returnRes = await fetch(
@@ -204,14 +204,31 @@ serve(async (req) => {
               returnData = await returnRes.json();
             }
           } catch (err) {
-            // Return pode não existir, não logar erro
+            // Return pode não existir para alguns claims (normal)
+          }
+
+          // ✅ 4. Buscar reviews SE existir related_entities
+          let reviewsData = null;
+          if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
+            try {
+              const reviewsRes = await fetch(
+                `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
+                { headers: { 'Authorization': `Bearer ${accessToken}` } }
+              );
+              if (reviewsRes.ok) {
+                reviewsData = await reviewsRes.json();
+              }
+            } catch (err) {
+              // Reviews podem não existir
+            }
           }
 
           return {
             ...claim,
             order_data: orderData,
             claim_messages: messagesData,
-            return_details_v2: returnData
+            return_details_v2: returnData,
+            review_details: reviewsData
           };
         } catch (err) {
           console.error(`[get-devolucoes-direct] Erro ao enriquecer claim ${claim.id}:`, err);
