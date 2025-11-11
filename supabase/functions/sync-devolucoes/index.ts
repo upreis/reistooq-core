@@ -140,13 +140,24 @@ async function syncDevolucoes(
       const hasMoreFromApi = apiData.pagination ? 
         (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
       
+      // 🔥 TRANSFORMAR NOMES DOS CAMPOS: claim_details → dados_claim, order_data → dados_order
+      const transformedClaims = claims.map((claim: any) => ({
+        ...claim,
+        // ✅ Transformar nomes dos campos JSONB para match com tabela devolucoes_avancadas
+        dados_claim: claim.claim_details || null,
+        dados_order: claim.order_data || null,
+        // Remover campos antigos para evitar conflito
+        claim_details: undefined,
+        order_data: undefined,
+      }));
+      
       // 🔥 UPSERT DOS DADOS EM devolucoes_avancadas
-      if (claims && claims.length > 0) {
-        logger.info(`💾 Salvando ${claims.length} claims em devolucoes_avancadas...`);
+      if (transformedClaims && transformedClaims.length > 0) {
+        logger.info(`💾 Salvando ${transformedClaims.length} claims em devolucoes_avancadas...`);
         
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
-          .upsert(claims, {
+          .upsert(transformedClaims, {
             onConflict: 'claim_id,integration_account_id',
             ignoreDuplicates: false
           });
@@ -156,8 +167,8 @@ async function syncDevolucoes(
           throw upsertError;
         }
         
-        totalCreated += claims.length;
-        logger.success(`✅ ${claims.length} claims salvos com sucesso em devolucoes_avancadas`);
+        totalCreated += transformedClaims.length;
+        logger.success(`✅ ${transformedClaims.length} claims salvos com sucesso em devolucoes_avancadas`);
       }
       
       totalProcessed += claims.length;
