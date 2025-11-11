@@ -18,20 +18,16 @@ import { ptBR } from 'date-fns/locale';
 interface SyncStatusIndicatorProps {
   syncStatus: any;
   onSync: () => void;
-  onEnrich: () => void;
-  onFullSync?: () => void; // Nova prop para sincronização completa
+  onFullSync?: () => void;
   isSyncing: boolean;
-  isEnriching: boolean;
-  isFullSyncing?: boolean; // Novo estado
+  isFullSyncing?: boolean;
 }
 
 export function SyncStatusIndicator({
   syncStatus,
   onSync,
-  onEnrich,
   onFullSync,
   isSyncing,
-  isEnriching,
   isFullSyncing = false,
 }: SyncStatusIndicatorProps) {
   const getStatusBadge = () => {
@@ -124,11 +120,11 @@ export function SyncStatusIndicator({
 
       {/* Botões de Ação */}
       <div className="flex gap-2">
-        {/* Sincronização Completa (Sync + Enrich) */}
+        {/* Sincronização Completa (Sync + Enrich inline) */}
         {onFullSync && (
           <Button
             onClick={onFullSync}
-            disabled={isFullSyncing || isSyncing || isEnriching}
+            disabled={isFullSyncing || isSyncing}
             size="sm"
             variant="default"
             className="gap-2"
@@ -163,26 +159,6 @@ export function SyncStatusIndicator({
             <>
               <Download className="h-4 w-4" />
               Sincronizar
-            </>
-          )}
-        </Button>
-
-        <Button
-          onClick={onEnrich}
-          disabled={isEnriching || isFullSyncing}
-          size="sm"
-          variant="outline"
-          className="gap-2"
-        >
-          {isEnriching ? (
-            <>
-              <Sparkles className="h-4 w-4 animate-pulse" />
-              Enriquecendo...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              Enriquecer
             </>
           )}
         </Button>

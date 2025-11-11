@@ -10,8 +10,7 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
 import { 
   useGetDevolucoes, 
-  useSyncDevolucoes, 
-  useEnrichDevolucoes,
+  useSyncDevolucoes,
   useSyncStatus,
   useAutoEnrichment
 } from '@/features/devolucoes-online/hooks';
@@ -76,9 +75,8 @@ function DevolucoesMercadoLivreContent() {
     { enabled: selectedAccountIds.length > 0 }
   );
   
-  // ✅ REACT QUERY: Mutations
+  // ✅ REACT QUERY: Mutations (enrich removido - agora sync faz tudo)
   const syncMutation = useSyncDevolucoes();
-  const enrichMutation = useEnrichDevolucoes();
   
   // ⚡ Estado para sincronização completa
   const [isFullSyncing, setIsFullSyncing] = React.useState(false);
@@ -199,17 +197,7 @@ function DevolucoesMercadoLivreContent() {
     });
   };
 
-  const handleEnrich = () => {
-    if (selectedAccountIds.length === 0) {
-      toast.error('Selecione uma conta ML');
-      return;
-    }
-    
-    enrichMutation.mutate({
-      integrationAccountId: selectedAccountIds[0],
-      limit: 50,
-    });
-  };
+  // ✅ REMOVIDO: handleEnrich - agora sync-devolucoes faz enriquecimento inline
 
   // ⚡ Handler para sincronização completa (sync + enrich)
   const handleFullSync = async () => {
@@ -221,30 +209,19 @@ function DevolucoesMercadoLivreContent() {
     setIsFullSyncing(true);
     
     try {
-      // 1️⃣ Sincronizar devoluções primeiro
-      toast.loading('Iniciando sincronização completa...', { id: 'full-sync' });
+      setIsFullSyncing(true);
+      
+      // Sincronização completa agora faz tudo em uma chamada (sync + enrich inline)
+      toast.loading('Sincronização completa iniciada...', { id: 'full-sync' });
       
       await syncMutation.mutateAsync({
         integrationAccountId: selectedAccountIds[0],
         batchSize: 100,
       });
       
-      toast.success('Sincronização concluída! Iniciando enriquecimento...', { id: 'full-sync' });
-      
-      // 2️⃣ Aguardar 2 segundos antes de enriquecer
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // 3️⃣ Enriquecer devoluções
-      toast.loading('Enriquecendo dados...', { id: 'full-sync' });
-      
-      await enrichMutation.mutateAsync({
-        integrationAccountId: selectedAccountIds[0],
-        limit: 50,
-      });
-      
       toast.success('Sincronização completa concluída! 🎉', { id: 'full-sync' });
       
-      // 4️⃣ Atualizar dados
+      // Atualizar dados
       setTimeout(() => refetch(), 1000);
       
     } catch (error) {
@@ -297,10 +274,8 @@ function DevolucoesMercadoLivreContent() {
               <SyncStatusIndicator 
                 syncStatus={syncStatus}
                 onSync={handleSync}
-                onEnrich={handleEnrich}
                 onFullSync={handleFullSync}
                 isSyncing={syncMutation.isPending}
-                isEnriching={enrichMutation.isPending}
                 isFullSyncing={isFullSyncing}
               />
               

@@ -120,24 +120,9 @@ class DevolucaoService {
   }
 
   /**
-   * ✨ Enriquecer devoluções com dados de buyer e produto
+   * ✨ REMOVIDO: enrichDevolucoes - agora sync-devolucoes faz tudo inline (FASE 1 e 2)
+   * O enriquecimento de reviews via /reviews agora acontece dentro de sync-devolucoes
    */
-  async enrichDevolucoes(
-    integrationAccountId: string,
-    limit: number = 50
-  ): Promise<EnrichResponse> {
-    const { data, error } = await supabase.functions.invoke('enrich-devolucoes', {
-      body: {
-        integration_account_id: integrationAccountId,
-        limit,
-      },
-    });
-
-    if (error) throw error;
-    if (!data.success) throw new Error(data.error || 'Erro ao enriquecer devoluções');
-
-    return data;
-  }
 
   /**
    * 📊 Buscar estatísticas de sincronização

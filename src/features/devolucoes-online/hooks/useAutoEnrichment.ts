@@ -5,7 +5,6 @@
 
 import { useEffect, useRef, useMemo } from 'react';
 import { useSyncDevolucoes } from './mutations/useSyncDevolucoes';
-import { useEnrichDevolucoes } from './mutations/useEnrichDevolucoes';
 import { toast } from 'sonner';
 
 interface UseAutoEnrichmentOptions {
@@ -22,20 +21,19 @@ export function useAutoEnrichment({
   const hasTriggeredRef = useRef(false);
   const lastCheckLengthRef = useRef(0);
   const { mutate: syncDevolucoes } = useSyncDevolucoes();
-  const { mutate: enrichDevolucoes } = useEnrichDevolucoes();
 
   // ✅ Memoizar análise de dados faltantes
+  // NOTA: Após FASE 1 e 2, sync-devolucoes já enriquece tudo inline (incluindo /reviews)
   const analysisResult = useMemo(() => {
     if (data.length === 0) {
-      return { needsSync: false, needsEnrich: false, totalMissing: 0 };
+      return { needsSync: false, totalMissing: 0 };
     }
 
     let needsSync = false;
-    let needsEnrich = false;
     let missingCount = 0;
 
     for (const item of data) {
-      // ✅ Campos que precisam de re-sincronização
+      // ✅ Campos que precisam de sincronização completa
       const missingSyncFields = 
         !item.status_money || 
         !item.resource_type || 
@@ -43,31 +41,23 @@ export function useAutoEnrichment({
         !item.shipment_destination ||
         !item.delivery_limit ||
         !item.refund_at ||
-        !item.available_actions;
+        !item.available_actions ||
+        // Reviews agora vêm do sync-devolucoes
+        (item.has_review === true && (
+          !item.review_status || 
+          !item.review_method ||
+          !item.review_stage ||
+          !item.product_condition || 
+          !item.product_destination
+        ));
 
       if (missingSyncFields) {
         needsSync = true;
         missingCount++;
       }
-
-      // ✅ Campos que precisam de enriquecimento via /reviews
-      // IMPORTANTE: Só verificar se has_review === true
-      if (item.has_review === true) {
-        const missingReviewFields = 
-          !item.review_status || 
-          !item.review_method ||
-          !item.review_stage ||
-          !item.product_condition || 
-          !item.product_destination;
-
-        if (missingReviewFields) {
-          needsEnrich = true;
-          missingCount++;
-        }
-      }
     }
 
-    return { needsSync, needsEnrich, totalMissing: missingCount };
+    return { needsSync, totalMissing: missingCount };
   }, [data]);
 
   useEffect(() => {
@@ -90,10 +80,10 @@ export function useAutoEnrichment({
       return;
     }
 
-    const { needsSync, needsEnrich, totalMissing } = analysisResult;
+    const { needsSync, totalMissing } = analysisResult;
 
-    if (!needsSync && !needsEnrich) {
-      return; // ✅ Nada a fazer
+    if (!needsSync) {
+      return; // ✅ Nada a fazer - sync-devolucoes já enriquece tudo
     }
 
     hasTriggeredRef.current = true;
@@ -105,96 +95,33 @@ export function useAutoEnrichment({
       }, 30000); // Retry após 30 segundos
     };
 
-    toast.info('Enriquecimento automático iniciado', {
+    toast.info('Sincronização automática iniciada', {
       description: `Processando ${totalMissing} registros com dados faltantes...`,
       duration: 3000,
     });
 
-    // ✅ ESTRATÉGIA 1: Só precisa de Sync
-    if (needsSync && !needsEnrich) {
-      syncDevolucoes(
-        { integrationAccountId, batchSize: 100 },
-        {
-          onSuccess: () => {
-            toast.success('Sincronização concluída!', {
-              description: 'Dados atualizados com sucesso.',
-            });
-          },
-          onError: (error: Error) => {
-            toast.error('Erro na sincronização', {
-              description: error.message,
-            });
-            resetFlag();
-          },
-        }
-      );
-    }
-    
-    // ✅ ESTRATÉGIA 2: Só precisa de Enrich
-    else if (!needsSync && needsEnrich) {
-      enrichDevolucoes(
-        { integrationAccountId, limit: 100 },
-        {
-          onSuccess: () => {
-            toast.success('Enriquecimento concluído!', {
-              description: 'Dados de revisão atualizados.',
-            });
-          },
-          onError: (error: Error) => {
-            toast.error('Erro no enriquecimento', {
-              description: error.message,
-            });
-            resetFlag();
-          },
-        }
-      );
-    }
-    
-    // ✅ ESTRATÉGIA 3: Precisa de ambos (Sync → Enrich)
-    else {
-      syncDevolucoes(
-        { integrationAccountId, batchSize: 100 },
-        {
-          onSuccess: () => {
-            toast.success('Sincronização concluída! Iniciando enriquecimento...', {
-              duration: 2000,
-            });
-            
-            // Aguardar 2s antes de enriquecer
-            setTimeout(() => {
-              enrichDevolucoes(
-                { integrationAccountId, limit: 100 },
-                {
-                  onSuccess: () => {
-                    toast.success('Enriquecimento completo concluído!', {
-                      description: 'Todos os dados foram atualizados.',
-                    });
-                  },
-                  onError: (error: Error) => {
-                    toast.error('Erro no enriquecimento', {
-                      description: error.message,
-                    });
-                    resetFlag();
-                  },
-                }
-              );
-            }, 2000);
-          },
-          onError: (error: Error) => {
-            toast.error('Erro na sincronização', {
-              description: error.message,
-            });
-            resetFlag();
-          },
-        }
-      );
-    }
-  }, [integrationAccountId, enabled, data.length, analysisResult, syncDevolucoes, enrichDevolucoes]);
+    // ✅ Estratégia única: sync-devolucoes agora faz tudo (incluindo /reviews)
+    syncDevolucoes(
+      { integrationAccountId, batchSize: 100 },
+      {
+        onSuccess: () => {
+          toast.success('Sincronização concluída!', {
+            description: 'Dados e reviews atualizados com sucesso.',
+          });
+        },
+        onError: (error: Error) => {
+          toast.error('Erro na sincronização', {
+            description: error.message,
+          });
+          resetFlag();
+        },
+      }
+    );
+  }, [integrationAccountId, enabled, data.length, analysisResult, syncDevolucoes]);
 
   return {
     hasTriggered: hasTriggeredRef.current,
     needsSync: analysisResult.needsSync,
-    needsEnrich: analysisResult.needsEnrich,
     totalMissing: analysisResult.totalMissing,
   };
 }
