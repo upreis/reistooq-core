@@ -94,68 +94,14 @@ export const useProducts = () => {
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
       // Buscar produtos com estoque no local
+      // Usar select('*') na relação produtos para garantir que TODOS os campos sejam retornados
+      // incluindo campos dinâmicos que podem ser adicionados no futuro
       let query = supabase
         .from('estoque_por_local')
         .select(`
           quantidade,
           local_id,
-          produtos (
-            id,
-            sku_interno,
-            nome,
-            categoria,
-            descricao,
-            codigo_barras,
-            quantidade_atual,
-            estoque_minimo,
-            estoque_maximo,
-            preco_custo,
-            preco_venda,
-            localizacao,
-            unidade_medida_id,
-            status,
-            ativo,
-            url_imagem,
-            created_at,
-            updated_at,
-            ultima_movimentacao,
-            organization_id,
-            integration_account_id,
-            sku_pai,
-            eh_produto_pai,
-            material,
-            cor,
-            peso_unitario_g,
-            peso_cx_master_kg,
-            comprimento,
-            largura,
-            altura,
-            cbm_cubagem,
-            cubagem_cm3,
-            ncm,
-            pis,
-            cofins,
-            imposto_importacao,
-            ipi,
-            icms,
-            url_imagem_fornecedor,
-            package,
-            package_info,
-            observacoes,
-            unidade,
-            pcs_ctn,
-            sob_encomenda,
-            dias_preparacao,
-            peso_liquido_kg,
-            peso_bruto_kg,
-            numero_volumes,
-            tipo_embalagem,
-            codigo_cest,
-            origem,
-            categoria_principal,
-            categoria_nivel2,
-            subcategoria
-          )
+          produtos!inner(*)
         `)
         .eq('local_id', filters.local_id)
         .order('created_at', { ascending: false });
