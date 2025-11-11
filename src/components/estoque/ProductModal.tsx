@@ -555,6 +555,27 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 )}
               />
 
+              {/* Descrição */}
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descrição detalhada do produto..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {/* Categorias Hierárquicas - Apenas 2 níveis */}
                <div className="md:col-span-2 space-y-4">
                  <h4 className="text-sm font-medium">Categorização (Opcional)</h4>
@@ -1105,25 +1126,6 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 />
               </div>
             </div>
-
-            {/* Descrição */}
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descrição detalhada do produto..."
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             {/* Upload de Imagem */}
             <div className="space-y-2">
