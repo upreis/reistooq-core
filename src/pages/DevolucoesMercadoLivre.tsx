@@ -162,17 +162,16 @@ function DevolucoesMercadoLivreContent() {
         searchTerm
       });
       
-      // Sincronizar para cada conta selecionada e acumular dados
+      // Buscar para cada conta selecionada e acumular dados
       const allData: any[] = [];
       
       for (const accountId of selectedAccountIds) {
         console.log(`📡 Buscando conta ${accountId}...`);
         
-        const result = await supabase.functions.invoke('sync-devolucoes', {
+        // ✅ NOVA EDGE FUNCTION: Busca DIRETO da API ML sem cache
+        const result = await supabase.functions.invoke('get-devolucoes-direct', {
           body: {
             integration_account_id: accountId,
-            batch_size: 100,
-            incremental: false, // ✅ Sempre buscar do período selecionado
             date_from: dateFromISO,
             date_to: dateToISO,
           },
