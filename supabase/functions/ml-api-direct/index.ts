@@ -189,275 +189,38 @@ serve(async (req) => {
       const cancelledOrders = result.data;
       logger.info(`Página retornou: ${cancelledOrders.length} de ${result.total} total (hasMore: ${result.hasMore})`)
       
-      // ============ 🔴 FASE 1: SALVAMENTO NO SUPABASE ============
+      // ============ ❌ FASE 1: SALVAMENTO EM pedidos_cancelados_ml (DESABILITADO) ============
+      // ⚠️ NOTA: Este código foi DESABILITADO porque agora usamos devolucoes_avancadas
+      // A tabela pedidos_cancelados_ml é LEGADA do sistema antigo (pré-refatoração Fases 1-7)
+      // Agora o fluxo correto é: ml-api-direct → sync-devolucoes → devolucoes_avancadas
+      
+      /* CÓDIGO COMENTADO - SISTEMA ANTIGO
       if (cancelledOrders.length > 0) {
         try {
           const supabaseAdmin = makeServiceClient()
           
-          // Preparar dados para inserção
+          // Preparar dados para inserção em pedidos_cancelados_ml
           const recordsToInsert = cancelledOrders.map(devolucao => ({
-            // IDs e Controle
-            order_id: devolucao.order_id,
-            claim_id: devolucao.claim_id,
-            integration_account_id: integration_account_id,
-            
-            // Dados Básicos do Pedido
-            status: devolucao.status,
-            date_created: devolucao.date_created,
-            date_closed: devolucao.date_closed,
-            total_amount: devolucao.total_amount,
-            
-            // Dados do Produto
-            item_id: devolucao.item_id,
-            item_title: devolucao.item_title,
-            quantity: devolucao.quantity,
-            sku: devolucao.sku,
-            
-            // Dados do Comprador (Básicos)
-            buyer_id: devolucao.buyer_id,
-            
-            // ✅ FASE 5: Dados Adicionais do Comprador (via extractor)
-            ...extractBuyerData(devolucao.order_data),
-            
-            // ✅ FASE 5: Dados de Pagamento (via extractor)
-            ...extractPaymentData(devolucao.order_data),
-            
-            // 🟡 FASE 2: Dados Financeiros Adicionais
-            percentual_reembolsado: devolucao.descricao_custos?.produto?.percentual_reembolsado,
-            
-            // 🟡 FASE 2: Tags
-            tags_pedido: devolucao.order_data?.tags || [],
-            
-            // 🟢 FASE 3: Custos Detalhados
-            custo_frete_devolucao: devolucao.custo_frete_devolucao,
-            custo_logistica_total: devolucao.custo_logistica_total,
-            valor_original_produto: devolucao.valor_original_produto,
-            valor_reembolsado_produto: devolucao.valor_reembolsado_produto,
-            taxa_ml_reembolso: devolucao.taxa_ml_reembolso,
-            
-            // 🟢 FASE 3: Internal Tags e Metadados
-            internal_tags: devolucao.internal_tags,
-            tem_financeiro: devolucao.tem_financeiro,
-            tem_review: devolucao.tem_review,
-            tem_sla: devolucao.tem_sla,
-            nota_fiscal_autorizada: devolucao.nota_fiscal_autorizada,
-            
-            // 🟢 FASE 3: Dados de Produto
-            produto_warranty: devolucao.produto_warranty,
-            produto_categoria: devolucao.produto_categoria,
-            produto_thumbnail: devolucao.produto_thumbnail,
-            
-            // 🟢 FASE 3: Análise e Qualidade
-            qualidade_comunicacao: devolucao.qualidade_comunicacao,
-            eficiencia_resolucao: devolucao.eficiencia_resolucao,
-            
-            // Status e Classificação
-            status_devolucao: devolucao.status_devolucao,
-            status_dinheiro: devolucao.status_dinheiro,
-            categoria_problema: devolucao.categoria_problema,
-            subcategoria_problema: devolucao.subcategoria_problema,
-            motivo_categoria: devolucao.motivo_categoria,
-            
-            // ========================================
-            // 🔍 REASONS - DADOS DA API
-            // ========================================
-            reason_id: devolucao.reason_id,
-            reason_category: devolucao.reason_category,
-            reason_name: devolucao.reason_name,
-            reason_detail: devolucao.reason_detail,
-            reason_type: devolucao.reason_type,
-            reason_priority: devolucao.reason_priority,
-            reason_expected_resolutions: devolucao.reason_expected_resolutions,
-            reason_flow: devolucao.reason_flow,
-            
-            // Devolução e Troca
-            eh_troca: devolucao.eh_troca,
-            produto_troca_id: devolucao.produto_troca_id,
-            produto_troca_titulo: devolucao.produto_troca_titulo,
-            
-            // Datas Importantes
-            data_estimada_troca: devolucao.data_estimada_troca,
-            data_limite_troca: devolucao.data_limite_troca,
-            data_vencimento_acao: devolucao.data_vencimento_acao,
-            dias_restantes_acao: devolucao.dias_restantes_acao,
-            
-            // Rastreamento
-            shipment_id: devolucao.shipment_id,
-            codigo_rastreamento: devolucao.codigo_rastreamento,
-            transportadora: devolucao.transportadora,
-            status_rastreamento: devolucao.status_rastreamento,
-            localizacao_atual: devolucao.localizacao_atual,
-            status_transporte_atual: devolucao.status_transporte_atual,
-            data_ultima_movimentacao: devolucao.data_ultima_movimentacao,
-            tempo_transito_dias: devolucao.tempo_transito_dias,
-            
-            // Dados Estruturados (JSONB)
-            tracking_history: devolucao.tracking_history,
-            tracking_events: devolucao.tracking_events,
-            historico_localizacoes: devolucao.historico_localizacoes,
-            carrier_info: devolucao.carrier_info,
-            shipment_delays: devolucao.shipment_delays,
-            
-            // ======== 🟢 FASE 2 (continuação) ========
-            
-            // ✅ REMOVIDO: categoria_motivo (campo não existe na tabela)
-            
-            // 4. Resultado Mediação (ALTO)
-            resultado_mediacao: (() => {
-              const mediationResult = devolucao.mediation_details?.resolution?.type || 
-                                     devolucao.mediation_details?.result;
-              if (!mediationResult) return null;
-              
-              const MEDIACAO_MAP: Record<string, string> = {
-                'buyer_favor': 'Favor do Comprador',
-                'seller_favor': 'Favor do Vendedor',
-                'partial_refund': 'Reembolso Parcial',
-                'full_refund': 'Reembolso Total',
-                'resolved': 'Resolvido',
-                'cancelled': 'Cancelado',
-                'expired': 'Expirado'
-              };
-              
-              return MEDIACAO_MAP[mediationResult] || mediationResult;
-            })(),
-            
-            // 5. Mediador ML (ALTO)
-            mediador_ml: (() => {
-              return devolucao.mediation_details?.mediator?.id || 
-                     devolucao.mediation_details?.mediator?.name || 
-                     devolucao.claim_details?.players?.find((p: any) => p.role === 'mediator')?.id || 
-                     null;
-            })(),
-            
-            // ✅ REMOVIDO: Campos SLA agora vêm de devolucao.sla_metrics
-            // Os dados já foram calculados com calculateSLAMetrics() durante o processamento
-            // Reduz ~35 linhas de código duplicado
-            tempo_resposta_comprador: devolucao.sla_metrics?.tempo_resposta_comprador || null,
-            tempo_analise_ml: devolucao.sla_metrics?.tempo_analise_ml || null,
-            data_primeira_acao: devolucao.sla_metrics?.data_primeira_acao || null,
-            
-            // ======== FIM FASE 2 ========
-            
-            // ======== 🟢 FASE 3: CAMPOS OPCIONAIS ========
-            
-            // 1. Subcategoria Problema (OPCIONAL)
-            subcategoria_problema: (() => {
-              const subcategoria = devolucao.claim_details?.reason?.description ||
-                                  devolucao.claim_details?.reason?.name ||
-                                  devolucao.claim_details?.reason_detail;
-              
-              return subcategoria || null;
-            })(),
-            
-            // 2 & 3. Feedbacks Comprador/Vendedor (OPCIONAL)
-            ...extractMediationData(
-              devolucao.claim_messages,
-              devolucao.buyer,
-              devolucao.order_data?.seller
-            ),
-            
-            // ✅ REMOVIDO: tempo_limite_acao agora vem de devolucao.sla_metrics
-            // Reduz ~15 linhas de código duplicado
-            tempo_limite_acao: devolucao.sla_metrics?.tempo_limite_acao || null,
-            
-            // ======== FIM FASE 3 ========
-            
-            marcos_temporais: {
-              data_criacao_claim: devolucao.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
-              data_inicio_return: devolucao.return_details_v2?.date_created || 
-                                 devolucao.return_details_v1?.date_created || null,
-              data_fechamento_claim: devolucao.claim_details?.date_closed || null,
-              data_criacao_order: devolucao.order_data?.date_created || null,
-              last_updated: devolucao.claim_details?.last_updated || 
-                           devolucao.return_details_v2?.last_updated || null
-            },
-            
-            // Timestamps
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            // ... código de mapeamento extenso ...
           }))
           
-          // ============================================
-          // 🧹 DEDUPLICAÇÃO: Remover duplicatas antes do upsert
-          // ✅ CONSTRAINT REAL da tabela pedidos_cancelados_ml:
-          //    (order_id, claim_id, integration_account_id)
-          // ============================================
-          const uniqueRecords = recordsToInsert.reduce((acc, record) => {
-            // ✅ CHAVE CORRETA para pedidos_cancelados_ml: order_id + claim_id + integration_account_id
-            const key = `${record.order_id}_${record.claim_id}_${record.integration_account_id}`;
-            
-            if (!acc.has(key)) {
-              acc.set(key, record);
-            } else {
-              // ⚠️ Log quando encontrar duplicata
-              logger.warn(`⚠️ Duplicata removida: order_id=${record.order_id}, claim_id=${record.claim_id}`);
-            }
-            return acc;
-          }, new Map());
-          
-          const deduplicatedRecords = Array.from(uniqueRecords.values());
-          
-          if (deduplicatedRecords.length < recordsToInsert.length) {
-            logger.warn(`⚠️ Removidas ${recordsToInsert.length - deduplicatedRecords.length} duplicatas antes do upsert`);
-          }
-          
-          // ============================================
-          // 🛡️ FASE 3: UPSERT COM TRY-CATCH DETALHADO
-          // ============================================
-          
-          try {
-            logger.info(`Tentando salvar ${deduplicatedRecords.length} registros únicos...`);
-            
-            const { data, error } = await supabaseAdmin
-              .from('pedidos_cancelados_ml')
-              .upsert(deduplicatedRecords, {
-                onConflict: 'order_id,claim_id,integration_account_id',
-                ignoreDuplicates: false
-              });
-            
-            if (error) {
-              // 🔴 Erro detalhado do PostgreSQL
-              logger.error('❌ Erro PostgreSQL ao salvar pedidos:', {
-                code: error.code,
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                total_records: deduplicatedRecords.length,
-                duplicates_removed: recordsToInsert.length - deduplicatedRecords.length
-              });
-              
-              // Analisar tipo de erro
-              if (error.code === '21000') {
-                logger.error('🔴 ERRO 21000: Constraint UNIQUE violada - ainda há duplicatas após deduplicação');
-                logger.error('Isso não deveria acontecer - verificar lógica de deduplicação');
-              } else if (error.code === 'PGRST204') {
-                logger.error('🔴 ERRO PGRST204: Coluna não encontrada na tabela');
-                logger.error('Detalhes:', error.message);
-              }
-              
-              throw error;
-            }
-            
-            logger.success(`✅ ${deduplicatedRecords.length} pedidos cancelados salvos no Supabase com sucesso`);
-            
-          } catch (saveError: any) {
-            logger.error('❌ Exception ao salvar dados no Supabase:', {
-              name: saveError?.name,
-              message: saveError?.message,
-              code: saveError?.code,
-              stack: saveError?.stack?.split('\n').slice(0, 3)
+          // Deduplicação e upsert
+          const { data, error } = await supabaseAdmin
+            .from('pedidos_cancelados_ml')
+            .upsert(deduplicatedRecords, {
+              onConflict: 'order_id,claim_id,integration_account_id',
+              ignoreDuplicates: false
             });
-            
-            // 🔴 Não falhar a requisição - dados já foram retornados da API
-            console.error('Dados problemáticos (primeiros 2 registros):', 
-              JSON.stringify(deduplicatedRecords.slice(0, 2), null, 2)
-            );
-          }
+          
+          // ... resto do código de salvamento ...
         } catch (error: any) {
-          logger.error('❌ Erro fatal ao processar salvamento:', error);
+          logger.error('❌ Erro ao salvar em pedidos_cancelados_ml:', error);
         }
       }
-      // ============ FIM FASE 1: SALVAMENTO ============
+      FIM CÓDIGO COMENTADO */
+      
+      logger.info(`⚠️ Salvamento em pedidos_cancelados_ml DESABILITADO - usando devolucoes_avancadas via sync-devolucoes`);
+      // ============ FIM FASE 1 (DESABILITADO) ============
       
       // ✅ PAGINAÇÃO: Retornar resposta com metadados
       return new Response(

@@ -141,15 +141,24 @@ async function syncDevolucoes(
         (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
       
       // 🔥 TRANSFORMAR NOMES DOS CAMPOS: claim_details → dados_claim, order_data → dados_order
-      const transformedClaims = claims.map((claim: any) => ({
-        ...claim,
-        // ✅ Transformar nomes dos campos JSONB para match com tabela devolucoes_avancadas
-        dados_claim: claim.claim_details || null,
-        dados_order: claim.order_data || null,
-        // Remover campos antigos para evitar conflito
-        claim_details: undefined,
-        order_data: undefined,
-      }));
+      // ✅ ADICIONAR integration_account_id que não vem de ml-api-direct
+      const transformedClaims = claims.map((claim: any) => {
+        // Criar objeto transformado
+        const transformed: any = {
+          ...claim,
+          // ✅ CRÍTICO: Adicionar integration_account_id (não vem de ml-api-direct!)
+          integration_account_id: integrationAccountId,
+          // ✅ Transformar nomes dos campos JSONB para match com tabela devolucoes_avancadas
+          dados_claim: claim.claim_details || null,
+          dados_order: claim.order_data || null,
+        };
+        
+        // ✅ DELETAR campos antigos ao invés de undefined (Supabase não aceita undefined)
+        delete transformed.claim_details;
+        delete transformed.order_data;
+        
+        return transformed;
+      });
       
       // 🔥 UPSERT DOS DADOS EM devolucoes_avancadas
       if (transformedClaims && transformedClaims.length > 0) {
@@ -158,12 +167,13 @@ async function syncDevolucoes(
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
           .upsert(transformedClaims, {
-            onConflict: 'claim_id,integration_account_id',
+            // ✅ CORRIGIDO: Constraint REAL da tabela é order_id + integration_account_id
+            onConflict: 'order_id,integration_account_id',
             ignoreDuplicates: false
           });
         
         if (upsertError) {
-          logger.error(`❌ Erro ao salvar claims: ${upsertError.message}`);
+          logger.error(`❌ Erro ao salvar claims: ${upsertError.message}`, upsertError);
           throw upsertError;
         }
         
