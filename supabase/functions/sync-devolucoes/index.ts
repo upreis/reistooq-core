@@ -328,9 +328,8 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
     if (validClaims.length > 0) {
       logger.info(`💾 Salvando ${validClaims.length} claims...`);
       
-      const claimsWithOrg = validClaims.map((claim: any) => ({
+      const claimsToSave = validClaims.map((claim: any) => ({
         ...claim,
-        organization_id: account.organization_id,
         integration_account_id: integrationAccountId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -338,7 +337,7 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
       
       const { error: upsertError } = await serviceClient
         .from('devolucoes_avancadas')
-        .upsert(claimsWithOrg, {
+        .upsert(claimsToSave, {
           onConflict: 'claim_id',
           ignoreDuplicates: false
         });
