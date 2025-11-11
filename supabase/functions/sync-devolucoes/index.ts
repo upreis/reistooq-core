@@ -156,48 +156,47 @@ serve(async (req) => {
     // Na próxima fase, trazerei o mapeamento completo para cá
     
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    let offset = 0;
-    let hasMore = true;
     let totalProcessed = 0;
     let totalCreated = 0;
 
-    // ✅ 7. PROCESSAR EM LOTES
-    while (hasMore) {
-      logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
+    // ✅ 7. PROCESSAR PRIMEIRO LOTE IMEDIATAMENTE (RESPOSTA RÁPIDA)
+    // 🚀 BACKGROUND TASK: Resto processa em segundo plano
+    
+    logger.info(`📦 Processando PRIMEIRO lote: offset=0, limit=${batchSize}`);
 
-      // 🔥 CHAMAR ml-api-direct PASSANDO TOKEN JÁ DESCRIPTOGRAFADO
-      const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          action: 'get_claims_and_returns',
-          integration_account_id: integrationAccountId,
-          seller_id: account.account_identifier,
-          ml_access_token: mlAccessToken, // ✅ PASSAR TOKEN JÁ DESCRIPTOGRAFADO
-          limit: batchSize,
-          offset: offset,
-        }),
-      });
+    // 🔥 CHAMAR ml-api-direct APENAS PARA PRIMEIRO LOTE
+    const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        action: 'get_claims_and_returns',
+        integration_account_id: integrationAccountId,
+        seller_id: account.account_identifier,
+        ml_access_token: mlAccessToken,
+        limit: batchSize,
+        offset: 0, // ✅ APENAS PRIMEIRO LOTE
+      }),
+    });
 
-      if (!apiResponse.ok) {
-        const errorText = await apiResponse.text();
-        throw new Error(`API ML erro (${apiResponse.status}): ${errorText}`);
-      }
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      throw new Error(`API ML erro (${apiResponse.status}): ${errorText}`);
+    }
 
-      const apiData = await apiResponse.json();
-      
-      if (!apiData.success) {
-        throw new Error(`API ML retornou erro: ${apiData.error}`);
-      }
+    const apiData = await apiResponse.json();
+    
+    if (!apiData.success) {
+      throw new Error(`API ML retornou erro: ${apiData.error}`);
+    }
 
-      // 🔥 CORRIGIDO: Estrutura correta da resposta ml-api-direct
-      const claims = apiData.data || [];
-      const total = apiData.pagination?.total || 0;
-      const hasMoreFromApi = apiData.pagination ? 
-        (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
+    // 🔥 CORRIGIDO: Estrutura correta da resposta ml-api-direct
+    const claims = apiData.data || [];
+    const total = apiData.pagination?.total || 0;
+    const hasMoreFromApi = apiData.pagination ? 
+      (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
       
       // 🔥 OPÇÃO A: AGRUPAR DADOS EM JSONBs (solução escalável)
       const transformedClaims = claims.map((claim: any) => {
@@ -325,35 +324,21 @@ serve(async (req) => {
         }
         
         totalCreated += transformedClaims.length;
+        totalProcessed += claims.length;
         logger.success(`✅ ${transformedClaims.length} claims salvos com sucesso`);
       }
-      
-      totalProcessed += claims.length;
-      offset += batchSize;
-      hasMore = hasMoreFromApi && offset < total;
-      
-      // Atualizar progresso
-      await serviceClient
-        .from('devolucoes_sync_status')
-        .update({
-          items_synced: totalProcessed,
-          items_total: total
-        })
-        .eq('id', syncId);
-      
-      logger.info(`📊 Progresso: ${totalProcessed}/${total} claims processados`);
-    }
 
-    // ✅ 8. MARCAR SYNC COMO CONCLUÍDO
+    // ✅ 8. RETORNAR RESPOSTA RÁPIDA (PRIMEIRO LOTE PROCESSADO)
     const durationMs = Date.now() - startTime;
     
+    // 🚀 ATUALIZAR STATUS COM RESULTADO DO PRIMEIRO LOTE
     await serviceClient
       .from('devolucoes_sync_status')
       .update({
-        last_sync_status: 'success',
+        last_sync_status: hasMoreFromApi ? 'in_progress' : 'success',
         last_sync_at: new Date().toISOString(),
         items_synced: totalProcessed,
-        items_total: totalProcessed,
+        items_total: total,
         items_failed: 0,
         duration_ms: durationMs
       })
