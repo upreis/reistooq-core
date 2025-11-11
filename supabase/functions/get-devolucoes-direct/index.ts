@@ -158,16 +158,80 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
+    // ✅ ENRIQUECER DADOS - Buscar pedido, mensagens e return para cada claim
+    console.log('[get-devolucoes-direct] Enriquecendo dados...');
+    const enrichedClaims = await Promise.all(
+      claims.map(async (claim: any) => {
+        try {
+          // Buscar dados do pedido
+          let orderData = null;
+          if (claim.resource_id) {
+            try {
+              const orderRes = await fetch(
+                `https://api.mercadolibre.com/orders/${claim.resource_id}`,
+                { headers: { 'Authorization': `Bearer ${accessToken}` } }
+              );
+              if (orderRes.ok) {
+                orderData = await orderRes.json();
+              }
+            } catch (err) {
+              console.error(`[get-devolucoes-direct] Erro ao buscar order ${claim.resource_id}:`, err);
+            }
+          }
+
+          // Buscar mensagens do claim
+          let messagesData = null;
+          try {
+            const messagesRes = await fetch(
+              `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
+              { headers: { 'Authorization': `Bearer ${accessToken}` } }
+            );
+            if (messagesRes.ok) {
+              messagesData = await messagesRes.json();
+            }
+          } catch (err) {
+            console.error(`[get-devolucoes-direct] Erro ao buscar messages do claim ${claim.id}:`, err);
+          }
+
+          // Buscar dados de return
+          let returnData = null;
+          try {
+            const returnRes = await fetch(
+              `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
+              { headers: { 'Authorization': `Bearer ${accessToken}` } }
+            );
+            if (returnRes.ok) {
+              returnData = await returnRes.json();
+            }
+          } catch (err) {
+            // Return pode não existir, não logar erro
+          }
+
+          return {
+            ...claim,
+            order_data: orderData,
+            claim_messages: messagesData,
+            return_details_v2: returnData
+          };
+        } catch (err) {
+          console.error(`[get-devolucoes-direct] Erro ao enriquecer claim ${claim.id}:`, err);
+          return claim;
+        }
+      })
+    );
+
+    console.log(`[get-devolucoes-direct] ${enrichedClaims.length} claims enriquecidos`);
+
     // ✅ MAPEAR DADOS USANDO MAPPERS CONSOLIDADOS
     console.log('[get-devolucoes-direct] Mapeando dados...');
-    const mappedClaims = claims.map((claim: any) => {
+    const mappedClaims = enrichedClaims.map((claim: any) => {
       try {
         // Estruturar dados no formato esperado pelos mappers
         const item = {
           claim_details: claim,
-          order_data: claim.resource_id ? { id: claim.resource_id } : null,
-          claim_messages: null,
-          return_details_v2: null,
+          order_data: claim.order_data,
+          claim_messages: claim.claim_messages,
+          return_details_v2: claim.return_details_v2,
           amount: claim.seller_amount || null
         };
 
