@@ -9,8 +9,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
 import { 
-  useGetDevolucoes, 
-  useSyncDevolucoes,
+  useGetDevolucoes,
   useSyncStatus,
   useAutoEnrichment
 } from '@/features/devolucoes-online/hooks';
@@ -75,11 +74,7 @@ function DevolucoesMercadoLivreContent() {
     { enabled: selectedAccountIds.length > 0 }
   );
   
-  // ✅ REACT QUERY: Mutations (enrich removido - agora sync faz tudo)
-  const syncMutation = useSyncDevolucoes();
-  
-  // ⚡ Estado para sincronização completa
-  const [isFullSyncing, setIsFullSyncing] = React.useState(false);
+  // ❌ REMOVIDO: syncMutation e isFullSyncing - sincronização via cron automático
 
   // 🤖 Auto-enriquecimento: detecta dados faltantes e dispara em background
   useAutoEnrichment({
@@ -185,52 +180,8 @@ function DevolucoesMercadoLivreContent() {
     }
   };
 
-  const handleSync = () => {
-    if (selectedAccountIds.length === 0) {
-      toast.error('Selecione uma conta ML');
-      return;
-    }
-    
-    syncMutation.mutate({
-      integrationAccountId: selectedAccountIds[0],
-      batchSize: 100,
-    });
-  };
-
-  // ✅ REMOVIDO: handleEnrich - agora sync-devolucoes faz enriquecimento inline
-
-  // ⚡ Handler para sincronização completa (sync + enrich)
-  const handleFullSync = async () => {
-    if (selectedAccountIds.length === 0) {
-      toast.error('Selecione uma conta ML');
-      return;
-    }
-    
-    setIsFullSyncing(true);
-    
-    try {
-      setIsFullSyncing(true);
-      
-      // Sincronização completa agora faz tudo em uma chamada (sync + enrich inline)
-      toast.loading('Sincronização completa iniciada...', { id: 'full-sync' });
-      
-      await syncMutation.mutateAsync({
-        integrationAccountId: selectedAccountIds[0],
-        batchSize: 100,
-      });
-      
-      toast.success('Sincronização completa concluída! 🎉', { id: 'full-sync' });
-      
-      // Atualizar dados
-      setTimeout(() => refetch(), 1000);
-      
-    } catch (error) {
-      console.error('Erro na sincronização completa:', error);
-      toast.error('Erro na sincronização completa', { id: 'full-sync' });
-    } finally {
-      setIsFullSyncing(false);
-    }
-  };
+  // ❌ REMOVIDO: Sincronização manual - agora acontece via cron job automático
+  // O cron job executa sync-devolucoes com sync_all: true a cada hora
 
   const handleExport = () => {
     toast.info('Exportação em desenvolvimento');
@@ -270,14 +221,7 @@ function DevolucoesMercadoLivreContent() {
                 onRefresh={() => refetch()}
               />
               
-              {/* ✅ NOVO: Indicador de Sync com Sincronização Completa */}
-              <SyncStatusIndicator 
-                syncStatus={syncStatus}
-                onSync={handleSync}
-                onFullSync={handleFullSync}
-                isSyncing={syncMutation.isPending}
-                isFullSyncing={isFullSyncing}
-              />
+              {/* ❌ REMOVIDO: SyncStatusIndicator - sincronização agora é automática via cron */}
               
               <CriticalDeadlinesNotification 
                 devolucoes={devolucoesData?.data || []}
