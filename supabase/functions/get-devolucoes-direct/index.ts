@@ -88,17 +88,23 @@ serve(async (req) => {
       throw new Error('Token ML não disponível. Reconecte a integração.');
     }
 
-    // ✅ BUSCAR CLAIMS DA API ML
+    // ✅ BUSCAR CLAIMS DA API ML com filtros corretos
     const params = new URLSearchParams({
-      seller_id: sellerId,
       offset: '0',
-      limit: '200', // Buscar mais dados de uma vez
+      limit: '200',
       sort: 'date_created',
       order: 'desc'
     });
 
-    // ⚠️ API ML NÃO aceita filtro de data no endpoint
-    // Vamos filtrar client-side depois
+    // Adicionar filtros de data se fornecidos (OBRIGATÓRIO para API ML)
+    if (date_from) {
+      params.append('date_created.from', date_from + 'T00:00:00.000-00:00');
+    }
+    if (date_to) {
+      params.append('date_created.to', date_to + 'T23:59:59.999-00:00');
+    }
+
+    // ⚠️ API ML NÃO aceita seller_id como filtro - usa date_created
     const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
     
     console.log('[get-devolucoes-direct] Chamando API ML:', claimsUrl);
@@ -117,21 +123,6 @@ serve(async (req) => {
     let claims = claimsData.data || [];
 
     console.log(`[get-devolucoes-direct] ${claims.length} claims retornados pela API ML`);
-
-    // ✅ FILTRAR POR DATA CLIENT-SIDE (igual /reclamacoes)
-    if (date_from || date_to) {
-      const dateFromObj = date_from ? new Date(date_from) : null;
-      const dateToObj = date_to ? new Date(date_to) : null;
-
-      claims = claims.filter((claim: any) => {
-        const claimDate = new Date(claim.date_created);
-        if (dateFromObj && claimDate < dateFromObj) return false;
-        if (dateToObj && claimDate > dateToObj) return false;
-        return true;
-      });
-
-      console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
-    }
 
     // ✅ RETORNAR DADOS DIRETO (sem salvar no banco)
     return new Response(
