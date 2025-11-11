@@ -24,11 +24,13 @@ import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/De
 import { UrgencyFilters } from '@/features/devolucoes-online/components/filters/UrgencyFilters';
 import { CriticalDeadlinesNotification } from '@/features/devolucoes-online/components/notifications/CriticalDeadlinesNotification';
 import { SyncStatusIndicator } from '@/features/devolucoes-online/components/sync/SyncStatusIndicator';
+import { SchemaValidationPanel } from '@/features/devolucoes-online/components/SchemaValidationPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { subDays, startOfDay, endOfDay, format } from 'date-fns';
+import { Database, List } from 'lucide-react';
 import type { StatusAnalise } from '@/features/devolucoes-online/types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '@/features/devolucoes-online/types/devolucao-analise.types';
 
@@ -235,139 +237,147 @@ function DevolucoesMercadoLivreContent() {
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* Header com Notificação */}
+          {/* Tabs: Devoluções vs Schema Validation */}
           <div className="px-4 md:px-6">
-            <div className="flex items-center justify-between gap-4">
-              <DevolucaoHeaderSection 
-                isRefreshing={isLoading}
-                onRefresh={() => refetch()}
-              />
-              
-              {/* ❌ REMOVIDO: SyncStatusIndicator - sincronização agora é automática via cron */}
-              
-              <CriticalDeadlinesNotification 
-                devolucoes={devolucoesData?.data || []}
-                onClick={() => {
-                  setCurrentUrgencyFilter('critical');
-                  setUrgencyFilter((dev: any) => {
-                    const shipmentHours = dev.deadlines?.shipment_deadline_hours_left;
-                    const reviewHours = dev.deadlines?.seller_review_deadline_hours_left;
-                    return (shipmentHours !== null && shipmentHours < 24) ||
-                           (reviewHours !== null && reviewHours < 24);
-                  });
-                  toast.info('Mostrando apenas devoluções críticas');
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="px-4 md:px-6">
-            <DevolucaoStatsCards stats={stats} />
-          </div>
-
-          {/* Filtros de Urgência */}
-          {(devolucoesData?.data?.length || 0) > 0 && (
-            <div className="px-4 md:px-6">
-              <UrgencyFilters 
-                devolucoes={devolucoesData?.data || []}
-                onFilterChange={setUrgencyFilter}
-                currentFilter={currentUrgencyFilter}
-                onCurrentFilterChange={setCurrentUrgencyFilter}
-              />
-            </div>
-          )}
-
-          {/* Quick Filters */}
-          {(devolucoesData?.data?.length || 0) > 0 && (
-            <div className="px-4 md:px-6">
-              <DevolucaoQuickFilters 
-                devolucoes={devolucoesData?.data || []}
-                onFilteredDataChange={() => {}}
-              />
-            </div>
-          )}
-
-          {/* Controls Bar */}
-          <div className="px-4 md:px-6 flex justify-end">
-            <DevolucaoControlsBar 
-              autoRefreshEnabled={autoRefreshEnabled}
-              autoRefreshInterval={30000}
-              onAutoRefreshToggle={setAutoRefreshEnabled}
-              onAutoRefreshIntervalChange={() => {}}
-              onExport={handleExport}
-              onClear={handleClear}
-              onRefresh={() => refetch()}
-              totalRecords={devolucoesData?.pagination?.total || 0}
-              isRefreshing={isLoading}
-            />
-          </div>
-
-          {/* Filters Avançados */}
-          <div className="px-4 md:px-6">
-            <DevolucaoAdvancedFiltersBar 
-              accounts={accounts}
-              selectedAccountIds={selectedAccountIds}
-              onAccountsChange={setSelectedAccountIds}
-              periodo={periodo}
-              onPeriodoChange={setPeriodo}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onBuscar={handleBuscar}
-              isLoading={isLoading}
-              onCancel={() => {}}
-            />
-          </div>
-
-          {/* Tabs Ativas/Histórico */}
-          <div className="px-4 md:px-6">
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'ativas' | 'historico')}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="ativas">
-                  Ativas ({devolucoesFiltradas.ativas.length})
+            <Tabs defaultValue="devolucoes" className="w-full">
+              <TabsList>
+                <TabsTrigger value="devolucoes">
+                  <List className="h-4 w-4 mr-2" />
+                  Devoluções
                 </TabsTrigger>
-                <TabsTrigger value="historico">
-                  Histórico ({devolucoesFiltradas.historico.length})
+                <TabsTrigger value="validation">
+                  <Database className="h-4 w-4 mr-2" />
+                  Validação de Schema
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="ativas">
-                <Card>
-                  <DevolucaoTable 
-                    devolucoes={devolucoesFiltradas.ativas}
-                    isLoading={isLoading}
-                    error={error?.message || null}
-                    onStatusChange={handleStatusChange}
+              {/* Tab: Devoluções */}
+              <TabsContent value="devolucoes" className="space-y-6 mt-6">
+                {/* Header com Notificação */}
+                <div className="flex items-center justify-between gap-4">
+                  <DevolucaoHeaderSection 
+                    isRefreshing={isLoading}
                     onRefresh={() => refetch()}
                   />
-                </Card>
+                  
+                  <CriticalDeadlinesNotification 
+                    devolucoes={devolucoesData?.data || []}
+                    onClick={() => {
+                      setCurrentUrgencyFilter('critical');
+                      setUrgencyFilter((dev: any) => {
+                        const shipmentHours = dev.deadlines?.shipment_deadline_hours_left;
+                        const reviewHours = dev.deadlines?.seller_review_deadline_hours_left;
+                        return (shipmentHours !== null && shipmentHours < 24) ||
+                               (reviewHours !== null && reviewHours < 24);
+                      });
+                      toast.info('Mostrando apenas devoluções críticas');
+                    }}
+                  />
+                </div>
+
+                {/* Stats Cards */}
+                <DevolucaoStatsCards stats={stats} />
+
+                {/* Filtros de Urgência */}
+                {(devolucoesData?.data?.length || 0) > 0 && (
+                  <UrgencyFilters 
+                    devolucoes={devolucoesData?.data || []}
+                    onFilterChange={setUrgencyFilter}
+                    currentFilter={currentUrgencyFilter}
+                    onCurrentFilterChange={setCurrentUrgencyFilter}
+                  />
+                )}
+
+                {/* Quick Filters */}
+                {(devolucoesData?.data?.length || 0) > 0 && (
+                  <DevolucaoQuickFilters 
+                    devolucoes={devolucoesData?.data || []}
+                    onFilteredDataChange={() => {}}
+                  />
+                )}
+
+                {/* Controls Bar */}
+                <div className="flex justify-end">
+                  <DevolucaoControlsBar 
+                    autoRefreshEnabled={autoRefreshEnabled}
+                    autoRefreshInterval={30000}
+                    onAutoRefreshToggle={setAutoRefreshEnabled}
+                    onAutoRefreshIntervalChange={() => {}}
+                    onExport={handleExport}
+                    onClear={handleClear}
+                    onRefresh={() => refetch()}
+                    totalRecords={devolucoesData?.pagination?.total || 0}
+                    isRefreshing={isLoading}
+                  />
+                </div>
+
+                {/* Filters Avançados */}
+                <DevolucaoAdvancedFiltersBar 
+                  accounts={accounts}
+                  selectedAccountIds={selectedAccountIds}
+                  onAccountsChange={setSelectedAccountIds}
+                  periodo={periodo}
+                  onPeriodoChange={setPeriodo}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  onBuscar={handleBuscar}
+                  isLoading={isLoading}
+                  onCancel={() => {}}
+                />
+
+                {/* Tabs Ativas/Histórico */}
+                <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'ativas' | 'historico')}>
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="ativas">
+                      Ativas ({devolucoesFiltradas.ativas.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="historico">
+                      Histórico ({devolucoesFiltradas.historico.length})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="ativas">
+                    <Card>
+                      <DevolucaoTable 
+                        devolucoes={devolucoesFiltradas.ativas}
+                        isLoading={isLoading}
+                        error={error?.message || null}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={() => refetch()}
+                      />
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="historico">
+                    <Card>
+                      <DevolucaoTable 
+                        devolucoes={devolucoesFiltradas.historico}
+                        isLoading={isLoading}
+                        error={error?.message || null}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={() => refetch()}
+                      />
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <DevolucaoPaginationControls 
+                    currentPage={pagination.page || 1}
+                    totalPages={totalPages}
+                    onPageChange={(page) => setPagination({ ...pagination, page })}
+                    isLoading={isLoading}
+                  />
+                )}
               </TabsContent>
 
-              <TabsContent value="historico">
-                <Card>
-                  <DevolucaoTable 
-                    devolucoes={devolucoesFiltradas.historico}
-                    isLoading={isLoading}
-                    error={error?.message || null}
-                    onStatusChange={handleStatusChange}
-                    onRefresh={() => refetch()}
-                  />
-                </Card>
+              {/* Tab: Validação de Schema */}
+              <TabsContent value="validation" className="mt-6">
+                <SchemaValidationPanel />
               </TabsContent>
             </Tabs>
           </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="px-4 md:px-6 pb-6">
-              <DevolucaoPaginationControls 
-                currentPage={pagination.page || 1}
-                totalPages={totalPages}
-                onPageChange={(page) => setPagination({ ...pagination, page })}
-                isLoading={isLoading}
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
