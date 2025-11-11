@@ -162,18 +162,16 @@ function DevolucoesMercadoLivreContent() {
     }
 
     try {
-      // 1️⃣ PRIMEIRO: Configurar filtros ANTES de qualquer chamada
+      // 1️⃣ Configurar filtros
       const days = parseInt(periodo);
       const hoje = new Date();
       const dataInicio = startOfDay(subDays(hoje, days));
       const dataFim = endOfDay(hoje);
-      
       const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
       const dateToISO = format(dataFim, 'yyyy-MM-dd');
-      
-      // ✅ Aplicar filtros IMEDIATAMENTE
+
       setFilters({
-        integrationAccountId: selectedAccountIds[0],
+        integrationAccountId: selectedAccountIds.join(','),
         search: searchTerm,
         dateFrom: dateFromISO,
         dateTo: dateToISO,
@@ -181,17 +179,20 @@ function DevolucoesMercadoLivreContent() {
       
       setPagination({ ...pagination, page: 1 });
 
-      // 2️⃣ DEPOIS: Sincronizar com API ML (dados frescos)
-      toast.loading('Sincronizando com API do Mercado Livre...', { id: 'sync-search' });
+      // 2️⃣ Sincronizar TODOS os dados da API ML
+      toast.loading('Sincronizando dados completos da API do Mercado Livre...', { id: 'sync-search' });
       
-      await syncMutation.mutateAsync({
-        integrationAccountId: selectedAccountIds[0],
-        batchSize: 100,
-      });
+      // Sincronizar para cada conta selecionada
+      for (const accountId of selectedAccountIds) {
+        await syncMutation.mutateAsync({
+          integrationAccountId: accountId,
+          batchSize: 100,
+        });
+      }
 
-      toast.success('Dados sincronizados! Aplicando filtros...', { id: 'sync-search' });
+      toast.success('✅ Sincronização completa! Carregando dados...', { id: 'sync-search' });
 
-      // 3️⃣ POR FIM: Buscar dados atualizados do banco com filtros aplicados
+      // 3️⃣ Buscar dados do banco com filtros
       const result = await refetch();
       if (result.isError) {
         toast.error('Erro ao buscar devoluções');
