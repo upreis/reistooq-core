@@ -263,16 +263,26 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
             const categoria = getCategorias(catPrincipal.id).find(c => c.nome === product.categoria);
             if (categoria) {
               setSelectedCategoria(categoria.id);
+            } else {
+              setSelectedCategoria("");
             }
+          } else {
+            setSelectedCategoria("");
           }
+        } else {
+          setSelectedCategoriaPrincipal("");
+          setSelectedCategoria("");
         }
+      } else {
+        setSelectedCategoriaPrincipal("");
+        setSelectedCategoria("");
       }
     } else if (!product && open) {
       // Limpar seleções ao criar novo produto
       setSelectedCategoriaPrincipal("");
       setSelectedCategoria("");
     }
-  }, [product, open, categories, getCategoriasPrincipais, getCategorias]);
+  }, [product?.id, product?.categoria_principal, product?.categoria, open, categories?.length, getCategoriasPrincipais, getCategorias]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
