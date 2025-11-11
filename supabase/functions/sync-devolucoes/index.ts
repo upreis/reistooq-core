@@ -228,11 +228,11 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
     // Vamos buscar claims dos últimos 90 dias (máximo recomendado)
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const dateFilter = ninetyDaysAgo.toISOString();
-    
+    const dateFilter = ninetyDaysAgo.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
     const params = new URLSearchParams({
       seller_id: account.account_identifier,
-      'range': `date_created:after:${dateFilter}`, // ✅ Filtro obrigatório
+      date_created: dateFilter, // ✅ Filtro obrigatório (data início)
       offset: offset.toString(),
       limit: BATCH_SIZE.toString(),
       sort: 'date_created',
