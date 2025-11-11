@@ -158,10 +158,14 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
-    // ✅ ENRIQUECER DADOS - Buscar pedido, mensagens e return para cada claim
-    console.log('[get-devolucoes-direct] Enriquecendo dados...');
+    // ⚠️ LIMITAÇÃO RATE LIMIT: Enriquecer apenas primeiros 50 claims
+    console.log('[get-devolucoes-direct] Enriquecendo dados (limitado a 50 claims para evitar rate limit 429)...');
+    
+    const claimsToEnrich = claims.slice(0, 50);
+    const claimsWithoutEnrichment = claims.slice(50);
+    
     const enrichedClaims = await Promise.all(
-      claims.map(async (claim: any) => {
+      claimsToEnrich.map(async (claim: any) => {
         try {
           // ✅ 1. Buscar dados COMPLETOS do pedido (order_data)
           let orderData = null;
@@ -237,11 +241,14 @@ serve(async (req) => {
       })
     );
 
-    console.log(`[get-devolucoes-direct] ${enrichedClaims.length} claims enriquecidos`);
+    // Adicionar claims sem enriquecimento (apenas dados básicos da API /claims/search)
+    const allClaims = [...enrichedClaims, ...claimsWithoutEnrichment];
+    
+    console.log(`[get-devolucoes-direct] ${enrichedClaims.length} claims enriquecidos, ${claimsWithoutEnrichment.length} apenas com dados básicos`);
 
     // ✅ MAPEAR DADOS USANDO MAPPERS CONSOLIDADOS
     console.log('[get-devolucoes-direct] Mapeando dados...');
-    const mappedClaims = enrichedClaims.map((claim: any) => {
+    const mappedClaims = allClaims.map((claim: any) => {
       try {
         // ✅ Estruturar dados no formato esperado pelos mappers
         const item = {
