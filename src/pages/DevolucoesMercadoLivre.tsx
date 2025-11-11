@@ -250,7 +250,8 @@ function DevolucoesMercadoLivreContent() {
 
       // ✅ Aplicar filtro de data no FRONTEND (dados já vêm da API)
       const filteredData = allData.filter(item => {
-        const itemDate = new Date(item.date_created || item.created_at);
+        // ✅ Usar data_criacao (campo em português retornado pela API)
+        const itemDate = new Date(item.data_criacao || item.date_created || item.created_at);
         const isAfterStart = itemDate >= dataInicio;
         const isBeforeEnd = itemDate <= dataFim;
         return isAfterStart && isBeforeEnd;
