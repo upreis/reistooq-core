@@ -224,7 +224,15 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
   let hasMore = true;
 
   while (hasMore && totalProcessed < MAX_CLAIMS) {
-    const claimsUrl = `https://api.mercadolibre.com/post-purchase/v2/claims?seller_id=${account.account_identifier}&offset=${offset}&limit=${BATCH_SIZE}&sort=date_created&order=desc`;
+    // ✅ CORRIGIDO: Usar endpoint v1/claims/search ao invés de v2/claims
+    const params = new URLSearchParams({
+      seller_id: account.account_identifier,
+      offset: offset.toString(),
+      limit: BATCH_SIZE.toString(),
+      sort: 'date_created',
+      order: 'desc'
+    });
+    const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
     
     const claimsResponse = await fetch(claimsUrl, {
       headers: {
