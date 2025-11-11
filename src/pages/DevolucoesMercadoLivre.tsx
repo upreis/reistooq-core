@@ -169,7 +169,63 @@ function DevolucoesMercadoLivreContent() {
         
         // ✅ ACUMULAR dados retornados DIRETO da API ML
         if (result.data.data && Array.isArray(result.data.data)) {
-          allData.push(...result.data.data);
+          // ✅ TRANSFORMAR dados para formato esperado pelo frontend
+          const transformedData = result.data.data.map((item: any) => ({
+            ...item,
+            // Expandir campos JSONB para aliases sem prefixo dados_
+            buyer_info: item.dados_buyer_info || null,
+            product_info: item.dados_product_info || null,
+            financial_info: item.dados_financial_info || null,
+            tracking_info: item.dados_tracking_info || null,
+            quantities: item.dados_quantities || null,
+            // Extrair dados do order JSONB
+            order: item.dados_order || null,
+            // Extrair dados do claim JSONB se existir
+            status: item.dados_claim?.status || { id: item.status_rastreamento || 'unknown' },
+            status_money: item.dados_claim?.status_money || { id: item.metodo_pagamento || 'unknown' },
+            subtype: item.dados_claim?.subtype || { id: item.dados_claim?.type || 'return' },
+            resource_type: item.dados_claim?.resource_type || null,
+            shipment_id: item.dados_tracking_info?.shipment_id || null,
+            shipment_status: item.dados_tracking_info?.status_rastreamento || item.status_rastreamento || null,
+            // Mapear orders array
+            orders: item.dados_order?.order_items?.map((orderItem: any) => ({
+              item_id: orderItem.item?.id || null,
+              variation_id: orderItem.item?.variation_id || null,
+              context_type: item.dados_claim?.context?.type || 'total',
+              total_quantity: orderItem.quantity || item.dados_quantities?.quantidade || 0,
+              return_quantity: item.dados_quantities?.quantidade || orderItem.quantity || 0,
+            })) || [],
+            // Mapear deadlines (se existir)
+            deadlines: item.deadlines || null,
+            // Mapear shipping_costs (se existir)
+            shipping_costs: item.shipping_costs || null,
+            // Mapear fulfillment_info (se existir)
+            fulfillment_info: item.fulfillment_info || null,
+            // Mapear available_actions (se existir)
+            available_actions: item.available_actions || [],
+            // Mapear shipments (se existir)
+            shipments: item.shipments || [],
+            // Campos de data
+            date_created: item.data_criacao || item.created_at,
+            last_updated: item.updated_at,
+            date_closed: item.data_fechamento_claim || null,
+            // Campos de review
+            review_status: item.dados_review?.status || item.review_status || null,
+            review_method: item.dados_review?.method || null,
+            review_stage: item.dados_review?.stage || null,
+            product_condition: item.dados_review?.product_condition || null,
+            product_destination: item.dados_review?.product_destination || null,
+            // Campos estimados
+            estimated_delivery_date: item.estimated_delivery_date || null,
+            estimated_delivery_from: item.estimated_delivery_from || null,
+            estimated_delivery_to: item.estimated_delivery_to || null,
+            delivery_limit_date: item.delivery_limit_date || null,
+            refund_at: item.refund_at || null,
+            // Campos adicionais
+            benefited: item.dados_claim?.resolution?.benefited || null,
+          }));
+          
+          allData.push(...transformedData);
         }
       }
 
