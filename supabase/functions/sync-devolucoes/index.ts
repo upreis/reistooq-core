@@ -276,18 +276,12 @@ serve(async (req) => {
           data_fechamento_claim: claim.date_closed || claim.data_fechamento_claim || null,
           data_atualizacao_devolucao: claim.last_updated || claim.data_atualizacao_devolucao || null,
           
-          // 📦 GRUPO 8: Outros campos importantes
-          status_devolucao: claim.status_devolucao || claim.status || claim.claim_details?.status || null,
-          subtipo_claim: claim.subtipo_claim || claim.subtipo || claim.claim_details?.sub_type || null,
-          tipo_claim: claim.tipo_claim || claim.claim_details?.type || null,
-          motivo_devolucao: claim.motivo_devolucao || claim.reason_detail || null,
-          
-          // 📦 GRUPO 9: Review (se existir)
-          review_status: claim.review_status || null,
-          review_method: claim.review_method || null,
-          review_stage: claim.review_stage || null,
-          product_condition: claim.product_condition || null,
-          product_destination: claim.product_destination || null,
+          // ✅ FASE 8: Removidas 9 colunas duplicadas (dados já salvos nos campos JSONB)
+          // - status_devolucao (já em dados_tracking_info.status_devolucao)
+          // - subtipo_claim (já em dados_tracking_info.subtipo)
+          // - tipo_claim (já em dados_claim)
+          // - motivo_devolucao (já em dados_claim)
+          // - review_status, review_method, review_stage, product_condition, product_destination (já em dados_review)
           
           // 📦 GRUPO 10: Campos JSONB já existentes (preservar)
           dados_review: claim.dados_review || {},
