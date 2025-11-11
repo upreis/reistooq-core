@@ -121,7 +121,6 @@ function DevolucoesMercadoLivreContent() {
   }, [devolucoesComEmpresa]);
 
   // Handlers
-  // Handlers
   const handleBuscar = async (fullSync: boolean = false) => {
     if (selectedAccountIds.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
@@ -131,7 +130,7 @@ function DevolucoesMercadoLivreContent() {
     try {
       setIsLoadingApi(true);
       
-      // 1️⃣ Configurar filtros
+      // 1️⃣ Configurar filtros de data
       const days = parseInt(periodo);
       const hoje = new Date();
       const dataInicio = startOfDay(subDays(hoje, days));
@@ -139,6 +138,7 @@ function DevolucoesMercadoLivreContent() {
       const dateFromISO = format(dataInicio, 'yyyy-MM-dd');
       const dateToISO = format(dataFim, 'yyyy-MM-dd');
 
+      // ✅ Atualizar filtros no contexto
       setFilters({
         integrationAccountId: selectedAccountIds.join(','),
         search: searchTerm,
@@ -148,24 +148,44 @@ function DevolucoesMercadoLivreContent() {
       
       setPagination({ ...pagination, page: 1 });
 
-      // 2️⃣ Buscar DIRETO da API ML (sem cache)
-      const syncType = fullSync ? 'completa (últimos 90 dias)' : 'rápida (incremental)';
+      // 2️⃣ Buscar DIRETO da API ML
+      const syncType = fullSync ? 'completa (últimos 90 dias)' : `rápida (últimos ${days} dias)`;
       toast.loading(`📡 Buscando dados DIRETO da API ML (${syncType})...`, { id: 'sync-search' });
+      
+      console.log('🔍 Parâmetros de busca:', {
+        contas: selectedAccountIds.length,
+        periodo: `${days} dias`,
+        dateFrom: dateFromISO,
+        dateTo: dateToISO,
+        fullSync,
+        searchTerm
+      });
       
       // Sincronizar para cada conta selecionada e acumular dados
       const allData: any[] = [];
       
       for (const accountId of selectedAccountIds) {
+        console.log(`📡 Buscando conta ${accountId}...`);
+        
         const result = await supabase.functions.invoke('sync-devolucoes', {
           body: {
             integration_account_id: accountId,
             batch_size: 100,
-            incremental: !fullSync,
+            incremental: !fullSync, // Full sync força buscar últimos 90 dias
           },
         });
         
-        if (result.error) throw result.error;
-        if (!result.data?.success) throw new Error(result.data?.error || 'Erro ao sincronizar');
+        if (result.error) {
+          console.error('❌ Erro ao sincronizar:', result.error);
+          throw result.error;
+        }
+        
+        if (!result.data?.success) {
+          console.error('❌ Sincronização falhou:', result.data);
+          throw new Error(result.data?.error || 'Erro ao sincronizar');
+        }
+        
+        console.log(`✅ Conta ${accountId}: ${result.data.totalProcessed} devoluções processadas`);
         
         // ✅ ACUMULAR dados retornados DIRETO da API ML
         if (result.data.data && Array.isArray(result.data.data)) {
@@ -178,24 +198,20 @@ function DevolucoesMercadoLivreContent() {
             financial_info: item.dados_financial_info || null,
             tracking_info: item.dados_tracking_info || null,
             quantities: item.dados_quantities || null,
-            // Extrair dados do order JSONB
+            // Mapear order (se existir)
             order: item.dados_order || null,
-            // Extrair dados do claim JSONB se existir
-            // ✅ CORRIGIDO: Usar dados_order.status ao invés de unknown
-            status: item.dados_claim?.status || { id: item.dados_order?.status || 'unknown' },
-            status_money: item.dados_claim?.status_money || { id: item.metodo_pagamento || 'unknown' },
-            subtype: item.dados_claim?.subtype || { id: item.dados_claim?.type || 'return' },
-            resource_type: item.dados_claim?.resource_type || null,
-            shipment_id: item.dados_tracking_info?.shipment_id || null,
-            shipment_status: item.dados_tracking_info?.status_rastreamento || item.status_rastreamento || null,
+            // Mapear status de dados_claim (se existir)
+            status: item.dados_claim?.status ? { id: item.dados_claim.status } : (item.dados_order?.status ? { id: item.dados_order.status } : { id: 'unknown' }),
+            status_money: item.dados_financial_info?.metodo_pagamento ? { id: item.dados_financial_info.metodo_pagamento } : { id: 'unknown' },
+            subtype: item.dados_claim?.type ? { id: item.dados_claim.type } : { id: 'unknown' },
             // Mapear orders array
-            orders: item.dados_order?.order_items?.map((orderItem: any) => ({
-              item_id: orderItem.item?.id || null,
-              variation_id: orderItem.item?.variation_id || null,
-              context_type: item.dados_claim?.context?.type || 'total',
-              total_quantity: orderItem.quantity || item.dados_quantities?.quantidade || 0,
-              return_quantity: item.dados_quantities?.quantidade || orderItem.quantity || 0,
-            })) || [],
+            orders: item.dados_claim?.quantity_type ? [{
+              item_id: item.dados_product_info?.item_id || null,
+              variation_id: item.dados_product_info?.variation_id || null,
+              context_type: item.dados_claim.quantity_type || 'total',
+              total_quantity: item.quantidade || 0,
+              return_quantity: item.quantidade || 0,
+            }] : [],
             // Mapear deadlines (se existir)
             deadlines: item.deadlines || null,
             // Mapear shipping_costs (se existir)
@@ -230,26 +246,38 @@ function DevolucoesMercadoLivreContent() {
         }
       }
 
-      // ✅ Atualizar estado com dados DIRETO da API
+      console.log(`✅ Total acumulado: ${allData.length} devoluções de ${selectedAccountIds.length} conta(s)`);
+
+      // ✅ Aplicar filtro de data no FRONTEND (dados já vêm da API)
+      const filteredData = allData.filter(item => {
+        const itemDate = new Date(item.date_created || item.created_at);
+        const isAfterStart = itemDate >= dataInicio;
+        const isBeforeEnd = itemDate <= dataFim;
+        return isAfterStart && isBeforeEnd;
+      });
+
+      console.log(`✅ Após filtro de data (${days} dias): ${filteredData.length} devoluções`);
+
+      // ✅ Atualizar estado com dados FILTRADOS
       setApiData({
-        data: allData,
+        data: filteredData,
         pagination: {
           page: 1,
           limit: 50,
-          total: allData.length,
-          totalPages: Math.ceil(allData.length / 50),
+          total: filteredData.length,
+          totalPages: Math.ceil(filteredData.length / 50),
         },
         stats: {
-          total: allData.length,
+          total: filteredData.length,
           by_status: {},
           total_amount: 0,
         },
       });
 
-      toast.success(`✅ ${allData.length} devoluções recebidas DIRETO da API ML!`, { id: 'sync-search' });
+      toast.success(`✅ ${filteredData.length} devoluções encontradas (${allData.length} total da API)!`, { id: 'sync-search' });
       
     } catch (error: any) {
-      console.error('Erro ao buscar da API ML:', error);
+      console.error('❌ Erro ao buscar da API ML:', error);
       toast.error(`Erro ao buscar da API: ${error.message}`, { id: 'sync-search' });
     } finally {
       setIsLoadingApi(false);
