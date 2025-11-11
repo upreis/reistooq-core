@@ -220,10 +220,10 @@ serve(async (req) => {
           
           // 📦 GRUPO 2: Identificadores e Item
           dados_product_info: {
-            item_id: claim.item_id || claim.order_data?.order_items?.[0]?.item?.id || claim.dados_order?.order_items?.[0]?.item?.id || null,
-            variation_id: claim.variation_id || claim.order_data?.order_items?.[0]?.item?.variation_id || claim.dados_order?.order_items?.[0]?.item?.variation_id || null,
-            seller_sku: claim.seller_sku || claim.order_data?.order_items?.[0]?.item?.seller_sku || claim.dados_order?.order_items?.[0]?.item?.seller_sku || null,
-            title: claim.produto_titulo || claim.order_data?.order_items?.[0]?.item?.title || claim.dados_order?.order_items?.[0]?.item?.title || null,
+            item_id: claim.item_id || claim.order_data?.order_items?.[0]?.item?.id || null,
+            variation_id: claim.variation_id || claim.order_data?.order_items?.[0]?.item?.variation_id || null,
+            seller_sku: claim.seller_sku || claim.order_data?.order_items?.[0]?.item?.seller_sku || null,
+            title: claim.produto_titulo || claim.order_data?.order_items?.[0]?.item?.title || null,
           },
           
           // 📦 GRUPO 3: Status e Tipo
@@ -248,14 +248,14 @@ serve(async (req) => {
           // 📦 GRUPO 4: Quantidade
           quantidade: claim.quantidade || claim.return_quantity || claim.quantity || 1,
           dados_quantities: {
-            total_quantity: claim.total_quantity || claim.quantidade_total || claim.order_data?.order_items?.[0]?.quantity || claim.dados_order?.order_items?.[0]?.quantity || null,
+            total_quantity: claim.total_quantity || claim.quantidade_total || claim.order_data?.order_items?.[0]?.quantity || null,
             return_quantity: claim.return_quantity || claim.quantidade || null,
             quantity_type: claim.quantity_type || claim.claim_quantity_type || claim.context_type || 'total',
           },
           
           // 📦 GRUPO 5: Financeiro
           dados_financial_info: {
-            total_amount: claim.total_amount || claim.order_data?.total_amount || claim.dados_order?.total_amount || null,
+            total_amount: claim.total_amount || claim.order_data?.total_amount || null,
             currency_id: claim.currency_id || claim.moeda_reembolso || 'BRL',
             payment_type: claim.payment_type || claim.tipo_pagamento || null,
             payment_method: claim.payment_method || claim.metodo_pagamento || null,
@@ -264,8 +264,8 @@ serve(async (req) => {
           
           // 📦 GRUPO 6: Comprador
           dados_buyer_info: {
-            id: claim.buyer_id || claim.order_data?.buyer?.id || claim.dados_order?.buyer?.id || null,
-            nickname: claim.buyer_nickname || claim.comprador_nickname || claim.order_data?.buyer?.nickname || claim.dados_order?.buyer?.nickname || null,
+            id: claim.buyer_id || claim.order_data?.buyer?.id || null,
+            nickname: claim.buyer_nickname || claim.comprador_nickname || claim.order_data?.buyer?.nickname || null,
             first_name: claim.buyer_first_name || claim.comprador_nome_completo || null,
           },
           
