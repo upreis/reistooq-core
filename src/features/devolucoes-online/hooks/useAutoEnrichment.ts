@@ -71,7 +71,9 @@ export function useAutoEnrichment({
   }, [data]);
 
   useEffect(() => {
-    // ✅ Auto-sincronização REABILITADA para buscar dados novos da API ML
+    // ⚠️ DESABILITADO até reconectar integrações ML (tokens corrompidos)
+    // Erro: "Failed to decrypt secret data - reconnection may be required"
+    return;
     
     // ✅ Condições de disparo mais robustas
     if (!enabled || !integrationAccountId || data.length === 0) {
