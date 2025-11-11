@@ -324,16 +324,40 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
     
     const validClaims = processedClaims.filter(Boolean);
     
-    // 7️⃣ Salvar claims
+    // 7️⃣ Salvar claims (filtrar campos válidos)
     if (validClaims.length > 0) {
       logger.info(`💾 Salvando ${validClaims.length} claims...`);
       
-      const claimsToSave = validClaims.map((claim: any) => ({
-        ...claim,
-        integration_account_id: integrationAccountId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }));
+      // ✅ Campos válidos da tabela devolucoes_avancadas (sem campos inexistentes)
+      const validColumns = [
+        'claim_id', 'order_id', 'return_id', 'integration_account_id',
+        'data_criacao_claim', 'data_criacao_devolucao', 'data_atualizacao_devolucao',
+        'claim_stage', 'status_devolucao', 'tipo_claim', 'subtipo_claim',
+        'motivo_categoria', 'reason_id', 'reason_name', 'reason_detail',
+        'produto_titulo', 'sku', 'quantidade', 'valor_original_produto',
+        'comprador_nickname', 'comprador_nome_completo', 'comprador_cpf',
+        'dados_claim', 'dados_order', 'dados_return', 'dados_review',
+        'dados_buyer_info', 'dados_product_info', 'dados_financial_info',
+        'dados_tracking_info', 'dados_quantities', 'dados_available_actions',
+        'created_at', 'updated_at'
+      ];
+      
+      const claimsToSave = validClaims.map((claim: any) => {
+        const filtered: any = {
+          integration_account_id: integrationAccountId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        
+        // Copiar apenas campos válidos
+        validColumns.forEach(col => {
+          if (claim[col] !== undefined) {
+            filtered[col] = claim[col];
+          }
+        });
+        
+        return filtered;
+      });
       
       const { error: upsertError } = await serviceClient
         .from('devolucoes_avancadas')
