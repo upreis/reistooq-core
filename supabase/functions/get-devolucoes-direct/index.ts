@@ -2,11 +2,15 @@
  * 🔥 GET DEVOLUCOES DIRECT - BUSCA DIRETO DA API ML
  * Copia EXATA do padrão de ml-claims-fetch que FUNCIONA
  * NÃO usa cache do banco - SEMPRE busca fresco da API
+ * ✅ APLICA MAPEAMENTO COMPLETO usando mappers consolidados
  */
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
+
+// ✅ Importar função de mapeamento completo
+import { mapDevolucaoCompleta } from './mapeamento.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -37,7 +41,7 @@ serve(async (req) => {
 
     const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
-      .select('account_identifier')
+      .select('account_identifier, account_name')
       .eq('id', integration_account_id)
       .eq('is_active', true)
       .single();
@@ -48,6 +52,7 @@ serve(async (req) => {
     }
 
     const sellerId = account.account_identifier;
+    const accountName = account.account_name || 'Desconhecido';
 
     // ✅ Buscar integration_secrets DIRETO do banco (igual unified-orders)
     const { data: secretRow, error: secretError } = await supabase
@@ -153,12 +158,34 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
-    // ✅ RETORNAR DADOS DIRETO (sem salvar no banco)
+    // ✅ MAPEAR DADOS USANDO MAPPERS CONSOLIDADOS
+    console.log('[get-devolucoes-direct] Mapeando dados...');
+    const mappedClaims = claims.map((claim: any) => {
+      try {
+        // Estruturar dados no formato esperado pelos mappers
+        const item = {
+          claim_details: claim,
+          order_data: claim.resource_id ? { id: claim.resource_id } : null,
+          claim_messages: null,
+          return_details_v2: null,
+          amount: claim.seller_amount || null
+        };
+
+        return mapDevolucaoCompleta(item, integration_account_id, accountName, null);
+      } catch (err) {
+        console.error('[get-devolucoes-direct] Erro ao mapear claim:', claim.id, err);
+        return null;
+      }
+    }).filter(Boolean);
+
+    console.log(`[get-devolucoes-direct] ${mappedClaims.length} claims mapeados com sucesso`);
+
+    // ✅ RETORNAR DADOS MAPEADOS
     return new Response(
       JSON.stringify({
         success: true,
-        data: claims,
-        total: claims.length,
+        data: mappedClaims,
+        total: mappedClaims.length,
         integration_account_id,
         date_range: { from: date_from, to: date_to }
       }),
