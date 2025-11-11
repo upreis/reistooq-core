@@ -6,22 +6,17 @@
 import { ExternalLink, Package } from 'lucide-react';
 import { ProductInfo } from '../../types/devolucao.types';
 import { Badge } from '@/components/ui/badge';
-import { EmptyFieldIndicator } from '../EmptyFieldIndicator';
-import { getEmptyFieldInfo } from '../../utils/emptyFieldDetector';
 
 interface ProductInfoCellProps {
   productInfo?: ProductInfo | null;
-  rawData?: any;
 }
 
-export const ProductInfoCell = ({ productInfo, rawData }: ProductInfoCellProps) => {
+export const ProductInfoCell = ({ productInfo }: ProductInfoCellProps) => {
   if (!productInfo) {
-    const analysis = getEmptyFieldInfo('produto_titulo', null, rawData || {});
-    
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
         <Package className="h-4 w-4" />
-        <EmptyFieldIndicator analysis={analysis} fieldName="Produto" />
+        <span className="text-xs">Sem dados</span>
       </div>
     );
   }
@@ -67,18 +62,10 @@ export const ProductInfoCell = ({ productInfo, rawData }: ProductInfoCellProps) 
 
         {/* SKU e Preço */}
         <div className="flex items-center gap-2 flex-wrap">
-          {productInfo.sku ? (
+          {productInfo.sku && (
             <Badge variant="secondary" className="text-xs font-mono">
               SKU: {productInfo.sku}
             </Badge>
-          ) : (
-            <div className="flex items-center gap-1">
-              <span className="text-xs text-muted-foreground">SKU:</span>
-              <EmptyFieldIndicator 
-                analysis={getEmptyFieldInfo('sku', null, rawData || {})} 
-                fieldName="SKU"
-              />
-            </div>
           )}
           <span className="text-sm font-semibold text-primary">
             {formatPrice(productInfo.price, productInfo.currency_id)}
