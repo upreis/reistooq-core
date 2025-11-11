@@ -41,8 +41,11 @@ serve(async (req) => {
       .eq('id', integration_account_id)
       .single();
 
+    console.log('[get-devolucoes-direct] Query result:', { account, accountError });
+
     if (accountError || !account) {
-      throw new Error('Conta ML não encontrada');
+      console.error('[get-devolucoes-direct] Account error details:', accountError);
+      throw new Error(`Conta ML não encontrada: ${accountError?.message || 'No account data'}`);
     }
 
     // ✅ Descriptografar token
