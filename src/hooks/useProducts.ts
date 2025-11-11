@@ -409,7 +409,7 @@ export const useProducts = () => {
       'url_imagem', 'sku_pai', 'eh_produto_pai',
       // Campos adicionais do template
       'sob_encomenda', 'dias_preparacao', 'peso_liquido_kg', 'peso_bruto_kg',
-      'numero_volumes', 'tipo_embalagem', 'largura', 'altura', 'comprimento',
+      'numero_volumes', 'tipo_embalagem', 'largura_cm', 'altura_cm', 'comprimento_cm',
       'ncm', 'codigo_cest', 'origem', 'categoria_nivel2', 'subcategoria'
     ];
 
