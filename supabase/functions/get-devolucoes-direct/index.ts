@@ -158,14 +158,23 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
-    // ⚠️ LIMITAÇÃO RATE LIMIT: Enriquecer apenas primeiros 50 claims
-    console.log('[get-devolucoes-direct] Enriquecendo dados (limitado a 50 claims para evitar rate limit 429)...');
+    // ✅ ENRIQUECER EM LOTES com DELAY (seguindo padrão de ml-claims-fetch)
+    console.log('[get-devolucoes-direct] Enriquecendo dados em lotes...');
     
-    const claimsToEnrich = claims.slice(0, 50);
-    const claimsWithoutEnrichment = claims.slice(50);
+    const BATCH_SIZE = 10;   // Processar 10 claims por vez
+    const DELAY_MS = 200;    // Delay de 200ms entre lotes
     
-    const enrichedClaims = await Promise.all(
-      claimsToEnrich.map(async (claim: any) => {
+    const allEnrichedClaims: any[] = [];
+    
+    for (let i = 0; i < claims.length; i += BATCH_SIZE) {
+      const batch = claims.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(claims.length / BATCH_SIZE);
+
+      console.log(`🔄 Processando lote ${batchNumber}/${totalBatches} (${batch.length} claims)...`);
+
+      // Processar claims do lote em paralelo
+      const batchPromises = batch.map(async (claim: any) => {
         try {
           // ✅ 1. Buscar dados COMPLETOS do pedido (order_data)
           let orderData = null;
@@ -238,17 +247,24 @@ serve(async (req) => {
           console.error(`[get-devolucoes-direct] Erro ao enriquecer claim ${claim.id}:`, err);
           return claim;
         }
-      })
-    );
+      });
 
-    // Adicionar claims sem enriquecimento (apenas dados básicos da API /claims/search)
-    const allClaims = [...enrichedClaims, ...claimsWithoutEnrichment];
+      // Aguardar conclusão do lote
+      const batchResults = await Promise.all(batchPromises);
+      allEnrichedClaims.push(...batchResults);
+
+      // Delay entre lotes (exceto no último)
+      if (i + BATCH_SIZE < claims.length) {
+        console.log(`⏸️ Aguardando ${DELAY_MS}ms antes do próximo lote...`);
+        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+      }
+    }
     
-    console.log(`[get-devolucoes-direct] ${enrichedClaims.length} claims enriquecidos, ${claimsWithoutEnrichment.length} apenas com dados básicos`);
+    console.log(`[get-devolucoes-direct] ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
     // ✅ MAPEAR DADOS USANDO MAPPERS CONSOLIDADOS
     console.log('[get-devolucoes-direct] Mapeando dados...');
-    const mappedClaims = allClaims.map((claim: any) => {
+    const mappedClaims = allEnrichedClaims.map((claim: any) => {
       try {
         // ✅ Estruturar dados no formato esperado pelos mappers
         const item = {
