@@ -104,17 +104,16 @@ async function syncDevolucoes(
     while (hasMore) {
       logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
 
-      // 🔥 CHAMAR ml-api-direct com header de autenticação
+      // 🔥 CHAMAR ml-api-direct (integration_account_id vai no BODY, não header)
       const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${ANON_KEY}`,
-          'x-integration-account-id': integrationAccountId, // ✅ Passar integration_account_id via header
         },
         body: JSON.stringify({
           action: 'get_claims_and_returns',
-          integration_account_id: integrationAccountId,
+          integration_account_id: integrationAccountId, // ✅ Correto: no body
           seller_id: account.account_identifier,
           limit: batchSize,
           offset: offset,
