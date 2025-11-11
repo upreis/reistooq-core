@@ -243,12 +243,13 @@ serve(async (req) => {
     console.log('[get-devolucoes-direct] Mapeando dados...');
     const mappedClaims = enrichedClaims.map((claim: any) => {
       try {
-        // Estruturar dados no formato esperado pelos mappers
+        // ✅ Estruturar dados no formato esperado pelos mappers
         const item = {
-          claim_details: claim,
-          order_data: claim.order_data,
-          claim_messages: claim.claim_messages,
-          return_details_v2: claim.return_details_v2,
+          claim_details: claim,  // Claim básico da API /claims/search
+          order_data: claim.order_data,  // Dados completos de /orders/{id}
+          claim_messages: claim.claim_messages,  // Mensagens de /claims/{id}/messages
+          return_details_v2: claim.return_details_v2,  // Return de /claims/{id}/returns
+          review_details: claim.review_details,  // ✅ CORRIGIDO: Reviews de /returns/{id}/reviews
           amount: claim.seller_amount || null
         };
 
