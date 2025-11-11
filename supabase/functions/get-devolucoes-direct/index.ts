@@ -41,7 +41,7 @@ serve(async (req) => {
 
     const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
-      .select('account_identifier, account_name')
+      .select('account_identifier')
       .eq('id', integration_account_id)
       .eq('is_active', true)
       .single();
@@ -52,7 +52,7 @@ serve(async (req) => {
     }
 
     const sellerId = account.account_identifier;
-    const accountName = account.account_name || 'Desconhecido';
+    const accountName = `Conta ${sellerId}`; // Nome padrão baseado no ID
 
     // ✅ Buscar integration_secrets DIRETO do banco (igual unified-orders)
     const { data: secretRow, error: secretError } = await supabase
