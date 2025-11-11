@@ -104,12 +104,13 @@ async function syncDevolucoes(
     while (hasMore) {
       logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
 
-      // Chamar ml-api-direct
+      // 🔥 CHAMAR ml-api-direct com header de autenticação
       const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${ANON_KEY}`,
+          'x-integration-account-id': integrationAccountId, // ✅ Passar integration_account_id via header
         },
         body: JSON.stringify({
           action: 'get_claims_and_returns',
@@ -125,6 +126,15 @@ async function syncDevolucoes(
 
       if (!apiResponse.ok) {
         const errorText = await apiResponse.text();
+        logger.error(`❌ API ML error (${apiResponse.status}):`, errorText);
+        
+        // 🔥 Se erro de token, logar detalhes e continuar
+        if (errorText.includes('Token ML não disponível')) {
+          logger.warn('⚠️ Token ML indisponível. Verifique se a integração está conectada.');
+          logger.info('💡 Os tokens estão ativos no banco, mas houve falha ao descriptografar.');
+          logger.info('💡 Isso pode ser cache. Tente reconectar a integração ML ou aguarde alguns minutos.');
+        }
+        
         throw new Error(`Erro ao buscar dados da API ML: ${errorText}`);
       }
 
