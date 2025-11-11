@@ -155,7 +155,7 @@ function DevolucoesMercadoLivreContent() {
   }, [devolucoesComEmpresa]);
 
   // Handlers
-  const handleBuscar = async () => {
+  const handleBuscar = async (fullSync: boolean = false) => {
     if (selectedAccountIds.length === 0) {
       toast.error('Selecione pelo menos uma conta ML');
       return;
@@ -179,19 +179,20 @@ function DevolucoesMercadoLivreContent() {
       
       setPagination({ ...pagination, page: 1 });
 
-      // 2️⃣ Sincronizar dados da API ML (incremental por padrão)
-      toast.loading('🔄 Sincronização rápida (incremental)...', { id: 'sync-search' });
+      // 2️⃣ Sincronizar dados da API ML
+      const syncType = fullSync ? 'completa (últimos 90 dias)' : 'rápida (incremental)';
+      toast.loading(`🔄 Sincronização ${syncType}...`, { id: 'sync-search' });
       
       // Sincronizar para cada conta selecionada
       for (const accountId of selectedAccountIds) {
         await syncMutation.mutateAsync({
           integrationAccountId: accountId,
           batchSize: 100,
-          incremental: true, // ✅ Sincronização incremental (rápida)
+          incremental: !fullSync, // ✅ Inverso: fullSync=true → incremental=false
         });
       }
 
-      toast.success('✅ Sincronização completa! Carregando dados...', { id: 'sync-search' });
+      toast.success(`✅ Sincronização ${syncType} concluída!`, { id: 'sync-search' });
 
       // 3️⃣ Buscar dados do banco com filtros
       const result = await refetch();
