@@ -213,19 +213,22 @@ async function getDevolucoes(
       claim_id: item.claim_id,
       return_id: item.return_id,
       
-      // ✅ EXTRAIR DE JSONB dados_product_info
-      item_id: item.dados_product_info?.item_id || null,
-      variation_id: item.dados_product_info?.variation_id || null,
+      // ✅ CORREÇÃO: Item ID e Variation ID - EXTRAIR DE dados_order.order_items[0] (prioridade) ou dados_product_info (fallback)
+      item_id: item.dados_order?.order_items?.[0]?.item?.id || item.dados_product_info?.item_id || null,
+      variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || item.dados_product_info?.variation_id || null,
       
       integration_account_id: item.integration_account_id,
       
-      // ✅ Status - EXTRAIR DE JSONB dados_tracking_info (FASE 8: Após remoção de colunas físicas)
-      // ✅ CORREÇÃO 2: Retornar STRING ao invés de objeto {id: "value"}
-      status: item.dados_tracking_info?.status || 'unknown',
-      status_devolucao: item.dados_tracking_info?.status_devolucao || null,
-      status_money: item.dados_tracking_info?.status_money || null,
-      subtype: item.dados_tracking_info?.subtipo || null,
-      resource_type: item.dados_tracking_info?.resource_type || null,
+      // ✅ Status - EXTRAIR DE dados_claim (claim completo) ao invés de dados_tracking_info
+      // ✅ CORREÇÃO: dados_claim agora contém o claim completo da API ML
+      status: item.dados_claim?.status?.id || item.dados_claim?.status || item.dados_tracking_info?.status || 'unknown',
+      status_devolucao: item.status_devolucao || item.dados_claim?.status || null,
+      status_money: item.dados_claim?.status_money || item.dados_order?.status_money || null,
+      
+      // ✅ Subtipo e Tipo de Recurso - EXTRAIR DE dados_claim
+      subtype: item.dados_claim?.subtype?.id || item.dados_claim?.subtype || item.dados_claim?.sub_type || null,
+      resource_type: item.dados_claim?.resource_type || null,
+      
       // ✅ RESOLUÇÃO - Capturar resolution.reason (timeout, warehouse_timeout, etc)
       resultado_final: item.resolution_reason || 
                        item.dados_claim?.resolution?.reason || 

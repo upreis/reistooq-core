@@ -217,8 +217,9 @@ serve(async (req) => {
           organization_id: account.organization_id, // ✅ CORRIGIDO: usar account.organization_id
           
           // 📦 GRUPO 1: Dados completos da API ML (originais)
-          dados_claim: claim.claim_details || {},
-          dados_order: claim.order_data || {},
+          // ✅ CORREÇÃO: Salvar claim COMPLETO (ml-api-direct retorna dados direto no claim)
+          dados_claim: claim.claim_details || claim,
+          dados_order: claim.order_data || claim.order || {},
           
           // 📦 GRUPO 2: Identificadores e Item
           dados_product_info: {
