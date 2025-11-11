@@ -104,12 +104,14 @@ class DevolucaoService {
    */
   async syncDevolucoes(
     integrationAccountId: string,
-    batchSize: number = 100
+    batchSize: number = 100,
+    incremental: boolean = false // ✅ NOVO: sincronização incremental
   ): Promise<SyncResponse> {
     const { data, error } = await supabase.functions.invoke('sync-devolucoes', {
       body: {
         integration_account_id: integrationAccountId,
         batch_size: batchSize,
+        incremental, // ✅ Passar flag incremental
       },
     });
 

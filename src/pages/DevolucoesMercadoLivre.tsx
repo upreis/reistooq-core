@@ -179,14 +179,15 @@ function DevolucoesMercadoLivreContent() {
       
       setPagination({ ...pagination, page: 1 });
 
-      // 2️⃣ Sincronizar TODOS os dados da API ML
-      toast.loading('Sincronizando dados completos da API do Mercado Livre...', { id: 'sync-search' });
+      // 2️⃣ Sincronizar dados da API ML (incremental por padrão)
+      toast.loading('🔄 Sincronização rápida (incremental)...', { id: 'sync-search' });
       
       // Sincronizar para cada conta selecionada
       for (const accountId of selectedAccountIds) {
         await syncMutation.mutateAsync({
           integrationAccountId: accountId,
           batchSize: 100,
+          incremental: true, // ✅ Sincronização incremental (rápida)
         });
       }
 

@@ -38,11 +38,16 @@ serve(async (req) => {
   }
 
   try {
-    const { integration_account_id, batch_size = 100, sync_all = false } = await req.json();
+    const { 
+      integration_account_id, 
+      batch_size = 100, 
+      sync_all = false,
+      incremental = false // ✅ NOVO: sincronização incremental
+    } = await req.json();
 
     // ✅ Modo 1: Sincronizar conta específica
     if (integration_account_id) {
-      const result = await syncAccount(integration_account_id, batch_size);
+      const result = await syncAccount(integration_account_id, batch_size, incremental);
       return new Response(
         JSON.stringify(result),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -77,11 +82,11 @@ serve(async (req) => {
 
       logger.info(`🔄 Sincronizando ${accounts.length} contas ML ativas...`);
 
-      // Sincronizar cada conta
+      // Sincronizar cada conta (sempre incremental no cron)
       const results = [];
       for (const account of accounts) {
         try {
-          const result = await syncAccount(account.id, batch_size);
+          const result = await syncAccount(account.id, batch_size, true); // ✅ Incremental por padrão
           results.push({ account_id: account.id, success: true, ...result });
           logger.success(`✅ Conta ${account.account_identifier} sincronizada`);
         } catch (error) {
@@ -125,8 +130,9 @@ serve(async (req) => {
 });
 
 // 🔄 Sincronizar uma conta específica
-async function syncAccount(integrationAccountId: string, batchSize: number) {
-  logger.info(`🚀 Sincronizando conta: ${integrationAccountId}`);
+async function syncAccount(integrationAccountId: string, batchSize: number, incremental: boolean = false) {
+  const syncType = incremental ? 'incremental' : 'full';
+  logger.info(`🚀 Sincronizando conta (${syncType}): ${integrationAccountId}`);
   
   const startTime = Date.now();
   const serviceClient = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -144,12 +150,33 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
     throw new Error('Conta de integração não encontrada');
   }
 
+  // 📅 INCREMENTAL: Buscar data da última sincronização
+  let lastSyncDate = null;
+  if (incremental) {
+    const { data: lastSync } = await serviceClient
+      .from('devolucoes_sync_status')
+      .select('last_sync_at')
+      .eq('integration_account_id', integrationAccountId)
+      .eq('last_sync_status', 'success')
+      .order('last_sync_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastSync?.last_sync_at) {
+      lastSyncDate = new Date(lastSync.last_sync_at);
+      logger.info(`📅 Sincronização incremental desde: ${lastSyncDate.toISOString()}`);
+    } else {
+      logger.warn('⚠️  Sem sincronização anterior - executando sync completa');
+      incremental = false; // Forçar full sync se não houver histórico
+    }
+  }
+
   // 2️⃣ Criar registro de sync
   const { data: syncRecord, error: syncInsertError } = await serviceClient
     .from('devolucoes_sync_status')
     .upsert({
       integration_account_id: integrationAccountId,
-      sync_type: 'full',
+      sync_type: incremental ? 'incremental' : 'full',
       last_sync_status: 'in_progress',
       last_sync_at: new Date().toISOString(),
       items_synced: 0,
@@ -224,11 +251,20 @@ async function syncAccount(integrationAccountId: string, batchSize: number) {
   let hasMore = true;
 
   while (hasMore && totalProcessed < MAX_CLAIMS) {
-    // ✅ CORRIGIDO: A API ML exige pelo menos um filtro além de seller_id
-    // Vamos buscar claims dos últimos 90 dias (máximo recomendado)
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-    const dateFilter = ninetyDaysAgo.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    // ✅ Filtro de data: Incremental OU últimos 90 dias
+    let dateFilter: string;
+    
+    if (incremental && lastSyncDate) {
+      // 📅 INCREMENTAL: Buscar apenas claims criados/atualizados após última sync
+      dateFilter = lastSyncDate.toISOString().split('T')[0];
+      logger.info(`🔄 Buscando claims desde ${dateFilter} (incremental)`);
+    } else {
+      // 📅 FULL: Buscar últimos 90 dias (máximo recomendado)
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+      dateFilter = ninetyDaysAgo.toISOString().split('T')[0];
+      logger.info(`📦 Buscando claims dos últimos 90 dias (full sync)`);
+    }
 
     const params = new URLSearchParams({
       seller_id: account.account_identifier,
