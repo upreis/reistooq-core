@@ -130,6 +130,9 @@ function DevolucoesMercadoLivreContent() {
     try {
       setIsLoadingApi(true);
       
+      // ✅ LIMPAR dados antigos antes de nova busca
+      setApiData(null);
+      
       // 1️⃣ Configurar filtros de data baseado no período selecionado
       const days = parseInt(periodo);
       const hoje = new Date();
