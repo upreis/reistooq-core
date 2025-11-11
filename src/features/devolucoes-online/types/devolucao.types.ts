@@ -13,7 +13,6 @@ export interface MLReturn {
   shipment_status: string;
   tracking_number: string | null;
   shipment_destination: string | null;
-  shipment_type: string | null;
   date_created: string;
   date_closed: string | null;
   refund_at: string | null;

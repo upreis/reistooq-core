@@ -116,7 +116,8 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
     return destination ? labels[destination] || destination : '-';
   };
 
-  const getShipmentTypeLabel = (type: string | null) => {
+  // ✅ Tipo de envio agora vem de tracking_info JSONB
+  const getShipmentTypeLabel = (type: string | null | undefined) => {
     const labels: Record<string, string> = {
       'return': 'Devolução',
       'return_from_triage': 'Revisão',
@@ -201,7 +202,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
               <TableHead className="font-semibold">Qtd Devolver</TableHead>
               <TableHead className="font-semibold">Shipment ID</TableHead>
               <TableHead className="font-semibold">Status Envio</TableHead>
-              <TableHead className="font-semibold">Tipo Envio</TableHead>
               <TableHead className="font-semibold">Destino</TableHead>
               <TableHead className="font-semibold">Rastreio</TableHead>
               {/* ✅ FASE 6: Novas colunas de dados enriquecidos com responsividade */}
@@ -420,11 +420,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     className="text-xs"
                   >
                     {translateShipmentStatus(dev.shipment_status || null)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    {getShipmentTypeLabel(dev.shipment_type)}
                   </Badge>
                 </TableCell>
                 <TableCell>

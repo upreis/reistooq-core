@@ -37,7 +37,6 @@ export function useAutoEnrichment({
       const missingSyncFields = 
         !item.status_money || 
         !item.resource_type || 
-        !item.shipment_type ||
         !item.shipment_destination ||
         !item.delivery_limit ||
         !item.refund_at ||
