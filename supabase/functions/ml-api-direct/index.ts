@@ -2399,18 +2399,6 @@ async function buscarPedidosCancelados(
               // 📦 CÓDIGO DE RASTREAMENTO DA DEVOLUÇÃO
               codigo_rastreamento_devolucao: safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.tracking_number || 
                                             safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.tracking_number || null,
-                                  safeClaimData?.return_details_v2?.results?.[0]?.shipments?.[0]?.id || 
-                                  safeClaimData?.return_details_v1?.results?.[0]?.shipments?.[0]?.id
-                
-                if (!shipmentId) return null
-                
-                // Buscar no shipment_history os eventos deste shipment específico de devolução
-                const returnEvents = safeClaimData?.shipment_history?.combined_events?.filter((e: any) => 
-                  e.shipment_id == shipmentId && e.shipment_type === 'return'
-                ) || []
-                
-                return returnEvents.length > 0 ? JSON.stringify(returnEvents) : null
-              })(),
               
               // 📊 STATUS DE RASTREAMENTO DA DEVOLUÇÃO
               status_rastreamento_devolucao: (() => {
