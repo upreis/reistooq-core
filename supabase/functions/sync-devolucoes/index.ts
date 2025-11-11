@@ -213,7 +213,7 @@ serve(async (req) => {
           claim_id: claim.claim_id,
           order_id: claim.order_id,
           integration_account_id: integrationAccountId,
-          organization_id: account.organization_id, // ✅ CORRIGIDO: usar account.organization_id
+          // ❌ REMOVIDO: organization_id NÃO existe na tabela devolucoes_avancadas
           
           // 📦 GRUPO 1: Dados completos da API ML (originais)
           // ✅ CORREÇÃO: Salvar claim COMPLETO (ml-api-direct retorna dados direto no claim)
