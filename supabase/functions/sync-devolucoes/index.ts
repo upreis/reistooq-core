@@ -181,9 +181,6 @@ serve(async (req) => {
           offset: offset,
         }),
       });
-          filters: {}
-        })
-      });
 
       if (!apiResponse.ok) {
         const errorText = await apiResponse.text();
