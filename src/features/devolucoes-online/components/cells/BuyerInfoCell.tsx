@@ -7,18 +7,23 @@ import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ExternalLink, User, Mail, Phone, Calendar } from 'lucide-react';
 import type { BuyerInfo } from '../../types/devolucao.types';
+import { EmptyFieldIndicator } from '../EmptyFieldIndicator';
+import { getEmptyFieldInfo } from '../../utils/emptyFieldDetector';
 
 interface BuyerInfoCellProps {
   buyerInfo?: BuyerInfo | null;
+  rawData?: any; // Dados brutos para análise
 }
 
-export const BuyerInfoCell = memo<BuyerInfoCellProps>(({ buyerInfo }) => {
+export const BuyerInfoCell = memo<BuyerInfoCellProps>(({ buyerInfo, rawData }) => {
   // Se não temos dados do comprador
   if (!buyerInfo) {
+    const analysis = getEmptyFieldInfo('comprador_nome', null, rawData || {});
+    
     return (
-      <div className="text-xs text-muted-foreground flex items-center gap-1">
+      <div className="text-xs text-muted-foreground flex items-center gap-2">
         <User className="w-3 h-3" />
-        <span>Não disponível</span>
+        <EmptyFieldIndicator analysis={analysis} fieldName="Comprador" />
       </div>
     );
   }
@@ -60,12 +65,20 @@ export const BuyerInfoCell = memo<BuyerInfoCellProps>(({ buyerInfo }) => {
       </div>
 
       {/* Email (se disponível) */}
-      {buyerInfo.email && (
+      {buyerInfo.email ? (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Mail className="w-3 h-3 flex-shrink-0" />
           <span className="truncate" title={buyerInfo.email}>
             {buyerInfo.email}
           </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Mail className="w-3 h-3 flex-shrink-0" />
+          <EmptyFieldIndicator 
+            analysis={getEmptyFieldInfo('comprador_email', null, rawData || {})} 
+            fieldName="Email"
+          />
         </div>
       )}
 

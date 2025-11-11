@@ -337,12 +337,12 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 
                 {/* ✅ FASE 1: Dados do Comprador */}
                 <TableCell>
-                  <BuyerInfoCell buyerInfo={dev.buyer_info} />
+                  <BuyerInfoCell buyerInfo={dev.buyer_info} rawData={dev} />
                 </TableCell>
                 
                 {/* ✅ FASE 2: Dados do Produto */}
                 <TableCell>
-                  <ProductInfoCell productInfo={dev.product_info} />
+                  <ProductInfoCell productInfo={dev.product_info} rawData={dev} />
                 </TableCell>
                 
                 {/* ✅ FASE 3: Dados Financeiros */}
