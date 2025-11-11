@@ -1,13 +1,5 @@
-// ✅ SAFETY CHECK: Importar React primeiro para garantir que está carregado
-import React from "react";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { THEMES, type ThemeName } from "./materialm/tokens";
-
-// ✅ CRITICAL FIX: Verificar se React hooks estão disponíveis
-if (!React || typeof useState !== 'function') {
-  console.error('❌ CRITICAL: React or React hooks not loaded properly!');
-  throw new Error('React initialization error - hooks not available');
-}
 
 type ThemeProviderProps = {
   children: ReactNode;
@@ -38,33 +30,19 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  // ✅ SAFETY CHECK: Fallback se useState não estiver disponível
-  let theme: ThemeName;
-  let setTheme: (theme: ThemeName) => void;
-  
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    [theme, setTheme] = useState<ThemeName>(() => {
+  const [theme, setTheme] = useState<ThemeName>(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       return defaultTheme;
     }
     
-      try {
-        const stored = window.localStorage?.getItem?.(storageKey) as ThemeName;
-        return (stored && THEME_OPTIONS.includes(stored)) ? stored : defaultTheme;
-      } catch (error) {
-        console.warn('Theme localStorage error:', error);
-        return defaultTheme;
-      }
-    });
-  } catch (error) {
-    console.error('❌ CRITICAL: useState failed in ThemeProvider!', error);
-    // Fallback to default values
-    theme = defaultTheme;
-    setTheme = () => {
-      console.warn('setTheme called but useState is not available');
-    };
-  }
+    try {
+      const stored = window.localStorage?.getItem?.(storageKey) as ThemeName;
+      return (stored && THEME_OPTIONS.includes(stored)) ? stored : defaultTheme;
+    } catch (error) {
+      console.warn('Theme localStorage error:', error);
+      return defaultTheme;
+    }
+  });
 
   useEffect(() => {
     if (typeof document === 'undefined') return;
