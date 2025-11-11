@@ -28,6 +28,12 @@ export interface DevolucaoBasica {
 
 // ===== TIPOS AVANÇADOS (42 NOVAS COLUNAS) =====
 export interface DevolucaoAvancada extends DevolucaoBasica {
+  // ✅ CORREÇÃO 1 e 3: Adicionar campos para as 4 colunas restauradas/novas
+  item_id?: string | null;           // Item ID do produto
+  variation_id?: string | null;      // Variação ID (null se produto simples)
+  status_money?: string | null;      // Status $ (retained, refunded, available)
+  resource_type?: string | null;     // Tipo Recurso (order, claim, shipment, other)
+  
   // 📨 MENSAGENS E COMUNICAÇÃO (6 colunas)
   timeline_mensagens?: TimelineMessage[] | null;
   ultima_mensagem_data?: string | null;

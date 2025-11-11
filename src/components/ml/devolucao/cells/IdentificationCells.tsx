@@ -34,8 +34,15 @@ export const IdentificationCells: React.FC<IdentificationCellsProps> = ({ devolu
         {devolucao.return_id || '-'}
       </td>
       
-      {/* ❌ REMOVIDO: Player Role - vazio */}
-      {/* ❌ REMOVIDO: Item ID - vazio */}
+      {/* ✅ CORREÇÃO 1: Item ID restaurado */}
+      <td className="px-3 py-3 text-center font-mono text-orange-600 dark:text-orange-400">
+        {devolucao.item_id || '-'}
+      </td>
+      
+      {/* ✅ CORREÇÃO 1: Variação ID restaurado */}
+      <td className="px-3 py-3 text-center font-mono text-purple-600 dark:text-purple-400">
+        {devolucao.variation_id || '-'}
+      </td>
       
       {/* SKU */}
       <td className="px-3 py-3 text-center font-mono text-foreground">

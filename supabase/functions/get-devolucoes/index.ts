@@ -220,10 +220,11 @@ async function getDevolucoes(
       integration_account_id: item.integration_account_id,
       
       // ✅ Status - EXTRAIR DE JSONB dados_tracking_info (FASE 8: Após remoção de colunas físicas)
-      status: item.dados_tracking_info?.status ? { id: item.dados_tracking_info.status } : { id: 'unknown' },
+      // ✅ CORREÇÃO 2: Retornar STRING ao invés de objeto {id: "value"}
+      status: item.dados_tracking_info?.status || 'unknown',
       status_devolucao: item.dados_tracking_info?.status_devolucao || null,
       status_money: item.dados_tracking_info?.status_money || null,
-      subtype: item.dados_tracking_info?.subtipo ? { id: item.dados_tracking_info.subtipo } : null,
+      subtype: item.dados_tracking_info?.subtipo || null,
       resource_type: item.dados_tracking_info?.resource_type || null,
       // ✅ RESOLUÇÃO - Capturar resolution.reason (timeout, warehouse_timeout, etc)
       resultado_final: item.resolution_reason || 
