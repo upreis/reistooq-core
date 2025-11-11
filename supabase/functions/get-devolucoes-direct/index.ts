@@ -88,33 +88,55 @@ serve(async (req) => {
       throw new Error('Token ML não disponível. Reconecte a integração.');
     }
 
-    // ✅ BUSCAR CLAIMS DA API ML (PADRÃO EXATO DE ml-claims-fetch)
-    const params = new URLSearchParams({
-      player_role: 'respondent',
-      player_user_id: sellerId.toString(),
-      limit: '200',
-      offset: '0',
-      sort: 'date_created:desc'
-    });
+    // ✅ BUSCAR CLAIMS DA API ML COM PAGINAÇÃO
+    let allClaims: any[] = [];
+    let offset = 0;
+    const limit = 50;
+    let hasMore = true;
 
-    const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
-    
-    console.log('[get-devolucoes-direct] Chamando API ML:', claimsUrl);
+    while (hasMore) {
+      const params = new URLSearchParams({
+        player_role: 'respondent',
+        player_user_id: sellerId.toString(),
+        limit: limit.toString(),
+        offset: offset.toString(),
+        sort: 'date_created:desc'
+      });
 
-    const claimsRes = await fetch(claimsUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
+      const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
+      
+      console.log(`[get-devolucoes-direct] Buscando página offset=${offset}`);
 
-    if (!claimsRes.ok) {
-      const errorText = await claimsRes.text();
-      console.error('[get-devolucoes-direct] Erro ML API:', errorText);
-      throw new Error(`ML API error: ${claimsRes.status}`);
+      const claimsRes = await fetch(claimsUrl, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      if (!claimsRes.ok) {
+        const errorText = await claimsRes.text();
+        console.error('[get-devolucoes-direct] Erro ML API:', errorText);
+        throw new Error(`ML API error: ${claimsRes.status}`);
+      }
+
+      const claimsData = await claimsRes.json();
+      const claims = claimsData.data || [];
+      
+      console.log(`[get-devolucoes-direct] Página offset=${offset}: ${claims.length} claims`);
+
+      if (claims.length === 0) {
+        hasMore = false;
+      } else {
+        allClaims.push(...claims);
+        offset += limit;
+        
+        // Se retornou menos que o limite, não há mais páginas
+        if (claims.length < limit) {
+          hasMore = false;
+        }
+      }
     }
 
-    const claimsData = await claimsRes.json();
-    let claims = claimsData.data || [];
-
-    console.log(`[get-devolucoes-direct] ${claims.length} claims retornados pela API ML`);
+    console.log(`[get-devolucoes-direct] Total de ${allClaims.length} claims da API ML`);
+    let claims = allClaims;
 
     // ✅ FILTRAR POR DATA CLIENT-SIDE (igual ml-claims-fetch)
     if (date_from || date_to) {
