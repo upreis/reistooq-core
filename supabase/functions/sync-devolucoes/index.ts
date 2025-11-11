@@ -42,12 +42,14 @@ serve(async (req) => {
       integration_account_id, 
       batch_size = 100, 
       sync_all = false,
-      incremental = false // ✅ NOVO: sincronização incremental
+      incremental = false, // ✅ NOVO: sincronização incremental
+      date_from,  // ✅ NOVO: Filtro de data início vindo do frontend
+      date_to     // ✅ NOVO: Filtro de data fim vindo do frontend
     } = await req.json();
 
     // ✅ Modo 1: Sincronizar conta específica
     if (integration_account_id) {
-      const result = await syncAccount(integration_account_id, batch_size, incremental);
+      const result = await syncAccount(integration_account_id, batch_size, incremental, date_from, date_to);
       return new Response(
         JSON.stringify(result),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -130,9 +132,15 @@ serve(async (req) => {
 });
 
 // 🔄 Sincronizar uma conta específica
-async function syncAccount(integrationAccountId: string, batchSize: number, incremental: boolean = false) {
+async function syncAccount(
+  integrationAccountId: string, 
+  batchSize: number, 
+  incremental: boolean = false,
+  dateFrom?: string,  // ✅ NOVO: Filtro de data início
+  dateTo?: string     // ✅ NOVO: Filtro de data fim
+) {
   const syncType = incremental ? 'incremental' : 'full';
-  logger.info(`🚀 Sincronizando conta (${syncType}): ${integrationAccountId}`);
+  logger.info(`🚀 Sincronizando conta (${syncType}): ${integrationAccountId}`, { dateFrom, dateTo });
   
   const startTime = Date.now();
   const serviceClient = createClient(SUPABASE_URL, SERVICE_KEY, {
@@ -252,15 +260,19 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
   const allMappedClaims: any[] = []; // ✅ NOVO: Acumular todos os dados mapeados da API
 
   while (hasMore && totalProcessed < MAX_CLAIMS) {
-    // ✅ Filtro de data: Incremental OU últimos 90 dias
+    // ✅ Filtro de data: Prioridade -> dateFrom do frontend > Incremental > Últimos 90 dias
     let dateFilter: string;
     
-    if (incremental && lastSyncDate) {
-      // 📅 INCREMENTAL: Buscar apenas claims criados/atualizados após última sync
+    if (dateFrom) {
+      // 📅 PRIORIDADE 1: Usar filtro do frontend (7, 15, 30, 60 dias selecionado pelo usuário)
+      dateFilter = dateFrom;
+      logger.info(`📅 Buscando claims desde ${dateFilter} (período selecionado: ${dateFrom} até ${dateTo || 'hoje'})`);
+    } else if (incremental && lastSyncDate) {
+      // 📅 PRIORIDADE 2: Incremental - Buscar apenas claims criados/atualizados após última sync
       dateFilter = lastSyncDate.toISOString().split('T')[0];
       logger.info(`🔄 Buscando claims desde ${dateFilter} (incremental)`);
     } else {
-      // 📅 FULL: Buscar últimos 90 dias (máximo recomendado)
+      // 📅 PRIORIDADE 3: Full sync padrão - Buscar últimos 90 dias (máximo recomendado)
       const ninetyDaysAgo = new Date();
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
       dateFilter = ninetyDaysAgo.toISOString().split('T')[0];

@@ -172,6 +172,9 @@ function DevolucoesMercadoLivreContent() {
             integration_account_id: accountId,
             batch_size: 100,
             incremental: !fullSync, // Full sync força buscar últimos 90 dias
+            // ✅ CORREÇÃO CRÍTICA: Passar filtros de data para a Edge Function
+            date_from: dateFromISO,
+            date_to: dateToISO,
           },
         });
         
@@ -248,7 +251,7 @@ function DevolucoesMercadoLivreContent() {
 
       console.log(`✅ Total acumulado: ${allData.length} devoluções de ${selectedAccountIds.length} conta(s)`);
 
-      // ✅ EXIBIR TODAS as devoluções retornadas pela API (sem filtro adicional de data)
+      // ✅ Dados já vêm filtrados pela Edge Function conforme período selecionado
       console.log(`✅ Total de devoluções recebidas da API: ${allData.length}`);
       
       // DEBUG: Mostrar período das devoluções
@@ -259,7 +262,7 @@ function DevolucoesMercadoLivreContent() {
         console.log(`📅 Período das devoluções: ${maisAntiga.toLocaleDateString()} até ${maisRecente.toLocaleDateString()}`);
       }
 
-      const filteredData = allData; // ✅ SEM FILTRO - Mostrar tudo da API
+      const filteredData = allData; // Dados já filtrados pela API
 
       console.log(`✅ Exibindo ${filteredData.length} devoluções DIRETO da API ML!`);
 
