@@ -277,6 +277,8 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
     });
     const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
     
+    logger.info(`🔍 Requisição ML API: ${claimsUrl}`);
+    
     const claimsResponse = await fetch(claimsUrl, {
       headers: {
         'Authorization': `Bearer ${mlAccessToken}`,
@@ -285,14 +287,23 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
     });
 
     if (!claimsResponse.ok) {
-      throw new Error(`API ML erro (${claimsResponse.status}): ${await claimsResponse.text()}`);
+      const errorText = await claimsResponse.text();
+      logger.error(`❌ API ML erro (${claimsResponse.status}): ${errorText}`);
+      throw new Error(`API ML erro (${claimsResponse.status}): ${errorText}`);
     }
 
     const claimsData = await claimsResponse.json();
     const claims = claimsData.data || [];
     const total = claimsData.paging?.total || 0;
+    const apiLimit = claimsData.paging?.limit || BATCH_SIZE;
+    const apiOffset = claimsData.paging?.offset || offset;
     
-    logger.info(`✅ ${claims.length} claims recebidos (total: ${total})`);
+    logger.info(`✅ ${claims.length} claims recebidos (offset: ${apiOffset}, limit: ${apiLimit}, total_api: ${total})`);
+    
+    // 🔍 DEBUG: Logar resposta completa da API ML se houver poucos resultados
+    if (total < 50 && offset === 0) {
+      logger.warn(`⚠️  API ML retornou apenas ${total} claims. Paging info:`, claimsData.paging);
+    }
     
     // 6️⃣ Processar claims: Order + Reviews + Mapear
     const processedClaims = await Promise.all(
@@ -414,14 +425,19 @@ async function syncAccount(integrationAccountId: string, batchSize: number, incr
     
     totalProcessed += claims.length;
     offset += BATCH_SIZE;
-    hasMore = (offset < total) && (totalProcessed < MAX_CLAIMS);
+    
+    // ✅ CORREÇÃO: Continuar buscando enquanto houver dados OU até atingir limite
+    // A API ML pode retornar total incorreto, então continuamos até não haver mais claims
+    hasMore = (claims.length === BATCH_SIZE) && (totalProcessed < MAX_CLAIMS);
+    
+    logger.info(`📊 Progresso: ${totalProcessed} processados, offset próximo: ${offset}, hasMore: ${hasMore}`);
     
     // Atualizar progresso
     await serviceClient
       .from('devolucoes_sync_status')
       .update({
         items_synced: totalProcessed,
-        items_total: Math.min(total, MAX_CLAIMS)
+        items_total: Math.max(total, totalProcessed) // Usar o maior valor
       })
       .eq('id', syncId);
   }
