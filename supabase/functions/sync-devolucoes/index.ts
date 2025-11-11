@@ -85,9 +85,8 @@ serve(async (req) => {
         items_total: 0,
         items_failed: 0
       }, {
-        // ✅ CORRIGIDO FINAL: Usar NOMES DAS COLUNAS diretamente
-        // PostgreSQL/Supabase JS aceita nomes de colunas separados por vírgula
-        onConflict: 'integration_account_id,sync_type'
+        // ✅ CORRIGIDO DEFINITIVO: Usar nome EXPLÍCITO da constraint criada na migration
+        onConflict: 'devolucoes_sync_status_account_sync_type_key'
       })
       .select()
       .single();
