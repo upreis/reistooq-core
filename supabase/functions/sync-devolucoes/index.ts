@@ -134,14 +134,34 @@ async function syncDevolucoes(
         throw new Error(`API ML retornou erro: ${apiData.error}`);
       }
 
-      const { claims, total, hasMore: apiHasMore } = apiData;
+      // 🔥 CORRIGIDO: Estrutura correta da resposta ml-api-direct
+      const claims = apiData.data || []; // ✅ apiData.data contém os claims
+      const total = apiData.pagination?.total || 0;
+      const hasMoreFromApi = apiData.pagination ? 
+        (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
+      
+      // 🔥 UPSERT DOS DADOS EM devolucoes_avancadas
+      if (claims && claims.length > 0) {
+        logger.info(`💾 Salvando ${claims.length} claims em devolucoes_avancadas...`);
+        
+        const { error: upsertError } = await supabase
+          .from('devolucoes_avancadas')
+          .upsert(claims, {
+            onConflict: 'claim_id,integration_account_id',
+            ignoreDuplicates: false
+          });
+        
+        if (upsertError) {
+          logger.error(`❌ Erro ao salvar claims: ${upsertError.message}`);
+          throw upsertError;
+        }
+        
+        totalCreated += claims.length;
+        logger.success(`✅ ${claims.length} claims salvos com sucesso em devolucoes_avancadas`);
+      }
       
       totalProcessed += claims.length;
-      // ml-api-direct retorna info de criados/atualizados
-      if (apiData.created) totalCreated += apiData.created;
-      if (apiData.updated) totalUpdated += apiData.updated;
-      
-      hasMore = apiHasMore;
+      hasMore = hasMoreFromApi;
       offset += batchSize;
 
       logger.success(`✅ Lote processado: ${claims.length} claims (Total: ${totalProcessed}/${total})`);
