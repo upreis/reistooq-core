@@ -91,9 +91,13 @@ function buildQuery(
     query = query.in('status', filters.status);
   }
 
-  // 🔍 Filtro por status_devolucao
+  // 🔍 Filtro por status_devolucao (EXTRAIR DE JSONB dados_tracking_info)
   if (filters.status_devolucao && filters.status_devolucao.length > 0) {
-    query = query.in('status_devolucao', filters.status_devolucao);
+    // ✅ FASE 8: Filtrar via JSONB após remoção da coluna física
+    const statusConditions = filters.status_devolucao
+      .map(s => `dados_tracking_info->>'status_devolucao'.eq.${s}`)
+      .join(',');
+    query = query.or(statusConditions);
   }
 
   // 🔍 Filtro por período
@@ -142,7 +146,7 @@ async function getAggregatedStats(
   try {
     let query = supabase
       .from('devolucoes_avancadas')
-      .select('status_devolucao, dados_financial_info');
+      .select('dados_tracking_info, dados_financial_info'); // ✅ FASE 8: Selecionar JSONB ao invés de coluna física
 
     // Aplicar filtro baseado no tipo de integrationAccountId
     if (Array.isArray(integrationAccountId)) {
@@ -162,7 +166,8 @@ async function getAggregatedStats(
     const stats = {
       total: data.length,
       por_status_devolucao: data.reduce((acc: any, item: any) => {
-        const status = item.status_devolucao || 'unknown';
+        // ✅ FASE 8: Extrair de JSONB após remoção da coluna física
+        const status = item.dados_tracking_info?.status_devolucao || 'unknown';
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {}),
@@ -214,9 +219,9 @@ async function getDevolucoes(
       
       integration_account_id: item.integration_account_id,
       
-      // ✅ Status - EXTRAIR DE JSONB dados_tracking_info
+      // ✅ Status - EXTRAIR DE JSONB dados_tracking_info (FASE 8: Após remoção de colunas físicas)
       status: item.dados_tracking_info?.status ? { id: item.dados_tracking_info.status } : { id: 'unknown' },
-      status_devolucao: item.status_devolucao || item.dados_tracking_info?.status_devolucao || null,
+      status_devolucao: item.dados_tracking_info?.status_devolucao || null,
       status_money: item.dados_tracking_info?.status_money || null,
       subtype: item.dados_tracking_info?.subtipo ? { id: item.dados_tracking_info.subtipo } : null,
       resource_type: item.dados_tracking_info?.resource_type || null,
