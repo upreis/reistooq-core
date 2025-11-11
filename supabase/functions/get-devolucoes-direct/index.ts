@@ -88,23 +88,20 @@ serve(async (req) => {
       throw new Error('Token ML não disponível. Reconecte a integração.');
     }
 
-    // ✅ BUSCAR CLAIMS DA API ML com filtros corretos
+    // ✅ BUSCAR CLAIMS DA API ML
+    // A API requer pelo menos UM dos filtros: id, type, stage, status, resource_id, resource, 
+    // reason_id, post_purchase_id, site_id, player_role, player_user_id, order_id, parent_id, 
+    // date_created, last_updated, test_claim
+    
+    // Usar site_id como filtro mínimo (funciona igual /reclamacoes)
     const params = new URLSearchParams({
+      site_id: 'MLB', // Mercado Livre Brasil
       offset: '0',
       limit: '200',
       sort: 'date_created',
       order: 'desc'
     });
 
-    // Adicionar filtros de data se fornecidos (OBRIGATÓRIO para API ML)
-    if (date_from) {
-      params.append('date_created.from', date_from + 'T00:00:00.000-00:00');
-    }
-    if (date_to) {
-      params.append('date_created.to', date_to + 'T23:59:59.999-00:00');
-    }
-
-    // ⚠️ API ML NÃO aceita seller_id como filtro - usa date_created
     const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
     
     console.log('[get-devolucoes-direct] Chamando API ML:', claimsUrl);
@@ -123,6 +120,29 @@ serve(async (req) => {
     let claims = claimsData.data || [];
 
     console.log(`[get-devolucoes-direct] ${claims.length} claims retornados pela API ML`);
+
+    // ✅ FILTRAR por seller_id E data CLIENT-SIDE
+    if (sellerId) {
+      claims = claims.filter((claim: any) => {
+        const seller = claim.players?.find((p: any) => p.role === 'seller');
+        return seller?.user_id?.toString() === sellerId;
+      });
+      console.log(`[get-devolucoes-direct] Após filtro seller: ${claims.length} claims`);
+    }
+
+    if (date_from || date_to) {
+      const dateFromObj = date_from ? new Date(date_from) : null;
+      const dateToObj = date_to ? new Date(date_to) : null;
+
+      claims = claims.filter((claim: any) => {
+        const claimDate = new Date(claim.date_created);
+        if (dateFromObj && claimDate < dateFromObj) return false;
+        if (dateToObj && claimDate > dateToObj) return false;
+        return true;
+      });
+
+      console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
+    }
 
     // ✅ RETORNAR DADOS DIRETO (sem salvar no banco)
     return new Response(
