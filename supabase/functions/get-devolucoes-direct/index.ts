@@ -158,105 +158,95 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
-    // ✅ ENRIQUECER EM LOTES com DELAY (seguindo padrão de ml-claims-fetch)
-    console.log('[get-devolucoes-direct] Enriquecendo dados em lotes...');
-    
-    const BATCH_SIZE = 10;   // Processar 10 claims por vez
-    const DELAY_MS = 200;    // Delay de 200ms entre lotes
+    // ✅ ENRIQUECER SEQUENCIALMENTE (evitar rate limit 429)
+    console.log('[get-devolucoes-direct] Enriquecendo dados sequencialmente...');
     
     const allEnrichedClaims: any[] = [];
+    const DELAY_BETWEEN_REQUESTS = 100; // 100ms entre cada request individual
     
-    for (let i = 0; i < claims.length; i += BATCH_SIZE) {
-      const batch = claims.slice(i, i + BATCH_SIZE);
-      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(claims.length / BATCH_SIZE);
-
-      console.log(`🔄 Processando lote ${batchNumber}/${totalBatches} (${batch.length} claims)...`);
-
-      // Processar claims do lote em paralelo
-      const batchPromises = batch.map(async (claim: any) => {
-        try {
-          // ✅ 1. Buscar dados COMPLETOS do pedido (order_data)
-          let orderData = null;
-          if (claim.resource_id) {
-            try {
-              const orderRes = await fetch(
-                `https://api.mercadolibre.com/orders/${claim.resource_id}`,
-                { headers: { 'Authorization': `Bearer ${accessToken}` } }
-              );
-              if (orderRes.ok) {
-                orderData = await orderRes.json();
-              }
-            } catch (err) {
-              console.error(`[get-devolucoes-direct] Erro ao buscar order ${claim.resource_id}:`, err);
-            }
-          }
-
-          // ✅ 2. Buscar mensagens do claim
-          let messagesData = null;
+    for (let i = 0; i < claims.length; i++) {
+      const claim = claims[i];
+      console.log(`🔄 Processando claim ${i + 1}/${claims.length} (ID: ${claim.id})...`);
+      
+      try {
+        // ✅ 1. Buscar dados COMPLETOS do pedido (order_data)
+        let orderData = null;
+        if (claim.resource_id) {
           try {
-            const messagesRes = await fetch(
-              `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
+            const orderRes = await fetch(
+              `https://api.mercadolibre.com/orders/${claim.resource_id}`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } }
             );
-            if (messagesRes.ok) {
-              messagesData = await messagesRes.json();
+            if (orderRes.ok) {
+              orderData = await orderRes.json();
+              console.log(`✅ Order ${claim.resource_id} buscado`);
             }
+            await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
           } catch (err) {
-            console.error(`[get-devolucoes-direct] Erro ao buscar messages do claim ${claim.id}:`, err);
+            console.error(`❌ Erro ao buscar order ${claim.resource_id}:`, err);
           }
-
-          // ✅ 3. Buscar dados COMPLETOS de return (return_details_v2)
-          let returnData = null;
-          try {
-            const returnRes = await fetch(
-              `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
-              { headers: { 'Authorization': `Bearer ${accessToken}` } }
-            );
-            if (returnRes.ok) {
-              returnData = await returnRes.json();
-            }
-          } catch (err) {
-            // Return pode não existir para alguns claims (normal)
-          }
-
-          // ✅ 4. Buscar reviews SE existir related_entities
-          let reviewsData = null;
-          if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
-            try {
-              const reviewsRes = await fetch(
-                `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
-                { headers: { 'Authorization': `Bearer ${accessToken}` } }
-              );
-              if (reviewsRes.ok) {
-                reviewsData = await reviewsRes.json();
-              }
-            } catch (err) {
-              // Reviews podem não existir
-            }
-          }
-
-          return {
-            ...claim,
-            order_data: orderData,
-            claim_messages: messagesData,
-            return_details_v2: returnData,
-            review_details: reviewsData
-          };
-        } catch (err) {
-          console.error(`[get-devolucoes-direct] Erro ao enriquecer claim ${claim.id}:`, err);
-          return claim;
         }
-      });
 
-      // Aguardar conclusão do lote
-      const batchResults = await Promise.all(batchPromises);
-      allEnrichedClaims.push(...batchResults);
+        // ✅ 2. Buscar mensagens do claim
+        let messagesData = null;
+        try {
+          const messagesRes = await fetch(
+            `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+          );
+          if (messagesRes.ok) {
+            messagesData = await messagesRes.json();
+            console.log(`✅ Messages do claim ${claim.id} buscadas`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+        } catch (err) {
+          console.error(`❌ Erro ao buscar messages do claim ${claim.id}:`, err);
+        }
 
-      // Delay entre lotes (exceto no último)
-      if (i + BATCH_SIZE < claims.length) {
-        console.log(`⏸️ Aguardando ${DELAY_MS}ms antes do próximo lote...`);
-        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+        // ✅ 3. Buscar dados COMPLETOS de return (return_details_v2)
+        let returnData = null;
+        try {
+          const returnRes = await fetch(
+            `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } }
+          );
+          if (returnRes.ok) {
+            returnData = await returnRes.json();
+            console.log(`✅ Return do claim ${claim.id} buscado`);
+          }
+          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+        } catch (err) {
+          // Return pode não existir para alguns claims (normal)
+        }
+
+        // ✅ 4. Buscar reviews SE existir related_entities
+        let reviewsData = null;
+        if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
+          try {
+            const reviewsRes = await fetch(
+              `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
+              { headers: { 'Authorization': `Bearer ${accessToken}` } }
+            );
+            if (reviewsRes.ok) {
+              reviewsData = await reviewsRes.json();
+              console.log(`✅ Reviews do return ${returnData.id} buscadas`);
+            }
+            await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
+          } catch (err) {
+            console.error(`❌ Erro ao buscar reviews:`, err);
+          }
+        }
+
+        allEnrichedClaims.push({
+          ...claim,
+          order_data: orderData,
+          claim_messages: messagesData,
+          return_details_v2: returnData,
+          review_details: reviewsData
+        });
+      } catch (err) {
+        console.error(`❌ Erro ao enriquecer claim ${claim.id}:`, err);
+        allEnrichedClaims.push(claim);
       }
     }
     
