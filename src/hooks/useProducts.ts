@@ -36,9 +36,9 @@ export interface Product extends BaseProduct {
   cor?: string | null;
   peso_unitario_g?: number | null;
   peso_cx_master_kg?: number | null;
-  comprimento?: number | null;
-  largura?: number | null;
-  altura?: number | null;
+  comprimento_cm?: number | null;
+  largura_cm?: number | null;
+  altura_cm?: number | null;
   cbm_cubagem?: number | null;
   cubagem_cm3?: number | null;
   ncm?: string | null;
@@ -53,16 +53,7 @@ export interface Product extends BaseProduct {
   observacoes?: string | null;
   unidade?: string | null;
   pcs_ctn?: number | null;
-  // Novos campos do template
-  sob_encomenda?: boolean | null;
-  dias_preparacao?: number | null;
-  peso_liquido_kg?: number | null;
-  peso_bruto_kg?: number | null;
-  numero_volumes?: number | null;
-  tipo_embalagem?: string | null;
-  codigo_cest?: string | null;
-  origem?: number | null;
-  // Campos de categoria hierárquica
+  // Campos que precisam ser mapeados para nomes corretos do banco
   categoria_principal?: string | null;
   categoria_nivel2?: string | null;
   subcategoria?: string | null;

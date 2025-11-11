@@ -29,16 +29,12 @@ interface ProductFormData {
   categoria_principal: string;
   categoria_nivel2: string;
   descricao: string;
-  peso_bruto_kg: number;
-  peso_liquido_kg: number;
-  largura: number;
-  altura: number;
-  comprimento: number;
-  dias_preparacao: number;
-  tipo_embalagem: string;
+  peso_cx_master_kg: number;
+  peso_unitario_g: number;
+  largura_cm: number;
+  altura_cm: number;
+  comprimento_cm: number;
   ncm: string;
-  codigo_cest: string;
-  origem: number | null;
 }
 
 // Função para calcular cubagem (m³)
