@@ -71,6 +71,11 @@ export function useAutoEnrichment({
   }, [data]);
 
   useEffect(() => {
+    // ✅ DESABILITAR disparo automático para evitar sync em filtros
+    // O auto-enriquecimento estava causando erro 500 ao aplicar filtros
+    // Usuário deve usar botões manuais "Sinc. Completa" ou "Enriquecer"
+    return;
+    
     // ✅ Condições de disparo mais robustas
     if (!enabled || !integrationAccountId || data.length === 0) {
       return;
