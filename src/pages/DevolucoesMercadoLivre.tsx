@@ -181,7 +181,8 @@ function DevolucoesMercadoLivreContent() {
             // Extrair dados do order JSONB
             order: item.dados_order || null,
             // Extrair dados do claim JSONB se existir
-            status: item.dados_claim?.status || { id: item.status_rastreamento || 'unknown' },
+            // ✅ CORRIGIDO: Usar dados_order.status ao invés de unknown
+            status: item.dados_claim?.status || { id: item.dados_order?.status || 'unknown' },
             status_money: item.dados_claim?.status_money || { id: item.metodo_pagamento || 'unknown' },
             subtype: item.dados_claim?.subtype || { id: item.dados_claim?.type || 'return' },
             resource_type: item.dados_claim?.resource_type || null,

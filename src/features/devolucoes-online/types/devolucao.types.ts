@@ -310,6 +310,8 @@ export interface ProductInfo {
   condition: string | null;
   available_quantity: number;
   sold_quantity: number;
+  variation_id?: number | null; // ✅ ADICIONADO: Variation ID do produto
+  category_id?: string | null;  // ✅ ADICIONADO: Category ID do produto
 }
 
 // ✅ FASE 3: Dados Financeiros

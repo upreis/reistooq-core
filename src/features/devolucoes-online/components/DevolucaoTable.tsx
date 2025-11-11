@@ -383,7 +383,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   {firstOrder?.item_id || '-'}
                 </TableCell>
                 <TableCell className="text-xs">
-                  {firstOrder?.variation_id || '-'}
+                  {dev.product_info?.variation_id || firstOrder?.variation_id || '-'}
                 </TableCell>
                 <TableCell>
                   <Badge 

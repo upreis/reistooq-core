@@ -1,6 +1,6 @@
 /**
  * 🔍 API DEBUG PANEL
- * Painel expandível com dados brutos da API ML
+ * Painel expandível com dados brutos da API ML e relatório de campos JSONB
  */
 
 import { useState } from 'react';
@@ -8,7 +8,9 @@ import { ChevronDown, ChevronUp, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { JsonbFieldsReport } from './JsonbFieldsReport';
 
 interface ApiDebugPanelProps {
   data: any;
@@ -68,11 +70,22 @@ export function ApiDebugPanel({ data, title = 'Resposta Completa da API ML' }: A
 
         {/* Expandable Content */}
         {isOpen && (
-          <ScrollArea className="h-[400px] w-full rounded-md border border-blue-200 dark:border-blue-800 bg-background">
-            <pre className="p-4 text-xs font-mono overflow-x-auto">
-              <code className="text-foreground">{jsonString}</code>
-            </pre>
-          </ScrollArea>
+          <Tabs defaultValue="report" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="report">📊 Relatório de Campos</TabsTrigger>
+              <TabsTrigger value="json">🔍 JSON Bruto</TabsTrigger>
+            </TabsList>
+            <TabsContent value="report" className="mt-3">
+              <JsonbFieldsReport data={data} />
+            </TabsContent>
+            <TabsContent value="json" className="mt-3">
+              <ScrollArea className="h-[600px] w-full rounded-md border border-blue-200 dark:border-blue-800 bg-background">
+                <pre className="p-4 text-xs font-mono overflow-x-auto">
+                  <code className="text-foreground">{jsonString}</code>
+                </pre>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
         )}
 
         {/* Collapsed Preview */}

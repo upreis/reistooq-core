@@ -60,11 +60,21 @@ export const ProductInfoCell = ({ productInfo }: ProductInfoCellProps) => {
           <ExternalLink className="h-3 w-3 text-muted-foreground flex-shrink-0 mt-0.5" />
         </div>
 
-        {/* SKU e Preço */}
+        {/* SKU, Category ID e Preço */}
         <div className="flex items-center gap-2 flex-wrap">
           {productInfo.sku && (
             <Badge variant="secondary" className="text-xs font-mono">
               SKU: {productInfo.sku}
+            </Badge>
+          )}
+          {productInfo.category_id && (
+            <Badge variant="outline" className="text-xs">
+              Cat: {productInfo.category_id}
+            </Badge>
+          )}
+          {productInfo.variation_id && (
+            <Badge variant="outline" className="text-xs font-mono">
+              Var: {productInfo.variation_id}
             </Badge>
           )}
           <span className="text-sm font-semibold text-primary">
