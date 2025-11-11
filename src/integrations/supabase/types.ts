@@ -1171,6 +1171,7 @@ export type Database = {
           dados_order: Json | null
           dados_product_condition: Json | null
           dados_product_info: Json | null
+          dados_quantities: Json | null
           dados_reasons: Json | null
           dados_refund_info: Json | null
           dados_return: Json | null
@@ -1323,6 +1324,7 @@ export type Database = {
           dados_order?: Json | null
           dados_product_condition?: Json | null
           dados_product_info?: Json | null
+          dados_quantities?: Json | null
           dados_reasons?: Json | null
           dados_refund_info?: Json | null
           dados_return?: Json | null
@@ -1475,6 +1477,7 @@ export type Database = {
           dados_order?: Json | null
           dados_product_condition?: Json | null
           dados_product_info?: Json | null
+          dados_quantities?: Json | null
           dados_reasons?: Json | null
           dados_refund_info?: Json | null
           dados_return?: Json | null
