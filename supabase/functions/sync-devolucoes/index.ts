@@ -279,9 +279,12 @@ async function syncAccount(
       logger.info(`📦 Buscando claims dos últimos 90 dias (full sync)`);
     }
 
+    // ⚠️ LIMITAÇÃO DA API ML: A API não suporta filtro de data_até (dateTo)
+    // A API retorna claims desde date_created até HOJE
+    // Se precisar filtrar por dateTo, fazer no código após receber os dados
     const params = new URLSearchParams({
       seller_id: account.account_identifier,
-      date_created: dateFilter, // ✅ Filtro obrigatório (data início)
+      date_created: dateFilter, // ✅ API ML interpreta como "desde esta data até hoje"
       offset: offset.toString(),
       limit: BATCH_SIZE.toString(),
       sort: 'date_created',
