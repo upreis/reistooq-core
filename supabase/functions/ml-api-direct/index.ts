@@ -105,9 +105,9 @@ serve(async (req) => {
 
     logger.debug('ML API Direct Request', { action, integration_account_id, seller_id, filters })
 
-    // 🆕 NOVO ENDPOINT: mapear_claim (usado por sync-devolucoes)
+    // 🆕 ENDPOINT COMPLETO: mapear_claim (FASE 2)
     if (action === 'mapear_claim') {
-      const { claim_data, order_data, reviews_data } = requestBody;
+      const { claim_data, order_data, reviews_data, account_id, account_name } = requestBody;
       
       if (!claim_data) {
         return new Response(
@@ -117,33 +117,154 @@ serve(async (req) => {
       }
       
       try {
-        // TODO: Implementar mapeamento usando funções existentes
-        // Por enquanto, retornar estrutura básica
-        const mapped = {
-          claim_id: claim_data.id,
-          order_id: claim_data.resource_id || order_data?.id,
-          integration_account_id: requestBody.integration_account_id,
+        logger.info(`🗺️ Mapeando claim ${claim_data.id}`);
+        
+        // ✅ MAPEAMENTO COMPLETO usando estrutura consolidada
+        const safeClaimData = claim_data || {};
+        const safeOrderDetail = order_data || {};
+        
+        const mappedData = {
+          // IDENTIFICADORES
+          claim_id: safeClaimData.id,
+          order_id: safeOrderDetail.id || safeClaimData.resource_id || 'N/A',
+          integration_account_id: account_id || requestBody.integration_account_id,
+          account_name: account_name || null,
           
-          // Dados brutos completos
-          dados_claim: claim_data,
-          dados_order: order_data || {},
-          dados_review: reviews_data || {},
+          // STATUS
+          status_devolucao: safeClaimData.claim_details?.status || 
+                           safeClaimData.return_details_v2?.results?.[0]?.status || 
+                           safeClaimData.return_details_v1?.results?.[0]?.status || null,
           
-          // Campos básicos extraídos
-          status: claim_data.status,
-          date_created: claim_data.date_created,
+          // PRODUTO
+          produto_titulo: safeOrderDetail.order_items?.[0]?.item?.title || 'Produto não identificado',
+          sku: safeOrderDetail.order_items?.[0]?.item?.seller_sku || '',
+          quantidade: safeOrderDetail.order_items?.[0]?.quantity || 1,
+          valor_retido: safeOrderDetail.total_amount || 0,
           
-          // TODO: Adicionar mapeamento completo de 200+ campos
+          // CLASSIFICAÇÃO
+          tipo_claim: safeClaimData.claim_details?.type || null,
+          subtipo_claim: safeClaimData.claim_details?.stage || safeClaimData.claim_details?.subtype || null,
+          
+          // REASONS (já enriquecido no sync-devolucoes)
+          reason_id: safeClaimData.dados_reasons?.reason_id || 
+                    safeClaimData.claim_details?.reason_id || 
+                    safeClaimData.reason_id || null,
+          reason_name: safeClaimData.dados_reasons?.reason_name || null,
+          reason_detail: safeClaimData.dados_reasons?.reason_detail || null,
+          dados_reasons: safeClaimData.dados_reasons || null,
+          
+          // COMUNICAÇÃO
+          timeline_mensagens: safeClaimData.claim_messages?.messages || [],
+          numero_interacoes: safeClaimData.claim_messages?.messages?.length || 0,
+          ultima_mensagem_data: (() => {
+            const messages = safeClaimData.claim_messages?.messages || [];
+            if (messages.length > 0) {
+              return messages.sort((a: any, b: any) => 
+                new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+              )[0].date_created;
+            }
+            return null;
+          })(),
+          ultima_mensagem_remetente: (() => {
+            const messages = safeClaimData.claim_messages?.messages || [];
+            if (messages.length > 0) {
+              return messages.sort((a: any, b: any) => 
+                new Date(b.date_created).getTime() - new Date(a.date_created).getTime()
+              )[0]?.from?.role;
+            }
+            return null;
+          })(),
+          
+          // TRACKING
+          codigo_rastreamento: safeClaimData.shipment_tracking?.original_tracking?.tracking_number || 
+                               safeClaimData.shipment_tracking?.return_tracking?.tracking_number ||
+                               safeClaimData.return_details_v2?.results?.[0]?.tracking_number || null,
+          status_rastreamento: safeClaimData.shipment_history?.combined_events?.[0]?.status ||
+                              safeClaimData.return_details_v2?.results?.[0]?.status || null,
+          transportadora: safeClaimData.return_details_v2?.results?.[0]?.carrier || 
+                         safeClaimData.return_details_v1?.results?.[0]?.carrier || null,
+          
+          // REVIEW
+          review_id: reviews_data?.review_id || null,
+          review_status: reviews_data?.review_status || null,
+          review_result: reviews_data?.review_result || null,
+          score_qualidade: reviews_data?.score_qualidade || null,
+          
+          // COMPRADOR
+          comprador_nome_completo: `${safeOrderDetail.buyer?.first_name || ''} ${safeOrderDetail.buyer?.last_name || ''}`.trim() || null,
+          comprador_cpf: safeOrderDetail.buyer?.billing_info?.doc_number || null,
+          comprador_nickname: safeOrderDetail.buyer?.nickname || null,
+          
+          // FINANCEIRO
+          metodo_pagamento: safeOrderDetail.payments?.[0]?.payment_method_id || null,
+          tipo_pagamento: safeOrderDetail.payments?.[0]?.payment_type || null,
+          parcelas: safeOrderDetail.payments?.[0]?.installments || null,
+          valor_parcela: safeOrderDetail.payments?.[0]?.installment_amount || null,
+          
+          // MEDIAÇÃO
+          em_mediacao: safeClaimData.claim_details?.type === 'meditations' || 
+                      safeClaimData.mediation_details !== null,
+          
+          // DATAS
+          data_criacao: safeOrderDetail.date_created || safeClaimData.date_created || new Date().toISOString(),
+          data_criacao_claim: safeClaimData.claim_details?.date_created || null,
+          data_fechamento_claim: safeClaimData.claim_details?.date_closed || null,
+          
+          // DADOS JSONB COMPLETOS
+          dados_order: safeOrderDetail,
+          dados_claim: safeClaimData.claim_details || null,
+          dados_mensagens: safeClaimData.claim_messages || null,
+          dados_return: safeClaimData.return_details_v2 || safeClaimData.return_details_v1 || null,
+          dados_review: reviews_data || null,
+          dados_tracking_info: {
+            codigo_rastreamento: safeClaimData.shipment_tracking?.original_tracking?.tracking_number || 
+                                safeClaimData.shipment_tracking?.return_tracking?.tracking_number || null,
+            status_rastreamento: safeClaimData.shipment_history?.combined_events?.[0]?.status || null,
+            transportadora: safeClaimData.return_details_v2?.results?.[0]?.carrier || null,
+            tracking_history: safeClaimData.shipment_history?.combined_events || []
+          },
+          dados_buyer_info: {
+            nome_completo: `${safeOrderDetail.buyer?.first_name || ''} ${safeOrderDetail.buyer?.last_name || ''}`.trim() || null,
+            cpf: safeOrderDetail.buyer?.billing_info?.doc_number || null,
+            nickname: safeOrderDetail.buyer?.nickname || null,
+            email: safeOrderDetail.buyer?.email || null
+          },
+          dados_product_info: {
+            titulo: safeOrderDetail.order_items?.[0]?.item?.title || null,
+            sku: safeOrderDetail.order_items?.[0]?.item?.seller_sku || null,
+            variation_id: safeOrderDetail.order_items?.[0]?.item?.variation_id || null,
+            category_id: safeOrderDetail.order_items?.[0]?.item?.category_id || null
+          },
+          dados_financial_info: {
+            total_amount: safeOrderDetail.total_amount || 0,
+            metodo_pagamento: safeOrderDetail.payments?.[0]?.payment_method_id || null,
+            parcelas: safeOrderDetail.payments?.[0]?.installments || null,
+            valor_parcela: safeOrderDetail.payments?.[0]?.installment_amount || null
+          },
+          dados_quantities: {
+            quantidade: safeOrderDetail.order_items?.[0]?.quantity || 1
+          },
+          
+          // METADATA
+          marketplace_origem: 'mercadolivre',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          ultima_sincronizacao: new Date().toISOString()
         };
         
+        logger.success(`✅ Claim ${safeClaimData.id} mapeado: ${Object.keys(mappedData).length} campos`);
+        
         return new Response(
-          JSON.stringify({ success: true, data: mapped }),
+          JSON.stringify({ success: true, data: mappedData }),
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       } catch (err) {
-        logger.error('Erro ao mapear claim:', err);
+        logger.error('❌ Erro ao mapear claim:', err);
         return new Response(
-          JSON.stringify({ success: false, error: err.message }),
+          JSON.stringify({ 
+            success: false, 
+            error: err instanceof Error ? err.message : String(err)
+          }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
