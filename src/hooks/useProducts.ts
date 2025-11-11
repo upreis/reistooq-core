@@ -53,10 +53,23 @@ export interface Product extends BaseProduct {
   observacoes?: string | null;
   unidade?: string | null;
   pcs_ctn?: number | null;
-  // Campos que precisam ser mapeados para nomes corretos do banco
+  // Novos campos adicionados via migration
+  peso_bruto_kg?: number | null;
+  peso_liquido_kg?: number | null;
+  dias_preparacao?: number | null;
+  tipo_embalagem?: string | null;
+  codigo_cest?: string | null;
+  origem?: number | null;
+  sob_encomenda?: boolean | null;
+  numero_volumes?: number | null;
+  // Campos de categoria hierárquica
   categoria_principal?: string | null;
   categoria_nivel2?: string | null;
   subcategoria?: string | null;
+  // Aliases para compatibilidade com código existente
+  largura?: number | null; // Alias para largura_cm
+  altura?: number | null; // Alias para altura_cm
+  comprimento?: number | null; // Alias para comprimento_cm
 }
 
 export const useProducts = () => {

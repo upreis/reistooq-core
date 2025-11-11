@@ -4824,12 +4824,14 @@ export type Database = {
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
+          codigo_cest: string | null
           cofins: number | null
           comprimento_cm: number | null
           cor: string | null
           created_at: string
           cubagem_cm3: number | null
           descricao: string | null
+          dias_preparacao: number | null
           eh_produto_pai: boolean
           estoque_maximo: number
           estoque_minimo: number
@@ -4844,11 +4846,15 @@ export type Database = {
           material: string | null
           ncm: string | null
           nome: string
+          numero_volumes: number | null
           observacoes: string | null
           organization_id: string | null
+          origem: number | null
           package: string | null
           pcs_ctn: number | null
+          peso_bruto_kg: number | null
           peso_cx_master_kg: number | null
+          peso_liquido_kg: number | null
           peso_unitario_g: number | null
           pis: number | null
           preco_custo: number | null
@@ -4858,8 +4864,10 @@ export type Database = {
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
           sku_pai: string | null
+          sob_encomenda: boolean | null
           status: string
           subcategoria: string | null
+          tipo_embalagem: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           unit: string | null
@@ -4875,12 +4883,14 @@ export type Database = {
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
+          codigo_cest?: string | null
           cofins?: number | null
           comprimento_cm?: number | null
           cor?: string | null
           created_at?: string
           cubagem_cm3?: number | null
           descricao?: string | null
+          dias_preparacao?: number | null
           eh_produto_pai?: boolean
           estoque_maximo?: number
           estoque_minimo?: number
@@ -4895,11 +4905,15 @@ export type Database = {
           material?: string | null
           ncm?: string | null
           nome: string
+          numero_volumes?: number | null
           observacoes?: string | null
           organization_id?: string | null
+          origem?: number | null
           package?: string | null
           pcs_ctn?: number | null
+          peso_bruto_kg?: number | null
           peso_cx_master_kg?: number | null
+          peso_liquido_kg?: number | null
           peso_unitario_g?: number | null
           pis?: number | null
           preco_custo?: number | null
@@ -4909,8 +4923,10 @@ export type Database = {
           sku_gerado_automaticamente?: boolean | null
           sku_interno: string
           sku_pai?: string | null
+          sob_encomenda?: boolean | null
           status?: string
           subcategoria?: string | null
+          tipo_embalagem?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id: string
           unit?: string | null
@@ -4926,12 +4942,14 @@ export type Database = {
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
+          codigo_cest?: string | null
           cofins?: number | null
           comprimento_cm?: number | null
           cor?: string | null
           created_at?: string
           cubagem_cm3?: number | null
           descricao?: string | null
+          dias_preparacao?: number | null
           eh_produto_pai?: boolean
           estoque_maximo?: number
           estoque_minimo?: number
@@ -4946,11 +4964,15 @@ export type Database = {
           material?: string | null
           ncm?: string | null
           nome?: string
+          numero_volumes?: number | null
           observacoes?: string | null
           organization_id?: string | null
+          origem?: number | null
           package?: string | null
           pcs_ctn?: number | null
+          peso_bruto_kg?: number | null
           peso_cx_master_kg?: number | null
+          peso_liquido_kg?: number | null
           peso_unitario_g?: number | null
           pis?: number | null
           preco_custo?: number | null
@@ -4960,8 +4982,10 @@ export type Database = {
           sku_gerado_automaticamente?: boolean | null
           sku_interno?: string
           sku_pai?: string | null
+          sob_encomenda?: boolean | null
           status?: string
           subcategoria?: string | null
+          tipo_embalagem?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id?: string
           unit?: string | null
@@ -7135,12 +7159,14 @@ export type Database = {
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
+          codigo_cest: string | null
           cofins: number | null
           comprimento_cm: number | null
           cor: string | null
           created_at: string
           cubagem_cm3: number | null
           descricao: string | null
+          dias_preparacao: number | null
           eh_produto_pai: boolean
           estoque_maximo: number
           estoque_minimo: number
@@ -7155,11 +7181,15 @@ export type Database = {
           material: string | null
           ncm: string | null
           nome: string
+          numero_volumes: number | null
           observacoes: string | null
           organization_id: string | null
+          origem: number | null
           package: string | null
           pcs_ctn: number | null
+          peso_bruto_kg: number | null
           peso_cx_master_kg: number | null
+          peso_liquido_kg: number | null
           peso_unitario_g: number | null
           pis: number | null
           preco_custo: number | null
@@ -7169,8 +7199,10 @@ export type Database = {
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
           sku_pai: string | null
+          sob_encomenda: boolean | null
           status: string
           subcategoria: string | null
+          tipo_embalagem: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           unit: string | null

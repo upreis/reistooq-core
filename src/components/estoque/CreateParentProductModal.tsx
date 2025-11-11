@@ -29,12 +29,16 @@ interface ProductFormData {
   categoria_principal: string;
   categoria_nivel2: string;
   descricao: string;
-  peso_cx_master_kg: number;
-  peso_unitario_g: number;
-  largura_cm: number;
-  altura_cm: number;
-  comprimento_cm: number;
+  peso_bruto_kg: number;
+  peso_liquido_kg: number;
+  largura: number;
+  altura: number;
+  comprimento: number;
+  dias_preparacao: number;
+  tipo_embalagem: string;
   ncm: string;
+  codigo_cest: string;
+  origem: number | null;
 }
 
 // Função para calcular cubagem (m³)
@@ -246,9 +250,9 @@ export function CreateParentProductModal({
           descricao: formData.descricao || null,
           peso_bruto_kg: formData.peso_bruto_kg || null,
           peso_liquido_kg: formData.peso_liquido_kg || null,
-          largura: formData.largura || null,
-          altura: formData.altura || null,
-          comprimento: formData.comprimento || null,
+          largura_cm: formData.largura || null,
+          altura_cm: formData.altura || null,
+          comprimento_cm: formData.comprimento || null,
           dias_preparacao: formData.dias_preparacao || null,
           tipo_embalagem: formData.tipo_embalagem || null,
           ncm: formData.ncm || null,
