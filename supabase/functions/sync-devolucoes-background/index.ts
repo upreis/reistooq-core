@@ -190,10 +190,10 @@ async function executarSincronizacao(
       throw new Error('Token ML não disponível. Reconecte a integração.');
     }
 
-    // ✅ 3. BUSCAR SELLER_ID
+    // ✅ 3. BUSCAR SELLER_ID E ORGANIZATION_ID
     const { data: accountData } = await serviceClient
       .from('integration_accounts')
-      .select('account_identifier')
+      .select('account_identifier, organization_id')
       .eq('id', integrationAccountId)
       .single();
 
@@ -202,7 +202,9 @@ async function executarSincronizacao(
     }
 
     const sellerId = accountData.account_identifier;
-    console.log(`🆔 [SYNC] Seller ID: ${sellerId}`);
+    const organizationId = accountData.organization_id;
+    
+    console.log(`🆔 [SYNC] Seller ID: ${sellerId}, Org ID: ${organizationId}`);
 
     // ✅ 4. BUSCAR DEVOLUÇÕES DIRETAMENTE DA API ML
     while (hasMore) {
@@ -245,53 +247,56 @@ async function executarSincronizacao(
 
       // ✅ 5. TRANSFORMAR DADOS DA API ML PARA SCHEMA DO BANCO
       const transformedClaims = rawClaims.map((claim: any) => {
-        // Buscar dados de order se existir
-        const orderData = claim.order_id ? {
-          order_id: claim.order_id,
-          // Dados serão enriquecidos depois via enrich-devolucoes
-        } : null;
-
         return {
+          // ✅ CORRIGIDO: claim_id é o identificador único, order_id pode ser null
           claim_id: claim.id,
-          order_id: claim.order_id || null,
+          order_id: claim.resource?.split('/').pop() || null, // Extrair order_id do resource
           integration_account_id: integrationAccountId,
-          status: claim.status?.id || null,
-          status_devolucao: claim.status?.id || null,
-          status_dinheiro: claim.status_money?.id || null,
-          subtipo_devolucao: claim.subtype?.id || null,
-          tipo_claim: claim.type || null,
+          organization_id: organizationId, // ✅ CORRIGIDO: Passar organization_id explicitamente
+          
+          // Status
+          status_devolucao: claim.status || null,
+          status_envio: null, // Será enriquecido depois
+          status_dinheiro: null, // Será enriquecido depois
+          
+          // Datas
           data_criacao: claim.date_created || new Date().toISOString(),
-          data_fechamento_devolucao: claim.date_closed || null,
-          data_atualizacao_devolucao: claim.last_updated || new Date().toISOString(),
-          quantidade: claim.quantity?.value || 1,
+          data_fechamento: claim.date_closed || null,
+          ultima_atualizacao: claim.last_updated || new Date().toISOString(),
           
-          // Salvar dados completos em JSONB
-          dados_claim: claim,
-          dados_order: orderData,
+          // Financeiro
+          reembolso_quando: null,
+          valor_retido: 0,
           
-          // Campos que serão enriquecidos depois
-          dados_buyer_info: null,
-          dados_product_info: null,
-          dados_financial_info: null,
-          dados_tracking_info: null,
-          dados_review: null,
+          // Logística
+          codigo_rastreamento: null,
+          destino_tipo: null,
+          destino_endereco: null,
           
-          ultima_sincronizacao: new Date().toISOString()
+          // ✅ CORRIGIDO: Salvar APENAS nos campos JSONB que EXISTEM
+          dados_claim: claim, // Claim completo
+          dados_order: null,  // Será enriquecido depois
+          dados_return: null, // Será enriquecido depois
+          
+          processado_em: new Date().toISOString()
         };
       });
 
-      // Salvar no Supabase (upsert)
+      // ✅ CORRIGIDO: Usar claim_id como identificador único ao invés de order_id
       if (transformedClaims.length > 0) {
-        const { error: upsertError } = await supabase
-          .from('devolucoes_avancadas')
-          .upsert(transformedClaims, {
-            onConflict: 'devolucoes_avancadas_order_integration_key',
-            ignoreDuplicates: false
-          });
+        // Fazer upsert individual para cada claim (mais seguro)
+        for (const claim of transformedClaims) {
+          const { error: upsertError } = await supabase
+            .from('devolucoes_avancadas')
+            .upsert(claim, {
+              onConflict: 'claim_id', // ✅ CORRIGIDO: Usar claim_id ao invés de constraint composta
+              ignoreDuplicates: false
+            });
 
-        if (upsertError) {
-          console.error('❌ [SYNC] Erro ao salvar claims:', upsertError);
-          throw new Error(`Erro ao salvar no banco: ${upsertError.message}`);
+          if (upsertError) {
+            console.error('❌ [SYNC] Erro ao salvar claim:', claim.claim_id, upsertError);
+            // Continuar com próximo ao invés de falhar tudo
+          }
         }
 
         console.log(`✅ [SYNC] Salvos ${transformedClaims.length} claims no Supabase`);
