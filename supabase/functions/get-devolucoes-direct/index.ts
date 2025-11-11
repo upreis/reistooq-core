@@ -30,15 +30,16 @@ serve(async (req) => {
 
     console.log('[get-devolucoes-direct] Parâmetros:', { integration_account_id, date_from, date_to });
 
-    // ✅ Buscar dados da conta com SERVICE CLIENT
+    // ✅ Buscar dados da conta
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: { persistSession: false }
     });
 
     const { data: account, error: accountError } = await supabase
       .from('integration_accounts')
-      .select('account_identifier, credentials')
+      .select('account_identifier')
       .eq('id', integration_account_id)
+      .eq('is_active', true)
       .single();
 
     console.log('[get-devolucoes-direct] Query result:', { account, accountError });
@@ -48,14 +49,38 @@ serve(async (req) => {
       throw new Error(`Conta ML não encontrada: ${accountError?.message || 'No account data'}`);
     }
 
-    // ✅ Descriptografar token
-    const encryptedTokens = account.credentials?.simple_tokens;
-    if (!encryptedTokens) {
-      throw new Error('Tokens não encontrados');
+    const sellerId = account.account_identifier;
+
+    // ✅ Buscar token via integrations-get-secret
+    const INTERNAL_TOKEN = Deno.env.get('INTERNAL_SHARED_TOKEN') || 'internal-shared-token';
+    const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
+    
+    const secretResponse = await fetch(secretUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        'x-internal-call': 'true',
+        'x-internal-token': INTERNAL_TOKEN
+      },
+      body: JSON.stringify({
+        integration_account_id,
+        provider: 'mercadolivre'
+      })
+    });
+
+    if (!secretResponse.ok) {
+      const errorText = await secretResponse.text();
+      throw new Error(`Token ML não disponível (${secretResponse.status}): ${errorText}`);
     }
 
-    const accessToken = encryptedTokens.access_token;
-    const sellerId = account.account_identifier;
+    const tokenData = await secretResponse.json();
+
+    if (!tokenData?.found || !tokenData?.secret?.access_token) {
+      throw new Error('Token ML não encontrado. Reconecte a integração.');
+    }
+
+    const accessToken = tokenData.secret.access_token;
 
     // ✅ BUSCAR CLAIMS DA API ML
     const params = new URLSearchParams({
