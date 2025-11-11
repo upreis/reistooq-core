@@ -203,7 +203,11 @@ async function enrichDevolucao(
   accessToken: string,
   supabase: any
 ) {
-  const { id, buyer_id, item_id, claim_id, return_id, related_entities } = devolucao;
+  const { id, dados_buyer_info, dados_product_info, claim_id, return_id, related_entities } = devolucao;
+  
+  // ✅ EXTRAIR buyer_id e item_id dos campos JSONB
+  const buyer_id = dados_buyer_info?.id || null;
+  const item_id = dados_product_info?.item_id || null;
   
   logger.info(`Enriquecendo claim ${claim_id}...`);
 
@@ -282,7 +286,7 @@ async function enrichDevolucoesBatch(
   // 1. Buscar devoluções pendentes de enriquecimento
   const { data: devolucoes, error: fetchError } = await supabase
     .from('devolucoes_avancadas')
-    .select('id, buyer_id, item_id, claim_id, return_id, related_entities')
+    .select('id, dados_buyer_info, dados_product_info, claim_id, return_id, related_entities')
     .eq('integration_account_id', integrationAccountId)
     .is('dados_buyer_info', null) // Ainda não enriquecida
     .order('created_at', { ascending: false })
