@@ -167,9 +167,9 @@ async function syncDevolucoes(
         const { error: upsertError } = await supabase
           .from('devolucoes_avancadas')
           .upsert(transformedClaims, {
-            // ✅ CRÍTICO: Usar NOME da constraint ao invés de colunas
-            // Isso evita conflito com múltiplas constraints UNIQUE
-            onConflict: 'devolucoes_avancadas_order_integration_key',
+            // ✅ CRÍTICO: onConflict aceita COLUNAS separadas por vírgula
+            // Corresponde à constraint UNIQUE (order_id, integration_account_id)
+            onConflict: 'order_id,integration_account_id',
             ignoreDuplicates: false
           });
         
