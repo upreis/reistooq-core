@@ -5,7 +5,7 @@
  * ✅ Adiciona UI de sincronização
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
 import { 
@@ -37,17 +37,17 @@ function DevolucoesMercadoLivreContent() {
   const { filters, setFilters, pagination, setPagination, viewMode, setViewMode } = useDevolucaoContext();
   
   // Carregar contas ML
-  const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [accounts, setAccounts] = React.useState<Array<{ id: string; name: string }>>([]);
+  const [selectedAccountIds, setSelectedAccountIds] = React.useState<string[]>([]);
   
   // Filtros UI
-  const [periodo, setPeriodo] = useState('60');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [urgencyFilter, setUrgencyFilter] = useState<((dev: any) => boolean) | null>(null);
-  const [currentUrgencyFilter, setCurrentUrgencyFilter] = useState<string>('all');
+  const [periodo, setPeriodo] = React.useState('60');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [urgencyFilter, setUrgencyFilter] = React.useState<((dev: any) => boolean) | null>(null);
+  const [currentUrgencyFilter, setCurrentUrgencyFilter] = React.useState<string>('all');
   
   // Auto-refresh
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
+  const [autoRefreshEnabled, setAutoRefreshEnabled] = React.useState(false);
   
   // ✅ REACT QUERY: Buscar devoluções
   const { 
@@ -81,7 +81,7 @@ function DevolucoesMercadoLivreContent() {
   const enrichMutation = useEnrichDevolucoes();
   
   // ⚡ Estado para sincronização completa
-  const [isFullSyncing, setIsFullSyncing] = useState(false);
+  const [isFullSyncing, setIsFullSyncing] = React.useState(false);
 
   // 🤖 Auto-enriquecimento: detecta dados faltantes e dispara em background
   useAutoEnrichment({
