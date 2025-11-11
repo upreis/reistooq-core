@@ -1324,7 +1324,7 @@ async function buscarPedidosCancelados(
     const { error: queueError } = await supabaseAdmin
       .from('fila_processamento_claims')
       .upsert(claimsForQueue, { 
-        onConflict: 'claim_id,integration_account_id',
+        onConflict: 'fila_processamento_claims_claim_integration_key', // ✅ CORRIGIDO: Usar nome da constraint
         ignoreDuplicates: true 
       });
     
