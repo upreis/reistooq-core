@@ -156,47 +156,50 @@ serve(async (req) => {
     // Na próxima fase, trazerei o mapeamento completo para cá
     
     const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    let offset = 0;
+    let hasMore = true;
     let totalProcessed = 0;
     let totalCreated = 0;
 
-    // ✅ 7. PROCESSAR PRIMEIRO LOTE IMEDIATAMENTE (RESPOSTA RÁPIDA)
-    // 🚀 BACKGROUND TASK: Resto processa em segundo plano
+    // ✅ 7. PROCESSAR EM LOTES (COM LIMITE DE 300 PARA EVITAR TIMEOUT)
+    const MAX_CLAIMS_PER_SYNC = 300; // ✅ LIMITE SEGURO (evita timeout de 60s)
     
-    logger.info(`📦 Processando PRIMEIRO lote: offset=0, limit=${batchSize}`);
+    while (hasMore && totalProcessed < MAX_CLAIMS_PER_SYNC) {
+      logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
 
-    // 🔥 CHAMAR ml-api-direct APENAS PARA PRIMEIRO LOTE
-    const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ANON_KEY}`,
-      },
-      body: JSON.stringify({
-        action: 'get_claims_and_returns',
-        integration_account_id: integrationAccountId,
-        seller_id: account.account_identifier,
-        ml_access_token: mlAccessToken,
-        limit: batchSize,
-        offset: 0, // ✅ APENAS PRIMEIRO LOTE
-      }),
-    });
+      // 🔥 CHAMAR ml-api-direct PASSANDO TOKEN JÁ DESCRIPTOGRAFADO
+      const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'get_claims_and_returns',
+          integration_account_id: integrationAccountId,
+          seller_id: account.account_identifier,
+          ml_access_token: mlAccessToken,
+          limit: batchSize,
+          offset: offset,
+        }),
+      });
 
-    if (!apiResponse.ok) {
-      const errorText = await apiResponse.text();
-      throw new Error(`API ML erro (${apiResponse.status}): ${errorText}`);
-    }
+      if (!apiResponse.ok) {
+        const errorText = await apiResponse.text();
+        throw new Error(`API ML erro (${apiResponse.status}): ${errorText}`);
+      }
 
-    const apiData = await apiResponse.json();
-    
-    if (!apiData.success) {
-      throw new Error(`API ML retornou erro: ${apiData.error}`);
-    }
+      const apiData = await apiResponse.json();
+      
+      if (!apiData.success) {
+        throw new Error(`API ML retornou erro: ${apiData.error}`);
+      }
 
-    // 🔥 CORRIGIDO: Estrutura correta da resposta ml-api-direct
-    const claims = apiData.data || [];
-    const total = apiData.pagination?.total || 0;
-    const hasMoreFromApi = apiData.pagination ? 
-      (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
+      // 🔥 CORRIGIDO: Estrutura correta da resposta ml-api-direct
+      const claims = apiData.data || [];
+      const total = apiData.pagination?.total || 0;
+      const hasMoreFromApi = apiData.pagination ? 
+        (apiData.pagination.offset + apiData.pagination.limit < apiData.pagination.total) : false;
       
       // 🔥 OPÇÃO A: AGRUPAR DADOS EM JSONBs (solução escalável)
       const transformedClaims = claims.map((claim: any) => {
@@ -212,10 +215,8 @@ serve(async (req) => {
           claim_id: claim.claim_id,
           order_id: claim.order_id,
           integration_account_id: integrationAccountId,
-          // ❌ REMOVIDO: organization_id NÃO existe na tabela devolucoes_avancadas
           
           // 📦 GRUPO 1: Dados completos da API ML (originais)
-          // ✅ CORREÇÃO: Salvar claim COMPLETO (ml-api-direct retorna dados direto no claim)
           dados_claim: claim.claim_details || claim,
           dados_order: claim.order_data || claim.order || {},
           
@@ -229,15 +230,12 @@ serve(async (req) => {
           
           // 📦 GRUPO 3: Status e Tipo
           dados_tracking_info: {
-            // Status principal
             status: claim.status || claim.claim_details?.status || null,
             status_devolucao: claim.status_devolucao || claim.claim_details?.status || null,
             status_money: claim.status_money || claim.status_dinheiro || null,
             subtipo: claim.subtipo || claim.subtipo_claim || claim.claim_details?.sub_type || null,
             resource_type: claim.resource_type || claim.return_resource_type || null,
             context: claim.context || claim.claim_details?.context || null,
-            
-            // Rastreamento e envio
             shipment_id: claim.shipment_id || claim.shipment_id_devolucao || null,
             tracking_number: claim.tracking_number || claim.codigo_rastreamento || claim.codigo_rastreamento_devolucao || null,
             shipment_status: claim.shipment_status || claim.status_envio_devolucao || claim.status_rastreamento || null,
@@ -275,14 +273,7 @@ serve(async (req) => {
           data_fechamento_claim: claim.date_closed || claim.data_fechamento_claim || null,
           data_atualizacao_devolucao: claim.last_updated || claim.data_atualizacao_devolucao || null,
           
-          // ✅ FASE 8: Removidas 9 colunas duplicadas (dados já salvos nos campos JSONB)
-          // - status_devolucao (já em dados_tracking_info.status_devolucao)
-          // - subtipo_claim (já em dados_tracking_info.subtipo)
-          // - tipo_claim (já em dados_claim)
-          // - motivo_devolucao (já em dados_claim)
-          // - review_status, review_method, review_stage, product_condition, product_destination (já em dados_review)
-          
-          // 📦 GRUPO 10: Campos JSONB já existentes (preservar)
+          // 📦 GRUPO 8: Campos JSONB já existentes
           dados_review: claim.dados_review || {},
           dados_comunicacao: claim.dados_comunicacao || {},
           dados_deadlines: claim.dados_deadlines || {},
@@ -292,13 +283,13 @@ serve(async (req) => {
           dados_lead_time: claim.dados_lead_time || {},
           dados_refund_info: claim.dados_refund_info || {},
           
-          // 📦 Outros campos simples (strings/booleans/numbers)
+          // 📦 Outros campos simples
           sku: claim.sku || null,
           produto_titulo: claim.produto_titulo || claim.dados_order?.order_items?.[0]?.item?.title || null,
           valor_retido: claim.valor_retido || 0,
           responsavel_custo: claim.responsavel_custo || claim.benefited || null,
           
-          // 🕐 Timestamps de controle
+          // 🕐 Timestamps
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -306,39 +297,53 @@ serve(async (req) => {
         return transformed;
       }).filter(Boolean);
       
-      // 🔥 UPSERT DOS DADOS EM devolucoes_avancadas
+      // 🔥 UPSERT DOS DADOS
       if (transformedClaims && transformedClaims.length > 0) {
-        logger.info(`💾 Salvando ${transformedClaims.length} claims em devolucoes_avancadas...`);
+        logger.info(`💾 Salvando ${transformedClaims.length} claims...`);
         
         const { error: upsertError } = await serviceClient
           .from('devolucoes_avancadas')
           .upsert(transformedClaims, {
-            // ✅ FASE 1 DECISÃO: Usar claim_id como chave única
             onConflict: 'claim_id',
             ignoreDuplicates: false
           });
         
         if (upsertError) {
-          logger.error(`❌ Erro ao salvar claims: ${upsertError.message}`, upsertError);
+          logger.error(`❌ Erro ao salvar: ${upsertError.message}`, upsertError);
           throw upsertError;
         }
         
         totalCreated += transformedClaims.length;
-        totalProcessed += claims.length;
-        logger.success(`✅ ${transformedClaims.length} claims salvos com sucesso`);
+        logger.success(`✅ ${transformedClaims.length} claims salvos`);
       }
+      
+      totalProcessed += claims.length;
+      offset += batchSize;
+      hasMore = hasMoreFromApi && totalProcessed < MAX_CLAIMS_PER_SYNC;
+      
+      // Atualizar progresso
+      await serviceClient
+        .from('devolucoes_sync_status')
+        .update({
+          items_synced: totalProcessed,
+          items_total: Math.min(total, MAX_CLAIMS_PER_SYNC)
+        })
+        .eq('id', syncId);
+      
+      logger.info(`📊 Progresso: ${totalProcessed}/${Math.min(total, MAX_CLAIMS_PER_SYNC)}`);
+    }
 
-    // ✅ 8. RETORNAR RESPOSTA RÁPIDA (PRIMEIRO LOTE PROCESSADO)
+
+    // ✅ 8. MARCAR SYNC COMO CONCLUÍDO
     const durationMs = Date.now() - startTime;
     
-    // 🚀 ATUALIZAR STATUS COM RESULTADO DO PRIMEIRO LOTE
     await serviceClient
       .from('devolucoes_sync_status')
       .update({
-        last_sync_status: hasMoreFromApi ? 'in_progress' : 'success',
+        last_sync_status: 'success',
         last_sync_at: new Date().toISOString(),
         items_synced: totalProcessed,
-        items_total: total,
+        items_total: totalProcessed,
         items_failed: 0,
         duration_ms: durationMs
       })
