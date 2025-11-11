@@ -249,9 +249,32 @@ function DevolucoesMercadoLivreContent() {
       console.log(`✅ Total acumulado: ${allData.length} devoluções de ${selectedAccountIds.length} conta(s)`);
 
       // ✅ Aplicar filtro de data no FRONTEND (dados já vêm da API)
+      console.log('🔍 DEBUG: Primeira devolução recebida:', allData[0]);
+      console.log('🔍 DEBUG: Campos de data disponíveis:', {
+        data_criacao: allData[0]?.data_criacao,
+        date_created: allData[0]?.date_created,
+        created_at: allData[0]?.created_at,
+        data_criacao_claim: allData[0]?.data_criacao_claim
+      });
+      console.log('🔍 DEBUG: Período de filtro:', {
+        dataInicio: dataInicio.toISOString(),
+        dataFim: dataFim.toISOString(),
+        dias: days
+      });
+
       const filteredData = allData.filter(item => {
         // ✅ Usar data_criacao (campo em português retornado pela API)
-        const itemDate = new Date(item.data_criacao || item.date_created || item.created_at);
+        const dateField = item.data_criacao || item.date_created || item.created_at || item.data_criacao_claim;
+        const itemDate = new Date(dateField);
+        
+        console.log('🔍 Item:', {
+          claim_id: item.claim_id,
+          dateField,
+          itemDate: itemDate.toISOString(),
+          isAfterStart: itemDate >= dataInicio,
+          isBeforeEnd: itemDate <= dataFim
+        });
+        
         const isAfterStart = itemDate >= dataInicio;
         const isBeforeEnd = itemDate <= dataFim;
         return isAfterStart && isBeforeEnd;
