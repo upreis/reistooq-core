@@ -9,45 +9,58 @@
 export const mapCommunicationData = (item: any) => {
   const claim = item;
   
-  // 🐛 DEBUG FASE 2: Log estrutura COMPLETA de claim_messages
-  console.log('💬 === FASE 2 DEBUG: Estrutura claim_messages ===');
+  // 🐛 DEBUG FASE 3: Log estrutura COMPLETA de claim_messages
+  console.log('💬 === FASE 3 DEBUG: Estrutura claim_messages ===');
   console.log('💬 claim_id:', claim.id);
   console.log('💬 claim_messages existe?', !!claim.claim_messages);
   console.log('💬 claim_messages tipo:', typeof claim.claim_messages);
   
   if (claim.claim_messages) {
-    console.log('💬 claim_messages.messages existe?', !!claim.claim_messages.messages);
-    console.log('💬 claim_messages.messages tipo:', typeof claim.claim_messages.messages);
-    console.log('💬 claim_messages.messages é array?', Array.isArray(claim.claim_messages.messages));
+    // 🔍 LOG CRÍTICO: Ver TODAS as keys do objeto claim_messages
+    console.log('💬 claim_messages KEYS:', Object.keys(claim.claim_messages));
     
-    if (Array.isArray(claim.claim_messages.messages)) {
-      console.log('💬 claim_messages.messages.length:', claim.claim_messages.messages.length);
+    // 🔍 LOG CRÍTICO: Ver se é array direto
+    console.log('💬 claim_messages É ARRAY?', Array.isArray(claim.claim_messages));
+    
+    if (Array.isArray(claim.claim_messages)) {
+      console.log('💬 ✅ claim_messages é ARRAY DIRETO com', claim.claim_messages.length, 'mensagens');
       
       // Log primeira mensagem como amostra
-      if (claim.claim_messages.messages.length > 0) {
-        console.log('💬 Primeira mensagem (amostra):', JSON.stringify({
-          sender_role: claim.claim_messages.messages[0].sender_role,
-          date_created: claim.claim_messages.messages[0].date_created,
-          has_message: !!claim.claim_messages.messages[0].message,
-          hash: claim.claim_messages.messages[0].hash
-        }));
+      if (claim.claim_messages.length > 0) {
+        console.log('💬 Primeira mensagem (amostra):', JSON.stringify(claim.claim_messages[0], null, 2).substring(0, 500));
+      }
+    } else {
+      // Se não é array, verificar propriedades
+      console.log('💬 claim_messages.messages existe?', !!claim.claim_messages.messages);
+      console.log('💬 claim_messages.messages tipo:', typeof claim.claim_messages.messages);
+      console.log('💬 claim_messages.messages é array?', Array.isArray(claim.claim_messages.messages));
+      
+      // Verificar caminhos alternativos
+      console.log('💬 Caminhos alternativos verificados:');
+      console.log('  - claim.messages?', !!claim.messages, Array.isArray(claim.messages) ? claim.messages.length : 'N/A');
+      console.log('  - claim.claim_messages.data?', !!claim.claim_messages.data, Array.isArray(claim.claim_messages.data) ? claim.claim_messages.data.length : 'N/A');
+      console.log('  - claim.claim_messages.items?', !!claim.claim_messages.items, Array.isArray(claim.claim_messages.items) ? claim.claim_messages.items.length : 'N/A');
+      console.log('  - claim.claim_messages.results?', !!claim.claim_messages.results, Array.isArray(claim.claim_messages.results) ? claim.claim_messages.results.length : 'N/A');
+      
+      // 🔍 LOG CRÍTICO: Ver primeira propriedade para entender estrutura
+      const firstKey = Object.keys(claim.claim_messages)[0];
+      if (firstKey) {
+        console.log(`💬 Primeira propriedade "${firstKey}":`, typeof claim.claim_messages[firstKey], Array.isArray(claim.claim_messages[firstKey]) ? `array[${claim.claim_messages[firstKey].length}]` : claim.claim_messages[firstKey]);
       }
     }
-    
-    // Verificar caminhos alternativos
-    console.log('💬 Caminhos alternativos verificados:');
-    console.log('  - claim.messages?', !!claim.messages, Array.isArray(claim.messages) ? claim.messages.length : 'N/A');
-    console.log('  - claim.claim_messages.data?', !!claim.claim_messages.data, Array.isArray(claim.claim_messages.data) ? claim.claim_messages.data.length : 'N/A');
-    console.log('  - claim.claim_messages.items?', !!claim.claim_messages.items, Array.isArray(claim.claim_messages.items) ? claim.claim_messages.items.length : 'N/A');
   }
   
-  // ✅ Tentar múltiplos caminhos para encontrar mensagens
-  const rawMessages = 
-    claim.claim_messages?.messages || 
-    claim.claim_messages?.data ||
-    claim.claim_messages?.items ||
-    claim.messages || 
-    [];
+  // ✅ FASE 3: Tentar múltiplos caminhos incluindo ARRAY DIRETO
+  const rawMessages = Array.isArray(claim.claim_messages) 
+    ? claim.claim_messages  // 🆕 Se claim_messages é array direto
+    : (
+      claim.claim_messages?.messages || 
+      claim.claim_messages?.data ||
+      claim.claim_messages?.items ||
+      claim.claim_messages?.results ||  // 🆕 Adicionar .results como caminho alternativo
+      claim.messages || 
+      []
+    );
   
   // Deduplicação e ordenação de mensagens
   const uniqueMessages = rawMessages.reduce((acc: any[], msg: any) => {
@@ -72,11 +85,12 @@ export const mapCommunicationData = (item: any) => {
   
   const lastMessage = sortedMessages[0] || null;
   
-  // 🐛 DEBUG FASE 2: Log resultado final do mapeamento
+  // 🐛 DEBUG FASE 3: Log resultado final do mapeamento
   const totalMensagens = sortedMessages.length;
-  console.log('💬 === FASE 2 RESULTADO ===');
+  console.log('💬 === FASE 3 RESULTADO ===');
   console.log('💬 claim_id:', claim.id);
-  console.log('💬 Total mensagens encontradas:', totalMensagens);
+  console.log('💬 Total mensagens RAW encontradas:', Array.isArray(rawMessages) ? rawMessages.length : 'N/A');
+  console.log('💬 Total mensagens APÓS dedup/sort:', totalMensagens);
   console.log('💬 Qualidade comunicação:', (() => {
     if (sortedMessages.length === 0) return 'sem_mensagens';
     
