@@ -28,6 +28,7 @@ import {
 } from '@/components/devolucoes/ShippingAdvancedCells';
 import { LogisticTypeCell } from '@/components/devolucoes/LogisticTypeCell';
 import { SubtipoCell } from '@/components/devolucoes/SubtipoCell';
+import { CustosLogisticaCell } from '@/components/devolucoes/CustosLogisticaCell';
 import {
   Pagination,
   PaginationContent,
@@ -97,6 +98,15 @@ interface Devolucao {
   custo_devolucao?: number | null;
   parcelas?: number | null;
   valor_parcela?: number | null;
+  
+  // ✅ CUSTOS LOGÍSTICA - campos do breakdown
+  custo_total_logistica?: number | null;
+  custo_envio_original?: number | null;
+  responsavel_custo_frete?: string | null;
+  shipping_fee?: number | null;
+  handling_fee?: number | null;
+  insurance?: number | null;
+  taxes?: number | null;
   
   // ✅ RASTREAMENTO DETALHADO - 10 campos (sem duplicação de FASE 2)
   estimated_delivery_limit?: string | null;
@@ -404,6 +414,9 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>💳 Parcelas</TableHead>
                 <TableHead>💵 Valor Parcela</TableHead>
                 
+                {/* CUSTOS LOGÍSTICA */}
+                <TableHead>💰 Custos Logística</TableHead>
+                
                 
                 {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas ANTES dos detalhados */}
                 <TableHead>📍 Localização Produto</TableHead>
@@ -456,13 +469,13 @@ export default function DevolucoesMercadoLivre() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={63} className="text-center py-8">
+                  <TableCell colSpan={64} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : devolucoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={63} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={64} className="text-center py-8 text-muted-foreground">
                     Clique em "Buscar Devoluções" para carregar os dados
                   </TableCell>
                 </TableRow>
@@ -563,6 +576,20 @@ export default function DevolucoesMercadoLivre() {
                       parcelas={dev.parcelas}
                       valor_parcela={dev.valor_parcela}
                     />
+                    
+                    {/* CUSTOS LOGÍSTICA */}
+                    <TableCell>
+                      <CustosLogisticaCell
+                        custo_total_logistica={dev.custo_total_logistica}
+                        custo_envio_original={dev.custo_envio_original}
+                        custo_devolucao={dev.custo_devolucao}
+                        responsavel_custo_frete={dev.responsavel_custo_frete}
+                        shipping_fee={dev.shipping_fee}
+                        handling_fee={dev.handling_fee}
+                        insurance={dev.insurance}
+                        taxes={dev.taxes}
+                      />
+                    </TableCell>
                     
                     {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas */}
                     <LocalizacaoAtualCell devolucao={dev} />
