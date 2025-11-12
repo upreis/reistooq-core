@@ -22,7 +22,7 @@ export const mapTrackingData = (item: any) => {
     review_type: claim.review_details?.type || claim.review?.type || null,
     revisor_responsavel: claim.review_details?.reviewer?.id || claim.review?.reviewer_id || null,
     
-    // Datas
+    // 📅 FASE 1: Datas críticas para gestão de devolução
     data_fechamento_devolucao: returnData?.closed_at || claim.date_closed || null,
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
     
@@ -43,12 +43,11 @@ export const mapTrackingData = (item: any) => {
       return orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
     })(),
     
+    // 🚨 FASE 1: Cálculo de urgência - dias restantes para análise
     dias_restantes_analise: (() => {
       const prazo = returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date;
       if (!prazo) return null;
-      const prazoDate = new Date(prazo);
-      const hoje = new Date();
-      const diff = Math.ceil((prazoDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      const diff = Math.ceil((new Date(prazo).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       return diff > 0 ? diff : 0;
     })(),
     

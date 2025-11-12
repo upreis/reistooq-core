@@ -33,17 +33,17 @@ export const mapFinancialData = (item: any) => {
     // Data de reembolso - usar return_details se existir
     data_reembolso: claim.return_details?.refund_at || null,
     
-    // Data estimada de reembolso
+    // 💰 FASE 1: Data estimada de reembolso (expectativa do vendedor)
     data_estimada_reembolso: (() => {
-      // Já foi reembolsado?
+      // Se já foi reembolsado, retornar data real
       if (claim.return_details?.refund_at) return claim.return_details.refund_at;
       
-      // Estimativa: 7 dias após prazo de análise
+      // Senão, estimar: prazo de análise + 7 dias úteis
       const prazo = claim.return_details?.estimated_handling_limit?.date;
       if (prazo) {
-        const prazoDate = new Date(prazo);
-        prazoDate.setDate(prazoDate.getDate() + 7);
-        return prazoDate.toISOString();
+        const estimativa = new Date(prazo);
+        estimativa.setDate(estimativa.getDate() + 7);
+        return estimativa.toISOString();
       }
       return null;
     })(),

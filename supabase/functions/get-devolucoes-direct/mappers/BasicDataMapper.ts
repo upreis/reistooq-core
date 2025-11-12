@@ -21,7 +21,7 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     dados_incompletos: false,
     fonte_dados_primaria: 'ml_api',
     
-    // Data da venda original
+    // 📅 FASE 1: Data da venda original (quando foi feita a compra)
     data_venda_original: claim.order_data?.date_created || null,
     
     // Dados do produto
@@ -55,11 +55,14 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     tipo_problema: claim.dados_reasons?.reason_flow || null,
     subtipo_problema: claim.dados_reasons?.reason_name || null,
     
-    // Entidades relacionadas
+    // 👥 FASE 1: Entidades relacionadas (rastreabilidade completa)
     entidades_relacionadas: {
       comprador_id: claim.players?.find((p: any) => p.role === 'claimant')?.user_id?.toString() || null,
       vendedor_id: claim.players?.find((p: any) => p.role === 'respondent')?.user_id?.toString() || null,
-      mediador_id: claim.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
+      mediador_id: claim.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
+      order_id: claim.resource_id?.toString() || null,
+      claim_id: claim.id?.toString() || null,
+      return_id: claim.return_details?.id?.toString() || null
     }
   };
 };
