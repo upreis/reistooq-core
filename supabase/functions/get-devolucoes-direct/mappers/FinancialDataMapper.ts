@@ -5,52 +5,46 @@
  */
 
 export const mapFinancialData = (item: any) => {
-  // ✅ CORREÇÃO: Usar dados do claim diretamente, pois order_data pode estar null
-  const claim = item.claim_details || item;
-  const payment = item.order_data?.payments?.[0];
-  const orderItem = item.order_data?.order_items?.[0];
+  // ✅ ACESSO DIRETO ao claim sem depender de nested objects
+  const claim = item;  // item já É o claim completo
+  const payment = claim.order_data?.payments?.[0];
+  const orderItem = claim.order_data?.order_items?.[0];
   
-  // ✅ CORREÇÃO: valor_reembolso_total vem do claim.seller_amount
-  const reembolsado = claim.resolution?.refund_amount || item.return_details_v2?.refund_amount || claim.seller_amount || item.amount;
-  const total = item.order_data?.total_amount || claim.seller_amount || item.amount;
+  // ✅ PRIORIDADE: seller_amount é o valor principal do claim
+  const reembolsado = claim.seller_amount || claim.resolution?.refund_amount || claim.order_data?.total_amount;
+  const total = claim.order_data?.total_amount || claim.seller_amount;
   
   return {
-    // ===== CAMPOS FINANCEIROS BÁSICOS (já existentes) =====
+    // ===== CAMPOS FINANCEIROS BÁSICOS =====
     valor_reembolso_total: reembolsado || null,
     valor_reembolso_produto: orderItem?.unit_price || null,
     valor_reembolso_frete: payment?.shipping_cost || null,
     taxa_ml_reembolso: payment?.marketplace_fee || null,
     data_processamento_reembolso: payment?.date_approved || null,
-    moeda_custo: null,
+    moeda_custo: claim.order_data?.currency_id || null,
     
-    // Responsável pelo custo - benefited pode ser array
+    // Responsável pelo custo
     responsavel_custo: (() => {
       const benefited = claim.resolution?.benefited;
-      const responsible = claim.resolution?.responsible;
-      
-      if (Array.isArray(benefited) && benefited.length > 0) {
-        return benefited[0];
-      }
-      
-      return benefited || responsible || null;
+      if (Array.isArray(benefited) && benefited.length > 0) return benefited[0];
+      return benefited || claim.resolution?.responsible || null;
     })(),
     
-    // Data de reembolso
-    data_reembolso: item.return_details_v2?.refund_at || null,
+    // Data de reembolso - usar return_details se existir
+    data_reembolso: claim.return_details?.refund_at || null,
     
     // Data estimada de reembolso
     data_estimada_reembolso: (() => {
-      if (item.return_details_v2?.refund_at) {
-        return item.return_details_v2.refund_at;
-      }
+      // Já foi reembolsado?
+      if (claim.return_details?.refund_at) return claim.return_details.refund_at;
       
-      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      // Estimativa: 7 dias após prazo de análise
+      const prazo = claim.return_details?.estimated_handling_limit?.date;
       if (prazo) {
         const prazoDate = new Date(prazo);
         prazoDate.setDate(prazoDate.getDate() + 7);
         return prazoDate.toISOString();
       }
-      
       return null;
     })(),
     
@@ -60,37 +54,35 @@ export const mapFinancialData = (item: any) => {
     transaction_id: payment?.id?.toString() || null,
     tags_pedido: item.order_data?.tags || [],
     
-    // ===== 🆕 9 CAMPOS FINANCEIROS DETALHADOS (nível superior individual) =====
+    // ===== CAMPOS FINANCEIROS DETALHADOS =====
     
-    // 1. Status $ (money_status)
-    status_dinheiro: item.return_details_v2?.money_status || claim.resolution?.money_status || null,
+    // Status financeiro do reembolso
+    status_dinheiro: claim.return_details?.money_status || claim.resolution?.money_status || null,
     
-    // 2. Método Reembolso
+    // Método de reembolso
     metodo_reembolso: payment?.payment_method_id || claim.resolution?.payment_method || null,
     
-    // 3. Moeda Reembolso
-    moeda_reembolso: item.order_data?.currency_id || claim.currency_id || 'BRL',
+    // Moeda
+    moeda_reembolso: claim.order_data?.currency_id || claim.currency_id || 'BRL',
     
-    // 4. % Reembolsado (calculado)
-    percentual_reembolsado: (total && reembolsado) ? ((reembolsado / total) * 100) : null,
+    // Percentual reembolsado
+    percentual_reembolsado: (total && reembolsado) ? Math.round((reembolsado / total) * 100) : null,
     
-    // 5. Valor Diferença Troca
-    valor_diferenca_troca: claim.resolution?.exchange_difference || item.change_details?.price_difference || null,
+    // Diferença de troca
+    valor_diferenca_troca: claim.resolution?.exchange_difference || claim.change_details?.price_difference || null,
     
-    // 6. Taxa ML Reembolsada (mesma que original - API ML não diferencia)
+    // Taxa ML reembolsada
     taxa_ml_reembolsada: payment?.marketplace_fee || null,
     
-    // 7. Custo Devolução (enriquecido de shipping_costs_enriched)
-    custo_devolucao: item.shipping_costs_enriched?.return_costs?.net_cost || 
-                     item.return_details_v2?.shipping_cost || null,
+    // Custo de devolução
+    custo_devolucao: claim.shipping_costs_enriched?.return_costs?.net_cost || 
+                     claim.return_details?.shipping_cost || null,
     
-    // 8. Parcelas
+    // Parcelas
     parcelas: payment?.installments || null,
-    
-    // 9. Valor Parcela
     valor_parcela: payment?.installment_amount || null,
     
-    // ===== CAMPOS PARA SHIPPING COSTS (usados por CustosLogisticaCell) =====
-    shipping_costs: item.shipping_costs_enriched || null
+    // Shipping costs (para CustosLogisticaCell)
+    shipping_costs: claim.shipping_costs_enriched || null
   };
 };

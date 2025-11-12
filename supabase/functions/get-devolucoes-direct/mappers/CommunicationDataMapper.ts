@@ -7,38 +7,31 @@
  */
 
 export const mapCommunicationData = (item: any) => {
-  // ✅ CORRIGIDO: claim_messages vem de endpoint separado /claims/$CLAIM_ID/messages
-  const rawMessages = item.claim_messages?.messages || [];
+  const claim = item;
+  const rawMessages = claim.claim_messages?.messages || [];
   
-  // ✅ NOVO: Deduplicação por hash único
-  // API ML retorna campo "hash" único: "5313707006_0_c793a662-fa12-3cfb-a069-9770f016baac"
+  // Deduplicação e ordenação de mensagens
   const uniqueMessages = rawMessages.reduce((acc: any[], msg: any) => {
-    // ✅ CORRIGIDO: message_date é OBJETO { created, received, read }, não string
-    const msgDate = msg.date_created || msg.message_date?.created || msg.message_date?.received || '';
-    const messageHash = msg.hash || `${msg.sender_role}_${msg.receiver_role}_${msgDate}_${msg.message}`;
+    const msgDate = msg.date_created || msg.message_date?.created || '';
+    const messageHash = msg.hash || `${msg.sender_role}_${msgDate}_${msg.message}`;
     
-    // Verificar se já existe mensagem com este hash
     const isDuplicate = acc.some(existingMsg => {
-      const existingDate = existingMsg.date_created || existingMsg.message_date?.created || existingMsg.message_date?.received || '';
-      const existingHash = existingMsg.hash || `${existingMsg.sender_role}_${existingMsg.receiver_role}_${existingDate}_${existingMsg.message}`;
+      const existingDate = existingMsg.date_created || existingMsg.message_date?.created || '';
+      const existingHash = existingMsg.hash || `${existingMsg.sender_role}_${existingDate}_${existingMsg.message}`;
       return existingHash === messageHash;
     });
     
-    if (!isDuplicate) {
-      acc.push(msg);
-    }
-    
+    if (!isDuplicate) acc.push(msg);
     return acc;
   }, []);
   
-  // Ordenar por data (mais recente primeiro)
   const sortedMessages = uniqueMessages.sort((a, b) => {
     const dateA = new Date(a.date_created || a.message_date?.created || 0).getTime();
     const dateB = new Date(b.date_created || b.message_date?.created || 0).getTime();
     return dateB - dateA;
   });
   
-  const lastMessage = sortedMessages.length > 0 ? sortedMessages[0] : null;
+  const lastMessage = sortedMessages[0] || null;
   
   return {
     // ===== CAMPOS DE COMUNICAÇÃO BÁSICOS (já existentes) =====
@@ -51,15 +44,13 @@ export const mapCommunicationData = (item: any) => {
     numero_interacoes: sortedMessages.length || null,
     
     qualidade_comunicacao: (() => {
-      if (sortedMessages.length === 0) return null;
+      if (sortedMessages.length === 0) return 'sem_mensagens';
       
-      // ✅ CORREÇÃO: Se não houver status de moderação, considerar todas como limpas
       const cleanMessages = sortedMessages.filter((m: any) => 
         !m.message_moderation || m.message_moderation?.status === 'clean'
       ).length;
       
-      const totalMessages = sortedMessages.length;
-      const cleanPercentage = (cleanMessages / totalMessages) * 100;
+      const cleanPercentage = (cleanMessages / sortedMessages.length) * 100;
       
       if (cleanPercentage >= 90) return 'excelente';
       if (cleanPercentage >= 70) return 'boa';
