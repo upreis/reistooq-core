@@ -104,11 +104,9 @@ export const mapFinancialData = (item: any) => {
     custo_envio_original: claim.shipping_costs_enriched?.original_costs?.total_receiver_cost || null,
     responsavel_custo_frete: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null,
     
-    // ✅ BREAKDOWN DETALHADO (para tooltip)
-    shipping_fee: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.shipping_fee || null,
-    handling_fee: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.handling_fee || null,
-    insurance: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.insurance || null,
-    taxes: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.taxes || null,
+    // ❌ FASE 4 REMOVIDO: Breakdown detalhado (shipping_fee, handling_fee, insurance, taxes)
+    // Motivo: API ML não retorna valores individualizados - sempre 0 nos logs
+    // Mantido apenas: custo_total_logistica (disponível e funcional)
     
     // 🐛 DEBUG: Log campos extraídos
     ...((() => {

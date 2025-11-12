@@ -99,14 +99,12 @@ interface Devolucao {
   parcelas?: number | null;
   valor_parcela?: number | null;
   
-  // ✅ CUSTOS LOGÍSTICA - campos do breakdown
+  // ✅ CUSTOS LOGÍSTICA
   custo_total_logistica?: number | null;
   custo_envio_original?: number | null;
   responsavel_custo_frete?: string | null;
-  shipping_fee?: number | null;
-  handling_fee?: number | null;
-  insurance?: number | null;
-  taxes?: number | null;
+  // ❌ FASE 4 REMOVIDO: shipping_fee, handling_fee, insurance, taxes
+  // Motivo: API ML não retorna breakdown individualizado (sempre 0 nos logs)
   
   // ✅ RASTREAMENTO DETALHADO - 10 campos (sem duplicação de FASE 2)
   estimated_delivery_limit?: string | null;
