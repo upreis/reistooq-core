@@ -15,12 +15,10 @@ import { DevolucaoDetailModal } from '@/components/devolucoes/DevolucaoDetailMod
 import { StatusBadge } from '@/components/devolucoes/StatusBadge';
 import { DevolucaoFilters } from '@/components/devolucoes/DevolucaoFilters';
 import { TrackingPriorityCells } from '@/components/ml/devolucao/cells/TrackingPriorityCells';
-import { FinancialDetailedCells } from '@/components/devolucoes/FinancialDetailedCells';
-import { TrackingDetailedCells } from '@/components/devolucoes/TrackingDetailedCells';
-import { CommunicationDetailedCells } from '@/components/devolucoes/CommunicationDetailedCells';
-import { MediationDetailedCells } from '@/components/devolucoes/MediationDetailedCells';
-import { MetadataDetailedCells } from '@/components/devolucoes/MetadataDetailedCells';
-import { PackDataCells } from '@/components/devolucoes/PackDataCells';
+import { FinancialDetailedCells } from '@/components/ml/devolucao/cells/FinancialDetailedCells';
+import { TrackingDetailedCells } from '@/components/ml/devolucao/cells/TrackingDetailedCells';
+import { MediationDetailedCells } from '@/components/ml/devolucao/cells/MediationDetailedCells';
+import { MetadataCells } from '@/components/ml/devolucao/cells/MetadataCells';
 import { 
   LocalizacaoAtualCell, 
   StatusTransporteCell, 
@@ -68,7 +66,7 @@ interface Devolucao {
   data_criacao: string;
   empresa: string;
   metodo_pagamento?: string;
-  codigo_rastreamento?: string;
+  
   
   // 🚚 TIPO DE LOGÍSTICA
   tipo_logistica?: string | null;
@@ -119,6 +117,10 @@ interface Devolucao {
   tracking_history?: any[] | null;
   tracking_events?: any[] | null;
   data_ultima_movimentacao?: string | null;
+  data_fechamento_devolucao?: string | null;
+  prazo_limite_analise?: string | null;
+  dias_restantes_analise?: number | null;
+  codigo_rastreamento?: string | null;
   
   // ✅ COMUNICAÇÃO DETALHADA - 6 campos
   timeline_events?: any[] | null;
@@ -128,7 +130,10 @@ interface Devolucao {
   data_fechamento_claim?: string | null;
   historico_status?: any[] | null;
   
-  // ✅ MEDIAÇÃO DETALHADA - 6 campos
+  // ✅ MEDIAÇÃO DETALHADA - 7 campos
+  em_mediacao?: boolean | null;
+  eh_troca?: boolean | null;
+  data_estimada_troca?: string | null;
   resultado_mediacao?: string | null;
   detalhes_mediacao?: string | null;
   produto_troca_id?: string | null;
@@ -524,17 +529,20 @@ export default function DevolucoesMercadoLivre() {
                       transaction_id={dev.transaction_id}
                     />
                     
-                    {/* FINANCEIRO DETALHADO - 9 colunas */}
+                    {/* FINANCEIRO DETALHADO - 12 colunas */}
                     <FinancialDetailedCells
                       status_dinheiro={dev.status_dinheiro}
-                      metodo_reembolso={dev.metodo_reembolso}
+                      metodo_pagamento={dev.metodo_pagamento}
                       moeda_reembolso={dev.moeda_reembolso}
                       percentual_reembolsado={dev.percentual_reembolsado}
                       valor_diferenca_troca={dev.valor_diferenca_troca}
-                      taxa_ml_reembolso={dev.taxa_ml_reembolso}
                       custo_devolucao={dev.custo_devolucao}
-                      parcelas={dev.parcelas}
-                      valor_parcela={dev.valor_parcela}
+                      custo_envio_original={dev.custo_envio_original}
+                      responsavel_custo_frete={dev.responsavel_custo_frete}
+                      shipping_fee={dev.shipping_fee}
+                      handling_fee={dev.handling_fee}
+                      insurance={dev.insurance}
+                      taxes={dev.taxes}
                     />
                     
                     {/* CUSTOS LOGÍSTICA */}
@@ -557,52 +565,27 @@ export default function DevolucoesMercadoLivre() {
                     <TempoTransitoCell devolucao={dev} />
                     <PrevisaoChegadaCell devolucao={dev} />
                     
-                    {/* RASTREAMENTO DETALHADO - 8 colunas (removido duplicatas de FASE 2) */}
+                    {/* RASTREAMENTO DETALHADO - 4 colunas */}
                     <TrackingDetailedCells
-                      estimated_delivery_limit={dev.estimated_delivery_limit}
-                      shipment_status={dev.shipment_status}
-                      refund_at={dev.refund_at}
-                      review_method={dev.review_method}
-                      review_stage={dev.review_stage}
-                      tracking_history={dev.tracking_history}
-                      tracking_events={dev.tracking_events}
-                      data_ultima_movimentacao={dev.data_ultima_movimentacao}
+                      data_fechamento_devolucao={dev.data_fechamento_devolucao}
+                      prazo_limite_analise={dev.prazo_limite_analise}
+                      dias_restantes_analise={dev.dias_restantes_analise}
+                      codigo_rastreamento={dev.codigo_rastreamento}
                     />
                     
-                    {/* COMUNICAÇÃO DETALHADA - 6 colunas */}
-                    <CommunicationDetailedCells
-                      timeline_events={dev.timeline_events}
-                      marcos_temporais={dev.marcos_temporais}
-                      data_criacao_claim={dev.data_criacao_claim}
-                      data_inicio_return={dev.data_inicio_return}
-                      data_fechamento_claim={dev.data_fechamento_claim}
-                      historico_status={dev.historico_status}
-                    />
-                    
-                    {/* MEDIAÇÃO DETALHADA - 6 colunas */}
+                    {/* MEDIAÇÃO DETALHADA - 4 colunas */}
                     <MediationDetailedCells
-                      resultado_mediacao={dev.resultado_mediacao}
-                      detalhes_mediacao={dev.detalhes_mediacao}
-                      produto_troca_id={dev.produto_troca_id}
-                      novo_pedido_id={dev.novo_pedido_id}
+                      em_mediacao={dev.em_mediacao}
+                      eh_troca={dev.eh_troca}
+                      data_estimada_troca={dev.data_estimada_troca}
                       dias_restantes_acao={dev.dias_restantes_acao}
-                      prazo_revisao_dias={dev.prazo_revisao_dias}
                     />
                     
                     {/* METADADOS - 3 colunas */}
-                    <MetadataDetailedCells
+                    <MetadataCells
                       usuario_ultima_acao={dev.usuario_ultima_acao}
                       total_evidencias={dev.total_evidencias}
                       anexos_ml={dev.anexos_ml}
-                    />
-                    
-                    {/* PACK DATA - 5 colunas */}
-                    <PackDataCells
-                      pack_id={dev.pack_id}
-                      is_pack={dev.is_pack}
-                      pack_items={dev.pack_items}
-                      cancel_detail={dev.cancel_detail}
-                      seller_custom_field={dev.seller_custom_field}
                     />
                     
                     <TableCell>
