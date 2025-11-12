@@ -10,6 +10,13 @@ export const mapCommunicationData = (item: any) => {
   const claim = item;
   const rawMessages = claim.claim_messages?.messages || [];
   
+  // 🐛 DEBUG: Log dados de comunicação recebidos
+  console.log('💬 CommunicationDataMapper - Dados recebidos:', JSON.stringify({
+    claim_id: claim.id,
+    has_messages: !!claim.claim_messages,
+    total_raw_messages: rawMessages.length
+  }));
+  
   // Deduplicação e ordenação de mensagens
   const uniqueMessages = rawMessages.reduce((acc: any[], msg: any) => {
     const msgDate = msg.date_created || msg.message_date?.created || '';
@@ -57,6 +64,90 @@ export const mapCommunicationData = (item: any) => {
       if (cleanPercentage >= 50) return 'regular';
       return 'ruim';
     })(),
+    
+    status_moderacao: (() => {
+      const moderatedCount = sortedMessages.filter((m: any) => 
+        m.message_moderation?.status === 'moderated' || 
+        m.message_moderation?.status === 'rejected'
+      ).length;
+      
+      return moderatedCount > 0 ? 'com_mensagens_moderadas' : 'limpo';
+    })(),
+    
+    // Anexos básicos
+    total_anexos_comprador: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'buyer' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    total_anexos_vendedor: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'seller' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    total_anexos_ml: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'mediator' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    
+    // Timeline consolidado (mantido para compatibilidade)
+    timeline_consolidado: null,
+    
+    // ===== 🆕 6 CAMPOS DE COMUNICAÇÃO DETALHADOS (nível superior individual) =====
+    
+    // 1. Timeline Events (array de eventos temporais)
+    timeline_events: item.timeline_events || [],
+    
+    // 2. Marcos Temporais (principais datas/eventos)
+    marcos_temporais: item.marcos_temporais || null,
+    
+    // 3. Data Criação Claim
+    data_criacao_claim: item.claim_details?.date_created || null,
+    
+    // 4. Data Início Return
+    data_inicio_return: item.return_details_v2?.date_created || null,
+    
+    // 5. Data Fechamento Claim
+    data_fechamento_claim: item.claim_details?.closed_at || item.claim_details?.date_closed || null,
+    
+    // 6. Histórico Status (array de mudanças de status)
+    historico_status: item.status_history || [],
+    
+    // ===== CAMPOS PARA METADADOS (total_evidencias, anexos_ml) =====
+    total_evidencias: item.attachments?.length || 0,
+    anexos_ml: item.attachments || []
+  };
+  
+  // 🐛 DEBUG: Log campos extraídos
+  const result = {
+    numero_interacoes: sortedMessages.length || null,
+    qualidade_comunicacao: (() => {
+      if (sortedMessages.length === 0) return 'sem_mensagens';
+      
+      const cleanMessages = sortedMessages.filter((m: any) => 
+        !m.message_moderation || m.message_moderation?.status === 'clean'
+      ).length;
+      
+      const cleanPercentage = (cleanMessages / sortedMessages.length) * 100;
+      
+      if (cleanPercentage >= 90) return 'excelente';
+      if (cleanPercentage >= 70) return 'boa';
+      if (cleanPercentage >= 50) return 'regular';
+      return 'ruim';
+    })()
+  };
+  
+  console.log('💬 CommunicationDataMapper - Campos extraídos:', JSON.stringify({
+    claim_id: claim.id,
+    numero_interacoes: result.numero_interacoes,
+    qualidade_comunicacao: result.qualidade_comunicacao
+  }));
+  
+  return {
+    // ===== CAMPOS DE COMUNICAÇÃO BÁSICOS (já existentes) =====
+    timeline_mensagens: sortedMessages,
+    ultima_mensagem_data: lastMessage?.date_created || lastMessage?.message_date?.created || null,
+    ultima_mensagem_remetente: lastMessage?.sender_role || lastMessage?.from?.role || null,
+    mensagens_nao_lidas: item.claim_messages?.unread_messages || null,
+    
+    // ===== CAMPOS PRIORIDADE ALTA (já implementados) =====
+    numero_interacoes: result.numero_interacoes,
+    qualidade_comunicacao: result.qualidade_comunicacao,
     
     status_moderacao: (() => {
       const moderatedCount = sortedMessages.filter((m: any) => 
