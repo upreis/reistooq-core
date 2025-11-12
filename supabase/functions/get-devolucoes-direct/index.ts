@@ -183,35 +183,52 @@ serve(async (req) => {
         let orderData = null;
         if (claim.resource_id) {
           try {
-            logger.debug(`📦 Buscando order ${claim.resource_id} (claim ${claim.id})`);
-            
             const orderRes = await fetchWithRetry(
               `https://api.mercadolibre.com/orders/${claim.resource_id}`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
               { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
             );
+            
+            console.log(`📦 ORDER FETCH STATUS (claim ${claim.id}):`, {
+              ok: orderRes.ok,
+              status: orderRes.status,
+              resource_id: claim.resource_id
+            });
+            
             if (orderRes.ok) {
               orderData = await orderRes.json();
+              
+              // 🔧 DEBUG: Inspecionar orderData COMPLETO
+              console.log(`📦 ORDER DATA KEYS (claim ${claim.id}):`, Object.keys(orderData || {}));
               
               // 🔧 DEBUG: Inspecionar estrutura COMPLETA de shipping
               if (orderData?.shipping) {
                 console.log(`🚚 ORDER SHIPPING COMPLETO (claim ${claim.id}):`, JSON.stringify({
                   shipping_keys: Object.keys(orderData.shipping),
+                  id: orderData.shipping.id,
                   logistic_type: orderData.shipping.logistic_type,
                   cost: orderData.shipping.cost,
                   base_cost: orderData.shipping.base_cost,
                   shipping_cost: orderData.shipping.shipping_cost,
                   list_cost: orderData.shipping.list_cost,
-                  // Mostrar estrutura completa limitada
-                  full_shipping: JSON.stringify(orderData.shipping).substring(0, 500)
+                  free_shipping: orderData.shipping.free_shipping,
+                  // Sample dos primeiros 500 chars
+                  full_sample: JSON.stringify(orderData.shipping).substring(0, 500)
                 }));
               } else {
-                console.log(`⚠️ ORDER SEM SHIPPING (claim ${claim.id})`);
+                console.log(`⚠️ ORDER SEM SHIPPING (claim ${claim.id}) - orderData exists:`, !!orderData);
+                if (orderData) {
+                  console.log(`📦 ORDER KEYS disponíveis:`, Object.keys(orderData));
+                }
               }
+            } else {
+              console.log(`❌ ORDER FETCH FAILED (claim ${claim.id}):`, orderRes.status);
             }
           } catch (err) {
-            logger.warn(`⚠️ Erro ao buscar order ${claim.resource_id}:`, err);
+            console.log(`❌ ERRO ao buscar order ${claim.resource_id}:`, err);
           }
+        } else {
+          console.log(`⚠️ Claim ${claim.id} sem resource_id`);
         }
 
         // 2. Buscar mensagens
