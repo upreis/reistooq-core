@@ -1,6 +1,7 @@
 /**
  * 📦 DEVOLUÇÕES MERCADO LIVRE - RECONSTRUÍDO DO ZERO
  * ✅ Cópia EXATA do padrão de /reclamacoes que FUNCIONA
+ * ✅ FASE 3: Hierarquia de produtos implementada
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -9,17 +10,22 @@ import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-on
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
+import { DevolucaoGroupedTable } from '@/features/devolucoes-online/components/DevolucaoGroupedTable';
 import { DevolucaoAdvancedFiltersBar } from '@/features/devolucoes-online/components/DevolucaoAdvancedFiltersBar';
 import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
 import { UrgencyFilters } from '@/features/devolucoes-online/components/filters/UrgencyFilters';
 import { CriticalDeadlinesNotification } from '@/features/devolucoes-online/components/notifications/CriticalDeadlinesNotification';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Package } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { StatusAnalise } from '@/features/devolucoes-online/types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '@/features/devolucoes-online/types/devolucao-analise.types';
 import { useDevolucoesDirect } from '@/features/devolucoes-online/hooks/useDevolucoesDirect';
+import { useDevolucaoHierarchy } from '@/features/devolucoes-online/hooks/useDevolucaoHierarchy';
 
 function DevolucoesMercadoLivreContent() {
   const { filters, setFilters, pagination, setPagination, viewMode, setViewMode } = useDevolucaoContext();
@@ -32,6 +38,7 @@ function DevolucoesMercadoLivreContent() {
   const [currentUrgencyFilter, setCurrentUrgencyFilter] = useState<string>('all');
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
+  const [enableGrouping, setEnableGrouping] = useState(true); // ✅ FASE 3: Toggle de hierarquia
 
   // ✅ Hook simplificado - Busca direto da API
   const {
@@ -116,6 +123,10 @@ function DevolucoesMercadoLivreContent() {
     return { ativas, historico };
   }, [devolucoesComEmpresa]);
 
+  // ✅ FASE 3: Aplicar hierarquia de produtos
+  const hierarchyAtivas = useDevolucaoHierarchy(devolucoesFiltradas.ativas, enableGrouping);
+  const hierarchyHistorico = useDevolucaoHierarchy(devolucoesFiltradas.historico, enableGrouping);
+
   // ✅ Handler - Buscar da API
   const handleBuscar = async () => {
     if (selectedAccountIds.length === 0) {
@@ -197,6 +208,26 @@ function DevolucoesMercadoLivreContent() {
                 />
               )}
 
+              {/* ✅ FASE 3: Toggle de Hierarquia */}
+              <div className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <Package className="h-5 w-5 text-primary" />
+                  <div>
+                    <Label htmlFor="enable-grouping" className="text-sm font-medium cursor-pointer">
+                      Agrupar por Produto
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Agrupa devoluções de variações do mesmo produto (SKU base)
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="enable-grouping"
+                  checked={enableGrouping}
+                  onCheckedChange={setEnableGrouping}
+                />
+              </div>
+
               <div className="flex justify-end">
                 <DevolucaoControlsBar 
                   autoRefreshEnabled={autoRefreshEnabled}
@@ -237,25 +268,45 @@ function DevolucoesMercadoLivreContent() {
 
                 <TabsContent value="ativas">
                   <Card>
-                    <DevolucaoTable 
-                      devolucoes={devolucoesFiltradas.ativas}
-                      isLoading={isLoading}
-                      error={null}
-                      onStatusChange={handleStatusChange}
-                      onRefresh={handleBuscar}
-                    />
+                    {enableGrouping ? (
+                      <DevolucaoGroupedTable
+                        groups={hierarchyAtivas.groups}
+                        independentDevolucoes={hierarchyAtivas.independentDevolucoes}
+                        isLoading={isLoading}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={handleBuscar}
+                      />
+                    ) : (
+                      <DevolucaoTable 
+                        devolucoes={devolucoesFiltradas.ativas}
+                        isLoading={isLoading}
+                        error={null}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={handleBuscar}
+                      />
+                    )}
                   </Card>
                 </TabsContent>
 
                 <TabsContent value="historico">
                   <Card>
-                    <DevolucaoTable 
-                      devolucoes={devolucoesFiltradas.historico}
-                      isLoading={isLoading}
-                      error={null}
-                      onStatusChange={handleStatusChange}
-                      onRefresh={handleBuscar}
-                    />
+                    {enableGrouping ? (
+                      <DevolucaoGroupedTable
+                        groups={hierarchyHistorico.groups}
+                        independentDevolucoes={hierarchyHistorico.independentDevolucoes}
+                        isLoading={isLoading}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={handleBuscar}
+                      />
+                    ) : (
+                      <DevolucaoTable 
+                        devolucoes={devolucoesFiltradas.historico}
+                        isLoading={isLoading}
+                        error={null}
+                        onStatusChange={handleStatusChange}
+                        onRefresh={handleBuscar}
+                      />
+                    )}
                   </Card>
                 </TabsContent>
               </Tabs>
