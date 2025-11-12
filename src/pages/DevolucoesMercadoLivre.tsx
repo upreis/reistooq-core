@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 import { DevolucaoDetailModal } from '@/components/devolucoes/DevolucaoDetailModal';
 import { StatusBadge } from '@/components/devolucoes/StatusBadge';
 import { DevolucaoFilters } from '@/components/devolucoes/DevolucaoFilters';
+import { TrackingPriorityCells } from '@/components/ml/devolucao/cells/TrackingPriorityCells';
 import { FinancialDetailedCells } from '@/components/devolucoes/FinancialDetailedCells';
 import { TrackingDetailedCells } from '@/components/devolucoes/TrackingDetailedCells';
 import { CommunicationDetailedCells } from '@/components/devolucoes/CommunicationDetailedCells';
@@ -512,57 +513,16 @@ export default function DevolucoesMercadoLivre() {
                     </TableCell>
                     
                     {/* PRIORIDADE ALTA - 7 colunas */}
-                    <TableCell className="text-sm">
-                      {formatSafeDate(dev.estimated_delivery_date)}
-                    </TableCell>
-                    
-                    <TableCell className="text-sm">
-                      {dev.has_delay === true ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
-                          Atrasado
-                        </span>
-                      ) : dev.has_delay === false ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
-                          No Prazo
-                        </span>
-                      ) : '-'}
-                    </TableCell>
-                    
-                    <TableCell className="text-sm">
-                      {dev.return_quantity && dev.total_quantity 
-                        ? `${dev.return_quantity}/${dev.total_quantity}`
-                        : '-'
-                      }
-                    </TableCell>
-                    
-                    <TableCell className="text-sm">
-                      {dev.qualidade_comunicacao ? (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          dev.qualidade_comunicacao === 'excelente' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
-                          dev.qualidade_comunicacao === 'boa' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
-                          dev.qualidade_comunicacao === 'regular' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
-                          'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                        }`}>
-                          {dev.qualidade_comunicacao}
-                        </span>
-                      ) : '-'}
-                    </TableCell>
-                    
-                    <TableCell className="text-sm">
-                      {dev.numero_interacoes || '0'}
-                    </TableCell>
-                    
-                    <TableCell className="text-sm">
-                      {dev.mediador_ml ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                          {dev.mediador_ml}
-                        </span>
-                      ) : '-'}
-                    </TableCell>
-                    
-                    <TableCell className="text-xs font-mono">
-                      {dev.transaction_id || '-'}
-                    </TableCell>
+                    <TrackingPriorityCells
+                      estimated_delivery_date={dev.estimated_delivery_date}
+                      has_delay={dev.has_delay}
+                      return_quantity={dev.return_quantity}
+                      total_quantity={dev.total_quantity}
+                      qualidade_comunicacao={dev.qualidade_comunicacao}
+                      numero_interacoes={dev.numero_interacoes}
+                      mediador_ml={dev.mediador_ml}
+                      transaction_id={dev.transaction_id}
+                    />
                     
                     {/* FINANCEIRO DETALHADO - 9 colunas */}
                     <FinancialDetailedCells
