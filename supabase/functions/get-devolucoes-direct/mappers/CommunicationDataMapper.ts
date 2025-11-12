@@ -35,12 +35,19 @@ export const mapCommunicationData = (item: any) => {
   
   // Deduplicação e ordenação de mensagens
   const uniqueMessages = rawMessages.reduce((acc: any[], msg: any) => {
+    // ✅ CORREÇÃO: Usar campos que realmente existem na API ML
     const msgDate = msg.date_created || msg.message_date?.created || '';
-    const messageHash = msg.hash || `${msg.sender_role}_${msgDate}_${msg.message}`;
+    const senderRole = msg.sender_role || msg.from?.role || '';
+    const text = msg.text || msg.message || '';
+    
+    // Criar hash baseado em campos disponíveis
+    const messageHash = `${senderRole}_${msgDate}_${text.substring(0, 50)}`;
     
     const isDuplicate = acc.some(existingMsg => {
       const existingDate = existingMsg.date_created || existingMsg.message_date?.created || '';
-      const existingHash = existingMsg.hash || `${existingMsg.sender_role}_${existingDate}_${existingMsg.message}`;
+      const existingSenderRole = existingMsg.sender_role || existingMsg.from?.role || '';
+      const existingText = existingMsg.text || existingMsg.message || '';
+      const existingHash = `${existingSenderRole}_${existingDate}_${existingText.substring(0, 50)}`;
       return existingHash === messageHash;
     });
     
