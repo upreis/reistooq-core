@@ -1,9 +1,10 @@
 /**
  * 🎣 HOOK DEVOLUCOES DIRECT - BUSCA DIRETO DA API ML
  * Cópia EXATA do padrão de useReclamacoes que FUNCIONA
+ * ✅ FASE 2: Feedback de progresso em tempo real
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -70,14 +71,28 @@ export function useDevolucoesDirect(
         dateTo: dataFim
       });
 
+      // ✅ FASE 2: Toast inicial de progresso
+      toast.loading(`📡 Iniciando sincronização...`, {
+        id: 'fetch-devolucoes',
+        duration: Infinity
+      });
+
       // ✅ BUSCAR PARA CADA CONTA
       const allDevolucoes: any[] = [];
       
-      for (const accountId of selectedAccountIds) {
+      for (let accountIndex = 0; accountIndex < selectedAccountIds.length; accountIndex++) {
+        const accountId = selectedAccountIds[accountIndex];
+        
         if (signal.aborted) {
           console.log('🛑 Busca cancelada pelo usuário');
           throw new Error('Busca cancelada');
         }
+
+        // ✅ FASE 2: Atualizar progresso da conta
+        toast.loading(
+          `📡 Conta ${accountIndex + 1}/${selectedAccountIds.length}: Buscando devoluções...`,
+          { id: 'fetch-devolucoes', duration: Infinity }
+        );
 
         console.log(`📡 Buscando conta ${accountId}...`);
 
@@ -103,6 +118,12 @@ export function useDevolucoesDirect(
         console.log(`✅ ${claims.length} devoluções recebidas da conta ${accountId}`);
         
         allDevolucoes.push(...claims);
+
+        // ✅ FASE 2: Atualizar progresso acumulado
+        toast.loading(
+          `✅ ${allDevolucoes.length} devoluções processadas (conta ${accountIndex + 1}/${selectedAccountIds.length})`,
+          { id: 'fetch-devolucoes', duration: Infinity }
+        );
       }
 
       console.log(`✅ Total: ${allDevolucoes.length} devoluções de ${selectedAccountIds.length} conta(s)`);

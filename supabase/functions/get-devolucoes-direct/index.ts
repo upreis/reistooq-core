@@ -9,6 +9,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 import { fetchWithRetry } from '../_shared/retryUtils.ts';
+import { logger } from '../_shared/logger.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -33,7 +34,8 @@ serve(async (req) => {
       date_to 
     } = await req.json();
 
-    console.log('[get-devolucoes-direct] Parâmetros:', { integration_account_id, date_from, date_to });
+    logger.progress(`[get-devolucoes-direct] Iniciando sincronização para conta ${integration_account_id}`);
+    logger.debug('Parâmetros:', { integration_account_id, date_from, date_to });
 
     // ✅ Buscar dados da conta com SERVICE CLIENT
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -48,7 +50,7 @@ serve(async (req) => {
       .single();
 
     if (accountError || !account) {
-      console.error('[get-devolucoes-direct] Account error:', accountError);
+      logger.error('Account error:', accountError);
       throw new Error(`Conta ML não encontrada: ${accountError?.message || 'No account data'}`);
     }
 
@@ -64,7 +66,7 @@ serve(async (req) => {
       .maybeSingle();
 
     if (secretError || !secretRow) {
-      console.error('[get-devolucoes-direct] Erro ao buscar secrets:', secretError);
+      logger.error('Erro ao buscar secrets:', secretError);
       throw new Error('Token ML não encontrado. Reconecte a integração.');
     }
 
@@ -75,7 +77,7 @@ serve(async (req) => {
     if (secretRow?.use_simple && secretRow?.simple_tokens) {
       try {
         const simpleTokensStr = secretRow.simple_tokens as string;
-        console.log('[get-devolucoes-direct] Descriptografando simple_tokens');
+        logger.debug('Descriptografando simple_tokens');
         
         // Remover prefixo SALT2024:: e descriptografar base64
         if (simpleTokensStr.startsWith('SALT2024::')) {
@@ -83,10 +85,10 @@ serve(async (req) => {
           const jsonStr = atob(base64Data);
           const tokensData = JSON.parse(jsonStr);
           accessToken = tokensData.access_token || '';
-          console.log('[get-devolucoes-direct] ✅ Token descriptografado com sucesso');
+          logger.info('✅ Token descriptografado com sucesso');
         }
       } catch (err) {
-        console.error('[get-devolucoes-direct] Erro descriptografia simples:', err);
+        logger.error('Erro descriptografia simples:', err);
       }
     }
 
@@ -111,7 +113,7 @@ serve(async (req) => {
 
       const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
       
-      console.log(`[get-devolucoes-direct] Buscando página offset=${offset}`);
+      logger.progress(`📡 Buscando página offset=${offset} da API ML...`);
 
       // ✅ CORREÇÃO 3: Usar fetchWithRetry para tratar 429 automaticamente
       const claimsRes = await fetchWithRetry(claimsUrl, {
@@ -120,14 +122,14 @@ serve(async (req) => {
 
       if (!claimsRes.ok) {
         const errorText = await claimsRes.text();
-        console.error('[get-devolucoes-direct] Erro ML API:', errorText);
+        logger.error('Erro ML API:', errorText);
         throw new Error(`ML API error: ${claimsRes.status}`);
       }
 
       const claimsData = await claimsRes.json();
       const claims = claimsData.data || [];
       
-      console.log(`[get-devolucoes-direct] Página offset=${offset}: ${claims.length} claims`);
+      logger.info(`✅ Página offset=${offset}: ${claims.length} claims`);
 
       if (claims.length === 0) {
         hasMore = false;
@@ -142,7 +144,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`[get-devolucoes-direct] Total de ${allClaims.length} claims da API ML`);
+    logger.progress(`✅ Total de ${allClaims.length} claims buscados da API ML`);
     let claims = allClaims;
 
     // ✅ FILTRAR POR DATA CLIENT-SIDE (igual ml-claims-fetch)
@@ -161,7 +163,7 @@ serve(async (req) => {
     }
 
     // ✅ CORREÇÃO 1: BATCH PARALELO 5x5 (Performance: 40s → ~10s)
-    console.log('[get-devolucoes-direct] Enriquecendo dados em lotes paralelos...');
+    logger.progress('🔄 Iniciando enriquecimento de dados em lotes paralelos...');
     
     const allEnrichedClaims: any[] = [];
     const BATCH_SIZE = 5; // Processar 5 claims em paralelo
@@ -253,7 +255,8 @@ serve(async (req) => {
       const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
       const totalBatches = Math.ceil(claims.length / BATCH_SIZE);
       
-      console.log(`📦 Processando lote ${batchNumber}/${totalBatches} (${batch.length} claims)...`);
+      // ✅ FASE 2: Log de progresso em tempo real
+      logger.progress(`📦 Processando lote ${batchNumber}/${totalBatches} (${batch.length} claims)...`);
       
       // Processar batch em paralelo
       const enrichedBatch = await Promise.all(batch.map(enrichClaim));
@@ -265,10 +268,10 @@ serve(async (req) => {
       }
     }
     
-    console.log(`[get-devolucoes-direct] ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
+    logger.progress(`✅ ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
     // ✅ CORREÇÃO 2: MAPEAR DADOS CORRETAMENTE
-    console.log('[get-devolucoes-direct] Mapeando dados...');
+    logger.progress('🗺️ Mapeando dados...');
     const mappedClaims = allEnrichedClaims.map((claim: any) => {
       try {
         // ✅ ESTRUTURA CORRETA para os mappers
@@ -304,12 +307,12 @@ serve(async (req) => {
 
         return mapDevolucaoCompleta(item, integration_account_id, accountName, null);
       } catch (err) {
-        console.error('[get-devolucoes-direct] Erro ao mapear claim:', claim.id, err);
+        logger.error('Erro ao mapear claim:', claim.id, err);
         return null;
       }
     }).filter(Boolean);
 
-    console.log(`[get-devolucoes-direct] ${mappedClaims.length} claims mapeados com sucesso`);
+    logger.progress(`✅ ${mappedClaims.length} claims mapeados com sucesso`);
 
     // ✅ RETORNAR DADOS MAPEADOS
     return new Response(
@@ -327,7 +330,7 @@ serve(async (req) => {
     );
 
   } catch (error: any) {
-    console.error('[get-devolucoes-direct] Erro:', error);
+    logger.error('Erro:', error);
     return new Response(
       JSON.stringify({
         error: error.message || 'Internal server error',
