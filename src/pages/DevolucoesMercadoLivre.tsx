@@ -29,6 +29,10 @@ import {
 import { LogisticTypeCell } from '@/components/devolucoes/LogisticTypeCell';
 import { SubtipoCell } from '@/components/devolucoes/SubtipoCell';
 import { CustosLogisticaCell } from '@/components/devolucoes/CustosLogisticaCell';
+import { StatusReturnCell } from '@/components/devolucoes/StatusReturnCell';
+import { StatusMoneyCell } from '@/components/devolucoes/StatusMoneyCell';
+import { StatusShipmentCell } from '@/components/devolucoes/StatusShipmentCell';
+import { StatusClaimCell } from '@/components/devolucoes/StatusClaimCell';
 import {
   Pagination,
   PaginationContent,
@@ -68,6 +72,13 @@ interface Devolucao {
   empresa: string;
   metodo_pagamento?: string;
   
+  // 🆕 TODOS OS 4 TIPOS DE STATUS
+  status_return?: string | null;      // Status da devolução (14 estados)
+  status_dinheiro?: string | null;    // Status do dinheiro (retained/refunded/available)
+  status_envio?: string | null;       // Status do shipment (pending/shipped/delivered/etc)
+  // status claim está em 'status' acima
+  
+  
   
   // 🚚 TIPO DE LOGÍSTICA
   tipo_logistica?: string | null;
@@ -88,8 +99,7 @@ interface Devolucao {
   mediador_ml?: string | null;
   transaction_id?: string | null;
   
-  // ✅ FINANCEIRO DETALHADO - 9 campos
-  status_dinheiro?: string | null;
+  // ✅ FINANCEIRO DETALHADO - 8 campos (status_dinheiro já declarado acima)
   metodo_reembolso?: string | null;
   moeda_reembolso?: string | null;
   percentual_reembolsado?: number | null;
@@ -393,7 +403,13 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Comprador</TableHead>
                 <TableHead>CPF/CNPJ</TableHead>
                 <TableHead>Produto</TableHead>
-                <TableHead>Status</TableHead>
+                
+                {/* 🆕 TODOS OS 4 TIPOS DE STATUS */}
+                <TableHead>📋 Status Claim</TableHead>
+                <TableHead>📦 Status Return</TableHead>
+                <TableHead>💰 Status Money</TableHead>
+                <TableHead>🚚 Status Shipment</TableHead>
+                
                 <TableHead>🏷️ Subtipo</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
@@ -467,9 +483,21 @@ export default function DevolucoesMercadoLivre() {
                       {dev.comprador_cpf || dev.dados_buyer_info?.doc_number || '-'}
                     </TableCell>
                     <TableCell>{dev.produto_titulo || '-'}</TableCell>
+                    
+                    {/* 🆕 TODOS OS 4 TIPOS DE STATUS */}
                     <TableCell>
-                      <StatusBadge status={dev.status?.id || 'unknown'} />
+                      <StatusClaimCell status={dev.status?.id || dev.status} />
                     </TableCell>
+                    <TableCell>
+                      <StatusReturnCell status={dev.status_return} />
+                    </TableCell>
+                    <TableCell>
+                      <StatusMoneyCell status={dev.status_dinheiro} />
+                    </TableCell>
+                    <TableCell>
+                      <StatusShipmentCell status={dev.status_envio} />
+                    </TableCell>
+                    
                     <TableCell>
                       <SubtipoCell subtipo_claim={dev.subtipo_claim} />
                     </TableCell>

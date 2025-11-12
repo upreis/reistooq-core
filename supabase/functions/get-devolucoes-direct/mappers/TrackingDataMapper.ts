@@ -7,20 +7,35 @@
 export const mapTrackingData = (item: any) => {
   // ✅ ACESSO DIRETO ao claim
   const claim = item;
-  const returnData = claim.return_details;
+  const returnData = claim.return_details_v2 || claim.return_details;
   
   // 🐛 DEBUG: Log dados de tracking recebidos
   console.log('📦 TrackingDataMapper - Dados recebidos:', JSON.stringify({
     claim_id: claim.id,
     has_return_details: !!returnData,
+    has_return_details_v2: !!claim.return_details_v2,
     has_shipment_history: !!claim.shipment_history_enriched,
-    estimated_delivery: returnData?.estimated_delivery_date,
-    tracking_number: returnData?.tracking_number
+    return_status: returnData?.status,
+    shipments_count: returnData?.shipments?.length || 0,
+    first_shipment_status: returnData?.shipments?.[0]?.status
   }));
   
   return {
+    // ===== 🆕 TODOS OS 4 TIPOS DE STATUS =====
+    
+    // 1. Status Return (status da devolução - 14 estados possíveis)
+    status_return: returnData?.status || null,
+    
+    // 2. Status Money (já existente, mantido)
+    // Mapeado em FinancialDataMapper
+    
+    // 3. Status Shipment (status do envio - corrigido para usar shipments[0].status)
+    status_envio: returnData?.shipments?.[0]?.status || claim.shipment_data?.status || null,
+    
+    // 4. Status Claim (status da reclamação - mapeado em BasicDataMapper)
+    
     // ===== RASTREAMENTO BÁSICO =====
-    tracking_number: returnData?.tracking_number || claim.tracking_number || null,
+    tracking_number: returnData?.tracking_number || returnData?.shipments?.[0]?.tracking_number || claim.tracking_number || null,
     tracking_status: returnData?.status || claim.status || null,
     codigo_rastreamento: returnData?.tracking_number || claim.tracking_number || null,
     tracking_method: returnData?.tracking_method || claim.tracking_method || null,
