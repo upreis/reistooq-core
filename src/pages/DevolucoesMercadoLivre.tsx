@@ -29,6 +29,7 @@ import {
 import { LogisticTypeCell } from '@/components/devolucoes/LogisticTypeCell';
 import { SubtipoCell } from '@/components/devolucoes/SubtipoCell';
 import { CustosLogisticaCell } from '@/components/devolucoes/CustosLogisticaCell';
+import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import { StatusReturnCell } from '@/components/devolucoes/StatusReturnCell';
 import { StatusMoneyCell } from '@/components/devolucoes/StatusMoneyCell';
 import { StatusShipmentCell } from '@/components/devolucoes/StatusShipmentCell';
@@ -71,6 +72,21 @@ interface Devolucao {
   data_criacao: string;
   empresa: string;
   metodo_pagamento?: string;
+  
+  // 📸 PRODUCT INFO (imagem, SKU, preço, link)
+  product_info?: {
+    id?: string;
+    title?: string;
+    price?: number;
+    currency_id?: string;
+    thumbnail?: string | null;
+    permalink?: string;
+    sku?: string | null;
+    condition?: string;
+    available_quantity?: number;
+    sold_quantity?: number;
+  } | null;
+  
   
   // 🆕 TODOS OS 4 TIPOS DE STATUS
   status_return?: string | null;      // Status da devolução (14 estados)
@@ -402,7 +418,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Claim ID</TableHead>
                 <TableHead>Comprador</TableHead>
                 <TableHead>CPF/CNPJ</TableHead>
-                <TableHead>Produto</TableHead>
+                <TableHead>📸 Produto</TableHead>
                 
                 {/* 🆕 TODOS OS 4 TIPOS DE STATUS */}
                 <TableHead>📋 Status Claim</TableHead>
@@ -482,7 +498,9 @@ export default function DevolucoesMercadoLivre() {
                     <TableCell className="text-xs">
                       {dev.comprador_cpf || dev.dados_buyer_info?.doc_number || '-'}
                     </TableCell>
-                    <TableCell>{dev.produto_titulo || '-'}</TableCell>
+                    <TableCell>
+                      <ProductInfoCell productInfo={dev.product_info} />
+                    </TableCell>
                     
                     {/* 🆕 TODOS OS 4 TIPOS DE STATUS */}
                     <TableCell>
