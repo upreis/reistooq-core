@@ -218,12 +218,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* 🆕 AÇÃO OBRIGATÓRIA */}
       <MandatoryActionCell devolucao={devolucao} />
       
-      {/* GRUPO 4: COMPRADOR (2 colunas) */}
-      
-      {/* Comprador com BuyerInfoCell */}
+      {/* GRUPO 4: COMPRADOR (1 coluna com BuyerInfoCell) */}
       <td className="px-3 py-3 text-left">
         <BuyerInfoCell 
           buyerInfo={{
+            id: (devolucao as any).comprador_id || 0,
             first_name: devolucao.comprador_nome_completo?.split(' ')[0] || '',
             last_name: devolucao.comprador_nome_completo?.split(' ').slice(1).join(' ') || '',
             nickname: devolucao.comprador_nickname || '',
