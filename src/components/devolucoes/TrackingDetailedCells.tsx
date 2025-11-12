@@ -26,8 +26,6 @@ interface TrackingDetailedCellsProps {
   refund_at?: string | null;
   review_method?: string | null;
   review_stage?: string | null;
-  localizacao_atual?: string | null;
-  status_transporte_atual?: string | null;
   tracking_history?: any[] | null;
   tracking_events?: any[] | null;
   data_ultima_movimentacao?: string | null;
@@ -39,8 +37,6 @@ export const TrackingDetailedCells = ({
   refund_at,
   review_method,
   review_stage,
-  localizacao_atual,
-  status_transporte_atual,
   tracking_history,
   tracking_events,
   data_ultima_movimentacao
@@ -73,18 +69,6 @@ export const TrackingDetailedCells = ({
       <TableCell className="text-sm">
         {review_stage ? (
           <Badge variant="secondary">{review_stage}</Badge>
-        ) : '-'}
-      </TableCell>
-
-      {/* Localização Atual */}
-      <TableCell className="text-sm max-w-[200px] truncate">
-        {localizacao_atual || '-'}
-      </TableCell>
-
-      {/* Status Transporte */}
-      <TableCell className="text-sm">
-        {status_transporte_atual ? (
-          <Badge variant="outline">{status_transporte_atual}</Badge>
         ) : '-'}
       </TableCell>
 

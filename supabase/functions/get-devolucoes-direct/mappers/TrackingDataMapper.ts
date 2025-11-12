@@ -51,50 +51,69 @@ export const mapTrackingData = (item: any) => {
       return diff > 0 ? diff : 0;
     })(),
     
-    // ===== 🆕 10 CAMPOS DE TRACKING DETALHADOS (nível superior individual) =====
     
-    // 1. Estimated Delivery Limit (prazo limite de entrega)
-    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || returnData?.estimated_delivery_date || null,
+    // ===== 🆕 FASE 2: SHIPPING AVANÇADO (4 campos críticos) =====
     
-    // 2. Shipment Status (status do envio)
-    shipment_status: item.shipment_data?.status || claim.shipment_status || null,
-    
-    // 3. Refund At (data real de reembolso)
-    refund_at: returnData?.refund_at || claim.resolution?.refund_date || null,
-    
-    // 4. Review Method (método de revisão)
-    review_method: returnData?.review_method || claim.review_method || null,
-    
-    // 5. Review Stage (estágio da revisão)
-    review_stage: returnData?.review_stage || claim.review_stage || null,
-    
-    // 6. Localização Atual (do shipment_history_enriched)
-    localizacao_atual: (() => {
-      const history = item.shipment_history_enriched?.return_shipment?.tracking_history;
+    // 1. 📍 Localização Atual do Produto (última movimentação)
+    localizacao_atual_produto: (() => {
+      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
       if (!history || !Array.isArray(history) || history.length === 0) return null;
       const latest = history[history.length - 1];
       return latest?.location || latest?.checkpoint_description || null;
     })(),
     
-    // 7. Status Transporte Atual (do shipment_history_enriched)
+    // 2. 🚚 Status Transporte Atual
     status_transporte_atual: (() => {
-      const history = item.shipment_history_enriched?.return_shipment?.tracking_history;
+      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
       if (!history || !Array.isArray(history) || history.length === 0) return null;
       const latest = history[history.length - 1];
       return latest?.status || latest?.checkpoint_status || null;
     })(),
     
-    // 8. Tracking History (array completo de eventos)
-    tracking_history: item.shipment_history_enriched?.return_shipment?.tracking_history || 
-                      item.shipment_data?.tracking_history || [],
+    // 3. ⏱️ Tempo em Trânsito (dias desde primeira movimentação)
+    tempo_transito_dias: (() => {
+      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
+      if (!history || !Array.isArray(history) || history.length === 0) return null;
+      
+      const firstEvent = history[0];
+      const lastEvent = history[history.length - 1];
+      
+      const firstDate = new Date(firstEvent?.date || firstEvent?.checkpoint_date);
+      const lastDate = new Date(lastEvent?.date || lastEvent?.checkpoint_date);
+      
+      if (isNaN(firstDate.getTime()) || isNaN(lastDate.getTime())) return null;
+      
+      const diffDays = Math.ceil((lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 ? diffDays : null;
+    })(),
     
-    // 9. Tracking Events (eventos de rastreamento formatados)
-    tracking_events: item.shipment_history_enriched?.return_shipment?.tracking_events || 
-                     item.shipment_data?.tracking_events || [],
+    // 4. 📅 Previsão de Chegada ao Vendedor
+    previsao_chegada_vendedor: returnData?.estimated_delivery_date || 
+                                 returnData?.estimated_delivery_limit?.date || null,
     
-    // 10. Data Última Movimentação (extraído do último evento do tracking_history)
+    // ===== CAMPOS DETALHADOS DE TRACKING (já existentes) =====
+    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || null,
+    shipment_status: claim.shipment_data?.status || claim.shipment_status || null,
+    refund_at: returnData?.refund_at || claim.resolution?.refund_date || null,
+    review_method: returnData?.review_method || claim.review_method || null,
+    review_stage: returnData?.review_stage || claim.review_stage || null,
+    
+    // Localização e status já implementados acima (FASE 2)
+    localizacao_atual: (() => {
+      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
+      if (!history || !Array.isArray(history) || history.length === 0) return null;
+      const latest = history[history.length - 1];
+      return latest?.location || latest?.checkpoint_description || null;
+    })(),
+    
+    tracking_history: claim.shipment_history_enriched?.return_shipment?.tracking_history || 
+                      claim.shipment_data?.tracking_history || [],
+    
+    tracking_events: claim.shipment_history_enriched?.return_shipment?.tracking_events || 
+                     claim.shipment_data?.tracking_events || [],
+    
     data_ultima_movimentacao: (() => {
-      const history = item.shipment_history_enriched?.return_shipment?.tracking_history;
+      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
       if (!history || !Array.isArray(history) || history.length === 0) return null;
       const latest = history[history.length - 1];
       return latest?.date || latest?.checkpoint_date || null;

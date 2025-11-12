@@ -20,6 +20,12 @@ import { CommunicationDetailedCells } from '@/components/devolucoes/Communicatio
 import { MediationDetailedCells } from '@/components/devolucoes/MediationDetailedCells';
 import { MetadataDetailedCells } from '@/components/devolucoes/MetadataDetailedCells';
 import { PackDataCells } from '@/components/devolucoes/PackDataCells';
+import { 
+  LocalizacaoAtualCell, 
+  StatusTransporteCell, 
+  TempoTransitoCell, 
+  PrevisaoChegadaCell 
+} from '@/components/devolucoes/ShippingAdvancedCells';
 import {
   Pagination,
   PaginationContent,
@@ -59,6 +65,12 @@ interface Devolucao {
   metodo_pagamento?: string;
   codigo_rastreamento?: string;
   
+  // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
+  localizacao_atual_produto?: string | null;
+  status_transporte_atual?: string | null;
+  tempo_transito_dias?: number | null;
+  previsao_chegada_vendedor?: string | null;
+  
   // ✅ PRIORIDADE ALTA - 7 campos
   estimated_delivery_date?: string | null;
   has_delay?: boolean | null;
@@ -80,14 +92,13 @@ interface Devolucao {
   parcelas?: number | null;
   valor_parcela?: number | null;
   
-  // ✅ RASTREAMENTO DETALHADO - 10 campos
+  // ✅ RASTREAMENTO DETALHADO - 10 campos (sem duplicação de FASE 2)
   estimated_delivery_limit?: string | null;
   shipment_status?: string | null;
   refund_at?: string | null;
   review_method?: string | null;
   review_stage?: string | null;
   localizacao_atual?: string | null;
-  status_transporte_atual?: string | null;
   tracking_history?: any[] | null;
   tracking_events?: any[] | null;
   data_ultima_movimentacao?: string | null;
@@ -385,14 +396,19 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>💳 Parcelas</TableHead>
                 <TableHead>💵 Valor Parcela</TableHead>
                 
-                {/* RASTREAMENTO DETALHADO - 10 colunas */}
+                
+                {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas ANTES dos detalhados */}
+                <TableHead>📍 Localização Produto</TableHead>
+                <TableHead>🚚 Status Transporte</TableHead>
+                <TableHead>⏱️ Tempo Trânsito</TableHead>
+                <TableHead>📅 Previsão Chegada</TableHead>
+                
+                {/* RASTREAMENTO DETALHADO - 9 colunas (removido status_transporte duplicado) */}
                 <TableHead>⏱️ Limite Entrega</TableHead>
-                <TableHead>🚚 Status Shipment</TableHead>
+                <TableHead>🚢 Status Shipment</TableHead>
                 <TableHead>💰 Refund At</TableHead>
                 <TableHead>🔍 Review Method</TableHead>
                 <TableHead>📋 Review Stage</TableHead>
-                <TableHead>📍 Localização</TableHead>
-                <TableHead>🚛 Status Transporte</TableHead>
                 <TableHead>📜 History</TableHead>
                 <TableHead>📊 Events</TableHead>
                 <TableHead>⏰ Última Movim.</TableHead>
@@ -532,15 +548,19 @@ export default function DevolucoesMercadoLivre() {
                       valor_parcela={dev.valor_parcela}
                     />
                     
-                    {/* RASTREAMENTO DETALHADO - 10 colunas */}
+                    {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas */}
+                    <LocalizacaoAtualCell devolucao={dev} />
+                    <StatusTransporteCell devolucao={dev} />
+                    <TempoTransitoCell devolucao={dev} />
+                    <PrevisaoChegadaCell devolucao={dev} />
+                    
+                    {/* RASTREAMENTO DETALHADO - 8 colunas (removido duplicatas de FASE 2) */}
                     <TrackingDetailedCells
                       estimated_delivery_limit={dev.estimated_delivery_limit}
                       shipment_status={dev.shipment_status}
                       refund_at={dev.refund_at}
                       review_method={dev.review_method}
                       review_stage={dev.review_stage}
-                      localizacao_atual={dev.localizacao_atual}
-                      status_transporte_atual={dev.status_transporte_atual}
                       tracking_history={dev.tracking_history}
                       tracking_events={dev.tracking_events}
                       data_ultima_movimentacao={dev.data_ultima_movimentacao}
