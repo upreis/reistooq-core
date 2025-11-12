@@ -26,10 +26,6 @@ const formatPercentage = (value: number | null | undefined): string => {
 };
 
 export function FinancialDetailedCells({ devolucao }: FinancialDetailedCellsProps) {
-  // 🐛 DEBUG: Ver campos financeiros
-  console.log('🔍 FinancialDetailedCells - status_dinheiro:', devolucao.status_dinheiro);
-  console.log('🔍 FinancialDetailedCells - metodo_reembolso:', devolucao.metodo_reembolso);
-  
   return (
     <>
       {/* Status $ */}

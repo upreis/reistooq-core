@@ -12,9 +12,6 @@ interface ProductInfoCellProps {
 }
 
 export const ProductInfoCell = ({ productInfo }: ProductInfoCellProps) => {
-  // 🐛 DEBUG: Ver o que está recebendo
-  console.log('🔍 ProductInfoCell recebeu:', productInfo);
-  
   if (!productInfo) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
