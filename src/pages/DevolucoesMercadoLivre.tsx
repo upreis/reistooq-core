@@ -97,62 +97,21 @@ function DevolucoesMercadoLivreContent() {
     return devs;
   }, [apiDevolucoes, urgencyFilter]);
 
-  // ✅ CRÍTICO: Expandir dados JSONB E adicionar empresa
+  // ✅ Adicionar empresa (dados já vêm FLAT da Edge Function)
   const devolucoesComEmpresa = useMemo(() => {
-    const result = devolucoesComUrgencyFilter.map((dev: any, index: number) => {
+    console.log('✅ Processando devoluções - total:', devolucoesComUrgencyFilter.length);
+    if (devolucoesComUrgencyFilter.length > 0) {
+      console.log('✅ Primeira devolução (sample):', devolucoesComUrgencyFilter[0]);
+    }
+    
+    return devolucoesComUrgencyFilter.map((dev: any) => {
       const account = accounts.find(acc => acc.id === dev.integration_account_id);
       
-      // ✅ Expandir todos os campos JSONB prefixados dados_* para nível superior
-      const expanded: any = { ...dev };
-      
-      // 🐛 DEBUG DETALHADO DO PRIMEIRO ITEM (UMA VEZ)
-      if (index === 0) {
-        console.log('🔍 ========== DEBUG DADOS ==========');
-        console.log('📦 Primeiro item RAW:', dev);
-        console.log('📋 Campos disponíveis:', Object.keys(dev));
-        console.log('🗂️ Campos dados_*:', Object.keys(dev).filter(k => k.startsWith('dados_')));
-        console.log('💰 produto_titulo DIRETO:', dev.produto_titulo);
-        console.log('💰 comprador_nome_completo DIRETO:', dev.comprador_nome_completo);
-        console.log('📦 dados_product_info:', dev.dados_product_info);
-        console.log('💳 dados_financial_info:', dev.dados_financial_info);
-        console.log('👤 dados_context_info:', dev.dados_context_info);
-      }
-      
-      // Processar cada campo que pode estar em formato JSONB prefixado
-      Object.keys(dev).forEach(key => {
-        if (key.startsWith('dados_') && dev[key] && typeof dev[key] === 'object') {
-          // Expandir campos do objeto JSONB para o nível superior
-          Object.keys(dev[key]).forEach(nestedKey => {
-            // Se o campo ainda não existe no nível superior, adicionar
-            if (!(nestedKey in expanded)) {
-              expanded[nestedKey] = dev[key][nestedKey];
-            }
-          });
-        }
-      });
-      
-      // 🐛 DEBUG: Ver resultado expandido do primeiro item
-      if (index === 0) {
-        console.log('🔍 ========== APÓS EXPANSÃO ==========');
-        console.log('📦 Item EXPANDIDO (primeiras propriedades):', Object.keys(expanded).slice(0, 20));
-        console.log('🎯 CAMPOS CRÍTICOS:', {
-          produto_titulo: expanded.produto_titulo,
-          comprador_nome_completo: expanded.comprador_nome_completo,
-          metodo_pagamento: expanded.metodo_pagamento,
-          status_dinheiro: expanded.status_dinheiro,
-          sku: expanded.sku,
-          quantidade: expanded.quantidade
-        });
-        console.log('🔍 ========== FIM DEBUG ==========');
-      }
-      
       return { 
-        ...expanded, 
+        ...dev, 
         empresa: account?.name || 'N/A' 
       };
     });
-    
-    return result;
   }, [devolucoesComUrgencyFilter, accounts]);
 
   // Separar por tabs
