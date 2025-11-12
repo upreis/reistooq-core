@@ -12,6 +12,7 @@ import { FinancialDetailedCells } from './cells/FinancialDetailedCells';
 import { ActionCell } from './cells/ActionCell';
 import { CustosLogisticaCell } from '@/features/devolucoes-online/components/cells/CustosLogisticaCell';
 import { ProductInfoCell } from '@/features/devolucoes-online/components/cells/ProductInfoCell';
+import { BuyerInfoCell } from '@/features/devolucoes-online/components/cells/BuyerInfoCell';
 import { TrackingPriorityCells } from './cells/TrackingPriorityCells';
 import { TrackingDetailedCells } from './cells/TrackingDetailedCells';
 import { CommunicationPriorityCells } from './cells/CommunicationPriorityCells';
@@ -217,24 +218,22 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* 🆕 AÇÃO OBRIGATÓRIA */}
       <MandatoryActionCell devolucao={devolucao} />
       
-      {/* GRUPO 4: COMPRADOR (4 colunas) */}
-      
-      {/* Comprador */}
+      {/* GRUPO 4: COMPRADOR (1 coluna com BuyerInfoCell) */}
       <td className="px-3 py-3 text-left">
-        {(() => {
-          console.log('[DEBUG ROW] comprador_nome_completo:', devolucao.comprador_nome_completo);
-          console.log('[DEBUG ROW] comprador_nickname:', devolucao.comprador_nickname);
-          return devolucao.comprador_nome_completo || '-';
-        })()}
+        <BuyerInfoCell 
+          buyerInfo={{
+            id: (devolucao as any).comprador_id || 0,
+            first_name: devolucao.comprador_nome_completo?.split(' ')[0] || '',
+            last_name: devolucao.comprador_nome_completo?.split(' ').slice(1).join(' ') || '',
+            nickname: devolucao.comprador_nickname || '',
+            email: (devolucao as any).comprador_email || null,
+            phone: (devolucao as any).comprador_telefone || null,
+            registration_date: (devolucao as any).comprador_data_registro || null,
+            buyer_reputation: (devolucao as any).comprador_reputacao || null,
+            permalink: (devolucao as any).comprador_permalink || null
+          }}
+        />
       </td>
-      
-      {/* Nickname */}
-      <td className="px-3 py-3 text-left">
-        {devolucao.comprador_nickname || '-'}
-      </td>
-      
-      {/* ❌ REMOVIDO: Email - vazio */}
-      {/* ❌ REMOVIDO: Cooperador - vazio */}
       
       {/* GRUPO 5: PRODUTO (2 colunas) */}
       
