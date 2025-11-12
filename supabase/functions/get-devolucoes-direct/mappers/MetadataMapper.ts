@@ -16,6 +16,12 @@ export const mapMetadata = (item: any) => {
     eficiencia_resolucao: item.claim_details?.resolution?.efficiency || 
                          item.claim_details?.resolution?.status || null,
     
+    // 🆕 FASE 2: Reputação do Vendedor
+    seller_reputation: item.seller_reputation_data?.seller_reputation || null,
+    power_seller_status: item.seller_reputation_data?.power_seller_status || null,
+    mercado_lider: item.seller_reputation_data?.mercado_lider_status || false,
+    seller_user_type: item.seller_reputation_data?.user_type || null,
+    
     // SLA
     tempo_primeira_resposta_vendedor: null,
     tempo_resposta_comprador: null,

@@ -169,6 +169,9 @@ serve(async (req) => {
     // ✅ CORREÇÃO 1: BATCH PARALELO 5x5 (Performance: 40s → ~10s)
     logger.progress('🔄 Iniciando enriquecimento de dados em lotes paralelos...');
     
+    // 🆕 FASE 2: Cache de reputação do vendedor (evitar chamadas repetidas)
+    const sellerReputationCache = new Map<string, any>();
+    
     const allEnrichedClaims: any[] = [];
     const BATCH_SIZE = 5; // Processar 5 claims em paralelo
     const DELAY_BETWEEN_BATCHES = 200; // 200ms entre batches
@@ -301,6 +304,40 @@ serve(async (req) => {
           }
         }
 
+        // 7. 🆕 FASE 2: BUSCAR SELLER REPUTATION (com cache)
+        let sellerReputationData = null;
+        const sellerId = account.seller_id;
+        if (sellerId) {
+          // Verificar cache primeiro
+          if (sellerReputationCache.has(sellerId)) {
+            sellerReputationData = sellerReputationCache.get(sellerId);
+            logger.debug(`♻️ Reputação do vendedor ${sellerId} obtida do cache`);
+          } else {
+            try {
+              const sellerRes = await fetchWithRetry(
+                `https://api.mercadolibre.com/users/${sellerId}`,
+                { headers: { 'Authorization': `Bearer ${accessToken}` } },
+                { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+              );
+              if (sellerRes.ok) {
+                const sellerFullData = await sellerRes.json();
+                sellerReputationData = {
+                  seller_reputation: sellerFullData.seller_reputation,
+                  power_seller_status: sellerFullData.power_seller_status,
+                  mercado_lider_status: sellerFullData.tags?.includes('mercadolider') || false,
+                  user_type: sellerFullData.user_type,
+                  tags: sellerFullData.tags
+                };
+                // Armazenar no cache
+                sellerReputationCache.set(sellerId, sellerReputationData);
+                logger.debug(`✅ Reputação do vendedor ${sellerId} obtida e cacheada`);
+              }
+            } catch (err) {
+              logger.warn(`⚠️ Erro ao buscar reputação do vendedor ${sellerId}: ${err.message}`);
+            }
+          }
+        }
+
         // 🆕 FASE 2: Buscar histórico de rastreamento detalhado
         let shipmentHistoryData = null;
         let shippingCostsData = null;
@@ -353,6 +390,7 @@ serve(async (req) => {
           review_details: reviewsData,
           product_info: productData, // ✅ ADICIONAR product_info enriquecido
           billing_info: billingData, // ✅ FASE 1: Dados fiscais do comprador (CPF/CNPJ)
+          seller_reputation_data: sellerReputationData, // ✅ FASE 2: Reputação do vendedor (power_seller, mercado_lider)
           shipment_history_enriched: shipmentHistoryData,
           shipping_costs_enriched: shippingCostsData
         };
