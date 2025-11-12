@@ -76,9 +76,14 @@ export const mapFinancialData = (item: any) => {
       frete: {
         valor_original: payment?.shipping_cost || null,
         valor_reembolsado: payment?.shipping_cost || null,
-        // ⚠️ API ML: return_details_v2.shipping_cost pode ser custo de devolução OU frete original
-        custo_devolucao: item.return_details_v2?.shipping_cost || null,
-        custo_total_logistica: item.return_details_v2?.shipping_cost || null
+        // 🆕 FASE 2: Custos detalhados de logística
+        custo_devolucao: item.shipping_costs_enriched?.return_costs?.net_cost || 
+                        item.return_details_v2?.shipping_cost || null,
+        custo_envio_original: item.shipping_costs_enriched?.original_costs?.net_cost || null,
+        custo_total_logistica: item.shipping_costs_enriched?.total_logistics_cost || 
+                              item.return_details_v2?.shipping_cost || null,
+        responsavel_custo_frete: item.shipping_costs_enriched?.return_costs?.responsavel_custo || null,
+        breakdown_custos_frete: item.shipping_costs_enriched?.return_costs?.cost_breakdown || null
       },
       taxas: {
         taxa_ml_original: payment?.marketplace_fee || null,

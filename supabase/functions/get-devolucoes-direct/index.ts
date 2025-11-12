@@ -11,6 +11,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 import { fetchWithRetry } from '../_shared/retryUtils.ts';
 import { logger } from '../_shared/logger.ts';
 
+// ✅ Importar serviços de enriquecimento FASE 2
+import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
+import { fetchShippingCosts, fetchMultipleShippingCosts } from './services/ShippingCostsService.ts';
+
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
 
@@ -236,12 +240,58 @@ serve(async (req) => {
           }
         }
 
+        // 🆕 FASE 2: Buscar histórico de rastreamento detalhado
+        let shipmentHistoryData = null;
+        let shippingCostsData = null;
+        
+        // Extrair shipment IDs (original e devolução)
+        const shipmentIds: number[] = [];
+        
+        // Shipment original do pedido
+        if (orderData?.shipping?.id) {
+          shipmentIds.push(orderData.shipping.id);
+        }
+        
+        // Shipment de devolução
+        if (returnData?.shipments?.[0]?.shipment_id) {
+          shipmentIds.push(returnData.shipments[0].shipment_id);
+        }
+        
+        // Buscar históricos e custos se houver shipments
+        if (shipmentIds.length > 0) {
+          try {
+            const [historyMap, costsMap] = await Promise.all([
+              fetchMultipleShipmentHistories(shipmentIds, accessToken),
+              fetchMultipleShippingCosts(shipmentIds, accessToken)
+            ]);
+            
+            // Consolidar dados em estrutura única
+            shipmentHistoryData = {
+              original_shipment: historyMap.get(shipmentIds[0]) || null,
+              return_shipment: shipmentIds[1] ? historyMap.get(shipmentIds[1]) || null : null
+            };
+            
+            shippingCostsData = {
+              original_costs: costsMap.get(shipmentIds[0]) || null,
+              return_costs: shipmentIds[1] ? costsMap.get(shipmentIds[1]) || null : null,
+              total_logistics_cost: (
+                (costsMap.get(shipmentIds[0])?.net_cost || 0) +
+                (costsMap.get(shipmentIds[1])?.net_cost || 0)
+              )
+            };
+          } catch (err) {
+            logger.warn(`Erro ao buscar histórico/custos shipment:`, err);
+          }
+        }
+
         return {
           ...claim,
           order_data: orderData,
           claim_messages: messagesData,
           return_details_v2: returnData,
-          review_details: reviewsData
+          review_details: reviewsData,
+          shipment_history_enriched: shipmentHistoryData,
+          shipping_costs_enriched: shippingCostsData
         };
       } catch (err) {
         console.error(`❌ Erro ao enriquecer claim ${claim.id}:`, err);

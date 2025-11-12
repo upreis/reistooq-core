@@ -36,16 +36,28 @@ export const mapTrackingData = (item: any) => {
                         item.return_details_v2?.shipments?.[0]?.status || 
                         item.order_data?.shipping?.status || null,
     url_rastreamento: null, // Não disponível em v2
-    localizacao_atual: item.tracking_history?.[0]?.location || null,
+    localizacao_atual: item.shipment_history_enriched?.return_shipment?.current_location || 
+                       item.tracking_history?.[0]?.location || null,
     status_transporte_atual: returnShipment?.status || null,
-    tracking_history: item.tracking_history || [],
+    tracking_history: item.shipment_history_enriched?.return_shipment?.events || 
+                     item.tracking_history || [],
     tracking_events: item.tracking_events || [],
-    data_ultima_movimentacao: item.tracking_events?.[0]?.date || item.tracking_history?.[0]?.date || null,
-    historico_localizacoes: item.tracking_history || [],
+    data_ultima_movimentacao: item.shipment_history_enriched?.return_shipment?.last_event?.date_created ||
+                             item.tracking_events?.[0]?.date || 
+                             item.tracking_history?.[0]?.date || null,
+    historico_localizacoes: item.shipment_history_enriched?.return_shipment?.events || 
+                           item.tracking_history || [],
     carrier_info: null,
-    tempo_transito_dias: null,
-    shipment_delays: [],
-    shipment_costs: null,
+    
+    // 🆕 FASE 2: Dados enriquecidos de rastreamento
+    tempo_transito_dias: item.shipment_history_enriched?.return_shipment?.transit_time_days || null,
+    shipment_delays: item.shipment_history_enriched?.return_shipment?.delays || [],
+    total_tracking_events: item.shipment_history_enriched?.return_shipment?.total_events || 0,
+    primeiro_evento_rastreamento: item.shipment_history_enriched?.return_shipment?.first_event || null,
+    ultimo_evento_rastreamento: item.shipment_history_enriched?.return_shipment?.last_event || null,
+    
+    // Custos de envio enriquecidos
+    shipment_costs: item.shipping_costs_enriched || null,
     previsao_entrega_vendedor: null, // Removido em v2
     
     // ✅ FASE 1: Novos campos de devolução
