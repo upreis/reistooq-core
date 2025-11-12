@@ -8,23 +8,10 @@ import { memo, useMemo, useCallback } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { TruckIcon, DollarSignIcon } from 'lucide-react';
-
-interface ShippingCostsBreakdown {
-  shipping?: number;
-  handling?: number;
-  insurance?: number;
-  taxes?: number;
-}
-
-interface ShippingCostsData {
-  custo_total_logistica: number;
-  responsavel_custo: 'buyer' | 'seller' | null;
-  currency_id?: string;
-  breakdown?: ShippingCostsBreakdown;
-}
+import type { ShippingCosts } from '@/features/devolucoes-online/types/devolucao.types';
 
 interface CustosLogisticaCellProps {
-  shippingCosts?: ShippingCostsData | null;
+  shippingCosts?: ShippingCosts | null;
 }
 
 const CustosLogisticaCellComponent: React.FC<CustosLogisticaCellProps> = ({
@@ -46,19 +33,7 @@ const CustosLogisticaCellComponent: React.FC<CustosLogisticaCellProps> = ({
     [shippingCosts]
   );
 
-  // Memoize responsável label
-  const responsavelLabel = useMemo(() => {
-    if (!shippingCosts?.responsavel_custo) return 'N/A';
-    return shippingCosts.responsavel_custo === 'buyer' ? 'Comprador' : 'Vendedor';
-  }, [shippingCosts?.responsavel_custo]);
-
-  // Memoize responsável badge variant
-  const responsavelVariant = useMemo(() => {
-    if (!shippingCosts?.responsavel_custo) return 'secondary';
-    return shippingCosts.responsavel_custo === 'seller' ? 'destructive' : 'default';
-  }, [shippingCosts?.responsavel_custo]);
-
-  if (!shippingCosts) {
+  if (!shippingCosts || shippingCosts.custo_total_logistica === null) {
     return (
       <Badge variant="secondary" className="text-xs">
         Sem dados
@@ -71,14 +46,9 @@ const CustosLogisticaCellComponent: React.FC<CustosLogisticaCellProps> = ({
       <HoverCardTrigger asChild>
         <div className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
           <TruckIcon className="h-4 w-4 text-muted-foreground" />
-          <div className="flex flex-col gap-1">
-            <Badge variant="default" className="font-mono text-xs">
-              {formatCurrency(shippingCosts.custo_total_logistica, shippingCosts.currency_id)}
-            </Badge>
-            <Badge variant={responsavelVariant} className="text-xs">
-              {responsavelLabel}
-            </Badge>
-          </div>
+          <Badge variant="default" className="font-mono text-xs">
+            {formatCurrency(shippingCosts.custo_total_logistica, shippingCosts.currency_id)}
+          </Badge>
         </div>
       </HoverCardTrigger>
 
@@ -97,41 +67,59 @@ const CustosLogisticaCellComponent: React.FC<CustosLogisticaCellProps> = ({
 
             {/* Breakdown Items */}
             <div className="space-y-2">
-              {shippingCosts.breakdown?.shipping !== undefined && shippingCosts.breakdown.shipping > 0 && (
+              {shippingCosts.breakdown?.forward_shipping && (
                 <div className="flex items-center justify-between py-1">
-                  <span className="text-xs text-muted-foreground">Frete:</span>
+                  <span className="text-xs text-muted-foreground">Frete Ida:</span>
                   <span className="text-xs font-mono font-medium text-foreground">
-                    {formatCurrency(shippingCosts.breakdown.shipping, shippingCosts.currency_id)}
+                    {formatCurrency(shippingCosts.breakdown.forward_shipping.amount, shippingCosts.breakdown.forward_shipping.currency_id)}
                   </span>
                 </div>
               )}
 
-              {shippingCosts.breakdown?.handling !== undefined && shippingCosts.breakdown.handling > 0 && (
+              {shippingCosts.breakdown?.return_shipping && (
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-xs text-muted-foreground">Frete Retorno:</span>
+                  <span className="text-xs font-mono font-medium text-foreground">
+                    {formatCurrency(shippingCosts.breakdown.return_shipping.amount, shippingCosts.breakdown.return_shipping.currency_id)}
+                  </span>
+                </div>
+              )}
+
+              {shippingCosts.breakdown?.handling_fee && (
                 <div className="flex items-center justify-between py-1">
                   <span className="text-xs text-muted-foreground">Manuseio:</span>
                   <span className="text-xs font-mono font-medium text-foreground">
-                    {formatCurrency(shippingCosts.breakdown.handling, shippingCosts.currency_id)}
+                    {formatCurrency(shippingCosts.breakdown.handling_fee.amount, shippingCosts.breakdown.handling_fee.currency_id)}
                   </span>
                 </div>
               )}
 
-              {shippingCosts.breakdown?.insurance !== undefined && shippingCosts.breakdown.insurance > 0 && (
+              {shippingCosts.breakdown?.insurance && (
                 <div className="flex items-center justify-between py-1">
                   <span className="text-xs text-muted-foreground">Seguro:</span>
                   <span className="text-xs font-mono font-medium text-foreground">
-                    {formatCurrency(shippingCosts.breakdown.insurance, shippingCosts.currency_id)}
+                    {formatCurrency(shippingCosts.breakdown.insurance.amount, shippingCosts.breakdown.insurance.currency_id)}
                   </span>
                 </div>
               )}
 
-              {shippingCosts.breakdown?.taxes !== undefined && shippingCosts.breakdown.taxes > 0 && (
+              {shippingCosts.breakdown?.storage_fee && (
                 <div className="flex items-center justify-between py-1">
-                  <span className="text-xs text-muted-foreground">Taxas:</span>
+                  <span className="text-xs text-muted-foreground">Armazenagem:</span>
                   <span className="text-xs font-mono font-medium text-foreground">
-                    {formatCurrency(shippingCosts.breakdown.taxes, shippingCosts.currency_id)}
+                    {formatCurrency(shippingCosts.breakdown.storage_fee.amount, shippingCosts.breakdown.storage_fee.currency_id)}
                   </span>
                 </div>
               )}
+
+              {shippingCosts.breakdown?.other_costs?.map((cost, idx) => (
+                <div key={idx} className="flex items-center justify-between py-1">
+                  <span className="text-xs text-muted-foreground">{cost.type}:</span>
+                  <span className="text-xs font-mono font-medium text-foreground">
+                    {formatCurrency(cost.amount, cost.currency_id)}
+                  </span>
+                </div>
+              ))}
             </div>
 
             {/* Total */}
@@ -139,14 +127,6 @@ const CustosLogisticaCellComponent: React.FC<CustosLogisticaCellProps> = ({
               <span className="text-sm font-semibold text-foreground">Total:</span>
               <Badge variant="default" className="font-mono text-sm">
                 {formatCurrency(shippingCosts.custo_total_logistica, shippingCosts.currency_id)}
-              </Badge>
-            </div>
-
-            {/* Responsável */}
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs text-muted-foreground">Responsável:</span>
-              <Badge variant={responsavelVariant} className="text-xs">
-                {responsavelLabel}
               </Badge>
             </div>
           </div>

@@ -30,7 +30,7 @@ import { CommunicationInfoCell } from './cells/CommunicationInfoCell';
 import { DeadlinesCell } from './cells/DeadlinesCell';
 import { SubstatusCell } from './cells/SubstatusCell';
 import { ActionsCell } from './cells/ActionsCell';
-import { ShippingCostsCell } from './cells/ShippingCostsCell';
+import { CustosLogisticaCell } from './cells/CustosLogisticaCell';
 import { FulfillmentCell } from './cells/FulfillmentCell';
 import {
   translateStatus,
@@ -542,11 +542,11 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   />
                 </TableCell>
                 {/* ✅ FASE 12: Custos de Logística */}
-                <ShippingCostsCell 
-                  shippingCosts={dev.shipping_costs}
-                  returnId={dev.id}
-                  claimId={dev.claim_id}
-                />
+                <TableCell>
+                  <CustosLogisticaCell 
+                    shippingCosts={dev.shipping_costs}
+                  />
+                </TableCell>
                 {/* ✅ FASE 13: Fulfillment Info */}
                 <TableCell>
                   <FulfillmentCell fulfillmentInfo={dev.fulfillment_info} />
