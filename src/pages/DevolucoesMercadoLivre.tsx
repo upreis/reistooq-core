@@ -14,6 +14,12 @@ import { Loader2 } from 'lucide-react';
 import { DevolucaoDetailModal } from '@/components/devolucoes/DevolucaoDetailModal';
 import { StatusBadge } from '@/components/devolucoes/StatusBadge';
 import { DevolucaoFilters } from '@/components/devolucoes/DevolucaoFilters';
+import { FinancialDetailedCells } from '@/components/devolucoes/FinancialDetailedCells';
+import { TrackingDetailedCells } from '@/components/devolucoes/TrackingDetailedCells';
+import { CommunicationDetailedCells } from '@/components/devolucoes/CommunicationDetailedCells';
+import { MediationDetailedCells } from '@/components/devolucoes/MediationDetailedCells';
+import { MetadataDetailedCells } from '@/components/devolucoes/MetadataDetailedCells';
+import { PackDataCells } from '@/components/devolucoes/PackDataCells';
 import {
   Pagination,
   PaginationContent,
@@ -41,7 +47,7 @@ interface Devolucao {
   metodo_pagamento?: string;
   codigo_rastreamento?: string;
   
-  // ✅ PRIORIDADE ALTA - Campos já mapeados no backend
+  // ✅ PRIORIDADE ALTA - 7 campos
   estimated_delivery_date?: string | null;
   has_delay?: boolean | null;
   return_quantity?: number | null;
@@ -50,6 +56,57 @@ interface Devolucao {
   numero_interacoes?: number | null;
   mediador_ml?: string | null;
   transaction_id?: string | null;
+  
+  // ✅ FINANCEIRO DETALHADO - 9 campos
+  status_dinheiro?: string | null;
+  metodo_reembolso?: string | null;
+  moeda_reembolso?: string | null;
+  percentual_reembolsado?: number | null;
+  valor_diferenca_troca?: number | null;
+  taxa_ml_reembolso?: number | null;
+  custo_devolucao?: number | null;
+  parcelas?: number | null;
+  valor_parcela?: number | null;
+  
+  // ✅ RASTREAMENTO DETALHADO - 10 campos
+  estimated_delivery_limit?: string | null;
+  shipment_status?: string | null;
+  refund_at?: string | null;
+  review_method?: string | null;
+  review_stage?: string | null;
+  localizacao_atual?: string | null;
+  status_transporte_atual?: string | null;
+  tracking_history?: any[] | null;
+  tracking_events?: any[] | null;
+  data_ultima_movimentacao?: string | null;
+  
+  // ✅ COMUNICAÇÃO DETALHADA - 6 campos
+  timeline_events?: any[] | null;
+  marcos_temporais?: any | null;
+  data_criacao_claim?: string | null;
+  data_inicio_return?: string | null;
+  data_fechamento_claim?: string | null;
+  historico_status?: any[] | null;
+  
+  // ✅ MEDIAÇÃO DETALHADA - 6 campos
+  resultado_mediacao?: string | null;
+  detalhes_mediacao?: string | null;
+  produto_troca_id?: string | null;
+  novo_pedido_id?: string | null;
+  dias_restantes_acao?: number | null;
+  prazo_revisao_dias?: number | null;
+  
+  // ✅ METADADOS - 3 campos
+  usuario_ultima_acao?: string | null;
+  total_evidencias?: number | null;
+  anexos_ml?: any[] | null;
+  
+  // ✅ PACK DATA - 5 campos
+  pack_id?: string | null;
+  is_pack?: boolean | null;
+  pack_items?: any[] | null;
+  cancel_detail?: any | null;
+  seller_custom_field?: string | null;
   
   dados_buyer_info?: {
     doc_number?: string;
@@ -309,6 +366,8 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Status</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
+                
+                {/* PRIORIDADE ALTA - 7 colunas */}
                 <TableHead>📅 Previsão Entrega</TableHead>
                 <TableHead>⏰ Atraso?</TableHead>
                 <TableHead>📦 Qtd</TableHead>
@@ -316,6 +375,58 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>🔢 Interações</TableHead>
                 <TableHead>⚖️ Mediador</TableHead>
                 <TableHead>💳 Transaction ID</TableHead>
+                
+                {/* FINANCEIRO DETALHADO - 9 colunas */}
+                <TableHead>💰 Status $</TableHead>
+                <TableHead>💸 Método Reemb.</TableHead>
+                <TableHead>💱 Moeda</TableHead>
+                <TableHead>📊 % Reembolsado</TableHead>
+                <TableHead>🔄 Dif. Troca</TableHead>
+                <TableHead>🏦 Taxa ML Reemb.</TableHead>
+                <TableHead>📦 Custo Devolução</TableHead>
+                <TableHead>💳 Parcelas</TableHead>
+                <TableHead>💵 Valor Parcela</TableHead>
+                
+                {/* RASTREAMENTO DETALHADO - 10 colunas */}
+                <TableHead>⏱️ Limite Entrega</TableHead>
+                <TableHead>🚚 Status Shipment</TableHead>
+                <TableHead>💰 Refund At</TableHead>
+                <TableHead>🔍 Review Method</TableHead>
+                <TableHead>📋 Review Stage</TableHead>
+                <TableHead>📍 Localização</TableHead>
+                <TableHead>🚛 Status Transporte</TableHead>
+                <TableHead>📜 History</TableHead>
+                <TableHead>📊 Events</TableHead>
+                <TableHead>⏰ Última Movim.</TableHead>
+                
+                {/* COMUNICAÇÃO DETALHADA - 6 colunas */}
+                <TableHead>📅 Timeline Events</TableHead>
+                <TableHead>🎯 Marcos Temp.</TableHead>
+                <TableHead>📅 Criação Claim</TableHead>
+                <TableHead>📅 Início Return</TableHead>
+                <TableHead>📅 Fecham. Claim</TableHead>
+                <TableHead>📊 Histórico Status</TableHead>
+                
+                {/* MEDIAÇÃO DETALHADA - 6 colunas */}
+                <TableHead>⚖️ Resultado Med.</TableHead>
+                <TableHead>📝 Detalhes Med.</TableHead>
+                <TableHead>🔄 Produto Troca</TableHead>
+                <TableHead>🆕 Novo Pedido</TableHead>
+                <TableHead>⏳ Dias Rest. Ação</TableHead>
+                <TableHead>⏱️ Prazo Revisão</TableHead>
+                
+                {/* METADADOS - 3 colunas */}
+                <TableHead>👤 Últ. Ação</TableHead>
+                <TableHead>📎 Evidências</TableHead>
+                <TableHead>📎 Anexos ML</TableHead>
+                
+                {/* PACK DATA - 5 colunas */}
+                <TableHead>📦 Pack ID</TableHead>
+                <TableHead>📦 É Pack?</TableHead>
+                <TableHead>📦 Pack Items</TableHead>
+                <TableHead>❌ Cancelado?</TableHead>
+                <TableHead>🏷️ Custom Field</TableHead>
+                
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
               </TableRow>
@@ -323,13 +434,13 @@ export default function DevolucoesMercadoLivre() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={17} className="text-center py-8">
+                  <TableCell colSpan={63} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : devolucoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={17} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={63} className="text-center py-8 text-muted-foreground">
                     Clique em "Buscar Devoluções" para carregar os dados
                   </TableCell>
                 </TableRow>
@@ -357,7 +468,7 @@ export default function DevolucoesMercadoLivre() {
                       {dev.codigo_rastreamento || dev.dados_tracking_info?.tracking_number || '-'}
                     </TableCell>
                     
-                    {/* 📅 Previsão Entrega */}
+                    {/* PRIORIDADE ALTA - 7 colunas */}
                     <TableCell className="text-sm">
                       {dev.estimated_delivery_date 
                         ? new Date(dev.estimated_delivery_date).toLocaleDateString('pt-BR')
@@ -365,7 +476,6 @@ export default function DevolucoesMercadoLivre() {
                       }
                     </TableCell>
                     
-                    {/* ⏰ Atraso? */}
                     <TableCell className="text-sm">
                       {dev.has_delay === true ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
@@ -378,7 +488,6 @@ export default function DevolucoesMercadoLivre() {
                       ) : '-'}
                     </TableCell>
                     
-                    {/* 📦 Quantidade */}
                     <TableCell className="text-sm">
                       {dev.return_quantity && dev.total_quantity 
                         ? `${dev.return_quantity}/${dev.total_quantity}`
@@ -386,7 +495,6 @@ export default function DevolucoesMercadoLivre() {
                       }
                     </TableCell>
                     
-                    {/* 💬 Qualidade Comunicação */}
                     <TableCell className="text-sm">
                       {dev.qualidade_comunicacao ? (
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -400,12 +508,10 @@ export default function DevolucoesMercadoLivre() {
                       ) : '-'}
                     </TableCell>
                     
-                    {/* 🔢 N° Interações */}
                     <TableCell className="text-sm">
                       {dev.numero_interacoes || '0'}
                     </TableCell>
                     
-                    {/* ⚖️ Mediador ML */}
                     <TableCell className="text-sm">
                       {dev.mediador_ml ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
@@ -414,10 +520,72 @@ export default function DevolucoesMercadoLivre() {
                       ) : '-'}
                     </TableCell>
                     
-                    {/* 💳 Transaction ID */}
                     <TableCell className="text-xs font-mono">
                       {dev.transaction_id || '-'}
                     </TableCell>
+                    
+                    {/* FINANCEIRO DETALHADO - 9 colunas */}
+                    <FinancialDetailedCells
+                      status_dinheiro={dev.status_dinheiro}
+                      metodo_reembolso={dev.metodo_reembolso}
+                      moeda_reembolso={dev.moeda_reembolso}
+                      percentual_reembolsado={dev.percentual_reembolsado}
+                      valor_diferenca_troca={dev.valor_diferenca_troca}
+                      taxa_ml_reembolso={dev.taxa_ml_reembolso}
+                      custo_devolucao={dev.custo_devolucao}
+                      parcelas={dev.parcelas}
+                      valor_parcela={dev.valor_parcela}
+                    />
+                    
+                    {/* RASTREAMENTO DETALHADO - 10 colunas */}
+                    <TrackingDetailedCells
+                      estimated_delivery_limit={dev.estimated_delivery_limit}
+                      shipment_status={dev.shipment_status}
+                      refund_at={dev.refund_at}
+                      review_method={dev.review_method}
+                      review_stage={dev.review_stage}
+                      localizacao_atual={dev.localizacao_atual}
+                      status_transporte_atual={dev.status_transporte_atual}
+                      tracking_history={dev.tracking_history}
+                      tracking_events={dev.tracking_events}
+                      data_ultima_movimentacao={dev.data_ultima_movimentacao}
+                    />
+                    
+                    {/* COMUNICAÇÃO DETALHADA - 6 colunas */}
+                    <CommunicationDetailedCells
+                      timeline_events={dev.timeline_events}
+                      marcos_temporais={dev.marcos_temporais}
+                      data_criacao_claim={dev.data_criacao_claim}
+                      data_inicio_return={dev.data_inicio_return}
+                      data_fechamento_claim={dev.data_fechamento_claim}
+                      historico_status={dev.historico_status}
+                    />
+                    
+                    {/* MEDIAÇÃO DETALHADA - 6 colunas */}
+                    <MediationDetailedCells
+                      resultado_mediacao={dev.resultado_mediacao}
+                      detalhes_mediacao={dev.detalhes_mediacao}
+                      produto_troca_id={dev.produto_troca_id}
+                      novo_pedido_id={dev.novo_pedido_id}
+                      dias_restantes_acao={dev.dias_restantes_acao}
+                      prazo_revisao_dias={dev.prazo_revisao_dias}
+                    />
+                    
+                    {/* METADADOS - 3 colunas */}
+                    <MetadataDetailedCells
+                      usuario_ultima_acao={dev.usuario_ultima_acao}
+                      total_evidencias={dev.total_evidencias}
+                      anexos_ml={dev.anexos_ml}
+                    />
+                    
+                    {/* PACK DATA - 5 colunas */}
+                    <PackDataCells
+                      pack_id={dev.pack_id}
+                      is_pack={dev.is_pack}
+                      pack_items={dev.pack_items}
+                      cancel_detail={dev.cancel_detail}
+                      seller_custom_field={dev.seller_custom_field}
+                    />
                     
                     <TableCell>
                       {dev.valor_reembolso_total 
