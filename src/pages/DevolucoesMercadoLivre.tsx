@@ -106,11 +106,13 @@ export default function DevolucoesMercadoLivre() {
         return;
       }
 
-      console.log('✅ Dados recebidos:', data?.length || 0, 'devoluções');
+      // A Edge Function retorna { success, data, total }
+      const claimsArray = data?.data || [];
+      console.log('✅ Dados recebidos:', claimsArray.length, 'devoluções');
       
       // Adicionar nome da empresa
       const account = accounts.find(acc => acc.id === selectedAccountId);
-      const devolucoesComEmpresa = (data || []).map((dev: any) => ({
+      const devolucoesComEmpresa = claimsArray.map((dev: any) => ({
         ...dev,
         empresa: account?.name || 'N/A'
       }));
