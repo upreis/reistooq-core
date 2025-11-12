@@ -11,7 +11,6 @@ import { structuredLogger } from '@/utils/structuredLogger';
 import { reasonsCacheService } from '../utils/DevolucaoCacheService';
 import { fetchClaimsAndReturns, fetchReasonDetail, fetchAllClaims } from '../utils/MLApiClient';
 import { sortByDataCriacao } from '../utils/DevolucaoSortUtils';
-import { mapDevolucaoCompleta } from '../utils/mappers';
 import { validateMLAccounts } from '../utils/AccountValidator';
 
 // ===================================
@@ -449,15 +448,9 @@ export function useDevolucoesBusca() {
               const reasonId = item.claim_details?.reason_id || null;
               const apiReasonData = reasonId ? reasonsApiData.get(reasonId) : null;
               
-              logger.info(`📋 Claim ${item.claim_details?.id}: reason_id = ${reasonId}`, {
-                temDadosAPI: !!apiReasonData,
-                nomeAPI: apiReasonData?.name,
-                detalheAPI: apiReasonData?.detail
-              });
-              
-              // ✅ USAR MAPEADOR CONSOLIDADO (reduz de 18 para 7 mapeadores)
+              // ✅ DADOS JÁ VÊM MAPEADOS DO BACKEND - apenas adicionar dados de reasons
               const itemCompleto = {
-                ...mapDevolucaoCompleta(item, accountId, account.name, reasonId),
+                ...item, // Dados já mapeados pela Edge Function
                 
                 // ✅ ADICIONAR DADOS DE REASONS DA API (FASE 4) - com validação
                 reason_id: reasonId,
@@ -471,7 +464,6 @@ export function useDevolucoesBusca() {
                 reason_expected_resolutions: apiReasonData?.expected_resolutions || null,
                 reason_flow: apiReasonData?.flow || null,
                 reason_settings: apiReasonData?.settings ? JSON.stringify(apiReasonData.settings) : null
-                // ❌ REMOVIDO: reason_position (não existe no schema)
               };
               
               // Log do primeiro item processado
