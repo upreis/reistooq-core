@@ -177,26 +177,6 @@ export function FinancialDetailedCells({
           <span className="text-muted-foreground">-</span>
         )}
       </TableCell>
-
-      {/* SHIPPING FEE */}
-      <TableCell className="text-sm">
-        {formatCurrency(shipping_fee, moeda_reembolso || 'BRL')}
-      </TableCell>
-
-      {/* HANDLING FEE */}
-      <TableCell className="text-sm">
-        {formatCurrency(handling_fee, moeda_reembolso || 'BRL')}
-      </TableCell>
-
-      {/* INSURANCE */}
-      <TableCell className="text-sm">
-        {formatCurrency(insurance, moeda_reembolso || 'BRL')}
-      </TableCell>
-
-      {/* TAXES */}
-      <TableCell className="text-sm">
-        {formatCurrency(taxes, moeda_reembolso || 'BRL')}
-      </TableCell>
     </>
   );
 }

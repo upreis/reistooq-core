@@ -10,7 +10,8 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Scale, RefreshCw } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { DevolucaoDetailModal } from '@/components/devolucoes/DevolucaoDetailModal';
 import { StatusBadge } from '@/components/devolucoes/StatusBadge';
 import { DevolucaoFilters } from '@/components/devolucoes/DevolucaoFilters';
@@ -409,16 +410,15 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>⚖️ Mediador</TableHead>
                 <TableHead>💳 Transaction ID</TableHead>
                 
-                {/* FINANCEIRO DETALHADO - 9 colunas */}
+                {/* FINANCEIRO DETALHADO - 8 colunas (removido breakdown zerado) */}
                 <TableHead>💰 Status $</TableHead>
-                <TableHead>💸 Método Reemb.</TableHead>
+                <TableHead>💸 Método Pag.</TableHead>
                 <TableHead>💱 Moeda</TableHead>
-                <TableHead>📊 % Reembolsado</TableHead>
+                <TableHead>📊 % Reemb.</TableHead>
                 <TableHead>🔄 Dif. Troca</TableHead>
-                <TableHead>🏦 Taxa ML Reemb.</TableHead>
-                <TableHead>📦 Custo Devolução</TableHead>
-                <TableHead>💳 Parcelas</TableHead>
-                <TableHead>💵 Valor Parcela</TableHead>
+                <TableHead>📦 Custo Dev.</TableHead>
+                <TableHead>📤 Custo Envio</TableHead>
+                <TableHead>👤 Resp. Frete</TableHead>
                 
                 {/* CUSTOS LOGÍSTICA */}
                 <TableHead>💰 Custos Logística</TableHead>
@@ -430,43 +430,13 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>⏱️ Tempo Trânsito</TableHead>
                 <TableHead>📅 Previsão Chegada</TableHead>
                 
-                {/* RASTREAMENTO DETALHADO - 9 colunas (removido status_transporte duplicado) */}
-                <TableHead>⏱️ Limite Entrega</TableHead>
-                <TableHead>🚢 Status Shipment</TableHead>
-                <TableHead>💰 Refund At</TableHead>
-                <TableHead>🔍 Review Method</TableHead>
-                <TableHead>📋 Review Stage</TableHead>
-                <TableHead>📜 History</TableHead>
-                <TableHead>📊 Events</TableHead>
-                <TableHead>⏰ Última Movim.</TableHead>
+                {/* RASTREAMENTO DETALHADO - REMOVIDO (dados não disponíveis) */}
                 
-                {/* COMUNICAÇÃO DETALHADA - 6 colunas */}
-                <TableHead>📅 Timeline Events</TableHead>
-                <TableHead>🎯 Marcos Temp.</TableHead>
-                <TableHead>📅 Criação Claim</TableHead>
-                <TableHead>📅 Início Return</TableHead>
-                <TableHead>📅 Fecham. Claim</TableHead>
-                <TableHead>📊 Histórico Status</TableHead>
+                {/* MEDIAÇÃO DETALHADA - 2 colunas (simplificado) */}
+                <TableHead>⚖️ Em Mediação?</TableHead>
+                <TableHead>🔄 É Troca?</TableHead>
                 
-                {/* MEDIAÇÃO DETALHADA - 6 colunas */}
-                <TableHead>⚖️ Resultado Med.</TableHead>
-                <TableHead>📝 Detalhes Med.</TableHead>
-                <TableHead>🔄 Produto Troca</TableHead>
-                <TableHead>🆕 Novo Pedido</TableHead>
-                <TableHead>⏳ Dias Rest. Ação</TableHead>
-                <TableHead>⏱️ Prazo Revisão</TableHead>
-                
-                {/* METADADOS - 3 colunas */}
-                <TableHead>👤 Últ. Ação</TableHead>
-                <TableHead>📎 Evidências</TableHead>
-                <TableHead>📎 Anexos ML</TableHead>
-                
-                {/* PACK DATA - 5 colunas */}
-                <TableHead>📦 Pack ID</TableHead>
-                <TableHead>📦 É Pack?</TableHead>
-                <TableHead>📦 Pack Items</TableHead>
-                <TableHead>❌ Cancelado?</TableHead>
-                <TableHead>🏷️ Custom Field</TableHead>
+                {/* METADADOS - REMOVIDO (sempre vazios) */}
                 
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
@@ -529,7 +499,7 @@ export default function DevolucoesMercadoLivre() {
                       transaction_id={dev.transaction_id}
                     />
                     
-                    {/* FINANCEIRO DETALHADO - 12 colunas */}
+                    {/* FINANCEIRO DETALHADO - 8 colunas (removido breakdown zerado) */}
                     <FinancialDetailedCells
                       status_dinheiro={dev.status_dinheiro}
                       metodo_pagamento={dev.metodo_pagamento}
@@ -539,10 +509,6 @@ export default function DevolucoesMercadoLivre() {
                       custo_devolucao={dev.custo_devolucao}
                       custo_envio_original={dev.custo_envio_original}
                       responsavel_custo_frete={dev.responsavel_custo_frete}
-                      shipping_fee={dev.shipping_fee}
-                      handling_fee={dev.handling_fee}
-                      insurance={dev.insurance}
-                      taxes={dev.taxes}
                     />
                     
                     {/* CUSTOS LOGÍSTICA */}
@@ -565,28 +531,33 @@ export default function DevolucoesMercadoLivre() {
                     <TempoTransitoCell devolucao={dev} />
                     <PrevisaoChegadaCell devolucao={dev} />
                     
-                    {/* RASTREAMENTO DETALHADO - 4 colunas */}
-                    <TrackingDetailedCells
-                      data_fechamento_devolucao={dev.data_fechamento_devolucao}
-                      prazo_limite_analise={dev.prazo_limite_analise}
-                      dias_restantes_analise={dev.dias_restantes_analise}
-                      codigo_rastreamento={dev.codigo_rastreamento}
-                    />
+                    {/* MEDIAÇÃO SIMPLIFICADA - 2 colunas */}
+                    <TableCell className="text-sm">
+                      {dev.em_mediacao === true ? (
+                        <Badge variant="default" className="gap-1 bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                          <Scale className="h-3 w-3" />
+                          Em Mediação
+                        </Badge>
+                      ) : dev.em_mediacao === false ? (
+                        <Badge variant="secondary">Sem Mediação</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     
-                    {/* MEDIAÇÃO DETALHADA - 4 colunas */}
-                    <MediationDetailedCells
-                      em_mediacao={dev.em_mediacao}
-                      eh_troca={dev.eh_troca}
-                      data_estimada_troca={dev.data_estimada_troca}
-                      dias_restantes_acao={dev.dias_restantes_acao}
-                    />
+                    <TableCell className="text-sm">
+                      {dev.eh_troca === true ? (
+                        <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                          <RefreshCw className="h-3 w-3" />
+                          Troca
+                        </Badge>
+                      ) : dev.eh_troca === false ? (
+                        <Badge variant="secondary">Reembolso</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     
-                    {/* METADADOS - 3 colunas */}
-                    <MetadataCells
-                      usuario_ultima_acao={dev.usuario_ultima_acao}
-                      total_evidencias={dev.total_evidencias}
-                      anexos_ml={dev.anexos_ml}
-                    />
                     
                     <TableCell>
                       {dev.valor_reembolso_total 
