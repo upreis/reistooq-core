@@ -406,20 +406,27 @@ serve(async (req) => {
           shipmentIds.push(returnData.shipments[0].shipment_id);
         }
         
-        // 💰 Buscar custo real de devolução via /charges/return-cost
+        // 💰 FASE 2: Buscar custo real de devolução via /charges/return-cost
         let returnCostData = null;
         try {
-          logger.debug(`💰 Buscando custo de devolução para claim ${claim.id}`);
+          console.log(`💰 === CUSTO DEVOLUÇÃO FASE 2 ===`);
+          console.log(`💰 Buscando custo para claim ${claim.id}`);
+          
           returnCostData = await fetchReturnCost(claim.id, accessToken);
           
           if (returnCostData) {
-            logger.debug(`💰 CUSTO DEVOLUÇÃO claim ${claim.id}: ${returnCostData.amount} ${returnCostData.currency_id}${returnCostData.amount_usd ? ` (USD ${returnCostData.amount_usd})` : ''}`);
+            console.log(`💰 ✅ CUSTO ENCONTRADO claim ${claim.id}:`, {
+              amount: returnCostData.amount,
+              currency: returnCostData.currency_id,
+              amount_usd: returnCostData.amount_usd || 'N/A'
+            });
           } else {
-            logger.debug(`⚠️ Sem custo de devolução para claim ${claim.id}`);
+            console.log(`💰 ⚠️ Sem custo de devolução para claim ${claim.id} (endpoint retornou null)`);
           }
         } catch (err) {
-          logger.error(`❌ Erro ao buscar custo de devolução (claim ${claim.id}):`, err);
+          console.error(`💰 ❌ Erro ao buscar custo de devolução (claim ${claim.id}):`, err);
         }
+        console.log(`💰 =========================`);
         
         // Buscar históricos e custos se houver shipments
         if (shipmentIds.length > 0) {
