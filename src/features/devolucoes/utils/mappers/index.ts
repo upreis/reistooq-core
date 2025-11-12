@@ -1,6 +1,6 @@
 /**
  * 🎯 MAPEADOR PRINCIPAL DE DEVOLUÇÕES
- * Consolida todos os mapeadores em um só ponto (18 → 7)
+ * Consolida todos os mapeadores em um só ponto (18 → 8)
  */
 
 import { mapBasicData } from './BasicDataMapper';
@@ -10,6 +10,7 @@ import { mapTrackingData } from './TrackingDataMapper';
 import { mapContextData } from './ContextDataMapper';
 import { mapMetadata } from './MetadataMapper';
 import { mapRawData } from './RawDataMapper';
+import { mapPackData } from './PackDataMapper';
 
 /**
  * Mapeia todos os dados de uma devolução usando mapeadores consolidados
@@ -39,7 +40,10 @@ export const mapDevolucaoCompleta = (
     // Grupo 6: Metadados (flags + qualidade + reputação + SLA)
     ...mapMetadata(item),
     
-    // Grupo 7: Dados Brutos (raw data)
+    // Grupo 7: Dados de Pack, Cancelamento e Custom Fields (FASE 2)
+    ...mapPackData(item),
+    
+    // Grupo 8: Dados Brutos (raw data)
     raw: mapRawData(item)
   };
 };
@@ -52,5 +56,6 @@ export {
   mapTrackingData,
   mapContextData,
   mapMetadata,
+  mapPackData,
   mapRawData
 };

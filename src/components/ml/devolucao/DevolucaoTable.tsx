@@ -158,6 +158,13 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Total Evidências</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Anexos ML</th>
             
+            {/* 🆕 FASE 2: PACK DATA - 5 novas colunas */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Pack ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>É Pedido Múltiplo?</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Itens do Pack</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Motivo Cancelamento</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '180px'}}>Campo Custom Vendedor</th>
+            
             {/* ❌ REMOVIDO: Método Reembolso - vazio */}
             {/* ❌ REMOVIDO: Moeda - vazio */}
             {/* ❌ REMOVIDO: Data Processamento - duplicada, movida para GRUPO 7 */}

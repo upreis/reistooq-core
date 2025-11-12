@@ -18,6 +18,7 @@ import { CommunicationDetailedCells } from './cells/CommunicationDetailedCells';
 import { MediationTransactionCells } from './cells/MediationTransactionCells';
 import { MediationDetailedCells } from './cells/MediationDetailedCells';
 import { MetadataDetailedCells } from './cells/MetadataDetailedCells';
+import { PackDataCells } from './cells/PackDataCells';
 import { 
   traduzirTipoClaim,
   traduzirStage, 
@@ -278,6 +279,9 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* 🆕 Metadados (3 colunas novas) */}
       <MetadataDetailedCells devolucao={devolucao} />
+      
+      {/* 🆕 FASE 2: Pack Data (5 colunas novas) */}
+      <PackDataCells devolucao={devolucao} />
       
       {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
       

@@ -290,6 +290,14 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   return_intermediate_check?: any | null; // Dados da verificação intermediária do return
   return_resource_type?: string | null; // Tipo de recurso do return
   
+  // 🆕 FASE 2: DADOS COMPLEMENTARES (Pack, Cancel, Seller Custom)
+  pack_id?: string | null; // ID do pack se pedido é agrupado
+  is_pack?: boolean | null; // Se devolução faz parte de pedido múltiplo
+  pack_items?: any[] | null; // Itens do pack
+  pack_data?: any | null; // Dados completos do pack
+  cancel_detail?: any | null; // Detalhes de cancelamento
+  seller_custom_field?: string | null; // Campo customizado do vendedor
+  
   // 🆕 FASE 5: DADOS ESTRUTURADOS JSONB (3 CAMPOS)
   dados_reviews?: any | null; // Dados completos de reviews da API ML
   dados_costs?: any | null; // Custos detalhados de envio
