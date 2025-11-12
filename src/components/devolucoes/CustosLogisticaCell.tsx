@@ -34,6 +34,17 @@ export const CustosLogisticaCell = ({
   insurance,
   taxes
 }: CustosLogisticaCellProps) => {
+  // 🐛 DEBUG: Log temporário para verificar props recebidas
+  if (custo_total_logistica !== null && custo_total_logistica !== undefined) {
+    console.log('💰 CustosLogisticaCell - Props recebidas:', {
+      custo_total_logistica,
+      custo_envio_original,
+      custo_devolucao,
+      responsavel_custo_frete,
+      breakdown: { shipping_fee, handling_fee, insurance, taxes }
+    });
+  }
+  
   // Se não há custo total, não renderizar
   if (!custo_total_logistica && custo_total_logistica !== 0) {
     return <span className="text-muted-foreground text-sm">-</span>;
