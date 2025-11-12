@@ -49,18 +49,30 @@ function DevolucoesMercadoLivreContent() {
   // Carregar contas ML
   useEffect(() => {
     const fetchAccounts = async () => {
-      const { data } = await supabase
+      console.log('[CONTAS] Iniciando busca de contas ML...');
+      const { data, error } = await supabase
         .from('integration_accounts')
         .select('id, name')
         .eq('provider', 'mercadolivre')
         .eq('is_active', true)
         .order('updated_at', { ascending: false });
       
+      if (error) {
+        console.error('[CONTAS] Erro ao buscar contas:', error);
+        toast.error('Erro ao carregar contas ML');
+        return;
+      }
+
+      console.log('[CONTAS] Contas encontradas:', data?.length || 0);
       setAccounts(data || []);
       
-      if (data && data.length > 0 && selectedAccountIds.length === 0) {
+      if (data && data.length > 0) {
         const allIds = data.map(acc => acc.id);
+        console.log('[CONTAS] Auto-selecionando contas:', allIds);
         setSelectedAccountIds(allIds);
+      } else {
+        console.warn('[CONTAS] Nenhuma conta ML ativa encontrada');
+        toast.warning('Nenhuma conta ML ativa encontrada. Conecte uma conta para continuar.');
       }
     };
     
@@ -122,14 +134,27 @@ function DevolucoesMercadoLivreContent() {
 
   // ✅ Handler - Buscar da API
   const handleBuscar = async () => {
+    console.log('[BUSCAR] Iniciando busca...');
+    console.log('[BUSCAR] Contas selecionadas:', selectedAccountIds);
+    console.log('[BUSCAR] Período:', periodo);
+    
     if (selectedAccountIds.length === 0) {
+      console.error('[BUSCAR] Nenhuma conta selecionada!');
       toast.error('Selecione pelo menos uma conta ML');
       return;
     }
 
+    if (accounts.length === 0) {
+      console.error('[BUSCAR] Nenhuma conta ML disponível!');
+      toast.error('Nenhuma conta ML disponível. Conecte uma conta primeiro.');
+      return;
+    }
+
     const days = parseInt(periodo);
+    console.log('[BUSCAR] Buscando últimos', days, 'dias');
     toast.loading(`📡 Buscando devoluções dos últimos ${days} dias...`, { id: 'fetch-search' });
     
+    setShouldFetch(true);
     await fetchDevolucoes();
   };
 
