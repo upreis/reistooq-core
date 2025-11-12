@@ -3,7 +3,7 @@
  * Reconstruída do zero seguindo padrão de /reclamacoes
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2 } from 'lucide-react';
+import { DevolucaoDetailModal } from '@/components/devolucoes/DevolucaoDetailModal';
+import { StatusBadge } from '@/components/devolucoes/StatusBadge';
 
 interface MLAccount {
   id: string;
