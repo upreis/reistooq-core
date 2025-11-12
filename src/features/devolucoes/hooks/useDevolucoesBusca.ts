@@ -481,7 +481,7 @@ export function useDevolucoesBusca() {
                   tem_financeiro: !!itemCompleto.valor_reembolso_total,
                   tem_review: !!itemCompleto.review_id,
                   tem_sla: itemCompleto.sla_cumprido !== null,
-                  descricao_custos: itemCompleto.descricao_custos
+                  shipping_costs: itemCompleto.shipping_costs
                 });
               }
 
