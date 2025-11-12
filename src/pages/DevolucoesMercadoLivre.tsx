@@ -23,10 +23,22 @@ interface Devolucao {
   claim_id: string;
   status: any;
   comprador_nome_completo: string;
+  comprador_cpf?: string;
   produto_titulo: string;
   valor_reembolso_total: number;
   data_criacao: string;
   empresa: string;
+  metodo_pagamento?: string;
+  codigo_rastreamento?: string;
+  dados_buyer_info?: {
+    doc_number?: string;
+  };
+  dados_financial_info?: {
+    payment_method?: string;
+  };
+  dados_tracking_info?: {
+    tracking_number?: string;
+  };
 }
 
 export default function DevolucoesMercadoLivre() {
