@@ -187,14 +187,10 @@ function DevolucoesMercadoLivreContent() {
       {/* 🚨 NOTIFICAÇÕES CRÍTICAS */}
       <CriticalDeadlinesNotification devolucoes={devolucoesComEmpresa} />
 
-      {/* 📊 HEADER */}
-      <DevolucaoHeaderSection total={stats.total} />
-
-      {/* 🎯 CONTROLES */}
+      {/* 📊 HEADER + CONTROLES */}
+      <DevolucaoHeaderSection />
+      
       <DevolucaoControlsBar 
-        search={searchTerm}
-        onSearchChange={setSearchTerm}
-        onClear={handleClear}
         onExport={handleExport}
       />
 
@@ -202,9 +198,8 @@ function DevolucoesMercadoLivreContent() {
       <UrgencyFilters 
         devolucoes={devolucoesComEmpresa}
         currentFilter={currentUrgencyFilter}
-        onFilterChange={(filterFn) => {
-          setUrgencyFilter(() => filterFn);
-        }}
+        onFilterChange={(filterFn) => setUrgencyFilter(() => filterFn)}
+        onCurrentFilterChange={setCurrentUrgencyFilter}
       />
 
       {/* 🔍 FILTROS AVANÇADOS */}
@@ -214,6 +209,8 @@ function DevolucoesMercadoLivreContent() {
         onAccountsChange={setSelectedAccountIds}
         periodo={periodo}
         onPeriodoChange={setPeriodo}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
         onBuscar={handleBuscar}
       />
 
