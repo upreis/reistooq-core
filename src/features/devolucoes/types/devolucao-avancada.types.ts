@@ -34,6 +34,14 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   status_money?: string | null;      // Status $ (retained, refunded, available)
   resource_type?: string | null;     // Tipo Recurso (order, claim, shipment, other)
   
+  // 🆕 FASE 1-3: Novos campos enriquecidos
+  comprador_cpf?: string | null;         // CPF/CNPJ do comprador (billing_info)
+  power_seller_status?: string | null;   // Status Power Seller (platinum, gold, silver)
+  mercado_lider?: boolean | null;        // É Mercado Líder?
+  seller_user_type?: string | null;      // Tipo de usuário do vendedor
+  seller_reputation?: any | null;        // Objeto completo de reputação do vendedor
+  data_estimada_reembolso?: string | null; // Data estimada para processamento do reembolso
+  
   // 📨 MENSAGENS E COMUNICAÇÃO (6 colunas)
   timeline_mensagens?: TimelineMessage[] | null;
   ultima_mensagem_data?: string | null;
@@ -62,6 +70,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   valor_compensacao?: number | null;
   moeda_custo?: string | null;
   responsavel_custo?: string | null;
+  // data_reembolso já definido abaixo (linha 173)
 
   // 🏷️ CLASSIFICAÇÃO E RESOLUÇÃO (9 colunas - EXPANDIDO)
   tipo_claim?: string | null;
@@ -226,7 +235,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   versao_api_utilizada?: string | null;
   
   // ========== FASE 2: DADOS DO COMPRADOR E PAGAMENTO (10 COLUNAS) ==========
-  comprador_cpf?: string | null;
+  // comprador_cpf já definido acima (FASE 1-3)
   comprador_nome_completo?: string | null;
   metodo_pagamento?: string | null;
   tipo_pagamento?: string | null;

@@ -16,6 +16,12 @@ export const mapMetadata = (item: any) => {
     eficiencia_resolucao: item.claim_details?.resolution?.efficiency || 
                          item.claim_details?.resolution?.status || null,
     
+    // 🆕 FASE 2: Reputação do Vendedor
+    seller_reputation: item.seller_reputation_data?.seller_reputation || null,
+    power_seller_status: item.seller_reputation_data?.power_seller_status || null,
+    mercado_lider: item.seller_reputation_data?.mercado_lider_status || false,
+    seller_user_type: item.seller_reputation_data?.user_type || null,
+    
     // SLA
     tempo_primeira_resposta_vendedor: null,
     tempo_resposta_comprador: null,
@@ -23,7 +29,7 @@ export const mapMetadata = (item: any) => {
     dias_ate_resolucao: null,
     sla_cumprido: null,
     tempo_limite_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
-    data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.date_created, // ✅ CORRIGIDO: date_created (nome oficial API ML)
+    data_primeira_acao: item.claim_messages?.messages?.[0]?.date_created || item.claim_details?.date_created,
     tempo_total_resolucao: null,
     tempo_resposta_medio: null
   };

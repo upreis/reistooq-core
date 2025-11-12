@@ -29,14 +29,14 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* PRIMEIRA COLUNA - Nome da Conta */}
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10" style={{minWidth: '160px'}}>Empresa</th>
             
-            {/* GRUPO 1: IDENTIFICAÇÃO (5 colunas) - ✅ CORREÇÃO 1: Item ID e Variação ID restaurados */}
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º da Venda</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º da Reclamação</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>N.º da Devolução</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Item ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Variação ID</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>SKU</th>
-            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>ID de Pagamento</th>
+            {/* GRUPO 1: IDENTIFICAÇÃO E RASTREABILIDADE (7 colunas - FASES 1-3 implementadas) */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground sticky left-0 bg-muted/50 dark:bg-muted z-10 border-r" style={{minWidth: '140px'}}>Nome da Conta</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>CPF/CNPJ</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Power Seller</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Mercado Líder</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>ID do Claim</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>ID do Pedido</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '110px'}}>ID da Devolução</th>
             
             {/* GRUPO 2: DATAS E TIMELINE (16 colunas - +5 novas) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Data da Venda</th>
@@ -104,8 +104,9 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* ❌ REMOVIDO: Parcelas - vazio */}
             {/* ❌ REMOVIDO: Valor Parcela - vazio */}
             
-            {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
+            {/* GRUPO 7: MOTIVO E CATEGORIA (9 colunas - adicionada Data Est. Reembolso) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Reembolso</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Est. Reembolso</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>N.º do Motivo</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Descrição do Motivo</th>
             <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Reason Detail</th>

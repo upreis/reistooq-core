@@ -86,13 +86,15 @@ export const FinancialCells: React.FC<FinancialCellsProps> = ({ devolucao }) => 
         {formatCurrency(devolucao.valor_retido)}
       </td>
       
-      {/* ❌ REMOVIDO: Compensação - não mapeado */}
+      {/* 🆕 FASE 3: Data Reembolso */}
+      <td className="px-3 py-3 text-center whitespace-nowrap">
+        {formatDateTime(devolucao.data_reembolso)}
+      </td>
       
-      {/* ❌ REMOVIDO: Método Reembolso - vazio */}
-      {/* ❌ REMOVIDO: Moeda - vazio */}
-      {/* ❌ REMOVIDO: Data Processamento - duplicada, agora está em GRUPO 7 */}
-      {/* ❌ REMOVIDO: Parcelas - vazio */}
-      {/* ❌ REMOVIDO: Valor Parcela - vazio */}
+      {/* 🆕 FASE 3: Data Estimada Reembolso */}
+      <td className="px-3 py-3 text-center whitespace-nowrap font-medium text-blue-600 dark:text-blue-400">
+        {formatDateTime(devolucao.data_estimada_reembolso)}
+      </td>
     </>
   );
 };
