@@ -37,8 +37,15 @@ export const mapTrackingData = (item: any) => {
     // ===== RASTREAMENTO BÁSICO =====
     tracking_number: returnData?.tracking_number || returnData?.shipments?.[0]?.tracking_number || claim.tracking_number || null,
     tracking_status: returnData?.status || claim.status || null,
-    codigo_rastreamento: returnData?.tracking_number || claim.tracking_number || null,
+    codigo_rastreamento: returnData?.shipments?.[0]?.tracking_number || returnData?.tracking_number || claim.tracking_number || null,
     tracking_method: returnData?.tracking_method || claim.tracking_method || null,
+    
+    // 🆕 DADOS DE ENVIO DA DEVOLUÇÃO (da documentação oficial ML)
+    tipo_envio_devolucao: returnData?.shipments?.[0]?.type || null, // return ou return_from_triage
+    destino_devolucao: returnData?.shipments?.[0]?.destination?.name || null, // warehouse ou seller_address
+    endereco_destino_devolucao: returnData?.shipments?.[0]?.destination?.shipping_address?.address_line || null,
+    cidade_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.city?.name || null,
+    estado_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.state?.name || null,
     
     // Review
     review_id: claim.review_details?.id || claim.review?.id || null,

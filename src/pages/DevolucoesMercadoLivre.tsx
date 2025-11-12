@@ -34,6 +34,7 @@ import { StatusReturnCell } from '@/components/devolucoes/StatusReturnCell';
 import { StatusMoneyCell } from '@/components/devolucoes/StatusMoneyCell';
 import { StatusShipmentCell } from '@/components/devolucoes/StatusShipmentCell';
 import { StatusClaimCell } from '@/components/devolucoes/StatusClaimCell';
+import { TipoEnvioCell } from '@/components/devolucoes/TipoEnvioCell';
 import {
   Pagination,
   PaginationContent,
@@ -87,12 +88,18 @@ interface Devolucao {
     sold_quantity?: number;
   } | null;
   
-  
   // 🆕 TODOS OS 4 TIPOS DE STATUS
   status_return?: string | null;      // Status da devolução (14 estados)
-  status_dinheiro?: string | null;    // Status do dinheiro (retained/refunded/available)
-  status_envio?: string | null;       // Status do shipment (pending/shipped/delivered/etc)
-  // status claim está em 'status' acima
+  status_money?: string | null;       // Status do dinheiro (retained/refunded/available)
+  status_shipment?: string | null;    // Status do shipment (pending/shipped/delivered/etc)
+  status_claim?: string | null;       // Status do claim (opened/closed)
+  
+  // 🆕 TIPO DE ENVIO DA DEVOLUÇÃO (da doc oficial ML)
+  tipo_envio_devolucao?: string | null;  // return ou return_from_triage
+  destino_devolucao?: string | null;     // warehouse ou seller_address
+  endereco_destino_devolucao?: string | null;
+  cidade_destino?: string | null;
+  estado_destino?: string | null;
   
   
   
@@ -430,6 +437,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
                 <TableHead>🚚 Tipo Logística</TableHead>
+                <TableHead>📮 Tipo Envio</TableHead>
                 
                 {/* PRIORIDADE ALTA - 7 colunas */}
                 <TableHead>📅 Previsão Entrega</TableHead>
@@ -510,10 +518,10 @@ export default function DevolucoesMercadoLivre() {
                       <StatusReturnCell status={dev.status_return} />
                     </TableCell>
                     <TableCell>
-                      <StatusMoneyCell status={dev.status_dinheiro} />
+                      <StatusMoneyCell status={dev.status_money} />
                     </TableCell>
                     <TableCell>
-                      <StatusShipmentCell status={dev.status_envio} />
+                      <StatusShipmentCell status={dev.status_shipment} />
                     </TableCell>
                     
                     <TableCell>
@@ -531,6 +539,14 @@ export default function DevolucoesMercadoLivre() {
                       <LogisticTypeCell tipo_logistica={dev.tipo_logistica} />
                     </TableCell>
                     
+                    {/* 📮 TIPO DE ENVIO DA DEVOLUÇÃO */}
+                    <TableCell>
+                      <TipoEnvioCell 
+                        tipo_envio_devolucao={dev.tipo_envio_devolucao}
+                        destino_devolucao={dev.destino_devolucao}
+                      />
+                    </TableCell>
+                    
                     {/* PRIORIDADE ALTA - 7 colunas */}
                     <TrackingPriorityCells
                       estimated_delivery_date={dev.estimated_delivery_date}
@@ -545,7 +561,7 @@ export default function DevolucoesMercadoLivre() {
                     
                     {/* FINANCEIRO DETALHADO - 8 colunas (FASE 1: removido breakdown zerado) */}
                     <FinancialDetailedCells
-                      status_dinheiro={dev.status_dinheiro}
+                      status_dinheiro={dev.status_money}
                       metodo_pagamento={dev.metodo_pagamento}
                       moeda_reembolso={dev.moeda_reembolso}
                       percentual_reembolsado={dev.percentual_reembolsado}
