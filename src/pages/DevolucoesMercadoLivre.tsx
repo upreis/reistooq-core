@@ -199,7 +199,9 @@ function DevolucoesMercadoLivreContent() {
         onAutoRefreshToggle={setAutoRefreshEnabled}
         onAutoRefreshIntervalChange={() => {}}
         onRefresh={handleBuscar}
+        onClear={handleClear}
         onExport={handleExport}
+        totalRecords={stats.total}
       />
 
       {/* ⏰ FILTROS URGÊNCIA */}
