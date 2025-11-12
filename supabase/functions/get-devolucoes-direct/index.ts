@@ -332,13 +332,25 @@ serve(async (req) => {
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
               { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
             );
+            
             if (billingRes.ok) {
-              billingData = await billingRes.json();
-              
-              logger.debug(`💳 BILLING ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
-                doc_type: billingData.doc_type,
-                has_doc_number: !!billingData.doc_number
-              }));
+              const contentType = billingRes.headers.get('content-type');
+              if (contentType && contentType.includes('application/json')) {
+                const text = await billingRes.text();
+                if (text && text.trim().length > 0) {
+                  billingData = JSON.parse(text);
+                  logger.debug(`💳 BILLING ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
+                    doc_type: billingData.doc_type,
+                    has_doc_number: !!billingData.doc_number
+                  }));
+                } else {
+                  logger.warn(`💳 ⚠️ Billing info retornou resposta vazia (claim ${claim.id})`);
+                }
+              } else {
+                logger.warn(`💳 ⚠️ Billing info não é JSON (claim ${claim.id})`);
+              }
+            } else if (billingRes.status === 404) {
+              logger.debug(`💳 ℹ️ Billing info não disponível para order ${orderId} (claim ${claim.id})`);
             }
           } catch (err) {
             logger.error(`❌ Erro ao buscar billing info (claim ${claim.id}):`, err);
