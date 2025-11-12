@@ -5,12 +5,13 @@ import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-av
 import { IdentificationCells } from './cells/IdentificationCells';
 import { DatesCells } from './cells/DatesCells';
 import { StatusCells } from './cells/StatusCells';
-import { StatusFinancialCells } from './cells/StatusFinancialCells'; // ✅ CORREÇÃO 3: Importar novo componente
+import { StatusFinancialCells } from './cells/StatusFinancialCells';
 import { MandatoryActionCell } from './cells/MandatoryActionCell';
 import { FinancialCells } from './cells/FinancialCells';
 import { FinancialDetailedCells } from './cells/FinancialDetailedCells';
 import { ActionCell } from './cells/ActionCell';
 import { CustosLogisticaCell } from '@/features/devolucoes-online/components/cells/CustosLogisticaCell';
+import { ProductInfoCell } from '@/features/devolucoes-online/components/cells/ProductInfoCell';
 import { TrackingPriorityCells } from './cells/TrackingPriorityCells';
 import { TrackingDetailedCells } from './cells/TrackingDetailedCells';
 import { CommunicationPriorityCells } from './cells/CommunicationPriorityCells';
@@ -233,11 +234,24 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 5: PRODUTO (2 colunas) */}
       
-      {/* Produto */}
+      {/* Produto com Imagem */}
       <td className="px-3 py-3 text-left">
-        <div className="max-w-[300px] truncate" title={devolucao.produto_titulo || ''}>
-          {devolucao.produto_titulo || '-'}
-        </div>
+        <ProductInfoCell 
+          productInfo={(devolucao as any).product_info ? {
+            id: (devolucao as any).product_info.id || '',
+            title: (devolucao as any).product_info.title || devolucao.produto_titulo || '',
+            price: (devolucao as any).product_info.price || devolucao.valor_original_produto || 0,
+            currency_id: (devolucao as any).product_info.currency_id || 'BRL',
+            thumbnail: (devolucao as any).product_info.thumbnail || null,
+            permalink: (devolucao as any).product_info.permalink || '',
+            sku: (devolucao as any).product_info.sku || devolucao.sku || '',
+            condition: (devolucao as any).product_info.condition || null,
+            sold_quantity: (devolucao as any).product_info.sold_quantity || 0,
+            available_quantity: (devolucao as any).product_info.available_quantity || 0,
+            category_id: (devolucao as any).product_info.category_id || null,
+            variation_id: (devolucao as any).product_info.variation_id || null
+          } : null}
+        />
       </td>
       
       {/* Qtd */}
