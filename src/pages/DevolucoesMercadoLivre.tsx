@@ -188,24 +188,21 @@ function DevolucoesMercadoLivreContent() {
       <CriticalDeadlinesNotification devolucoes={devolucoesComEmpresa} />
 
       {/* 📊 HEADER */}
-      <DevolucaoHeaderSection 
-        totalDevolucoes={stats.total} 
-        onExport={handleExport}
-      />
+      <DevolucaoHeaderSection total={stats.total} />
 
       {/* 🎯 CONTROLES */}
       <DevolucaoControlsBar 
-        searchTerm={searchTerm}
+        search={searchTerm}
         onSearchChange={setSearchTerm}
-        onClearFilters={handleClear}
+        onClear={handleClear}
+        onExport={handleExport}
       />
 
       {/* ⏰ FILTROS URGÊNCIA */}
       <UrgencyFilters 
         devolucoes={devolucoesComEmpresa}
         currentFilter={currentUrgencyFilter}
-        onFilterChange={(filter, filterFn) => {
-          setCurrentUrgencyFilter(filter);
+        onFilterChange={(filterFn) => {
           setUrgencyFilter(() => filterFn);
         }}
       />
@@ -214,7 +211,7 @@ function DevolucoesMercadoLivreContent() {
       <DevolucaoAdvancedFiltersBar 
         accounts={accounts}
         selectedAccountIds={selectedAccountIds}
-        onAccountChange={setSelectedAccountIds}
+        onAccountsChange={setSelectedAccountIds}
         periodo={periodo}
         onPeriodoChange={setPeriodo}
         onBuscar={handleBuscar}
