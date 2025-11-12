@@ -8,6 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Helper to safely format dates
+const formatSafeDate = (dateValue: any, formatStr: string = 'dd/MM/yyyy HH:mm'): string => {
+  if (!dateValue) return '-';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '-';
+    return format(date, formatStr, { locale: ptBR });
+  } catch {
+    return '-';
+  }
+};
+
 interface TrackingDetailedCellsProps {
   estimated_delivery_limit?: string | null;
   shipment_status?: string | null;
@@ -37,10 +49,7 @@ export const TrackingDetailedCells = ({
     <>
       {/* Limite Entrega */}
       <TableCell className="text-sm">
-        {estimated_delivery_limit 
-          ? format(new Date(estimated_delivery_limit), 'dd/MM/yyyy', { locale: ptBR })
-          : '-'
-        }
+        {formatSafeDate(estimated_delivery_limit, 'dd/MM/yyyy')}
       </TableCell>
 
       {/* Status Shipment */}
@@ -52,10 +61,7 @@ export const TrackingDetailedCells = ({
 
       {/* Refund At */}
       <TableCell className="text-sm">
-        {refund_at 
-          ? format(new Date(refund_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-          : '-'
-        }
+        {formatSafeDate(refund_at)}
       </TableCell>
 
       {/* Review Method */}
@@ -100,10 +106,7 @@ export const TrackingDetailedCells = ({
 
       {/* Última Movimentação */}
       <TableCell className="text-sm">
-        {data_ultima_movimentacao 
-          ? format(new Date(data_ultima_movimentacao), 'dd/MM HH:mm', { locale: ptBR })
-          : '-'
-        }
+        {formatSafeDate(data_ultima_movimentacao, 'dd/MM HH:mm')}
       </TableCell>
     </>
   );

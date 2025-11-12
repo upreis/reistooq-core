@@ -8,6 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Helper to safely format dates
+const formatSafeDate = (dateValue: any, formatStr: string = 'dd/MM/yyyy HH:mm'): string => {
+  if (!dateValue) return '-';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '-';
+    return format(date, formatStr, { locale: ptBR });
+  } catch {
+    return '-';
+  }
+};
+
 interface CommunicationDetailedCellsProps {
   timeline_events?: any[] | null;
   marcos_temporais?: any | null;
@@ -45,26 +57,17 @@ export const CommunicationDetailedCells = ({
 
       {/* Data Criação Claim */}
       <TableCell className="text-sm">
-        {data_criacao_claim 
-          ? format(new Date(data_criacao_claim), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-          : '-'
-        }
+        {formatSafeDate(data_criacao_claim)}
       </TableCell>
 
       {/* Data Início Return */}
       <TableCell className="text-sm">
-        {data_inicio_return 
-          ? format(new Date(data_inicio_return), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-          : '-'
-        }
+        {formatSafeDate(data_inicio_return)}
       </TableCell>
 
       {/* Data Fechamento Claim */}
       <TableCell className="text-sm">
-        {data_fechamento_claim 
-          ? format(new Date(data_fechamento_claim), 'dd/MM/yyyy HH:mm', { locale: ptBR })
-          : '-'
-        }
+        {formatSafeDate(data_fechamento_claim)}
       </TableCell>
 
       {/* Histórico Status */}

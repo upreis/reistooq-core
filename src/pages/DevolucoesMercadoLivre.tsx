@@ -29,6 +29,18 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 
+// Helper to safely format dates
+const formatSafeDate = (dateValue: any): string => {
+  if (!dateValue) return '-';
+  try {
+    const date = new Date(dateValue);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('pt-BR');
+  } catch {
+    return '-';
+  }
+};
+
 interface MLAccount {
   id: string;
   name: string;
@@ -470,10 +482,7 @@ export default function DevolucoesMercadoLivre() {
                     
                     {/* PRIORIDADE ALTA - 7 colunas */}
                     <TableCell className="text-sm">
-                      {dev.estimated_delivery_date 
-                        ? new Date(dev.estimated_delivery_date).toLocaleDateString('pt-BR')
-                        : '-'
-                      }
+                      {formatSafeDate(dev.estimated_delivery_date)}
                     </TableCell>
                     
                     <TableCell className="text-sm">
