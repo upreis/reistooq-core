@@ -3,12 +3,10 @@
  * Tabela de devoluções com memoização e prazos
  */
 
-import { memo, useState, Fragment } from 'react';
+import { memo, Fragment } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { Code2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MLReturn } from '../types/devolucao.types';
@@ -34,7 +32,6 @@ import { SubstatusCell } from './cells/SubstatusCell';
 import { ActionsCell } from './cells/ActionsCell';
 import { ShippingCostsCell } from './cells/ShippingCostsCell';
 import { FulfillmentCell } from './cells/FulfillmentCell';
-import { ApiDebugPanel } from './ApiDebugPanel';
 import {
   translateStatus,
   translateStatusMoney,
@@ -60,7 +57,6 @@ interface DevolucaoTableProps {
 }
 
 export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChange, onRefresh }: DevolucaoTableProps) => {
-  const [expandedDebugId, setExpandedDebugId] = useState<string | null>(null);
 
   if (error) {
     return (
@@ -274,12 +270,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             <TableHead className="font-semibold whitespace-nowrap min-w-[200px]">
               <span className="flex items-center gap-1.5">
                 🎬 Ações Disponíveis
-              </span>
-            </TableHead>
-            {/* ✅ NOVO: Coluna de Debug */}
-            <TableHead className="font-semibold whitespace-nowrap">
-              <span className="flex items-center gap-1.5">
-                🔍 Debug API
               </span>
             </TableHead>
             <TableHead className="font-semibold">Análise</TableHead>
@@ -570,18 +560,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     onActionExecuted={onRefresh}
                   />
                 </TableCell>
-                {/* ✅ NOVO: Botão Debug API */}
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setExpandedDebugId(expandedDebugId === uniqueKey ? null : uniqueKey)}
-                    className="h-8 w-8 p-0"
-                    title="Ver dados brutos da API ML"
-                  >
-                    <Code2 className={`h-4 w-4 ${expandedDebugId === uniqueKey ? 'text-primary' : ''}`} />
-                  </Button>
-                </TableCell>
                 {/* Status Análise */}
                 <TableCell>
                   {onStatusChange && (
@@ -592,17 +570,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   )}
                 </TableCell>
               </TableRow>
-              {/* ✅ NOVO: Linha expandível com Debug Panel */}
-              {expandedDebugId === uniqueKey && (
-                <TableRow>
-                  <TableCell colSpan={100} className="bg-muted/30 p-4">
-                    <ApiDebugPanel 
-                      data={dev}
-                      title={`API ML - Devolução ${dev.id} (Claim ${dev.claim_id})`}
-                    />
-                  </TableCell>
-                </TableRow>
-              )}
               </Fragment>
             );
           })}
