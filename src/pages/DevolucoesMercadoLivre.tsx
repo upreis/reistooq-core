@@ -144,6 +144,11 @@ export default function DevolucoesMercadoLivre() {
     }
   };
 
+  const handleRowClick = (devolucao: Devolucao) => {
+    setSelectedDevolucao(devolucao);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <MLOrdersNav />
