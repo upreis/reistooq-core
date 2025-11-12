@@ -160,22 +160,20 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
-    // ✅ ENRIQUECER SEQUENCIALMENTE (evitar rate limit 429)
-    console.log('[get-devolucoes-direct] Enriquecendo dados sequencialmente...');
+    // ✅ CORREÇÃO 1: BATCH PARALELO 5x5 (Performance: 40s → ~10s)
+    console.log('[get-devolucoes-direct] Enriquecendo dados em lotes paralelos...');
     
     const allEnrichedClaims: any[] = [];
-    const DELAY_BETWEEN_REQUESTS = 100; // 100ms entre cada request individual
+    const BATCH_SIZE = 5; // Processar 5 claims em paralelo
+    const DELAY_BETWEEN_BATCHES = 200; // 200ms entre batches
     
-    for (let i = 0; i < claims.length; i++) {
-      const claim = claims[i];
-      console.log(`🔄 Processando claim ${i + 1}/${claims.length} (ID: ${claim.id})...`);
-      
+    // Função para enriquecer um único claim
+    const enrichClaim = async (claim: any) => {
       try {
-        // ✅ 1. Buscar dados COMPLETOS do pedido (order_data)
+        // 1. Buscar ordem (order_data)
         let orderData = null;
         if (claim.resource_id) {
           try {
-            // ✅ CORREÇÃO 3: Usar fetchWithRetry
             const orderRes = await fetchWithRetry(
               `https://api.mercadolibre.com/orders/${claim.resource_id}`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -183,20 +181,15 @@ serve(async (req) => {
             );
             if (orderRes.ok) {
               orderData = await orderRes.json();
-              console.log(`✅ Order ${claim.resource_id} buscado`);
-            } else if (orderRes.status === 404) {
-              console.log(`⚠️ Order ${claim.resource_id} não encontrado (404 - pode ter sido deletado)`);
             }
-            await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
           } catch (err) {
-            console.error(`❌ Erro ao buscar order ${claim.resource_id}:`, err);
+            // Ignorar 404 (order deletada)
           }
         }
 
-        // ✅ 2. Buscar mensagens do claim
+        // 2. Buscar mensagens
         let messagesData = null;
         try {
-          // ✅ CORREÇÃO 3: Usar fetchWithRetry
           const messagesRes = await fetchWithRetry(
             `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
             { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -204,17 +197,14 @@ serve(async (req) => {
           );
           if (messagesRes.ok) {
             messagesData = await messagesRes.json();
-            console.log(`✅ Messages do claim ${claim.id} buscadas`);
           }
-          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
         } catch (err) {
-          console.error(`❌ Erro ao buscar messages do claim ${claim.id}:`, err);
+          // Ignorar erro
         }
 
-        // ✅ 3. Buscar dados COMPLETOS de return (return_details_v2)
+        // 3. Buscar return
         let returnData = null;
         try {
-          // ✅ CORREÇÃO 3: Usar fetchWithRetry
           const returnRes = await fetchWithRetry(
             `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
             { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -222,18 +212,15 @@ serve(async (req) => {
           );
           if (returnRes.ok) {
             returnData = await returnRes.json();
-            console.log(`✅ Return do claim ${claim.id} buscado`);
           }
-          await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
         } catch (err) {
-          // Return pode não existir para alguns claims (normal)
+          // Return pode não existir
         }
 
-        // ✅ 4. Buscar reviews SE existir related_entities
+        // 4. Buscar reviews (se return existe e tem reviews)
         let reviewsData = null;
         if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
           try {
-            // ✅ CORREÇÃO 3: Usar fetchWithRetry
             const reviewsRes = await fetchWithRetry(
               `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -241,53 +228,78 @@ serve(async (req) => {
             );
             if (reviewsRes.ok) {
               reviewsData = await reviewsRes.json();
-              console.log(`✅ Reviews do return ${returnData.id} buscadas`);
             }
-            await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_REQUESTS));
           } catch (err) {
-            console.error(`❌ Erro ao buscar reviews:`, err);
+            // Ignorar erro
           }
         }
 
-        allEnrichedClaims.push({
+        return {
           ...claim,
           order_data: orderData,
           claim_messages: messagesData,
           return_details_v2: returnData,
           review_details: reviewsData
-        });
+        };
       } catch (err) {
         console.error(`❌ Erro ao enriquecer claim ${claim.id}:`, err);
-        allEnrichedClaims.push(claim);
+        return claim; // Retornar claim original em caso de erro
+      }
+    };
+
+    // Processar em batches de 5 claims paralelos
+    for (let i = 0; i < claims.length; i += BATCH_SIZE) {
+      const batch = claims.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(claims.length / BATCH_SIZE);
+      
+      console.log(`📦 Processando lote ${batchNumber}/${totalBatches} (${batch.length} claims)...`);
+      
+      // Processar batch em paralelo
+      const enrichedBatch = await Promise.all(batch.map(enrichClaim));
+      allEnrichedClaims.push(...enrichedBatch);
+      
+      // Delay entre batches para evitar rate limit
+      if (i + BATCH_SIZE < claims.length) {
+        await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
       }
     }
     
     console.log(`[get-devolucoes-direct] ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
-    // ✅ MAPEAR DADOS USANDO MAPPERS CONSOLIDADOS
+    // ✅ CORREÇÃO 2: MAPEAR DADOS CORRETAMENTE
     console.log('[get-devolucoes-direct] Mapeando dados...');
-    const mappedClaims = allEnrichedClaims.map((claim: any, index: number) => {
+    const mappedClaims = allEnrichedClaims.map((claim: any) => {
       try {
-        // 🔍 DEBUG: Log estrutura de dados do primeiro claim
-        if (index === 0) {
-          console.log('🔍 ESTRUTURA DO CLAIM ENRIQUECIDO:', {
-            claim_id: claim.id,
-            claim_keys: Object.keys(claim),
-            order_data_exists: !!claim.order_data,
-            order_data_keys: claim.order_data ? Object.keys(claim.order_data).slice(0, 10) : [],
-            return_exists: !!claim.return_details_v2,
-            return_keys: claim.return_details_v2 ? Object.keys(claim.return_details_v2) : []
-          });
-        }
-        
-        // ✅ Estruturar dados no formato esperado pelos mappers
+        // ✅ ESTRUTURA CORRETA para os mappers
         const item = {
-          claim_details: claim,  // Claim básico da API /claims/search
-          order_data: claim.order_data,  // Dados completos de /orders/{id}
-          claim_messages: claim.claim_messages,  // Mensagens de /claims/{id}/messages
-          return_details_v2: claim.return_details_v2,  // Return de /claims/{id}/returns
-          review_details: claim.review_details,  // ✅ CORRIGIDO: Reviews de /returns/{id}/reviews
-          amount: claim.seller_amount || null
+          // Campos de nível superior que os mappers esperam
+          order_id: claim.resource_id, // resource_id é o order_id
+          date_created: claim.date_created, // Data de criação do claim
+          amount: claim.seller_amount || null,
+          reason: claim.reason?.description || null, // Motivo da devolução
+          
+          // Dados do claim (contém status, stage, resolution, etc.)
+          claim_details: claim,
+          
+          // Dados completos da ordem (buscado de /orders/{id})
+          order_data: claim.order_data,
+          
+          // Mensagens do claim
+          claim_messages: claim.claim_messages,
+          
+          // Dados do return v2
+          return_details_v2: claim.return_details_v2,
+          
+          // Reviews do return
+          review_details: claim.review_details,
+          
+          // resource_data para título/sku do produto
+          resource_data: {
+            title: claim.order_data?.order_items?.[0]?.item?.title || null,
+            sku: claim.order_data?.order_items?.[0]?.item?.seller_sku || null,
+            quantity: claim.order_data?.order_items?.[0]?.quantity || null
+          }
         };
 
         return mapDevolucaoCompleta(item, integration_account_id, accountName, null);

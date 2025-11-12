@@ -99,19 +99,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
     }
   };
 
-  const getStatusColor = (statusId: string) => {
-    const colors: Record<string, string> = {
-      'pending': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-      'label_generated': 'bg-blue-500/10 text-blue-500 border-blue-500/20',
-      'shipped': 'bg-purple-500/10 text-purple-500 border-purple-500/20',
-      'delivered': 'bg-green-500/10 text-green-500 border-green-500/20',
-      'cancelled': 'bg-gray-500/10 text-gray-500 border-gray-500/20',
-      'expired': 'bg-red-500/10 text-red-500 border-red-500/20',
-      'not_delivered': 'bg-orange-500/10 text-orange-500 border-orange-500/20',
-    };
-    return colors[statusId] || 'bg-gray-500/10 text-gray-500 border-gray-500/20';
-  };
-
+  // ✅ CORREÇÃO 3: Remover funções duplicadas - usar apenas utils/translations.ts
   const getDestinationLabel = (destination: string | null) => {
     const labels: Record<string, string> = {
       'seller_address': 'Vendedor',
@@ -120,7 +108,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
     return destination ? labels[destination] || destination : '-';
   };
 
-  // ✅ Tipo de envio agora vem de tracking_info JSONB
   const getShipmentTypeLabel = (type: string | null | undefined) => {
     const labels: Record<string, string> = {
       'return': 'Devolução',
