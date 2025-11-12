@@ -36,7 +36,9 @@ export const mapContextData = (item: any) => {
     endereco_destino: null,
     
     // Comprador
-    comprador_cpf: item.order_data?.buyer?.billing_info?.doc_number || null,
+    // ✅ FASE 1: Priorizar billing_info enriquecido (CPF/CNPJ oficial)
+    comprador_cpf: item.billing_info?.doc_number || 
+                   item.order_data?.buyer?.billing_info?.doc_number || null,
     comprador_nome_completo: item.order_data?.buyer?.first_name && item.order_data?.buyer?.last_name 
       ? `${item.order_data.buyer.first_name} ${item.order_data.buyer.last_name}`.trim()
       : item.order_data?.buyer?.nickname || null,

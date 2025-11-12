@@ -278,6 +278,25 @@ serve(async (req) => {
               };
             }
           } catch (err) {
+            // Produto pode não existir
+          }
+        }
+
+        // 6. 🆕 FASE 1: BUSCAR BILLING INFO (CPF/CNPJ do comprador)
+        let billingData = null;
+        const orderId = claim.resource_id;
+        if (orderId) {
+          try {
+            const billingRes = await fetchWithRetry(
+              `https://api.mercadolibre.com/orders/${orderId}/billing_info`,
+              { headers: { 'Authorization': `Bearer ${accessToken}` } },
+              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+            );
+            if (billingRes.ok) {
+              billingData = await billingRes.json();
+              logger.debug(`✅ Billing info obtido para order ${orderId}`);
+            }
+          } catch (err) {
             // Ignorar erro se produto não existir mais
           }
         }
@@ -333,6 +352,7 @@ serve(async (req) => {
           return_details_v2: returnData,
           review_details: reviewsData,
           product_info: productData, // ✅ ADICIONAR product_info enriquecido
+          billing_info: billingData, // ✅ FASE 1: Dados fiscais do comprador (CPF/CNPJ)
           shipment_history_enriched: shipmentHistoryData,
           shipping_costs_enriched: shippingCostsData
         };
