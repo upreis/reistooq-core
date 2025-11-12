@@ -26,6 +26,7 @@ import {
   TempoTransitoCell, 
   PrevisaoChegadaCell 
 } from '@/components/devolucoes/ShippingAdvancedCells';
+import { LogisticTypeCell } from '@/components/devolucoes/LogisticTypeCell';
 import {
   Pagination,
   PaginationContent,
@@ -64,6 +65,9 @@ interface Devolucao {
   empresa: string;
   metodo_pagamento?: string;
   codigo_rastreamento?: string;
+  
+  // 🚚 TIPO DE LOGÍSTICA
+  tipo_logistica?: string | null;
   
   // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
   localizacao_atual_produto?: string | null;
@@ -375,6 +379,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Status</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
+                <TableHead>🚚 Tipo Logística</TableHead>
                 
                 {/* PRIORIDADE ALTA - 7 colunas */}
                 <TableHead>📅 Previsão Entrega</TableHead>
@@ -480,6 +485,11 @@ export default function DevolucoesMercadoLivre() {
                     </TableCell>
                     <TableCell className="text-xs font-mono">
                       {dev.codigo_rastreamento || dev.dados_tracking_info?.tracking_number || '-'}
+                    </TableCell>
+                    
+                    {/* 🚚 TIPO DE LOGÍSTICA */}
+                    <TableCell>
+                      <LogisticTypeCell tipo_logistica={dev.tipo_logistica} />
                     </TableCell>
                     
                     {/* PRIORIDADE ALTA - 7 colunas */}
