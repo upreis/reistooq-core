@@ -358,10 +358,14 @@ serve(async (req) => {
         // Buscar históricos e custos se houver shipments
         if (shipmentIds.length > 0) {
           try {
+            logger.debug(`🚚 Buscando custos para shipments: ${shipmentIds.join(', ')} (claim ${claim.id})`);
+            
             const [historyMap, costsMap] = await Promise.all([
               fetchMultipleShipmentHistories(shipmentIds, accessToken),
               fetchMultipleShippingCosts(shipmentIds, accessToken)
             ]);
+            
+            logger.debug(`💰 Custos retornados: ${costsMap.size} shipments com dados (claim ${claim.id})`);
             
             // Consolidar dados em estrutura única
             shipmentHistoryData = {
@@ -378,17 +382,23 @@ serve(async (req) => {
               )
             };
             
-            // 🐛 DEBUG: Log custos enriquecidos
-            logger.debug(`💰 SHIPPING COSTS para claim ${claim.id}:`, JSON.stringify({
-              shipment_ids: shipmentIds,
-              original_cost: costsMap.get(shipmentIds[0])?.total_cost || null,
-              return_cost: shipmentIds[1] ? costsMap.get(shipmentIds[1])?.total_cost || null : null,
-              total_logistics: shippingCostsData.total_logistics_cost,
-              has_breakdown: !!costsMap.get(shipmentIds[0])?.cost_breakdown
-            }));
+            // 🐛 DEBUG: Log detalhado dos custos
+            const originalCosts = costsMap.get(shipmentIds[0]);
+            if (originalCosts) {
+              logger.debug(`💰 CUSTOS SHIPMENT ${shipmentIds[0]}:`, JSON.stringify({
+                total_cost: originalCosts.total_cost,
+                net_cost: originalCosts.net_cost,
+                responsavel: originalCosts.responsavel_custo,
+                has_breakdown: !!originalCosts.cost_breakdown
+              }));
+            } else {
+              logger.warn(`⚠️ SEM CUSTOS para shipment ${shipmentIds[0]} (claim ${claim.id})`);
+            }
           } catch (err) {
-            logger.warn(`Erro ao buscar histórico/custos shipment:`, err);
+            logger.error(`❌ Erro ao buscar histórico/custos shipment (claim ${claim.id}):`, err);
           }
+        } else {
+          logger.debug(`⚠️ Claim ${claim.id} sem shipments para enriquecer custos`);
         }
 
         // 8. 🆕 BUSCAR CHANGE DETAILS (se for troca)
