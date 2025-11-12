@@ -12,6 +12,7 @@ import { FinancialDetailedCells } from './cells/FinancialDetailedCells';
 import { ActionCell } from './cells/ActionCell';
 import { CustosLogisticaCell } from '@/features/devolucoes-online/components/cells/CustosLogisticaCell';
 import { ProductInfoCell } from '@/features/devolucoes-online/components/cells/ProductInfoCell';
+import { BuyerInfoCell } from '@/features/devolucoes-online/components/cells/BuyerInfoCell';
 import { TrackingPriorityCells } from './cells/TrackingPriorityCells';
 import { TrackingDetailedCells } from './cells/TrackingDetailedCells';
 import { CommunicationPriorityCells } from './cells/CommunicationPriorityCells';
