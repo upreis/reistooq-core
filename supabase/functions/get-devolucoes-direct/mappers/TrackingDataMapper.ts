@@ -56,9 +56,35 @@ export const mapTrackingData = (item: any) => {
     primeiro_evento_rastreamento: item.shipment_history_enriched?.return_shipment?.first_event || null,
     ultimo_evento_rastreamento: item.shipment_history_enriched?.return_shipment?.last_event || null,
     
+    // 🆕 PRIORIDADE ALTA: Data estimada de entrega ao vendedor
+    estimated_delivery_date: item.return_details_v2?.estimated_delivery?.from || 
+                            item.return_details_v2?.estimated_delivery?.to ||
+                            item.shipment_history_enriched?.estimated_delivery_date || null,
+    
+    // 🆕 PRIORIDADE ALTA: Indica se há atraso no envio
+    has_delay: (() => {
+      const estimatedDate = item.return_details_v2?.estimated_delivery?.to || 
+                           item.shipment_history_enriched?.estimated_delivery_date;
+      if (!estimatedDate) return null;
+      
+      const now = new Date();
+      const estimated = new Date(estimatedDate);
+      const isDelayed = now > estimated && 
+                       returnShipment?.status !== 'delivered' && 
+                       returnShipment?.status !== 'cancelled';
+      
+      return isDelayed || item.shipment_history_enriched?.has_delay || false;
+    })(),
+    
+    // 🆕 PRIORIDADE ALTA: Quantidades (devolvida vs. total)
+    return_quantity: item.return_details_v2?.orders?.[0]?.quantity || 
+                    item.quantity || 
+                    firstOrderItem?.quantity || null,
+    total_quantity: item.order_data?.order_items?.[0]?.quantity || null,
+    
     // Custos de envio enriquecidos
     shipment_costs: item.shipping_costs_enriched || null,
-    previsao_entrega_vendedor: null, // Removido em v2
+    previsao_entrega_vendedor: item.return_details_v2?.estimated_delivery?.to || null,
     
     // ✅ FASE 1: Novos campos de devolução
     status_devolucao: item.return_details_v2?.status || null,

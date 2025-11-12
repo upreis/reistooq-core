@@ -25,7 +25,11 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     // Dados do produto
     produto_titulo: item.resource_data?.title || item.reason || null,
     sku: item.resource_data?.sku || item.order_data?.order_items?.[0]?.item?.seller_sku || null,
+    
+    // 🆕 PRIORIDADE ALTA: Quantidades já mapeadas em TrackingDataMapper
+    // Mantidas aqui como fallback
     quantidade: item.resource_data?.quantity || item.order_data?.order_items?.[0]?.quantity || null,
+    
     valor_retido: item.amount || null,
     valor_original_produto: item.order_data?.order_items?.[0]?.unit_price || null,
     
