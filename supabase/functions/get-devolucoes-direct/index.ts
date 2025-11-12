@@ -471,6 +471,18 @@ serve(async (req) => {
     }).filter(Boolean);
 
     logger.progress(`✅ ${mappedClaims.length} claims mapeados com sucesso`);
+    
+    // 🐛 DEBUG: Log primeiro claim completo para verificar estrutura
+    if (mappedClaims.length > 0) {
+      console.log('[DEBUG BACKEND] ===== ESTRUTURA DADOS MAPEADOS =====');
+      console.log('[DEBUG BACKEND] comprador_nome_completo:', mappedClaims[0].comprador_nome_completo);
+      console.log('[DEBUG BACKEND] comprador_nickname:', mappedClaims[0].comprador_nickname);
+      console.log('[DEBUG BACKEND] product_info:', mappedClaims[0].product_info ? 'EXISTS' : 'NULL');
+      console.log('[DEBUG BACKEND] valor_reembolso_total:', mappedClaims[0].valor_reembolso_total);
+      console.log('[DEBUG BACKEND] status_dinheiro:', mappedClaims[0].status_dinheiro);
+      console.log('[DEBUG BACKEND] estimated_delivery_date:', mappedClaims[0].estimated_delivery_date);
+      console.log('[DEBUG BACKEND] qualidade_comunicacao:', mappedClaims[0].qualidade_comunicacao);
+    }
 
     // ✅ RETORNAR DADOS MAPEADOS
     return new Response(

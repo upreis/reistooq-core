@@ -1,114 +1,173 @@
-# 📋 LISTA COMPLETA DE COLUNAS - /devolucoes-ml
+# 📋 ANÁLISE DE COLUNAS - /devolucoes-ml
 
-## ✅ COLUNAS QUE DEVERIAM ESTAR VISÍVEIS NA TABELA
-
-### 🔵 COLUNAS BÁSICAS (Antigas - já existiam)
-1. **👤 Comprador** - Nome completo do comprador
-2. **📦 Produto** - Imagem, título, SKU, preço do produto
-3. **💰 Financeiro** - Valores de reembolso
-4. **📊 Status** - Status atual da devolução
-5. **❓ Motivo** - Motivo da devolução
-6. **📅 Data Criação** - Data de criação da devolução
-7. **🏢 Empresa** - Nome da conta integrada
+## 🎯 OBJETIVO
+Comparar as colunas que DEVERIAM existir vs as colunas que REALMENTE existem na página
 
 ---
 
-### 🟢 PRIORIDADE ALTA (7 colunas - recém implementadas)
-8. **📅 Data Estimada Entrega** - Quando produto deve chegar
-9. **⏰ Tem Atraso?** - Badge indicando atraso
-10. **📦 Qtd Devolvida/Total** - Ex: "2/5"
-11. **💬 Qualidade Comunicação** - Clean/Moderate/Poor
-12. **🔢 N° Interações** - Quantidade de mensagens
-13. **🤝 Mediador ML** - ID do mediador
-14. **💳 Transaction ID** - ID da transação financeira
-
----
-
-### 🟡 FINANCIAL DETAILED (9 colunas)
-15. **💵 Status $** - Status do dinheiro (refunded/pending/retained)
-16. **💳 Método Reembolso** - Como será reembolsado
-17. **💱 Moeda** - Moeda do reembolso (BRL)
-18. **📊 % Reembolsado** - Percentual reembolsado
-19. **🔄 Diferença Troca** - Valor de diferença
-20. **💸 Taxa ML Reemb.** - Taxa cobrada pelo ML
-21. **📉 Custo Devolução** - Custo da devolução
-22. **🔢 Parcelas** - Número de parcelas
-23. **💰 Valor Parcela** - Valor de cada parcela
-
----
-
-### 🟠 TRACKING DETAILED (10 colunas)
-24. **⏱️ Limite Entrega** - Data limite
-25. **🚚 Status Shipment** - Status do envio
-26. **💰 Refund At** - Quando será reembolsado
-27. **🔍 Review Method** - Método de revisão
-28. **📊 Review Stage** - Estágio da revisão
-29. **📍 Localização Atual** - Onde está o produto
-30. **🚛 Status Transporte** - Status atual do transporte
-31. **📜 Tracking History** - Histórico de rastreamento
-32. **📋 Tracking Events** - Eventos de rastreamento
-33. **🕐 Última Movimentação** - Data da última movimentação
-
----
-
-### 🔵 COMMUNICATION DETAILED (6 colunas)
-34. **📅 Timeline Events** - Eventos da linha do tempo
-35. **⏰ Marcos Temporais** - Marcos importantes
-36. **📆 Data Criação Claim** - Quando claim foi criado
-37. **🚀 Data Início Return** - Quando return iniciou
-38. **✅ Data Fechamento Claim** - Quando claim fechou
-39. **📊 Histórico Status** - Mudanças de status
-
----
-
-### 🟣 MEDIATION DETAILED (6 colunas)
-40. **🏁 Resultado Mediação** - Resultado final
-41. **📝 Detalhes Mediação** - Detalhes da mediação
-42. **🔄 Produto Troca ID** - ID do produto de troca
-43. **🆕 Novo Pedido ID** - ID do novo pedido
-44. **⏳ Dias Restantes Ação** - Dias para agir
-45. **📅 Prazo Revisão Dias** - Prazo de revisão
-
----
-
-### ⚪ METADATA (3 colunas)
-46. **👤 Usuário Última Ação** - Quem fez última ação
-47. **📎 Total Evidências** - Quantidade de evidências
-48. **📄 Anexos ML** - Anexos do Mercado Livre
-
----
-
-### 🔴 OUTRAS ADICIONADAS
-49. **🆔 CPF/CNPJ** - CPF/CNPJ do comprador
-50. **⭐ Power Seller** - Status Power Seller
-51. **👑 Mercado Líder** - Status Mercado Líder
-52. **💸 Data Est. Reembolso** - Data estimada de reembolso
-53. **💰 Custos Logística** - Breakdown de custos (tooltip)
-
----
-
-## 📊 TOTAL: 53 COLUNAS
-
-### ✅ Verifique na página se você consegue ver:
-- [ ] As 7 colunas básicas antigas
-- [ ] As 7 colunas de prioridade alta
-- [ ] As 9 colunas de Financial Detailed
-- [ ] As 10 colunas de Tracking Detailed
-- [ ] As 6 colunas de Communication Detailed
-- [ ] As 6 colunas de Mediation Detailed
-- [ ] As 3 colunas de Metadata
-- [ ] As 5 outras colunas adicionadas
-
----
-
-## ⚠️ PROBLEMA IDENTIFICADO NO CONSOLE:
+## ✅ COLUNAS QUE EXISTEM NA PÁGINA (Lista Real do Usuário)
 
 ```
-ProductInfoCell recebeu: null
+Empresa
+👤 Comprador  
+📦 Produto
+💰 Financeiro
+📋 Pedido
+📍 Tracking
+ID Devolução
+Claim ID
+Item ID
+Variação ID
+Status
+Status $
+Subtipo
+Tipo Recurso
+Contexto
+Qtd Total
+Qtd Devolver
+Shipment ID
+Status Envio
+Destino
+Rastreio
+📅 Previsão Entrega
+⏰ Prazo Limite
+🚚 Status Envio
+💰 Reembolso
+🔍 Revisão
+📦 Qtd
+Endereço
+Cidade
+Estado
+CEP
+Bairro
+País
+Complemento
+Motivo
+Condição Produto
+Destino Produto
+Beneficiado
+Status Review
+Data Estimada
+Prazo
+Atraso?
+Reviews
+Reembolso Após
+Criação
+Atualização
+Fechamento
+⏰ Prazos
+📍 Substatus
+💰 Custos Logística
+📦 Fulfillment
+🎬 Ações Disponíveis
 ```
 
-**ISSO SIGNIFICA:**
-- A coluna "📦 Produto" NÃO está recebendo os dados corretamente
-- Os dados do produto (thumbnail, title, price, sku) existem no backend
-- Mas não estão chegando no componente ProductInfoCell
-- Causa: mapeamento incorreto entre dados backend → frontend
+**Total: ~50 colunas visíveis**
+
+---
+
+## ⚠️ PROBLEMA CRÍTICO IDENTIFICADO
+
+### 🔴 Colunas VAZIAS (sem dados) - Conforme Screenshots
+
+1. **👤 Comprador** - Mostra "👤 Não disponível" ❌
+   - Campo esperado: `comprador_nome_completo`
+   - Realidade: VAZIO
+
+2. **💰 Financeiro** - Mostra "$ Sem dados" ❌
+   - Campos esperados: valores de reembolso
+   - Realidade: VAZIO
+
+3. **Maioria das outras colunas** - Mostram "-" ou "N/A"
+   - Status: VAZIOS
+
+### ✅ Colunas COM DADOS (funcionando)
+
+1. **📦 Produto** - FUNCIONA PERFEITAMENTE! ✅
+   - Mostra: Imagem, título, SKU, Category, Preço, ID
+   - Exemplo: "Cap Chapéu Capitão Quepe Ancora Marinha Marinheiro..."
+   - SKU: FL-802-BRAN-1
+   - Cat: MLB256811
+   - R$ 26,44
+   - ID: MLB5521284194
+
+2. **Empresa** - FUNCIONA ✅
+   - Mostra: "PLATINUMLOJA2020"
+
+3. **Claim ID** - FUNCIONA ✅
+   - Mostra: "5430638540", "5430626171", etc.
+
+---
+
+## 🔍 CAUSA RAIZ SUSPEITA
+
+**Problema:** Dados NÃO estão chegando do backend para o frontend
+
+**Evidências das Screenshots:**
+- ✅ ProductInfoCell recebe dados completos e renderiza corretamente
+- ❌ CompNome (👤 Comprador) mostra "Não disponível" - dados NÃO estão chegando
+- ❌ Financeiro mostra "Sem dados" - dados NÃO estão chegando
+
+**Hipóteses:**
+1. Edge Function pode estar retornando dados com estrutura incorreta
+2. Frontend pode estar tentando ler campos com nomes incorretos
+3. Dados podem estar em campos JSONB aninhados não expandidos
+
+---
+
+## 📊 DEBUG NECESSÁRIO
+
+### AÇÃO 1: Verificar logs do Backend
+Adicionar console.log na Edge Function antes de retornar:
+```typescript
+console.log('[DEBUG] comprador_nome_completo:', mappedClaims[0].comprador_nome_completo);
+console.log('[DEBUG] valor_reembolso_total:', mappedClaims[0].valor_reembolso_total);
+```
+
+### AÇÃO 2: Verificar logs do Frontend  
+Adicionar console.log em DevolucoesMercadoLivre.tsx:
+```typescript
+console.log('[DEBUG] allData[0]:', allData[0]);
+console.log('[DEBUG] comprador_nome_completo:', allData[0]?.comprador_nome_completo);
+```
+
+### AÇÃO 3: Verificar componentes de células
+Adicionar console.log em DevolucaoTableRow.tsx:
+```typescript
+console.log('[DEBUG ROW] comprador:', devolucao.comprador_nome_completo);
+```
+
+---
+
+## 📋 COLUNAS ESPERADAS vs REALIDADE
+
+| # | Coluna Esperada | Existe na Página? | Tem Dados? | Status |
+|---|----------------|------------------|-----------|--------|
+| 1 | Empresa | ✅ Sim | ✅ Sim | OK |
+| 2 | 👤 Comprador | ✅ Sim | ❌ NÃO | CRÍTICO |
+| 3 | 📦 Produto | ✅ Sim | ✅ Sim | OK |
+| 4 | 💰 Financeiro | ✅ Sim | ❌ NÃO | CRÍTICO |
+| 5 | 📋 Pedido | ✅ Sim | ❓ Parcial | VERIFICAR |
+| 6 | 📍 Tracking | ✅ Sim | ❌ NÃO | CRÍTICO |
+| 7 | ID Devolução | ✅ Sim | ❓ Parcial | VERIFICAR |
+| 8 | Claim ID | ✅ Sim | ✅ Sim | OK |
+| ... | ... | ... | ... | ... |
+
+---
+
+## 🚨 PRÓXIMOS PASSOS
+
+1. **Executar debug logs** e verificar console
+2. **Comparar estrutura** de dados backend vs frontend
+3. **Identificar campos faltantes** ou mal nomeados
+4. **Corrigir mapeamento** onde necessário
+5. **Testar novamente** e validar correções
+
+---
+
+## 📝 OBSERVAÇÕES
+
+- ✅ **Produto funciona perfeitamente** - usar como referência
+- ❌ **Comprador e Financeiro vazios** - problema crítico de dados
+- ⚠️ **Maioria das colunas vazias** - dados não chegam do backend ou estão mal nomeados
+- 🎯 **Foco:** Fazer os dados fluírem da API ML → Backend → Frontend → Componentes
