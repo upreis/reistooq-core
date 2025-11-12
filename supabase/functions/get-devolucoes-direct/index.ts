@@ -398,7 +398,11 @@ serve(async (req) => {
           },
           
           // ✅ CRÍTICO: Passar product_info enriquecido para o mapeamento
-          product_info: claim.product_info
+          product_info: claim.product_info,
+          
+          // ✅ FASE 1: Dados de shipment e custos já enriquecidos
+          shipment_history_enriched: claim.shipment_history_enriched,
+          shipping_costs_enriched: claim.shipping_costs_enriched
         };
 
         return mapDevolucaoCompleta(item, integration_account_id, accountName, null);
