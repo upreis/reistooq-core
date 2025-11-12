@@ -27,7 +27,7 @@ import { useAnnouncements } from "@/contexts/AnnouncementContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSidebarUI } from "@/context/SidebarUIContext";
 import { useCurrentProfile } from "@/hooks/useCurrentProfile";
-import { NotificacoesPanel } from "@/features/devolucoes-online/components/NotificacoesPanel";
+// NotificacoesPanel removido temporariamente
 
 export default function Header() {
   const location = useLocation();
@@ -200,8 +200,7 @@ export default function Header() {
             </Button>
           )}
 
-          {/* 🔔 Painel de Notificações de Devoluções */}
-          <NotificacoesPanel />
+          {/* Painel de notificações removido temporariamente */}
 
           {/* User menu */}
           <DropdownMenu>
