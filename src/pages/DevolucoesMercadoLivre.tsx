@@ -27,6 +27,7 @@ import {
   PrevisaoChegadaCell 
 } from '@/components/devolucoes/ShippingAdvancedCells';
 import { LogisticTypeCell } from '@/components/devolucoes/LogisticTypeCell';
+import { SubtipoCell } from '@/components/devolucoes/SubtipoCell';
 import {
   Pagination,
   PaginationContent,
@@ -57,6 +58,7 @@ interface Devolucao {
   id: string;
   claim_id: string;
   status: any;
+  subtipo_claim?: string | null;
   comprador_nome_completo: string;
   comprador_cpf?: string;
   produto_titulo: string;
@@ -377,6 +379,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>CPF/CNPJ</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>🏷️ Subtipo</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
                 <TableHead>🚚 Tipo Logística</TableHead>
@@ -479,6 +482,9 @@ export default function DevolucoesMercadoLivre() {
                     <TableCell>{dev.produto_titulo || '-'}</TableCell>
                     <TableCell>
                       <StatusBadge status={dev.status?.id || 'unknown'} />
+                    </TableCell>
+                    <TableCell>
+                      <SubtipoCell subtipo_claim={dev.subtipo_claim} />
                     </TableCell>
                     <TableCell className="text-xs">
                       {dev.metodo_pagamento || dev.dados_financial_info?.payment_method || '-'}
