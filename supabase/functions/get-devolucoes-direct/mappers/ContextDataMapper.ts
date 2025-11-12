@@ -21,14 +21,30 @@ export const mapContextData = (item: any) => {
                         item.change_details?.estimated_exchange_date?.to ?? null,
     data_limite_troca: item.change_details?.estimated_exchange_date?.to || null,
     novo_pedido_id: item.change_details?.new_orders_ids?.[0] || null,
+    
+    // 🆕 MEDIAÇÃO DETALHADA (nível superior para tabela)
+    dias_restantes_acao: (() => {
+      const dueDate = item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date;
+      if (!dueDate) return null;
+      const due = new Date(dueDate);
+      const now = new Date();
+      const diff = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 0;
+    })(),
+    prazo_revisao_dias: (() => {
+      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      if (!prazo) return null;
+      const prazoDate = new Date(prazo);
+      const hoje = new Date();
+      const diff = Math.ceil((prazoDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 0;
+    })(),
+    valor_diferenca_troca: item.claim_details?.resolution?.exchange_difference || null,
+    usuario_ultima_acao: item.claim_details?.last_updated_by || null,
     data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
-    dias_restantes_acao: null,
-    prazo_revisao_dias: null,
-    valor_diferenca_troca: null,
     
     // Dados adicionais
     tags_automaticas: [],
-    usuario_ultima_acao: null,
     hash_verificacao: null,
     versao_api_utilizada: null,
     origem_timeline: null,

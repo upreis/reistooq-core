@@ -74,17 +74,28 @@ export const mapCommunicationData = (item: any) => {
       return moderatedCount > 0 ? 'com_mensagens_moderadas' : 'limpo';
     })(),
     
-    // Timeline
+    // 🆕 COMUNICAÇÃO DETALHADA (nível superior para tabela)
     timeline_events: item.timeline_events || [],
+    marcos_temporais: item.marcos_temporais || null,
+    data_criacao_claim: item.claim_details?.date_created || null,
+    data_inicio_return: item.return_details_v2?.date_created || null,
+    data_fechamento_claim: item.claim_details?.closed_at || item.claim_details?.date_closed || null,
+    historico_status: item.status_history || [],
+    total_evidencias: item.attachments?.length || 0,
+    anexos_ml: item.attachments || [],
+    
+    // Timeline consolidado
     timeline_consolidado: null,
-    marcos_temporais: null,
-    data_criacao_claim: item.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
-    data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-    data_fechamento_claim: item.claim_details?.resolution?.date_created || null, // ✅ CORRIGIDO: date_created (API ML)
-    historico_status: [],
     
     // Anexos
-    anexos_ml: [],
-    total_evidencias: null
+    total_anexos_comprador: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'buyer' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    total_anexos_vendedor: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'seller' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    total_anexos_ml: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'mediator' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
   };
 };

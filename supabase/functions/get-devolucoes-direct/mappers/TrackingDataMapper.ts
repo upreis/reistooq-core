@@ -162,15 +162,11 @@ export const mapTrackingData = (item: any) => {
     observacoes_review: item.claim_details?.resolution?.reason || null,
     revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     
-    // ✅ FASE 2: Novos campos que JÁ vem da API (ml-returns edge function)
-    estimated_delivery_date: item.estimated_delivery_date || null,
-    estimated_delivery_limit: item.estimated_delivery_limit || null,
-    has_delay: item.has_delay || false,
-    shipment_status: item.shipment_status || returnShipment?.status || null,
-    refund_at: item.refund_at || null,
-    review_method: item.review_method || null,
-    review_stage: item.review_stage || null,
-    return_quantity: firstOrderItem?.return_quantity ? parseInt(firstOrderItem.return_quantity) : null,
-    total_quantity: firstOrderItem?.total_quantity ? parseInt(firstOrderItem.total_quantity) : null,
+    // 🆕 DETALHES RASTREAMENTO (nível superior para tabela)
+    estimated_delivery_limit: item.return_details_v2?.estimated_delivery?.to || null,
+    shipment_status: returnShipment?.status || item.shipment_status || null,
+    refund_at: item.return_details_v2?.refund_at || item.refund_at || null,
+    review_method: item.review_details?.method || item.review_method || null,
+    review_stage: item.review_details?.stage || item.review_stage || null,
   };
 };

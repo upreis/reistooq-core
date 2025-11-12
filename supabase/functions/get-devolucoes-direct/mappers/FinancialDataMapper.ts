@@ -63,10 +63,21 @@ export const mapFinancialData = (item: any) => {
     parcelas: payment?.installments || null,
     valor_parcela: payment?.installment_amount || null,
     transaction_id: payment?.id?.toString() || null,
-    percentual_reembolsado: null,
+    
+    // 🆕 CAMPOS DETALHADOS FINANCEIROS (nível superior para exibição na tabela)
+    percentual_reembolsado: (() => {
+      const total = item.order_data?.total_amount || item.amount;
+      const reembolsado = item.claim_details?.resolution?.refund_amount || item.return_details_v2?.refund_amount;
+      if (!total || !reembolsado) return null;
+      return ((reembolsado / total) * 100);
+    })(),
+    valor_diferenca_troca: item.claim_details?.resolution?.exchange_difference || null,
+    custo_devolucao: item.shipping_costs_enriched?.return_costs?.net_cost || 
+                     item.return_details_v2?.shipping_cost || null,
+    
     tags_pedido: item.order_data?.tags || [],
     
-    // Descrição detalhada
+    // Descrição detalhada (mantido para compatibilidade)
     descricao_custos: {
       produto: {
         valor_original: orderItem?.unit_price || null,
