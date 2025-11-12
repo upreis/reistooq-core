@@ -99,9 +99,13 @@ export const mapFinancialData = (item: any) => {
                            claim.order_data?.currency_id || 'BRL',
     
     // ✅ CUSTOS LOGÍSTICOS COMPLETOS (para CustosLogisticaCell)
-    custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || 
-                           claim.shipping_costs_enriched?.total_logistics_cost || null,
-    custo_envio_original: claim.shipping_costs_enriched?.original_costs?.total_receiver_cost || null,
+    // 🔧 CORREÇÃO: Usar original_total diretamente (breakdown sempre 0 na API ML)
+    custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || null,
+    
+    // 🔧 CORREÇÃO: Extrair custo de envio original do orderData (não de shipping_costs_enriched)
+    custo_envio_original: claim.order_data?.shipping?.cost || 
+                          claim.order_data?.shipping?.base_cost || null,
+    
     responsavel_custo_frete: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null,
     
     // ❌ FASE 4 REMOVIDO: Breakdown detalhado (shipping_fee, handling_fee, insurance, taxes)
@@ -111,11 +115,12 @@ export const mapFinancialData = (item: any) => {
     // 🐛 DEBUG: Log campos extraídos
     ...((() => {
       const custos = {
-        custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || claim.shipping_costs_enriched?.total_logistics_cost || null,
-        shipping_fee: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.shipping_fee || null,
+        custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || null,
+        custo_envio_original: claim.order_data?.shipping?.cost || claim.order_data?.shipping?.base_cost || null,
+        tipo_logistica_ordem: claim.order_data?.shipping?.logistic_type || null,
         responsavel: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null
       };
-      console.log('💰 FinancialDataMapper - Campos extraídos:', custos);
+      console.log('💰 FinancialDataMapper - Campos extraídos:', JSON.stringify(custos));
       return {};
     })()),
     

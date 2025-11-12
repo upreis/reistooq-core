@@ -179,10 +179,12 @@ serve(async (req) => {
     // Função para enriquecer um único claim
     const enrichClaim = async (claim: any) => {
       try {
-        // 1. Buscar ordem (order_data)
+        // 1. Buscar ordem (order_data) com shipping.logistic_type
         let orderData = null;
         if (claim.resource_id) {
           try {
+            logger.debug(`📦 Buscando order ${claim.resource_id} (claim ${claim.id})`);
+            
             const orderRes = await fetchWithRetry(
               `https://api.mercadolibre.com/orders/${claim.resource_id}`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -190,9 +192,17 @@ serve(async (req) => {
             );
             if (orderRes.ok) {
               orderData = await orderRes.json();
+              
+              // 🔧 DEBUG: Validar dados de shipping da ordem
+              logger.info(`🚚 ORDER SHIPPING (claim ${claim.id}):`, JSON.stringify({
+                has_shipping: !!orderData?.shipping,
+                logistic_type: orderData?.shipping?.logistic_type || null,
+                shipping_cost: orderData?.shipping?.cost || null,
+                base_cost: orderData?.shipping?.base_cost || null
+              }));
             }
           } catch (err) {
-            // Ignorar 404 (order deletada)
+            logger.warn(`⚠️ Erro ao buscar order ${claim.resource_id}:`, err);
           }
         }
 
