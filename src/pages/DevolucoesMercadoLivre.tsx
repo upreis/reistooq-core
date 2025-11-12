@@ -40,6 +40,17 @@ interface Devolucao {
   empresa: string;
   metodo_pagamento?: string;
   codigo_rastreamento?: string;
+  
+  // ✅ PRIORIDADE ALTA - Campos já mapeados no backend
+  estimated_delivery_date?: string | null;
+  has_delay?: boolean | null;
+  return_quantity?: number | null;
+  total_quantity?: number | null;
+  qualidade_comunicacao?: string | null;
+  numero_interacoes?: number | null;
+  mediador_ml?: string | null;
+  transaction_id?: string | null;
+  
   dados_buyer_info?: {
     doc_number?: string;
   };
@@ -298,6 +309,13 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Status</TableHead>
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
+                <TableHead>📅 Previsão Entrega</TableHead>
+                <TableHead>⏰ Atraso?</TableHead>
+                <TableHead>📦 Qtd</TableHead>
+                <TableHead>💬 Qualidade</TableHead>
+                <TableHead>🔢 Interações</TableHead>
+                <TableHead>⚖️ Mediador</TableHead>
+                <TableHead>💳 Transaction ID</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
               </TableRow>
@@ -305,13 +323,13 @@ export default function DevolucoesMercadoLivre() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8">
+                  <TableCell colSpan={17} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : devolucoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={17} className="text-center py-8 text-muted-foreground">
                     Clique em "Buscar Devoluções" para carregar os dados
                   </TableCell>
                 </TableRow>
@@ -338,6 +356,69 @@ export default function DevolucoesMercadoLivre() {
                     <TableCell className="text-xs font-mono">
                       {dev.codigo_rastreamento || dev.dados_tracking_info?.tracking_number || '-'}
                     </TableCell>
+                    
+                    {/* 📅 Previsão Entrega */}
+                    <TableCell className="text-sm">
+                      {dev.estimated_delivery_date 
+                        ? new Date(dev.estimated_delivery_date).toLocaleDateString('pt-BR')
+                        : '-'
+                      }
+                    </TableCell>
+                    
+                    {/* ⏰ Atraso? */}
+                    <TableCell className="text-sm">
+                      {dev.has_delay === true ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive">
+                          Atrasado
+                        </span>
+                      ) : dev.has_delay === false ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                          No Prazo
+                        </span>
+                      ) : '-'}
+                    </TableCell>
+                    
+                    {/* 📦 Quantidade */}
+                    <TableCell className="text-sm">
+                      {dev.return_quantity && dev.total_quantity 
+                        ? `${dev.return_quantity}/${dev.total_quantity}`
+                        : '-'
+                      }
+                    </TableCell>
+                    
+                    {/* 💬 Qualidade Comunicação */}
+                    <TableCell className="text-sm">
+                      {dev.qualidade_comunicacao ? (
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          dev.qualidade_comunicacao === 'excelente' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' :
+                          dev.qualidade_comunicacao === 'boa' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400' :
+                          dev.qualidade_comunicacao === 'regular' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400' :
+                          'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                        }`}>
+                          {dev.qualidade_comunicacao}
+                        </span>
+                      ) : '-'}
+                    </TableCell>
+                    
+                    {/* 🔢 N° Interações */}
+                    <TableCell className="text-sm">
+                      {dev.numero_interacoes || '0'}
+                    </TableCell>
+                    
+                    {/* ⚖️ Mediador ML */}
+                    <TableCell className="text-sm">
+                      {dev.mediador_ml ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                          {dev.mediador_ml}
+                        </span>
+                      ) : '-'}
+                    </TableCell>
+                    
+                    {/* 💳 Transaction ID */}
+                    <TableCell className="text-xs font-mono">
+                      {dev.transaction_id || '-'}
+                    </TableCell>
+                    
                     <TableCell>
                       {dev.valor_reembolso_total 
                         ? `R$ ${dev.valor_reembolso_total.toFixed(2)}`
