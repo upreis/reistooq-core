@@ -140,6 +140,50 @@ export async function fetchShippingCosts(
 }
 
 /**
+ * Buscar custo real de devolução via endpoint /charges/return-cost
+ */
+export async function fetchReturnCost(
+  claimId: string,
+  accessToken: string
+): Promise<{
+  amount: number;
+  currency_id: string;
+  amount_usd?: number;
+} | null> {
+  try {
+    const url = `https://api.mercadolibre.com/post-purchase/v1/claims/${claimId}/charges/return-cost?calculate_amount_usd=true`;
+    
+    logger.debug(`[ShippingCostsService] 💰 Buscando custo devolução claim ${claimId}`);
+    
+    const response = await fetchWithRetry(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      logger.warn(`[ShippingCostsService] ⚠️ Erro ${response.status} ao buscar custo devolução claim ${claimId}`);
+      return null;
+    }
+
+    const data = await response.json();
+    
+    logger.info(`[ShippingCostsService] ✅ Custo devolução: ${data.amount} ${data.currency_id}${data.amount_usd ? ` (USD ${data.amount_usd})` : ''}`);
+    
+    return {
+      amount: data.amount || 0,
+      currency_id: data.currency_id || 'BRL',
+      amount_usd: data.amount_usd || undefined
+    };
+  } catch (error) {
+    logger.error(`[ShippingCostsService] ❌ Erro ao buscar custo devolução claim ${claimId}:`, error);
+    return null;
+  }
+}
+
+/**
  * Buscar custos de múltiplos shipments
  */
 export async function fetchMultipleShippingCosts(

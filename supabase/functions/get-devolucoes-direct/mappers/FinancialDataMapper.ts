@@ -86,9 +86,17 @@ export const mapFinancialData = (item: any) => {
     // Taxa ML reembolsada
     taxa_ml_reembolsada: payment?.marketplace_fee || null,
     
-    // Custo de devolução
-    custo_devolucao: claim.shipping_costs_enriched?.net_cost || 
+    // 💰 Custo de devolução - PRIORIDADE: endpoint /charges/return-cost
+    custo_devolucao: claim.return_cost_enriched?.amount || 
+                     claim.shipping_costs_enriched?.net_cost || 
                      claim.return_details?.shipping_cost || null,
+    
+    // 💵 Custo de devolução em USD
+    custo_devolucao_usd: claim.return_cost_enriched?.amount_usd || null,
+    
+    // 💱 Moeda do custo de devolução
+    moeda_custo_devolucao: claim.return_cost_enriched?.currency_id || 
+                           claim.order_data?.currency_id || 'BRL',
     
     // ✅ CUSTOS LOGÍSTICOS COMPLETOS (para CustosLogisticaCell)
     custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || 

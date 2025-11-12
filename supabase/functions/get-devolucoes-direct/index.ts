@@ -13,7 +13,7 @@ import { logger } from '../_shared/logger.ts';
 
 // ✅ Importar serviços de enriquecimento FASE 2
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
-import { fetchShippingCosts, fetchMultipleShippingCosts } from './services/ShippingCostsService.ts';
+import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -406,6 +406,21 @@ serve(async (req) => {
           shipmentIds.push(returnData.shipments[0].shipment_id);
         }
         
+        // 💰 Buscar custo real de devolução via /charges/return-cost
+        let returnCostData = null;
+        try {
+          logger.debug(`💰 Buscando custo de devolução para claim ${claim.id}`);
+          returnCostData = await fetchReturnCost(claim.id, accessToken);
+          
+          if (returnCostData) {
+            logger.debug(`💰 CUSTO DEVOLUÇÃO claim ${claim.id}: ${returnCostData.amount} ${returnCostData.currency_id}${returnCostData.amount_usd ? ` (USD ${returnCostData.amount_usd})` : ''}`);
+          } else {
+            logger.debug(`⚠️ Sem custo de devolução para claim ${claim.id}`);
+          }
+        } catch (err) {
+          logger.error(`❌ Erro ao buscar custo de devolução (claim ${claim.id}):`, err);
+        }
+        
         // Buscar históricos e custos se houver shipments
         if (shipmentIds.length > 0) {
           try {
@@ -497,6 +512,7 @@ serve(async (req) => {
           seller_reputation_data: sellerReputationData, // ✅ FASE 2: Reputação do vendedor (power_seller, mercado_lider)
           shipment_history_enriched: shipmentHistoryData,
           shipping_costs_enriched: shippingCostsData,
+          return_cost_enriched: returnCostData, // 💰 Custo real de devolução via /charges/return-cost
           change_details: changeDetailsData, // 🆕 Detalhes de troca
           attachments: attachmentsData // 🆕 Anexos/evidências
         };
