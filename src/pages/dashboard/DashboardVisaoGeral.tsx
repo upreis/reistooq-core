@@ -2,7 +2,13 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
-import { useDevolucaoCalendarData } from '@/features/devolucoes/hooks/useDevolucaoCalendarData';
+// useDevolucaoCalendarData removido temporariamente
+const useDevolucaoCalendarData = () => ({ 
+  data: [], 
+  loading: false, 
+  error: null, 
+  refresh: () => {} 
+});
 
 export default function DashboardVisaoGeral() {
   // Buscar dados reais de devoluções para o calendário

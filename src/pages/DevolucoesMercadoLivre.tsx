@@ -1,278 +1,260 @@
 /**
- * 📦 DEVOLUÇÕES MERCADO LIVRE - RECONSTRUÍDO DO ZERO
- * ✅ Removido DevolucaoProvider problemático - usando apenas state local
+ * 📦 DEVOLUÇÕES ML - NOVA VERSÃO LIMPA
+ * Reconstruída do zero seguindo padrão de /reclamacoes
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
-import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
-import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
-import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
-import { DevolucaoAdvancedFiltersBar } from '@/features/devolucoes-online/components/DevolucaoAdvancedFiltersBar';
-import { DevolucaoControlsBar } from '@/features/devolucoes-online/components/DevolucaoControlsBar';
-import { UrgencyFilters } from '@/features/devolucoes-online/components/filters/UrgencyFilters';
-import { CriticalDeadlinesNotification } from '@/features/devolucoes-online/components/notifications/CriticalDeadlinesNotification';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import type { StatusAnalise } from '@/features/devolucoes-online/types/devolucao-analise.types';
-import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '@/features/devolucoes-online/types/devolucao-analise.types';
-import { useDevolucoesDirect } from '@/features/devolucoes-online/hooks/useDevolucoesDirect';
+import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Loader2 } from 'lucide-react';
 
-function DevolucoesMercadoLivreContent() {
-  const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+interface MLAccount {
+  id: string;
+  name: string;
+}
+
+interface Devolucao {
+  id: string;
+  claim_id: string;
+  status: any;
+  comprador_nome_completo: string;
+  produto_titulo: string;
+  valor_reembolso_total: number;
+  data_criacao: string;
+  empresa: string;
+}
+
+export default function DevolucoesMercadoLivre() {
+  const [accounts, setAccounts] = useState<MLAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [periodo, setPeriodo] = useState('60');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [urgencyFilter, setUrgencyFilter] = useState<((dev: any) => boolean) | null>(null);
-  const [currentUrgencyFilter, setCurrentUrgencyFilter] = useState<string>('all');
-  const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(false);
-
-  // ✅ Hook simplificado - Busca direto da API
-  const {
-    devolucoes: apiDevolucoes,
-    isLoading,
-    error,
-    fetchDevolucoes,
-    cancelFetch
-  } = useDevolucoesDirect(
-    { periodo, date_from: '', date_to: '' },
-    selectedAccountIds,
-    shouldFetch
-  );
+  const [devolucoes, setDevolucoes] = useState<Devolucao[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Carregar contas ML
   useEffect(() => {
     const fetchAccounts = async () => {
-      console.log('[CONTAS] Iniciando busca de contas ML...');
+      console.log('🔍 Buscando contas ML...');
       const { data, error } = await supabase
         .from('integration_accounts')
         .select('id, name')
         .eq('provider', 'mercadolivre')
         .eq('is_active', true)
         .order('updated_at', { ascending: false });
-      
+
       if (error) {
-        console.error('[CONTAS] Erro ao buscar contas:', error);
+        console.error('❌ Erro ao buscar contas:', error);
         toast.error('Erro ao carregar contas ML');
         return;
       }
 
-      console.log('[CONTAS] Contas encontradas:', data?.length || 0);
+      console.log('✅ Contas encontradas:', data?.length || 0);
       setAccounts(data || []);
       
       if (data && data.length > 0) {
-        const allIds = data.map(acc => acc.id);
-        console.log('[CONTAS] Auto-selecionando contas:', allIds);
-        setSelectedAccountIds(allIds);
-      } else {
-        console.warn('[CONTAS] Nenhuma conta ML ativa encontrada');
-        toast.warning('Nenhuma conta ML ativa encontrada. Conecte uma conta para continuar.');
+        setSelectedAccountId(data[0].id);
+        console.log('✅ Auto-selecionada conta:', data[0].name);
       }
     };
-    
+
     fetchAccounts();
   }, []);
 
-  // Estrutura de dados
-  const devolucoesData = useMemo(() => ({
-    data: apiDevolucoes || [],
-    pagination: {
-      total: apiDevolucoes?.length || 0,
-      page: 1,
-      limit: 50
-    }
-  }), [apiDevolucoes]);
-
-  // Estatísticas
-  const stats = useMemo(() => {
-    const devs = apiDevolucoes || [];
-    return {
-      total: devs.length,
-      pending: devs.filter((d: any) => d.status?.id === 'pending').length,
-      approved: devs.filter((d: any) => d.status?.id === 'approved').length,
-      refunded: devs.filter((d: any) => d.status_money?.id === 'refunded').length,
-    };
-  }, [apiDevolucoes]);
-
-  // Filtro de urgência
-  const devolucoesComUrgencyFilter = useMemo(() => {
-    const devs = apiDevolucoes || [];
-    if (urgencyFilter) {
-      return devs.filter(urgencyFilter);
-    }
-    return devs;
-  }, [apiDevolucoes, urgencyFilter]);
-
-  // ✅ Adicionar empresa (dados já vêm FLAT da Edge Function)
-  const devolucoesComEmpresa = useMemo(() => {
-    return devolucoesComUrgencyFilter.map((dev: any) => {
-      const account = accounts.find(acc => acc.id === dev.integration_account_id);
-      
-      return { 
-        ...dev, 
-        empresa: account?.name || 'N/A' 
-      };
-    });
-  }, [devolucoesComUrgencyFilter, accounts]);
-
-  // Separar por tabs
-  const devolucoesFiltradas = useMemo(() => {
-    const ativas = devolucoesComEmpresa.filter((dev: any) =>
-      ACTIVE_STATUSES.includes(dev.status_analise || 'pendente')
-    );
-    const historico = devolucoesComEmpresa.filter((dev: any) =>
-      HISTORIC_STATUSES.includes(dev.status_analise || 'pendente')
-    );
-    return { ativas, historico };
-  }, [devolucoesComEmpresa]);
-
-  // ✅ Handler - Buscar da API
+  // Buscar devoluções da API ML
   const handleBuscar = async () => {
-    console.log('[BUSCAR] Iniciando busca...');
-    console.log('[BUSCAR] Contas selecionadas:', selectedAccountIds);
-    console.log('[BUSCAR] Período:', periodo);
-    
-    if (selectedAccountIds.length === 0) {
-      console.error('[BUSCAR] Nenhuma conta selecionada!');
-      toast.error('Selecione pelo menos uma conta ML');
+    if (!selectedAccountId) {
+      toast.error('Selecione uma conta ML');
       return;
     }
 
-    if (accounts.length === 0) {
-      console.error('[BUSCAR] Nenhuma conta ML disponível!');
-      toast.error('Nenhuma conta ML disponível. Conecte uma conta primeiro.');
-      return;
-    }
+    console.log('📡 Iniciando busca de devoluções...');
+    console.log('📍 Conta:', selectedAccountId);
+    console.log('📍 Período:', periodo);
 
-    const days = parseInt(periodo);
-    console.log('[BUSCAR] Buscando últimos', days, 'dias');
-    toast.loading(`📡 Buscando devoluções dos últimos ${days} dias...`, { id: 'fetch-search' });
-    
-    setShouldFetch(true);
-    await fetchDevolucoes();
-  };
+    setIsLoading(true);
+    const toastId = toast.loading(`📡 Buscando devoluções dos últimos ${periodo} dias...`);
 
-  const handleExport = () => {
-    const jsonString = JSON.stringify(apiDevolucoes, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `devolucoes-ml-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success(`${apiDevolucoes?.length || 0} devoluções exportadas`);
-  };
+    try {
+      // Calcular datas
+      const dateTo = new Date();
+      const dateFrom = new Date();
+      dateFrom.setDate(dateTo.getDate() - parseInt(periodo));
 
-  const handleClear = () => {
-    setSearchTerm('');
-    setPeriodo('60');
-    setSelectedAccountIds(accounts.map(acc => acc.id));
-    setUrgencyFilter(null);
-    setCurrentUrgencyFilter('all');
-    toast.success('Filtros limpos');
-  };
+      const dateFromISO = dateFrom.toISOString();
+      const dateToISO = dateTo.toISOString();
 
-  const handleStatusChange = async (devolucaoId: string, newStatus: StatusAnalise) => {
-    toast.success('Status atualizado com sucesso!');
-  };
+      console.log('📅 Date from:', dateFromISO);
+      console.log('📅 Date to:', dateToISO);
 
-  return (
-    <div className="container mx-auto py-6 space-y-6">
-      {/* 🚨 NOTIFICAÇÕES CRÍTICAS */}
-      <CriticalDeadlinesNotification devolucoes={devolucoesComEmpresa} />
+      // Chamar Edge Function
+      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+        body: {
+          integration_account_id: selectedAccountId,
+          date_from: dateFromISO,
+          date_to: dateToISO
+        }
+      });
 
-      {/* 📊 HEADER + CONTROLES */}
-      <DevolucaoHeaderSection 
-        isRefreshing={isLoading}
-        onRefresh={handleBuscar}
-      />
+      if (error) {
+        console.error('❌ Erro na Edge Function:', error);
+        toast.error('Erro ao buscar devoluções', { id: toastId });
+        return;
+      }
+
+      console.log('✅ Dados recebidos:', data?.length || 0, 'devoluções');
       
-      <DevolucaoControlsBar 
-        autoRefreshEnabled={autoRefreshEnabled}
-        autoRefreshInterval={30}
-        onAutoRefreshToggle={setAutoRefreshEnabled}
-        onAutoRefreshIntervalChange={() => {}}
-        onRefresh={handleBuscar}
-        onClear={handleClear}
-        onExport={handleExport}
-        totalRecords={stats.total}
-      />
+      // Adicionar nome da empresa
+      const account = accounts.find(acc => acc.id === selectedAccountId);
+      const devolucoesComEmpresa = (data || []).map((dev: any) => ({
+        ...dev,
+        empresa: account?.name || 'N/A'
+      }));
 
-      {/* ⏰ FILTROS URGÊNCIA */}
-      <UrgencyFilters 
-        devolucoes={devolucoesComEmpresa}
-        currentFilter={currentUrgencyFilter}
-        onFilterChange={(filterFn) => setUrgencyFilter(() => filterFn)}
-        onCurrentFilterChange={setCurrentUrgencyFilter}
-      />
+      setDevolucoes(devolucoesComEmpresa);
+      toast.success(`✅ ${devolucoesComEmpresa.length} devoluções encontradas`, { id: toastId });
 
-      {/* 🔍 FILTROS AVANÇADOS */}
-      <DevolucaoAdvancedFiltersBar 
-        accounts={accounts}
-        selectedAccountIds={selectedAccountIds}
-        onAccountsChange={setSelectedAccountIds}
-        periodo={periodo}
-        onPeriodoChange={setPeriodo}
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        onBuscar={handleBuscar}
-      />
+    } catch (err) {
+      console.error('❌ Erro ao buscar:', err);
+      toast.error('Erro ao buscar devoluções', { id: toastId });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      {/* 📈 STATS */}
-      <DevolucaoStatsCards stats={stats} />
-
-      {/* 📋 DADOS */}
-      <div className="space-y-6">
-        <Tabs defaultValue="ativas" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="ativas">
-              Ativas ({devolucoesFiltradas.ativas.length})
-            </TabsTrigger>
-            <TabsTrigger value="historico">
-              Histórico ({devolucoesFiltradas.historico.length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="ativas">
-            <Card>
-              <DevolucaoTable 
-                devolucoes={devolucoesFiltradas.ativas}
-                isLoading={isLoading}
-                error={null}
-                onStatusChange={handleStatusChange}
-                onRefresh={handleBuscar}
-              />
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="historico">
-            <Card>
-              <DevolucaoTable 
-                devolucoes={devolucoesFiltradas.historico}
-                isLoading={isLoading}
-                error={null}
-                onStatusChange={handleStatusChange}
-                onRefresh={handleBuscar}
-              />
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  );
-}
-
-export default function DevolucoesMercadoLivre() {
   return (
     <div className="min-h-screen bg-background">
       <MLOrdersNav />
-      <DevolucoesMercadoLivreContent />
+      
+      <div className="container mx-auto py-6 space-y-6">
+        {/* HEADER */}
+        <div>
+          <h1 className="text-3xl font-bold">Devoluções Mercado Livre</h1>
+          <p className="text-muted-foreground">Gerencie suas devoluções do Mercado Livre</p>
+        </div>
+
+        {/* FILTROS */}
+        <Card className="p-6">
+          <div className="flex gap-4 items-end">
+            {/* Conta ML */}
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Conta ML</label>
+              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma conta" />
+                </SelectTrigger>
+                <SelectContent>
+                  {accounts.map(acc => (
+                    <SelectItem key={acc.id} value={acc.id}>
+                      {acc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Período */}
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-2 block">Período</label>
+              <Select value={periodo} onValueChange={setPeriodo}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">Últimos 7 dias</SelectItem>
+                  <SelectItem value="15">Últimos 15 dias</SelectItem>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="60">Últimos 60 dias</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Botão Buscar */}
+            <Button 
+              onClick={handleBuscar} 
+              disabled={isLoading || !selectedAccountId}
+              className="px-8"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : (
+                'Buscar Devoluções'
+              )}
+            </Button>
+          </div>
+        </Card>
+
+        {/* TABELA */}
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Empresa</TableHead>
+                <TableHead>Claim ID</TableHead>
+                <TableHead>Comprador</TableHead>
+                <TableHead>Produto</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Valor</TableHead>
+                <TableHead>Data</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                  </TableCell>
+                </TableRow>
+              ) : devolucoes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Clique em "Buscar Devoluções" para carregar os dados
+                  </TableCell>
+                </TableRow>
+              ) : (
+                devolucoes.map((dev) => (
+                  <TableRow key={dev.id}>
+                    <TableCell className="font-medium">{dev.empresa}</TableCell>
+                    <TableCell>{dev.claim_id}</TableCell>
+                    <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>
+                    <TableCell>{dev.produto_titulo || '-'}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                        {dev.status?.id || '-'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {dev.valor_reembolso_total 
+                        ? `R$ ${dev.valor_reembolso_total.toFixed(2)}`
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      {dev.data_criacao 
+                        ? new Date(dev.data_criacao).toLocaleDateString('pt-BR')
+                        : '-'
+                      }
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+
+          {devolucoes.length > 0 && (
+            <div className="p-4 border-t text-sm text-muted-foreground">
+              Total: {devolucoes.length} devoluções
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

@@ -4,10 +4,10 @@ import { ptBR } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  translateStatus, 
-  translateStatusMoney 
-} from "@/features/devolucoes-online/utils/translations";
+
+// Funções de tradução temporárias (feature devolucoes removida)
+const translateStatus = (status: string) => status;
+const translateStatusMoney = (status: string) => status;
 
 interface ContributionDay {
   date: string; // ISO date string (e.g., "2025-09-13")

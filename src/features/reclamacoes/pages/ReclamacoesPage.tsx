@@ -23,7 +23,12 @@ import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, ChevronDown, X, Search } from 'lucide-react';
-import { validateMLAccounts } from '@/features/devolucoes/utils/AccountValidator';
+// validateMLAccounts removido temporariamente
+const validateMLAccounts = (mlAccounts: any[]) => ({ 
+  valid: mlAccounts.length > 0, 
+  accountIds: mlAccounts.map(acc => acc.id), 
+  error: null 
+});
 import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -111,7 +116,7 @@ export function ReclamacoesPage() {
   // ✅ CORREÇÃO ANTI-LOOP: Auto-selecionar contas APENAS UMA VEZ
   React.useEffect(() => {
     if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
-      const { accountIds } = validateMLAccounts(mlAccounts, selectedAccountIds);
+      const { accountIds } = validateMLAccounts(mlAccounts);
       if (accountIds.length > 0) {
         setSelectedAccountIds(accountIds);
         logger.debug('Contas auto-selecionadas', { 
