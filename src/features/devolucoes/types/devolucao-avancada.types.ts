@@ -59,13 +59,16 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   data_vencimento_acao?: string | null;
   dias_restantes_acao?: number | null;
 
-  // 📦 RASTREAMENTO E LOGÍSTICA (5 colunas)
+  // 📦 RASTREAMENTO E LOGÍSTICA (12 colunas - EXPANDIDO)
   return_id?: string | null;
   codigo_rastreamento?: string | null;
   transportadora?: string | null;
   status_rastreamento_pedido?: string | null;
   status_rastreamento?: string | null; // ✅ NOVO: status do tracking (pending, shipped, delivered, etc)
   url_rastreamento?: string | null;
+  estimated_delivery_date?: string | null; // 🆕 Data estimada de entrega ao vendedor
+  has_delay?: boolean | null; // 🆕 Indica se há atraso no envio
+  shipment_id?: string | null;
 
   // 💰 CUSTOS E FINANCEIRO (4 colunas)
   custo_envio_devolucao?: number | null;
@@ -112,7 +115,8 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   proxima_acao_requerida?: string | null;
   produto_troca_id?: string | null;
   status_produto_novo?: string | null;
-  mediador_ml?: string | null;
+  mediador?: string | null; // Mediador genérico
+  mediador_ml?: string | null; // 🆕 Nome/ID do mediador do Mercado Livre
   usuario_ultima_acao?: string | null;
   marketplace_origem?: string | null;
   anexos_ml?: any[] | null;
@@ -130,6 +134,12 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   reason_type?: string | null;
   reason_settings?: any | null;
   reason_position?: number | null;
+  
+  // 📊 QUANTIDADES E VALORES UNITÁRIOS (8 colunas)
+  quantidade?: number | null;
+  quantidade_devolvida?: number | null;
+  return_quantity?: number | null; // 🆕 Quantidade sendo devolvida
+  total_quantity?: number | null; // 🆕 Quantidade total do pedido original
   
   // ⏱️ ANÁLISE TEMPORAL E PERFORMANCE (Novas colunas)
   tempo_primeira_resposta_vendedor?: number | null;
@@ -185,7 +195,6 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   transportadora_devolucao?: string | null;
   localizacao_atual?: string | null;
   status_transporte_atual?: string | null;
-  shipment_id?: string | null;
   data_ultima_movimentacao?: string | null;
   previsao_entrega_vendedor?: string | null;
   tempo_transito_dias?: number | null;
@@ -209,7 +218,8 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   // FEEDBACK E COMUNICAÇÃO
   feedback_comprador_final?: string | null;
   feedback_vendedor?: string | null;
-  qualidade_comunicacao?: string | null;
+  numero_interacoes?: number | null; // Total de mensagens trocadas
+  qualidade_comunicacao?: string | null; // Avaliação da comunicação (clean/moderate/poor)
   
   // TIMELINE E EVENTOS
   timeline_events?: any[] | null;
@@ -244,7 +254,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   tipo_pagamento?: string | null;
   parcelas?: number | null;
   valor_parcela?: number | null;
-  transaction_id?: string | null;
+  transaction_id?: string | null; // ID da transação financeira
   percentual_reembolsado?: number | null;
   tags_pedido?: string[] | null;
   

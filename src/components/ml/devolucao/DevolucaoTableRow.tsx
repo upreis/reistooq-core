@@ -10,8 +10,11 @@ import { MandatoryActionCell } from './cells/MandatoryActionCell';
 import { FinancialCells } from './cells/FinancialCells';
 import { ActionCell } from './cells/ActionCell';
 import { CustosLogisticaCell } from '@/features/devolucoes-online/components/cells/CustosLogisticaCell';
+import { TrackingPriorityCells } from './cells/TrackingPriorityCells';
+import { CommunicationPriorityCells } from './cells/CommunicationPriorityCells';
+import { MediationTransactionCells } from './cells/MediationTransactionCells';
 import { 
-  traduzirTipoClaim, 
+  traduzirTipoClaim,
   traduzirStage, 
   traduzirResultadoFinal, 
   traduzirResponsavelCusto,
@@ -246,6 +249,15 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       <td className="px-3 py-3 text-center">
         <CustosLogisticaCell shippingCosts={devolucao.shipping_costs || null} />
       </td>
+      
+      {/* 🆕 PRIORIDADE ALTA - Rastreamento */}
+      <TrackingPriorityCells devolucao={devolucao} />
+      
+      {/* 🆕 PRIORIDADE ALTA - Comunicação */}
+      <CommunicationPriorityCells devolucao={devolucao} />
+      
+      {/* 🆕 PRIORIDADE ALTA - Mediação e Transação */}
+      <MediationTransactionCells devolucao={devolucao} />
       
       {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
       

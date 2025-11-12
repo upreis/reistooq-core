@@ -102,6 +102,19 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* 🆕 Custos Logística - breakdown detalhado via hover */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Custos Logística</th>
             
+            {/* 🆕 PRIORIDADE ALTA - Rastreamento */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Data Est. Entrega</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tem Atraso?</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Qtd Devolvida/Total</th>
+            
+            {/* 🆕 PRIORIDADE ALTA - Comunicação */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Qualidade Comunicação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>N° Interações</th>
+            
+            {/* 🆕 PRIORIDADE ALTA - Mediação e Transação */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Mediador ML</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Transaction ID</th>
+            
             {/* ❌ REMOVIDO: Método Reembolso - vazio */}
             {/* ❌ REMOVIDO: Moeda - vazio */}
             {/* ❌ REMOVIDO: Data Processamento - duplicada, movida para GRUPO 7 */}
