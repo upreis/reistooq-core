@@ -3,6 +3,8 @@
  * Define interface completa para as 42 novas colunas + compatibilidade
  */
 
+import type { ShippingCosts } from '@/features/devolucoes-online/types/devolucao.types';
+
 // ===== TIPOS BÁSICOS (COMPATIBILIDADE TOTAL) =====
 export interface DevolucaoBasica {
   id: string;
@@ -70,6 +72,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   valor_compensacao?: number | null;
   moeda_custo?: string | null;
   responsavel_custo?: string | null;
+  shipping_costs?: ShippingCosts | null; // 🆕 Custos logísticos detalhados
   // data_reembolso já definido abaixo (linha 173)
 
   // 🏷️ CLASSIFICAÇÃO E RESOLUÇÃO (9 colunas - EXPANDIDO)

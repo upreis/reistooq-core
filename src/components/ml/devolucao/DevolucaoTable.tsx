@@ -98,6 +98,10 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             {/* Outros valores */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Retido</th>
             {/* ❌ REMOVIDO: Compensação - não está sendo mapeado pela API */}
+            
+            {/* 🆕 Custos Logística - breakdown detalhado via hover */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Custos Logística</th>
+            
             {/* ❌ REMOVIDO: Método Reembolso - vazio */}
             {/* ❌ REMOVIDO: Moeda - vazio */}
             {/* ❌ REMOVIDO: Data Processamento - duplicada, movida para GRUPO 7 */}

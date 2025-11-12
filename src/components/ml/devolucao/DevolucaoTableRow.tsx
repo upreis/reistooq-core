@@ -9,6 +9,7 @@ import { StatusFinancialCells } from './cells/StatusFinancialCells'; // ✅ CORR
 import { MandatoryActionCell } from './cells/MandatoryActionCell';
 import { FinancialCells } from './cells/FinancialCells';
 import { ActionCell } from './cells/ActionCell';
+import { CustosLogisticaCell } from '@/features/devolucoes-online/components/cells/CustosLogisticaCell';
 import { 
   traduzirTipoClaim, 
   traduzirStage, 
@@ -240,6 +241,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 6: VALORES FINANCEIROS */}
       <FinancialCells devolucao={devolucao} />
+      
+      {/* 🆕 Custos Logística - breakdown detalhado via hover */}
+      <td className="px-3 py-3 text-center">
+        <CustosLogisticaCell shippingCosts={devolucao.shipping_costs || null} />
+      </td>
       
       {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
       
