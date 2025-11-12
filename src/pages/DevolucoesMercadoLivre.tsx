@@ -499,7 +499,7 @@ export default function DevolucoesMercadoLivre() {
                       transaction_id={dev.transaction_id}
                     />
                     
-                    {/* FINANCEIRO DETALHADO - 8 colunas (removido breakdown zerado) */}
+                    {/* FINANCEIRO DETALHADO - 8 colunas (FASE 1: removido breakdown zerado) */}
                     <FinancialDetailedCells
                       status_dinheiro={dev.status_dinheiro}
                       metodo_pagamento={dev.metodo_pagamento}
@@ -511,17 +511,13 @@ export default function DevolucoesMercadoLivre() {
                       responsavel_custo_frete={dev.responsavel_custo_frete}
                     />
                     
-                    {/* CUSTOS LOGÍSTICA */}
+                    {/* CUSTOS LOGÍSTICA (FASE 1: breakdown removido internamente) */}
                     <TableCell>
                       <CustosLogisticaCell
                         custo_total_logistica={dev.custo_total_logistica}
                         custo_envio_original={dev.custo_envio_original}
                         custo_devolucao={dev.custo_devolucao}
                         responsavel_custo_frete={dev.responsavel_custo_frete}
-                        shipping_fee={dev.shipping_fee}
-                        handling_fee={dev.handling_fee}
-                        insurance={dev.insurance}
-                        taxes={dev.taxes}
                       />
                     </TableCell>
                     

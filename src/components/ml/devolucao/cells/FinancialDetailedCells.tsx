@@ -1,6 +1,9 @@
 /**
  * 💰 CÉLULAS FINANCEIRAS DETALHADAS
  * Campos financeiros adicionais que complementam FinancialCell
+ * 
+ * ✅ FASE 1: Removidas 4 colunas de breakdown (shipping_fee, handling_fee, insurance, taxes)
+ * Motivo: Breakdown sempre retorna 0 nos logs da API ML
  */
 
 import { TableCell } from "@/components/ui/table";
@@ -17,10 +20,6 @@ interface FinancialDetailedCellsProps {
   custo_devolucao?: number;
   custo_envio_original?: number;
   responsavel_custo_frete?: string;
-  shipping_fee?: number;
-  handling_fee?: number;
-  insurance?: number;
-  taxes?: number;
 }
 
 const formatCurrency = (value?: number, currency: string = 'BRL') => {
@@ -46,11 +45,7 @@ export function FinancialDetailedCells({
   valor_diferenca_troca,
   custo_devolucao,
   custo_envio_original,
-  responsavel_custo_frete,
-  shipping_fee,
-  handling_fee,
-  insurance,
-  taxes
+  responsavel_custo_frete
 }: FinancialDetailedCellsProps) {
   return (
     <>

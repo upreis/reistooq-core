@@ -1,6 +1,9 @@
 /**
  * 💰 CÉLULA DE CUSTOS LOGÍSTICA
- * Exibe custo total com breakdown detalhado via tooltip
+ * Exibe custo total com breakdown simplificado via tooltip
+ * 
+ * ✅ FASE 1 COMPLETA: Removido breakdown detalhado (shipping_fee, handling_fee, insurance, taxes)
+ * Motivo: Breakdown sempre retorna 0 nos logs da API ML
  */
 
 import { Badge } from '@/components/ui/badge';
@@ -10,41 +13,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Package, TruckIcon, Shield, Receipt } from 'lucide-react';
+import { Package, TruckIcon, Shield } from 'lucide-react';
 
-interface CustosLogisticaCellProps {
+export interface CustosLogisticaCellProps {
   custo_total_logistica?: number | null;
   custo_envio_original?: number | null;
   custo_devolucao?: number | null;
   responsavel_custo_frete?: string | null;
-  // Breakdown detalhado
-  shipping_fee?: number | null;
-  handling_fee?: number | null;
-  insurance?: number | null;
-  taxes?: number | null;
 }
 
 export const CustosLogisticaCell = ({
   custo_total_logistica,
   custo_envio_original,
   custo_devolucao,
-  responsavel_custo_frete,
-  shipping_fee,
-  handling_fee,
-  insurance,
-  taxes
+  responsavel_custo_frete
 }: CustosLogisticaCellProps) => {
-  // 🐛 DEBUG: Log temporário para verificar props recebidas
-  if (custo_total_logistica !== null && custo_total_logistica !== undefined) {
-    console.log('💰 CustosLogisticaCell - Props recebidas:', {
-      custo_total_logistica,
-      custo_envio_original,
-      custo_devolucao,
-      responsavel_custo_frete,
-      breakdown: { shipping_fee, handling_fee, insurance, taxes }
-    });
-  }
-  
   // Se não há custo total, não renderizar
   if (!custo_total_logistica && custo_total_logistica !== 0) {
     return <span className="text-muted-foreground text-sm">-</span>;
@@ -123,10 +106,10 @@ export const CustosLogisticaCell = ({
             </Badge>
           </div>
         </TooltipTrigger>
-        <TooltipContent className="w-64 p-3 pointer-events-auto">
+        <TooltipContent className="w-64 p-3">
           <div className="space-y-2">
             <div className="font-semibold text-sm border-b border-border pb-2">
-              💰 Breakdown de Custos
+              💰 Custos de Logística
             </div>
 
             {/* Responsável */}
@@ -140,73 +123,26 @@ export const CustosLogisticaCell = ({
               </div>
             )}
 
-            {/* Frete */}
-            {(shipping_fee !== null && shipping_fee !== undefined) && (
+            {/* Custo Envio Original */}
+            {(custo_envio_original !== null && custo_envio_original !== undefined) && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <TruckIcon className="h-3 w-3" />
-                  Frete:
-                </span>
-                <span className="font-mono">{formatCurrency(shipping_fee)}</span>
+                <span className="text-muted-foreground">Envio Original:</span>
+                <span className="font-mono">{formatCurrency(custo_envio_original)}</span>
               </div>
             )}
 
-            {/* Manuseio */}
-            {(handling_fee !== null && handling_fee !== undefined) && (
+            {/* Custo Devolução */}
+            {(custo_devolucao !== null && custo_devolucao !== undefined) && (
               <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Package className="h-3 w-3" />
-                  Manuseio:
-                </span>
-                <span className="font-mono">{formatCurrency(handling_fee)}</span>
+                <span className="text-muted-foreground">Devolução:</span>
+                <span className="font-mono">{formatCurrency(custo_devolucao)}</span>
               </div>
             )}
 
-            {/* Seguro */}
-            {(insurance !== null && insurance !== undefined) && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
-                  Seguro:
-                </span>
-                <span className="font-mono">{formatCurrency(insurance)}</span>
-              </div>
-            )}
-
-            {/* Taxas */}
-            {(taxes !== null && taxes !== undefined) && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground flex items-center gap-1">
-                  <Receipt className="h-3 w-3" />
-                  Taxas:
-                </span>
-                <span className="font-mono">{formatCurrency(taxes)}</span>
-              </div>
-            )}
-
-            {/* Separador */}
-            <div className="border-t border-border pt-2 mt-2">
-              {/* Custo Envio Original */}
-              {(custo_envio_original !== null && custo_envio_original !== undefined) && (
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Envio Original:</span>
-                  <span className="font-mono">{formatCurrency(custo_envio_original)}</span>
-                </div>
-              )}
-
-              {/* Custo Devolução */}
-              {(custo_devolucao !== null && custo_devolucao !== undefined) && (
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Devolução:</span>
-                  <span className="font-mono">{formatCurrency(custo_devolucao)}</span>
-                </div>
-              )}
-
-              {/* Custo Total */}
-              <div className="flex items-center justify-between text-sm font-semibold border-t border-border pt-2">
-                <span>Total:</span>
-                <span className="font-mono">{formatCurrency(custo_total_logistica)}</span>
-              </div>
+            {/* Custo Total */}
+            <div className="flex items-center justify-between text-sm font-semibold border-t border-border pt-2 mt-2">
+              <span>Total:</span>
+              <span className="font-mono">{formatCurrency(custo_total_logistica)}</span>
             </div>
           </div>
         </TooltipContent>
