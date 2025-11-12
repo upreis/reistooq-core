@@ -102,10 +102,11 @@ export const mapFinancialData = (item: any) => {
     // 🔧 CORREÇÃO: Usar original_total diretamente (breakdown sempre 0 na API ML)
     custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || null,
     
-    // 🔧 SOLUÇÃO ALTERNATIVA: Priorizar payments[0].shipping_cost para custo de envio original
-    custo_envio_original: claim.order_data?.payments?.[0]?.shipping_cost || 
-                          claim.order_data?.shipping?.cost || 
-                          claim.order_data?.shipping?.base_cost || null,
+    // 📤 CUSTO ENVIO ORIGINAL - PRIORIZAR claim.shipping (já no claim principal)
+    custo_envio_original: claim.shipping?.cost ||
+                          claim.shipping?.base_cost ||
+                          claim.order_data?.payments?.[0]?.shipping_cost || 
+                          claim.order_data?.shipping?.cost || null,
     
     responsavel_custo_frete: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null,
     

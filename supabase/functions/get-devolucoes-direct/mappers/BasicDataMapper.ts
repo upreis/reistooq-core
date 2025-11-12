@@ -124,8 +124,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     valor_retido: claim.seller_amount || null,
     valor_original_produto: claim.order_data?.order_items?.[0]?.unit_price || null,
     
-    // 🚚 TIPO DE LOGÍSTICA (fulfillment, flex, self_service, drop_off, cross_docking)
-    tipo_logistica: claim.order_data?.shipping?.logistic_type || null,
+    // 🚚 TIPO DE LOGÍSTICA - PRIORIZAR claim.shipping (já no claim principal)
+    tipo_logistica: claim.shipping?.logistic_type || 
+                    claim.order_data?.shipping?.logistic_type || null,
     
     // Classificação
     tipo_claim: claim.type || null,
