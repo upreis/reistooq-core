@@ -527,7 +527,7 @@ export function useDevolucoesBusca() {
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
                   .upsert(deduplicatedRecords, {
-                    onConflict: 'claim_id', // ✅ FASE 1-4: Usar claim_id como chave única
+                    onConflict: 'order_id', // ✅ CORRETO: usar constraint mais restritiva
                     ignoreDuplicates: false
                   });
 
@@ -803,7 +803,7 @@ export function useDevolucoesBusca() {
                 const { error: upsertError } = await supabase
                   .from('devolucoes_avancadas')
                   .upsert(devolucaoFiltrada, { 
-                    onConflict: 'claim_id', // ✅ FASE 1-4: Usar claim_id como chave única
+                    onConflict: 'order_id',
                     ignoreDuplicates: false 
                   });
 

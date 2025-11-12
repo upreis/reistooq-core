@@ -12,31 +12,10 @@ export interface SkuGroup {
 export function groupProductsBySku(products: Product[]): SkuGroup[] {
   const groups = new Map<string, SkuGroup>();
   
-  // Separar produtos pai, filhos e independentes
+  // Separar produtos pai e filhos
   const parentProducts = products.filter(p => p.eh_produto_pai === true);
-  const childProducts = products.filter(p => {
-    // Produto é filho se:
-    // 1. Tem sku_pai definido OU
-    // 2. Tem eh_produto_pai === false E o SKU tem formato de filho (mais de 2 partes)
-    const hasParent = !!p.sku_pai;
-    const isMarkedAsChild = p.eh_produto_pai === false;
-    const hasChildSkuFormat = p.sku_interno.split('-').length > 2;
-    
-    return hasParent || (isMarkedAsChild && hasChildSkuFormat);
-  });
-  const independentProducts = products.filter(p => {
-    // Produto é independente se:
-    // 1. NÃO é marcado como pai
-    // 2. NÃO tem sku_pai
-    // 3. NÃO tem formato de SKU filho
-    // 4. NÃO é marcado explicitamente como filho (eh_produto_pai !== false)
-    const isNotParent = p.eh_produto_pai !== true;
-    const hasNoParent = !p.sku_pai;
-    const hasSimpleSkuFormat = p.sku_interno.split('-').length <= 2;
-    const isNotMarkedAsChild = p.eh_produto_pai !== false;
-    
-    return isNotParent && hasNoParent && (hasSimpleSkuFormat || isNotMarkedAsChild);
-  });
+  const childProducts = products.filter(p => p.eh_produto_pai !== true && p.sku_pai);
+  const independentProducts = products.filter(p => p.eh_produto_pai !== true && !p.sku_pai);
   
   // Criar grupos para produtos pai
   parentProducts.forEach(parent => {
@@ -52,13 +31,12 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
   // Adicionar filhos aos seus pais
   childProducts.forEach(child => {
     if (child.sku_pai) {
-      // Filho com pai definido
       const group = groups.get(child.sku_pai);
       if (group) {
         group.children.push(child);
         group.totalStock += child.quantidade_atual;
       } else {
-        // Se o pai não existe, criar grupo órfão
+        // Se o pai não existe, tratar como independente
         groups.set(child.sku_interno, {
           parentSku: child.sku_interno,
           parentProduct: child,
@@ -67,15 +45,6 @@ export function groupProductsBySku(products: Product[]): SkuGroup[] {
           hasLowStock: child.quantidade_atual <= child.estoque_minimo
         });
       }
-    } else {
-      // Filho sem pai definido (órfão) - eh_produto_pai === false mas sem sku_pai
-      groups.set(child.sku_interno, {
-        parentSku: child.sku_interno,
-        parentProduct: child,
-        children: [],
-        totalStock: child.quantidade_atual,
-        hasLowStock: child.quantidade_atual <= child.estoque_minimo
-      });
     }
   });
   

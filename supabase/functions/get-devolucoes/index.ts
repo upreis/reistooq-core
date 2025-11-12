@@ -35,18 +35,18 @@ const logger = {
   error: (msg: string, error?: any) => console.error(`❌ ${msg}`, error || ''),
 };
 
-// 🔍 Interface de filtros (snake_case como recebido do frontend)
+// 🔍 Interface de filtros
 interface DevolucaoFilters {
   search?: string;
   status?: string[];
   status_devolucao?: string[];
-  date_from?: string;
-  date_to?: string;
-  integration_account_id?: string | string[]; // Aceitar string única ou array
-  claim_id?: string;
-  order_id?: string;
-  buyer_id?: number;
-  item_id?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  integrationAccountId: string;
+  claimId?: string;
+  orderId?: string;
+  buyerId?: number;
+  itemId?: string;
 }
 
 // 📄 Interface de paginação
@@ -65,20 +65,8 @@ function buildQuery(
 ) {
   let query = supabase
     .from('devolucoes_avancadas')
-    .select('*', { count: 'exact' });
-
-  // 🔍 Filtro por integration_account_id (aceitar string ou array)
-  if (filters.integration_account_id) {
-    if (Array.isArray(filters.integration_account_id)) {
-      query = query.in('integration_account_id', filters.integration_account_id);
-    } else if (typeof filters.integration_account_id === 'string' && filters.integration_account_id.includes(',')) {
-      // Se vier como string com vírgulas, converter para array
-      const accountIds = filters.integration_account_id.split(',').map(id => id.trim());
-      query = query.in('integration_account_id', accountIds);
-    } else {
-      query = query.eq('integration_account_id', filters.integration_account_id);
-    }
-  }
+    .select('*', { count: 'exact' })
+    .eq('integration_account_id', filters.integrationAccountId);
 
   // 🔍 Filtro de busca (claim_id, order_id, item_title, buyer)
   if (filters.search && filters.search.trim() !== '') {
@@ -91,39 +79,35 @@ function buildQuery(
     query = query.in('status', filters.status);
   }
 
-  // 🔍 Filtro por status_devolucao (EXTRAIR DE JSONB dados_tracking_info)
+  // 🔍 Filtro por status_devolucao
   if (filters.status_devolucao && filters.status_devolucao.length > 0) {
-    // ✅ FASE 8: Filtrar via JSONB após remoção da coluna física
-    const statusConditions = filters.status_devolucao
-      .map(s => `dados_tracking_info->>'status_devolucao'.eq.${s}`)
-      .join(',');
-    query = query.or(statusConditions);
+    query = query.in('status_devolucao', filters.status_devolucao);
   }
 
   // 🔍 Filtro por período
-  if (filters.date_from) {
-    query = query.gte('data_criacao_claim', filters.date_from);
+  if (filters.dateFrom) {
+    query = query.gte('date_created', filters.dateFrom);
   }
-  if (filters.date_to) {
-    query = query.lte('data_criacao_claim', filters.date_to);
+  if (filters.dateTo) {
+    query = query.lte('date_created', filters.dateTo);
   }
 
   // 🔍 Filtros específicos
-  if (filters.claim_id) {
-    query = query.eq('claim_id', filters.claim_id);
+  if (filters.claimId) {
+    query = query.eq('claim_id', filters.claimId);
   }
-  if (filters.order_id) {
-    query = query.eq('order_id', filters.order_id);
+  if (filters.orderId) {
+    query = query.eq('order_id', filters.orderId);
   }
-  if (filters.buyer_id) {
-    query = query.eq('buyer_id', filters.buyer_id);
+  if (filters.buyerId) {
+    query = query.eq('buyer_id', filters.buyerId);
   }
-  if (filters.item_id) {
-    query = query.eq('item_id', filters.item_id);
+  if (filters.itemId) {
+    query = query.eq('item_id', filters.itemId);
   }
 
   // 📊 Ordenação
-  const sortBy = pagination.sortBy || 'data_criacao_claim';
+  const sortBy = pagination.sortBy || 'date_created';
   const sortOrder = pagination.sortOrder || 'desc';
   query = query.order(sortBy, { ascending: sortOrder === 'asc' });
 
@@ -141,40 +125,32 @@ function buildQuery(
 // 📊 Buscar estatísticas agregadas
 async function getAggregatedStats(
   supabase: any,
-  integrationAccountId: string | string[]
+  integrationAccountId: string
 ) {
   try {
-    let query = supabase
+    const { data, error } = await supabase
       .from('devolucoes_avancadas')
-      .select('dados_tracking_info, dados_financial_info'); // ✅ FASE 8: Selecionar JSONB ao invés de coluna física
-
-    // Aplicar filtro baseado no tipo de integrationAccountId
-    if (Array.isArray(integrationAccountId)) {
-      query = query.in('integration_account_id', integrationAccountId);
-    } else if (typeof integrationAccountId === 'string' && integrationAccountId.includes(',')) {
-      const accountIds = integrationAccountId.split(',').map(id => id.trim());
-      query = query.in('integration_account_id', accountIds);
-    } else {
-      query = query.eq('integration_account_id', integrationAccountId);
-    }
-
-    const { data, error } = await query;
+      .select('status, status_devolucao, total_amount')
+      .eq('integration_account_id', integrationAccountId);
 
     if (error) throw error;
 
     // Calcular estatísticas
     const stats = {
       total: data.length,
-      por_status_devolucao: data.reduce((acc: any, item: any) => {
-        // ✅ FASE 8: Extrair de JSONB após remoção da coluna física
-        const status = item.dados_tracking_info?.status_devolucao || 'unknown';
+      por_status: data.reduce((acc: any, item: any) => {
+        const status = item.status || 'unknown';
         acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {}),
-      valor_total: data.reduce((sum: number, item: any) => {
-        const financial = item.dados_financial_info || {};
-        return sum + (parseFloat(financial.total_amount) || 0);
-      }, 0)
+      por_status_devolucao: data.reduce((acc: any, item: any) => {
+        const status = item.status_devolucao || 'unknown';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {}),
+      valor_total: data.reduce((sum: number, item: any) => 
+        sum + (parseFloat(item.total_amount) || 0), 0
+      )
     };
 
     return stats;
@@ -205,232 +181,10 @@ async function getDevolucoes(
     const queryTime = Date.now() - startTime;
     logger.success(`Query executada em ${queryTime}ms - ${data?.length || 0} registros`);
 
-    // 🔄 Mapear dados do banco para formato esperado pelo frontend
-    const mappedData = (data || []).map((item: any) => ({
-      // IDs e identificadores
-      id: item.id,
-      order_id: item.order_id,
-      claim_id: item.claim_id,
-      return_id: item.return_id,
-      
-      // ✅ CORREÇÃO: Item ID e Variation ID - EXTRAIR DE dados_order.order_items[0] (prioridade) ou dados_product_info (fallback)
-      item_id: item.dados_order?.order_items?.[0]?.item?.id || item.dados_product_info?.item_id || null,
-      variation_id: item.dados_order?.order_items?.[0]?.item?.variation_id || item.dados_product_info?.variation_id || null,
-      
-      integration_account_id: item.integration_account_id,
-      
-      // ✅ FASE 8: Status (colunas status_devolucao, tipo_claim, subtipo_claim DELETADAS)
-      // Dados agora EXCLUSIVAMENTE de dados_claim JSONB
-      status: item.dados_claim?.status?.id || item.dados_claim?.status || item.dados_tracking_info?.status || 'unknown',
-      status_money: item.dados_claim?.status_money || item.dados_order?.status_money || null,
-      
-      // ✅ Subtipo e Tipo de Recurso - EXTRAIR DE dados_claim
-      subtype: item.dados_claim?.subtype?.id || item.dados_claim?.subtype || item.dados_claim?.sub_type || null,
-      resource_type: item.dados_claim?.resource_type || null,
-      
-      // ✅ RESOLUÇÃO - Capturar resolution.reason (timeout, warehouse_timeout, etc)
-      resultado_final: item.resolution_reason || 
-                       item.dados_claim?.resolution?.reason || 
-                       item.resultado_final || null,
-      
-      // Datas
-      date_created: item.data_criacao_claim,
-      date_closed: item.data_fechamento_claim,
-      last_updated: item.updated_at,
-      
-      // Buyer info - ✅ EXTRAIR DE JSONB dados_buyer_info
-      buyer_info: item.dados_buyer_info || {
-        id: item.dados_order?.buyer?.id || null,
-        nickname: item.comprador_nickname || item.dados_order?.buyer?.nickname || null,
-      },
-      
-      // Product info - ✅ EXTRAIR DE JSONB dados_product_info
-      product_info: item.dados_product_info || {
-        id: item.dados_order?.order_items?.[0]?.item?.id || null,
-        title: item.produto_titulo || item.dados_order?.order_items?.[0]?.item?.title || null,
-        variation_id: item.dados_product_info?.variation_id || null,
-        sku: item.sku || item.dados_product_info?.seller_sku || null,
-      },
-      
-      // Financial info - ✅ EXTRAIR DE JSONB dados_financial_info
-      financial_info: item.dados_financial_info || {
-        total_amount: item.dados_order?.total_amount || null,
-        currency_id: item.moeda_reembolso || 'BRL',
-      },
-      
-      // Tracking info - ✅ EXTRAIR DE JSONB dados_tracking_info
-      tracking_info: item.dados_tracking_info || {
-        tracking_number: item.codigo_rastreamento_devolucao || null,
-        carrier: item.transportadora_devolucao || null,
-        shipment_status: item.status_rastreamento_devolucao || null,
-      },
-      
-      // Quantidade - ✅ EXTRAIR DE JSONB dados_quantities OU campo direto
-      quantity: {
-        type: item.dados_quantities?.quantity_type || 'total',
-        value: item.quantidade || item.dados_quantities?.return_quantity || 1,
-      },
-      
-      // Order (para compatibilidade)
-      order: item.dados_order ? {
-        id: item.order_id,
-        date_created: item.dados_order.date_created,
-        seller_id: item.dados_order.seller_id,
-      } : null,
-      
-      // Orders array (para compatibilidade com campos antigos) - ✅ USAR dados_quantities
-      orders: item.dados_order ? [{
-        item_id: item.dados_product_info?.item_id || null,
-        variation_id: item.dados_product_info?.variation_id || null,
-        context_type: item.dados_quantities?.quantity_type || 'total',
-        total_quantity: item.dados_quantities?.total_quantity || 1,
-        return_quantity: item.quantidade || item.dados_quantities?.return_quantity || 1,
-      }] : [],
-      
-      // ✅ FASE 8: Shipment info (coluna shipment_type DELETADA)
-      // Dados de tipo agora via dados_tracking_info.shipment_type
-      shipment_id: item.dados_tracking_info?.shipment_id || item.shipment_id,
-      shipment_status: item.dados_tracking_info?.shipment_status || null,
-      shipment_destination: item.dados_tracking_info?.destination || null,
-      tracking_number: item.dados_tracking_info?.tracking_number || item.codigo_rastreamento,
-      
-      // ✅ FASE 8: Endereço de destino (coluna endereco_destino_devolucao DELETADA)
-      // Dados agora exclusivamente de endereco_destino JSONB
-      destination_address: item.endereco_destino?.street_name || null,
-      destination_city: item.endereco_destino?.city?.name || null,
-      destination_state: item.endereco_destino?.state?.name || null,
-      destination_zip: item.endereco_destino?.zip_code || null,
-      destination_neighborhood: item.endereco_destino?.neighborhood?.name || null,
-      destination_country: item.endereco_destino?.country?.name || 'Brasil',
-      destination_comment: item.endereco_destino?.comment || null,
-      
-      // Deadlines
-      deadlines: item.dados_deadlines || {},
-      
-      // Costs
-      shipping_costs: item.dados_shipping_costs || item.shipment_costs || {},
-      
-      // ✅ Review info (populado por enrich-devolucoes via /reviews)
-      review_info: item.full_review || item.dados_review || {
-        id: item.review_id || null,
-        status: item.review_status || null,
-        result: item.review_result || null,
-        method: item.review_method || null,
-        stage: item.review_stage || null
-      },
-      review_status: item.review_status || item.dados_review?.status || null,
-      review_method: item.review_method || item.dados_review?.method || null,
-      review_stage: item.review_stage || item.dados_review?.stage || null,
-      seller_status: item.seller_status || null,
-      
-      // Communication
-      communication_info: item.dados_comunicacao || {
-        messages_count: item.numero_interacoes || 0,
-        last_message_date: item.ultima_mensagem_data || null,
-        last_message_sender: item.ultima_mensagem_remetente || null,
-      },
-      
-      // Fulfillment
-      fulfillment_info: item.dados_fulfillment || {},
-      
-      // ✅ Available actions (campo já populado por sync-devolucoes)
-      available_actions: (() => {
-        try {
-          // PRIORIDADE 1: dados_acoes_disponiveis ou dados_available_actions (direto)
-          if (item.dados_acoes_disponiveis || item.dados_available_actions) {
-            const data = item.dados_acoes_disponiveis || item.dados_available_actions;
-            if (typeof data === 'string') {
-              return JSON.parse(data);
-            }
-            return data || [];
-          }
-          
-          // PRIORIDADE 2: Extrair de dados_claim.players (seller/respondent)
-          if (item.dados_claim?.players) {
-            const sellerPlayer = item.dados_claim.players.find((p: any) => 
-              p.role === 'respondent' || p.role === 'seller' || p.type === 'seller'
-            );
-            return sellerPlayer?.available_actions || [];
-          }
-          
-          return [];
-        } catch {
-          return [];
-        }
-      })(),
-      
-      // ⚡ DELIVERY DATES (extrair de JSONB dados_lead_time)
-      estimated_delivery_date: item.dados_lead_time?.estimated_delivery_time?.date || 
-                                item.dados_lead_time?.estimated_delivery_date || null,
-      estimated_delivery_from: item.dados_lead_time?.estimated_delivery_time?.shipping || null,
-      estimated_delivery_to: item.dados_lead_time?.estimated_delivery_time?.handling || null,
-      estimated_delivery_limit: item.dados_lead_time?.estimated_schedule_limit?.date || 
-                                 item.dados_lead_time?.delivery_limit || null,
-      
-      // ✅ Delivery limit (campo já populado por sync-devolucoes)
-      delivery_limit: item.prazo_limite_entrega || item.dados_lead_time?.delivery_limit || null,
-      
-      // ✅ Delay calculation (implementado)
-      has_delay: (() => {
-        const deliveryLimit = item.prazo_limite_entrega || item.dados_lead_time?.delivery_limit;
-        if (!deliveryLimit) return false;
-        
-        try {
-          const limitDate = new Date(deliveryLimit);
-          const now = new Date();
-          return now > limitDate;
-        } catch {
-          return false;
-        }
-      })(),
-      
-      // ✅ FASE 8: Refund info (coluna reembolso_quando DELETADA)
-      // Dados agora de refund_at (coluna preservada) ou dados_refund_info JSONB
-      refund_at: item.dados_refund_info?.refund_at || 
-                 item.dados_refund_info?.when || null,
-      
-      // ✅ Product condition e destination (populado por enrich-devolucoes via /reviews)
-      product_condition: item.product_condition || item.dados_product_condition?.status || null,
-      product_destination: item.product_destination || item.dados_product_condition?.destination || null,
-      
-      // Benefited (retornar STRING ao invés de objeto/array)
-      benefited: Array.isArray(item.responsavel_custo) 
-        ? item.responsavel_custo[0] 
-        : item.responsavel_custo || null,
-      
-      // ✅ QUANTIDADE - EXTRAIR DE dados_quantities OU campo direto 'quantidade'
-      return_quantity: item.quantidade || item.dados_quantities?.return_quantity || null,
-      total_quantity: item.dados_quantities?.total_quantity || item.quantidade || null,
-      
-      // Substatus
-      substatus: item.descricao_ultimo_status || null,
-      
-      // Shipments array (para SubstatusCell)
-      shipments: item.dados_tracking_info ? [{
-        substatus: item.status_rastreamento_devolucao || null,
-      }] : [],
-      
-      // Campos adicionais
-      reason_id: item.reason_id || null,
-      intermediate_check: item.return_intermediate_check || false,
-      related_entities: item.related_entities || [],
-      
-      // Status análise (campo customizado)
-      status_analise: item.status_analise || 'pendente',
-      
-      // Raw data para referência
-      raw: {
-        dados_order: item.dados_order,
-        dados_claim: item.dados_claim,
-        dados_return: item.dados_return,
-        dados_mensagens: item.dados_mensagens,
-      }
-    }));
-
     // 📊 Buscar estatísticas se solicitado
     let stats = null;
     if (includeStats) {
-      stats = await getAggregatedStats(supabase, filters.integration_account_id);
+      stats = await getAggregatedStats(supabase, filters.integrationAccountId);
     }
 
     // 📄 Calcular informações de paginação
@@ -440,7 +194,7 @@ async function getDevolucoes(
 
     return {
       success: true,
-      data: mappedData,
+      data: data || [],
       pagination: {
         page,
         limit,
@@ -472,7 +226,7 @@ serve(async (req) => {
     const { filters, pagination, includeStats } = body;
 
     // Validação
-    if (!filters?.integration_account_id) {
+    if (!filters?.integrationAccountId) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -485,7 +239,7 @@ serve(async (req) => {
       );
     }
 
-    logger.info(`Buscando devoluções - Account: ${filters.integration_account_id}`, {
+    logger.info(`Buscando devoluções - Account: ${filters.integrationAccountId}`, {
       filters,
       pagination
     });

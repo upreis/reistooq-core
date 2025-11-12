@@ -104,14 +104,12 @@ class DevolucaoService {
    */
   async syncDevolucoes(
     integrationAccountId: string,
-    batchSize: number = 100,
-    incremental: boolean = false // ✅ NOVO: sincronização incremental
+    batchSize: number = 100
   ): Promise<SyncResponse> {
     const { data, error } = await supabase.functions.invoke('sync-devolucoes', {
       body: {
         integration_account_id: integrationAccountId,
         batch_size: batchSize,
-        incremental, // ✅ Passar flag incremental
       },
     });
 
@@ -122,9 +120,24 @@ class DevolucaoService {
   }
 
   /**
-   * ✨ REMOVIDO: enrichDevolucoes - agora sync-devolucoes faz tudo inline (FASE 1 e 2)
-   * O enriquecimento de reviews via /reviews agora acontece dentro de sync-devolucoes
+   * ✨ Enriquecer devoluções com dados de buyer e produto
    */
+  async enrichDevolucoes(
+    integrationAccountId: string,
+    limit: number = 50
+  ): Promise<EnrichResponse> {
+    const { data, error } = await supabase.functions.invoke('enrich-devolucoes', {
+      body: {
+        integration_account_id: integrationAccountId,
+        limit,
+      },
+    });
+
+    if (error) throw error;
+    if (!data.success) throw new Error(data.error || 'Erro ao enriquecer devoluções');
+
+    return data;
+  }
 
   /**
    * 📊 Buscar estatísticas de sincronização
@@ -134,11 +147,11 @@ class DevolucaoService {
       .from('devolucoes_sync_status')
       .select('*')
       .eq('integration_account_id', integrationAccountId)
-      .order('last_sync_at', { ascending: false })
+      .order('started_at', { ascending: false })
       .limit(1)
-      .maybeSingle();
+      .single();
 
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
     return data;
   }
 
@@ -150,7 +163,7 @@ class DevolucaoService {
       .from('devolucoes_sync_status')
       .select('*')
       .eq('integration_account_id', integrationAccountId)
-      .order('last_sync_at', { ascending: false })
+      .order('started_at', { ascending: false })
       .limit(limit);
 
     if (error) throw error;

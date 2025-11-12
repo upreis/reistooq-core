@@ -36,9 +36,9 @@ export interface Product extends BaseProduct {
   cor?: string | null;
   peso_unitario_g?: number | null;
   peso_cx_master_kg?: number | null;
-  comprimento_cm?: number | null;
-  largura_cm?: number | null;
-  altura_cm?: number | null;
+  comprimento?: number | null;
+  largura?: number | null;
+  altura?: number | null;
   cbm_cubagem?: number | null;
   cubagem_cm3?: number | null;
   ncm?: string | null;
@@ -53,23 +53,19 @@ export interface Product extends BaseProduct {
   observacoes?: string | null;
   unidade?: string | null;
   pcs_ctn?: number | null;
-  // Novos campos adicionados via migration
-  peso_bruto_kg?: number | null;
-  peso_liquido_kg?: number | null;
+  // Novos campos do template
+  sob_encomenda?: boolean | null;
   dias_preparacao?: number | null;
+  peso_liquido_kg?: number | null;
+  peso_bruto_kg?: number | null;
+  numero_volumes?: number | null;
   tipo_embalagem?: string | null;
   codigo_cest?: string | null;
   origem?: number | null;
-  sob_encomenda?: boolean | null;
-  numero_volumes?: number | null;
   // Campos de categoria hierárquica
   categoria_principal?: string | null;
   categoria_nivel2?: string | null;
   subcategoria?: string | null;
-  // Aliases para compatibilidade com código existente
-  largura?: number | null; // Alias para largura_cm
-  altura?: number | null; // Alias para altura_cm
-  comprimento?: number | null; // Alias para comprimento_cm
 }
 
 export const useProducts = () => {
@@ -97,8 +93,7 @@ export const useProducts = () => {
 
     // Se filtro por local_id, buscar de estoque_por_local
     if (filters?.local_id) {
-      // Buscar produtos com estoque no local usando LEFT JOIN
-      // Isso garante que tenhamos acesso a TODOS os campos de produtos
+      // Buscar produtos com estoque no local
       let query = supabase
         .from('estoque_por_local')
         .select(`
@@ -274,11 +269,7 @@ export const useProducts = () => {
       'sku_interno', 'nome', 'categoria', 'categoria_principal', 'descricao', 'codigo_barras',
       'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
       'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
-      'url_imagem', 'sku_pai', 'eh_produto_pai',
-      // Campos adicionais do template
-      'sob_encomenda', 'dias_preparacao', 'peso_liquido_kg', 'peso_bruto_kg',
-      'numero_volumes', 'tipo_embalagem', 'largura_cm', 'altura_cm', 'comprimento_cm',
-      'ncm', 'codigo_cest', 'origem', 'categoria_nivel2', 'subcategoria'
+      'url_imagem', 'sku_pai', 'eh_produto_pai'
     ];
 
     if (existingProduct) {
@@ -406,11 +397,7 @@ export const useProducts = () => {
       'sku_interno', 'nome', 'categoria', 'categoria_principal', 'descricao', 'codigo_barras',
       'quantidade_atual', 'estoque_minimo', 'estoque_maximo', 'preco_custo',
       'preco_venda', 'localizacao', 'unidade_medida_id', 'status', 'ativo',
-      'url_imagem', 'sku_pai', 'eh_produto_pai',
-      // Campos adicionais do template
-      'sob_encomenda', 'dias_preparacao', 'peso_liquido_kg', 'peso_bruto_kg',
-      'numero_volumes', 'tipo_embalagem', 'largura_cm', 'altura_cm', 'comprimento_cm',
-      'ncm', 'codigo_cest', 'origem', 'categoria_nivel2', 'subcategoria'
+      'url_imagem', 'sku_pai', 'eh_produto_pai'
     ];
 
     const filteredUpdates = Object.keys(updates).reduce((acc, key) => {

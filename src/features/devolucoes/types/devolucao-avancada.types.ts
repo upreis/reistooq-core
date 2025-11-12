@@ -28,12 +28,6 @@ export interface DevolucaoBasica {
 
 // ===== TIPOS AVANÇADOS (42 NOVAS COLUNAS) =====
 export interface DevolucaoAvancada extends DevolucaoBasica {
-  // ✅ CORREÇÃO 1 e 3: Adicionar campos para as 4 colunas restauradas/novas
-  item_id?: string | null;           // Item ID do produto
-  variation_id?: string | null;      // Variação ID (null se produto simples)
-  status_money?: string | null;      // Status $ (retained, refunded, available)
-  resource_type?: string | null;     // Tipo Recurso (order, claim, shipment, other)
-  
   // 📨 MENSAGENS E COMUNICAÇÃO (6 colunas)
   timeline_mensagens?: TimelineMessage[] | null;
   ultima_mensagem_data?: string | null;
@@ -265,13 +259,6 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   dados_reviews?: any | null; // Dados completos de reviews da API ML
   dados_costs?: any | null; // Custos detalhados de envio
   dados_reasons?: any | null; // Detalhes completos de reasons/motivos
-  
-  // 🆕 AVAILABLE ACTIONS - Ações disponíveis para o seller
-  available_actions?: Array<{
-    action: string;
-    mandatory?: boolean;
-    due_date?: string | null;
-  }> | null;
 }
 
 // ===== TIPOS AUXILIARES =====

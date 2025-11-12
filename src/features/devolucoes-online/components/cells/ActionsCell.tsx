@@ -180,22 +180,26 @@ const ActionsCellComponent: React.FC<ActionsCellProps> = ({
 
   if (!availableActions) {
     return (
-      <Badge variant="secondary" className="text-xs">
-        Nenhuma ação disponível
-      </Badge>
+      <td className="px-3 py-3 text-center">
+        <Badge variant="secondary" className="text-xs">
+          Nenhuma ação disponível
+        </Badge>
+      </td>
     );
   }
 
   if (availableActionsList.length === 0) {
     return (
-      <Badge variant="secondary" className="text-xs">
-        Nenhuma ação disponível
-      </Badge>
+      <td className="px-3 py-3 text-center">
+        <Badge variant="secondary" className="text-xs">
+          Nenhuma ação disponível
+        </Badge>
+      </td>
     );
   }
 
   return (
-    <>
+    <td className="px-3 py-3">
       {dialog}
       <ReviewRejectModal
         open={showRejectModal}
@@ -228,7 +232,7 @@ const ActionsCellComponent: React.FC<ActionsCellProps> = ({
           );
         })}
       </div>
-    </>
+    </td>
   );
 };
 

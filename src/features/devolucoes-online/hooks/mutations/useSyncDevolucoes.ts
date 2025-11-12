@@ -16,26 +16,20 @@ export function useSyncDevolucoes() {
     mutationFn: ({
       integrationAccountId,
       batchSize = 100,
-      incremental = false, // ✅ NOVO: sincronização incremental
     }: {
       integrationAccountId: string;
       batchSize?: number;
-      incremental?: boolean;
-    }) => devolucaoService.syncDevolucoes(integrationAccountId, batchSize, incremental),
+    }) => devolucaoService.syncDevolucoes(integrationAccountId, batchSize),
 
-    onMutate: ({ incremental }) => {
-      const syncType = incremental ? 'incremental (rápida)' : 'completa';
-      toast.loading(`Sincronização ${syncType} iniciada...`, {
+    onMutate: () => {
+      toast.loading('Sincronização iniciada...', {
         id: 'sync-devolucoes',
-        description: incremental 
-          ? 'Buscando apenas dados novos do Mercado Livre'
-          : 'Buscando todos os dados do Mercado Livre',
+        description: 'Buscando devoluções do Mercado Livre em background',
       });
     },
 
-    onSuccess: (data, variables) => {
-      const syncType = variables.incremental ? 'incremental' : 'completa';
-      toast.success(`Sincronização ${syncType} concluída!`, {
+    onSuccess: (data) => {
+      toast.success('Sincronização concluída!', {
         id: 'sync-devolucoes',
         description: `${data.totalProcessed} devoluções processadas em ${(data.durationMs / 1000).toFixed(1)}s`,
       });

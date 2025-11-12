@@ -1171,7 +1171,6 @@ export type Database = {
           dados_order: Json | null
           dados_product_condition: Json | null
           dados_product_info: Json | null
-          dados_quantities: Json | null
           dados_reasons: Json | null
           dados_refund_info: Json | null
           dados_return: Json | null
@@ -1191,14 +1190,17 @@ export type Database = {
           data_ultima_movimentacao: string | null
           data_ultimo_status: string | null
           descricao_ultimo_status: string | null
+          destino_devolucao: string | null
           eh_troca: boolean | null
           em_mediacao: boolean | null
           endereco_destino: Json | null
+          endereco_destino_devolucao: string | null
           fonte_dados_primaria: string | null
           has_related_return: boolean | null
           hash_verificacao: string | null
           historico_status: Json | null
           id: string
+          impacto_reputacao: string | null
           integration_account_id: string | null
           internal_tags: string[] | null
           localizacao_atual: string | null
@@ -1210,6 +1212,7 @@ export type Database = {
           moeda_custo: string | null
           moeda_reembolso: string | null
           motivo_categoria: string | null
+          nivel_prioridade: string | null
           nota_fiscal_autorizada: boolean | null
           numero_interacoes: number | null
           observacoes_review: string | null
@@ -1218,6 +1221,7 @@ export type Database = {
           parcelas: number | null
           produto_titulo: string | null
           produto_troca_id: string | null
+          proxima_acao_requerida: string | null
           quantidade: number | null
           reason_category: string | null
           reason_detail: string | null
@@ -1227,9 +1231,11 @@ export type Database = {
           reason_priority: string | null
           reason_rules_engine: string[] | null
           reason_type: string | null
+          reembolso_quando: string | null
           related_entities: Json | null
           responsavel_custo: string | null
           resultado_final: string | null
+          resultado_mediacao: string | null
           return_id: string | null
           return_intermediate_check: Json | null
           return_resource_type: string | null
@@ -1237,6 +1243,7 @@ export type Database = {
           review_result: string | null
           review_status: string | null
           revisor_responsavel: string | null
+          satisfacao_comprador: string | null
           shipment_costs: Json | null
           shipment_id: string | null
           shipment_id_devolucao: number | null
@@ -1244,12 +1251,15 @@ export type Database = {
           snapshot_anterior: Json | null
           status_analise: string | null
           status_devolucao: string | null
+          status_dinheiro: string | null
+          status_envio_devolucao: string | null
           status_moderacao: string | null
           status_produto_novo: string | null
           status_rastreamento: string | null
           status_rastreamento_devolucao: string | null
           status_rastreamento_pedido: string | null
           status_transporte_atual: string | null
+          subtipo_claim: string | null
           subtipo_devolucao: string | null
           tags_automaticas: string[] | null
           tags_pedido: string[] | null
@@ -1259,6 +1269,7 @@ export type Database = {
           timeline_consolidado: Json | null
           timeline_events: Json | null
           timeline_mensagens: Json | null
+          timeline_rastreamento: string | null
           tipo_claim: string | null
           tipo_envio_devolucao: string | null
           tipo_pagamento: string | null
@@ -1312,7 +1323,6 @@ export type Database = {
           dados_order?: Json | null
           dados_product_condition?: Json | null
           dados_product_info?: Json | null
-          dados_quantities?: Json | null
           dados_reasons?: Json | null
           dados_refund_info?: Json | null
           dados_return?: Json | null
@@ -1332,14 +1342,17 @@ export type Database = {
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
           descricao_ultimo_status?: string | null
+          destino_devolucao?: string | null
           eh_troca?: boolean | null
           em_mediacao?: boolean | null
           endereco_destino?: Json | null
+          endereco_destino_devolucao?: string | null
           fonte_dados_primaria?: string | null
           has_related_return?: boolean | null
           hash_verificacao?: string | null
           historico_status?: Json | null
           id?: string
+          impacto_reputacao?: string | null
           integration_account_id?: string | null
           internal_tags?: string[] | null
           localizacao_atual?: string | null
@@ -1351,6 +1364,7 @@ export type Database = {
           moeda_custo?: string | null
           moeda_reembolso?: string | null
           motivo_categoria?: string | null
+          nivel_prioridade?: string | null
           nota_fiscal_autorizada?: boolean | null
           numero_interacoes?: number | null
           observacoes_review?: string | null
@@ -1359,6 +1373,7 @@ export type Database = {
           parcelas?: number | null
           produto_titulo?: string | null
           produto_troca_id?: string | null
+          proxima_acao_requerida?: string | null
           quantidade?: number | null
           reason_category?: string | null
           reason_detail?: string | null
@@ -1368,9 +1383,11 @@ export type Database = {
           reason_priority?: string | null
           reason_rules_engine?: string[] | null
           reason_type?: string | null
+          reembolso_quando?: string | null
           related_entities?: Json | null
           responsavel_custo?: string | null
           resultado_final?: string | null
+          resultado_mediacao?: string | null
           return_id?: string | null
           return_intermediate_check?: Json | null
           return_resource_type?: string | null
@@ -1378,6 +1395,7 @@ export type Database = {
           review_result?: string | null
           review_status?: string | null
           revisor_responsavel?: string | null
+          satisfacao_comprador?: string | null
           shipment_costs?: Json | null
           shipment_id?: string | null
           shipment_id_devolucao?: number | null
@@ -1385,12 +1403,15 @@ export type Database = {
           snapshot_anterior?: Json | null
           status_analise?: string | null
           status_devolucao?: string | null
+          status_dinheiro?: string | null
+          status_envio_devolucao?: string | null
           status_moderacao?: string | null
           status_produto_novo?: string | null
           status_rastreamento?: string | null
           status_rastreamento_devolucao?: string | null
           status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
+          subtipo_claim?: string | null
           subtipo_devolucao?: string | null
           tags_automaticas?: string[] | null
           tags_pedido?: string[] | null
@@ -1400,6 +1421,7 @@ export type Database = {
           timeline_consolidado?: Json | null
           timeline_events?: Json | null
           timeline_mensagens?: Json | null
+          timeline_rastreamento?: string | null
           tipo_claim?: string | null
           tipo_envio_devolucao?: string | null
           tipo_pagamento?: string | null
@@ -1453,7 +1475,6 @@ export type Database = {
           dados_order?: Json | null
           dados_product_condition?: Json | null
           dados_product_info?: Json | null
-          dados_quantities?: Json | null
           dados_reasons?: Json | null
           dados_refund_info?: Json | null
           dados_return?: Json | null
@@ -1473,14 +1494,17 @@ export type Database = {
           data_ultima_movimentacao?: string | null
           data_ultimo_status?: string | null
           descricao_ultimo_status?: string | null
+          destino_devolucao?: string | null
           eh_troca?: boolean | null
           em_mediacao?: boolean | null
           endereco_destino?: Json | null
+          endereco_destino_devolucao?: string | null
           fonte_dados_primaria?: string | null
           has_related_return?: boolean | null
           hash_verificacao?: string | null
           historico_status?: Json | null
           id?: string
+          impacto_reputacao?: string | null
           integration_account_id?: string | null
           internal_tags?: string[] | null
           localizacao_atual?: string | null
@@ -1492,6 +1516,7 @@ export type Database = {
           moeda_custo?: string | null
           moeda_reembolso?: string | null
           motivo_categoria?: string | null
+          nivel_prioridade?: string | null
           nota_fiscal_autorizada?: boolean | null
           numero_interacoes?: number | null
           observacoes_review?: string | null
@@ -1500,6 +1525,7 @@ export type Database = {
           parcelas?: number | null
           produto_titulo?: string | null
           produto_troca_id?: string | null
+          proxima_acao_requerida?: string | null
           quantidade?: number | null
           reason_category?: string | null
           reason_detail?: string | null
@@ -1509,9 +1535,11 @@ export type Database = {
           reason_priority?: string | null
           reason_rules_engine?: string[] | null
           reason_type?: string | null
+          reembolso_quando?: string | null
           related_entities?: Json | null
           responsavel_custo?: string | null
           resultado_final?: string | null
+          resultado_mediacao?: string | null
           return_id?: string | null
           return_intermediate_check?: Json | null
           return_resource_type?: string | null
@@ -1519,6 +1547,7 @@ export type Database = {
           review_result?: string | null
           review_status?: string | null
           revisor_responsavel?: string | null
+          satisfacao_comprador?: string | null
           shipment_costs?: Json | null
           shipment_id?: string | null
           shipment_id_devolucao?: number | null
@@ -1526,12 +1555,15 @@ export type Database = {
           snapshot_anterior?: Json | null
           status_analise?: string | null
           status_devolucao?: string | null
+          status_dinheiro?: string | null
+          status_envio_devolucao?: string | null
           status_moderacao?: string | null
           status_produto_novo?: string | null
           status_rastreamento?: string | null
           status_rastreamento_devolucao?: string | null
           status_rastreamento_pedido?: string | null
           status_transporte_atual?: string | null
+          subtipo_claim?: string | null
           subtipo_devolucao?: string | null
           tags_automaticas?: string[] | null
           tags_pedido?: string[] | null
@@ -1541,6 +1573,7 @@ export type Database = {
           timeline_consolidado?: Json | null
           timeline_events?: Json | null
           timeline_mensagens?: Json | null
+          timeline_rastreamento?: string | null
           tipo_claim?: string | null
           tipo_envio_devolucao?: string | null
           tipo_pagamento?: string | null
@@ -4791,14 +4824,12 @@ export type Database = {
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
-          codigo_cest: string | null
           cofins: number | null
           comprimento_cm: number | null
           cor: string | null
           created_at: string
           cubagem_cm3: number | null
           descricao: string | null
-          dias_preparacao: number | null
           eh_produto_pai: boolean
           estoque_maximo: number
           estoque_minimo: number
@@ -4813,15 +4844,11 @@ export type Database = {
           material: string | null
           ncm: string | null
           nome: string
-          numero_volumes: number | null
           observacoes: string | null
           organization_id: string | null
-          origem: number | null
           package: string | null
           pcs_ctn: number | null
-          peso_bruto_kg: number | null
           peso_cx_master_kg: number | null
-          peso_liquido_kg: number | null
           peso_unitario_g: number | null
           pis: number | null
           preco_custo: number | null
@@ -4831,10 +4858,8 @@ export type Database = {
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
           sku_pai: string | null
-          sob_encomenda: boolean | null
           status: string
           subcategoria: string | null
-          tipo_embalagem: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           unit: string | null
@@ -4850,14 +4875,12 @@ export type Database = {
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
-          codigo_cest?: string | null
           cofins?: number | null
           comprimento_cm?: number | null
           cor?: string | null
           created_at?: string
           cubagem_cm3?: number | null
           descricao?: string | null
-          dias_preparacao?: number | null
           eh_produto_pai?: boolean
           estoque_maximo?: number
           estoque_minimo?: number
@@ -4872,15 +4895,11 @@ export type Database = {
           material?: string | null
           ncm?: string | null
           nome: string
-          numero_volumes?: number | null
           observacoes?: string | null
           organization_id?: string | null
-          origem?: number | null
           package?: string | null
           pcs_ctn?: number | null
-          peso_bruto_kg?: number | null
           peso_cx_master_kg?: number | null
-          peso_liquido_kg?: number | null
           peso_unitario_g?: number | null
           pis?: number | null
           preco_custo?: number | null
@@ -4890,10 +4909,8 @@ export type Database = {
           sku_gerado_automaticamente?: boolean | null
           sku_interno: string
           sku_pai?: string | null
-          sob_encomenda?: boolean | null
           status?: string
           subcategoria?: string | null
-          tipo_embalagem?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id: string
           unit?: string | null
@@ -4909,14 +4926,12 @@ export type Database = {
           categoria_nivel2?: string | null
           categoria_principal?: string | null
           codigo_barras?: string | null
-          codigo_cest?: string | null
           cofins?: number | null
           comprimento_cm?: number | null
           cor?: string | null
           created_at?: string
           cubagem_cm3?: number | null
           descricao?: string | null
-          dias_preparacao?: number | null
           eh_produto_pai?: boolean
           estoque_maximo?: number
           estoque_minimo?: number
@@ -4931,15 +4946,11 @@ export type Database = {
           material?: string | null
           ncm?: string | null
           nome?: string
-          numero_volumes?: number | null
           observacoes?: string | null
           organization_id?: string | null
-          origem?: number | null
           package?: string | null
           pcs_ctn?: number | null
-          peso_bruto_kg?: number | null
           peso_cx_master_kg?: number | null
-          peso_liquido_kg?: number | null
           peso_unitario_g?: number | null
           pis?: number | null
           preco_custo?: number | null
@@ -4949,10 +4960,8 @@ export type Database = {
           sku_gerado_automaticamente?: boolean | null
           sku_interno?: string
           sku_pai?: string | null
-          sob_encomenda?: boolean | null
           status?: string
           subcategoria?: string | null
-          tipo_embalagem?: string | null
           ultima_movimentacao?: string | null
           unidade_medida_id?: string
           unit?: string | null
@@ -7126,14 +7135,12 @@ export type Database = {
           categoria_nivel2: string | null
           categoria_principal: string | null
           codigo_barras: string | null
-          codigo_cest: string | null
           cofins: number | null
           comprimento_cm: number | null
           cor: string | null
           created_at: string
           cubagem_cm3: number | null
           descricao: string | null
-          dias_preparacao: number | null
           eh_produto_pai: boolean
           estoque_maximo: number
           estoque_minimo: number
@@ -7148,15 +7155,11 @@ export type Database = {
           material: string | null
           ncm: string | null
           nome: string
-          numero_volumes: number | null
           observacoes: string | null
           organization_id: string | null
-          origem: number | null
           package: string | null
           pcs_ctn: number | null
-          peso_bruto_kg: number | null
           peso_cx_master_kg: number | null
-          peso_liquido_kg: number | null
           peso_unitario_g: number | null
           pis: number | null
           preco_custo: number | null
@@ -7166,10 +7169,8 @@ export type Database = {
           sku_gerado_automaticamente: boolean | null
           sku_interno: string
           sku_pai: string | null
-          sob_encomenda: boolean | null
           status: string
           subcategoria: string | null
-          tipo_embalagem: string | null
           ultima_movimentacao: string | null
           unidade_medida_id: string
           unit: string | null

@@ -3,7 +3,7 @@
  * Componente para mostrar status de sincronização e ações
  */
 
-import { RefreshCw, Download, Sparkles, Zap } from 'lucide-react';
+import { RefreshCw, Download, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -18,17 +18,17 @@ import { ptBR } from 'date-fns/locale';
 interface SyncStatusIndicatorProps {
   syncStatus: any;
   onSync: () => void;
-  onFullSync?: () => void;
+  onEnrich: () => void;
   isSyncing: boolean;
-  isFullSyncing?: boolean;
+  isEnriching: boolean;
 }
 
 export function SyncStatusIndicator({
   syncStatus,
   onSync,
-  onFullSync,
+  onEnrich,
   isSyncing,
-  isFullSyncing = false,
+  isEnriching,
 }: SyncStatusIndicatorProps) {
   const getStatusBadge = () => {
     if (!syncStatus) {
@@ -120,32 +120,9 @@ export function SyncStatusIndicator({
 
       {/* Botões de Ação */}
       <div className="flex gap-2">
-        {/* Sincronização Completa (Sync + Enrich inline) */}
-        {onFullSync && (
-          <Button
-            onClick={onFullSync}
-            disabled={isFullSyncing || isSyncing}
-            size="sm"
-            variant="default"
-            className="gap-2"
-          >
-            {isFullSyncing ? (
-              <>
-                <Zap className="h-4 w-4 animate-pulse" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <Zap className="h-4 w-4" />
-                Sinc. Completa
-              </>
-            )}
-          </Button>
-        )}
-
         <Button
           onClick={onSync}
-          disabled={isSyncing || isFullSyncing || syncStatus?.last_sync_status === 'running' || syncStatus?.last_sync_status === 'in_progress'}
+          disabled={isSyncing || syncStatus?.last_sync_status === 'running' || syncStatus?.last_sync_status === 'in_progress'}
           size="sm"
           variant="outline"
           className="gap-2"
@@ -159,6 +136,26 @@ export function SyncStatusIndicator({
             <>
               <Download className="h-4 w-4" />
               Sincronizar
+            </>
+          )}
+        </Button>
+
+        <Button
+          onClick={onEnrich}
+          disabled={isEnriching}
+          size="sm"
+          variant="outline"
+          className="gap-2"
+        >
+          {isEnriching ? (
+            <>
+              <Sparkles className="h-4 w-4 animate-pulse" />
+              Enriquecendo...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Enriquecer
             </>
           )}
         </Button>

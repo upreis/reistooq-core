@@ -123,7 +123,7 @@ Deno.serve(async (req) => {
         console.log(`[ML Webhook] Found integration account: ${accountId}`);
         
         // Chamar sync em background (não aguardar resposta)
-        supabase.functions.invoke('sync-devolucoes', {
+        supabase.functions.invoke('sync-devolucoes-background', {
           body: { 
             integration_account_id: accountId,
             trigger: 'webhook'

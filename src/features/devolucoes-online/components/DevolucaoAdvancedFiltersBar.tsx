@@ -4,13 +4,12 @@
  */
 
 import { useState } from 'react';
-import { Search, CalendarIcon, ChevronDown, RefreshCw, Download } from 'lucide-react';
+import { Search, CalendarIcon, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
 
 interface MLAccount {
   id: string;
@@ -28,7 +27,6 @@ interface DevolucaoAdvancedFiltersBarProps {
   onBuscar: () => void;
   isLoading?: boolean;
   onCancel?: () => void;
-  apiData?: any[]; // ✅ NOVO: dados brutos da API para exportação
 }
 
 export function DevolucaoAdvancedFiltersBar({
@@ -41,30 +39,9 @@ export function DevolucaoAdvancedFiltersBar({
   onSearchChange,
   onBuscar,
   isLoading = false,
-  onCancel,
-  apiData = []
+  onCancel
 }: DevolucaoAdvancedFiltersBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
-
-  const handleExportJson = () => {
-    if (!apiData || apiData.length === 0) {
-      toast.error('Nenhum dado disponível para exportar');
-      return;
-    }
-
-    const jsonString = JSON.stringify(apiData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `devolucoes-ml-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
-    toast.success(`${apiData.length} devoluções exportadas em JSON`);
-  };
 
   const handleToggleAccount = (accountId: string) => {
     if (selectedAccountIds.includes(accountId)) {
@@ -198,21 +175,10 @@ export function DevolucaoAdvancedFiltersBar({
           </div>
         </div>
 
-        {/* Botões de Ação */}
+        {/* Botão Aplicar Filtros */}
         <div className="md:col-span-3 space-y-2">
           <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
           <div className="flex gap-2">
-            {/* Botão Exportar JSON */}
-            <Button
-              onClick={handleExportJson}
-              disabled={!apiData || apiData.length === 0}
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              title="Exportar dados brutos JSON"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
             {isLoading && onCancel && (
               <Button
                 onClick={onCancel}
@@ -226,20 +192,19 @@ export function DevolucaoAdvancedFiltersBar({
               </Button>
             )}
             
-            {/* Botão Único de Sincronização */}
             <Button
-              onClick={() => onBuscar()}
+              onClick={onBuscar}
               disabled={isLoading || selectedAccountIds.length === 0}
               className="flex-1 min-w-[200px] bg-yellow-500 hover:bg-yellow-600 text-black disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <>
                   <div className="animate-spin mr-2 h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
-                  <span className="font-medium">Sincronizando...</span>
+                  <span className="font-medium">Buscando...</span>
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-4 w-4 mr-2" />
+                  <Search className="h-4 w-4 mr-2" />
                   <span className="font-medium">Aplicar Filtros e Buscar</span>
                 </>
               )}

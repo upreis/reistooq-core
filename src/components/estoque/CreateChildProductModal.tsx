@@ -62,13 +62,6 @@ interface CreateChildProductModalProps {
   initialBarcode?: string;
 }
 
-// Função para calcular cubagem (m³)
-const calcularCubagem = (largura: number, altura: number, comprimento: number): number => {
-  if (!largura || !altura || !comprimento) return 0;
-  // Dimensões em cm, converter para m³
-  return (largura * altura * comprimento) / 1000000;
-};
-
 export function CreateChildProductModal({ 
   open, 
   onOpenChange, 
@@ -756,21 +749,6 @@ export function CreateChildProductModal({
                       />
                     </div>
                   </div>
-
-                  {/* Exibir cubagem calculada */}
-                  {(variation.largura > 0 && variation.altura > 0 && variation.comprimento > 0) && (
-                    <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">Cubagem Calculada:</span>
-                        <span className="text-lg font-bold text-primary">
-                          {calcularCubagem(variation.largura, variation.altura, variation.comprimento).toFixed(6)} m³
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {variation.largura} × {variation.altura} × {variation.comprimento} cm
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 {/* Informações Fiscais */}

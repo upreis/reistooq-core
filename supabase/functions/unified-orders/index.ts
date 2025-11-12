@@ -1058,9 +1058,8 @@ Deno.serve(async (req) => {
       return fail('integration_account_id é obrigatório. Verifique se uma conta ML está selecionada.', 400);
     }
 
-    // ✅ 1. Busca account com SERVICE CLIENT (RLS policies gerenciam acesso)
-    // CORRIGIDO: Usar serviceClient ao invés de userClient para evitar "permission denied"
-    const { data: accountData, error: accountError } = await serviceClient
+    // ✅ 1. Busca account com validação de usuário (RLS ativo)
+    const { data: accountData, error: accountError } = await userClient
       .from('integration_accounts')
       .select('*')
       .eq('id', integration_account_id)

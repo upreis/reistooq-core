@@ -1,28 +1,30 @@
 /**
- * 🔄 SYNC-DEVOLUCOES - FASE 3 COMPLETA
+ * 🔄 SYNC-DEVOLUCOES - FASE 2
+ * Edge Function para sincronização em background de devoluções do Mercado Livre
  * 
- * ✅ ARQUITETURA FINAL:
- * 1. Busca tokens DIRETO do banco (serviceClient)
- * 2. Descriptografia INLINE (sem get-ml-token)
- * 3. Chama API ML /post-purchase/v2/claims DIRETAMENTE
- * 4. Enriquece com /reviews INLINE (enriquecimento automático)
- * 5. Chama ml-api-direct VIA HTTP apenas para MAPEAMENTO
- * 6. Salva dados completos em devolucoes_avancadas (JSONB)
- * 7. Suporta sync_all: true para cron jobs (sincroniza todas as contas ativas)
- * 
- * ❌ ELIMINADO: enrich-devolucoes (enriquecimento agora é inline)
- * ✅ MANTIDO: ml-api-direct como serviço de mapeamento (via HTTP)
+ * Funcionalidades:
+ * - Sincronização automática de claims/returns do ML
+ * - Processamento em background com throttling
+ * - Atualização de status em devolucoes_sync_status
+ * - Paginação inteligente
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { decryptAESGCM } from "../_shared/crypto.ts";
-import { CRYPTO_KEY, SUPABASE_URL, SERVICE_KEY } from "../_shared/config.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// 🔒 Cliente Supabase Admin
+function makeServiceClient() {
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+  const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  return createClient(SUPABASE_URL, SERVICE_KEY, { 
+    auth: { persistSession: false, autoRefreshToken: false } 
+  });
+}
 
 // 📊 Logger
 const logger = {
@@ -30,458 +32,231 @@ const logger = {
   success: (msg: string) => console.log(`✅ ${msg}`),
   warn: (msg: string, data?: any) => console.warn(`⚠️  ${msg}`, data || ''),
   error: (msg: string, error?: any) => console.error(`❌ ${msg}`, error || ''),
+  section: (title: string) => {
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`  ${title}`);
+    console.log(`${'='.repeat(60)}\n`);
+  }
 };
 
+// 🔄 Sincronizar devoluções do Mercado Livre
+async function syncDevolucoes(
+  integrationAccountId: string,
+  supabase: any,
+  batchSize: number = 100
+) {
+  const startTime = Date.now(); // ✅ Rastrear tempo de início
+  logger.section('INICIANDO SINCRONIZAÇÃO');
+  
+  let syncId: string | null = null;
+  
+  try {
+    // 1. Obter seller_id da conta de integração
+    const { data: account, error: accountError } = await supabase
+      .from('integration_accounts')
+      .select('seller_id, organization_id')
+      .eq('id', integrationAccountId)
+      .single();
+
+    if (accountError || !account) {
+      throw new Error(`Conta de integração não encontrada: ${accountError?.message}`);
+    }
+
+    logger.info(`Seller ID: ${account.seller_id}`);
+
+    // 2. Criar registro de sync inicial
+    const { data: syncRecord, error: syncInsertError } = await supabase
+      .from('devolucoes_sync_status')
+      .insert({
+        integration_account_id: integrationAccountId,
+        last_sync_status: 'running',
+        last_sync_at: new Date().toISOString(),
+        items_synced: 0,
+        items_total: 0,
+        items_failed: 0,
+        sync_type: 'manual'
+      })
+      .select()
+      .single();
+
+    if (syncInsertError || !syncRecord) {
+      throw new Error(`Erro ao criar registro de sync: ${syncInsertError?.message}`);
+    }
+
+    syncId = syncRecord.id;
+    logger.success(`Sync iniciado: ${syncId}`);
+
+    // 3. Chamar ml-api-direct para buscar dados
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    
+    let offset = 0;
+    let hasMore = true;
+    let totalProcessed = 0;
+    let totalCreated = 0;
+    let totalUpdated = 0;
+
+    // 4. Processar em lotes
+    while (hasMore) {
+      logger.info(`📦 Processando lote: offset=${offset}, limit=${batchSize}`);
+
+      // Chamar ml-api-direct
+      const apiResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'get_claims_and_returns',
+          integration_account_id: integrationAccountId,
+          seller_id: account.seller_id,
+          limit: batchSize,
+          offset: offset,
+          filters: {
+            periodoDias: 90 // Últimos 90 dias
+          }
+        })
+      });
+
+      if (!apiResponse.ok) {
+        const errorText = await apiResponse.text();
+        throw new Error(`Erro ao buscar dados da API ML: ${errorText}`);
+      }
+
+      const apiData = await apiResponse.json();
+      
+      if (!apiData.success) {
+        throw new Error(`API ML retornou erro: ${apiData.error}`);
+      }
+
+      const { claims, total, hasMore: apiHasMore } = apiData;
+      
+      totalProcessed += claims.length;
+      // ml-api-direct retorna info de criados/atualizados
+      if (apiData.created) totalCreated += apiData.created;
+      if (apiData.updated) totalUpdated += apiData.updated;
+      
+      hasMore = apiHasMore;
+      offset += batchSize;
+
+      logger.success(`✅ Lote processado: ${claims.length} claims (Total: ${totalProcessed}/${total})`);
+
+      // Atualizar progresso
+      await supabase
+        .from('devolucoes_sync_status')
+        .update({
+          items_synced: totalProcessed,
+          items_total: total,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', syncId);
+
+      // 🔥 Throttling: 500ms entre lotes para evitar rate limit
+      if (hasMore) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    // 5. Completar sync com sucesso
+    const durationMs = Date.now() - startTime;
+    await supabase
+      .from('devolucoes_sync_status')
+      .update({
+        last_sync_status: 'completed',
+        items_synced: totalProcessed,
+        items_total: totalProcessed,
+        items_failed: 0,
+        duration_ms: durationMs,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', syncId);
+
+    logger.section('SINCRONIZAÇÃO CONCLUÍDA');
+    logger.success(`Total processado: ${totalProcessed} devoluções`);
+    logger.success(`Criados: ${totalCreated} | Atualizados: ${totalUpdated}`);
+    logger.success(`Tempo: ${durationMs}ms`);
+
+    return {
+      success: true,
+      syncId,
+      totalProcessed,
+      totalCreated,
+      totalUpdated,
+      durationMs
+    };
+
+  } catch (error) {
+    // Marcar sync como falhado
+    const durationMs = Date.now() - startTime;
+    if (syncId) {
+      await supabase
+        .from('devolucoes_sync_status')
+        .update({
+          last_sync_status: 'failed',
+          error_message: error instanceof Error ? error.message : 'Erro desconhecido',
+          duration_ms: durationMs,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', syncId);
+    }
+
+    throw error;
+  }
+}
+
 serve(async (req) => {
+  // Handle CORS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      integration_account_id, 
-      batch_size = 100, 
-      sync_all = false,
-      incremental = false, // ✅ NOVO: sincronização incremental
-      date_from,  // ✅ NOVO: Filtro de data início vindo do frontend
-      date_to     // ✅ NOVO: Filtro de data fim vindo do frontend
-    } = await req.json();
+    const { integration_account_id, batch_size } = await req.json();
 
-    // ✅ Modo 1: Sincronizar conta específica
-    if (integration_account_id) {
-      const result = await syncAccount(integration_account_id, batch_size, incremental, date_from, date_to);
-      return new Response(
-        JSON.stringify(result),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // ✅ Modo 2: Sincronizar TODAS as contas ativas (cron job)
-    if (sync_all) {
-      const serviceClient = createClient(SUPABASE_URL, SERVICE_KEY, {
-        auth: { persistSession: false, autoRefreshToken: false }
-      });
-
-      // Buscar todas as contas ML ativas
-      const { data: accounts, error: accountsError } = await serviceClient
-        .from('integration_accounts')
-        .select('id, account_identifier')
-        .eq('provider', 'mercadolivre')
-        .eq('is_active', true);
-
-      if (accountsError) throw accountsError;
-      
-      if (!accounts || accounts.length === 0) {
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: 'Nenhuma conta ML ativa encontrada',
-            synced: 0
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      logger.info(`🔄 Sincronizando ${accounts.length} contas ML ativas...`);
-
-      // Sincronizar cada conta (sempre incremental no cron)
-      const results = [];
-      for (const account of accounts) {
-        try {
-          const result = await syncAccount(account.id, batch_size, true); // ✅ Incremental por padrão
-          results.push({ account_id: account.id, success: true, ...result });
-          logger.success(`✅ Conta ${account.account_identifier} sincronizada`);
-        } catch (error) {
-          logger.error(`❌ Erro ao sincronizar ${account.account_identifier}:`, error);
-          results.push({ 
-            account_id: account.id, 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Erro desconhecido' 
-          });
-        }
-      }
-
+    if (!integration_account_id) {
       return new Response(
         JSON.stringify({ 
-          success: true, 
-          synced: results.filter(r => r.success).length,
-          failed: results.filter(r => !r.success).length,
-          accounts: accounts.length,
-          results
+          success: false, 
+          error: 'integration_account_id é obrigatório' 
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+          status: 400 
+        }
       );
     }
 
-    // ❌ Nenhum parâmetro fornecido
+    const supabase = makeServiceClient();
+
+    // Executar sincronização
+    const result = await syncDevolucoes(
+      integration_account_id,
+      supabase,
+      batch_size || 100
+    );
+
+    return new Response(
+      JSON.stringify(result),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200
+      }
+    );
+
+  } catch (error) {
+    logger.error('Erro na sincronização', error);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Forneça integration_account_id OU sync_all: true' 
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+        details: error instanceof Error ? error.stack : undefined
       }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-
-  } catch (error: any) {
-    logger.error('Erro fatal:', error);
-    return new Response(
-      JSON.stringify({ success: false, error: error.message || 'Erro desconhecido' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, 
+        status: 500 
+      }
     );
   }
 });
-
-// 🔄 Sincronizar uma conta específica
-async function syncAccount(
-  integrationAccountId: string, 
-  batchSize: number, 
-  incremental: boolean = false,
-  dateFrom?: string,  // ✅ NOVO: Filtro de data início
-  dateTo?: string     // ✅ NOVO: Filtro de data fim
-) {
-  const syncType = incremental ? 'incremental' : 'full';
-  logger.info(`🚀 Sincronizando conta (${syncType}): ${integrationAccountId}`, { dateFrom, dateTo });
-  
-  const startTime = Date.now();
-  const serviceClient = createClient(SUPABASE_URL, SERVICE_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false }
-  });
-
-  // 1️⃣ Buscar dados da conta
-  const { data: account, error: accountError } = await serviceClient
-    .from('integration_accounts')
-    .select('account_identifier, organization_id')
-    .eq('id', integrationAccountId)
-    .single();
-
-  if (accountError || !account) {
-    throw new Error('Conta de integração não encontrada');
-  }
-
-  // 📅 INCREMENTAL: Buscar data da última sincronização
-  let lastSyncDate = null;
-  if (incremental) {
-    const { data: lastSync } = await serviceClient
-      .from('devolucoes_sync_status')
-      .select('last_sync_at')
-      .eq('integration_account_id', integrationAccountId)
-      .eq('last_sync_status', 'success')
-      .order('last_sync_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (lastSync?.last_sync_at) {
-      lastSyncDate = new Date(lastSync.last_sync_at);
-      logger.info(`📅 Sincronização incremental desde: ${lastSyncDate.toISOString()}`);
-    } else {
-      logger.warn('⚠️  Sem sincronização anterior - executando sync completa');
-      incremental = false; // Forçar full sync se não houver histórico
-    }
-  }
-
-  // 2️⃣ Criar registro de sync
-  const { data: syncRecord, error: syncInsertError } = await serviceClient
-    .from('devolucoes_sync_status')
-    .upsert({
-      integration_account_id: integrationAccountId,
-      sync_type: incremental ? 'incremental' : 'full',
-      last_sync_status: 'in_progress',
-      last_sync_at: new Date().toISOString(),
-      items_synced: 0,
-      items_total: 0,
-      items_failed: 0
-    }, {
-      onConflict: 'integration_account_id,sync_type'
-    })
-    .select()
-    .single();
-
-  if (syncInsertError || !syncRecord) {
-    throw new Error(`Erro ao criar registro de sync: ${syncInsertError?.message}`);
-  }
-
-  const syncId = syncRecord.id;
-
-  // 3️⃣ Buscar token
-  const { data: secretRow, error: secretError } = await serviceClient
-    .from('integration_secrets')
-    .select('simple_tokens, use_simple, secret_enc')
-    .eq('integration_account_id', integrationAccountId)
-    .eq('provider', 'mercadolivre')
-    .maybeSingle();
-
-  if (!secretRow) {
-    throw new Error('Token ML não encontrado');
-  }
-
-  let mlAccessToken = '';
-
-  // 4️⃣ Descriptografar token
-  if (secretRow.use_simple && secretRow.simple_tokens) {
-    try {
-      const simpleTokensStr = secretRow.simple_tokens as string;
-      if (simpleTokensStr.startsWith('SALT2024::')) {
-        const base64Data = simpleTokensStr.replace('SALT2024::', '');
-        const jsonStr = atob(base64Data);
-        const tokensData = JSON.parse(jsonStr);
-        mlAccessToken = tokensData.access_token || '';
-        logger.success('Token obtido via simple_tokens');
-      }
-    } catch (err) {
-      logger.error('Erro descriptografia simple_tokens:', err);
-    }
-  }
-
-  if (!mlAccessToken && secretRow.secret_enc) {
-    try {
-      const decrypted = await decryptAESGCM(secretRow.secret_enc as string);
-      const tokensData = JSON.parse(decrypted);
-      mlAccessToken = tokensData.access_token || '';
-      logger.success('Token obtido via secret_enc');
-    } catch (err) {
-      logger.error('Erro descriptografia secret_enc:', err);
-    }
-  }
-
-  if (!mlAccessToken) {
-    throw new Error('Token ML não disponível');
-  }
-
-  // 5️⃣ Buscar claims da API ML
-  logger.info(`📦 Buscando claims - Seller: ${account.account_identifier}`);
-  
-  const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-  let offset = 0;
-  let totalProcessed = 0;
-  let totalCreated = 0;
-  const MAX_CLAIMS = 5000; // ✅ Aumentado para buscar mais devoluções
-  const BATCH_SIZE = 50;
-  let hasMore = true;
-  const allMappedClaims: any[] = []; // ✅ NOVO: Acumular todos os dados mapeados da API
-
-  while (hasMore && totalProcessed < MAX_CLAIMS) {
-    // ✅ Filtro de data: Prioridade -> dateFrom do frontend > Incremental > Últimos 90 dias
-    let dateFilter: string;
-    
-    if (dateFrom) {
-      // 📅 PRIORIDADE 1: Usar filtro do frontend (7, 15, 30, 60 dias selecionado pelo usuário)
-      dateFilter = dateFrom;
-      logger.info(`📅 Buscando claims desde ${dateFilter} (período selecionado: ${dateFrom} até ${dateTo || 'hoje'})`);
-    } else if (incremental && lastSyncDate) {
-      // 📅 PRIORIDADE 2: Incremental - Buscar apenas claims criados/atualizados após última sync
-      dateFilter = lastSyncDate.toISOString().split('T')[0];
-      logger.info(`🔄 Buscando claims desde ${dateFilter} (incremental)`);
-    } else {
-      // 📅 PRIORIDADE 3: Full sync padrão - Buscar últimos 90 dias (máximo recomendado)
-      const ninetyDaysAgo = new Date();
-      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-      dateFilter = ninetyDaysAgo.toISOString().split('T')[0];
-      logger.info(`📦 Buscando claims dos últimos 90 dias (full sync)`);
-    }
-
-    // ⚠️ LIMITAÇÃO DA API ML: A API não suporta filtro de data_até (dateTo)
-    // A API retorna claims desde date_created até HOJE
-    // Se precisar filtrar por dateTo, fazer no código após receber os dados
-    const params = new URLSearchParams({
-      seller_id: account.account_identifier,
-      date_created: dateFilter, // ✅ API ML interpreta como "desde esta data até hoje"
-      offset: offset.toString(),
-      limit: BATCH_SIZE.toString(),
-      sort: 'date_created',
-      order: 'desc'
-    });
-    const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params.toString()}`;
-    
-    logger.info(`🔍 Requisição ML API: ${claimsUrl}`);
-    
-    const claimsResponse = await fetch(claimsUrl, {
-      headers: {
-        'Authorization': `Bearer ${mlAccessToken}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!claimsResponse.ok) {
-      const errorText = await claimsResponse.text();
-      logger.error(`❌ API ML erro (${claimsResponse.status}): ${errorText}`);
-      throw new Error(`API ML erro (${claimsResponse.status}): ${errorText}`);
-    }
-
-    const claimsData = await claimsResponse.json();
-    const claims = claimsData.data || [];
-    const total = claimsData.paging?.total || 0;
-    const apiLimit = claimsData.paging?.limit || BATCH_SIZE;
-    const apiOffset = claimsData.paging?.offset || offset;
-    
-    logger.info(`✅ ${claims.length} claims recebidos (offset: ${apiOffset}, limit: ${apiLimit}, total_api: ${total})`);
-    
-    // 🔍 DEBUG: Logar resposta completa da API ML se houver poucos resultados
-    if (total < 50 && offset === 0) {
-      logger.warn(`⚠️  API ML retornou apenas ${total} claims. Paging info:`, claimsData.paging);
-    }
-    
-    // 6️⃣ Processar claims: Order + Reviews + Mapear
-    const processedClaims = await Promise.all(
-      claims.map(async (claim: any) => {
-        try {
-          const claimId = claim.id;
-          const orderId = claim.resource_id;
-          
-          if (!claimId) return null;
-          
-          // Buscar order
-          let orderData = null;
-          if (orderId) {
-            try {
-              const orderResp = await fetch(`https://api.mercadolibre.com/orders/${orderId}`, {
-                headers: { 'Authorization': `Bearer ${mlAccessToken}` }
-              });
-              if (orderResp.ok) orderData = await orderResp.json();
-            } catch (err) {
-              logger.warn(`⚠️ Erro ao buscar order ${orderId}`);
-            }
-          }
-          
-          // Buscar reviews (enriquecimento inline)
-          let reviewsData = null;
-          try {
-            const reviewsResp = await fetch(
-              `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/reviews`,
-              { headers: { 'Authorization': `Bearer ${mlAccessToken}` } }
-            );
-            if (reviewsResp.ok) reviewsData = await reviewsResp.json();
-          } catch (err) {
-            // Reviews podem não existir, não é erro
-          }
-          
-          // Mapear via ml-api-direct
-          const mapResponse = await fetch(`${SUPABASE_URL}/functions/v1/ml-api-direct`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${ANON_KEY}`,
-            },
-            body: JSON.stringify({
-              action: 'mapear_claim',
-              claim_data: claim,
-              order_data: orderData,
-              reviews_data: reviewsData,
-              integration_account_id: integrationAccountId
-            }),
-          });
-          
-          if (!mapResponse.ok) {
-            logger.warn(`⚠️ Erro ao mapear claim ${claimId}`);
-            return null;
-          }
-          
-          const mapResult = await mapResponse.json();
-          return mapResult.data;
-          
-        } catch (err) {
-          logger.warn(`⚠️ Erro ao processar claim:`, err);
-          return null;
-        }
-      })
-    );
-    
-    const validClaims = processedClaims.filter(Boolean);
-    
-    // 7️⃣ Salvar claims no banco (cache para sincronizações futuras)
-    if (validClaims.length > 0) {
-      logger.info(`💾 Salvando ${validClaims.length} claims no cache...`);
-      
-      const validColumns = [
-        'claim_id', 'order_id', 'return_id', 'integration_account_id',
-        'data_criacao_claim', 'data_criacao_devolucao', 'data_atualizacao_devolucao',
-        'claim_stage', 'motivo_categoria', 'reason_id', 'reason_name', 'reason_detail',
-        'produto_titulo', 'sku', 'quantidade', 'valor_original_produto',
-        'comprador_nickname', 'comprador_nome_completo', 'comprador_cpf',
-        'dados_claim', 'dados_order', 'dados_return', 'dados_review',
-        'dados_buyer_info', 'dados_product_info', 'dados_financial_info',
-        'dados_tracking_info', 'dados_quantities', 'dados_available_actions',
-        'created_at', 'updated_at'
-      ];
-      
-      const claimsToSave = validClaims.map((claim: any) => {
-        const filtered: any = {
-          integration_account_id: integrationAccountId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        
-        validColumns.forEach(col => {
-          if (claim[col] !== undefined) {
-            filtered[col] = claim[col];
-          }
-        });
-        
-        return filtered;
-      });
-      
-      const { error: upsertError } = await serviceClient
-        .from('devolucoes_avancadas')
-        .upsert(claimsToSave, {
-          onConflict: 'claim_id',
-          ignoreDuplicates: false
-        });
-      
-      if (upsertError) {
-        logger.warn(`⚠️ Erro ao salvar cache: ${upsertError.message}`);
-      } else {
-        logger.success(`✅ Cache atualizado com ${validClaims.length} claims`);
-      }
-      
-      totalCreated += validClaims.length;
-    }
-    
-    // ✅ ACUMULAR dados mapeados para retornar ao frontend
-    allMappedClaims.push(...validClaims);
-    
-    totalProcessed += claims.length;
-    offset += BATCH_SIZE;
-    
-    // ✅ CORREÇÃO: Continuar buscando enquanto houver dados OU até atingir limite
-    // A API ML pode retornar total incorreto, então continuamos até não haver mais claims
-    hasMore = (claims.length === BATCH_SIZE) && (totalProcessed < MAX_CLAIMS);
-    
-    logger.info(`📊 Progresso: ${totalProcessed} processados, offset próximo: ${offset}, hasMore: ${hasMore}`);
-    
-    // Atualizar progresso
-    await serviceClient
-      .from('devolucoes_sync_status')
-      .update({
-        items_synced: totalProcessed,
-        items_total: Math.max(total, totalProcessed) // Usar o maior valor
-      })
-      .eq('id', syncId);
-  }
-
-  // 8️⃣ Finalizar sync
-  const durationMs = Date.now() - startTime;
-  
-  await serviceClient
-    .from('devolucoes_sync_status')
-    .update({
-      last_sync_status: 'success',
-      last_sync_at: new Date().toISOString(),
-      items_synced: totalProcessed,
-      items_total: totalProcessed,
-      items_failed: 0,
-      duration_ms: durationMs
-    })
-    .eq('id', syncId);
-
-  logger.success(`🎉 Concluído: ${totalProcessed} claims em ${durationMs}ms`);
-
-  // ✅ RETORNAR dados mapeados DIRETO da API ML
-  return {
-    success: true,
-    totalProcessed,
-    totalCreated,
-    durationMs,
-    syncId,
-    data: allMappedClaims, // ✅ NOVO: Retornar dados mapeados da API ML
-    message: `${totalProcessed} devoluções sincronizadas da API ML`
-  };
-}

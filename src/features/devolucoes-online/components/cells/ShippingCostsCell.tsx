@@ -42,14 +42,16 @@ const ShippingCostsCellComponent: React.FC<ShippingCostsCellProps> = ({
 
   if (!shippingCosts) {
     return (
-      <Badge variant="secondary" className="text-xs">
-        Sem dados de custo
-      </Badge>
+      <td className="px-3 py-3">
+        <Badge variant="secondary" className="text-xs">
+          Sem dados de custo
+        </Badge>
+      </td>
     );
   }
 
   return (
-    <>
+    <td className="px-3 py-3">
       <ShippingCostsModal
         open={modalOpen}
         onOpenChange={setModalOpen}
@@ -100,7 +102,7 @@ const ShippingCostsCellComponent: React.FC<ShippingCostsCellProps> = ({
           </Button>
         )}
       </div>
-    </>
+    </td>
   );
 };
 

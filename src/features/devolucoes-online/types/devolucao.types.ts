@@ -13,6 +13,7 @@ export interface MLReturn {
   shipment_status: string;
   tracking_number: string | null;
   shipment_destination: string | null;
+  shipment_type: string | null;
   date_created: string;
   date_closed: string | null;
   refund_at: string | null;
@@ -310,8 +311,6 @@ export interface ProductInfo {
   condition: string | null;
   available_quantity: number;
   sold_quantity: number;
-  variation_id?: number | null; // ✅ ADICIONADO: Variation ID do produto
-  category_id?: string | null;  // ✅ ADICIONADO: Category ID do produto
 }
 
 // ✅ FASE 3: Dados Financeiros
