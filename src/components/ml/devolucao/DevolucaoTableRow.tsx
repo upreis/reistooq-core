@@ -237,18 +237,19 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* Produto com Imagem */}
       <td className="px-3 py-3 text-left">
         <ProductInfoCell 
-          productInfo={devolucao.product_info ? {
-            id: devolucao.product_info.id || '',
-            title: devolucao.product_info.title || devolucao.produto_titulo || '',
-            price: devolucao.product_info.price || devolucao.valor_original_produto || 0,
-            currency_id: devolucao.product_info.currency_id || 'BRL',
-            thumbnail: devolucao.product_info.thumbnail || null,
-            permalink: devolucao.product_info.permalink || '',
-            sku: devolucao.product_info.sku || devolucao.sku || '',
-            condition: devolucao.product_info.condition || null,
-            sold_quantity: devolucao.product_info.sold_quantity || 0,
-            category_id: devolucao.product_info.category_id || null,
-            variation_id: devolucao.product_info.variation_id || null
+          productInfo={(devolucao as any).product_info ? {
+            id: (devolucao as any).product_info.id || '',
+            title: (devolucao as any).product_info.title || devolucao.produto_titulo || '',
+            price: (devolucao as any).product_info.price || devolucao.valor_original_produto || 0,
+            currency_id: (devolucao as any).product_info.currency_id || 'BRL',
+            thumbnail: (devolucao as any).product_info.thumbnail || null,
+            permalink: (devolucao as any).product_info.permalink || '',
+            sku: (devolucao as any).product_info.sku || devolucao.sku || '',
+            condition: (devolucao as any).product_info.condition || null,
+            sold_quantity: (devolucao as any).product_info.sold_quantity || 0,
+            available_quantity: (devolucao as any).product_info.available_quantity || 0,
+            category_id: (devolucao as any).product_info.category_id || null,
+            variation_id: (devolucao as any).product_info.variation_id || null
           } : null}
         />
       </td>
