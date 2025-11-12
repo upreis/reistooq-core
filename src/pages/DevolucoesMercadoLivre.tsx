@@ -198,7 +198,7 @@ function DevolucoesMercadoLivreContent() {
         autoRefreshInterval={30}
         onAutoRefreshToggle={setAutoRefreshEnabled}
         onAutoRefreshIntervalChange={() => {}}
-        onManualRefresh={handleBuscar}
+        onRefresh={handleBuscar}
         onClearFilters={handleClear}
         onExport={handleExport}
       />
