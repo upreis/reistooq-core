@@ -99,6 +99,18 @@ function DevolucoesMercadoLivreContent() {
 
   // ✅ Adicionar empresa (dados já vêm FLAT da Edge Function)
   const devolucoesComEmpresa = useMemo(() => {
+    // 🐛 DEBUG: Log primeiro item bruto recebido do backend
+    if (devolucoesComUrgencyFilter.length > 0) {
+      console.log('[DEBUG FRONTEND] ===== DADOS RECEBIDOS DO BACKEND =====');
+      console.log('[DEBUG FRONTEND] comprador_nome_completo:', devolucoesComUrgencyFilter[0]?.comprador_nome_completo);
+      console.log('[DEBUG FRONTEND] comprador_nickname:', devolucoesComUrgencyFilter[0]?.comprador_nickname);
+      console.log('[DEBUG FRONTEND] product_info:', devolucoesComUrgencyFilter[0]?.product_info ? 'EXISTS' : 'NULL');
+      console.log('[DEBUG FRONTEND] valor_reembolso_total:', devolucoesComUrgencyFilter[0]?.valor_reembolso_total);
+      console.log('[DEBUG FRONTEND] status_dinheiro:', devolucoesComUrgencyFilter[0]?.status_dinheiro);
+      console.log('[DEBUG FRONTEND] estimated_delivery_date:', devolucoesComUrgencyFilter[0]?.estimated_delivery_date);
+      console.log('[DEBUG FRONTEND] qualidade_comunicacao:', devolucoesComUrgencyFilter[0]?.qualidade_comunicacao);
+    }
+    
     return devolucoesComUrgencyFilter.map((dev: any) => {
       const account = accounts.find(acc => acc.id === dev.integration_account_id);
       
