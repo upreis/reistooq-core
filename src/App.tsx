@@ -22,7 +22,7 @@ import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import VendasOnline from "./pages/VendasOnline";
 import DevolucoesMercadoLivre from "./pages/DevolucoesMercadoLivre";
-import { DadosEnriquecidosQualidade } from "./features/devolucoes/pages/DadosEnriquecidosQualidade";
+// DadosEnriquecidosQualidade removido temporariamente
 import Scanner from "./pages/Scanner";
 
 import Reclamacoes from "./pages/Reclamacoes";

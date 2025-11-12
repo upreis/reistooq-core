@@ -4,6 +4,5 @@
  */
 
 import { ReclamacoesPage } from './ReclamacoesPage';
-import { DevolucoesMelhoradaPage } from './DevolucoesMelhoradaPage';
 
-export { ReclamacoesPage, DevolucoesMelhoradaPage };
+export { ReclamacoesPage };
