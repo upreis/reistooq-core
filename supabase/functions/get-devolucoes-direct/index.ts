@@ -382,6 +382,40 @@ serve(async (req) => {
           }
         }
 
+        // 8. 🆕 BUSCAR CHANGE DETAILS (se for troca)
+        let changeDetailsData = null;
+        if (claim.stage === 'change' || claim.type === 'change') {
+          try {
+            const changeRes = await fetchWithRetry(
+              `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/change_details`,
+              { headers: { 'Authorization': `Bearer ${accessToken}` } },
+              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+            );
+            if (changeRes.ok) {
+              changeDetailsData = await changeRes.json();
+              logger.debug(`✅ Change details obtido para claim ${claim.id}`);
+            }
+          } catch (err) {
+            logger.debug(`⚠️ Change details não disponível para claim ${claim.id}`);
+          }
+        }
+
+        // 9. 🆕 BUSCAR ATTACHMENTS (anexos/evidências)
+        let attachmentsData = null;
+        try {
+          const attachmentsRes = await fetchWithRetry(
+            `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/attachments`,
+            { headers: { 'Authorization': `Bearer ${accessToken}` } },
+            { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+          );
+          if (attachmentsRes.ok) {
+            attachmentsData = await attachmentsRes.json();
+            logger.debug(`✅ ${attachmentsData?.length || 0} anexos obtidos para claim ${claim.id}`);
+          }
+        } catch (err) {
+          logger.debug(`⚠️ Attachments não disponível para claim ${claim.id}`);
+        }
+
         return {
           ...claim,
           order_data: orderData,
@@ -392,7 +426,9 @@ serve(async (req) => {
           billing_info: billingData, // ✅ FASE 1: Dados fiscais do comprador (CPF/CNPJ)
           seller_reputation_data: sellerReputationData, // ✅ FASE 2: Reputação do vendedor (power_seller, mercado_lider)
           shipment_history_enriched: shipmentHistoryData,
-          shipping_costs_enriched: shippingCostsData
+          shipping_costs_enriched: shippingCostsData,
+          change_details: changeDetailsData, // 🆕 Detalhes de troca
+          attachments: attachmentsData // 🆕 Anexos/evidências
         };
       } catch (err) {
         console.error(`❌ Erro ao enriquecer claim ${claim.id}:`, err);
@@ -458,9 +494,21 @@ serve(async (req) => {
           // ✅ CRÍTICO: Passar product_info enriquecido para o mapeamento
           product_info: claim.product_info,
           
-          // ✅ FASE 1: Dados de shipment e custos já enriquecidos
+          // ✅ BILLING INFO (CPF/CNPJ)
+          billing_info: claim.billing_info,
+          
+          // ✅ SELLER REPUTATION (Power Seller, Mercado Líder)
+          seller_reputation_data: claim.seller_reputation_data,
+          
+          // ✅ SHIPMENT & COSTS enriquecidos
           shipment_history_enriched: claim.shipment_history_enriched,
-          shipping_costs_enriched: claim.shipping_costs_enriched
+          shipping_costs_enriched: claim.shipping_costs_enriched,
+          
+          // 🆕 CHANGE DETAILS (para trocas)
+          change_details: claim.change_details,
+          
+          // 🆕 ATTACHMENTS (anexos/evidências)
+          attachments: claim.attachments
         };
 
         return mapDevolucaoCompleta(item, integration_account_id, accountName, null);
