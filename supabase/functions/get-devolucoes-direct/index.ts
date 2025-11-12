@@ -377,6 +377,15 @@ serve(async (req) => {
                 (costsMap.get(shipmentIds[1])?.net_cost || 0)
               )
             };
+            
+            // 🐛 DEBUG: Log custos enriquecidos
+            logger.debug(`💰 SHIPPING COSTS para claim ${claim.id}:`, JSON.stringify({
+              shipment_ids: shipmentIds,
+              original_cost: costsMap.get(shipmentIds[0])?.total_cost || null,
+              return_cost: shipmentIds[1] ? costsMap.get(shipmentIds[1])?.total_cost || null : null,
+              total_logistics: shippingCostsData.total_logistics_cost,
+              has_breakdown: !!costsMap.get(shipmentIds[0])?.cost_breakdown
+            }));
           } catch (err) {
             logger.warn(`Erro ao buscar histórico/custos shipment:`, err);
           }

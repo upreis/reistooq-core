@@ -10,6 +10,18 @@ export const mapFinancialData = (item: any) => {
   const payment = claim.order_data?.payments?.[0];
   const orderItem = claim.order_data?.order_items?.[0];
   
+  // 🐛 DEBUG: Log shipping_costs_enriched recebido
+  if (claim.shipping_costs_enriched) {
+    console.log('💰 FinancialDataMapper - shipping_costs_enriched recebido:', {
+      claim_id: claim.id || claim.claim_details?.id,
+      has_original_costs: !!claim.shipping_costs_enriched.original_costs,
+      has_return_costs: !!claim.shipping_costs_enriched.return_costs,
+      total_logistics_cost: claim.shipping_costs_enriched.total_logistics_cost,
+      original_total: claim.shipping_costs_enriched.original_costs?.total_cost,
+      breakdown: claim.shipping_costs_enriched.original_costs?.cost_breakdown
+    });
+  }
+  
   // ✅ PRIORIDADE: seller_amount é o valor principal do claim
   const reembolsado = claim.seller_amount || claim.resolution?.refund_amount || claim.order_data?.total_amount;
   const total = claim.order_data?.total_amount || claim.seller_amount;
@@ -79,15 +91,27 @@ export const mapFinancialData = (item: any) => {
                      claim.return_details?.shipping_cost || null,
     
     // ✅ CUSTOS LOGÍSTICOS COMPLETOS (para CustosLogisticaCell)
-    custo_total_logistica: claim.shipping_costs_enriched?.total_cost || null,
-    custo_envio_original: claim.shipping_costs_enriched?.total_receiver_cost || null,
-    responsavel_custo_frete: claim.shipping_costs_enriched?.responsavel_custo || null,
+    custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || 
+                           claim.shipping_costs_enriched?.total_logistics_cost || null,
+    custo_envio_original: claim.shipping_costs_enriched?.original_costs?.total_receiver_cost || null,
+    responsavel_custo_frete: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null,
     
     // ✅ BREAKDOWN DETALHADO (para tooltip)
-    shipping_fee: claim.shipping_costs_enriched?.cost_breakdown?.shipping_fee || null,
-    handling_fee: claim.shipping_costs_enriched?.cost_breakdown?.handling_fee || null,
-    insurance: claim.shipping_costs_enriched?.cost_breakdown?.insurance || null,
-    taxes: claim.shipping_costs_enriched?.cost_breakdown?.taxes || null,
+    shipping_fee: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.shipping_fee || null,
+    handling_fee: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.handling_fee || null,
+    insurance: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.insurance || null,
+    taxes: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.taxes || null,
+    
+    // 🐛 DEBUG: Log campos extraídos
+    ...((() => {
+      const custos = {
+        custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || claim.shipping_costs_enriched?.total_logistics_cost || null,
+        shipping_fee: claim.shipping_costs_enriched?.original_costs?.cost_breakdown?.shipping_fee || null,
+        responsavel: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null
+      };
+      console.log('💰 FinancialDataMapper - Campos extraídos:', custos);
+      return {};
+    })()),
     
     // Parcelas
     parcelas: payment?.installments || null,
