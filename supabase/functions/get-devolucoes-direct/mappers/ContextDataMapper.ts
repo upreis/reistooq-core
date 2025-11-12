@@ -4,75 +4,59 @@
  */
 
 export const mapContextData = (item: any) => {
+  const claim = item;
+  
   return {
-    // ===== CAMPOS DE MEDIAÇÃO BÁSICOS (já existentes) =====
-    em_mediacao: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute',
-    data_inicio_mediacao: item.claim_details?.date_created || null,
-    escalado_para_ml: item.claim_details?.type === 'meditations' || item.claim_details?.stage === 'dispute',
+    // ===== MEDIAÇÃO =====
+    em_mediacao: claim.type === 'meditations' || claim.stage === 'dispute',
+    data_inicio_mediacao: claim.date_created || null,
+    escalado_para_ml: claim.type === 'meditations' || claim.stage === 'dispute',
+    mediador_ml: claim.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     
-    // ===== CAMPOS PRIORIDADE ALTA (já implementados) =====
-    mediador_ml: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
+    // ===== TROCA =====
+    eh_troca: claim.change_details?.type === 'change' || claim.change_details?.type === 'replace' || false,
+    data_estimada_troca: claim.change_details?.estimated_exchange_date?.from || 
+                         claim.change_details?.estimated_exchange_date?.to || null,
+    data_limite_troca: claim.change_details?.estimated_exchange_date?.to || null,
     
-    // Troca
-    eh_troca: item.change_details?.type === 'change' || item.change_details?.type === 'replace' || false,
-    data_estimada_troca: item.change_details?.estimated_exchange_date?.from ?? 
-                        item.change_details?.estimated_exchange_date?.to ?? null,
-    data_limite_troca: item.change_details?.estimated_exchange_date?.to || null,
+    // ===== COMPRADOR =====
+    comprador_cpf: claim.billing_info?.doc_number || 
+                   claim.order_data?.buyer?.billing_info?.doc_number || null,
+    comprador_nome_completo: claim.order_data?.buyer?.first_name && claim.order_data?.buyer?.last_name 
+      ? `${claim.order_data.buyer.first_name} ${claim.order_data.buyer.last_name}`.trim()
+      : claim.order_data?.buyer?.nickname || null,
+    comprador_nickname: claim.order_data?.buyer?.nickname || null,
     
-    // Comprador
-    comprador_cpf: item.billing_info?.doc_number || 
-                   item.order_data?.buyer?.billing_info?.doc_number || null,
-    comprador_nome_completo: item.order_data?.buyer?.first_name && item.order_data?.buyer?.last_name 
-      ? `${item.order_data.buyer.first_name} ${item.order_data.buyer.last_name}`.trim()
-      : item.order_data?.buyer?.nickname || null,
-    comprador_nickname: item.order_data?.buyer?.nickname || null,
-    
-    // Dados adicionais (mantidos para compatibilidade)
+    // ===== DADOS ADICIONAIS =====
     tags_automaticas: [],
     hash_verificacao: null,
     versao_api_utilizada: null,
     origem_timeline: null,
     status_produto_novo: null,
     endereco_destino: null,
-    valor_diferenca_troca: item.claim_details?.resolution?.exchange_difference || null,
-    data_vencimento_acao: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
+    valor_diferenca_troca: claim.resolution?.exchange_difference || null,
+    data_vencimento_acao: claim.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date || null,
     
-    // ===== 🆕 6 CAMPOS DE MEDIAÇÃO DETALHADOS (nível superior individual) =====
+    // ===== MEDIAÇÃO DETALHADOS =====
+    resultado_mediacao: claim.resolution?.reason || null,
+    detalhes_mediacao: claim.resolution?.details || claim.resolution?.description || null,
+    produto_troca_id: claim.change_details?.items?.[0]?.id || null,
+    novo_pedido_id: claim.change_details?.new_orders_ids?.[0] || null,
     
-    // 1. Resultado Mediação
-    resultado_mediacao: item.claim_details?.resolution?.reason || null,
-    
-    // 2. Detalhes Mediação (texto descritivo)
-    detalhes_mediacao: item.claim_details?.resolution?.details || 
-                       item.claim_details?.resolution?.description || null,
-    
-    // 3. Produto Troca ID
-    produto_troca_id: item.change_details?.items?.[0]?.id || null,
-    
-    // 4. Novo Pedido ID (gerado pela troca)
-    novo_pedido_id: item.change_details?.new_orders_ids?.[0] || null,
-    
-    // 5. Dias Restantes Ação (calculado do due_date)
     dias_restantes_acao: (() => {
-      const dueDate = item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date;
+      const dueDate = claim.players?.find((p: any) => p.role === 'respondent')?.available_actions?.[0]?.due_date;
       if (!dueDate) return null;
-      const due = new Date(dueDate);
-      const now = new Date();
-      const diff = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const diff = Math.ceil((new Date(dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       return diff > 0 ? diff : 0;
     })(),
     
-    // 6. Prazo Revisão Dias (calculado do estimated_handling_limit)
     prazo_revisao_dias: (() => {
-      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      const prazo = claim.return_details?.estimated_handling_limit?.date;
       if (!prazo) return null;
-      const prazoDate = new Date(prazo);
-      const hoje = new Date();
-      const diff = Math.ceil((prazoDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      const diff = Math.ceil((new Date(prazo).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
       return diff > 0 ? diff : 0;
     })(),
     
-    // ===== CAMPO PARA METADADOS (usuario_ultima_acao) =====
-    usuario_ultima_acao: item.claim_details?.last_updated_by || null
+    usuario_ultima_acao: claim.last_updated_by || null
   };
 };
