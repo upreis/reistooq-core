@@ -36,7 +36,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     
     // Classificação
     tipo_claim: claim.type || null,
-    subtipo_claim: claim.stage || null,
+    // ✅ CORREÇÃO: Priorizar return_details.subtype (low_cost, return_partial, return_total) 
+    // sobre claim.stage conforme documentação oficial ML
+    subtipo_claim: claim.return_details?.subtype || claim.stage || null,
     claim_stage: claim.stage || null,
     motivo_categoria: reasonId,
     metodo_resolucao: claim.resolution?.type || claim.resolution?.reason_id || null,
