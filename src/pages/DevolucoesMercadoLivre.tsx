@@ -35,6 +35,8 @@ import { StatusMoneyCell } from '@/components/devolucoes/StatusMoneyCell';
 import { StatusShipmentCell } from '@/components/devolucoes/StatusShipmentCell';
 import { StatusClaimCell } from '@/components/devolucoes/StatusClaimCell';
 import { TipoEnvioCell } from '@/components/devolucoes/TipoEnvioCell';
+import { EnderecoDestinoCell } from '@/components/devolucoes/EnderecoDestinoCell';
+import { WarehouseIndicatorCell } from '@/components/devolucoes/WarehouseIndicatorCell';
 import {
   Pagination,
   PaginationContent,
@@ -98,8 +100,12 @@ interface Devolucao {
   tipo_envio_devolucao?: string | null;  // return ou return_from_triage
   destino_devolucao?: string | null;     // warehouse ou seller_address
   endereco_destino_devolucao?: string | null;
+  rua_destino?: string | null;
+  numero_destino?: string | null;
   cidade_destino?: string | null;
   estado_destino?: string | null;
+  cep_destino?: string | null;
+  bairro_destino?: string | null;
   
   
   
@@ -438,6 +444,8 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Tracking</TableHead>
                 <TableHead>🚚 Tipo Logística</TableHead>
                 <TableHead>📮 Tipo Envio</TableHead>
+                <TableHead>📍 Endereço Destino</TableHead>
+                <TableHead>🏭 Triagem ML</TableHead>
                 
                 {/* PRIORIDADE ALTA - 7 colunas */}
                 <TableHead>📅 Previsão Entrega</TableHead>
@@ -544,6 +552,28 @@ export default function DevolucoesMercadoLivre() {
                       <TipoEnvioCell 
                         tipo_envio_devolucao={dev.tipo_envio_devolucao}
                         destino_devolucao={dev.destino_devolucao}
+                      />
+                    </TableCell>
+                    
+                    {/* 📍 ENDEREÇO DESTINO */}
+                    <TableCell>
+                      <EnderecoDestinoCell
+                        endereco_destino_devolucao={dev.endereco_destino_devolucao}
+                        rua_destino={dev.rua_destino}
+                        numero_destino={dev.numero_destino}
+                        cidade_destino={dev.cidade_destino}
+                        estado_destino={dev.estado_destino}
+                        cep_destino={dev.cep_destino}
+                        bairro_destino={dev.bairro_destino}
+                      />
+                    </TableCell>
+                    
+                    {/* 🏭 INDICADOR TRIAGEM ML */}
+                    <TableCell>
+                      <WarehouseIndicatorCell
+                        destino_devolucao={dev.destino_devolucao}
+                        tipo_envio_devolucao={dev.tipo_envio_devolucao}
+                        status_shipment={dev.status_shipment}
                       />
                     </TableCell>
                     

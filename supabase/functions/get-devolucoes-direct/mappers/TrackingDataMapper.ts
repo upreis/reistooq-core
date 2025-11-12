@@ -44,8 +44,12 @@ export const mapTrackingData = (item: any) => {
     tipo_envio_devolucao: returnData?.shipments?.[0]?.type || null, // return ou return_from_triage
     destino_devolucao: returnData?.shipments?.[0]?.destination?.name || null, // warehouse ou seller_address
     endereco_destino_devolucao: returnData?.shipments?.[0]?.destination?.shipping_address?.address_line || null,
+    rua_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.street_name || null,
+    numero_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.street_number || null,
     cidade_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.city?.name || null,
     estado_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.state?.name || null,
+    cep_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.zip_code || null,
+    bairro_destino: returnData?.shipments?.[0]?.destination?.shipping_address?.neighborhood?.name || null,
     
     // Review
     review_id: claim.review_details?.id || claim.review?.id || null,
