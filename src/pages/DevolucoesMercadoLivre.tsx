@@ -154,7 +154,6 @@ export default function DevolucoesMercadoLivre() {
   // Carregar contas ML
   useEffect(() => {
     const fetchAccounts = async () => {
-      console.log('🔍 Buscando contas ML...');
       const { data, error } = await supabase
         .from('integration_accounts')
         .select('id, name')
@@ -168,12 +167,10 @@ export default function DevolucoesMercadoLivre() {
         return;
       }
 
-      console.log('✅ Contas encontradas:', data?.length || 0);
       setAccounts(data || []);
       
       if (data && data.length > 0) {
         setSelectedAccountId(data[0].id);
-        console.log('✅ Auto-selecionada conta:', data[0].name);
       }
     };
 
@@ -187,10 +184,6 @@ export default function DevolucoesMercadoLivre() {
       return;
     }
 
-    console.log('📡 Iniciando busca de devoluções...');
-    console.log('📍 Conta:', selectedAccountId);
-    console.log('📍 Período:', periodo);
-
     setIsLoading(true);
     const toastId = toast.loading(`📡 Buscando devoluções dos últimos ${periodo} dias...`);
 
@@ -203,9 +196,6 @@ export default function DevolucoesMercadoLivre() {
       const dateFromISO = dateFrom.toISOString();
       const dateToISO = dateTo.toISOString();
 
-      console.log('📅 Date from:', dateFromISO);
-      console.log('📅 Date to:', dateToISO);
-
       // Usar datas customizadas se período for 'custom'
       let finalDateFrom = dateFromISO;
       let finalDateTo = dateToISO;
@@ -214,9 +204,6 @@ export default function DevolucoesMercadoLivre() {
         finalDateFrom = dateFrom.toISOString();
         finalDateTo = dateTo.toISOString();
       }
-
-      console.log('📅 Date from (final):', finalDateFrom);
-      console.log('📅 Date to (final):', finalDateTo);
 
       // Chamar Edge Function
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
@@ -235,7 +222,6 @@ export default function DevolucoesMercadoLivre() {
 
       // A Edge Function retorna { success, data, total }
       const claimsArray = data?.data || [];
-      console.log('✅ Dados recebidos:', claimsArray.length, 'devoluções');
       
       // Adicionar nome da empresa
       const account = accounts.find(acc => acc.id === selectedAccountId);
@@ -457,9 +443,9 @@ export default function DevolucoesMercadoLivre() {
                   </TableCell>
                 </TableRow>
               ) : (
-                devolucoesPage.map((dev) => (
+                devolucoesPage.map((dev, index) => (
                   <TableRow 
-                    key={dev.id} 
+                    key={`${dev.id}-${dev.claim_id}-${index}`}
                     className="cursor-pointer hover:bg-muted/50 transition-colors"
                     onClick={() => handleRowClick(dev)}
                   >
