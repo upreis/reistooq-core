@@ -199,6 +199,8 @@ serve(async (req) => {
         // 2. Buscar mensagens
         let messagesData = null;
         try {
+          logger.debug(`💬 Buscando messages para claim ${claim.id}`);
+          
           const messagesRes = await fetchWithRetry(
             `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
             { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -206,14 +208,21 @@ serve(async (req) => {
           );
           if (messagesRes.ok) {
             messagesData = await messagesRes.json();
+            
+            logger.debug(`💬 MESSAGES ENRIQUECIDAS para claim ${claim.id}:`, JSON.stringify({
+              total_messages: messagesData?.length || 0,
+              has_messages: (messagesData?.length || 0) > 0
+            }));
           }
         } catch (err) {
-          // Ignorar erro
+          logger.error(`❌ Erro ao buscar messages (claim ${claim.id}):`, err);
         }
 
         // 3. Buscar return
         let returnData = null;
         try {
+          logger.debug(`📋 Buscando return details para claim ${claim.id}`);
+          
           const returnRes = await fetchWithRetry(
             `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
             { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -221,15 +230,25 @@ serve(async (req) => {
           );
           if (returnRes.ok) {
             returnData = await returnRes.json();
+            
+            logger.debug(`📋 RETURN ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
+              return_id: returnData?.id,
+              status: returnData?.status,
+              has_estimated_delivery: !!returnData?.estimated_delivery_date
+            }));
+          } else {
+            logger.debug(`⚠️ Claim ${claim.id} sem return details`);
           }
         } catch (err) {
-          // Return pode não existir
+          logger.error(`❌ Erro ao buscar return (claim ${claim.id}):`, err);
         }
 
         // 4. Buscar reviews (se return existe e tem reviews)
         let reviewsData = null;
         if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
           try {
+            logger.debug(`🔍 Buscando review para return ${returnData.id} (claim ${claim.id})`);
+            
             const reviewsRes = await fetchWithRetry(
               `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -237,9 +256,14 @@ serve(async (req) => {
             );
             if (reviewsRes.ok) {
               reviewsData = await reviewsRes.json();
+              
+              logger.debug(`🔍 REVIEW ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
+                status: reviewsData?.status,
+                method: reviewsData?.method
+              }));
             }
           } catch (err) {
-            // Ignorar erro
+            logger.error(`❌ Erro ao buscar review (claim ${claim.id}):`, err);
           }
         }
 
@@ -248,6 +272,8 @@ serve(async (req) => {
         const itemId = orderData?.order_items?.[0]?.item?.id;
         if (itemId) {
           try {
+            logger.debug(`📦 Buscando product info para item ${itemId} (claim ${claim.id})`);
+            
             const productRes = await fetchWithRetry(
               `https://api.mercadolibre.com/items/${itemId}`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -279,10 +305,19 @@ serve(async (req) => {
                 variation_id: orderData?.order_items?.[0]?.variation_id || null,
                 category_id: itemData.category_id || null,
               };
+              
+              logger.debug(`📦 PRODUTO ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
+                title: productData.title?.substring(0, 50),
+                sku: productData.sku,
+                has_thumbnail: !!productData.thumbnail,
+                price: productData.price
+              }));
             }
           } catch (err) {
-            // Produto pode não existir
+            logger.error(`❌ Erro ao buscar product info (claim ${claim.id}):`, err);
           }
+        } else {
+          logger.debug(`⚠️ Claim ${claim.id} sem item ID para buscar produto`);
         }
 
         // 6. 🆕 FASE 1: BUSCAR BILLING INFO (CPF/CNPJ do comprador)
@@ -290,6 +325,8 @@ serve(async (req) => {
         const orderId = claim.resource_id;
         if (orderId) {
           try {
+            logger.debug(`💳 Buscando billing info para order ${orderId} (claim ${claim.id})`);
+            
             const billingRes = await fetchWithRetry(
               `https://api.mercadolibre.com/orders/${orderId}/billing_info`,
               { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -297,23 +334,31 @@ serve(async (req) => {
             );
             if (billingRes.ok) {
               billingData = await billingRes.json();
-              logger.debug(`✅ Billing info obtido para order ${orderId}`);
+              
+              logger.debug(`💳 BILLING ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
+                doc_type: billingData.doc_type,
+                has_doc_number: !!billingData.doc_number
+              }));
             }
           } catch (err) {
-            // Ignorar erro se produto não existir mais
+            logger.error(`❌ Erro ao buscar billing info (claim ${claim.id}):`, err);
           }
+        } else {
+          logger.debug(`⚠️ Claim ${claim.id} sem order ID para buscar billing`);
         }
 
         // 7. 🆕 FASE 2: BUSCAR SELLER REPUTATION (com cache)
         let sellerReputationData = null;
-        const sellerId = account.seller_id;
+        const sellerId = claim.players?.seller?.id;
         if (sellerId) {
           // Verificar cache primeiro
           if (sellerReputationCache.has(sellerId)) {
             sellerReputationData = sellerReputationCache.get(sellerId);
-            logger.debug(`♻️ Reputação do vendedor ${sellerId} obtida do cache`);
+            logger.debug(`♻️ Reputação do vendedor ${sellerId} obtida do cache (claim ${claim.id})`);
           } else {
             try {
+              logger.debug(`⭐ Buscando seller reputation para seller ${sellerId} (claim ${claim.id})`);
+              
               const sellerRes = await fetchWithRetry(
                 `https://api.mercadolibre.com/users/${sellerId}`,
                 { headers: { 'Authorization': `Bearer ${accessToken}` } },
@@ -330,12 +375,18 @@ serve(async (req) => {
                 };
                 // Armazenar no cache
                 sellerReputationCache.set(sellerId, sellerReputationData);
-                logger.debug(`✅ Reputação do vendedor ${sellerId} obtida e cacheada`);
+                
+                logger.debug(`⭐ REPUTAÇÃO ENRIQUECIDA para claim ${claim.id}:`, JSON.stringify({
+                  power_seller: sellerReputationData.power_seller_status,
+                  mercado_lider: sellerReputationData.mercado_lider_status
+                }));
               }
             } catch (err) {
-              logger.warn(`⚠️ Erro ao buscar reputação do vendedor ${sellerId}: ${err.message}`);
+              logger.error(`❌ Erro ao buscar seller reputation (claim ${claim.id}):`, err);
             }
           }
+        } else {
+          logger.debug(`⚠️ Claim ${claim.id} sem seller ID para buscar reputação`);
         }
 
         // 🆕 FASE 2: Buscar histórico de rastreamento detalhado
