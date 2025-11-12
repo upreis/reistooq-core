@@ -182,11 +182,7 @@ function App() {
                           <DevolucoesMercadoLivre />
                         </PermissionRoute>
                       } />
-                      <Route path="/devolucoes-ml/qualidade-dados" element={
-                        <PermissionRoute requiredPermissions={['orders:read']}>
-                          <DadosEnriquecidosQualidade />
-                        </PermissionRoute>
-                      } />
+                      {/* Rota qualidade-dados removida temporariamente */}
                     <Route path="/reclamacoes" element={
                       <PermissionRoute requiredPermissions={['integrations:manage']}>
                         <Reclamacoes />
