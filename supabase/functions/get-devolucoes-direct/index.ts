@@ -194,6 +194,15 @@ serve(async (req) => {
             if (orderRes.ok) {
               orderData = await orderRes.json();
               
+              // 🔍 DEBUG: Estrutura completa de orderData
+              console.log(`📦 ORDER DATA (claim ${claim.id}):`, JSON.stringify({
+                has_shipping: !!orderData?.shipping,
+                shipping_id: orderData?.shipping?.id,
+                has_payments: !!orderData?.payments,
+                payments_length: orderData?.payments?.length,
+                first_payment_exists: !!orderData?.payments?.[0]
+              }));
+              
               // 🔧 SOLUÇÃO ALTERNATIVA: Buscar logistic_type do endpoint /shipments/{id}
               if (orderData?.shipping?.id) {
                 try {
