@@ -13,6 +13,10 @@ interface MediationTransactionCellsProps {
 }
 
 export function MediationTransactionCells({ devolucao }: MediationTransactionCellsProps) {
+  // 🐛 DEBUG: Ver campos de mediação
+  console.log('🔍 MediationTransactionCells - mediador_ml:', devolucao.mediador_ml);
+  console.log('🔍 MediationTransactionCells - transaction_id:', devolucao.transaction_id);
+  
   return (
     <>
       {/* Mediador ML */}

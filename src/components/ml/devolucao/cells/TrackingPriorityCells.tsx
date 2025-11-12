@@ -28,6 +28,10 @@ const formatDate = (date: string | null | undefined): string => {
 };
 
 export function TrackingPriorityCells({ devolucao }: TrackingPriorityCellsProps) {
+  // 🐛 DEBUG: Ver campos de tracking
+  console.log('🔍 TrackingPriorityCells - estimated_delivery_date:', devolucao.estimated_delivery_date);
+  console.log('🔍 TrackingPriorityCells - has_delay:', devolucao.has_delay);
+  
   const returnQty = devolucao.return_quantity ?? devolucao.quantidade_devolvida ?? 0;
   const totalQty = devolucao.total_quantity ?? devolucao.quantidade ?? 0;
 
