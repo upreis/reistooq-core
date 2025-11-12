@@ -26,7 +26,7 @@ export function useAutoSync({
       try {
         console.log('[AutoSync] Triggering automatic sync...');
         
-        const { error } = await supabase.functions.invoke('sync-devolucoes-background', {
+        const { error } = await supabase.functions.invoke('sync-devolucoes', {
           body: {
             integration_account_id: integrationAccountId,
             trigger: 'auto'

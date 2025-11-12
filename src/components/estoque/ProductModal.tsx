@@ -72,6 +72,13 @@ const productSchema = z.object({
 
 type ProductFormData = z.infer<typeof productSchema>;
 
+// Função para calcular cubagem (m³)
+const calcularCubagem = (largura: number, altura: number, comprimento: number): number => {
+  if (!largura || !altura || !comprimento) return 0;
+  // Dimensões em cm, converter para m³
+  return (largura * altura * comprimento) / 1000000;
+};
+
 interface ProductModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -186,9 +193,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         peso_bruto_kg: product.peso_bruto_kg || "" as any,
         numero_volumes: product.numero_volumes || "" as any,
         tipo_embalagem: product.tipo_embalagem || "",
-        largura: product.largura || "" as any,
-        altura: product.altura || "" as any,
-        comprimento: product.comprimento || "" as any,
+        largura: product.largura_cm || "" as any,
+        altura: product.altura_cm || "" as any,
+        comprimento: product.comprimento_cm || "" as any,
         ncm: product.ncm || "",
         codigo_cest: product.codigo_cest || "",
         origem: product.origem !== null ? product.origem : "" as any,
@@ -244,28 +251,39 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
 
   // Sincronizar os selects de categoria quando um produto existente é carregado
   useEffect(() => {
-    if (product && open && categories?.length) {
-      // Procurar a categoria principal pelo nome
+    if (!open) return;
+    
+    // Carregar categorias ao editar produto existente
+    if (product?.id && categories?.length && !catalogLoading) {
       if (product.categoria_principal) {
-        const catPrincipal = getCategoriasPrincipais().find(c => c.nome === product.categoria_principal);
+        const categoriasPrincipais = getCategoriasPrincipais();
+        const catPrincipal = categoriasPrincipais.find(c => c.nome === product.categoria_principal);
+        
         if (catPrincipal) {
           setSelectedCategoriaPrincipal(catPrincipal.id);
           
-          // Procurar a categoria pelo nome
           if (product.categoria) {
-            const categoria = getCategorias(catPrincipal.id).find(c => c.nome === product.categoria);
-            if (categoria) {
-              setSelectedCategoria(categoria.id);
-            }
+            const categoriasFilhas = getCategorias(catPrincipal.id);
+            const categoria = categoriasFilhas.find(c => c.nome === product.categoria);
+            setSelectedCategoria(categoria?.id || "");
+          } else {
+            setSelectedCategoria("");
           }
+        } else {
+          setSelectedCategoriaPrincipal("");
+          setSelectedCategoria("");
         }
+      } else {
+        setSelectedCategoriaPrincipal("");
+        setSelectedCategoria("");
       }
-    } else if (!product && open) {
-      // Limpar seleções ao criar novo produto
+    }
+    // Limpar apenas uma vez ao abrir modal de criação
+    else if (!product && selectedCategoriaPrincipal) {
       setSelectedCategoriaPrincipal("");
       setSelectedCategoria("");
     }
-  }, [product, open, categories, getCategoriasPrincipais, getCategorias]);
+  }, [product?.id, product?.categoria_principal, product?.categoria, open, categories?.length, catalogLoading]);
 
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -370,6 +388,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
         
         await updateProduct(product.id, {
           ...data,
+          largura_cm: data.largura || null,
+          altura_cm: data.altura || null,
+          comprimento_cm: data.comprimento || null,
           url_imagem: imageUrl,
         });
 
@@ -438,9 +459,9 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
           peso_bruto_kg: data.peso_bruto_kg || null,
           numero_volumes: data.numero_volumes || null,
           tipo_embalagem: data.tipo_embalagem || null,
-          largura: data.largura || null,
-          altura: data.altura || null,
-          comprimento: data.comprimento || null,
+          largura_cm: data.largura || null,
+          altura_cm: data.altura || null,
+          comprimento_cm: data.comprimento || null,
           ncm: data.ncm || null,
           codigo_cest: data.codigo_cest || null,
           origem: data.origem || null,
@@ -545,6 +566,27 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 )}
               />
 
+              {/* Descrição */}
+              <FormField
+                control={form.control}
+                name="descricao"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel>Descrição</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Descrição detalhada do produto..."
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {/* Categorias Hierárquicas - Apenas 2 níveis */}
                <div className="md:col-span-2 space-y-4">
                  <h4 className="text-sm font-medium">Categorização (Opcional)</h4>
@@ -1003,6 +1045,25 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                   )}
                 />
               </div>
+
+              {/* Exibir cubagem calculada */}
+              {(form.watch('largura') > 0 && form.watch('altura') > 0 && form.watch('comprimento') > 0) && (
+                <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Cubagem Calculada:</span>
+                    <span className="text-lg font-bold text-primary">
+                      {calcularCubagem(
+                        form.watch('largura') || 0,
+                        form.watch('altura') || 0,
+                        form.watch('comprimento') || 0
+                      ).toFixed(6)} m³
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {form.watch('largura')} × {form.watch('altura')} × {form.watch('comprimento')} cm
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Seção: Informações Fiscais */}
@@ -1076,25 +1137,6 @@ export function ProductModal({ open, onOpenChange, product, onSuccess, initialBa
                 />
               </div>
             </div>
-
-            {/* Descrição */}
-            <FormField
-              control={form.control}
-              name="descricao"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Descrição detalhada do produto..."
-                      className="min-h-[80px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
             {/* Upload de Imagem */}
             <div className="space-y-2">

@@ -3,10 +3,12 @@
  * Tabela de devoluções com memoização e prazos
  */
 
-import { memo } from 'react';
+import { memo, useState, Fragment } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Code2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MLReturn } from '../types/devolucao.types';
@@ -32,6 +34,7 @@ import { SubstatusCell } from './cells/SubstatusCell';
 import { ActionsCell } from './cells/ActionsCell';
 import { ShippingCostsCell } from './cells/ShippingCostsCell';
 import { FulfillmentCell } from './cells/FulfillmentCell';
+import { ApiDebugPanel } from './ApiDebugPanel';
 import {
   translateStatus,
   translateStatusMoney,
@@ -57,6 +60,7 @@ interface DevolucaoTableProps {
 }
 
 export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChange, onRefresh }: DevolucaoTableProps) => {
+  const [expandedDebugId, setExpandedDebugId] = useState<string | null>(null);
 
   if (error) {
     return (
@@ -116,7 +120,8 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
     return destination ? labels[destination] || destination : '-';
   };
 
-  const getShipmentTypeLabel = (type: string | null) => {
+  // ✅ Tipo de envio agora vem de tracking_info JSONB
+  const getShipmentTypeLabel = (type: string | null | undefined) => {
     const labels: Record<string, string> = {
       'return': 'Devolução',
       'return_from_triage': 'Revisão',
@@ -188,8 +193,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
               <TableHead className="font-semibold min-w-[220px]">💰 Financeiro</TableHead>
               <TableHead className="font-semibold min-w-[200px]">📋 Pedido</TableHead>
               <TableHead className="font-semibold min-w-[220px]">📍 Tracking</TableHead>
-              <TableHead className="font-semibold min-w-[200px]">🔍 Revisão</TableHead>
-              <TableHead className="font-semibold min-w-[220px]">💬 Comunicação</TableHead>
               <TableHead className="font-semibold">ID Devolução</TableHead>
               <TableHead className="font-semibold">Claim ID</TableHead>
               <TableHead className="font-semibold">Item ID</TableHead>
@@ -203,7 +206,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
               <TableHead className="font-semibold">Qtd Devolver</TableHead>
               <TableHead className="font-semibold">Shipment ID</TableHead>
               <TableHead className="font-semibold">Status Envio</TableHead>
-              <TableHead className="font-semibold">Tipo Envio</TableHead>
               <TableHead className="font-semibold">Destino</TableHead>
               <TableHead className="font-semibold">Rastreio</TableHead>
               {/* ✅ FASE 6: Novas colunas de dados enriquecidos com responsividade */}
@@ -252,7 +254,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
             <TableHead className="font-semibold">Data Estimada</TableHead>
             <TableHead className="font-semibold">Prazo</TableHead>
             <TableHead className="font-semibold">Atraso?</TableHead>
-            <TableHead className="font-semibold">MPT</TableHead>
             <TableHead className="font-semibold">Reviews</TableHead>
             <TableHead className="font-semibold">Reembolso Após</TableHead>
             <TableHead className="font-semibold">Criação</TableHead>
@@ -288,6 +289,12 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 🎬 Ações Disponíveis
               </span>
             </TableHead>
+            {/* ✅ NOVO: Coluna de Debug */}
+            <TableHead className="font-semibold whitespace-nowrap">
+              <span className="flex items-center gap-1.5">
+                🔍 Debug API
+              </span>
+            </TableHead>
             <TableHead className="font-semibold">Análise</TableHead>
           </TableRow>
         </TableHeader>
@@ -314,7 +321,8 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
               : 'hover:bg-muted/50';
             
             return (
-              <TableRow key={uniqueKey} className={`transition-colors ${rowClasses}`}>
+              <Fragment key={uniqueKey}>
+              <TableRow className={`transition-colors ${rowClasses}`}>
                 <TableCell className="sticky left-0 bg-background z-10">
                   {onStatusChange && (
                     <StatusAnaliseSelect
@@ -364,20 +372,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                 <TableCell>
                   <TrackingInfoCell trackingInfo={dev.tracking_info} />
                 </TableCell>
-                
-                {/* ✅ FASE 6 + 10: Dados de Revisão */}
-                <TableCell>
-                  <ReviewInfoCell 
-                    reviewInfo={dev.review_info}
-                    returnId={dev.id}
-                    claimId={dev.claim_id}
-                  />
-                </TableCell>
-                
-                {/* ✅ FASE 7: Dados de Comunicação */}
-                <TableCell>
-                  <CommunicationInfoCell communication={dev.communication_info} />
-                </TableCell>
 
                 <TableCell className="font-medium text-xs">
                   {dev.id}
@@ -389,7 +383,7 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   {firstOrder?.item_id || '-'}
                 </TableCell>
                 <TableCell className="text-xs">
-                  {firstOrder?.variation_id || '-'}
+                  {dev.product_info?.variation_id || firstOrder?.variation_id || '-'}
                 </TableCell>
                 <TableCell>
                   <Badge 
@@ -437,11 +431,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     className="text-xs"
                   >
                     {translateShipmentStatus(dev.shipment_status || null)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className="text-xs">
-                    {getShipmentTypeLabel(dev.shipment_type)}
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -544,11 +533,6 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   )}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={dev.intermediate_check ? "default" : "outline"} className="text-xs">
-                    {dev.intermediate_check ? 'Sim' : 'Não'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
                   <Badge variant={dev.related_entities?.includes('reviews') ? "default" : "outline"} className="text-xs">
                     {dev.related_entities?.includes('reviews') ? 'Sim' : 'Não'}
                   </Badge>
@@ -599,6 +583,18 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                     onActionExecuted={onRefresh}
                   />
                 </TableCell>
+                {/* ✅ NOVO: Botão Debug API */}
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedDebugId(expandedDebugId === uniqueKey ? null : uniqueKey)}
+                    className="h-8 w-8 p-0"
+                    title="Ver dados brutos da API ML"
+                  >
+                    <Code2 className={`h-4 w-4 ${expandedDebugId === uniqueKey ? 'text-primary' : ''}`} />
+                  </Button>
+                </TableCell>
                 {/* Status Análise */}
                 <TableCell>
                   {onStatusChange && (
@@ -609,8 +605,20 @@ export const DevolucaoTable = memo(({ devolucoes, isLoading, error, onStatusChan
                   )}
                 </TableCell>
               </TableRow>
+              {/* ✅ NOVO: Linha expandível com Debug Panel */}
+              {expandedDebugId === uniqueKey && (
+                <TableRow>
+                  <TableCell colSpan={100} className="bg-muted/30 p-4">
+                    <ApiDebugPanel 
+                      data={dev}
+                      title={`API ML - Devolução ${dev.id} (Claim ${dev.claim_id})`}
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+              </Fragment>
             );
-        })}
+          })}
         </TableBody>
       </Table>
       </div>

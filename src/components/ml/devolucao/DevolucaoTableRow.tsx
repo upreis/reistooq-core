@@ -5,6 +5,8 @@ import type { DevolucaoAvancada } from '@/features/devolucoes/types/devolucao-av
 import { IdentificationCells } from './cells/IdentificationCells';
 import { DatesCells } from './cells/DatesCells';
 import { StatusCells } from './cells/StatusCells';
+import { StatusFinancialCells } from './cells/StatusFinancialCells'; // ✅ CORREÇÃO 3: Importar novo componente
+import { MandatoryActionCell } from './cells/MandatoryActionCell';
 import { FinancialCells } from './cells/FinancialCells';
 import { ActionCell } from './cells/ActionCell';
 import { 
@@ -197,7 +199,12 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* GRUPO 3: STATUS E ESTADO */}
       <StatusCells devolucao={devolucao} />
-      {/* ❌ REMOVIDO: SLA Cumprido (comparação de datas) */}
+      
+      {/* ✅ CORREÇÃO 3: Status $ e Tipo Recurso */}
+      <StatusFinancialCells devolucao={devolucao} />
+      
+      {/* 🆕 AÇÃO OBRIGATÓRIA */}
+      <MandatoryActionCell devolucao={devolucao} />
       
       {/* GRUPO 4: COMPRADOR (4 colunas) */}
       

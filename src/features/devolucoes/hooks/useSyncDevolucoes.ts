@@ -19,8 +19,8 @@ export function useSyncDevolucoes() {
     setSyncStatus(prev => ({ ...prev, isRunning: true, error: null }));
     
     try {
-      // ✅ Nova Edge Function de sincronização em background
-      const { data, error } = await supabase.functions.invoke('sync-devolucoes-background', {
+      // ✅ Edge Function de sincronização unificada
+      const { data, error } = await supabase.functions.invoke('sync-devolucoes', {
         body: { 
           integration_account_id: integrationAccountId 
         }

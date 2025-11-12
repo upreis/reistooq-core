@@ -28,6 +28,14 @@ const getBooleanBadge = (value: boolean | null | undefined) => {
 };
 
 export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
+  // 🔍 DEBUG: Log para verificar dados de resolução
+  if (devolucao.resultado_final) {
+    console.log('[StatusCells] Dados de resolução:', {
+      resultado_final: devolucao.resultado_final,
+      dados_claim_resolution: (devolucao as any).dados_claim?.resolution?.reason
+    });
+  }
+  
   return (
     <>
       {/* Status da Devolução */}
@@ -37,9 +45,13 @@ export const StatusCells: React.FC<StatusCellsProps> = ({ devolucao }) => {
       
       {/* ❌ REMOVIDO: Etapa - excluído conforme solicitação do usuário */}
       
-      {/* Resolução */}
+      {/* 🎯 Resolução */}
       <td className="px-3 py-3 text-center">
-        {devolucao.resultado_final ? <Badge variant="secondary">{traduzirResolucao(devolucao.resultado_final)}</Badge> : <span className="text-muted-foreground">-</span>}
+        {devolucao.resultado_final ? (
+          <Badge variant="secondary">{traduzirResolucao(devolucao.resultado_final)}</Badge>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        )}
       </td>
       
       {/* ❌ REMOVIDO: Status Rastreio - vazio */}

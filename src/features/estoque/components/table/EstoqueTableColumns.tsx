@@ -218,7 +218,7 @@ export function getEstoqueTableColumns({
       width: "120px",
       render: (_, product: Product) => (
         <span className="text-[10px]">
-          {formatDimensions(product.largura, product.altura, product.comprimento)}
+          {formatDimensions(product.largura_cm, product.altura_cm, product.comprimento_cm)}
         </span>
       )
     },

@@ -1,14 +1,8 @@
-import * as React from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { THEMES, type ThemeName } from "./materialm/tokens";
 
-// ✅ SAFETY CHECK: Garante que React está carregado corretamente
-if (!React || typeof React.useState !== 'function') {
-  console.error('🚨 CRITICAL: React não carregou corretamente!');
-  throw new Error('React failed to load. Please refresh the page.');
-}
-
 type ThemeProviderProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   defaultTheme?: ThemeName;
   storageKey?: string;
 };
@@ -28,7 +22,7 @@ const initialState: ThemeProviderState = {
   toggleTheme: () => null,
 };
 
-const ThemeProviderContext = React.createContext<ThemeProviderState>(initialState);
+const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
 export function ThemeProvider({
   children,
@@ -36,13 +30,7 @@ export function ThemeProvider({
   storageKey = "reistoq.theme",
   ...props
 }: ThemeProviderProps) {
-  // ✅ SAFETY: Fallback se React.useState não existir
-  if (!React.useState) {
-    console.error('🚨 React.useState is not available');
-    return <>{children}</>;
-  }
-
-  const [theme, setTheme] = React.useState<ThemeName>(() => {
+  const [theme, setTheme] = useState<ThemeName>(() => {
     if (typeof window === 'undefined' || typeof document === 'undefined') {
       return defaultTheme;
     }
@@ -56,7 +44,7 @@ export function ThemeProvider({
     }
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (typeof document === 'undefined') return;
     
     const root = document.documentElement;
@@ -123,7 +111,7 @@ export function ThemeProvider({
 }
 
 export const useTheme = () => {
-  const context = React.useContext(ThemeProviderContext);
+  const context = useContext(ThemeProviderContext);
 
   if (context === undefined)
     throw new Error("useTheme must be used within a ThemeProvider");

@@ -76,19 +76,15 @@ export const DEVOLUCAO_COLUMN_DEFINITIONS: ColumnDefinition[] = [
   { key: 'dias_ate_resolucao', label: 'Dias Resolução', category: 'meta', priority: 'optional', visible: true, default: false, width: 100 },
   { key: 'dentro_sla', label: 'SLA OK', category: 'meta', priority: 'optional', visible: true, default: false, width: 80 },
 
-  // SATISFAÇÃO - SEM DADOS
+  // SATISFAÇÃO - SEM DADOS (removidas colunas inexistentes na API)
   { key: 'score_satisfacao', label: 'Score Satisf.', category: 'meta', priority: 'optional', visible: true, default: false, width: 100 },
   { key: 'eficiencia_resolucao', label: 'Eficiência', category: 'meta', priority: 'optional', visible: true, default: false, width: 100 },
   { key: 'resultado_final', label: 'Resultado', category: 'basic', priority: 'optional', visible: true, default: false, width: 100 },
-  { key: 'impacto_reputacao', label: 'Reputação', category: 'meta', priority: 'optional', visible: true, default: false, width: 100 },
   { key: 'feedback_comprador_final', label: 'Feedback Comp.', category: 'meta', priority: 'optional', visible: false, default: false, width: 150, description: '❌ Dado nunca disponível - não existe na ML API' },
   { key: 'feedback_vendedor', label: 'Feedback Vend.', category: 'meta', priority: 'optional', visible: false, default: false, width: 150, description: '❌ Dado nunca disponível - não existe na ML API' },
-  { key: 'satisfacao_comprador', label: 'Satisfação', category: 'meta', priority: 'optional', visible: false, default: false, width: 100, description: '❌ Dado nunca disponível - ML não expõe essa métrica' },
 
-  // GESTÃO
-  { key: 'proxima_acao_requerida', label: 'Próx Ação', category: 'basic', priority: 'optional', visible: true, default: false, width: 120 },
+  // GESTÃO (removidas colunas duplicadas/inexistentes)
   { key: 'revisor_caso', label: 'Revisor', category: 'basic', priority: 'optional', visible: true, default: false, width: 100 },
-  { key: 'score_qualidade_caso', label: 'Score Qual.', category: 'meta', priority: 'optional', visible: true, default: false, width: 80 },
 
   // FINANCEIRO AVANÇADO
   { key: 'valor_reembolso_total', label: 'Reemb. Total', category: 'financial', priority: 'optional', visible: true, default: false, width: 100 },

@@ -51,8 +51,21 @@ export function calculateDeadlines(
   leadTime: LeadTimeData | null,
   claimData: ClaimData | null
 ): Deadlines {
-  const created = new Date(returnData.date_created);
+  // ✅ FIX: Validar date_created antes de usar
   const now = new Date();
+  let created: Date;
+  
+  if (returnData.date_created) {
+    created = new Date(returnData.date_created);
+    // Validar se é uma data válida
+    if (isNaN(created.getTime())) {
+      logger.warn(`Data de criação inválida para return ${returnData.id}, usando data atual`);
+      created = now;
+    }
+  } else {
+    logger.warn(`date_created ausente para return ${returnData.id}, usando data atual`);
+    created = now;
+  }
   
   // 1. Prazo para comprador enviar (10 dias úteis ou do lead_time)
   let shipmentDeadline: Date | null = null;
