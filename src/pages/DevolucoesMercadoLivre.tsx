@@ -188,9 +188,18 @@ function DevolucoesMercadoLivreContent() {
       <CriticalDeadlinesNotification devolucoes={devolucoesComEmpresa} />
 
       {/* 📊 HEADER + CONTROLES */}
-      <DevolucaoHeaderSection />
+      <DevolucaoHeaderSection 
+        isRefreshing={isLoading}
+        onRefresh={handleBuscar}
+      />
       
       <DevolucaoControlsBar 
+        autoRefreshEnabled={autoRefreshEnabled}
+        autoRefreshInterval={30}
+        onAutoRefreshToggle={setAutoRefreshEnabled}
+        onAutoRefreshIntervalChange={() => {}}
+        onManualRefresh={handleBuscar}
+        onClearFilters={handleClear}
         onExport={handleExport}
       />
 
