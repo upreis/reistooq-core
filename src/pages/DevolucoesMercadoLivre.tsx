@@ -5,7 +5,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
-import { DevolucaoProvider, useDevolucaoContext } from '@/features/devolucoes-online/contexts/DevolucaoProvider';
 import { DevolucaoHeaderSection } from '@/features/devolucoes-online/components/DevolucaoHeaderSection';
 import { DevolucaoStatsCards } from '@/features/devolucoes-online/components/DevolucaoStatsCards';
 import { DevolucaoTable } from '@/features/devolucoes-online/components/DevolucaoTable';
@@ -22,7 +21,6 @@ import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES
 import { useDevolucoesDirect } from '@/features/devolucoes-online/hooks/useDevolucoesDirect';
 
 function DevolucoesMercadoLivreContent() {
-  const { filters, setFilters, pagination, setPagination, viewMode, setViewMode } = useDevolucaoContext();
   
   const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
