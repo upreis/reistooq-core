@@ -47,6 +47,8 @@ export default function DevolucoesMercadoLivre() {
   const [periodo, setPeriodo] = useState('60');
   const [devolucoes, setDevolucoes] = useState<Devolucao[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedDevolucao, setSelectedDevolucao] = useState<Devolucao | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Carregar contas ML
   useEffect(() => {
@@ -237,7 +239,11 @@ export default function DevolucoesMercadoLivre() {
                 </TableRow>
               ) : (
                 devolucoes.map((dev) => (
-                  <TableRow key={dev.id}>
+                  <TableRow 
+                    key={dev.id} 
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => handleRowClick(dev)}
+                  >
                     <TableCell className="font-medium">{dev.empresa}</TableCell>
                     <TableCell>{dev.claim_id}</TableCell>
                     <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>
@@ -246,9 +252,7 @@ export default function DevolucoesMercadoLivre() {
                     </TableCell>
                     <TableCell>{dev.produto_titulo || '-'}</TableCell>
                     <TableCell>
-                      <span className="inline-flex px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
-                        {dev.status?.id || '-'}
-                      </span>
+                      <StatusBadge status={dev.status?.id || 'unknown'} />
                     </TableCell>
                     <TableCell className="text-xs">
                       {dev.metodo_pagamento || dev.dados_financial_info?.payment_method || '-'}
@@ -280,6 +284,12 @@ export default function DevolucoesMercadoLivre() {
             </div>
           )}
         </Card>
+
+        <DevolucaoDetailModal
+          devolucao={selectedDevolucao}
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
       </div>
     </div>
   );
