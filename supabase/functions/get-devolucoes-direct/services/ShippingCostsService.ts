@@ -149,13 +149,22 @@ export async function fetchMultipleShippingCosts(
   const costsMap = new Map<number, ShippingCostsData>();
   
   for (const shipmentId of shipmentIds) {
-    const costs = await fetchShippingCosts(shipmentId, accessToken);
-    if (costs) {
-      costsMap.set(shipmentId, costs);
+    try {
+      const costs = await fetchShippingCosts(shipmentId, accessToken);
+      if (costs) {
+        costsMap.set(shipmentId, costs);
+        logger.debug(`[ShippingCostsService] ✅ Custos shipment ${shipmentId} enriquecidos`);
+      } else {
+        logger.debug(`[ShippingCostsService] ⚠️ Sem dados custos shipment ${shipmentId}`);
+      }
+      
+      // ✅ CORREÇÃO: Delay correto usando setTimeout
+      if (shipmentIds.indexOf(shipmentId) < shipmentIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    } catch (err) {
+      logger.error(`[ShippingCostsService] ❌ Erro shipment ${shipmentId}:`, err);
     }
-    
-    // Delay de 100ms entre requests para evitar rate limit
-    await new Deno.delay(100);
   }
   
   return costsMap;

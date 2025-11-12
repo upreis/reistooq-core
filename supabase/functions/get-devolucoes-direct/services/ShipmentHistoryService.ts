@@ -141,13 +141,22 @@ export async function fetchMultipleShipmentHistories(
   const historyMap = new Map<number, ShipmentHistoryData>();
   
   for (const shipmentId of shipmentIds) {
-    const history = await fetchShipmentHistory(shipmentId, accessToken);
-    if (history) {
-      historyMap.set(shipmentId, history);
+    try {
+      const history = await fetchShipmentHistory(shipmentId, accessToken);
+      if (history) {
+        historyMap.set(shipmentId, history);
+        logger.debug(`[ShipmentHistoryService] ✅ Histórico shipment ${shipmentId} enriquecido`);
+      } else {
+        logger.debug(`[ShipmentHistoryService] ⚠️ Sem dados histórico shipment ${shipmentId}`);
+      }
+      
+      // ✅ CORREÇÃO: Delay correto usando setTimeout
+      if (shipmentIds.indexOf(shipmentId) < shipmentIds.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+    } catch (err) {
+      logger.error(`[ShipmentHistoryService] ❌ Erro shipment ${shipmentId}:`, err);
     }
-    
-    // Delay de 100ms entre requests para evitar rate limit
-    await new Deno.delay(100);
   }
   
   return historyMap;
