@@ -37,6 +37,24 @@ export const mapFinancialData = (item: any) => {
     status_dinheiro: item.return_details_v2?.money_status || null,
     data_reembolso: item.return_details_v2?.refund_at || null,
     
+    // 📅 FASE 3: Data estimada de reembolso (baseada em prazo ou data real)
+    data_estimada_reembolso: (() => {
+      // Se já temos data de reembolso confirmada, usar ela
+      if (item.return_details_v2?.refund_at) {
+        return item.return_details_v2.refund_at;
+      }
+      
+      // Se há prazo de análise, estimar 5-10 dias úteis após o prazo
+      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      if (prazo) {
+        const prazoDate = new Date(prazo);
+        prazoDate.setDate(prazoDate.getDate() + 7); // 7 dias após prazo limite
+        return prazoDate.toISOString();
+      }
+      
+      return null;
+    })(),
+    
     // ⚠️ NOTA: Compensação vem de return_details_v2 (não está no mapper ainda)
     
     // Pagamento
