@@ -59,6 +59,21 @@ export const mapTrackingData = (item: any) => {
     data_ultimo_status: item.shipment_history?.combined_events?.[0]?.date_created || null,
     data_criacao_devolucao: item.return_details_v2?.date_created || null,
     
+    // 📅 FASE 1: Datas críticas da devolução
+    data_fechamento_devolucao: item.return_details_v2?.closed_at || null,
+    prazo_limite_analise: item.return_details_v2?.estimated_handling_limit?.date || null,
+    dias_restantes_analise: (() => {
+      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      if (!prazo) return null;
+      
+      const prazoDate = new Date(prazo);
+      const hoje = new Date();
+      const diffTime = prazoDate.getTime() - hoje.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      return diffDays > 0 ? diffDays : 0;
+    })(),
+    
     // 📦 LOGÍSTICA ADICIONAL (✅ CORRIGIDO: usar destination.shipping_address)
     shipment_id_devolucao: returnShipment?.shipment_id?.toString() || null,
     endereco_destino_devolucao: (() => {

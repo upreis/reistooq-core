@@ -19,6 +19,9 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     dados_incompletos: false,
     fonte_dados_primaria: 'ml_api',
     
+    // 📅 FASE 1: Data da venda original
+    data_venda_original: item.order_data?.date_created || null,
+    
     // Dados do produto
     produto_titulo: item.resource_data?.title || item.reason || null,
     sku: item.resource_data?.sku || item.order_data?.order_items?.[0]?.item?.seller_sku || null,
@@ -51,6 +54,13 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     reason_detail: item.dados_reasons?.reason_detail || null,
     reason_flow: item.dados_reasons?.reason_flow || null,
     tipo_problema: item.dados_reasons?.reason_flow || null,
-    subtipo_problema: item.dados_reasons?.reason_name || null
+    subtipo_problema: item.dados_reasons?.reason_name || null,
+    
+    // 👥 FASE 1: Entidades relacionadas
+    entidades_relacionadas: {
+      comprador_id: item.claim_details?.players?.find((p: any) => p.role === 'claimant')?.user_id?.toString() || null,
+      vendedor_id: item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.user_id?.toString() || null,
+      mediador_id: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null
+    }
   };
 };
