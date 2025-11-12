@@ -99,11 +99,6 @@ function DevolucoesMercadoLivreContent() {
 
   // ✅ Adicionar empresa (dados já vêm FLAT da Edge Function)
   const devolucoesComEmpresa = useMemo(() => {
-    console.log('✅ Processando devoluções - total:', devolucoesComUrgencyFilter.length);
-    if (devolucoesComUrgencyFilter.length > 0) {
-      console.log('✅ Primeira devolução (sample):', devolucoesComUrgencyFilter[0]);
-    }
-    
     return devolucoesComUrgencyFilter.map((dev: any) => {
       const account = accounts.find(acc => acc.id === dev.integration_account_id);
       
