@@ -240,9 +240,11 @@ serve(async (req) => {
                   taxes_amount: orderData.payments[0].taxes_amount
                 }));
               }
+            } else {
+              console.log(`⚠️ ORDER fetch retornou status ${orderRes.status} para claim ${claim.id} - tipo_logistica e custo_envio_original ficarão NULL`);
             }
           } catch (err) {
-            console.log(`❌ ERRO ao buscar order ${claim.resource_id}:`, err);
+            console.log(`❌ ERRO ao buscar order ${claim.resource_id} (claim ${claim.id}): campos logísticos ficarão NULL -`, err);
           }
         }
 
