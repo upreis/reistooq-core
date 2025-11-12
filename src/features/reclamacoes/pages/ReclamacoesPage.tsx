@@ -116,7 +116,7 @@ export function ReclamacoesPage() {
   // ✅ CORREÇÃO ANTI-LOOP: Auto-selecionar contas APENAS UMA VEZ
   React.useEffect(() => {
     if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
-      const { accountIds } = validateMLAccounts(mlAccounts, selectedAccountIds);
+      const { accountIds } = validateMLAccounts(mlAccounts);
       if (accountIds.length > 0) {
         setSelectedAccountIds(accountIds);
         logger.debug('Contas auto-selecionadas', { 
