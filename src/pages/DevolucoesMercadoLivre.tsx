@@ -97,11 +97,31 @@ function DevolucoesMercadoLivreContent() {
     return devs;
   }, [apiDevolucoes, urgencyFilter]);
 
-  // Adicionar empresa
+  // ✅ CRÍTICO: Expandir dados JSONB E adicionar empresa
   const devolucoesComEmpresa = useMemo(() => {
     return devolucoesComUrgencyFilter.map((dev: any) => {
       const account = accounts.find(acc => acc.id === dev.integration_account_id);
-      return { ...dev, empresa: account?.name || 'N/A' };
+      
+      // ✅ Expandir todos os campos JSONB prefixados dados_* para nível superior
+      const expanded: any = { ...dev };
+      
+      // Processar cada campo que pode estar em formato JSONB prefixado
+      Object.keys(dev).forEach(key => {
+        if (key.startsWith('dados_') && dev[key] && typeof dev[key] === 'object') {
+          // Expandir campos do objeto JSONB para o nível superior
+          Object.keys(dev[key]).forEach(nestedKey => {
+            // Se o campo ainda não existe no nível superior, adicionar
+            if (!(nestedKey in expanded)) {
+              expanded[nestedKey] = dev[key][nestedKey];
+            }
+          });
+        }
+      });
+      
+      return { 
+        ...expanded, 
+        empresa: account?.name || 'N/A' 
+      };
     });
   }, [devolucoesComUrgencyFilter, accounts]);
 
