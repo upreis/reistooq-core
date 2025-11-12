@@ -99,11 +99,17 @@ function DevolucoesMercadoLivreContent() {
 
   // ✅ CRÍTICO: Expandir dados JSONB E adicionar empresa
   const devolucoesComEmpresa = useMemo(() => {
-    return devolucoesComUrgencyFilter.map((dev: any) => {
+    const result = devolucoesComUrgencyFilter.map((dev: any) => {
       const account = accounts.find(acc => acc.id === dev.integration_account_id);
       
       // ✅ Expandir todos os campos JSONB prefixados dados_* para nível superior
       const expanded: any = { ...dev };
+      
+      // 🐛 DEBUG: Ver estrutura do primeiro item
+      if (devolucoesComUrgencyFilter.indexOf(dev) === 0) {
+        console.log('🔍 PRIMEIRO ITEM RAW:', dev);
+        console.log('🔍 CAMPOS dados_*:', Object.keys(dev).filter(k => k.startsWith('dados_')));
+      }
       
       // Processar cada campo que pode estar em formato JSONB prefixado
       Object.keys(dev).forEach(key => {
@@ -118,11 +124,25 @@ function DevolucoesMercadoLivreContent() {
         }
       });
       
+      // 🐛 DEBUG: Ver resultado expandido do primeiro item
+      if (devolucoesComUrgencyFilter.indexOf(dev) === 0) {
+        console.log('🔍 PRIMEIRO ITEM EXPANDIDO:', expanded);
+        console.log('🔍 CAMPOS CRÍTICOS:', {
+          produto_titulo: expanded.produto_titulo,
+          comprador_nome_completo: expanded.comprador_nome_completo,
+          metodo_pagamento: expanded.metodo_pagamento,
+          status_dinheiro: expanded.status_dinheiro
+        });
+      }
+      
       return { 
         ...expanded, 
         empresa: account?.name || 'N/A' 
       };
     });
+    
+    console.log(`✅ Devoluções com empresa processadas: ${result.length}`);
+    return result;
   }, [devolucoesComUrgencyFilter, accounts]);
 
   // Separar por tabs
