@@ -221,7 +221,11 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       
       {/* Comprador */}
       <td className="px-3 py-3 text-left">
-        {devolucao.comprador_nome_completo || '-'}
+        {(() => {
+          console.log('[DEBUG ROW] comprador_nome_completo:', devolucao.comprador_nome_completo);
+          console.log('[DEBUG ROW] comprador_nickname:', devolucao.comprador_nickname);
+          return devolucao.comprador_nome_completo || '-';
+        })()}
       </td>
       
       {/* Nickname */}
