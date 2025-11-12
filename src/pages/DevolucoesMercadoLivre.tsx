@@ -21,6 +21,10 @@ import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES
 import { useDevolucoesDirect } from '@/features/devolucoes-online/hooks/useDevolucoesDirect';
 
 function DevolucoesMercadoLivreContent() {
+  // ✅ State local (sem context problemático)
+  const [filters, setFilters] = useState({ dateFrom: '', dateTo: '' });
+  const [pagination, setPagination] = useState({ page: 1, limit: 50 });
+  const [viewMode, setViewMode] = useState<'table' | 'kanban'>('table');
   
   const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
