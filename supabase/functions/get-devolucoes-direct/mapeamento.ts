@@ -39,6 +39,9 @@ export const mapDevolucaoCompleta = (
     // Grupo 6: Metadados (flags + qualidade + reputação + SLA)
     ...mapMetadata(item),
     
+    // ✅ CRÍTICO: Dados do Produto Enriquecidos (thumbnail, SKU, variation_id, category_id)
+    product_info: item.product_info || null,
+    
     // Grupo 7: Dados Brutos (raw data)
     raw: mapRawData(item)
   };

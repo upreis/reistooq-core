@@ -395,7 +395,10 @@ serve(async (req) => {
             title: claim.order_data?.order_items?.[0]?.item?.title || null,
             sku: claim.order_data?.order_items?.[0]?.item?.seller_sku || null,
             quantity: claim.order_data?.order_items?.[0]?.quantity || null
-          }
+          },
+          
+          // ✅ CRÍTICO: Passar product_info enriquecido para o mapeamento
+          product_info: claim.product_info
         };
 
         return mapDevolucaoCompleta(item, integration_account_id, accountName, null);
