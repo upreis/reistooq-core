@@ -67,11 +67,17 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   status_rastreamento?: string | null; // ✅ NOVO: status do tracking (pending, shipped, delivered, etc)
   url_rastreamento?: string | null;
   estimated_delivery_date?: string | null; // 🆕 Data estimada de entrega ao vendedor
+  estimated_delivery_limit?: string | null; // 🆕 Limite de entrega estimado
   has_delay?: boolean | null; // 🆕 Indica se há atraso no envio
   shipment_id?: string | null;
+  shipment_status?: string | null; // 🆕 Status específico do shipment
+  refund_at?: string | null; // 🆕 Data exata de reembolso
+  review_method?: string | null; // 🆕 Método de revisão
+  review_stage?: string | null; // 🆕 Estágio da revisão
 
   // 💰 CUSTOS E FINANCEIRO (4 colunas)
   custo_envio_devolucao?: number | null;
+  custo_devolucao?: number | null; // 🆕 Custo específico da devolução
   valor_compensacao?: number | null;
   moeda_custo?: string | null;
   responsavel_custo?: string | null;
@@ -122,6 +128,7 @@ export interface DevolucaoAvancada extends DevolucaoBasica {
   anexos_ml?: any[] | null;
   eh_troca?: boolean | null;
   valor_diferenca_troca?: number | null;
+  novo_pedido_id?: string | null; // 🆕 ID do novo pedido (em trocas)
   account_name?: string | null;
   
   // 🔍 REASONS API - FASE 4 (9 campos expandidos - SEM DUPLICAÇÃO)

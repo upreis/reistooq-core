@@ -8,11 +8,16 @@ import { StatusCells } from './cells/StatusCells';
 import { StatusFinancialCells } from './cells/StatusFinancialCells'; // ✅ CORREÇÃO 3: Importar novo componente
 import { MandatoryActionCell } from './cells/MandatoryActionCell';
 import { FinancialCells } from './cells/FinancialCells';
+import { FinancialDetailedCells } from './cells/FinancialDetailedCells';
 import { ActionCell } from './cells/ActionCell';
 import { CustosLogisticaCell } from '@/features/devolucoes-online/components/cells/CustosLogisticaCell';
 import { TrackingPriorityCells } from './cells/TrackingPriorityCells';
+import { TrackingDetailedCells } from './cells/TrackingDetailedCells';
 import { CommunicationPriorityCells } from './cells/CommunicationPriorityCells';
+import { CommunicationDetailedCells } from './cells/CommunicationDetailedCells';
 import { MediationTransactionCells } from './cells/MediationTransactionCells';
+import { MediationDetailedCells } from './cells/MediationDetailedCells';
+import { MetadataDetailedCells } from './cells/MetadataDetailedCells';
 import { 
   traduzirTipoClaim,
   traduzirStage, 
@@ -245,19 +250,34 @@ export const DevolucaoTableRow = React.memo<DevolucaoTableRowProps>(({
       {/* GRUPO 6: VALORES FINANCEIROS */}
       <FinancialCells devolucao={devolucao} />
       
+      {/* 🆕 Detalhes Financeiros Adicionais (9 colunas novas) */}
+      <FinancialDetailedCells devolucao={devolucao} />
+      
       {/* 🆕 Custos Logística - breakdown detalhado via hover */}
       <td className="px-3 py-3 text-center">
         <CustosLogisticaCell shippingCosts={devolucao.shipping_costs || null} />
       </td>
       
-      {/* 🆕 PRIORIDADE ALTA - Rastreamento */}
+      {/* 🆕 PRIORIDADE ALTA - Rastreamento (3 colunas já existentes) */}
       <TrackingPriorityCells devolucao={devolucao} />
       
-      {/* 🆕 PRIORIDADE ALTA - Comunicação */}
+      {/* 🆕 Rastreamento Detalhado (10 colunas novas) */}
+      <TrackingDetailedCells devolucao={devolucao} />
+      
+      {/* 🆕 PRIORIDADE ALTA - Comunicação (2 colunas já existentes) */}
       <CommunicationPriorityCells devolucao={devolucao} />
       
-      {/* 🆕 PRIORIDADE ALTA - Mediação e Transação */}
+      {/* 🆕 Comunicação Detalhada (6 colunas novas) */}
+      <CommunicationDetailedCells devolucao={devolucao} />
+      
+      {/* 🆕 PRIORIDADE ALTA - Mediação e Transação (2 colunas já existentes) */}
       <MediationTransactionCells devolucao={devolucao} />
+      
+      {/* 🆕 Mediação Detalhada (6 colunas novas) */}
+      <MediationDetailedCells devolucao={devolucao} />
+      
+      {/* 🆕 Metadados (3 colunas novas) */}
+      <MetadataDetailedCells devolucao={devolucao} />
       
       {/* GRUPO 7: MOTIVO E CATEGORIA (8 colunas) */}
       

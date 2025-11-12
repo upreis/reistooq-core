@@ -97,23 +97,66 @@ const DevolucaoTableComponent: React.FC<DevolucaoTableProps> = ({
             
             {/* Outros valores */}
             <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Retido</th>
-            {/* ❌ REMOVIDO: Compensação - não está sendo mapeado pela API */}
+            
+            {/* 🆕 FINANCEIRO DETALHADO - 9 novas colunas */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Status $</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Método Reembolso</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '80px'}}>Moeda</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>% Reembolsado</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Diferença Troca</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Taxa ML Reemb.</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Custo Devolução</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '100px'}}>Parcelas</th>
+            <th className="text-right px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Valor Parcela</th>
             
             {/* 🆕 Custos Logística - breakdown detalhado via hover */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Custos Logística</th>
             
-            {/* 🆕 PRIORIDADE ALTA - Rastreamento */}
+            {/* 🆕 PRIORIDADE ALTA - Rastreamento (3 colunas já existentes) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Data Est. Entrega</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>Tem Atraso?</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Qtd Devolvida/Total</th>
             
-            {/* 🆕 PRIORIDADE ALTA - Comunicação */}
+            {/* 🆕 RASTREAMENTO DETALHADO - 10 novas colunas */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Limite Entrega</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Status Shipment</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Refund At</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Review Method</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Review Stage</th>
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '200px'}}>Localização Atual</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Status Transporte</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Tracking History</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Tracking Events</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Última Movimentação</th>
+            
+            {/* 🆕 PRIORIDADE ALTA - Comunicação (2 colunas já existentes) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Qualidade Comunicação</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '120px'}}>N° Interações</th>
             
-            {/* 🆕 PRIORIDADE ALTA - Mediação e Transação */}
+            {/* 🆕 COMUNICAÇÃO DETALHADA - 6 novas colunas */}
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Timeline Events</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Marcos Temporais</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Data Criação Claim</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Data Início Return</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '170px'}}>Data Fechamento Claim</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Histórico Status</th>
+            
+            {/* 🆕 PRIORIDADE ALTA - Mediação e Transação (2 colunas já existentes) */}
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Mediador ML</th>
             <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Transaction ID</th>
+            
+            {/* 🆕 MEDIAÇÃO DETALHADA - 6 novas colunas */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '160px'}}>Resultado Mediação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Detalhes Mediação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Produto Troca ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Novo Pedido ID</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Dias Restantes Ação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '140px'}}>Prazo Revisão Dias</th>
+            
+            {/* 🆕 METADADOS - 3 novas colunas */}
+            <th className="text-left px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '150px'}}>Usuário Última Ação</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Total Evidências</th>
+            <th className="text-center px-3 py-3 font-semibold text-muted-foreground" style={{minWidth: '130px'}}>Anexos ML</th>
             
             {/* ❌ REMOVIDO: Método Reembolso - vazio */}
             {/* ❌ REMOVIDO: Moeda - vazio */}
