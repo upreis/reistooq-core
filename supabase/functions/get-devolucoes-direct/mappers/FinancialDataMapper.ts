@@ -75,14 +75,22 @@ export const mapFinancialData = (item: any) => {
     taxa_ml_reembolsada: payment?.marketplace_fee || null,
     
     // Custo de devolução
-    custo_devolucao: claim.shipping_costs_enriched?.return_costs?.net_cost || 
+    custo_devolucao: claim.shipping_costs_enriched?.net_cost || 
                      claim.return_details?.shipping_cost || null,
+    
+    // ✅ CUSTOS LOGÍSTICOS COMPLETOS (para CustosLogisticaCell)
+    custo_total_logistica: claim.shipping_costs_enriched?.total_cost || null,
+    custo_envio_original: claim.shipping_costs_enriched?.total_receiver_cost || null,
+    responsavel_custo_frete: claim.shipping_costs_enriched?.responsavel_custo || null,
+    
+    // ✅ BREAKDOWN DETALHADO (para tooltip)
+    shipping_fee: claim.shipping_costs_enriched?.cost_breakdown?.shipping_fee || null,
+    handling_fee: claim.shipping_costs_enriched?.cost_breakdown?.handling_fee || null,
+    insurance: claim.shipping_costs_enriched?.cost_breakdown?.insurance || null,
+    taxes: claim.shipping_costs_enriched?.cost_breakdown?.taxes || null,
     
     // Parcelas
     parcelas: payment?.installments || null,
-    valor_parcela: payment?.installment_amount || null,
-    
-    // Shipping costs (para CustosLogisticaCell)
-    shipping_costs: claim.shipping_costs_enriched || null
+    valor_parcela: payment?.installment_amount || null
   };
 };
