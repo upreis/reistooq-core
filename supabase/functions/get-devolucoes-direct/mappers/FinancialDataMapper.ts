@@ -102,8 +102,9 @@ export const mapFinancialData = (item: any) => {
     // 🔧 CORREÇÃO: Usar original_total diretamente (breakdown sempre 0 na API ML)
     custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || null,
     
-    // 🔧 CORREÇÃO: Extrair custo de envio original do orderData (não de shipping_costs_enriched)
-    custo_envio_original: claim.order_data?.shipping?.cost || 
+    // 🔧 SOLUÇÃO ALTERNATIVA: Priorizar payments[0].shipping_cost para custo de envio original
+    custo_envio_original: claim.order_data?.payments?.[0]?.shipping_cost || 
+                          claim.order_data?.shipping?.cost || 
                           claim.order_data?.shipping?.base_cost || null,
     
     responsavel_custo_frete: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null,
@@ -116,8 +117,10 @@ export const mapFinancialData = (item: any) => {
     ...((() => {
       const custos = {
         custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || null,
-        custo_envio_original: claim.order_data?.shipping?.cost || claim.order_data?.shipping?.base_cost || null,
-        tipo_logistica_ordem: claim.order_data?.shipping?.logistic_type || null,
+        custo_envio_original: claim.order_data?.payments?.[0]?.shipping_cost || 
+                              claim.order_data?.shipping?.cost || 
+                              claim.order_data?.shipping?.base_cost || null,
+        tipo_logistica_ordem: claim.shipment_data?.logistic_type || claim.order_data?.shipping?.logistic_type || null,
         responsavel: claim.shipping_costs_enriched?.original_costs?.responsavel_custo || null
       };
       console.log('💰 FinancialDataMapper - Campos extraídos:', JSON.stringify(custos));

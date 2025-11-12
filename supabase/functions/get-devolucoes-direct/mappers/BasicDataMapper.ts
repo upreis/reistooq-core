@@ -46,7 +46,7 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     valor_original_produto: claim.order_data?.order_items?.[0]?.unit_price || null,
     
     // 🚚 TIPO DE LOGÍSTICA (fulfillment, flex, self_service, drop_off, cross_docking)
-    tipo_logistica: claim.order_data?.shipping?.logistic_type || null,
+    tipo_logistica: claim.shipment_data?.logistic_type || claim.order_data?.shipping?.logistic_type || null,
     
     // Classificação
     tipo_claim: claim.type || null,

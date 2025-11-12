@@ -179,8 +179,10 @@ serve(async (req) => {
     // Função para enriquecer um único claim
     const enrichClaim = async (claim: any) => {
       try {
-        // 1. Buscar ordem (order_data) com shipping.logistic_type
+        // 1. Buscar ordem (order_data) e shipment para logistic_type
         let orderData = null;
+        let shipmentData = null;
+        
         if (claim.resource_id) {
           try {
             const orderRes = await fetchWithRetry(
@@ -189,46 +191,50 @@ serve(async (req) => {
               { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
             );
             
-            console.log(`📦 ORDER FETCH STATUS (claim ${claim.id}):`, {
-              ok: orderRes.ok,
-              status: orderRes.status,
-              resource_id: claim.resource_id
-            });
-            
             if (orderRes.ok) {
               orderData = await orderRes.json();
               
-              // 🔧 DEBUG: Inspecionar orderData COMPLETO
-              console.log(`📦 ORDER DATA KEYS (claim ${claim.id}):`, Object.keys(orderData || {}));
-              
-              // 🔧 DEBUG: Inspecionar estrutura COMPLETA de shipping
-              if (orderData?.shipping) {
-                console.log(`🚚 ORDER SHIPPING COMPLETO (claim ${claim.id}):`, JSON.stringify({
-                  shipping_keys: Object.keys(orderData.shipping),
-                  id: orderData.shipping.id,
-                  logistic_type: orderData.shipping.logistic_type,
-                  cost: orderData.shipping.cost,
-                  base_cost: orderData.shipping.base_cost,
-                  shipping_cost: orderData.shipping.shipping_cost,
-                  list_cost: orderData.shipping.list_cost,
-                  free_shipping: orderData.shipping.free_shipping,
-                  // Sample dos primeiros 500 chars
-                  full_sample: JSON.stringify(orderData.shipping).substring(0, 500)
-                }));
-              } else {
-                console.log(`⚠️ ORDER SEM SHIPPING (claim ${claim.id}) - orderData exists:`, !!orderData);
-                if (orderData) {
-                  console.log(`📦 ORDER KEYS disponíveis:`, Object.keys(orderData));
+              // 🔧 SOLUÇÃO ALTERNATIVA: Buscar logistic_type do endpoint /shipments/{id}
+              if (orderData?.shipping?.id) {
+                try {
+                  console.log(`🚚 Buscando shipment ${orderData.shipping.id} para logistic_type`);
+                  
+                  const shipmentRes = await fetchWithRetry(
+                    `https://api.mercadolibre.com/shipments/${orderData.shipping.id}`,
+                    { headers: { 'Authorization': `Bearer ${accessToken}` } },
+                    { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+                  );
+                  
+                  if (shipmentRes.ok) {
+                    shipmentData = await shipmentRes.json();
+                    
+                    console.log(`🚚 SHIPMENT DATA (claim ${claim.id}):`, JSON.stringify({
+                      shipment_id: shipmentData.id,
+                      logistic_type: shipmentData.logistic_type,
+                      shipping_option: shipmentData.shipping_option,
+                      status: shipmentData.status
+                    }));
+                  } else {
+                    console.log(`⚠️ Shipment fetch failed: ${shipmentRes.status}`);
+                  }
+                } catch (err) {
+                  console.log(`❌ Erro ao buscar shipment:`, err);
                 }
               }
-            } else {
-              console.log(`❌ ORDER FETCH FAILED (claim ${claim.id}):`, orderRes.status);
+              
+              // 🔧 DEBUG: Validar payments para custo_envio_original
+              if (orderData?.payments?.[0]) {
+                console.log(`💰 PAYMENT DATA (claim ${claim.id}):`, JSON.stringify({
+                  payment_id: orderData.payments[0].id,
+                  shipping_cost: orderData.payments[0].shipping_cost,
+                  transaction_amount: orderData.payments[0].transaction_amount,
+                  taxes_amount: orderData.payments[0].taxes_amount
+                }));
+              }
             }
           } catch (err) {
             console.log(`❌ ERRO ao buscar order ${claim.resource_id}:`, err);
           }
-        } else {
-          console.log(`⚠️ Claim ${claim.id} sem resource_id`);
         }
 
         // 2. Buscar mensagens
@@ -560,6 +566,7 @@ serve(async (req) => {
         return {
           ...claim,
           order_data: orderData,
+          shipment_data: shipmentData, // 🔧 SOLUÇÃO ALTERNATIVA: Dados do shipment para logistic_type
           claim_messages: messagesData,
           return_details_v2: returnData,
           review_details: reviewsData,
