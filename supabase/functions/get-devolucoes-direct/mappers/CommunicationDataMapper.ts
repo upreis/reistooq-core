@@ -53,8 +53,9 @@ export const mapCommunicationData = (item: any) => {
     qualidade_comunicacao: (() => {
       if (sortedMessages.length === 0) return null;
       
+      // ✅ CORREÇÃO: Se não houver status de moderação, considerar todas como limpas
       const cleanMessages = sortedMessages.filter((m: any) => 
-        m.message_moderation?.status === 'clean'
+        !m.message_moderation || m.message_moderation?.status === 'clean'
       ).length;
       
       const totalMessages = sortedMessages.length;

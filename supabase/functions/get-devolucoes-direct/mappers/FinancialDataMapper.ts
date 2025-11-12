@@ -5,12 +5,14 @@
  */
 
 export const mapFinancialData = (item: any) => {
+  // ✅ CORREÇÃO: Usar dados do claim diretamente, pois order_data pode estar null
+  const claim = item.claim_details || item;
   const payment = item.order_data?.payments?.[0];
   const orderItem = item.order_data?.order_items?.[0];
   
-  // Calcular total e reembolsado para percentual
-  const total = item.order_data?.total_amount || item.amount;
-  const reembolsado = item.claim_details?.resolution?.refund_amount || item.return_details_v2?.refund_amount;
+  // ✅ CORREÇÃO: valor_reembolso_total vem do claim.seller_amount
+  const reembolsado = claim.resolution?.refund_amount || item.return_details_v2?.refund_amount || claim.seller_amount || item.amount;
+  const total = item.order_data?.total_amount || claim.seller_amount || item.amount;
   
   return {
     // ===== CAMPOS FINANCEIROS BÁSICOS (já existentes) =====
@@ -23,8 +25,8 @@ export const mapFinancialData = (item: any) => {
     
     // Responsável pelo custo - benefited pode ser array
     responsavel_custo: (() => {
-      const benefited = item.claim_details?.resolution?.benefited;
-      const responsible = item.claim_details?.resolution?.responsible;
+      const benefited = claim.resolution?.benefited;
+      const responsible = claim.resolution?.responsible;
       
       if (Array.isArray(benefited) && benefited.length > 0) {
         return benefited[0];
@@ -61,19 +63,19 @@ export const mapFinancialData = (item: any) => {
     // ===== 🆕 9 CAMPOS FINANCEIROS DETALHADOS (nível superior individual) =====
     
     // 1. Status $ (money_status)
-    status_dinheiro: item.return_details_v2?.money_status || null,
+    status_dinheiro: item.return_details_v2?.money_status || claim.resolution?.money_status || null,
     
     // 2. Método Reembolso
-    metodo_reembolso: payment?.payment_method_id || null,
+    metodo_reembolso: payment?.payment_method_id || claim.resolution?.payment_method || null,
     
     // 3. Moeda Reembolso
-    moeda_reembolso: item.order_data?.currency_id || 'BRL',
+    moeda_reembolso: item.order_data?.currency_id || claim.currency_id || 'BRL',
     
     // 4. % Reembolsado (calculado)
     percentual_reembolsado: (total && reembolsado) ? ((reembolsado / total) * 100) : null,
     
     // 5. Valor Diferença Troca
-    valor_diferenca_troca: item.claim_details?.resolution?.exchange_difference || null,
+    valor_diferenca_troca: claim.resolution?.exchange_difference || item.change_details?.price_difference || null,
     
     // 6. Taxa ML Reembolsada (mesma que original - API ML não diferencia)
     taxa_ml_reembolsada: payment?.marketplace_fee || null,

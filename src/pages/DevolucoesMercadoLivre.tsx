@@ -223,16 +223,6 @@ export default function DevolucoesMercadoLivre() {
       // A Edge Function retorna { success, data, total }
       const claimsArray = data?.data || [];
       
-      // 🔍 DEBUG: Ver estrutura real dos dados
-      if (claimsArray.length > 0) {
-        console.log('🔍 PRIMEIRO ITEM RETORNADO:', JSON.stringify(claimsArray[0], null, 2));
-        console.log('🔍 CAMPOS DISPONÍVEIS:', Object.keys(claimsArray[0]));
-        console.log('🔍 comprador_nome_completo:', claimsArray[0].comprador_nome_completo);
-        console.log('🔍 produto_titulo:', claimsArray[0].produto_titulo);
-        console.log('🔍 status_dinheiro:', claimsArray[0].status_dinheiro);
-        console.log('🔍 estimated_delivery_date:', claimsArray[0].estimated_delivery_date);
-      }
-      
       // Adicionar nome da empresa
       const account = accounts.find(acc => acc.id === selectedAccountId);
       const devolucoesComEmpresa = claimsArray.map((dev: any) => ({

@@ -5,43 +5,48 @@
  */
 
 export const mapTrackingData = (item: any) => {
+  // ✅ CORREÇÃO: Usar dados do claim diretamente
+  const claim = item.claim_details || item;
+  const returnData = item.return_details_v2 || claim.return_details;
+  
   return {
     // ===== CAMPOS DE RASTREAMENTO BÁSICOS (já existentes) =====
-    tracking_number: item.return_details_v2?.tracking_number || null,
-    tracking_status: item.return_details_v2?.status || null,
-    codigo_rastreamento: item.return_details_v2?.tracking_number || null,
-    tracking_method: item.return_details_v2?.tracking_method || null,
+    tracking_number: returnData?.tracking_number || claim.tracking_number || null,
+    tracking_status: returnData?.status || claim.status || null,
+    codigo_rastreamento: returnData?.tracking_number || claim.tracking_number || null,
+    tracking_method: returnData?.tracking_method || claim.tracking_method || null,
     
     // Review básico
-    review_id: item.review_details?.id || item.claim_details?.review?.id || null,
-    review_status: item.review_details?.status || null,
-    review_type: item.review_details?.type || null,
-    revisor_responsavel: item.review_details?.reviewer?.id || null,
+    review_id: item.review_details?.id || claim.review?.id || null,
+    review_status: item.review_details?.status || claim.review?.status || null,
+    review_type: item.review_details?.type || claim.review?.type || null,
+    revisor_responsavel: item.review_details?.reviewer?.id || claim.review?.reviewer_id || null,
     
     // Datas e prazos
-    data_fechamento_devolucao: item.return_details_v2?.closed_at || null,
-    prazo_limite_analise: item.return_details_v2?.estimated_handling_limit?.date || null,
+    data_fechamento_devolucao: returnData?.closed_at || claim.date_closed || null,
+    prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
     
     // ===== CAMPOS PRIORIDADE ALTA (já implementados) =====
-    estimated_delivery_date: item.return_details_v2?.estimated_delivery_date || null,
+    estimated_delivery_date: returnData?.estimated_delivery_date || claim.estimated_delivery_date || null,
     
     has_delay: (() => {
-      const estimatedDate = item.return_details_v2?.estimated_delivery_date;
+      const estimatedDate = returnData?.estimated_delivery_date || claim.estimated_delivery_date;
       if (!estimatedDate) return null;
       const estimated = new Date(estimatedDate);
       const now = new Date();
       return now > estimated;
     })(),
     
-    return_quantity: item.return_details_v2?.quantity || null,
+    return_quantity: returnData?.quantity || claim.quantity || 1,
     
     total_quantity: (() => {
       const orderItems = item.order_data?.order_items || [];
+      if (orderItems.length === 0) return returnData?.quantity || claim.quantity || 1;
       return orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
     })(),
     
     dias_restantes_analise: (() => {
-      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      const prazo = returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date;
       if (!prazo) return null;
       const prazoDate = new Date(prazo);
       const hoje = new Date();
@@ -52,19 +57,19 @@ export const mapTrackingData = (item: any) => {
     // ===== 🆕 10 CAMPOS DE TRACKING DETALHADOS (nível superior individual) =====
     
     // 1. Estimated Delivery Limit (prazo limite de entrega)
-    estimated_delivery_limit: item.return_details_v2?.estimated_delivery_limit?.date || null,
+    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || returnData?.estimated_delivery_date || null,
     
     // 2. Shipment Status (status do envio)
-    shipment_status: item.shipment_data?.status || null,
+    shipment_status: item.shipment_data?.status || claim.shipment_status || null,
     
     // 3. Refund At (data real de reembolso)
-    refund_at: item.return_details_v2?.refund_at || null,
+    refund_at: returnData?.refund_at || claim.resolution?.refund_date || null,
     
     // 4. Review Method (método de revisão)
-    review_method: item.return_details_v2?.review_method || null,
+    review_method: returnData?.review_method || claim.review_method || null,
     
     // 5. Review Stage (estágio da revisão)
-    review_stage: item.return_details_v2?.review_stage || null,
+    review_stage: returnData?.review_stage || claim.review_stage || null,
     
     // 6. Localização Atual (do shipment_history_enriched)
     localizacao_atual: (() => {
