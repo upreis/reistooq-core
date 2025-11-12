@@ -193,13 +193,21 @@ serve(async (req) => {
             if (orderRes.ok) {
               orderData = await orderRes.json();
               
-              // 🔧 DEBUG: Validar dados de shipping da ordem
-              logger.info(`🚚 ORDER SHIPPING (claim ${claim.id}):`, JSON.stringify({
-                has_shipping: !!orderData?.shipping,
-                logistic_type: orderData?.shipping?.logistic_type || null,
-                shipping_cost: orderData?.shipping?.cost || null,
-                base_cost: orderData?.shipping?.base_cost || null
-              }));
+              // 🔧 DEBUG: Inspecionar estrutura COMPLETA de shipping
+              if (orderData?.shipping) {
+                console.log(`🚚 ORDER SHIPPING COMPLETO (claim ${claim.id}):`, JSON.stringify({
+                  shipping_keys: Object.keys(orderData.shipping),
+                  logistic_type: orderData.shipping.logistic_type,
+                  cost: orderData.shipping.cost,
+                  base_cost: orderData.shipping.base_cost,
+                  shipping_cost: orderData.shipping.shipping_cost,
+                  list_cost: orderData.shipping.list_cost,
+                  // Mostrar estrutura completa limitada
+                  full_shipping: JSON.stringify(orderData.shipping).substring(0, 500)
+                }));
+              } else {
+                console.log(`⚠️ ORDER SEM SHIPPING (claim ${claim.id})`);
+              }
             }
           } catch (err) {
             logger.warn(`⚠️ Erro ao buscar order ${claim.resource_id}:`, err);
