@@ -459,8 +459,46 @@ serve(async (req) => {
 
     // ✅ CORREÇÃO 2: MAPEAR DADOS CORRETAMENTE
     logger.progress('🗺️ Mapeando dados...');
+    
+    // 🐛 DEBUG: Log primeiro claim ANTES do mapeamento
+    if (allEnrichedClaims.length > 0) {
+      const firstClaim = allEnrichedClaims[0];
+      logger.debug('🔍 CLAIM ENRIQUECIDO (pré-mapeamento):', JSON.stringify({
+        claim_id: firstClaim.id,
+        resource_id: firstClaim.resource_id,
+        seller_amount: firstClaim.seller_amount,
+        has_order_data: !!firstClaim.order_data,
+        order_data_total: firstClaim.order_data?.total_amount,
+        order_data_payments: firstClaim.order_data?.payments?.length,
+        has_return_v2: !!firstClaim.return_details_v2,
+        return_v2_money_status: firstClaim.return_details_v2?.money_status,
+        return_v2_refund_at: firstClaim.return_details_v2?.refund_at,
+        has_resolution: !!firstClaim.resolution,
+        resolution_refund: firstClaim.resolution?.refund_amount,
+      }, null, 2));
+    }
+    
     const mappedClaims = allEnrichedClaims.map((claim: any) => {
       try {
+        // ✅ DEBUG: Log estrutura do primeiro claim enriquecido
+        if (allEnrichedClaims.indexOf(claim) === 0) {
+          logger.debug('🔍 PRIMEIRO CLAIM ENRIQUECIDO:', JSON.stringify({
+            id: claim.id,
+            resource_id: claim.resource_id,
+            seller_amount: claim.seller_amount,
+            stage: claim.stage,
+            type: claim.type,
+            status: claim.status,
+            has_order_data: !!claim.order_data,
+            has_return_details_v2: !!claim.return_details_v2,
+            has_claim_messages: !!claim.claim_messages,
+            has_product_info: !!claim.product_info,
+            has_billing_info: !!claim.billing_info,
+            order_data_keys: claim.order_data ? Object.keys(claim.order_data) : [],
+            return_v2_keys: claim.return_details_v2 ? Object.keys(claim.return_details_v2) : [],
+          }, null, 2));
+        }
+        
         // ✅ ESTRUTURA CORRETA para os mappers
         const item = {
           // Campos de nível superior que os mappers esperam
