@@ -240,6 +240,48 @@ serve(async (req) => {
           }
         }
 
+        // 5. ✅ BUSCAR DADOS DO PRODUTO (thumbnail, imagem, etc.)
+        let productData = null;
+        const itemId = orderData?.order_items?.[0]?.item?.id;
+        if (itemId) {
+          try {
+            const productRes = await fetchWithRetry(
+              `https://api.mercadolibre.com/items/${itemId}`,
+              { headers: { 'Authorization': `Bearer ${accessToken}` } },
+              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+            );
+            if (productRes.ok) {
+              const itemData = await productRes.json();
+              
+              // Extrair SKU (priorizar seller_custom_field, fallback para attributes)
+              let sku = itemData.seller_custom_field || null;
+              if (!sku && itemData.attributes) {
+                const skuAttr = itemData.attributes.find((a: any) => 
+                  a.id === 'SELLER_SKU' || a.name?.toLowerCase().includes('sku')
+                );
+                sku = skuAttr?.value_name || null;
+              }
+              
+              productData = {
+                id: itemData.id,
+                title: itemData.title,
+                price: itemData.price,
+                currency_id: itemData.currency_id,
+                thumbnail: itemData.thumbnail || itemData.pictures?.[0]?.url || null,
+                permalink: itemData.permalink,
+                sku: sku,
+                condition: itemData.condition,
+                available_quantity: itemData.available_quantity,
+                sold_quantity: itemData.sold_quantity,
+                variation_id: orderData?.order_items?.[0]?.variation_id || null,
+                category_id: itemData.category_id || null,
+              };
+            }
+          } catch (err) {
+            // Ignorar erro se produto não existir mais
+          }
+        }
+
         // 🆕 FASE 2: Buscar histórico de rastreamento detalhado
         let shipmentHistoryData = null;
         let shippingCostsData = null;
@@ -290,6 +332,7 @@ serve(async (req) => {
           claim_messages: messagesData,
           return_details_v2: returnData,
           review_details: reviewsData,
+          product_info: productData, // ✅ ADICIONAR product_info enriquecido
           shipment_history_enriched: shipmentHistoryData,
           shipping_costs_enriched: shippingCostsData
         };
