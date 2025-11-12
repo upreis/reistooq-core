@@ -11,8 +11,13 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     claim_id: claim.id,
     has_product_info: !!claim.product_info,
     has_order_data: !!claim.order_data,
+    has_shipping: !!claim.order_data?.shipping,
     product_title: claim.product_info?.title?.substring(0, 50),
-    sku: claim.product_info?.sku || claim.order_data?.order_items?.[0]?.item?.seller_sku
+    sku: claim.product_info?.sku || claim.order_data?.order_items?.[0]?.item?.seller_sku,
+    logistic_type: claim.order_data?.shipping?.logistic_type,
+    subtipo_claim: claim.return_details?.subtype || claim.stage,
+    return_subtype: claim.return_details?.subtype,
+    claim_stage: claim.stage
   }));
   
   return {

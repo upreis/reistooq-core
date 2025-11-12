@@ -17,7 +17,11 @@ export const mapTrackingData = (item: any) => {
     has_shipment_history: !!claim.shipment_history_enriched,
     return_status: returnData?.status,
     shipments_count: returnData?.shipments?.length || 0,
-    first_shipment_status: returnData?.shipments?.[0]?.status
+    first_shipment_status: returnData?.shipments?.[0]?.status,
+    first_shipment_type: returnData?.shipments?.[0]?.type,
+    first_shipment_tracking: returnData?.shipments?.[0]?.tracking_number,
+    subtype: returnData?.subtype,
+    estimated_delivery: returnData?.estimated_delivery_date
   }));
   
   return {

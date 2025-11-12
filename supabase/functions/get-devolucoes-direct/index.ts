@@ -421,36 +421,38 @@ serve(async (req) => {
         // 💰 FASE 2: Buscar custo real de devolução via /charges/return-cost
         let returnCostData = null;
         try {
-          console.log(`💰 === CUSTO DEVOLUÇÃO FASE 2 ===`);
-          console.log(`💰 Buscando custo para claim ${claim.id}`);
+          logger.debug(`💰 Buscando return cost para claim ${claim.id}`);
           
           returnCostData = await fetchReturnCost(claim.id, accessToken);
           
           if (returnCostData) {
-            console.log(`💰 ✅ CUSTO ENCONTRADO claim ${claim.id}:`, {
+            logger.info(`💰 ✅ CUSTO DEVOLUÇÃO encontrado (claim ${claim.id}):`, JSON.stringify({
               amount: returnCostData.amount,
               currency: returnCostData.currency_id,
-              amount_usd: returnCostData.amount_usd || 'N/A'
-            });
+              amount_usd: returnCostData.amount_usd || null
+            }));
           } else {
-            console.log(`💰 ⚠️ Sem custo de devolução para claim ${claim.id} (endpoint retornou null)`);
+            logger.warn(`💰 ⚠️ SEM CUSTO DEVOLUÇÃO (claim ${claim.id}) - API retornou null`);
           }
         } catch (err) {
-          console.error(`💰 ❌ Erro ao buscar custo de devolução (claim ${claim.id}):`, err);
+          logger.error(`💰 ❌ ERRO ao buscar custo devolução (claim ${claim.id}):`, err);
         }
-        console.log(`💰 =========================`);
         
         // Buscar históricos e custos se houver shipments
         if (shipmentIds.length > 0) {
           try {
-            logger.debug(`🚚 Buscando custos para shipments: ${shipmentIds.join(', ')} (claim ${claim.id})`);
+            logger.info(`🚚 Buscando histórico/custos para ${shipmentIds.length} shipments (claim ${claim.id}): ${shipmentIds.join(', ')}`);
             
             const [historyMap, costsMap] = await Promise.all([
               fetchMultipleShipmentHistories(shipmentIds, accessToken),
               fetchMultipleShippingCosts(shipmentIds, accessToken)
             ]);
             
-            logger.debug(`💰 Custos retornados: ${costsMap.size} shipments com dados (claim ${claim.id})`);
+            logger.info(`📊 RESULTADO enriquecimento (claim ${claim.id}):`, JSON.stringify({
+              shipments_count: shipmentIds.length,
+              history_found: historyMap.size,
+              costs_found: costsMap.size
+            }));
             
             // Consolidar dados em estrutura única
             shipmentHistoryData = {
