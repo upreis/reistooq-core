@@ -23,10 +23,22 @@ interface Devolucao {
   claim_id: string;
   status: any;
   comprador_nome_completo: string;
+  comprador_cpf?: string;
   produto_titulo: string;
   valor_reembolso_total: number;
   data_criacao: string;
   empresa: string;
+  metodo_pagamento?: string;
+  codigo_rastreamento?: string;
+  dados_buyer_info?: {
+    doc_number?: string;
+  };
+  dados_financial_info?: {
+    payment_method?: string;
+  };
+  dados_tracking_info?: {
+    tracking_number?: string;
+  };
 }
 
 export default function DevolucoesMercadoLivre() {
@@ -201,8 +213,11 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Empresa</TableHead>
                 <TableHead>Claim ID</TableHead>
                 <TableHead>Comprador</TableHead>
+                <TableHead>CPF/CNPJ</TableHead>
                 <TableHead>Produto</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Pagamento</TableHead>
+                <TableHead>Tracking</TableHead>
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
               </TableRow>
@@ -210,13 +225,13 @@ export default function DevolucoesMercadoLivre() {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8">
+                  <TableCell colSpan={10} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : devolucoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                     Clique em "Buscar Devoluções" para carregar os dados
                   </TableCell>
                 </TableRow>
@@ -226,11 +241,20 @@ export default function DevolucoesMercadoLivre() {
                     <TableCell className="font-medium">{dev.empresa}</TableCell>
                     <TableCell>{dev.claim_id}</TableCell>
                     <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>
+                    <TableCell className="text-xs">
+                      {dev.comprador_cpf || dev.dados_buyer_info?.doc_number || '-'}
+                    </TableCell>
                     <TableCell>{dev.produto_titulo || '-'}</TableCell>
                     <TableCell>
                       <span className="inline-flex px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                         {dev.status?.id || '-'}
                       </span>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {dev.metodo_pagamento || dev.dados_financial_info?.payment_method || '-'}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono">
+                      {dev.codigo_rastreamento || dev.dados_tracking_info?.tracking_number || '-'}
                     </TableCell>
                     <TableCell>
                       {dev.valor_reembolso_total 
