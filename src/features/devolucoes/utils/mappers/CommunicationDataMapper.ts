@@ -41,14 +41,15 @@ export const mapCommunicationData = (item: any) => {
   const lastMessage = sortedMessages.length > 0 ? sortedMessages[0] : null;
   
   return {
-    // ✅ Mensagens (deduplicated por hash)
+    // ===== CAMPOS DE COMUNICAÇÃO BÁSICOS (já existentes) =====
     timeline_mensagens: sortedMessages,
     ultima_mensagem_data: lastMessage?.date_created || lastMessage?.message_date?.created || null,
     ultima_mensagem_remetente: lastMessage?.sender_role || lastMessage?.from?.role || null,
-    numero_interacoes: sortedMessages.length || null,
     mensagens_nao_lidas: item.claim_messages?.unread_messages || null,
     
-    // ✅ Qualidade da comunicação (baseado em moderação)
+    // ===== CAMPOS PRIORIDADE ALTA (já implementados) =====
+    numero_interacoes: sortedMessages.length || null,
+    
     qualidade_comunicacao: (() => {
       if (sortedMessages.length === 0) return null;
       
@@ -74,17 +75,42 @@ export const mapCommunicationData = (item: any) => {
       return moderatedCount > 0 ? 'com_mensagens_moderadas' : 'limpo';
     })(),
     
-    // Timeline
-    timeline_events: item.timeline_events || [],
-    timeline_consolidado: null,
-    marcos_temporais: null,
-    data_criacao_claim: item.claim_details?.date_created || null, // ✅ CORRIGIDO: date_created (nome oficial API ML)
-    data_inicio_return: item.return_details_v2?.date_created || item.return_details_v1?.date_created || null,
-    data_fechamento_claim: item.claim_details?.resolution?.date_created || null, // ✅ CORRIGIDO: date_created (API ML)
-    historico_status: [],
+    // Anexos básicos
+    total_anexos_comprador: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'buyer' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    total_anexos_vendedor: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'seller' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
+    total_anexos_ml: item.claim_messages?.messages?.filter((m: any) => 
+      m.sender_role === 'mediator' && m.attachments?.length > 0
+    ).reduce((total: number, m: any) => total + m.attachments.length, 0) || 0,
     
-    // Anexos
-    anexos_ml: [],
-    total_evidencias: null
+    // Timeline consolidado (mantido para compatibilidade)
+    timeline_consolidado: null,
+    
+    // ===== 🆕 6 CAMPOS DE COMUNICAÇÃO DETALHADOS (nível superior individual) =====
+    
+    // 1. Timeline Events (array de eventos temporais)
+    timeline_events: item.timeline_events || [],
+    
+    // 2. Marcos Temporais (principais datas/eventos)
+    marcos_temporais: item.marcos_temporais || null,
+    
+    // 3. Data Criação Claim
+    data_criacao_claim: item.claim_details?.date_created || null,
+    
+    // 4. Data Início Return
+    data_inicio_return: item.return_details_v2?.date_created || null,
+    
+    // 5. Data Fechamento Claim
+    data_fechamento_claim: item.claim_details?.closed_at || item.claim_details?.date_closed || null,
+    
+    // 6. Histórico Status (array de mudanças de status)
+    historico_status: item.status_history || [],
+    
+    // ===== CAMPOS PARA METADADOS (total_evidencias, anexos_ml) =====
+    total_evidencias: item.attachments?.length || 0,
+    anexos_ml: item.attachments || []
   };
 };

@@ -1,123 +1,101 @@
 /**
- * 🚚 MAPEADOR DE DADOS DE RASTREAMENTO
- * Consolida: rastreamento e review
+ * 📦 MAPEADOR DE DADOS DE RASTREAMENTO - VERSÃO COMPLETA
+ * Extrai TODOS os 10 campos de tracking detalhados de nível superior
+ * Elimina objetos JSONB aninhados - apenas campos individuais
  */
 
 export const mapTrackingData = (item: any) => {
-  // ✅ CORRIGIDO: shipments é array, pegar primeiro shipment (type: "return")
-  const returnShipment = item.return_details_v2?.shipments?.find((s: any) => s.type === 'return') || 
-                        item.return_details_v2?.shipments?.[0];
-  
-  // 🆕 PRIORIDADE: Usar tracking real da API se disponível
-  const originalTracking = item.shipment_tracking?.original_tracking?.tracking_number || 
-                          item.order_data?.shipping?.tracking_number || 
-                          returnShipment?.tracking_number;
-  
-  const returnTracking = item.shipment_tracking?.return_tracking?.tracking_number || 
-                        returnShipment?.tracking_number;
-  
-  // ✅ FASE 2: Extrair quantidade do primeiro item do pedido
-  const firstOrderItem = item.return_details_v2?.orders?.[0];
-  
   return {
-    // ✅ FASE 1.5: ID único do return
-    return_id: item.return_details_v2?.id?.toString() || null,
+    // ===== CAMPOS DE RASTREAMENTO BÁSICOS (já existentes) =====
+    tracking_number: item.return_details_v2?.tracking_number || null,
+    tracking_status: item.return_details_v2?.status || null,
+    codigo_rastreamento: item.return_details_v2?.tracking_number || null,
+    tracking_method: item.return_details_v2?.tracking_method || null,
     
-    // Rastreamento (✅ CORRIGIDO: usar tracking real da API primeiro)
-    shipment_id: returnShipment?.shipment_id?.toString() || 
-                 item.order_data?.shipping?.id?.toString() || null,
-    codigo_rastreamento: originalTracking || null,
-    codigo_rastreamento_devolucao: returnTracking || null,
-    transportadora: null, // Não disponível em v2
-    transportadora_devolucao: null,
-    // ✅ CORRIGIDO: status vem de shipments[].status com fallback robusto
-    // Valores: pending, ready_to_ship, shipped, not_delivered, delivered, cancelled
-    status_rastreamento: returnShipment?.status || 
-                        item.return_details_v2?.shipments?.[0]?.status || 
-                        item.order_data?.shipping?.status || null,
-    url_rastreamento: null, // Não disponível em v2
-    localizacao_atual: item.tracking_history?.[0]?.location || null,
-    status_transporte_atual: returnShipment?.status || null,
-    tracking_history: item.tracking_history || [],
-    tracking_events: item.tracking_events || [],
-    data_ultima_movimentacao: item.tracking_events?.[0]?.date || item.tracking_history?.[0]?.date || null,
-    historico_localizacoes: item.tracking_history || [],
-    carrier_info: null,
-    tempo_transito_dias: null,
-    shipment_delays: [],
-    shipment_costs: null,
-    previsao_entrega_vendedor: null, // Removido em v2
+    // Review básico
+    review_id: item.review_details?.id || item.claim_details?.review?.id || null,
+    review_status: item.review_details?.status || null,
+    review_type: item.review_details?.type || null,
+    revisor_responsavel: item.review_details?.reviewer?.id || null,
     
-    // ✅ FASE 1: Novos campos de devolução
-    status_devolucao: item.return_details_v2?.status || null,
-    subtipo_devolucao: item.return_details_v2?.subtype || null, // low_cost, return_partial, return_total
+    // Datas e prazos
+    data_fechamento_devolucao: item.return_details_v2?.closed_at || null,
+    prazo_limite_analise: item.return_details_v2?.estimated_handling_limit?.date || null,
     
-    // 📅 DATAS - API ML
-    last_updated: item.claim_details?.last_updated || 
-                  item.return_details_v2?.last_updated || null,
-    data_atualizacao_devolucao: item.return_details_v2?.last_updated || null,
-    data_ultimo_status: item.shipment_history?.combined_events?.[0]?.date_created || null,
-    data_criacao_devolucao: item.return_details_v2?.date_created || null,
+    // ===== CAMPOS PRIORIDADE ALTA (já implementados) =====
+    estimated_delivery_date: item.return_details_v2?.estimated_delivery_date || null,
     
-    // 📦 LOGÍSTICA ADICIONAL (✅ CORRIGIDO: usar destination.shipping_address)
-    shipment_id_devolucao: returnShipment?.shipment_id?.toString() || null,
-    endereco_destino_devolucao: (() => {
-      const addr = returnShipment?.destination?.shipping_address;
-      if (!addr || typeof addr !== 'object') return null;
-      
-      const parts = [
-        addr.street_name,
-        addr.street_number,
-        addr.city?.name,
-        addr.state?.id || addr.state?.name
-      ].filter(Boolean);
-      
-      return parts.length > 0 ? parts.join(', ') : null;
-    })(),
-    descricao_ultimo_status: (() => {
-      // 1. Se claim está fechado, usar o motivo da resolução
-      if (item.claim_details?.resolution?.reason) {
-        return item.claim_details.resolution.reason;
-      }
-      
-      // 2. Se há devolução, usar o status dela
-      if (item.return_details_v2?.status) {
-        return item.return_details_v2.status;
-      }
-      
-      // 3. Usar substatus do shipment de devolução
-      if (returnShipment?.substatus) {
-        return returnShipment.substatus;
-      }
-      
-      // 4. Usar stage do claim como fallback
-      if (item.claim_details?.stage) {
-        return item.claim_details.stage;
-      }
-      
-      return null;
+    has_delay: (() => {
+      const estimatedDate = item.return_details_v2?.estimated_delivery_date;
+      if (!estimatedDate) return null;
+      const estimated = new Date(estimatedDate);
+      const now = new Date();
+      return now > estimated;
     })(),
     
-    // ✅ Review (agora endpoint separado: GET /returns/$RETURN_ID/reviews)
-    review_id: item.review_id || null,
-    review_status: item.review_status || null,
-    review_result: item.review_result || null,
-    score_qualidade: item.review?.score || null,
-    necessita_acao_manual: (item.claim_details?.players?.find((p: any) => p.role === 'respondent')?.available_actions?.length || 0) > 0,
-    problemas_encontrados: item.problemas_encontrados || [],
-    data_inicio_review: item.claim_details?.date_created || null,
-    observacoes_review: item.claim_details?.resolution?.reason || null,
-    revisor_responsavel: item.claim_details?.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
+    return_quantity: item.return_details_v2?.quantity || null,
     
-    // ✅ FASE 2: Novos campos que JÁ vem da API (ml-returns edge function)
-    estimated_delivery_date: item.estimated_delivery_date || null,
-    estimated_delivery_limit: item.estimated_delivery_limit || null,
-    has_delay: item.has_delay || false,
-    shipment_status: item.shipment_status || returnShipment?.status || null,
-    refund_at: item.refund_at || null,
-    review_method: item.review_method || null,
-    review_stage: item.review_stage || null,
-    return_quantity: firstOrderItem?.return_quantity ? parseInt(firstOrderItem.return_quantity) : null,
-    total_quantity: firstOrderItem?.total_quantity ? parseInt(firstOrderItem.total_quantity) : null,
+    total_quantity: (() => {
+      const orderItems = item.order_data?.order_items || [];
+      return orderItems.reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    })(),
+    
+    dias_restantes_analise: (() => {
+      const prazo = item.return_details_v2?.estimated_handling_limit?.date;
+      if (!prazo) return null;
+      const prazoDate = new Date(prazo);
+      const hoje = new Date();
+      const diff = Math.ceil((prazoDate.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+      return diff > 0 ? diff : 0;
+    })(),
+    
+    // ===== 🆕 10 CAMPOS DE TRACKING DETALHADOS (nível superior individual) =====
+    
+    // 1. Estimated Delivery Limit (prazo limite de entrega)
+    estimated_delivery_limit: item.return_details_v2?.estimated_delivery_limit?.date || null,
+    
+    // 2. Shipment Status (status do envio)
+    shipment_status: item.shipment_data?.status || null,
+    
+    // 3. Refund At (data real de reembolso)
+    refund_at: item.return_details_v2?.refund_at || null,
+    
+    // 4. Review Method (método de revisão)
+    review_method: item.return_details_v2?.review_method || null,
+    
+    // 5. Review Stage (estágio da revisão)
+    review_stage: item.return_details_v2?.review_stage || null,
+    
+    // 6. Localização Atual (do shipment_history_enriched)
+    localizacao_atual: (() => {
+      const history = item.shipment_history_enriched?.return_shipment?.tracking_history;
+      if (!history || !Array.isArray(history) || history.length === 0) return null;
+      const latest = history[history.length - 1];
+      return latest?.location || latest?.checkpoint_description || null;
+    })(),
+    
+    // 7. Status Transporte Atual (do shipment_history_enriched)
+    status_transporte_atual: (() => {
+      const history = item.shipment_history_enriched?.return_shipment?.tracking_history;
+      if (!history || !Array.isArray(history) || history.length === 0) return null;
+      const latest = history[history.length - 1];
+      return latest?.status || latest?.checkpoint_status || null;
+    })(),
+    
+    // 8. Tracking History (array completo de eventos)
+    tracking_history: item.shipment_history_enriched?.return_shipment?.tracking_history || 
+                      item.shipment_data?.tracking_history || [],
+    
+    // 9. Tracking Events (eventos de rastreamento formatados)
+    tracking_events: item.shipment_history_enriched?.return_shipment?.tracking_events || 
+                     item.shipment_data?.tracking_events || [],
+    
+    // 10. Data Última Movimentação (extraído do último evento do tracking_history)
+    data_ultima_movimentacao: (() => {
+      const history = item.shipment_history_enriched?.return_shipment?.tracking_history;
+      if (!history || !Array.isArray(history) || history.length === 0) return null;
+      const latest = history[history.length - 1];
+      return latest?.date || latest?.checkpoint_date || null;
+    })()
   };
 };
