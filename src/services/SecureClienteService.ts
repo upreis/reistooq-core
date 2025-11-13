@@ -116,17 +116,19 @@ export class SecureClienteService {
   static async createCliente(cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) {
     try {
       // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
-      const { data: customerId, error } = await supabase
+      const { data: result, error } = await supabase
         .rpc('admin_create_customer', {
-          p_customer: cliente
+          p_customer_data: cliente
         })
         .single();
 
-      if (error) {
+      if (error || !result) {
         console.error('❌ Erro ao criar cliente:', error);
-        return { data: null, error: { message: error.message } };
+        return { data: null, error: { message: error?.message || 'Erro ao criar cliente' } };
       }
 
+      // Extract customer ID from result
+      const customerId = result.id;
       console.log('✅ Cliente criado com sucesso:', customerId);
       
       // Return the newly created customer data
@@ -145,16 +147,16 @@ export class SecureClienteService {
   static async updateCliente(id: string, updates: Partial<Cliente>) {
     try {
       // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
-      const { data: success, error } = await supabase
+      const { data: result, error } = await supabase
         .rpc('admin_update_customer', {
           p_customer_id: id,
-          p_customer: updates
+          p_updates: updates
         })
         .single();
 
-      if (error || !success) {
+      if (error || !result || !result.success) {
         console.error('❌ Erro ao atualizar cliente:', error);
-        return { data: null, error: { message: error?.message || 'Erro ao atualizar cliente' } };
+        return { data: null, error: { message: error?.message || result?.error_message || 'Erro ao atualizar cliente' } };
       }
 
       console.log('✅ Cliente atualizado com sucesso:', id);

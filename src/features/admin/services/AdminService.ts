@@ -388,8 +388,8 @@ export class AdminService {
     
     const { data: updatedProfile, error } = await supabase
       .rpc('admin_update_profile', {
-        p_user_id: id,
-        p_updates: updateData
+        _user_id: id,
+        _updates: updateData
       })
       .single();
 
