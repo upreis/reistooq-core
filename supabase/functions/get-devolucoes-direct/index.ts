@@ -263,7 +263,7 @@ serve(async (req) => {
           logger.debug(`💬 Buscando messages para claim ${claim.id}`);
           
           const messagesRes = await fetchWithRetry(
-            `https://api.mercadolibre.com/post-purchase/v1/claims/${claim.id}/messages`,
+            `https://api.mercadolibre.com/marketplace/v2/claims/${claim.id}/messages`,
             { headers: { 'Authorization': `Bearer ${accessToken}` } },
             { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
           );
