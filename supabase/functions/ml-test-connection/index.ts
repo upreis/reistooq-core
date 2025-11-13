@@ -40,7 +40,10 @@ serve(async (req) => {
       
       try {
         // 2. Buscar access token usando integrations-get-secret
-        const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+        const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+        if (!INTERNAL_TOKEN) {
+          throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+        }
         
         const secretResponse = await fetch(
           `${supabaseUrl}/functions/v1/integrations-get-secret`,
