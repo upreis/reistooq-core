@@ -37,6 +37,7 @@ import { StatusClaimCell } from '@/components/devolucoes/StatusClaimCell';
 import { TipoEnvioCell } from '@/components/devolucoes/TipoEnvioCell';
 import { EnderecoDestinoCell } from '@/components/devolucoes/EnderecoDestinoCell';
 import { WarehouseIndicatorCell } from '@/components/devolucoes/WarehouseIndicatorCell';
+import { ShippingModeCell } from '@/components/devolucoes/ShippingModeCell';
 import {
   Pagination,
   PaginationContent,
@@ -111,6 +112,9 @@ interface Devolucao {
   
   // 🚚 TIPO DE LOGÍSTICA
   tipo_logistica?: string | null;
+  
+  // 🚢 MODO DE ENVIO (shipping mode) - IGUAL /pedidos
+  shipping_mode?: string | null;
   
   // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
   localizacao_atual_produto?: string | null;
@@ -443,6 +447,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Pagamento</TableHead>
                 <TableHead>Tracking</TableHead>
                 <TableHead>🚚 Tipo Logística</TableHead>
+                <TableHead>🚢 Modo Envio</TableHead>
                 <TableHead>📮 Tipo Envio</TableHead>
                 <TableHead>📍 Endereço Destino</TableHead>
                 <TableHead>🏭 Triagem ML</TableHead>
@@ -545,6 +550,11 @@ export default function DevolucoesMercadoLivre() {
                     {/* 🚚 TIPO DE LOGÍSTICA */}
                     <TableCell>
                       <LogisticTypeCell tipo_logistica={dev.tipo_logistica} />
+                    </TableCell>
+                    
+                    {/* 🚢 MODO DE ENVIO */}
+                    <TableCell>
+                      <ShippingModeCell shipping_mode={dev.shipping_mode} />
                     </TableCell>
                     
                     {/* 📮 TIPO DE ENVIO DA DEVOLUÇÃO */}
