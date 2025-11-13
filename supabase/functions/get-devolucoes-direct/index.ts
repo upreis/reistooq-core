@@ -195,13 +195,15 @@ serve(async (req) => {
         
         if (claim.resource_id) {
           try {
-            const orderRes = await fetchWithRetry(
-              `https://api.mercadolibre.com/orders/${claim.resource_id}`,
-              { headers: { 'Authorization': `Bearer ${accessToken}` } },
-              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+            // ✅ Usar validador automático para orders
+            const { response: orderRes, endpointUsed: orderEndpoint, fallbackUsed: orderFallback } = await validateAndFetch(
+              'orders',
+              accessToken,
+              { id: claim.resource_id },
+              { retryOnFail: true, logResults: true }
             );
             
-            if (orderRes.ok) {
+            if (orderRes?.ok) {
               orderData = await orderRes.json();
               
               // 🔍 DEBUG: Estrutura completa de orderData
@@ -210,7 +212,9 @@ serve(async (req) => {
                 shipping_id: orderData?.shipping?.id,
                 has_payments: !!orderData?.payments,
                 payments_length: orderData?.payments?.length,
-                first_payment_exists: !!orderData?.payments?.[0]
+                first_payment_exists: !!orderData?.payments?.[0],
+                endpoint_used: orderEndpoint,
+                fallback_used: orderFallback
               }));
               
               // 🔧 SOLUÇÃO ALTERNATIVA: Buscar logistic_type do endpoint /shipments/{id}
@@ -218,23 +222,31 @@ serve(async (req) => {
                 try {
                   console.log(`🚚 Buscando shipment ${orderData.shipping.id} para logistic_type`);
                   
-                  const shipmentRes = await fetchWithRetry(
-                    `https://api.mercadolibre.com/shipments/${orderData.shipping.id}`,
-                    { headers: { 'Authorization': `Bearer ${accessToken}` } },
-                    { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+                  // ✅ Usar validador automático para shipments
+                  const { response: shipmentRes, endpointUsed: shipmentEndpoint, fallbackUsed: shipmentFallback } = await validateAndFetch(
+                    'shipments',
+                    accessToken,
+                    { id: orderData.shipping.id.toString() },
+                    { retryOnFail: true, logResults: true }
                   );
                   
-                  if (shipmentRes.ok) {
+                  if (shipmentRes?.ok) {
                     shipmentData = await shipmentRes.json();
                     
                     console.log(`🚚 SHIPMENT DATA (claim ${claim.id}):`, JSON.stringify({
                       shipment_id: shipmentData.id,
                       logistic_type: shipmentData.logistic_type,
                       shipping_option: shipmentData.shipping_option,
-                      status: shipmentData.status
+                      status: shipmentData.status,
+                      endpoint_used: shipmentEndpoint,
+                      fallback_used: shipmentFallback
                     }));
+                    
+                    if (shipmentFallback) {
+                      logger.warn(`⚠️ Shipment endpoint usando fallback: ${shipmentEndpoint}`);
+                    }
                   } else {
-                    console.log(`⚠️ Shipment fetch failed: ${shipmentRes.status}`);
+                    console.log(`⚠️ Shipment fetch failed: ${shipmentRes?.status}`);
                   }
                 } catch (err) {
                   console.log(`❌ Erro ao buscar shipment:`, err);
@@ -250,8 +262,12 @@ serve(async (req) => {
                   taxes_amount: orderData.payments[0].taxes_amount
                 }));
               }
+              
+              if (orderFallback) {
+                logger.warn(`⚠️ Order endpoint usando fallback: ${orderEndpoint}`);
+              }
             } else {
-              console.log(`⚠️ ORDER fetch retornou status ${orderRes.status} para claim ${claim.id} - tipo_logistica e custo_envio_original ficarão NULL`);
+              console.log(`⚠️ ORDER fetch retornou status ${orderRes?.status} para claim ${claim.id} - tipo_logistica e custo_envio_original ficarão NULL`);
             }
           } catch (err) {
             console.log(`❌ ERRO ao buscar order ${claim.resource_id} (claim ${claim.id}): campos logísticos ficarão NULL -`, err);
@@ -292,49 +308,67 @@ serve(async (req) => {
           logger.error(`❌ Erro ao buscar messages (claim ${claim.id}):`, err);
         }
 
-        // 3. Buscar return
+        // 3. Buscar return com validação automática
         let returnData = null;
         try {
           logger.debug(`📋 Buscando return details para claim ${claim.id}`);
           
-          const returnRes = await fetchWithRetry(
-            `https://api.mercadolibre.com/post-purchase/v2/claims/${claim.id}/returns`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } },
-            { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+          // ✅ Usar validador automático para return details
+          const { response: returnRes, endpointUsed: returnEndpoint, fallbackUsed: returnFallback } = await validateAndFetch(
+            'returnDetailsV2',
+            accessToken,
+            { id: claim.id.toString() },
+            { retryOnFail: true, logResults: true }
           );
-          if (returnRes.ok) {
+          
+          if (returnRes?.ok) {
             returnData = await returnRes.json();
             
             logger.debug(`📋 RETURN ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
               return_id: returnData?.id,
               status: returnData?.status,
-              has_estimated_delivery: !!returnData?.estimated_delivery_date
+              has_estimated_delivery: !!returnData?.estimated_delivery_date,
+              endpoint_used: returnEndpoint,
+              fallback_used: returnFallback
             }));
+            
+            if (returnFallback) {
+              logger.warn(`⚠️ Return endpoint usando fallback: ${returnEndpoint}`);
+            }
           } else {
-            logger.debug(`⚠️ Claim ${claim.id} sem return details`);
+            logger.debug(`⚠️ Claim ${claim.id} sem return details (status: ${returnRes?.status})`);
           }
         } catch (err) {
           logger.error(`❌ Erro ao buscar return (claim ${claim.id}):`, err);
         }
 
-        // 4. Buscar reviews (se return existe e tem reviews)
+        // 4. Buscar reviews com validação automática (se return existe e tem reviews)
         let reviewsData = null;
         if (returnData?.id && returnData?.related_entities?.includes('reviews')) {
           try {
             logger.debug(`🔍 Buscando review para return ${returnData.id} (claim ${claim.id})`);
             
-            const reviewsRes = await fetchWithRetry(
-              `https://api.mercadolibre.com/post-purchase/v1/returns/${returnData.id}/reviews`,
-              { headers: { 'Authorization': `Bearer ${accessToken}` } },
-              { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+            // ✅ Usar validador automático para reviews
+            const { response: reviewsRes, endpointUsed: reviewEndpoint, fallbackUsed: reviewFallback } = await validateAndFetch(
+              'reviews',
+              accessToken,
+              { id: returnData.id.toString() },
+              { retryOnFail: true, logResults: true }
             );
-            if (reviewsRes.ok) {
+            
+            if (reviewsRes?.ok) {
               reviewsData = await reviewsRes.json();
               
               logger.debug(`🔍 REVIEW ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
                 status: reviewsData?.status,
-                method: reviewsData?.method
+                method: reviewsData?.method,
+                endpoint_used: reviewEndpoint,
+                fallback_used: reviewFallback
               }));
+              
+              if (reviewFallback) {
+                logger.warn(`⚠️ Review endpoint usando fallback: ${reviewEndpoint}`);
+              }
             }
           } catch (err) {
             logger.error(`❌ Erro ao buscar review (claim ${claim.id}):`, err);
