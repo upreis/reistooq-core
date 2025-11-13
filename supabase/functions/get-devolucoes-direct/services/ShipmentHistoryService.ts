@@ -27,6 +27,12 @@ export interface ShipmentHistoryData {
   transit_time_days: number | null;
   current_location: string | null;
   delays: string[];
+  // ✅ FASE 1: Novos campos críticos de shipment
+  estimated_delivery_limit?: string | null;
+  carrier_name?: string | null;
+  carrier_tracking_url?: string | null;
+  shipping_option_name?: string | null;
+  logistic_type?: string | null;
 }
 
 /**
@@ -37,11 +43,30 @@ export async function fetchShipmentHistory(
   accessToken: string
 ): Promise<ShipmentHistoryData | null> {
   try {
-    const url = `https://api.mercadolibre.com/shipments/${shipmentId}/history`;
+    // ✅ FASE 1: Buscar shipment completo (não apenas history) para obter estimated_delivery_limit e carrier
+    const shipmentUrl = `https://api.mercadolibre.com/shipments/${shipmentId}`;
     
-    logger.debug(`[ShipmentHistoryService] Buscando histórico para shipment ${shipmentId}`);
+    logger.debug(`[ShipmentHistoryService] Buscando shipment completo ${shipmentId}`);
     
-    const response = await fetchWithRetry(url, {
+    const shipmentResponse = await fetchWithRetry(shipmentUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+        'x-format-new': 'true' // ✅ Formato novo com mais detalhes
+      }
+    });
+
+    if (!shipmentResponse.ok) {
+      logger.warn(`[ShipmentHistoryService] Erro ${shipmentResponse.status} ao buscar shipment ${shipmentId}`);
+      return null;
+    }
+
+    const shipmentData = await shipmentResponse.json();
+    
+    // Buscar histórico separadamente
+    const historyUrl = `https://api.mercadolibre.com/shipments/${shipmentId}/history`;
+    const historyResponse = await fetchWithRetry(historyUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -49,17 +74,15 @@ export async function fetchShipmentHistory(
       }
     });
 
-    if (!response.ok) {
-      logger.warn(`[ShipmentHistoryService] Erro ${response.status} ao buscar histórico shipment ${shipmentId}`);
-      return null;
+    let historyData = { history: [] };
+    if (historyResponse.ok) {
+      historyData = await historyResponse.json();
     }
-
-    const data = await response.json();
-    const events = data?.history || [];
+    
+    const events = historyData?.history || [];
 
     if (events.length === 0) {
       logger.debug(`[ShipmentHistoryService] Sem eventos para shipment ${shipmentId}`);
-      return null;
     }
 
     // Extrair dados enriquecidos
@@ -88,9 +111,19 @@ export async function fetchShipmentHistory(
       ? [lastEvent.location.city, lastEvent.location.state].filter(Boolean).join(', ')
       : null;
 
+    // ✅ FASE 1: Extrair campos críticos do shipment completo
+    const estimatedDeliveryLimit = shipmentData?.estimated_delivery_limit?.date || 
+                                   shipmentData?.estimated_delivery_time?.date || null;
+    const carrierName = shipmentData?.carrier_info?.name || null;
+    const carrierTrackingUrl = shipmentData?.carrier_info?.tracking_url || null;
+    const shippingOptionName = shipmentData?.shipping_option?.name || null;
+    const logisticType = shipmentData?.logistic_type || null;
+    
+    logger.info(`[ShipmentHistoryService] 📦 FASE 1 - Dados extraídos: estimated_delivery=${estimatedDeliveryLimit}, carrier=${carrierName}, tracking_url=${carrierTrackingUrl}`);
+
     const enrichedData: ShipmentHistoryData = {
       shipment_id: shipmentId,
-      tracking_number: data?.tracking_number || null,
+      tracking_number: shipmentData?.tracking_number || null,
       events: events.map((e: any) => ({
         date_created: e.date_created,
         status: e.status,
@@ -118,10 +151,16 @@ export async function fetchShipmentHistory(
       } : null,
       transit_time_days: transitTimeDays,
       current_location: currentLocation,
-      delays: delays
+      delays: delays,
+      // ✅ FASE 1: Novos campos críticos
+      estimated_delivery_limit: estimatedDeliveryLimit,
+      carrier_name: carrierName,
+      carrier_tracking_url: carrierTrackingUrl,
+      shipping_option_name: shippingOptionName,
+      logistic_type: logisticType
     };
 
-    logger.info(`[ShipmentHistoryService] ✅ Histórico enriquecido: ${events.length} eventos, ${transitTimeDays || 0} dias trânsito`);
+    logger.info(`[ShipmentHistoryService] ✅ Shipment completo enriquecido: ${events.length} eventos, carrier=${carrierName}`);
     
     return enrichedData;
 

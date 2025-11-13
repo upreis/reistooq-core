@@ -69,7 +69,15 @@ export const mapTrackingData = (item: any) => {
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
     
     // ===== CAMPOS PRIORIDADE ALTA =====
-    estimated_delivery_date: returnData?.estimated_delivery_date || returnData?.estimated_delivery_limit?.date || null,
+    // ✅ FASE 1: Priorizar estimated_delivery_limit do shipment enriquecido
+    estimated_delivery_date: claim.shipment_history_enriched?.estimated_delivery_limit || 
+                             returnData?.estimated_delivery_date || 
+                             returnData?.estimated_delivery_limit?.date || null,
+    
+    // ✅ FASE 1: Dados da transportadora do shipment enriquecido
+    carrier_name: claim.shipment_history_enriched?.carrier_name || null,
+    carrier_tracking_url: claim.shipment_history_enriched?.carrier_tracking_url || null,
+    shipping_option_name: claim.shipment_history_enriched?.shipping_option_name || null,
     
     has_delay: (() => {
       const estimatedDate = returnData?.estimated_delivery_date || returnData?.estimated_delivery_limit?.date;
