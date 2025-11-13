@@ -53,7 +53,10 @@ Deno.serve(async (req: Request) => {
     }
 
     // 2. Buscar secret atual
-    const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+    const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+    if (!INTERNAL_TOKEN) {
+      throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+    }
     
     const secretResponse = await serviceClient.functions.invoke('integrations-get-secret', {
       body: { 

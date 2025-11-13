@@ -282,7 +282,10 @@ serve(async (req) => {
         console.log('✅ Usando token já descriptografado passado por sync-devolucoes');
       } else {
         // ✅ FALLBACK: Buscar e descriptografar token (para chamadas diretas)
-        const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+        const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+        if (!INTERNAL_TOKEN) {
+          throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+        }
         const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
         const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
         
@@ -422,9 +425,11 @@ serve(async (req) => {
       const { reason_id } = requestBody;
       
       // 🔒 Obter token de forma segura
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+      if (!INTERNAL_TOKEN) {
+        throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+      }
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-      
       const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       const secretUrl = `${SUPABASE_URL}/functions/v1/integrations-get-secret`;
       const secretResponse = await fetch(secretUrl, {
@@ -519,7 +524,10 @@ serve(async (req) => {
       }
       
       // Obter token de forma segura
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+      if (!INTERNAL_TOKEN) {
+        throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+      }
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       
@@ -634,7 +642,10 @@ serve(async (req) => {
       }
       
       // Obter token de forma segura
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+      if (!INTERNAL_TOKEN) {
+        throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+      }
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       
@@ -750,7 +761,10 @@ serve(async (req) => {
       }
 
       // Obter token de forma segura
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+      if (!INTERNAL_TOKEN) {
+        throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+      }
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       
@@ -854,7 +868,10 @@ serve(async (req) => {
       }
       
       // Obter token de forma segura
-      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+      const INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN");
+      if (!INTERNAL_TOKEN) {
+        throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+      }
       const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
       const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
       

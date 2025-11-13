@@ -9,7 +9,11 @@ export class TokenManager {
   private readonly ANON_KEY: string;
   
   constructor() {
-    this.INTERNAL_TOKEN = Deno.env.get("INTERNAL_SHARED_TOKEN") || "internal-shared-token";
+    const token = Deno.env.get("INTERNAL_SHARED_TOKEN");
+    if (!token) {
+      throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+    }
+    this.INTERNAL_TOKEN = token;
     this.SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     this.ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
   }

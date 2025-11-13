@@ -38,6 +38,11 @@ Deno.serve(async (req) => {
     console.log('[ml-claims-messages] Buscando mensagens', { claimId, accountId });
 
     // Buscar token ML
+    const INTERNAL_TOKEN = Deno.env.get('INTERNAL_SHARED_TOKEN');
+    if (!INTERNAL_TOKEN) {
+      throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
+    }
+    
     const tokenUrl = `${supabaseUrl}/functions/v1/integrations-get-secret`;
     const tokenRes = await fetch(tokenUrl, {
       method: 'POST',
@@ -45,7 +50,7 @@ Deno.serve(async (req) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${supabaseKey}`,
         'x-internal-call': 'true',
-        'x-internal-token': Deno.env.get('INTERNAL_SHARED_TOKEN') || ''
+        'x-internal-token': INTERNAL_TOKEN
       },
       body: JSON.stringify({
         integration_account_id: accountId,
