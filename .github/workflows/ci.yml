@@ -7,8 +7,69 @@ on:
     branches: [ main, develop ]
 
 jobs:
+  # 🛡️ SECURITY: Supabase Database Linter
+  security-lint:
+    name: Database Security Linter
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Supabase CLI
+      uses: supabase/setup-cli@v1
+      with:
+        version: latest
+
+    - name: Link Supabase Project
+      env:
+        SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        PROJECT_ID: tdjyfqnxvjgossuncpwm
+      run: |
+        supabase link --project-ref $PROJECT_ID
+
+    - name: Run Database Linter
+      id: lint
+      run: |
+        echo "🔍 Executando Supabase Database Linter..."
+        supabase db lint --level warning > linter-output.txt 2>&1 || true
+        cat linter-output.txt
+        
+        # Conta avisos críticos de segurança
+        CRITICAL_WARNINGS=$(grep -E "(auth_users_exposed|rls_disabled_in_public|function_search_path_mutable)" linter-output.txt | wc -l)
+        
+        echo "critical_warnings=$CRITICAL_WARNINGS" >> $GITHUB_OUTPUT
+        
+        if [ "$CRITICAL_WARNINGS" -gt 0 ]; then
+          echo "❌ BLOQUEADO: $CRITICAL_WARNINGS avisos críticos de segurança encontrados!"
+          exit 1
+        else
+          echo "✅ Nenhum aviso crítico de segurança encontrado"
+        fi
+
+    - name: Upload Linter Report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: supabase-linter-report
+        path: linter-output.txt
+        retention-days: 30
+
+    - name: Comment PR with Security Status
+      if: github.event_name == 'pull_request' && failure()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '🛡️ **AVISOS DE SEGURANÇA DETECTADOS**\n\n❌ O Supabase Linter encontrou avisos críticos de segurança que devem ser corrigidos antes do merge.\n\nVerifique o [relatório completo](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) para detalhes.'
+          })
+
   test:
     runs-on: ubuntu-latest
+    needs: security-lint  # 🛡️ Requer aprovação do security-lint
 
     strategy:
       matrix:
