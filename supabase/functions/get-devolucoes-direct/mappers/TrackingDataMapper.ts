@@ -38,6 +38,9 @@ export const mapTrackingData = (item: any) => {
     
     // 4. Status Claim (status da reclamação - mapeado em BasicDataMapper)
     
+    // ===== MODO DE ENVIO (shipping mode) - IGUAL /pedidos =====
+    shipping_mode: claim.shipping?.mode || claim.shipping?.shipping_mode || returnData?.shipping_mode || null,
+    
     // ===== RASTREAMENTO BÁSICO =====
     tracking_number: returnData?.tracking_number || returnData?.shipments?.[0]?.tracking_number || claim.tracking_number || null,
     tracking_status: returnData?.status || claim.status || null,
