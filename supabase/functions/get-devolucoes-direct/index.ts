@@ -479,6 +479,17 @@ serve(async (req) => {
           shipmentIds.push(returnData.shipments[0].shipment_id);
         }
         
+        // 🐛 DEBUG: Log de shipment IDs encontrados
+        logger.info(`📦 SHIPMENT IDS (claim ${claim.id}):`, JSON.stringify({
+          total: shipmentIds.length,
+          order_shipping_id: orderData?.shipping?.id || null,
+          return_shipment_id: returnData?.shipments?.[0]?.shipment_id || null,
+          has_order_data: !!orderData,
+          has_return_data: !!returnData,
+          has_return_shipments: !!returnData?.shipments,
+          return_shipments_count: returnData?.shipments?.length || 0
+        }));
+        
         // 💰 FASE 2: Buscar custo real de devolução via /charges/return-cost
         let returnCostData = null;
         try {
