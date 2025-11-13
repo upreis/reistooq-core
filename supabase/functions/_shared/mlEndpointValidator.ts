@@ -51,6 +51,20 @@ export const ML_ENDPOINTS = {
     method: 'GET' as const,
     requiresAuth: true
   },
+  returnDetailsV2: {
+    name: 'Return Details V2',
+    primary: '/post-purchase/v2/claims/{id}/returns',
+    fallbacks: ['/post-purchase/v1/returns/{id}', '/marketplace/v2/returns/{id}'],
+    method: 'GET' as const,
+    requiresAuth: true
+  },
+  reviews: {
+    name: 'Return Reviews',
+    primary: '/post-purchase/v1/returns/{id}/reviews',
+    fallbacks: [],
+    method: 'GET' as const,
+    requiresAuth: true
+  },
   orders: {
     name: 'Orders',
     primary: '/orders/{id}',
@@ -61,6 +75,20 @@ export const ML_ENDPOINTS = {
   shipments: {
     name: 'Shipments',
     primary: '/shipments/{id}',
+    fallbacks: [],
+    method: 'GET' as const,
+    requiresAuth: true
+  },
+  shipmentHistory: {
+    name: 'Shipment History',
+    primary: '/shipments/{id}/history',
+    fallbacks: [],
+    method: 'GET' as const,
+    requiresAuth: true
+  },
+  shippingCosts: {
+    name: 'Shipping Costs',
+    primary: '/shipments/{id}/costs',
     fallbacks: [],
     method: 'GET' as const,
     requiresAuth: true
