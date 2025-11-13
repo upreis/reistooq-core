@@ -38,6 +38,7 @@ import { TipoEnvioCell } from '@/components/devolucoes/TipoEnvioCell';
 import { EnderecoDestinoCell } from '@/components/devolucoes/EnderecoDestinoCell';
 import { WarehouseIndicatorCell } from '@/components/devolucoes/WarehouseIndicatorCell';
 import { ShippingModeCell } from '@/components/devolucoes/ShippingModeCell';
+import { EstimatedDeliveryCell } from '@/components/devolucoes/EstimatedDeliveryCell';
 import {
   Pagination,
   PaginationContent,
@@ -116,6 +117,9 @@ interface Devolucao {
   // 🚢 MODO DE ENVIO (shipping mode) - IGUAL /pedidos
   shipping_mode?: string | null;
   
+  // 📅 DATA DE ENTREGA ESTIMADA
+  estimated_delivery_date?: string | null;
+  
   // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
   localizacao_atual_produto?: string | null;
   status_transporte_atual?: string | null;
@@ -123,7 +127,6 @@ interface Devolucao {
   previsao_chegada_vendedor?: string | null;
   
   // ✅ PRIORIDADE ALTA - 7 campos
-  estimated_delivery_date?: string | null;
   has_delay?: boolean | null;
   return_quantity?: number | null;
   total_quantity?: number | null;
@@ -448,6 +451,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Tracking</TableHead>
                 <TableHead>🚚 Tipo Logística</TableHead>
                 <TableHead>🚢 Modo Envio</TableHead>
+                <TableHead>📅 Entrega Estimada</TableHead>
                 <TableHead>📮 Tipo Envio</TableHead>
                 <TableHead>📍 Endereço Destino</TableHead>
                 <TableHead>🏭 Triagem ML</TableHead>
@@ -555,6 +559,11 @@ export default function DevolucoesMercadoLivre() {
                     {/* 🚢 MODO DE ENVIO */}
                     <TableCell>
                       <ShippingModeCell shipping_mode={dev.shipping_mode} />
+                    </TableCell>
+                    
+                    {/* 📅 DATA DE ENTREGA ESTIMADA */}
+                    <TableCell>
+                      <EstimatedDeliveryCell estimated_delivery_date={dev.estimated_delivery_date} />
                     </TableCell>
                     
                     {/* 📮 TIPO DE ENVIO DA DEVOLUÇÃO */}
