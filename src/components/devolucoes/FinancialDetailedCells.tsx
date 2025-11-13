@@ -1,10 +1,11 @@
 /**
  * 💰 CÉLULAS DE DADOS FINANCEIROS DETALHADOS
- * 9 campos financeiros avançados
+ * 8 campos financeiros avançados
  */
 
 import { TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { ResponsavelFreteCell } from './ResponsavelFreteCell';
 
 interface FinancialDetailedCellsProps {
   status_dinheiro?: string | null;
@@ -12,10 +13,9 @@ interface FinancialDetailedCellsProps {
   moeda_reembolso?: string | null;
   percentual_reembolsado?: number | null;
   valor_diferenca_troca?: number | null;
-  taxa_ml_reembolso?: number | null;
   custo_devolucao?: number | null;
-  parcelas?: number | null;
-  valor_parcela?: number | null;
+  custo_envio_original?: number | null;
+  responsavel_custo_frete?: string | null;
 }
 
 export const FinancialDetailedCells = ({
@@ -24,10 +24,9 @@ export const FinancialDetailedCells = ({
   moeda_reembolso,
   percentual_reembolsado,
   valor_diferenca_troca,
-  taxa_ml_reembolso,
   custo_devolucao,
-  parcelas,
-  valor_parcela
+  custo_envio_original,
+  responsavel_custo_frete
 }: FinancialDetailedCellsProps) => {
   return (
     <>
@@ -60,24 +59,19 @@ export const FinancialDetailedCells = ({
         {valor_diferenca_troca ? `R$ ${valor_diferenca_troca.toFixed(2)}` : '-'}
       </TableCell>
 
-      {/* Taxa ML Reemb. */}
-      <TableCell className="text-sm">
-        {taxa_ml_reembolso ? `R$ ${taxa_ml_reembolso.toFixed(2)}` : '-'}
-      </TableCell>
-
       {/* Custo Devolução */}
       <TableCell className="text-sm">
         {custo_devolucao ? `R$ ${custo_devolucao.toFixed(2)}` : '-'}
       </TableCell>
 
-      {/* Parcelas */}
+      {/* Custo Envio Original */}
       <TableCell className="text-sm">
-        {parcelas ? `${parcelas}x` : '-'}
+        {custo_envio_original ? `R$ ${custo_envio_original.toFixed(2)}` : '-'}
       </TableCell>
 
-      {/* Valor Parcela */}
-      <TableCell className="text-sm">
-        {valor_parcela ? `R$ ${valor_parcela.toFixed(2)}` : '-'}
+      {/* Responsável Frete */}
+      <TableCell>
+        <ResponsavelFreteCell responsavel_custo_frete={responsavel_custo_frete} />
       </TableCell>
     </>
   );
