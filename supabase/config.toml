@@ -115,3 +115,11 @@ verify_jwt = true
 [functions.get-devolucoes]
 verify_jwt = true
 
+# ✅ FASE 1+2+3: Busca direta com enriquecimento completo de shipments
+[functions.get-devolucoes-direct]
+verify_jwt = true
+
+[functions.test-shipment-structure]
+verify_jwt = true
+
+
