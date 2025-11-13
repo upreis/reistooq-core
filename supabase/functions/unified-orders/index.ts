@@ -965,6 +965,10 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
 }
 
 Deno.serve(async (req) => {
+  // 🔥🔥🔥 TESTE DE DEPLOYMENT - VENDAS ONLINE 🔥🔥🔥
+  console.log('🔥🔥🔥 [TESTE DEPLOYMENT] Edge Function unified-orders EXECUTANDO - versão NOVA 13/NOV 15:00 🔥🔥🔥');
+  console.log(`🔥🔥🔥 [TESTE DEPLOYMENT] Timestamp: ${new Date().toISOString()} 🔥🔥🔥`);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
