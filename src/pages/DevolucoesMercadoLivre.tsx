@@ -41,6 +41,7 @@ import { ShippingModeCell } from '@/components/devolucoes/ShippingModeCell';
 import { EstimatedDeliveryCell } from '@/components/devolucoes/EstimatedDeliveryCell';
 import { PrevisaoEntregaCell } from '@/components/devolucoes/PrevisaoEntregaCell';
 import { ResponsavelFreteCell } from '@/components/devolucoes/ResponsavelFreteCell';
+import { TransportadoraCell } from '@/components/devolucoes/TransportadoraCell';
 import {
   Pagination,
   PaginationContent,
@@ -121,6 +122,11 @@ interface Devolucao {
   
   // 📅 DATA DE ENTREGA ESTIMADA
   estimated_delivery_date?: string | null;
+  
+  // ✅ FASE 1: Novos campos de shipment
+  carrier_name?: string | null;
+  carrier_tracking_url?: string | null;
+  shipping_option_name?: string | null;
   
   // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
   localizacao_atual_produto?: string | null;
@@ -481,9 +487,12 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>💰 Custos Logística</TableHead>
                 
                 
+                {/* 🆕 FASE 1: TRANSPORTADORA */}
+                <TableHead>🚚 Transportadora</TableHead>
+                
                 {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas ANTES dos detalhados */}
                 <TableHead>📍 Localização Produto</TableHead>
-                <TableHead>🚚 Status Transporte</TableHead>
+                <TableHead>🚛 Status Transporte</TableHead>
                 <TableHead>⏱️ Tempo Trânsito</TableHead>
                 <TableHead>📅 Previsão Chegada</TableHead>
                 
@@ -629,6 +638,15 @@ export default function DevolucoesMercadoLivre() {
                         custo_envio_original={dev.custo_envio_original}
                         custo_devolucao={dev.custo_devolucao}
                         responsavel_custo_frete={dev.responsavel_custo_frete}
+                      />
+                    </TableCell>
+                    
+                    {/* 🆕 FASE 1: TRANSPORTADORA */}
+                    <TableCell>
+                      <TransportadoraCell
+                        carrier_name={dev.carrier_name}
+                        carrier_tracking_url={dev.carrier_tracking_url}
+                        tracking_number={dev.codigo_rastreamento}
                       />
                     </TableCell>
                     
