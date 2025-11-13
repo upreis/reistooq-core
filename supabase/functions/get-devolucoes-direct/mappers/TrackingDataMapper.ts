@@ -65,7 +65,8 @@ export const mapTrackingData = (item: any) => {
     revisor_responsavel: claim.review_details?.reviewer?.id || claim.review?.reviewer_id || null,
     
     // 📅 FASE 1: Datas críticas para gestão de devolução
-    data_fechamento_devolucao: returnData?.closed_at || claim.date_closed || null,
+    // ✅ CORREÇÃO: Usar date_closed do claim como fallback primário (endpoint /returns retorna 404)
+    data_fechamento_devolucao: claim.date_closed || returnData?.closed_at || claim.resolution?.date || null,
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
     
     // ===== CAMPOS PRIORIDADE ALTA =====
