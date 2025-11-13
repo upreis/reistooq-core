@@ -63,14 +63,14 @@ export class SecureClienteService {
 
       const clientes = data || [];
       
-      // Calculate stats from secure view data
+      // Calculate stats from secure view data - handle both view types
       const stats: ClientesStats = {
         total: clientes.length,
-        ativos: clientes.filter(c => c.status_cliente === 'Regular').length,
-        vip: clientes.filter(c => c.status_cliente === 'VIP').length,
-        premium: clientes.filter(c => c.status_cliente === 'Premium').length,
-        ticket_medio: clientes.reduce((acc, c) => acc + (Number(c.ticket_medio) || 0), 0) / clientes.length || 0,
-        ltv_medio: clientes.reduce((acc, c) => acc + (Number(c.valor_total_gasto) || 0), 0) / clientes.length || 0
+        ativos: clientes.filter((c: any) => c.status_cliente === 'Regular').length,
+        vip: clientes.filter((c: any) => c.status_cliente === 'VIP').length,
+        premium: clientes.filter((c: any) => c.status_cliente === 'Premium').length,
+        ticket_medio: clientes.reduce((acc: number, c: any) => acc + (Number(c.ticket_medio) || 0), 0) / clientes.length || 0,
+        ltv_medio: clientes.reduce((acc: number, c: any) => acc + (Number(c.valor_total_gasto) || 0), 0) / clientes.length || 0
       };
 
       return { data: stats, error: null };
@@ -116,22 +116,21 @@ export class SecureClienteService {
   static async createCliente(cliente: Omit<Cliente, 'id' | 'created_at' | 'updated_at' | 'organization_id'>) {
     try {
       // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
-      const { data, error } = await supabase
+      const { data: customerId, error } = await supabase
         .rpc('admin_create_customer', {
-          p_customer_data: cliente
-        });
+          p_customer: cliente
+        })
+        .single();
 
-      if (error || !data?.[0]?.success) {
-        const errorMessage = data?.[0]?.error_message || error?.message || 'Erro ao criar cliente';
-        console.error('❌ Erro ao criar cliente:', errorMessage);
-        return { data: null, error: { message: errorMessage } };
+      if (error) {
+        console.error('❌ Erro ao criar cliente:', error);
+        return { data: null, error: { message: error.message } };
       }
 
-      const result = data[0];
-      console.log('✅ Cliente criado com sucesso:', result.id);
+      console.log('✅ Cliente criado com sucesso:', customerId);
       
       // Return the newly created customer data
-      const customerResult = await this.getClienteById(result.id!);
+      const customerResult = await this.getClienteById(customerId);
       return { data: customerResult.data, error: customerResult.error };
     } catch (error) {
       console.error('❌ Erro ao criar cliente:', error);
@@ -146,16 +145,16 @@ export class SecureClienteService {
   static async updateCliente(id: string, updates: Partial<Cliente>) {
     try {
       // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
-      const { data, error } = await supabase
+      const { data: success, error } = await supabase
         .rpc('admin_update_customer', {
           p_customer_id: id,
-          p_updates: updates
-        });
+          p_customer: updates
+        })
+        .single();
 
-      if (error || !data?.[0]?.success) {
-        const errorMessage = data?.[0]?.error_message || error?.message || 'Erro ao atualizar cliente';
-        console.error('❌ Erro ao atualizar cliente:', errorMessage);
-        return { data: null, error: { message: errorMessage } };
+      if (error || !success) {
+        console.error('❌ Erro ao atualizar cliente:', error);
+        return { data: null, error: { message: error?.message || 'Erro ao atualizar cliente' } };
       }
 
       console.log('✅ Cliente atualizado com sucesso:', id);
