@@ -6,19 +6,6 @@ verify_jwt = true
 [functions.sync-ml-orders]
 verify_jwt = true
 
-[auth]
-enabled = true
-external_email_providers = ["gmail"]
-
-[api]
-enabled = true
-
-[db]
-enabled = true
-
-[edge_runtime]
-enabled = true
-
 [functions.shopee-oauth]
 verify_jwt = false
 
@@ -39,11 +26,6 @@ verify_jwt = false
 
 [functions.ml-token-refresh-cron]
 verify_jwt = false
-
-# CONFIGURAÇÃO CRÍTICA: CRON automático para refresh preventivo
-# Executa a cada 2 horas para verificar tokens que expiram em 4 horas
-[functions.ml-token-refresh-cron.cron]
-schedule = "0 */2 * * *"
 
 [functions.integrations-get-secret]
 verify_jwt = false
@@ -69,11 +51,9 @@ verify_jwt = true
 [functions.ml-webhook]
 verify_jwt = false
 
-
 [functions.ml-test-connection]
 verify_jwt = false
 
-# DEPRECATED: Use devolucoes-avancadas-sync instead
 [functions.ml-devolucoes-sync]
 verify_jwt = true
 
@@ -95,16 +75,8 @@ verify_jwt = false
 [functions.auto-update-devolucoes]
 verify_jwt = false
 
-# ⏰ CRON JOB: Atualização automática a cada 4 horas
-[functions.auto-update-devolucoes.cron]
-schedule = "0 */4 * * *"  # 00:00, 04:00, 08:00, 12:00, 16:00, 20:00
-
 [functions.ml-claims-fetch]
 verify_jwt = true
-
-# ============================================
-# FASE 2: Edge Functions Background
-# ============================================
 
 [functions.sync-devolucoes]
 verify_jwt = true
@@ -115,11 +87,8 @@ verify_jwt = true
 [functions.get-devolucoes]
 verify_jwt = true
 
-# ✅ FASE 1+2+3: Busca direta com enriquecimento completo de shipments
 [functions.get-devolucoes-direct]
 verify_jwt = true
 
 [functions.test-shipment-structure]
 verify_jwt = true
-
-
