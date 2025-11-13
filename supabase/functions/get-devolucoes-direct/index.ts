@@ -10,6 +10,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 import { fetchWithRetry } from '../_shared/retryUtils.ts';
 import { logger } from '../_shared/logger.ts';
+import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.ts';
 
 // ✅ Importar serviços de enriquecimento FASE 2
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
@@ -257,23 +258,35 @@ serve(async (req) => {
           }
         }
 
-        // 2. Buscar mensagens
+        // 2. Buscar mensagens com validação automática
         let messagesData = null;
         try {
           logger.debug(`💬 Buscando messages para claim ${claim.id}`);
           
-          const messagesRes = await fetchWithRetry(
-            `https://api.mercadolibre.com/marketplace/v2/claims/${claim.id}/messages`,
-            { headers: { 'Authorization': `Bearer ${accessToken}` } },
-            { maxRetries: 2, retryDelay: 500, retryOnStatus: [429, 500, 502, 503] }
+          // ✅ Usar validador automático de endpoints
+          const { response: messagesRes, endpointUsed, fallbackUsed } = await validateAndFetch(
+            'claimMessages',
+            accessToken,
+            { id: claim.id.toString() },
+            { retryOnFail: true, logResults: true }
           );
-          if (messagesRes.ok) {
+          
+          if (messagesRes?.ok) {
             messagesData = await messagesRes.json();
             
             logger.debug(`💬 MESSAGES ENRIQUECIDAS para claim ${claim.id}:`, JSON.stringify({
               total_messages: messagesData?.length || 0,
-              has_messages: (messagesData?.length || 0) > 0
+              has_messages: (messagesData?.length || 0) > 0,
+              endpoint_used: endpointUsed,
+              fallback_used: fallbackUsed
             }));
+            
+            // ⚠️ Alertar se fallback foi usado
+            if (fallbackUsed) {
+              logger.warn(`⚠️ ATENÇÃO: Endpoint primário ${ML_ENDPOINTS.claimMessages.primary} falhou!`);
+              logger.warn(`   Usando fallback: ${endpointUsed}`);
+              logger.warn(`   Considere atualizar o código para usar o endpoint correto.`);
+            }
           }
         } catch (err) {
           logger.error(`❌ Erro ao buscar messages (claim ${claim.id}):`, err);
