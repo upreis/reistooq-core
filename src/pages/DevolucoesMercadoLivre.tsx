@@ -39,6 +39,8 @@ import { EnderecoDestinoCell } from '@/components/devolucoes/EnderecoDestinoCell
 import { WarehouseIndicatorCell } from '@/components/devolucoes/WarehouseIndicatorCell';
 import { ShippingModeCell } from '@/components/devolucoes/ShippingModeCell';
 import { EstimatedDeliveryCell } from '@/components/devolucoes/EstimatedDeliveryCell';
+import { PrevisaoEntregaCell } from '@/components/devolucoes/PrevisaoEntregaCell';
+import { ResponsavelFreteCell } from '@/components/devolucoes/ResponsavelFreteCell';
 import {
   Pagination,
   PaginationContent,
@@ -598,7 +600,7 @@ export default function DevolucoesMercadoLivre() {
                     
                     {/* PRIORIDADE ALTA - 7 colunas */}
                     <TrackingPriorityCells
-                      estimated_delivery_date={dev.estimated_delivery_date}
+                      prazo_limite_analise={dev.prazo_limite_analise}
                       has_delay={dev.has_delay}
                       return_quantity={dev.return_quantity}
                       total_quantity={dev.total_quantity}

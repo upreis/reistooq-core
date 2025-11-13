@@ -5,15 +5,16 @@
 
 import { TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, AlertTriangle, CheckCircle2, Package, MessageSquare, User, CreditCard } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Package, MessageSquare, User, CreditCard } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { PrevisaoEntregaCell } from '@/components/devolucoes/PrevisaoEntregaCell';
 
 interface TrackingPriorityCellsProps {
-  estimated_delivery_date?: string;
+  prazo_limite_analise?: string | null;
   has_delay?: boolean;
   return_quantity?: number;
   total_quantity?: number;
-  qualidade_comunicacao?: string;  // Pode ser 'excelente' | 'boa' | 'regular' | 'ruim' ou outros
+  qualidade_comunicacao?: string;
   numero_interacoes?: number;
   mediador_ml?: string;
   transaction_id?: string;
@@ -53,7 +54,7 @@ const qualidadeConfig = {
 };
 
 export function TrackingPriorityCells({
-  estimated_delivery_date,
+  prazo_limite_analise,
   has_delay,
   return_quantity,
   total_quantity,
@@ -64,21 +65,9 @@ export function TrackingPriorityCells({
 }: TrackingPriorityCellsProps) {
   return (
     <>
-      {/* 1. DATA ESTIMADA DE ENTREGA */}
-      <TableCell className="text-sm">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                <span>{formatSafeDate(estimated_delivery_date)}</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p className="text-xs">Data estimada de chegada do produto devolvido ao vendedor</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+      {/* 1. PREVISÃO DE ENTREGA (prazo limite de análise) */}
+      <TableCell>
+        <PrevisaoEntregaCell prazo_limite_analise={prazo_limite_analise} />
       </TableCell>
 
       {/* 2. TEM ATRASO? */}
