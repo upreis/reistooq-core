@@ -527,6 +527,7 @@ export default function DevolucoesMercadoLivre() {
                 
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
+                <TableHead>📦 Data Chegada</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -736,6 +737,12 @@ export default function DevolucoesMercadoLivre() {
                     <TableCell>
                       {dev.data_criacao 
                         ? new Date(dev.data_criacao).toLocaleDateString('pt-BR')
+                        : '-'
+                      }
+                    </TableCell>
+                    <TableCell>
+                      {dev.data_fechamento_devolucao 
+                        ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR')
                         : '-'
                       }
                     </TableCell>
