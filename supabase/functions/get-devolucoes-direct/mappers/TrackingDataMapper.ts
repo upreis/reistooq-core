@@ -82,6 +82,11 @@ export const mapTrackingData = (item: any) => {
     // ✅ FASE 2: Prazo estimado de entrega
     estimated_delivery_time: claim.shipment_history_enriched?.estimated_delivery_time || null,
     estimated_delivery_time_type: claim.shipment_history_enriched?.estimated_delivery_time_type || null,
+    
+    // ✅ FASE 3: Método de envio e histórico
+    shipping_method_name: claim.shipment_history_enriched?.shipping_method_name || null,
+    tracking_method: claim.shipment_history_enriched?.tracking_method || null,
+    status_history: claim.shipment_history_enriched?.status_history || null,
 
     has_delay: (() => {
       const estimatedDate = returnData?.estimated_delivery_date || returnData?.estimated_delivery_limit?.date;

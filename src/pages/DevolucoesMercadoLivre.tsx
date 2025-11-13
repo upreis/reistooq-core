@@ -44,6 +44,8 @@ import { ResponsavelFreteCell } from '@/components/devolucoes/ResponsavelFreteCe
 import { TransportadoraCell } from '@/components/devolucoes/TransportadoraCell';
 import { OpcaoFreteCell } from '@/components/devolucoes/OpcaoFreteCell';
 import { PrazoEstimadoCell } from '@/components/devolucoes/PrazoEstimadoCell';
+import { MetodoEnvioCell } from '@/components/devolucoes/MetodoEnvioCell';
+import { HistoricoStatusCell } from '@/components/devolucoes/HistoricoStatusCell';
 import {
   Pagination,
   PaginationContent,
@@ -133,6 +135,11 @@ interface Devolucao {
   // ✅ FASE 2: Novos campos de prazo
   estimated_delivery_time?: string | null;
   estimated_delivery_time_type?: string | null;
+  
+  // ✅ FASE 3: Método de envio e histórico
+  shipping_method_name?: string | null;
+  tracking_method?: string | null;
+  status_history?: any[] | null;
   
   // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
   localizacao_atual_produto?: string | null;
@@ -500,6 +507,10 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>📦 Opção Frete</TableHead>
                 <TableHead>⏰ Prazo Estimado</TableHead>
                 
+                {/* 🆕 FASE 3: MÉTODO ENVIO E HISTÓRICO */}
+                <TableHead>🚢 Método Envio</TableHead>
+                <TableHead>📜 Histórico Status</TableHead>
+                
                 {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas ANTES dos detalhados */}
                 <TableHead>📍 Localização Produto</TableHead>
                 <TableHead>🚛 Status Transporte</TableHead>
@@ -669,6 +680,17 @@ export default function DevolucoesMercadoLivre() {
                         estimated_delivery_time={dev.estimated_delivery_time}
                         estimated_delivery_time_type={dev.estimated_delivery_time_type}
                       />
+                    </TableCell>
+                    
+                    {/* 🆕 FASE 3: MÉTODO ENVIO E HISTÓRICO */}
+                    <TableCell>
+                      <MetodoEnvioCell 
+                        shipping_method_name={dev.shipping_method_name}
+                        tracking_method={dev.tracking_method}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <HistoricoStatusCell status_history={dev.status_history} />
                     </TableCell>
                     
                     {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas */}

@@ -36,6 +36,10 @@ export interface ShipmentHistoryData {
   // ✅ FASE 2: Campos adicionais de prazo
   estimated_delivery_time?: string | null;
   estimated_delivery_time_type?: string | null;
+  // ✅ FASE 3: Método de envio e histórico
+  shipping_method_name?: string | null;
+  tracking_method?: string | null;
+  status_history?: any[] | null;
 }
 
 /**
@@ -126,7 +130,12 @@ export async function fetchShipmentHistory(
     const estimatedDeliveryTime = shipmentData?.estimated_delivery_time?.date || null;
     const estimatedDeliveryTimeType = shipmentData?.estimated_delivery_time?.type || null;
     
-    logger.info(`[ShipmentHistoryService] 📦 FASE 1+2 - Dados extraídos: estimated_delivery=${estimatedDeliveryLimit}, carrier=${carrierName}, shipping_option=${shippingOptionName}, logistic_type=${logisticType}`);
+    // ✅ FASE 3: Método de envio e histórico
+    const shippingMethodName = shipmentData?.shipping_method?.name || null;
+    const trackingMethod = shipmentData?.tracking_method || null;
+    const statusHistory = shipmentData?.status_history || null;
+    
+    logger.info(`[ShipmentHistoryService] 📦 FASE 1+2+3 - Dados extraídos: carrier=${carrierName}, shipping_method=${shippingMethodName}, tracking_method=${trackingMethod}, status_history_count=${statusHistory?.length || 0}`);
     const enrichedData: ShipmentHistoryData = {
       shipment_id: shipmentId,
       tracking_number: shipmentData?.tracking_number || null,
@@ -166,7 +175,11 @@ export async function fetchShipmentHistory(
       logistic_type: logisticType,
       // ✅ FASE 2: Prazo estimado
       estimated_delivery_time: estimatedDeliveryTime,
-      estimated_delivery_time_type: estimatedDeliveryTimeType
+      estimated_delivery_time_type: estimatedDeliveryTimeType,
+      // ✅ FASE 3: Método de envio e histórico
+      shipping_method_name: shippingMethodName,
+      tracking_method: trackingMethod,
+      status_history: statusHistory
     };
 
     logger.info(`[ShipmentHistoryService] ✅ Shipment completo enriquecido: ${events.length} eventos, carrier=${carrierName}`);
