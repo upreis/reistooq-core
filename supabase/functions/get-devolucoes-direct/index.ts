@@ -179,6 +179,15 @@ serve(async (req) => {
     // Função para enriquecer um único claim
     const enrichClaim = async (claim: any) => {
       try {
+        // 🔍 DEBUG CRÍTICO: Verificar se claim.shipping existe na resposta do endpoint /claims
+        console.log(`🔍 CLAIM SHIPPING (claim ${claim.id}):`, JSON.stringify({
+          has_shipping: !!claim.shipping,
+          shipping_keys: claim.shipping ? Object.keys(claim.shipping) : [],
+          logistic_type: claim.shipping?.logistic?.type,
+          logistic_type_flat: claim.shipping?.logistic_type,
+          shipping_sample: claim.shipping ? JSON.stringify(claim.shipping).substring(0, 200) : null
+        }));
+        
         // 1. Buscar ordem (order_data) e shipment para logistic_type
         let orderData = null;
         let shipmentData = null;
