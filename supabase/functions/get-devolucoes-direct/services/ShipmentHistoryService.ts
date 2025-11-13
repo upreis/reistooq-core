@@ -33,6 +33,9 @@ export interface ShipmentHistoryData {
   carrier_tracking_url?: string | null;
   shipping_option_name?: string | null;
   logistic_type?: string | null;
+  // ✅ FASE 2: Campos adicionais de prazo
+  estimated_delivery_time?: string | null;
+  estimated_delivery_time_type?: string | null;
 }
 
 /**
@@ -111,7 +114,7 @@ export async function fetchShipmentHistory(
       ? [lastEvent.location.city, lastEvent.location.state].filter(Boolean).join(', ')
       : null;
 
-    // ✅ FASE 1: Extrair campos críticos do shipment completo
+    // ✅ FASE 1 + FASE 2: Extrair campos críticos do shipment completo
     const estimatedDeliveryLimit = shipmentData?.estimated_delivery_limit?.date || 
                                    shipmentData?.estimated_delivery_time?.date || null;
     const carrierName = shipmentData?.carrier_info?.name || null;
@@ -119,8 +122,11 @@ export async function fetchShipmentHistory(
     const shippingOptionName = shipmentData?.shipping_option?.name || null;
     const logisticType = shipmentData?.logistic_type || null;
     
-    logger.info(`[ShipmentHistoryService] 📦 FASE 1 - Dados extraídos: estimated_delivery=${estimatedDeliveryLimit}, carrier=${carrierName}, tracking_url=${carrierTrackingUrl}`);
-
+    // ✅ FASE 2: Prazo estimado de entrega
+    const estimatedDeliveryTime = shipmentData?.estimated_delivery_time?.date || null;
+    const estimatedDeliveryTimeType = shipmentData?.estimated_delivery_time?.type || null;
+    
+    logger.info(`[ShipmentHistoryService] 📦 FASE 1+2 - Dados extraídos: estimated_delivery=${estimatedDeliveryLimit}, carrier=${carrierName}, shipping_option=${shippingOptionName}, logistic_type=${logisticType}`);
     const enrichedData: ShipmentHistoryData = {
       shipment_id: shipmentId,
       tracking_number: shipmentData?.tracking_number || null,
@@ -157,7 +163,10 @@ export async function fetchShipmentHistory(
       carrier_name: carrierName,
       carrier_tracking_url: carrierTrackingUrl,
       shipping_option_name: shippingOptionName,
-      logistic_type: logisticType
+      logistic_type: logisticType,
+      // ✅ FASE 2: Prazo estimado
+      estimated_delivery_time: estimatedDeliveryTime,
+      estimated_delivery_time_type: estimatedDeliveryTimeType
     };
 
     logger.info(`[ShipmentHistoryService] ✅ Shipment completo enriquecido: ${events.length} eventos, carrier=${carrierName}`);

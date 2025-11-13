@@ -42,6 +42,8 @@ import { EstimatedDeliveryCell } from '@/components/devolucoes/EstimatedDelivery
 import { PrevisaoEntregaCell } from '@/components/devolucoes/PrevisaoEntregaCell';
 import { ResponsavelFreteCell } from '@/components/devolucoes/ResponsavelFreteCell';
 import { TransportadoraCell } from '@/components/devolucoes/TransportadoraCell';
+import { OpcaoFreteCell } from '@/components/devolucoes/OpcaoFreteCell';
+import { PrazoEstimadoCell } from '@/components/devolucoes/PrazoEstimadoCell';
 import {
   Pagination,
   PaginationContent,
@@ -127,6 +129,10 @@ interface Devolucao {
   carrier_name?: string | null;
   carrier_tracking_url?: string | null;
   shipping_option_name?: string | null;
+  
+  // ✅ FASE 2: Novos campos de prazo
+  estimated_delivery_time?: string | null;
+  estimated_delivery_time_type?: string | null;
   
   // ✅ FASE 2: SHIPPING AVANÇADO - 4 campos críticos
   localizacao_atual_produto?: string | null;
@@ -490,6 +496,10 @@ export default function DevolucoesMercadoLivre() {
                 {/* 🆕 FASE 1: TRANSPORTADORA */}
                 <TableHead>🚚 Transportadora</TableHead>
                 
+                {/* 🆕 FASE 2: OPÇÃO FRETE E PRAZO */}
+                <TableHead>📦 Opção Frete</TableHead>
+                <TableHead>⏰ Prazo Estimado</TableHead>
+                
                 {/* 🆕 FASE 2: SHIPPING AVANÇADO - 4 colunas ANTES dos detalhados */}
                 <TableHead>📍 Localização Produto</TableHead>
                 <TableHead>🚛 Status Transporte</TableHead>
@@ -647,6 +657,17 @@ export default function DevolucoesMercadoLivre() {
                         carrier_name={dev.carrier_name}
                         carrier_tracking_url={dev.carrier_tracking_url}
                         tracking_number={dev.codigo_rastreamento}
+                      />
+                    </TableCell>
+                    
+                    {/* 🆕 FASE 2: OPÇÃO FRETE E PRAZO */}
+                    <TableCell>
+                      <OpcaoFreteCell shipping_option_name={dev.shipping_option_name} />
+                    </TableCell>
+                    <TableCell>
+                      <PrazoEstimadoCell 
+                        estimated_delivery_time={dev.estimated_delivery_time}
+                        estimated_delivery_time_type={dev.estimated_delivery_time_type}
                       />
                     </TableCell>
                     
