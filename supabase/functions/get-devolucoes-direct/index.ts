@@ -502,7 +502,7 @@ serve(async (req) => {
         // Buscar históricos e custos se houver shipments
         if (shipmentIds.length > 0) {
           try {
-            logger.info(`🚚 Buscando histórico/custos para ${shipmentIds.length} shipments (claim ${claim.id}): ${shipmentIds.join(', ')}`);
+            logger.info(`🚚 [FASE 1+2+3] Buscando histórico/custos para ${shipmentIds.length} shipments (claim ${claim.id}): ${shipmentIds.join(', ')}`);
             
             const [historyMap, costsMap] = await Promise.all([
               fetchMultipleShipmentHistories(shipmentIds, accessToken),
@@ -512,7 +512,10 @@ serve(async (req) => {
             logger.info(`📊 RESULTADO enriquecimento (claim ${claim.id}):`, JSON.stringify({
               shipments_count: shipmentIds.length,
               history_found: historyMap.size,
-              costs_found: costsMap.size
+              costs_found: costsMap.size,
+              has_carrier_data: Array.from(historyMap.values()).some(h => h.carrier_name),
+              has_shipping_method: Array.from(historyMap.values()).some(h => h.shipping_method_name),
+              has_status_history: Array.from(historyMap.values()).some(h => h.status_history && h.status_history.length > 0)
             }));
             
             // Consolidar dados em estrutura única
