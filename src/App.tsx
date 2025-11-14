@@ -22,6 +22,7 @@ import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import VendasOnline from "./pages/VendasOnline";
 import DevolucoesMercadoLivre from "./pages/DevolucoesMercadoLivre";
+import Devolucao2025 from "./pages/Devolucao2025";
 // DadosEnriquecidosQualidade removido temporariamente
 import Scanner from "./pages/Scanner";
 
@@ -177,9 +178,14 @@ function App() {
                          <VendasOnline />
                        </PermissionRoute>
                      } />
-                      <Route path="/devolucoes-ml" element={
+                     <Route path="/devolucoes-ml" element={
                         <PermissionRoute requiredPermissions={['orders:read']}>
                           <DevolucoesMercadoLivre />
+                        </PermissionRoute>
+                      } />
+                      <Route path="/devolucao2025" element={
+                        <PermissionRoute requiredPermissions={['orders:read']}>
+                          <Devolucao2025 />
                         </PermissionRoute>
                       } />
                       {/* Rota qualidade-dados removida temporariamente */}
