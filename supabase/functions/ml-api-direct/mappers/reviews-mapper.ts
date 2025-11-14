@@ -67,6 +67,24 @@ export function mapReviewsData(reviewsData: any, reviewReasons: any[] = []) {
     ? reviewReasons.find(r => r.id === sellerReasonId)?.detail 
     : null;
 
+  // ✅ NOVO: Extrair available_actions do claim players
+  const availableActions = reviewsData.players?.find((p: any) => p.role === 'respondent')?.available_actions?.map((action: any) => ({
+    action: action.action,
+    mandatory: action.mandatory || false,
+    due_date: action.due_date || null
+  })) || [];
+
+  // ✅ NOVO: Mapear resolution completa
+  const resolution = reviewsData.resolution ? {
+    reason: reviewsData.resolution.reason,
+    date_created: reviewsData.resolution.date_created,
+    benefited: Array.isArray(reviewsData.resolution.benefited) 
+      ? reviewsData.resolution.benefited 
+      : [reviewsData.resolution.benefited],
+    closed_by: reviewsData.resolution.closed_by,
+    applied_coverage: reviewsData.resolution.applied_coverage
+  } : null;
+
   return {
     // ✅ Identificação (nível do review)
     resource: firstReview.resource || null, // 'order'
@@ -109,6 +127,12 @@ export function mapReviewsData(reviewsData: any, reviewReasons: any[] = []) {
     
     // ✅ FASE 10: Razões disponíveis para o vendedor
     available_reasons: reviewReasons,
+    
+    // ✅ NOVO: Available Actions do vendedor
+    available_actions: availableActions,
+    
+    // ✅ NOVO: Resolution completa
+    resolution: resolution,
     
     // ✅ Datas
     date_created: firstReview.date_created || null,
