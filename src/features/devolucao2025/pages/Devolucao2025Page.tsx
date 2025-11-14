@@ -11,6 +11,7 @@ import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
 import { Devolucao2025Pagination } from '../components/Devolucao2025Pagination';
+import { Devolucao2025Export } from '../components/Devolucao2025Export';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
 import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
@@ -150,7 +151,13 @@ export const Devolucao2025Page = () => {
               Gestão completa com {devolucoesValidas.length} devoluções válidas
             </p>
           </div>
-          <DevolucaoAlertsBadge alertsByType={alertsByType} />
+          <div className="flex gap-2">
+            <Devolucao2025Export 
+              devolucoes={devolucoesValidas}
+              disabled={isLoading}
+            />
+            <DevolucaoAlertsBadge alertsByType={alertsByType} />
+          </div>
         </div>
         <NotificationsBell organizationId={organizationId} />
       </div>
