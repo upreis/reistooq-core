@@ -108,22 +108,47 @@ Deno.serve(async (req) => {
       // ✅ Buscar integration_account_id baseado no user_id do ML
       const { data: accounts } = await supabase
         .from('integration_accounts')
-        .select('id, organization_id, public_auth')
+        .select('id, organization_id')
+        .eq('account_identifier', user_id?.toString())
         .eq('provider', 'mercadolivre')
         .eq('is_active', true);
       
-      // Filtrar pela conta correta usando public_auth->user_id
-      const matchingAccount = accounts?.find(acc => {
-        const authData = acc.public_auth as any;
-        return authData && authData.user_id && parseInt(authData.user_id) === user_id;
-      });
+      const matchingAccount = accounts?.[0];
       
       if (matchingAccount) {
         const accountId = matchingAccount.id;
+        const organizationId = matchingAccount.organization_id;
         console.log(`[ML Webhook] Found integration account: ${accountId}`);
         
+        // 🔔 CRIAR NOTIFICAÇÃO EM TEMPO REAL
+        try {
+          await supabase
+            .from('devolucoes_notificacoes')
+            .insert({
+              integration_account_id: accountId,
+              organization_id: organizationId,
+              order_id: resource || 'unknown',
+              claim_id: parseInt(resource?.split('-')[0] || '0'),
+              return_id: parseInt(resource?.split('-')[1] || '0'),
+              tipo_notificacao: topic === 'claims' ? 'novo_claim' : 'novo_return',
+              prioridade: 'alta',
+              titulo: topic === 'claims' ? '🚨 Novo Claim Recebido' : '📦 Nova Devolução',
+              mensagem: `Um novo ${topic === 'claims' ? 'claim' : 'return'} foi detectado e está sendo processado.`,
+              dados_contexto: {
+                resource,
+                topic,
+                user_id,
+                application_id,
+                received_at: new Date().toISOString()
+              }
+            });
+          console.log(`[ML Webhook] Notification created for ${topic}`);
+        } catch (notifError) {
+          console.error('[ML Webhook] Error creating notification:', notifError);
+        }
+        
         // Chamar sync em background (não aguardar resposta)
-        supabase.functions.invoke('sync-devolucoes', {
+        supabase.functions.invoke('sync-ml-claims', {
           body: { 
             integration_account_id: accountId,
             trigger: 'webhook'

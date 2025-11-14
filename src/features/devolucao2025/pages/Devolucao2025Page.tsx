@@ -3,7 +3,7 @@
  * Implementação completa com 65 colunas
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
 import { Devolucao2025Pagination } from '../components/Devolucao2025Pagination';
+import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
@@ -21,6 +22,26 @@ export const Devolucao2025Page = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+
+  // Buscar organization_id do usuário
+  useEffect(() => {
+    const fetchOrganization = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('organizacao_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (data?.organizacao_id) {
+          setOrganizationId(data.organizacao_id);
+        }
+      }
+    };
+    fetchOrganization();
+  }, []);
 
   // Buscar contas de integração
   const { data: accounts = [] } = useQuery({
@@ -92,6 +113,7 @@ export const Devolucao2025Page = () => {
             Gestão completa com {devolucoes.length} devoluções
           </p>
         </div>
+        <NotificationsBell organizationId={organizationId} />
       </div>
 
       <Devolucao2025Stats devolucoes={devolucoes} />
