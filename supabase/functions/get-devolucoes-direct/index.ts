@@ -703,11 +703,11 @@ serve(async (req) => {
     logger.progress('🗺️ Mapeando dados...');
     logger.progress(`📊 Total de claims a mapear: ${allEnrichedClaims.length}`);
     
-    // 🎯 Enriquecer com datas de chegada da devolução
-    logger.progress('📅 Buscando datas de chegada das devoluções...');
-    const claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
+    // ⚠️ DATA DE CHEGADA DESATIVADA - rate limiting 429
+    // A data de chegada não está disponível de forma confiável via API
+    logger.progress('📊 Prosseguindo sem busca de data de chegada (desativado)');
     
-    const mappedClaims = claimsWithArrivalDates.map((claim: any) => {
+    const mappedClaims = allEnrichedClaims.map((claim: any) => {
       try {
         // ✅ DEBUG: Log estrutura do primeiro claim enriquecido
         if (allEnrichedClaims.indexOf(claim) === 0) {
