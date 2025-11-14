@@ -71,7 +71,9 @@ export const Devolucao2025Page = () => {
         return data?.data || [];
       }
     },
-    enabled: accounts.length > 0
+    enabled: accounts.length > 0,
+    retry: 2, // Tentar 2x em caso de timeout
+    staleTime: 5 * 60 * 1000, // Cache de 5 minutos
   });
 
   // Paginação dos dados
@@ -110,16 +112,29 @@ export const Devolucao2025Page = () => {
 
       <Card className="p-6">
         {isLoading && (
-          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
-            <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+          <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-md flex items-center gap-3">
+            <RefreshCw className="h-5 w-5 animate-spin text-primary" />
             <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Buscando devoluções...
-              </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                Aguarde enquanto carregamos os dados do Mercado Livre
+              <p className="text-sm font-medium">Buscando devoluções...</p>
+              <p className="text-xs text-muted-foreground">
+                Aguarde enquanto carregamos os dados do Mercado Livre (isso pode demorar alguns segundos)
               </p>
             </div>
+          </div>
+        )}
+        
+        {error && (
+          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg space-y-2">
+            <p className="font-semibold text-destructive">Erro ao carregar devoluções:</p>
+            <p className="text-sm text-destructive/90">{error.message}</p>
+            {error.message.includes('Failed to send') && (
+              <div className="mt-3 p-3 bg-background rounded border border-border">
+                <p className="text-sm font-medium mb-1">💡 Dica:</p>
+                <p className="text-xs text-muted-foreground">
+                  Tente reduzir o período de busca para evitar timeout (máx. 30 dias recomendado)
+                </p>
+              </div>
+            )}
           </div>
         )}
         

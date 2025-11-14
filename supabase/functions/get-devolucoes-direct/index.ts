@@ -11,6 +11,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.8";
 import { fetchWithRetry } from '../_shared/retryUtils.ts';
 import { logger } from '../_shared/logger.ts';
 import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.ts';
+import pLimit from 'https://esm.sh/p-limit@7.2.0';
 
 // ✅ Importar serviços de enriquecimento FASE 2
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
@@ -169,15 +170,16 @@ serve(async (req) => {
       console.log(`[get-devolucoes-direct] Após filtro de data: ${claims.length} claims`);
     }
 
-    // ✅ CORREÇÃO 1: BATCH PARALELO 5x5 (Performance: 40s → ~10s)
-    logger.progress('🔄 Iniciando enriquecimento de dados em lotes paralelos...');
+    // ✅ OTIMIZAÇÃO: Throttling com p-limit para evitar timeout
+    logger.progress('🔄 Iniciando enriquecimento de dados com throttling...');
     
     // 🆕 FASE 2: Cache de reputação do vendedor (evitar chamadas repetidas)
     const sellerReputationCache = new Map<string, any>();
     
     const allEnrichedClaims: any[] = [];
-    const BATCH_SIZE = 5; // Processar 5 claims em paralelo
-    const DELAY_BETWEEN_BATCHES = 200; // 200ms entre batches
+    
+    // ✅ Limitar concorrência para evitar timeout (10 requests simultâneos max)
+    const limit = pLimit(10);
     
     // Função para enriquecer um único claim
     const enrichClaim = async (claim: any) => {
@@ -677,24 +679,23 @@ serve(async (req) => {
       }
     };
 
-    // Processar em batches de 5 claims paralelos
-    for (let i = 0; i < claims.length; i += BATCH_SIZE) {
-      const batch = claims.slice(i, i + BATCH_SIZE);
-      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-      const totalBatches = Math.ceil(claims.length / BATCH_SIZE);
-      
-      // ✅ FASE 2: Log de progresso em tempo real
-      logger.progress(`📦 Processando lote ${batchNumber}/${totalBatches} (${batch.length} claims)...`);
-      
-      // Processar batch em paralelo
-      const enrichedBatch = await Promise.all(batch.map(enrichClaim));
-      allEnrichedClaims.push(...enrichedBatch);
-      
-      // Delay entre batches para evitar rate limit
-      if (i + BATCH_SIZE < claims.length) {
-        await new Promise((resolve) => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
-      }
-    }
+    // ✅ Processar com throttling (10 simultâneos max)
+    logger.progress(`⏳ Processando ${claims.length} claims com throttling (10 simultâneos)...`);
+    
+    const enrichedPromises = claims.map((claim, index) => 
+      limit(async () => {
+        const result = await enrichClaim(claim);
+        
+        // Log de progresso a cada 10 claims
+        if ((index + 1) % 10 === 0 || (index + 1) === claims.length) {
+          logger.progress(`✅ Processados ${index + 1}/${claims.length} claims`);
+        }
+        
+        return result;
+      })
+    );
+    
+    allEnrichedClaims.push(...await Promise.all(enrichedPromises));
     
     logger.progress(`✅ ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
