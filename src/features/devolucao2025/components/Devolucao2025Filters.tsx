@@ -2,13 +2,15 @@
  * 📋 FILTROS - DEVOLUÇÕES 2025
  */
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, RefreshCw } from 'lucide-react';
+import { CalendarIcon, RefreshCw, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface Devolucao2025FiltersProps {
   accounts: Array<{ id: string; name: string; account_identifier: string }>;
@@ -29,6 +31,15 @@ export const Devolucao2025Filters = ({
   onRefresh,
   isLoading = false
 }: Devolucao2025FiltersProps) => {
+  const [tempDateRange, setTempDateRange] = useState(dateRange);
+  const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
+
+  const handleApplyDateRange = () => {
+    if (tempDateRange.from && tempDateRange.to) {
+      onDateRangeChange(tempDateRange);
+      setIsDatePopoverOpen(false);
+    }
+  };
   return (
     <div className="flex flex-wrap gap-4">
       <div className="flex-1 min-w-[200px]">
@@ -47,7 +58,7 @@ export const Devolucao2025Filters = ({
         </Select>
       </div>
 
-      <Popover>
+      <Popover open={isDatePopoverOpen} onOpenChange={setIsDatePopoverOpen}>
         <PopoverTrigger asChild>
           <Button variant="outline" className="justify-start text-left font-normal">
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -62,17 +73,40 @@ export const Devolucao2025Filters = ({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="range"
-            selected={{ from: dateRange.from, to: dateRange.to }}
-            onSelect={(range) => {
-              if (range?.from && range?.to) {
-                onDateRangeChange({ from: range.from, to: range.to });
-              }
-            }}
-            locale={ptBR}
-            numberOfMonths={2}
-          />
+          <div className="flex flex-col">
+            <Calendar
+              mode="range"
+              selected={{ from: tempDateRange.from, to: tempDateRange.to }}
+              onSelect={(range) => {
+                if (range?.from) {
+                  setTempDateRange({
+                    from: range.from,
+                    to: range.to || range.from
+                  });
+                }
+              }}
+              locale={ptBR}
+              numberOfMonths={2}
+              className={cn("p-3 pointer-events-auto")}
+            />
+            <div className="flex gap-2 p-3 border-t">
+              <Button
+                onClick={() => setIsDatePopoverOpen(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleApplyDateRange}
+                className="flex-1"
+                disabled={!tempDateRange.from || !tempDateRange.to}
+              >
+                <Search className="mr-2 h-4 w-4" />
+                Aplicar e Buscar
+              </Button>
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
 
