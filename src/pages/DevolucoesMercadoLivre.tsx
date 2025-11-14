@@ -311,13 +311,12 @@ export default function DevolucoesMercadoLivre() {
         finalDateTo = dateTo.toISOString();
       }
 
-      // Chamar Edge Function
+      // Chamar Edge Function - busca TODAS devoluções (filtro aplicado client-side)
       const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
         body: {
           integration_account_id: selectedAccountId,
           date_from: finalDateFrom,
-          date_to: finalDateTo,
-          status: statusFilter.length === 1 ? statusFilter[0] : 'all' // Filtro de status pela API
+          date_to: finalDateTo
         }
       });
 
