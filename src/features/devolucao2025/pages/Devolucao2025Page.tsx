@@ -111,7 +111,7 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   return (
-    <div className="w-full h-screen px-6 py-6 space-y-6 flex flex-col overflow-hidden">
+    <div className="w-full min-h-screen px-6 py-6 space-y-6 flex flex-col">
       <div className="flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <div>
@@ -144,7 +144,7 @@ export const Devolucao2025Page = () => {
         />
       </Card>
 
-      <Card className="p-6 flex-1 flex flex-col min-h-0 overflow-hidden">
+      <Card className="p-6 flex flex-col">
         {isLoading && (
           <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
             <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
