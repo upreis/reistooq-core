@@ -85,7 +85,9 @@ export const mapTrackingData = (item: any) => {
     data_ultima_atualizacao_return: returnData?.last_updated || null,
     data_fechamento_devolucao: returnData?.date_closed || null,
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || null,
-    data_chegada_produto: returnData?.shipments?.[0]?.arrival_date || null,
+    // 🎯 DATA DE CHEGADA: Obtida do histórico de status do shipment (status='delivered')
+    // Via serviço ReturnArrivalDateService que consulta /claims/{id}/returns e /shipments/{id}
+    data_chegada_produto: claim.return_arrival_date || null,
     estimated_delivery_date: returnData?.estimated_delivery_date || null,
     
     // ===== TRANSPORTADORA =====

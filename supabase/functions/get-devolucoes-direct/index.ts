@@ -15,6 +15,7 @@ import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.t
 // ✅ Importar serviços de enriquecimento FASE 2
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
 import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
+import { enrichClaimsWithArrivalDates } from './services/ReturnArrivalDateService.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -731,7 +732,11 @@ serve(async (req) => {
       }, null, 2));
     }
     
-    const mappedClaims = allEnrichedClaims.map((claim: any) => {
+    // 🎯 Enriquecer com datas de chegada da devolução
+    logger.progress('📅 Buscando datas de chegada das devoluções...');
+    const claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
+    
+    const mappedClaims = claimsWithArrivalDates.map((claim: any) => {
       try {
         // ✅ DEBUG: Log estrutura do primeiro claim enriquecido
         if (allEnrichedClaims.indexOf(claim) === 0) {
