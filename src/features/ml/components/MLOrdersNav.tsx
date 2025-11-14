@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2 } from "lucide-react";
+import { Package, RefreshCcw, AlertCircle, ShoppingBag, Undo2, FileText } from "lucide-react";
 import { MagneticTabs } from "@/components/ui/magnetic-tabs";
 
 const subNavItems = [
@@ -23,6 +23,11 @@ const subNavItems = [
     path: "/devolucoes-ml",
     label: "Devoluções ML",
     icon: Undo2,
+  },
+  {
+    path: "/devolucao2025",
+    label: "Devoluções 2025",
+    icon: FileText,
   },
 ];
 
