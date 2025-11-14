@@ -16,7 +16,7 @@ import { RefreshCw } from 'lucide-react';
 export const Devolucao2025Page = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Padrão: 7 dias
     to: new Date()
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -67,13 +67,17 @@ export const Devolucao2025Page = () => {
           }
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Edge function error:', error);
+          throw error;
+        }
         return data?.data || [];
       }
     },
     enabled: accounts.length > 0,
-    retry: 2, // Tentar 2x em caso de timeout
+    retry: 1, // Apenas 1 retry para evitar múltiplas chamadas timeout
     staleTime: 5 * 60 * 1000, // Cache de 5 minutos
+    gcTime: 10 * 60 * 1000,
   });
 
   // Paginação dos dados
