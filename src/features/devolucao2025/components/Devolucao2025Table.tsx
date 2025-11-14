@@ -68,8 +68,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             {/* GRUPO 2: FINANCEIRO */}
             <TableHead>💰 Valor Total</TableHead>
             <TableHead>💵 Valor Produto</TableHead>
-            <TableHead>🚚 Frete</TableHead>
-            <TableHead>💲 Moeda</TableHead>
             <TableHead>📊 % Reemb.</TableHead>
             <TableHead>🧾 Método Pagto</TableHead>
             <TableHead>💳 Tipo Pagto</TableHead>
@@ -131,10 +129,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>
                 {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
               </TableCell>
-              <TableCell>
-                {dev.valor_reembolso_frete ? `R$ ${dev.valor_reembolso_frete.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>{dev.moeda_reembolso || '-'}</TableCell>
               <TableCell>
                 {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
               </TableCell>
