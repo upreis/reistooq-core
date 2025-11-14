@@ -1,8 +1,9 @@
 /**
  * 📋 TABELA PRINCIPAL - DEVOLUÇÕES 2025
- * Implementação com todas as 65 colunas mapeadas
+ * Implementação com todas as 65 colunas mapeadas + Seletor de Colunas
  */
 
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,7 +15,42 @@ import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBad
 import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
+import { Devolucao2025ColumnSelector } from './Devolucao2025ColumnSelector';
 
+const STORAGE_KEY = 'devolucoes2025-column-visibility';
+
+// Colunas visíveis por padrão
+const DEFAULT_VISIBLE_COLUMNS = {
+  empresa: true,
+  pedido: true,
+  comprador: true,
+  produto: true,
+  sku: true,
+  quantidade: true,
+  valor_total: true,
+  valor_produto: false,
+  percentual_reembolso: false,
+  metodo_pagamento: false,
+  tipo_pagamento: false,
+  status_devolucao: true,
+  status_return: true,
+  status_entrega: true,
+  destino: true,
+  evidencias: true,
+  resolucao: true,
+  data_criacao: true,
+  data_venda: false,
+  data_fechamento: false,
+  data_inicio_return: false,
+  data_ultima_atualizacao: false,
+  prazo_analise: true,
+  data_chegada: false,
+  ultima_mensagem: false,
+  codigo_rastreio: false,
+  tipo_logistica: true,
+  eh_troca: false,
+  numero_interacoes: false,
+};
 
 interface Devolucao2025TableProps {
   devolucoes: any[];
@@ -23,6 +59,38 @@ interface Devolucao2025TableProps {
 }
 
 export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao2025TableProps) => {
+  // Estado de visibilidade de colunas com persistência no localStorage
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_VISIBLE_COLUMNS;
+  });
+
+  // Salvar preferências no localStorage sempre que mudar
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(columnVisibility));
+  }, [columnVisibility]);
+
+  const handleVisibilityChange = (columnId: string, visible: boolean) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnId]: visible
+    }));
+  };
+
+  const handleResetToDefault = () => {
+    setColumnVisibility(DEFAULT_VISIBLE_COLUMNS);
+  };
+
+  const handleToggleAll = (show: boolean) => {
+    const updated: Record<string, boolean> = {};
+    Object.keys(DEFAULT_VISIBLE_COLUMNS).forEach(key => {
+      updated[key] = show;
+    });
+    setColumnVisibility(updated);
+  };
+
+  const isVisible = (columnId: string) => columnVisibility[columnId] !== false;
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -57,202 +125,227 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
   return (
     <div className="w-full flex-1 flex flex-col min-h-0">
+      {/* Seletor de Colunas */}
+      <div className="flex items-center justify-end mb-4">
+        <Devolucao2025ColumnSelector
+          columnVisibility={columnVisibility}
+          onVisibilityChange={handleVisibilityChange}
+          onResetToDefault={handleResetToDefault}
+          onToggleAll={handleToggleAll}
+        />
+      </div>
+
       <div className="flex-1 overflow-auto border rounded-md scroll-smooth relative">
         <table className="w-full caption-bottom text-sm">
           <thead className="sticky top-0 z-20 bg-background border-b-2 shadow-sm">
             <tr className="border-b border-gray-600">
-            {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Empresa</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Pedido</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">👤 Comprador</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Produto</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏷️ SKU</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📊 Qtd</th>
-
-            {/* GRUPO 2: FINANCEIRO */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💰 Valor Total</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💵 Valor Produto</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📊 % Reemb.</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🧾 Método Pagto</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💳 Tipo Pagto</th>
-
-            {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔄 Status Dev</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Status Return</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Status Entrega</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏭 Destino</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Evidências</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⚖️ Resolução</th>
-
-            {/* GRUPO 4: DATAS */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Criação</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Venda</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Fechamento</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Início Return</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Última Atualização Return</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Prazo Análise</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Chegada</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⏰ Última Msg</th>
-
-            {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📍 Código Rastreio</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Tipo Logística</th>
-
-            {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔄 É Troca</th>
-
-            {/* GRUPO 8: COMUNICAÇÃO */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💬 Nº Interações</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⭐ Qualidade Com</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔒 Moderação</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Anexos Comprador</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Anexos Vendedor</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Anexos ML</th>
-
-            {/* GRUPO 9: REVIEW & AÇÕES */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔍 Review Resource</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔢 Review Resource ID</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🛠️ Review Method</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Review Created</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Review Updated</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏷️ Reason ID</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">👤 Seller Status</th>
-
-            {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💵 Custo Total Log</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Custo Envio Orig</th>
-          </tr>
-        </thead>
-        <tbody className="[&_tr:last-child]:border-0">
-          {devolucoes.map((dev, index) => (
-            <tr key={`${dev.order_id}-${index}`} className="border-b border-gray-600 transition-colors hover:bg-muted/50">
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-              <td className="p-4 align-middle font-medium">{dev.account_name || '-'}</td>
-              <td className="p-4 align-middle">{dev.order_id || '-'}</td>
-              <td className="p-4 align-middle">{dev.comprador_nome_completo || '-'}</td>
-              <td className="p-4 align-middle">
-                <ProductInfoCell productInfo={dev.product_info} />
-              </td>
-              <td className="p-4 align-middle">{dev.sku || '-'}</td>
-              <td className="p-4 align-middle">{dev.quantidade || '-'}</td>
+              {isVisible('empresa') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Empresa</th>}
+              {isVisible('pedido') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Pedido</th>}
+              {isVisible('comprador') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">👤 Comprador</th>}
+              {isVisible('produto') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Produto</th>}
+              {isVisible('sku') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏷️ SKU</th>}
+              {isVisible('quantidade') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📊 Qtd</th>}
 
               {/* GRUPO 2: FINANCEIRO */}
-              <td className="p-4 align-middle">
-                {dev.valor_reembolso_total ? `R$ ${dev.valor_reembolso_total.toFixed(2)}` : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
-              </td>
-              <td className="p-4 align-middle">{dev.metodo_pagamento || '-'}</td>
-              <td className="p-4 align-middle">{dev.tipo_pagamento || '-'}</td>
+              {isVisible('valor_total') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💰 Valor Total</th>}
+              {isVisible('valor_produto') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💵 Valor Produto</th>}
+              {isVisible('percentual_reembolso') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📊 % Reemb.</th>}
+              {isVisible('metodo_pagamento') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🧾 Método Pagto</th>}
+              {isVisible('tipo_pagamento') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💳 Tipo Pagto</th>}
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-              <td className="p-4 align-middle">
-                <div className="flex items-center gap-2">
-                  <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
-                    {dev.status_devolucao || '-'}
-                  </Badge>
-                  <RecentBadge dataChegada={dev.data_chegada_produto} />
-                </div>
-              </td>
-              <td className="p-4 align-middle">
-                <Badge variant="outline">{dev.status_return || '-'}</Badge>
-              </td>
-              <td className="p-4 align-middle">
-                <DeliveryStatusCell 
-                  statusEnvio={dev.status_envio}
-                  dataChegada={dev.data_chegada_produto}
-                  estimatedDeliveryDate={dev.estimated_delivery_date}
-                />
-              </td>
-              <td className="p-4 align-middle">{dev.destino_devolucao || '-'}</td>
-              <td className="p-4 align-middle">
-                <EvidencesCell 
-                  attachments={dev.anexos_ml}
-                  totalEvidencias={dev.total_evidencias}
-                />
-              </td>
-              <td className="p-4 align-middle">
-                <ResolutionCell resolution={dev.resolution || null} />
-              </td>
+              {isVisible('status_devolucao') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔄 Status Dev</th>}
+              {isVisible('status_return') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Status Return</th>}
+              {isVisible('status_entrega') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Status Entrega</th>}
+              {isVisible('destino') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏭 Destino</th>}
+              {isVisible('evidencias') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Evidências</th>}
+              {isVisible('resolucao') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⚖️ Resolução</th>}
 
               {/* GRUPO 4: DATAS */}
-              <td className="p-4 align-middle">
-                {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.data_venda_original ? new Date(dev.data_venda_original).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.data_fechamento_devolucao ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.data_inicio_return ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
-              </td>
-              <td className="p-4 align-middle">
-                {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
-              </td>
+              {isVisible('data_criacao') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Criação</th>}
+              {isVisible('data_venda') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Venda</th>}
+              {isVisible('data_fechamento') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Fechamento</th>}
+              {isVisible('data_inicio_return') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Início Return</th>}
+              {isVisible('data_ultima_atualizacao') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Última Atualização Return</th>}
+              {isVisible('prazo_analise') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Prazo Análise</th>}
+              {isVisible('data_chegada') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Chegada</th>}
+              {isVisible('ultima_mensagem') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⏰ Última Msg</th>}
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-              <td className="p-4 align-middle">{dev.codigo_rastreamento || '-'}</td>
-              <td className="p-4 align-middle">
-                <LogisticTypeCell logisticType={dev.tipo_logistica} />
-              </td>
+              {isVisible('codigo_rastreio') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📍 Código Rastreio</th>}
+              {isVisible('tipo_logistica') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Tipo Logística</th>}
 
               {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-              <td className="p-4 align-middle">
-                <Badge variant={dev.eh_troca ? 'default' : 'outline'}>
-                  {dev.eh_troca ? 'Sim' : 'Não'}
-                </Badge>
-              </td>
+              {isVisible('eh_troca') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔄 É Troca</th>}
 
               {/* GRUPO 8: COMUNICAÇÃO */}
-              <td className="p-4 align-middle">{dev.numero_interacoes || 0}</td>
-              <td className="p-4 align-middle">
-                <Badge variant="outline">{dev.qualidade_comunicacao || '-'}</Badge>
-              </td>
-              <td className="p-4 align-middle">
-                <Badge variant="outline">{dev.status_moderacao || '-'}</Badge>
-              </td>
-              <td className="p-4 align-middle">{dev.total_anexos_comprador || 0}</td>
-              <td className="p-4 align-middle">{dev.total_anexos_vendedor || 0}</td>
-              <td className="p-4 align-middle">{dev.total_anexos_ml || 0}</td>
-
-              {/* GRUPO 9: REVIEW & AÇÕES */}
-              <td className="p-4 align-middle">{dev.dados_reviews?.resource || '-'}</td>
-              <td className="p-4 align-middle">{dev.dados_reviews?.resource_id || '-'}</td>
-              <td className="p-4 align-middle">{dev.dados_reviews?.method || '-'}</td>
-              <td className="p-4 align-middle">
-                {dev.dados_reviews?.date_created ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.dados_reviews?.last_updated ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') : '-'}
-              </td>
-              <td className="p-4 align-middle">{dev.dados_reviews?.reason_id || '-'}</td>
-              <td className="p-4 align-middle">{dev.dados_reviews?.seller_status || '-'}</td>
-
-              {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-              <td className="p-4 align-middle">
-                {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
-              </td>
-              <td className="p-4 align-middle">
-                {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
-              </td>
+              {isVisible('numero_interacoes') && <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💬 Nº Interações</th>}
             </tr>
-          ))}
-        </tbody>
+          </thead>
+          <tbody>
+            {devolucoes.map((dev) => (
+              <tr key={dev.order_id} className="border-b hover:bg-muted/50 transition-colors">
+                {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
+                {isVisible('empresa') && <td className="px-4 py-3 text-sm">{dev.account_name || '-'}</td>}
+                {isVisible('pedido') && (
+                  <td className="px-4 py-3 text-sm font-medium">
+                    <div className="flex items-center gap-2">
+                      {dev.order_id}
+                      <RecentBadge dataChegada={dev.data_chegada_produto} />
+                    </div>
+                  </td>
+                )}
+                {isVisible('comprador') && <td className="px-4 py-3 text-sm">{dev.comprador_nome_completo || dev.comprador_nickname || '-'}</td>}
+                {isVisible('produto') && (
+                  <td className="px-4 py-3 text-sm max-w-xs">
+                    <ProductInfoCell productInfo={dev.dados_product_info} />
+                  </td>
+                )}
+                {isVisible('sku') && <td className="px-4 py-3 text-sm font-mono text-xs">{dev.sku || '-'}</td>}
+                {isVisible('quantidade') && <td className="px-4 py-3 text-sm text-center">{dev.quantidade || 1}</td>}
+
+                {/* GRUPO 2: FINANCEIRO */}
+                {isVisible('valor_total') && (
+                  <td className="px-4 py-3 text-sm font-medium">
+                    {dev.dados_financial_info?.total_amount 
+                      ? `R$ ${(dev.dados_financial_info.total_amount / 100).toFixed(2)}`
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('valor_produto') && (
+                  <td className="px-4 py-3 text-sm">
+                    {dev.valor_original_produto 
+                      ? `R$ ${dev.valor_original_produto.toFixed(2)}`
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('percentual_reembolso') && (
+                  <td className="px-4 py-3 text-sm">
+                    {dev.dados_refund_info?.percentage 
+                      ? `${dev.dados_refund_info.percentage}%`
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('metodo_pagamento') && <td className="px-4 py-3 text-sm">{dev.metodo_pagamento || '-'}</td>}
+                {isVisible('tipo_pagamento') && <td className="px-4 py-3 text-sm">{dev.tipo_pagamento || '-'}</td>}
+
+                {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
+                {isVisible('status_devolucao') && (
+                  <td className="px-4 py-3 text-sm">
+                    <Badge variant="outline">{dev.status_devolucao || 'N/A'}</Badge>
+                  </td>
+                )}
+                {isVisible('status_return') && (
+                  <td className="px-4 py-3 text-sm">
+                    <Badge variant="secondary">{dev.dados_return?.status || '-'}</Badge>
+                  </td>
+                )}
+                {isVisible('status_entrega') && (
+                  <td className="px-4 py-3">
+                    <DeliveryStatusCell 
+                      statusEnvio={dev.status_rastreamento}
+                      dataChegada={dev.data_chegada_produto}
+                      estimatedDeliveryDate={dev.dados_tracking_info?.estimated_delivery}
+                    />
+                  </td>
+                )}
+                {isVisible('destino') && <td className="px-4 py-3 text-sm">{dev.dados_fulfillment?.destination || '-'}</td>}
+                {isVisible('evidencias') && (
+                  <td className="px-4 py-3">
+                    <EvidencesCell attachments={dev.anexos_ml} />
+                  </td>
+                )}
+                {isVisible('resolucao') && (
+                  <td className="px-4 py-3">
+                    <ResolutionCell resolution={dev.dados_claim?.resolution} />
+                  </td>
+                )}
+
+                {/* GRUPO 4: DATAS */}
+                {isVisible('data_criacao') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.data_criacao_claim 
+                      ? new Date(dev.data_criacao_claim).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('data_venda') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.dados_order?.date_created 
+                      ? new Date(dev.dados_order.date_created).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('data_fechamento') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.data_fechamento_claim 
+                      ? new Date(dev.data_fechamento_claim).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('data_inicio_return') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.data_inicio_return 
+                      ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('data_ultima_atualizacao') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.dados_return?.last_updated 
+                      ? new Date(dev.dados_return.last_updated).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('prazo_analise') && (
+                  <td className="px-4 py-3">
+                    <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
+                  </td>
+                )}
+                {isVisible('data_chegada') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.data_chegada_produto 
+                      ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+                {isVisible('ultima_mensagem') && (
+                  <td className="px-4 py-3 text-sm text-muted-foreground">
+                    {dev.ultima_mensagem_data 
+                      ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR')
+                      : '-'}
+                  </td>
+                )}
+
+                {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
+                {isVisible('codigo_rastreio') && (
+                  <td className="px-4 py-3 text-sm font-mono text-xs">
+                    {dev.codigo_rastreamento || '-'}
+                  </td>
+                )}
+                {isVisible('tipo_logistica') && (
+                  <td className="px-4 py-3">
+                    <LogisticTypeCell logisticType={dev.tipo_logistica} />
+                  </td>
+                )}
+
+                {/* GRUPO 7: MEDIAÇÃO & TROCA */}
+                {isVisible('eh_troca') && (
+                  <td className="px-4 py-3 text-center">
+                    {dev.eh_troca ? '✅' : '❌'}
+                  </td>
+                )}
+
+                {/* GRUPO 8: COMUNICAÇÃO */}
+                {isVisible('numero_interacoes') && (
+                  <td className="px-4 py-3 text-sm text-center">
+                    <Badge variant="secondary">{dev.numero_interacoes || 0}</Badge>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     </div>
