@@ -1156,8 +1156,6 @@ export type Database = {
           comprador_nickname: string | null
           comprador_nome_completo: string | null
           created_at: string | null
-          custo_devolucao_ml: number | null
-          custo_devolucao_ml_usd: number | null
           dados_acoes_disponiveis: Json | null
           dados_available_actions: Json | null
           dados_buyer_info: Json | null
@@ -1182,7 +1180,6 @@ export type Database = {
           dados_shipping_costs: Json | null
           dados_tracking_info: Json | null
           data_atualizacao_devolucao: string | null
-          data_chegada_produto: string | null
           data_criacao: string | null
           data_criacao_claim: string | null
           data_criacao_devolucao: string | null
@@ -1211,7 +1208,6 @@ export type Database = {
           metodo_reembolso: string | null
           metodo_resolucao: string | null
           moeda_custo: string | null
-          moeda_custo_devolucao_ml: string | null
           moeda_reembolso: string | null
           motivo_categoria: string | null
           nota_fiscal_autorizada: boolean | null
@@ -1301,8 +1297,6 @@ export type Database = {
           comprador_nickname?: string | null
           comprador_nome_completo?: string | null
           created_at?: string | null
-          custo_devolucao_ml?: number | null
-          custo_devolucao_ml_usd?: number | null
           dados_acoes_disponiveis?: Json | null
           dados_available_actions?: Json | null
           dados_buyer_info?: Json | null
@@ -1327,7 +1321,6 @@ export type Database = {
           dados_shipping_costs?: Json | null
           dados_tracking_info?: Json | null
           data_atualizacao_devolucao?: string | null
-          data_chegada_produto?: string | null
           data_criacao?: string | null
           data_criacao_claim?: string | null
           data_criacao_devolucao?: string | null
@@ -1356,7 +1349,6 @@ export type Database = {
           metodo_reembolso?: string | null
           metodo_resolucao?: string | null
           moeda_custo?: string | null
-          moeda_custo_devolucao_ml?: string | null
           moeda_reembolso?: string | null
           motivo_categoria?: string | null
           nota_fiscal_autorizada?: boolean | null
@@ -1446,8 +1438,6 @@ export type Database = {
           comprador_nickname?: string | null
           comprador_nome_completo?: string | null
           created_at?: string | null
-          custo_devolucao_ml?: number | null
-          custo_devolucao_ml_usd?: number | null
           dados_acoes_disponiveis?: Json | null
           dados_available_actions?: Json | null
           dados_buyer_info?: Json | null
@@ -1472,7 +1462,6 @@ export type Database = {
           dados_shipping_costs?: Json | null
           dados_tracking_info?: Json | null
           data_atualizacao_devolucao?: string | null
-          data_chegada_produto?: string | null
           data_criacao?: string | null
           data_criacao_claim?: string | null
           data_criacao_devolucao?: string | null
@@ -1501,7 +1490,6 @@ export type Database = {
           metodo_reembolso?: string | null
           metodo_resolucao?: string | null
           moeda_custo?: string | null
-          moeda_custo_devolucao_ml?: string | null
           moeda_reembolso?: string | null
           motivo_categoria?: string | null
           nota_fiscal_autorizada?: boolean | null
@@ -6144,29 +6132,80 @@ export type Database = {
         Row: {
           cpf_cnpj: string | null
           created_at: string | null
+          data_is_masked: boolean | null
+          data_primeiro_pedido: string | null
+          data_ultimo_pedido: string | null
           email: string | null
+          empresa: string | null
+          endereco_bairro: string | null
+          endereco_cep: string | null
+          endereco_cidade: string | null
+          endereco_numero: string | null
+          endereco_rua: string | null
+          endereco_uf: string | null
           id: string | null
-          nome: string | null
+          integration_account_id: string | null
+          nome_completo: string | null
+          observacoes: string | null
           organization_id: string | null
+          status_cliente: string | null
           telefone: string | null
+          ticket_medio: number | null
+          total_pedidos: number | null
+          updated_at: string | null
+          valor_total_gasto: number | null
         }
         Insert: {
           cpf_cnpj?: never
           created_at?: string | null
+          data_is_masked?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
           email?: never
+          empresa?: string | null
+          endereco_bairro?: never
+          endereco_cep?: never
+          endereco_cidade?: never
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: never
           id?: string | null
-          nome?: never
+          integration_account_id?: string | null
+          nome_completo?: never
+          observacoes?: never
           organization_id?: string | null
+          status_cliente?: string | null
           telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
         }
         Update: {
           cpf_cnpj?: never
           created_at?: string | null
+          data_is_masked?: never
+          data_primeiro_pedido?: string | null
+          data_ultimo_pedido?: string | null
           email?: never
+          empresa?: string | null
+          endereco_bairro?: never
+          endereco_cep?: never
+          endereco_cidade?: never
+          endereco_numero?: never
+          endereco_rua?: never
+          endereco_uf?: never
           id?: string | null
-          nome?: never
+          integration_account_id?: string | null
+          nome_completo?: never
+          observacoes?: never
           organization_id?: string | null
+          status_cliente?: string | null
           telefone?: never
+          ticket_medio?: number | null
+          total_pedidos?: number | null
+          updated_at?: string | null
+          valor_total_gasto?: number | null
         }
         Relationships: []
       }
@@ -6220,48 +6259,24 @@ export type Database = {
           },
         ]
       }
-      profiles_safe: {
-        Row: {
-          created_at: string | null
-          id: string | null
-          organizacao_id: string | null
-          telefone: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string | null
-          organizacao_id?: string | null
-          telefone?: never
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string | null
-          organizacao_id?: string | null
-          telefone?: never
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_organizacao_id_fkey"
-            columns: ["organizacao_id"]
-            isOneToOne: false
-            referencedRelation: "organizacoes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
     }
     Functions: {
       accept_invitation_secure: { Args: { _token: string }; Returns: Json }
-      accept_invite:
-        | { Args: { _token: string; _user_email: string }; Returns: Json }
-        | { Args: { _token: string }; Returns: Json }
-      admin_create_customer: { Args: { p_customer: Json }; Returns: string }
+      accept_invite: { Args: { _token: string }; Returns: Json }
+      admin_create_customer: {
+        Args: { p_customer_data: Json }
+        Returns: {
+          error_message: string
+          id: string
+          success: boolean
+        }[]
+      }
       admin_delete_customer: {
         Args: { p_customer_id: string }
-        Returns: boolean
+        Returns: {
+          error_message: string
+          success: boolean
+        }[]
       }
       admin_list_profiles:
         | {
@@ -6304,12 +6319,37 @@ export type Database = {
             }
           }
       admin_update_customer: {
-        Args: { p_customer: Json; p_customer_id: string }
-        Returns: boolean
+        Args: { p_customer_id: string; p_updates: Json }
+        Returns: {
+          error_message: string
+          success: boolean
+        }[]
       }
       admin_update_profile: {
-        Args: { p_updates: Json; p_user_id: string }
-        Returns: boolean
+        Args: { _updates: Json; _user_id: string }
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          cargo: string | null
+          configuracoes_notificacao: Json | null
+          created_at: string
+          departamento: string | null
+          id: string
+          nome_completo: string | null
+          nome_exibicao: string | null
+          onboarding_banner_dismissed: boolean
+          onboarding_completed: boolean | null
+          onboarding_completed_at: string | null
+          organizacao_id: string | null
+          telefone: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       aplicar_mapeamento_local_estoque: {
         Args: { p_pedido_id: string }
@@ -6317,35 +6357,18 @@ export type Database = {
       }
       backfill_config_for_current_org: { Args: never; Returns: Json }
       backfill_historico_vendas_orphans: { Args: never; Returns: Json }
-      baixar_estoque_direto:
-        | { Args: { p_quantidade: number; p_sku: string }; Returns: Json }
-        | { Args: { p_baixas: Json }; Returns: Json }
+      baixar_estoque_direto: { Args: { p_baixas: Json }; Returns: Json }
       baixar_insumos_pedido: { Args: { p_insumos: Json }; Returns: Json }
-      calcular_dias_restantes_acao: {
-        Args: { p_deadline: string }
-        Returns: number
-      }
       can_view_sensitive_customer_data: { Args: never; Returns: boolean }
-      check_access_schedule:
-        | { Args: { p_role_id?: string; p_user_id: string }; Returns: boolean }
-        | { Args: { _user_id: string }; Returns: boolean }
+      check_access_schedule: { Args: { _user_id: string }; Returns: boolean }
       check_clientes_secure_access: { Args: never; Returns: boolean }
       cleanup_expired_notifications: { Args: never; Returns: undefined }
       cleanup_expired_sensitive_data: { Args: never; Returns: undefined }
       cleanup_oauth_states: { Args: never; Returns: undefined }
-      complete_background_job:
-        | {
-            Args: { p_error_message?: string; p_job_id: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_error_message?: string
-              p_job_id: string
-              p_success: boolean
-            }
-            Returns: undefined
-          }
+      complete_background_job: {
+        Args: { p_error_message?: string; p_job_id: string; p_success: boolean }
+        Returns: undefined
+      }
       complete_devolucoes_sync:
         | {
             Args: {
@@ -6378,34 +6401,23 @@ export type Database = {
         }
         Returns: Json
       }
-      converter_quantidade:
-        | {
-            Args: {
-              quantidade_origem: number
-              unidade_destino_id: string
-              unidade_origem_id: string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_quantidade: number
-              p_unidade_destino: string
-              p_unidade_origem: string
-            }
-            Returns: number
-          }
-      count_baixados:
-        | {
-            Args: {
-              _account_ids: string[]
-              _from?: string
-              _search?: string
-              _to?: string
-            }
-            Returns: number
-          }
-        | { Args: never; Returns: number }
+      converter_quantidade: {
+        Args: {
+          quantidade_origem: number
+          unidade_destino_id: string
+          unidade_origem_id: string
+        }
+        Returns: number
+      }
+      count_baixados: {
+        Args: {
+          _account_ids: string[]
+          _from?: string
+          _search?: string
+          _to?: string
+        }
+        Returns: number
+      }
       count_mapeamentos_pendentes:
         | {
             Args: { _account_ids?: string[]; _from?: string; _to?: string }
@@ -6460,6 +6472,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_invitation_safe: {
+        Args: { p_email: string; p_expires_in_days?: number; p_role_id: string }
+        Returns: Json
+      }
       create_logistic_events_from_pedido: {
         Args: { p_pedido_data: Json }
         Returns: string[]
@@ -6469,46 +6485,26 @@ export type Database = {
         Returns: string
       }
       debug_historico_visibilidade: { Args: never; Returns: Json }
-      decrypt_integration_secret: {
-        Args: { p_encrypted_data: string; p_encryption_key?: string }
+      decrypt_simple: { Args: { encrypted_data: string }; Returns: Json }
+      delete_invitation_safe: {
+        Args: { p_invitation_id: string }
         Returns: Json
       }
-      decrypt_simple: { Args: { encrypted_data: string }; Returns: Json }
-      detectar_marketplace_pedido:
-        | {
-            Args: {
-              p_integration_account_id: string
-              p_organization_id: string
-            }
-            Returns: string
-          }
-        | { Args: { p_dados: Json; p_order_id: string }; Returns: string }
-      encrypt_integration_secret: {
-        Args: { p_encryption_key?: string; p_secret_data: Json }
+      detectar_marketplace_pedido: {
+        Args: { p_integration_account_id: string; p_organization_id: string }
         Returns: string
       }
       encrypt_simple: { Args: { data: string }; Returns: string }
-      enqueue_background_job:
-        | {
-            Args: {
-              p_job_type: string
-              p_metadata?: Json
-              p_priority?: number
-              p_resource_id: string
-              p_resource_type: string
-            }
-            Returns: string
-          }
-        | {
-            Args: {
-              p_job_type: string
-              p_metadata?: Json
-              p_priority?: number
-              p_resource_id: string
-              p_resource_type: string
-            }
-            Returns: string
-          }
+      enqueue_background_job: {
+        Args: {
+          p_job_type: string
+          p_metadata?: Json
+          p_priority?: number
+          p_resource_id: string
+          p_resource_type: string
+        }
+        Returns: string
+      }
       ensure_current_org: { Args: never; Returns: Json }
       ensure_integrations_manager_for_current_user: {
         Args: never
@@ -6538,9 +6534,10 @@ export type Database = {
       generate_password_reset_token: { Args: { _email: string }; Returns: Json }
       gerar_numero_cotacao: { Args: never; Returns: string }
       gerar_numero_pedido_compra: { Args: never; Returns: string }
-      gerar_sku_automatico:
-        | { Args: { org_id: string; prefixo?: string }; Returns: string }
-        | { Args: never; Returns: string }
+      gerar_sku_automatico: {
+        Args: { org_id: string; prefixo?: string }
+        Returns: string
+      }
       get_categorias_hierarquicas: {
         Args: { org_id: string }
         Returns: {
@@ -6595,11 +6592,28 @@ export type Database = {
         Returns: {
           cpf_cnpj: string
           created_at: string
+          data_is_masked: boolean
+          data_primeiro_pedido: string
+          data_ultimo_pedido: string
           email: string
+          empresa: string
+          endereco_bairro: string
+          endereco_cep: string
+          endereco_cidade: string
+          endereco_numero: string
+          endereco_rua: string
+          endereco_uf: string
           id: string
-          nome: string
+          integration_account_id: string
+          nome_completo: string
+          observacoes: string
           organization_id: string
+          status_cliente: string
           telefone: string
+          ticket_medio: number
+          total_pedidos: number
+          updated_at: string
+          valor_total_gasto: number
         }[]
       }
       get_data_quality_metrics: {
@@ -6959,133 +6973,114 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      get_historico_vendas_masked:
-        | {
-            Args: {
-              p_limit?: number
-              p_offset?: number
-              p_organization_id: string
-            }
-            Returns: {
-              buyer_cpf: string
-              buyer_email: string
-              buyer_name: string
-              buyer_phone: string
-              created_at: string
-              id: string
-              order_id: string
-              organization_id: string
-              total_amount: number
-            }[]
-          }
-        | {
-            Args: {
-              _end?: string
-              _limit?: number
-              _offset?: number
-              _search?: string
-              _start?: string
-            }
-            Returns: {
-              bairro: string
-              cep: string
-              cidade: string
-              cliente_documento: string
-              cliente_nome: string
-              codigo_barras: string
-              codigo_rastreamento: string
-              conditions: string
-              cpf_cnpj: string
-              created_at: string
-              created_by: string
-              custo_envio_seller: number
-              custo_fixo_meli: number
-              data_pedido: string
-              data_prevista: string
-              date_created: string
-              delivery_type: string
-              desconto_cupom: number
-              descricao: string
-              empresa: string
-              frete_pago_cliente: number
-              id: string
-              id_unico: string
-              integration_account_id: string
-              last_updated: string
-              level_id: string
-              local_estoque: string
-              local_estoque_id: string
-              local_estoque_nome: string
-              logistic_mode_principal: string
-              logistic_type: string
-              marketplace_origem: string
-              meta: Json
-              metodo_envio_combinado: string
-              metodo_pagamento: string
-              modo_envio_combinado: string
-              ncm: string
-              nome_completo: string
-              numero: string
-              numero_ecommerce: string
-              numero_pedido: string
-              numero_venda: string
-              obs: string
-              obs_interna: string
-              observacoes: string
-              origem: string
-              pack_id: string
-              pack_status: string
-              pack_status_detail: string
-              pedido_id: string
-              pickup_id: string
-              power_seller_status: string
-              qtd_kit: number
-              quantidade: number
-              quantidade_itens: number
-              quantidade_kit: number
-              quantidade_total: number
-              raw: Json
-              raw_data: Json
-              receita_flex_bonus: number
-              rua: string
-              shipping_method: string
-              shipping_mode: string
-              shipping_shipping_status: string
-              shipping_substatus: string
-              situacao: string
-              sku_estoque: string
-              sku_kit: string
-              sku_produto: string
-              skus_produtos: string
-              status: string
-              status_baixa: string
-              status_envio: string
-              status_insumos: string
-              status_mapeamento: string
-              status_pagamento: string
-              substatus_detail: string
-              substatus_estado_atual: string
-              tags: string[]
-              taxa_marketplace: number
-              tipo_entrega: string
-              tipo_logistico: string
-              tipo_metodo_envio: string
-              tipo_pagamento: string
-              titulo_anuncio: string
-              titulo_produto: string
-              total_itens: number
-              uf: string
-              ultima_atualizacao: string
-              updated_at: string
-              url_rastreamento: string
-              valor_desconto: number
-              valor_frete: number
-              valor_liquido_vendedor: number
-              valor_pago: number
-              valor_total: number
-              valor_unitario: number
-            }[]
-          }
+      get_historico_vendas_masked: {
+        Args: {
+          _end?: string
+          _limit?: number
+          _offset?: number
+          _search?: string
+          _start?: string
+        }
+        Returns: {
+          bairro: string
+          cep: string
+          cidade: string
+          cliente_documento: string
+          cliente_nome: string
+          codigo_barras: string
+          codigo_rastreamento: string
+          conditions: string
+          cpf_cnpj: string
+          created_at: string
+          created_by: string
+          custo_envio_seller: number
+          custo_fixo_meli: number
+          data_pedido: string
+          data_prevista: string
+          date_created: string
+          delivery_type: string
+          desconto_cupom: number
+          descricao: string
+          empresa: string
+          frete_pago_cliente: number
+          id: string
+          id_unico: string
+          integration_account_id: string
+          last_updated: string
+          level_id: string
+          local_estoque: string
+          local_estoque_id: string
+          local_estoque_nome: string
+          logistic_mode_principal: string
+          logistic_type: string
+          marketplace_origem: string
+          meta: Json
+          metodo_envio_combinado: string
+          metodo_pagamento: string
+          modo_envio_combinado: string
+          ncm: string
+          nome_completo: string
+          numero: string
+          numero_ecommerce: string
+          numero_pedido: string
+          numero_venda: string
+          obs: string
+          obs_interna: string
+          observacoes: string
+          origem: string
+          pack_id: string
+          pack_status: string
+          pack_status_detail: string
+          pedido_id: string
+          pickup_id: string
+          power_seller_status: string
+          qtd_kit: number
+          quantidade: number
+          quantidade_itens: number
+          quantidade_kit: number
+          quantidade_total: number
+          raw: Json
+          raw_data: Json
+          receita_flex_bonus: number
+          rua: string
+          shipping_method: string
+          shipping_mode: string
+          shipping_shipping_status: string
+          shipping_substatus: string
+          situacao: string
+          sku_estoque: string
+          sku_kit: string
+          sku_produto: string
+          skus_produtos: string
+          status: string
+          status_baixa: string
+          status_envio: string
+          status_insumos: string
+          status_mapeamento: string
+          status_pagamento: string
+          substatus_detail: string
+          substatus_estado_atual: string
+          tags: string[]
+          taxa_marketplace: number
+          tipo_entrega: string
+          tipo_logistico: string
+          tipo_metodo_envio: string
+          tipo_pagamento: string
+          titulo_anuncio: string
+          titulo_produto: string
+          total_itens: number
+          uf: string
+          ultima_atualizacao: string
+          updated_at: string
+          url_rastreamento: string
+          valor_desconto: number
+          valor_frete: number
+          valor_liquido_vendedor: number
+          valor_pago: number
+          valor_total: number
+          valor_unitario: number
+        }[]
+      }
       get_integration_secret: {
         Args: { _key: string; _provider: string }
         Returns: string
@@ -7263,28 +7258,12 @@ export type Database = {
       get_next_background_job: {
         Args: never
         Returns: {
-          completed_at: string | null
-          created_at: string | null
-          error_message: string | null
           id: string
           job_type: string
-          max_retries: number | null
-          metadata: Json | null
-          priority: number | null
+          metadata: Json
           resource_id: string
           resource_type: string
-          retry_count: number | null
-          scheduled_at: string | null
-          started_at: string | null
-          status: string
-          updated_at: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "background_jobs"
-          isOneToOne: true
-          isSetofReturn: false
-        }
+        }[]
       }
       get_notificacoes_nao_lidas_count: { Args: never; Returns: number }
       get_org_id_from_oauth_state: {
@@ -7437,20 +7416,10 @@ export type Database = {
             Args: { access_type?: string; customer_id: string; details?: Json }
             Returns: undefined
           }
-      log_customer_data_access:
-        | {
-            Args: { p_action?: string; p_customer_id: string }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_action: string
-              p_customer_id: string
-              p_has_permission: boolean
-              p_user_id: string
-            }
-            Returns: undefined
-          }
+      log_customer_data_access: {
+        Args: { p_action?: string; p_customer_id: string }
+        Returns: undefined
+      }
       log_secret_access: {
         Args: {
           p_account_id: string
@@ -7480,7 +7449,7 @@ export type Database = {
         Args: { p_state_value: string }
         Returns: boolean
       }
-      mask_cpf_cnpj: { Args: { doc: string }; Returns: string }
+      mask_cpf_cnpj: { Args: { document: string }; Returns: string }
       mask_customer_address: { Args: { address: string }; Returns: string }
       mask_customer_cep: { Args: { cep: string }; Returns: string }
       mask_customer_data: {
@@ -7500,7 +7469,7 @@ export type Database = {
       }
       mask_customer_phone: { Args: { phone: string }; Returns: string }
       mask_document: { Args: { doc: string }; Returns: string }
-      mask_email: { Args: { email: string }; Returns: string }
+      mask_email: { Args: { email_addr: string }; Returns: string }
       mask_name: { Args: { full_name: string }; Returns: string }
       mask_phone: { Args: { phone: string }; Returns: string }
       mask_phone_secure: { Args: { phone_input: string }; Returns: string }
@@ -7522,18 +7491,6 @@ export type Database = {
       }
       revoke_invitation: { Args: { _id: string }; Returns: Json }
       search_customers_secure:
-        | {
-            Args: { p_organization_id: string; p_search_term: string }
-            Returns: {
-              cpf_cnpj: string
-              created_at: string
-              email: string
-              id: string
-              nome: string
-              organization_id: string
-              telefone: string
-            }[]
-          }
         | {
             Args: {
               p_cidade?: string

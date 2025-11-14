@@ -16,7 +16,7 @@ import { RefreshCw } from 'lucide-react';
 export const Devolucao2025Page = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Padrão: 7 dias
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
   const [currentPage, setCurrentPage] = useState(1);
@@ -39,84 +39,40 @@ export const Devolucao2025Page = () => {
   });
 
   // Buscar devoluções via Edge Function
-  // ✅ Estado para sincronização
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncError, setSyncError] = useState<string | null>(null);
-
-  // ✅ Buscar devoluções DIRETO DO BANCO (como /pedidos faz)
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025-db', selectedAccount, dateRange],
+    queryKey: ['devolucoes-2025', selectedAccount, dateRange],
     queryFn: async () => {
-      console.log('[Devolucao2025] Buscando do banco...', { selectedAccount, dateRange });
-      
-      let query = supabase
-        .from('ml_devolucoes_reclamacoes')
-        .select('*')
-        .order('created_at', { ascending: false });
+      if (selectedAccount === 'all') {
+        const allDevolucoes = await Promise.all(
+          accounts.map(async (account) => {
+            const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+              body: {
+                integration_account_id: account.id,
+                date_from: dateRange.from.toISOString(),
+                date_to: dateRange.to.toISOString()
+              }
+            });
 
-      // Filtrar por conta
-      if (selectedAccount && selectedAccount !== 'all') {
-        query = query.eq('integration_account_id', selectedAccount);
+            if (error) throw error;
+            return data?.data || [];
+          })
+        );
+        return allDevolucoes.flat();
+      } else {
+        const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+          body: {
+            integration_account_id: selectedAccount,
+            date_from: dateRange.from.toISOString(),
+            date_to: dateRange.to.toISOString()
+          }
+        });
+
+        if (error) throw error;
+        return data?.data || [];
       }
-
-      // ⚠️ IMPORTANTE: Não filtrar por data na query do banco
-      // A maioria dos registros tem data_criacao NULL
-      // Melhor: buscar tudo e deixar o usuário sincronizar dados novos
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('[Devolucao2025] Erro ao buscar:', error);
-        throw error;
-      }
-
-      console.log('[Devolucao2025] ✅ Dados carregados:', data?.length || 0);
-      
-      // 🔍 TEMPORÁRIO: Remover filtro de data para mostrar registros antigos
-      // Os 3 registros do banco são de setembro/2025
-      // Para trazer dados novos, usar botão "Sincronizar"
-      console.log('[Devolucao2025] ℹ️ Mostrando todos os registros (sem filtro de data)');
-      console.log('[Devolucao2025] 💡 Use "Sincronizar" para buscar dados do período selecionado');
-      
-      return data || [];
     },
-    enabled: accounts.length > 0,
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
+    enabled: accounts.length > 0
   });
-
-  // ✅ Sincronizar dados via edge function
-  const handleSync = async () => {
-    if (!selectedAccount || selectedAccount === 'all') {
-      alert('Selecione uma conta específica para sincronizar');
-      return;
-    }
-
-    setIsSyncing(true);
-    setSyncError(null);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-        body: {
-          integration_account_id: selectedAccount,
-          date_from: dateRange.from.toISOString(),
-          date_to: dateRange.to.toISOString(),
-        },
-      });
-
-      if (error) throw error;
-
-      // Após sincronizar, recarregar dados do banco
-      await refetch();
-      alert(`✅ Sincronização concluída! ${data?.data?.length || 0} devoluções atualizadas`);
-    } catch (err: any) {
-      console.error('[Sync Error]', err);
-      setSyncError(err.message || 'Erro ao sincronizar');
-      alert(`❌ Erro: ${err.message || 'Falha na sincronização'}`);
-    } finally {
-      setIsSyncing(false);
-    }
-  };
 
   // Paginação dos dados
   const paginatedDevolucoes = useMemo(() => {
@@ -149,36 +105,21 @@ export const Devolucao2025Page = () => {
           onDateRangeChange={setDateRange}
           onRefresh={refetch}
           isLoading={isLoading}
-          onSync={handleSync}
-          isSyncing={isSyncing}
         />
       </Card>
 
       <Card className="p-6">
         {isLoading && (
-          <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-md flex items-center gap-3">
-            <RefreshCw className="h-5 w-5 animate-spin text-primary" />
+          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
+            <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="text-sm font-medium">Buscando devoluções...</p>
-              <p className="text-xs text-muted-foreground">
-                Aguarde enquanto carregamos os dados do Mercado Livre (isso pode demorar alguns segundos)
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Buscando devoluções...
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Aguarde enquanto carregamos os dados do Mercado Livre
               </p>
             </div>
-          </div>
-        )}
-        
-        {error && (
-          <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg space-y-2">
-            <p className="font-semibold text-destructive">Erro ao carregar devoluções:</p>
-            <p className="text-sm text-destructive/90">{error.message}</p>
-            {error.message.includes('Failed to send') && (
-              <div className="mt-3 p-3 bg-background rounded border border-border">
-                <p className="text-sm font-medium mb-1">💡 Dica:</p>
-                <p className="text-xs text-muted-foreground">
-                  Tente reduzir o período de busca para evitar timeout (máx. 30 dias recomendado)
-                </p>
-              </div>
-            )}
           </div>
         )}
         
