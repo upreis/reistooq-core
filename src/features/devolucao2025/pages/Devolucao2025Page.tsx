@@ -18,6 +18,27 @@ import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
 import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
 import { RefreshCw } from 'lucide-react';
 
+const DEFAULT_VISIBLE_COLUMNS = {
+  empresa: true,
+  pedido: true,
+  comprador: true,
+  produto: true,
+  sku: true,
+  quantidade: true,
+  valor_total: true,
+  status_devolucao: true,
+  status_return: true,
+  status_entrega: true,
+  destino: true,
+  evidencias: true,
+  resolucao: true,
+  data_criacao: true,
+  prazo_analise: true,
+  tipo_logistica: true,
+};
+
+const STORAGE_KEY = 'devolucoes2025-column-visibility';
+
 export const Devolucao2025Page = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [dateRange, setDateRange] = useState({
@@ -28,6 +49,17 @@ export const Devolucao2025Page = () => {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [searchTrigger, setSearchTrigger] = useState(0); // Trigger para forçar busca
+  
+  // Estado para visibilidade de colunas
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_VISIBLE_COLUMNS;
+  });
+
+  // Salvar preferências no localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(columnVisibility));
+  }, [columnVisibility]);
 
   // Buscar organization_id do usuário
   useEffect(() => {
@@ -106,6 +138,18 @@ export const Devolucao2025Page = () => {
     setCurrentPage(1); // Reset para primeira página
   };
 
+  const handleResetToDefault = () => {
+    setColumnVisibility(DEFAULT_VISIBLE_COLUMNS);
+  };
+
+  const handleToggleAll = (show: boolean) => {
+    const updated: Record<string, boolean> = {};
+    Object.keys(DEFAULT_VISIBLE_COLUMNS).forEach(key => {
+      updated[key] = show;
+    });
+    setColumnVisibility(updated);
+  };
+
   // Paginação dos dados - filtrar apenas devoluções com dados completos
   const devolucoesValidas = useMemo(() => {
     console.log('[DEBUG] Total de devoluções recebidas:', devolucoes.length);
@@ -178,6 +222,10 @@ export const Devolucao2025Page = () => {
           onDateRangeChange={setDateRange}
           onRefresh={handleSearch}
           isLoading={isLoading}
+          columnVisibility={columnVisibility}
+          onVisibilityChange={setColumnVisibility}
+          onResetToDefault={handleResetToDefault}
+          onToggleAll={handleToggleAll}
         />
       </Card>
 
@@ -200,6 +248,7 @@ export const Devolucao2025Page = () => {
           devolucoes={paginatedDevolucoes}
           isLoading={isLoading}
           error={error}
+          columnVisibility={columnVisibility}
         />
 
         {!isLoading && !error && devolucoesValidas.length > 0 && (
