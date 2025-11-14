@@ -1,6 +1,6 @@
 /**
  * 📋 PÁGINA PRINCIPAL - DEVOLUÇÕES 2025
- * Implementação completa com 65 colunas
+ * Implementação completa com 65 colunas + Sistema de Alertas
  */
 
 import { useState, useMemo, useEffect } from 'react';
@@ -12,6 +12,9 @@ import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
 import { Devolucao2025Pagination } from '../components/Devolucao2025Pagination';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
+import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
+import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
 import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
@@ -104,17 +107,28 @@ export const Devolucao2025Page = () => {
 
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoes.length / itemsPerPage);
 
+  // Sistema de Alertas
+  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
+
   return (
     <div className="w-full min-h-screen px-6 py-6 space-y-6 flex flex-col">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Devoluções 2025</h1>
-          <p className="text-muted-foreground">
-            Gestão completa com {devolucoes.length} devoluções
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold">Devoluções 2025</h1>
+            <p className="text-muted-foreground">
+              Gestão completa com {devolucoes.length} devoluções
+            </p>
+          </div>
+          <DevolucaoAlertsBadge alertsByType={alertsByType} />
         </div>
         <NotificationsBell organizationId={organizationId} />
       </div>
+
+      {/* Painel de Alertas */}
+      {totalAlerts > 0 && (
+        <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
+      )}
 
       <Devolucao2025Stats devolucoes={devolucoes} />
 
