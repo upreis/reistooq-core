@@ -17,7 +17,7 @@ import { Settings2, Eye, EyeOff } from 'lucide-react';
 
 interface Devolucao2025ColumnSelectorProps {
   columnVisibility: Record<string, boolean>;
-  onVisibilityChange: (columnId: string, visible: boolean) => void;
+  onVisibilityChange: (visibility: Record<string, boolean>) => void;
   onResetToDefault: () => void;
   onToggleAll: (show: boolean) => void;
 }
@@ -146,7 +146,10 @@ export function Devolucao2025ColumnSelector({
                   id={`col-${column.id}`}
                   checked={columnVisibility[column.id] !== false}
                   onCheckedChange={(checked) => 
-                    onVisibilityChange(column.id, checked as boolean)
+                    onVisibilityChange({
+                      ...columnVisibility,
+                      [column.id]: checked as boolean
+                    })
                   }
                 />
                 <label

@@ -11,6 +11,7 @@ import { CalendarIcon, RefreshCw, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Devolucao2025ColumnSelector } from './Devolucao2025ColumnSelector';
 
 interface Devolucao2025FiltersProps {
   accounts: Array<{ id: string; name: string; account_identifier: string }>;
@@ -20,6 +21,10 @@ interface Devolucao2025FiltersProps {
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
   onRefresh: () => void;
   isLoading?: boolean;
+  columnVisibility: Record<string, boolean>;
+  onVisibilityChange: (visibility: Record<string, boolean>) => void;
+  onResetToDefault: () => void;
+  onToggleAll: (show: boolean) => void;
 }
 
 export const Devolucao2025Filters = ({
@@ -29,7 +34,11 @@ export const Devolucao2025Filters = ({
   dateRange,
   onDateRangeChange,
   onRefresh,
-  isLoading = false
+  isLoading = false,
+  columnVisibility,
+  onVisibilityChange,
+  onResetToDefault,
+  onToggleAll
 }: Devolucao2025FiltersProps) => {
   const [tempDateRange, setTempDateRange] = useState(dateRange);
   const [isDatePopoverOpen, setIsDatePopoverOpen] = useState(false);
@@ -116,6 +125,13 @@ export const Devolucao2025Filters = ({
         <Search className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
         {isLoading ? 'Buscando...' : 'Aplicar Filtros'}
       </Button>
+
+      <Devolucao2025ColumnSelector
+        columnVisibility={columnVisibility}
+        onVisibilityChange={onVisibilityChange}
+        onResetToDefault={onResetToDefault}
+        onToggleAll={onToggleAll}
+      />
     </div>
   );
 };

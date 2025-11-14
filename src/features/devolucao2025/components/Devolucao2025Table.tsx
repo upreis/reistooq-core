@@ -56,39 +56,10 @@ interface Devolucao2025TableProps {
   devolucoes: any[];
   isLoading: boolean;
   error: any;
+  columnVisibility: Record<string, boolean>;
 }
 
-export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao2025TableProps) => {
-  // Estado de visibilidade de colunas com persistência no localStorage
-  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : DEFAULT_VISIBLE_COLUMNS;
-  });
-
-  // Salvar preferências no localStorage sempre que mudar
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(columnVisibility));
-  }, [columnVisibility]);
-
-  const handleVisibilityChange = (columnId: string, visible: boolean) => {
-    setColumnVisibility(prev => ({
-      ...prev,
-      [columnId]: visible
-    }));
-  };
-
-  const handleResetToDefault = () => {
-    setColumnVisibility(DEFAULT_VISIBLE_COLUMNS);
-  };
-
-  const handleToggleAll = (show: boolean) => {
-    const updated: Record<string, boolean> = {};
-    Object.keys(DEFAULT_VISIBLE_COLUMNS).forEach(key => {
-      updated[key] = show;
-    });
-    setColumnVisibility(updated);
-  };
-
+export const Devolucao2025Table = ({ devolucoes, isLoading, error, columnVisibility }: Devolucao2025TableProps) => {
   const isVisible = (columnId: string) => columnVisibility[columnId] !== false;
 
   if (isLoading) {
@@ -125,16 +96,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
   return (
     <div className="w-full flex-1 flex flex-col min-h-0">
-      {/* Seletor de Colunas */}
-      <div className="flex items-center justify-end mb-4">
-        <Devolucao2025ColumnSelector
-          columnVisibility={columnVisibility}
-          onVisibilityChange={handleVisibilityChange}
-          onResetToDefault={handleResetToDefault}
-          onToggleAll={handleToggleAll}
-        />
-      </div>
-
       <div className="flex-1 overflow-auto border rounded-md scroll-smooth relative">
         <table className="w-full caption-bottom text-sm">
           <thead className="sticky top-0 z-20 bg-background border-b-2 shadow-sm">
