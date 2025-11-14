@@ -135,10 +135,10 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
-  logger.info(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
-  logger.info(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
-  logger.info(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
-  logger.info(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
+  logger.progress(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
+  logger.progress(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
+  logger.progress(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
+  logger.progress(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
 
   // Processar em lotes menores para evitar rate limiting
   const BATCH_SIZE = 3; // Reduzido para evitar 429
@@ -172,8 +172,8 @@ export async function enrichClaimsWithArrivalDates(
     }
   }
 
-  logger.info(`[ReturnArrival] ✅ Concluído: ${successCount}/${claims.length} datas encontradas`);
-  logger.info(`[ReturnArrival] 📊 Motivos sem data: 404(sem return físico), warehouse(não seller_address), em trânsito`);
+  logger.progress(`[ReturnArrival] ✅ Concluído: ${successCount}/${claims.length} datas encontradas`);
+  logger.progress(`[ReturnArrival] 📊 Motivos sem data: 404(sem return físico), warehouse(não seller_address), em trânsito`);
 
   return enrichedClaims;
 }
