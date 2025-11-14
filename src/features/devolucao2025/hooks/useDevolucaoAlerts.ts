@@ -4,7 +4,8 @@
  */
 
 import { useMemo } from 'react';
-import { differenceInHours, isPast, parseISO } from 'date-fns';
+import { differenceInHours, isPast } from 'date-fns';
+import { calculateAnalysisDeadline } from '../utils/businessDays';
 
 export interface DevolucaoAlert {
   id: string;
@@ -25,47 +26,51 @@ export const useDevolucaoAlerts = (devolucoes: any[]) => {
     devolucoes.forEach((dev) => {
       const now = new Date();
 
-      // 1. VERIFICAR PRAZO PRÓXIMO (menos de 24h)
-      if (dev.deadline_date) {
+      // 1. VERIFICAR PRAZO DE ANÁLISE (3 dias úteis após chegada)
+      if (dev.data_chegada_produto) {
         try {
-          const deadline = parseISO(dev.deadline_date);
-          const hoursRemaining = differenceInHours(deadline, now);
+          const deadline = calculateAnalysisDeadline(dev.data_chegada_produto);
+          
+          if (deadline) {
+            const hoursRemaining = differenceInHours(deadline, now);
 
-          if (hoursRemaining > 0 && hoursRemaining <= 24) {
-            detectedAlerts.push({
-              id: `prazo-${dev.id}`,
-              order_id: dev.order_id,
-              claim_id: dev.claim_id,
-              type: 'prazo_proximo',
-              priority: hoursRemaining <= 6 ? 'alta' : 'media',
-              title: `⏰ Prazo se aproximando - Pedido ${dev.order_id}`,
-              message: `Faltam ${hoursRemaining}h para o prazo limite. Ação necessária urgente!`,
-              horasRestantes: hoursRemaining,
-              deadline
-            });
-          }
+            // PRAZO PRÓXIMO (menos de 24h)
+            if (hoursRemaining > 0 && hoursRemaining <= 24) {
+              detectedAlerts.push({
+                id: `prazo-${dev.id}`,
+                order_id: dev.order_id,
+                claim_id: dev.claim_id,
+                type: 'prazo_proximo',
+                priority: hoursRemaining <= 6 ? 'alta' : 'media',
+                title: `⏰ Prazo de análise se aproximando - Pedido ${dev.order_id}`,
+                message: `Faltam ${hoursRemaining}h para analisar a devolução. Ação necessária urgente!`,
+                horasRestantes: hoursRemaining,
+                deadline
+              });
+            }
 
-          // 2. VERIFICAR ATRASO
-          if (isPast(deadline) && dev.status_devolucao !== 'closed') {
-            const hoursLate = Math.abs(differenceInHours(now, deadline));
-            detectedAlerts.push({
-              id: `atraso-${dev.id}`,
-              order_id: dev.order_id,
-              claim_id: dev.claim_id,
-              type: 'atrasado',
-              priority: 'alta',
-              title: `🚨 ATRASADO - Pedido ${dev.order_id}`,
-              message: `Prazo vencido há ${hoursLate}h. Ação imediata necessária!`,
-              horasRestantes: -hoursLate,
-              deadline
-            });
+            // ATRASO NA ANÁLISE
+            if (isPast(deadline) && dev.status_devolucao !== 'closed') {
+              const hoursLate = Math.abs(differenceInHours(now, deadline));
+              detectedAlerts.push({
+                id: `atraso-${dev.id}`,
+                order_id: dev.order_id,
+                claim_id: dev.claim_id,
+                type: 'atrasado',
+                priority: 'alta',
+                title: `🚨 ANÁLISE ATRASADA - Pedido ${dev.order_id}`,
+                message: `Prazo de análise vencido há ${hoursLate}h. Ação imediata necessária!`,
+                horasRestantes: -hoursLate,
+                deadline
+              });
+            }
           }
         } catch (error) {
-          console.error('Erro ao processar deadline:', error);
+          console.error('Erro ao processar prazo de análise:', error);
         }
       }
 
-      // 3. VERIFICAR MEDIADOR ATRIBUÍDO
+      // 2. VERIFICAR MEDIADOR ATRIBUÍDO
       if (dev.em_mediacao && !dev.mediacao_notificada) {
         detectedAlerts.push({
           id: `mediacao-${dev.id}`,
