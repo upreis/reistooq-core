@@ -38,6 +38,8 @@ export const Devolucao2025Filters = ({
     if (tempDateRange.from && tempDateRange.to) {
       onDateRangeChange(tempDateRange);
       setIsDatePopoverOpen(false);
+      // Busca imediatamente após aplicar
+      onRefresh();
     }
   };
   return (
