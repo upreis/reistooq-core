@@ -529,6 +529,11 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Data</TableHead>
                 <TableHead>📦 Data Chegada</TableHead>
                 <TableHead>⏰ Prazo Análise</TableHead>
+                <TableHead>💰 Status Dinheiro</TableHead>
+                <TableHead>📦 Status Envio</TableHead>
+                <TableHead>🏭 Destino</TableHead>
+                <TableHead>🔄 Status Return</TableHead>
+                <TableHead>💵 Reembolso Em</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -784,6 +789,67 @@ export default function DevolucoesMercadoLivre() {
                           </div>
                         );
                       })()}
+                    </TableCell>
+
+                    {/* Status Dinheiro */}
+                    <TableCell>
+                      <StatusMoneyCell status={(dev as any).status_dinheiro} />
+                    </TableCell>
+
+                    {/* Status Envio (shipment status) */}
+                    <TableCell>
+                      {(dev as any).status_envio ? (
+                        <Badge variant={
+                          (dev as any).status_envio === 'delivered' ? 'default' :
+                          (dev as any).status_envio === 'shipped' ? 'secondary' :
+                          (dev as any).status_envio === 'cancelled' ? 'destructive' :
+                          'outline'
+                        }>
+                          {(dev as any).status_envio === 'pending' && '⏳ Pendente'}
+                          {(dev as any).status_envio === 'ready_to_ship' && '📦 Pronto'}
+                          {(dev as any).status_envio === 'shipped' && '🚚 Enviado'}
+                          {(dev as any).status_envio === 'delivered' && '✅ Entregue'}
+                          {(dev as any).status_envio === 'not_delivered' && '❌ Não Entregue'}
+                          {(dev as any).status_envio === 'cancelled' && '🚫 Cancelado'}
+                          {!['pending', 'ready_to_ship', 'shipped', 'delivered', 'not_delivered', 'cancelled'].includes((dev as any).status_envio) && (dev as any).status_envio}
+                        </Badge>
+                      ) : '-'}
+                    </TableCell>
+
+                    {/* Destino (warehouse indicator) */}
+                    <TableCell>
+                      <WarehouseIndicatorCell 
+                        destino_devolucao={(dev as any).destino_devolucao}
+                        tipo_envio_devolucao={(dev as any).tipo_envio_devolucao}
+                        status_shipment={(dev as any).status_envio}
+                      />
+                    </TableCell>
+
+                    {/* Status Return (status da devolução) */}
+                    <TableCell>
+                      {(dev as any).status_return ? (
+                        <Badge variant={
+                          (dev as any).status_return === 'delivered' ? 'default' :
+                          (dev as any).status_return === 'cancelled' ? 'destructive' :
+                          (dev as any).status_return === 'expired' ? 'destructive' :
+                          (dev as any).status_return === 'shipped' ? 'secondary' :
+                          'outline'
+                        }>
+                          {(dev as any).status_return}
+                        </Badge>
+                      ) : '-'}
+                    </TableCell>
+
+                    {/* Reembolso Em (refund_at) */}
+                    <TableCell>
+                      {(dev as any).data_reembolso ? (
+                        <Badge variant="outline">
+                          {(dev as any).data_reembolso === 'shipped' && '🚚 No Envio'}
+                          {(dev as any).data_reembolso === 'delivered' && '📦 Após Entrega (3 dias)'}
+                          {(dev as any).data_reembolso === 'n/a' && '💰 Sem Devolução'}
+                          {!['shipped', 'delivered', 'n/a'].includes((dev as any).data_reembolso) && (dev as any).data_reembolso}
+                        </Badge>
+                      ) : '-'}
                     </TableCell>
                   </TableRow>
                 ))
