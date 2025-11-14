@@ -24,7 +24,12 @@ Deno.serve(async (req) => {
   console.log('[ML Token Refresh Cron] Starting proactive token refresh check...');
 
   try {
-    const supabase = makeClient(req.headers.get("Authorization"));
+    // ✅ CORREÇÃO: Usar SERVICE_ROLE_KEY direto, sem passar Authorization header do cron
+    const url = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(url, serviceKey, {
+      auth: { persistSession: false }
+    });
 
     // ✅ SISTEMA BLINDADO: Refresh preventivo - tokens que expiram em até 4 horas (Documentação ML: tokens duram 6h)
     const threshold4hours = new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString();
