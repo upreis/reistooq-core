@@ -64,7 +64,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Empresa</th>
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Pedido</th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Claim ID</th>
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">👤 Comprador</th>
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Produto</th>
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏷️ SKU</th>
@@ -126,11 +125,10 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
         </thead>
         <tbody className="[&_tr:last-child]:border-0">
           {devolucoes.map((dev, index) => (
-            <tr key={`${dev.claim_id}-${index}`} className="border-b border-gray-600 transition-colors hover:bg-muted/50">
+            <tr key={`${dev.order_id}-${index}`} className="border-b border-gray-600 transition-colors hover:bg-muted/50">
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
               <td className="p-4 align-middle font-medium">{dev.account_name || '-'}</td>
               <td className="p-4 align-middle">{dev.order_id || '-'}</td>
-              <td className="p-4 align-middle">{dev.claim_id || '-'}</td>
               <td className="p-4 align-middle">{dev.comprador_nome_completo || '-'}</td>
               <td className="p-4 align-middle">
                 <ProductInfoCell productInfo={dev.product_info} />

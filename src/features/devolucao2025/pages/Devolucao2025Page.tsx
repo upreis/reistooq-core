@@ -98,17 +98,21 @@ export const Devolucao2025Page = () => {
     enabled: false // Desabilita busca automática
   });
 
-  // Paginação dos dados
+  // Paginação dos dados - filtrar apenas devoluções com claim_id válido
+  const devolucoesValidas = useMemo(() => {
+    return devolucoes.filter(dev => dev.claim_id && dev.claim_id !== '-');
+  }, [devolucoes]);
+
   const paginatedDevolucoes = useMemo(() => {
-    if (itemsPerPage === -1) return devolucoes; // "Todas"
+    if (itemsPerPage === -1) return devolucoesValidas; // "Todas"
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return devolucoes.slice(startIndex, startIndex + itemsPerPage);
-  }, [devolucoes, currentPage, itemsPerPage]);
+    return devolucoesValidas.slice(startIndex, startIndex + itemsPerPage);
+  }, [devolucoesValidas, currentPage, itemsPerPage]);
 
-  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoes.length / itemsPerPage);
+  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoesValidas.length / itemsPerPage);
 
-  // Sistema de Alertas
-  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
+  // Sistema de Alertas - usando devoluções válidas
+  const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesValidas);
 
   return (
     <div className="w-full h-screen px-6 py-6 space-y-6 flex flex-col overflow-hidden">
@@ -117,7 +121,7 @@ export const Devolucao2025Page = () => {
           <div>
             <h1 className="text-3xl font-bold">Devoluções 2025</h1>
             <p className="text-muted-foreground">
-              Gestão completa com {devolucoes.length} devoluções
+              Gestão completa com {devolucoesValidas.length} devoluções válidas
             </p>
           </div>
           <DevolucaoAlertsBadge alertsByType={alertsByType} />
@@ -130,7 +134,7 @@ export const Devolucao2025Page = () => {
         <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
       )}
 
-      <Devolucao2025Stats devolucoes={devolucoes} />
+      <Devolucao2025Stats devolucoes={devolucoesValidas} />
 
       <Card className="p-6">
         <Devolucao2025Filters
@@ -165,12 +169,12 @@ export const Devolucao2025Page = () => {
           error={error}
         />
 
-        {!isLoading && !error && devolucoes.length > 0 && (
+        {!isLoading && !error && devolucoesValidas.length > 0 && (
           <Devolucao2025Pagination
             currentPage={currentPage}
             totalPages={totalPages}
             itemsPerPage={itemsPerPage}
-            totalItems={devolucoes.length}
+            totalItems={devolucoesValidas.length}
             onPageChange={setCurrentPage}
             onItemsPerPageChange={setItemsPerPage}
           />
