@@ -4,17 +4,20 @@
  */
 
 export const mapBasicData = (item: any, accountId: string, accountName: string, reasonId: string | null) => {
-  const claim = item;
+  // ✅ CORREÇÃO: item já contém claim_details, não precisa reatribuir
+  const claim = item.claim_details || item;
   
   // 🐛 DEBUG: Log dados básicos recebidos
   console.log('🎯 BasicDataMapper - Dados recebidos:', JSON.stringify({
     claim_id: claim.id,
-    has_product_info: !!claim.product_info,
-    has_order_data: !!claim.order_data,
-    has_shipping: !!claim.order_data?.shipping,
-    product_title: claim.product_info?.title?.substring(0, 50),
-    sku: claim.product_info?.sku || claim.order_data?.order_items?.[0]?.item?.seller_sku,
-    logistic_type: claim.order_data?.shipping?.logistic_type,
+    has_product_info: !!item.product_info,
+    has_order_data: !!item.order_data,
+    has_shipment_data: !!item.shipment_data,
+    has_shipping: !!item.order_data?.shipping,
+    product_title: item.product_info?.title?.substring(0, 50),
+    sku: item.product_info?.sku || item.order_data?.order_items?.[0]?.item?.seller_sku,
+    logistic_type_shipment: item.shipment_data?.logistic_type,
+    logistic_type_order: item.order_data?.shipping?.logistic_type,
     subtipo_claim: claim.return_details?.subtype || claim.stage,
     return_subtype: claim.return_details?.subtype,
     claim_stage: claim.stage
@@ -37,11 +40,11 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
   
   // 🐛 DEBUG: Log do shipment_data para verificar logistic_type
   console.log(`🚚 [BasicDataMapper] Claim ${claim.id} - shipment_data:`, JSON.stringify({
-    has_shipment_data: !!claim.shipment_data,
-    logistic_type: claim.shipment_data?.logistic_type,
-    shipping_option: claim.shipment_data?.shipping_option,
-    status: claim.shipment_data?.status,
-    fallback_order: claim.order_data?.shipping?.logistic_type,
+    has_shipment_data: !!item.shipment_data,
+    logistic_type: item.shipment_data?.logistic_type,
+    shipping_option: item.shipment_data?.shipping_option,
+    status: item.shipment_data?.status,
+    fallback_order: item.order_data?.shipping?.logistic_type,
     fallback_claim: claim.shipping?.logistic?.type
   }));
   
@@ -64,16 +67,16 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     data_venda_original: claim.order_data?.date_created || null,
     
     // Dados do produto
-    produto_titulo: claim.product_info?.title || claim.reason || null,
-    sku: claim.product_info?.sku || claim.order_data?.order_items?.[0]?.item?.seller_sku || null,
-    quantidade: claim.order_data?.order_items?.[0]?.quantity || claim.quantity || 1,
+    produto_titulo: item.product_info?.title || claim.reason || null,
+    sku: item.product_info?.sku || item.order_data?.order_items?.[0]?.item?.seller_sku || null,
+    quantidade: item.order_data?.order_items?.[0]?.quantity || claim.quantity || 1,
     valor_retido: claim.seller_amount || null,
-    valor_original_produto: claim.order_data?.order_items?.[0]?.unit_price || null,
+    valor_original_produto: item.order_data?.order_items?.[0]?.unit_price || null,
     
     // 🚚 TIPO DE LOGÍSTICA - BUSCAR DO SHIPMENT_DATA (venda original)
     // Prioridade: shipment_data.logistic_type (venda) > order_data.shipping.logistic_type
-    tipo_logistica: claim.shipment_data?.logistic_type || 
-                    claim.order_data?.shipping?.logistic_type || 
+    tipo_logistica: item.shipment_data?.logistic_type || 
+                    item.order_data?.shipping?.logistic_type || 
                     claim.shipping?.logistic?.type || 
                     claim.shipping?.logistic_type || 
                     null,

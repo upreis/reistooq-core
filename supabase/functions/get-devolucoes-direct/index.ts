@@ -795,6 +795,9 @@ serve(async (req) => {
           shipment_history_enriched: claim.shipment_history_enriched,
           shipping_costs_enriched: claim.shipping_costs_enriched,
           
+          // 🚚 SHIPMENT DATA (logistic_type da venda original)
+          shipment_data: claim.shipment_data,
+          
           // 🆕 CHANGE DETAILS (para trocas)
           change_details: claim.change_details,
           
