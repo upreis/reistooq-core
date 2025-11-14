@@ -17,6 +17,7 @@ interface Devolucao2025FiltersProps {
   dateRange: { from: Date; to: Date };
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
   onRefresh: () => void;
+  isLoading?: boolean;
 }
 
 export const Devolucao2025Filters = ({
@@ -25,7 +26,8 @@ export const Devolucao2025Filters = ({
   onAccountChange,
   dateRange,
   onDateRangeChange,
-  onRefresh
+  onRefresh,
+  isLoading = false
 }: Devolucao2025FiltersProps) => {
   return (
     <div className="flex flex-wrap gap-4">
@@ -74,9 +76,9 @@ export const Devolucao2025Filters = ({
         </PopoverContent>
       </Popover>
 
-      <Button onClick={onRefresh} variant="outline">
-        <RefreshCw className="h-4 w-4 mr-2" />
-        Atualizar
+      <Button onClick={onRefresh} variant="outline" disabled={isLoading}>
+        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+        {isLoading ? 'Buscando...' : 'Atualizar'}
       </Button>
     </div>
   );

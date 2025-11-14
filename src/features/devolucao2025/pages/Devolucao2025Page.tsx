@@ -11,6 +11,7 @@ import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
 import { Devolucao2025Pagination } from '../components/Devolucao2025Pagination';
+import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
@@ -103,26 +104,41 @@ export const Devolucao2025Page = () => {
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
           onRefresh={refetch}
+          isLoading={isLoading}
         />
       </Card>
 
       <Card className="p-6">
-      <Devolucao2025Table 
-        devolucoes={paginatedDevolucoes}
-        isLoading={isLoading}
-        error={error}
-      />
-
-      {!isLoading && !error && devolucoes.length > 0 && (
-        <Devolucao2025Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          itemsPerPage={itemsPerPage}
-          totalItems={devolucoes.length}
-          onPageChange={setCurrentPage}
-          onItemsPerPageChange={setItemsPerPage}
+        {isLoading && (
+          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
+            <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Buscando devoluções...
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Aguarde enquanto carregamos os dados do Mercado Livre
+              </p>
+            </div>
+          </div>
+        )}
+        
+        <Devolucao2025Table 
+          devolucoes={paginatedDevolucoes}
+          isLoading={isLoading}
+          error={error}
         />
-      )}
+
+        {!isLoading && !error && devolucoes.length > 0 && (
+          <Devolucao2025Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={devolucoes.length}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
+          />
+        )}
       </Card>
     </div>
   );
