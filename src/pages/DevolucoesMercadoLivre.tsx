@@ -883,59 +883,40 @@ export default function DevolucoesMercadoLivre() {
 
                     {/* 💰 Status Dinheiro */}
                     <TableCell>
-                      <StatusMoneyCell status={(dev as any).status_dinheiro} />
-                    </TableCell>
-
-                    {/* 📦 Status Envio (já existe) */}
-                    <TableCell>
-                      <StatusShipmentCell status={(dev as any).status_envio} />
-                    </TableCell>
-
-                    {/* 🏭 Destino (já existe) */}
-                    <TableCell>
-                      {(dev as any).destino_devolucao ? (
-                        <Badge variant="outline">
-                          {(dev as any).destino_devolucao === 'warehouse' ? '🏭 Armazém ML' : '📦 Vendedor'}
-                        </Badge>
-                      ) : '-'}
-                    </TableCell>
-
-                    {/* 🔄 Status Return (já existe) */}
-                    <TableCell>
-                      <StatusReturnCell status={(dev as any).status_return} />
+                      <StatusMoneyCell status={(dev as any).status_money} />
                     </TableCell>
 
                     {/* 💵 Reembolso Em */}
                     <TableCell>
                       <DataReembolsoCell 
-                        data={(dev as any).data_estimada_reembolso}
-                        isEstimated={true}
+                        data={(dev as any).refund_at || (dev as any).data_estimada_reembolso}
+                        isEstimated={!(dev as any).refund_at}
                       />
                     </TableCell>
 
-                    {/* Histórico de Status do Shipment */}
-                    <TableCell>
-                      <ShipmentHistoryCell 
-                        status_history={(dev as any).dados_tracking_info?.tracking_events || (dev as any).status_history || []}
-                      />
-                    </TableCell>
-                    
-                    {/* 🆕 REVIEWS - 3 NOVAS CÉLULAS */}
+                    {/* 📜 Histórico Envio */}
+                    <ShipmentHistoryCell 
+                      status_history={(dev as any).tracking_history || (dev as any).tracking_events || (dev as any).status_history}
+                    />
+
+                    {/* 🔄 Stage Review */}
                     <TableCell>
                       <ReviewStageCell 
-                        stage={(dev as any).dados_reviews?.stage || (dev as any).review_stage} 
-                        status={(dev as any).dados_reviews?.status || (dev as any).review_status}
+                        stage={(dev as any).review_stage} 
+                        status={(dev as any).review_status}
                       />
                     </TableCell>
+
+                    {/* ⚡ Ações Disponíveis */}
                     <TableCell>
                       <AvailableActionsCell 
                         actions={(dev as any).dados_available_actions || []}
                       />
                     </TableCell>
+
+                    {/* ⚖️ Resolução */}
                     <TableCell>
-                      <ResolutionCell 
-                        resolution={(dev as any).dados_reviews?.resolution || null}
-                      />
+                      <ResolutionCell resolution={(dev as any).resolution} />
                     </TableCell>
                     
                     {/* 🆕 CUSTO DEVOLUÇÃO ML */}
