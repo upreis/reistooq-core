@@ -3,13 +3,14 @@
  * Implementação completa com 65 colunas
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
+import { Devolucao2025Pagination } from '../components/Devolucao2025Pagination';
 
 export const Devolucao2025Page = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
@@ -17,6 +18,8 @@ export const Devolucao2025Page = () => {
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   // Buscar contas de integração
   const { data: accounts = [] } = useQuery({
@@ -70,6 +73,15 @@ export const Devolucao2025Page = () => {
     enabled: accounts.length > 0
   });
 
+  // Paginação dos dados
+  const paginatedDevolucoes = useMemo(() => {
+    if (itemsPerPage === -1) return devolucoes; // "Todas"
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return devolucoes.slice(startIndex, startIndex + itemsPerPage);
+  }, [devolucoes, currentPage, itemsPerPage]);
+
+  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoes.length / itemsPerPage);
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -95,11 +107,22 @@ export const Devolucao2025Page = () => {
       </Card>
 
       <Card className="p-6">
-        <Devolucao2025Table
-          devolucoes={devolucoes}
-          isLoading={isLoading}
-          error={error}
+      <Devolucao2025Table 
+        devolucoes={paginatedDevolucoes}
+        isLoading={isLoading}
+        error={error}
+      />
+
+      {!isLoading && !error && devolucoes.length > 0 && (
+        <Devolucao2025Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          totalItems={devolucoes.length}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={setItemsPerPage}
         />
+      )}
       </Card>
     </div>
   );
