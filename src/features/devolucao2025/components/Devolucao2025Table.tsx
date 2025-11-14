@@ -89,7 +89,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📅 Prazo Análise</TableHead>
             <TableHead>📅 Data Chegada</TableHead>
             <TableHead>⏰ Última Msg</TableHead>
-            <TableHead>⏰ Última Movimentação</TableHead>
 
             {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
             <TableHead>📍 Código Rastreio</TableHead>
