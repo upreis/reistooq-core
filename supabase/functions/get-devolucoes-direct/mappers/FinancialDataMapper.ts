@@ -98,6 +98,11 @@ export const mapFinancialData = (item: any) => {
     moeda_custo_devolucao: claim.return_cost_enriched?.currency_id || 
                            claim.order_data?.currency_id || 'BRL',
     
+    // 💰 NOVO: Custo de devolução oficial do ML (endpoint /charges/return-cost)
+    custo_devolucao_ml: claim.return_cost_enriched?.amount || null,
+    custo_devolucao_ml_usd: claim.return_cost_enriched?.amount_usd || null,
+    moeda_custo_devolucao_ml: claim.return_cost_enriched?.currency_id || 'BRL',
+    
     // ✅ CUSTOS LOGÍSTICOS COMPLETOS (para CustosLogisticaCell)
     // 🔧 CORREÇÃO: Usar original_total diretamente (breakdown sempre 0 na API ML)
     custo_total_logistica: claim.shipping_costs_enriched?.original_costs?.total_cost || null,
