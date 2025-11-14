@@ -112,7 +112,7 @@ export const Devolucao2025Page = () => {
 
   return (
     <div className="w-full px-6 py-6 space-y-6">
-      <div className="flex items-center justify-between sticky top-0 z-50 bg-background pb-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
             <h1 className="text-3xl font-bold">Devoluções 2025</h1>
@@ -144,7 +144,7 @@ export const Devolucao2025Page = () => {
         />
       </Card>
 
-      <Card className="p-6 overflow-hidden">
+      <Card className="p-6">
         {isLoading && (
           <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
             <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
