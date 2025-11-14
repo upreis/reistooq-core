@@ -39,8 +39,11 @@ export const Devolucao2025Page = () => {
   });
 
   // Buscar devoluções via Edge Function
+  // ✅ Estado para sincronização
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
+
   // ✅ Buscar devoluções DIRETO DO BANCO (como /pedidos faz)
-  // Evita timeout da edge function
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025-db', selectedAccount, dateRange],
     queryFn: async () => {
@@ -75,9 +78,42 @@ export const Devolucao2025Page = () => {
       return data || [];
     },
     enabled: accounts.length > 0,
-    staleTime: 2 * 60 * 1000, // Cache de 2 minutos
+    staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,
   });
+
+  // ✅ Sincronizar dados via edge function
+  const handleSync = async () => {
+    if (!selectedAccount || selectedAccount === 'all') {
+      alert('Selecione uma conta específica para sincronizar');
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncError(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+        body: {
+          integration_account_id: selectedAccount,
+          date_from: dateRange.from.toISOString(),
+          date_to: dateRange.to.toISOString(),
+        },
+      });
+
+      if (error) throw error;
+
+      // Após sincronizar, recarregar dados do banco
+      await refetch();
+      alert(`✅ Sincronização concluída! ${data?.data?.length || 0} devoluções atualizadas`);
+    } catch (err: any) {
+      console.error('[Sync Error]', err);
+      setSyncError(err.message || 'Erro ao sincronizar');
+      alert(`❌ Erro: ${err.message || 'Falha na sincronização'}`);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   // Paginação dos dados
   const paginatedDevolucoes = useMemo(() => {
@@ -110,6 +146,8 @@ export const Devolucao2025Page = () => {
           onDateRangeChange={setDateRange}
           onRefresh={refetch}
           isLoading={isLoading}
+          onSync={handleSync}
+          isSyncing={isSyncing}
         />
       </Card>
 

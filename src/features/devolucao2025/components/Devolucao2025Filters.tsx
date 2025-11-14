@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, RefreshCw, AlertTriangle } from 'lucide-react';
+import { CalendarIcon, RefreshCw, AlertTriangle, Download } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -18,7 +18,9 @@ interface Devolucao2025FiltersProps {
   dateRange: { from: Date; to: Date };
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
   onRefresh: () => void;
+  onSync: () => void;
   isLoading?: boolean;
+  isSyncing?: boolean;
 }
 
 export const Devolucao2025Filters = ({
@@ -28,7 +30,9 @@ export const Devolucao2025Filters = ({
   dateRange,
   onDateRangeChange,
   onRefresh,
-  isLoading = false
+  onSync,
+  isLoading = false,
+  isSyncing = false
 }: Devolucao2025FiltersProps) => {
   // Calcular dias do período
   const daysDiff = differenceInDays(dateRange.to, dateRange.from);
@@ -120,14 +124,30 @@ export const Devolucao2025Filters = ({
         {/* Botão Atualizar */}
         <div className="space-y-2">
           <label className="text-sm font-medium">Ações</label>
-          <Button 
-            onClick={onRefresh} 
-            disabled={isLoading}
-            className="w-full"
-          >
-            <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
-            {isLoading ? 'Carregando...' : 'Atualizar'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              onClick={onRefresh} 
+              disabled={isLoading}
+              variant="outline"
+              className="flex-1"
+            >
+              <RefreshCw className={cn("mr-2 h-4 w-4", isLoading && "animate-spin")} />
+              {isLoading ? 'Carregando...' : 'Atualizar'}
+            </Button>
+            <Button 
+              onClick={onSync} 
+              disabled={isSyncing || selectedAccount === 'all'}
+              className="flex-1"
+            >
+              <Download className={cn("mr-2 h-4 w-4", isSyncing && "animate-spin")} />
+              {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
+            </Button>
+          </div>
+          {selectedAccount === 'all' && (
+            <p className="text-xs text-muted-foreground">
+              Selecione uma conta específica para sincronizar
+            </p>
+          )}
         </div>
       </div>
 
