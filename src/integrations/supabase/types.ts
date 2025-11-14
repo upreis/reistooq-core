@@ -1265,6 +1265,7 @@ export type Database = {
           timeline_mensagens: Json | null
           tipo_claim: string | null
           tipo_envio_devolucao: string | null
+          tipo_logistica: string | null
           tipo_pagamento: string | null
           tracking_events: Json | null
           tracking_history: Json | null
@@ -1410,6 +1411,7 @@ export type Database = {
           timeline_mensagens?: Json | null
           tipo_claim?: string | null
           tipo_envio_devolucao?: string | null
+          tipo_logistica?: string | null
           tipo_pagamento?: string | null
           tracking_events?: Json | null
           tracking_history?: Json | null
@@ -1555,6 +1557,7 @@ export type Database = {
           timeline_mensagens?: Json | null
           tipo_claim?: string | null
           tipo_envio_devolucao?: string | null
+          tipo_logistica?: string | null
           tipo_pagamento?: string | null
           tracking_events?: Json | null
           tracking_history?: Json | null

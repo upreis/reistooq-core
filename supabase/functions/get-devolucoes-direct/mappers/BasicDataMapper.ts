@@ -35,6 +35,16 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     status_final: statusDevolucao
   }));
   
+  // 🐛 DEBUG: Log do shipment_data para verificar logistic_type
+  console.log(`🚚 [BasicDataMapper] Claim ${claim.id} - shipment_data:`, JSON.stringify({
+    has_shipment_data: !!claim.shipment_data,
+    logistic_type: claim.shipment_data?.logistic_type,
+    shipping_option: claim.shipment_data?.shipping_option,
+    status: claim.shipment_data?.status,
+    fallback_order: claim.order_data?.shipping?.logistic_type,
+    fallback_claim: claim.shipping?.logistic?.type
+  }));
+  
   return {
     // Dados principais
     order_id: claim.resource_id?.toString() || claim.order_id?.toString() || '',
