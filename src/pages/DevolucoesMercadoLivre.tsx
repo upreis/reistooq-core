@@ -50,6 +50,7 @@ import { HistoricoStatusCell } from '@/components/devolucoes/HistoricoStatusCell
 import { ReviewStageCell } from '@/components/devolucoes/ReviewStageCell';
 import { AvailableActionsCell } from '@/components/devolucoes/AvailableActionsCell';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
+import { ReturnCostCell } from '@/components/devolucoes/ReturnCostCell';
 import {
   Pagination,
   PaginationContent,
@@ -544,18 +545,21 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>🔄 Stage Review</TableHead>
                 <TableHead>⚡ Ações Disponíveis</TableHead>
                 <TableHead>⚖️ Resolução</TableHead>
+                
+                {/* 🆕 CUSTO DEVOLUÇÃO ML */}
+                <TableHead>💰 Custo Devolução ML</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={67} className="text-center py-8">
+                  <TableCell colSpan={68} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : devolucoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={67} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={68} className="text-center py-8 text-muted-foreground">
                     Clique em "Buscar Devoluções" para carregar os dados
                   </TableCell>
                 </TableRow>
@@ -880,6 +884,15 @@ export default function DevolucoesMercadoLivre() {
                     <TableCell>
                       <ResolutionCell 
                         resolution={(dev as any).dados_reviews?.resolution || null}
+                      />
+                    </TableCell>
+                    
+                    {/* 🆕 CUSTO DEVOLUÇÃO ML */}
+                    <TableCell>
+                      <ReturnCostCell 
+                        custo_ml={(dev as any).custo_devolucao_ml}
+                        custo_ml_usd={(dev as any).custo_devolucao_ml_usd}
+                        moeda={(dev as any).moeda_custo_devolucao_ml}
                       />
                     </TableCell>
                   </TableRow>
