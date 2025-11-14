@@ -5,11 +5,10 @@
 
 export const mapContextData = (item: any) => {
   const claim = item;
-  
   return {
     // ===== MEDIAÇÃO =====
     em_mediacao: claim.type === 'meditations' || claim.stage === 'dispute',
-    data_inicio_mediacao: claim.date_created || null,
+    data_inicio_mediacao: null, // ❌ ML não fornece data específica de início de mediação
     escalado_para_ml: claim.type === 'meditations' || claim.stage === 'dispute',
     mediador_ml: claim.players?.find((p: any) => p.role === 'mediator')?.user_id?.toString() || null,
     
