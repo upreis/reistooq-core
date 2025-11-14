@@ -164,7 +164,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>{dev.status_envio || '-'}</TableCell>
               <TableCell>{dev.destino_devolucao || '-'}</TableCell>
               <TableCell>
-                <ResolutionCell resolution={dev.dados_claim?.resolution || null} />
+                <ResolutionCell resolution={dev.resolution || null} />
               </TableCell>
 
               {/* GRUPO 4: DATAS */}
