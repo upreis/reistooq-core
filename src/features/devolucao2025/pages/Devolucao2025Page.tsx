@@ -52,20 +52,16 @@ export const Devolucao2025Page = () => {
       let query = supabase
         .from('ml_devolucoes_reclamacoes')
         .select('*')
-        .order('data_criacao', { ascending: false });
+        .order('created_at', { ascending: false });
 
       // Filtrar por conta
       if (selectedAccount && selectedAccount !== 'all') {
         query = query.eq('integration_account_id', selectedAccount);
       }
 
-      // Filtrar por período
-      if (dateRange.from) {
-        query = query.gte('data_criacao', dateRange.from.toISOString());
-      }
-      if (dateRange.to) {
-        query = query.lte('data_criacao', dateRange.to.toISOString());
-      }
+      // ⚠️ IMPORTANTE: Não filtrar por data na query do banco
+      // A maioria dos registros tem data_criacao NULL
+      // Melhor: buscar tudo e deixar o usuário sincronizar dados novos
 
       const { data, error } = await query;
 
@@ -75,7 +71,20 @@ export const Devolucao2025Page = () => {
       }
 
       console.log('[Devolucao2025] ✅ Dados carregados:', data?.length || 0);
-      return data || [];
+      
+      // Filtrar client-side para suportar registros com data_criacao NULL
+      let filtered = data || [];
+      if (dateRange.from || dateRange.to) {
+        filtered = filtered.filter(item => {
+          const itemDate = new Date(item.data_criacao || item.created_at);
+          if (dateRange.from && itemDate < dateRange.from) return false;
+          if (dateRange.to && itemDate > dateRange.to) return false;
+          return true;
+        });
+      }
+      
+      console.log('[Devolucao2025] ✅ Dados após filtro de data:', filtered.length);
+      return filtered;
     },
     enabled: accounts.length > 0,
     staleTime: 2 * 60 * 1000,
