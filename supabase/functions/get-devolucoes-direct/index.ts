@@ -179,7 +179,7 @@ serve(async (req) => {
     const allEnrichedClaims: any[] = [];
     
     // ✅ Limitar concorrência para evitar timeout (10 requests simultâneos max)
-    const limit = pLimit(10);
+    const concurrencyLimit = pLimit(10);
     
     // Função para enriquecer um único claim
     const enrichClaim = async (claim: any) => {
@@ -683,7 +683,7 @@ serve(async (req) => {
     logger.progress(`⏳ Processando ${claims.length} claims com throttling (10 simultâneos)...`);
     
     const enrichedPromises = claims.map((claim, index) => 
-      limit(async () => {
+      concurrencyLimit(async () => {
         const result = await enrichClaim(claim);
         
         // Log de progresso a cada 10 claims
