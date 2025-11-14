@@ -9,6 +9,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
+import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 
 
 interface Devolucao2025TableProps {
@@ -77,6 +78,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📦 Status Return</TableHead>
             <TableHead>🚚 Status Envio</TableHead>
             <TableHead>🏭 Destino</TableHead>
+            <TableHead>⚖️ Resolução</TableHead>
 
             {/* GRUPO 4: DATAS */}
             <TableHead>📅 Data Criação</TableHead>
@@ -157,6 +159,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               </TableCell>
               <TableCell>{dev.status_envio || '-'}</TableCell>
               <TableCell>{dev.destino_devolucao || '-'}</TableCell>
+              <TableCell>
+                <ResolutionCell resolution={dev.dados_claim?.resolution || null} />
+              </TableCell>
 
               {/* GRUPO 4: DATAS */}
               <TableCell>
