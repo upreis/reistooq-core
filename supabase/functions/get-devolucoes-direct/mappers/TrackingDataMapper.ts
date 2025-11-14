@@ -85,9 +85,35 @@ export const mapTrackingData = (item: any) => {
     data_ultima_atualizacao_return: returnData?.last_updated || null,
     data_fechamento_devolucao: returnData?.date_closed || null,
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || null,
-    // 🎯 DATA DE CHEGADA: Obtida do histórico de status do shipment (status='delivered')
-    // Via serviço ReturnArrivalDateService que consulta /claims/{id}/returns e /shipments/{id}
-    data_chegada_produto: claim.return_arrival_date || null,
+    
+    // 🎯 DATA DE CHEGADA: Busca no histórico do shipment de devolução (status 'delivered')
+    data_chegada_produto: (() => {
+      // Tentar extrair do enriched history primeiro
+      const enrichedHistory = claim.shipment_history_enriched?.return_shipment?.tracking_history;
+      if (enrichedHistory && Array.isArray(enrichedHistory)) {
+        const deliveredEvent = enrichedHistory.find((event: any) => 
+          event.status === 'delivered' || 
+          event.checkpoint?.toLowerCase().includes('delivered') ||
+          event.checkpoint?.toLowerCase().includes('entregue')
+        );
+        if (deliveredEvent) {
+          return deliveredEvent.date || deliveredEvent.checkpoint_date || null;
+        }
+      }
+      
+      // Fallback: shipment direto
+      const shipment = returnData?.shipments?.[0];
+      if (shipment?.status === 'delivered' && shipment?.status_history) {
+        const deliveredStatus = shipment.status_history.find((s: any) => s.status === 'delivered');
+        if (deliveredStatus?.date) return deliveredStatus.date;
+      }
+      
+      // Último fallback: date_delivered do shipment
+      if (shipment?.date_delivered) return shipment.date_delivered;
+      
+      return null;
+    })(),
+    
     estimated_delivery_date: returnData?.estimated_delivery_date || null,
     
     // ===== TRANSPORTADORA =====
