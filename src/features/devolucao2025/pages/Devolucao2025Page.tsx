@@ -64,7 +64,7 @@ export const Devolucao2025Page = () => {
 
   // Buscar devoluções via Edge Function
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025', selectedAccount, dateRange],
+    queryKey: ['devolucoes-2025', selectedAccount],
     queryFn: async () => {
       if (selectedAccount === 'all') {
         const allDevolucoes = await Promise.all(
@@ -95,7 +95,7 @@ export const Devolucao2025Page = () => {
         return data?.data || [];
       }
     },
-    enabled: accounts.length > 0
+    enabled: false // Desabilita busca automática
   });
 
   // Paginação dos dados
