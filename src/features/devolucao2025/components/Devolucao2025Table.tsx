@@ -56,11 +56,10 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
   }
 
   return (
-    <div className="w-full">
-      <div className="overflow-auto border rounded-md max-h-[calc(100vh-400px)]">
-        <table className="w-full caption-bottom text-sm">
-          <thead className="sticky top-0 z-40 bg-background border-b-2 shadow-sm">
-            <tr className="border-b border-gray-600">
+    <div className="w-full overflow-x-auto border rounded-md">
+      <table className="w-full caption-bottom text-sm">
+        <thead className="sticky top-0 z-50 bg-background border-b-2 shadow-md backdrop-blur-sm">
+          <tr className="border-b border-gray-600">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Empresa</th>
             <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Pedido</th>
@@ -255,8 +254,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             </tr>
           ))}
         </tbody>
-        </table>
-      </div>
+      </table>
     </div>
   );
 };
