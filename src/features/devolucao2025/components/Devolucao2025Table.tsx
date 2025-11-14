@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
+import { BuyerInfoCell } from '@/components/devolucoes/BuyerInfoCell';
 
 
 interface Devolucao2025TableProps {
@@ -130,7 +131,14 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell className="font-medium">{dev.account_name || '-'}</TableCell>
               <TableCell>{dev.order_id || '-'}</TableCell>
               <TableCell>{dev.claim_id || '-'}</TableCell>
-              <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>
+              <TableCell>
+                <BuyerInfoCell 
+                  buyerInfo={dev.dados_buyer_info}
+                  buyerFullName={dev.comprador_nome_completo}
+                  buyerNickname={dev.comprador_nickname}
+                  buyerCpf={dev.comprador_cpf}
+                />
+              </TableCell>
               <TableCell className="max-w-[200px] truncate">{dev.produto_titulo || '-'}</TableCell>
               <TableCell>{dev.sku || '-'}</TableCell>
               <TableCell>{dev.quantidade || '-'}</TableCell>
