@@ -798,8 +798,14 @@ serve(async (req) => {
           // 🚚 SHIPMENT DATA (logistic_type da venda original)
           shipment_data: claim.shipment_data,
           
+          // ⚖️ RESOLUTION DATA (dados de resolução do claim)
+          resolution: claim.resolution,
+          
           // 🆕 CHANGE DETAILS (para trocas)
           change_details: claim.change_details,
+          
+          // 🐛 DEBUG: Log da resolution
+          ...(claim.resolution && console.log('⚖️ [Resolution Debug] Claim', claim.id, '- Resolution:', JSON.stringify(claim.resolution)) && {}),
           
           // 🆕 ATTACHMENTS (anexos/evidências)
           attachments: claim.attachments
