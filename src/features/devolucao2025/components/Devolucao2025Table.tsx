@@ -58,10 +58,12 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
   }
 
   return (
-    <ScrollArea className="h-[600px] w-full">
-      <Table>
-        <TableHeader>
-          <TableRow>
+    <div className="relative w-full">
+      <ScrollArea className="h-[600px] w-full rounded-md border">
+        <div className="w-max">
+          <Table>
+            <TableHeader>
+              <TableRow>
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             <TableHead>Empresa</TableHead>
             <TableHead>Pedido</TableHead>
@@ -349,8 +351,10 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               </TableCell>
             </TableRow>
           ))}
-        </TableBody>
-      </Table>
-    </ScrollArea>
+          </TableBody>
+        </Table>
+      </div>
+      </ScrollArea>
+    </div>
   );
 };
