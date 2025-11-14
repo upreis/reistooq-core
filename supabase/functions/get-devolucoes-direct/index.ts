@@ -326,10 +326,19 @@ serve(async (req) => {
           if (returnRes?.ok) {
             returnData = await returnRes.json();
             
-            logger.debug(`📋 RETURN ENRIQUECIDO para claim ${claim.id}:`, JSON.stringify({
+            // 🐛 DEBUG CRÍTICO: Ver TODOS os campos do returnData
+            console.log(`📋 RETURN COMPLETO para claim ${claim.id}:`, JSON.stringify({
               return_id: returnData?.id,
               status: returnData?.status,
+              subtype: returnData?.subtype,
+              refund_at: returnData?.refund_at,
+              status_money: returnData?.status_money,
+              shipments_count: returnData?.shipments?.length || 0,
+              first_shipment_status: returnData?.shipments?.[0]?.status,
+              first_shipment_type: returnData?.shipments?.[0]?.type,
               has_estimated_delivery: !!returnData?.estimated_delivery_date,
+              has_date_closed: !!returnData?.date_closed,
+              related_entities: returnData?.related_entities,
               endpoint_used: returnEndpoint,
               fallback_used: returnFallback
             }));

@@ -24,6 +24,17 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
   const returnData = claim.return_details_v2 || claim.return_details;
   const statusDevolucao = returnData?.status || claim.status || 'cancelled';
   
+  // 🐛 DEBUG: Log para entender por que só vem cancelled
+  console.log(`🔍 [BasicDataMapper] Claim ${claim.id}:`, JSON.stringify({
+    claim_status: claim.status,
+    claim_type: claim.type,
+    has_return_details_v2: !!claim.return_details_v2,
+    has_return_details: !!claim.return_details,
+    return_status: returnData?.status,
+    return_subtype: returnData?.subtype,
+    status_final: statusDevolucao
+  }));
+  
   return {
     // Dados principais
     order_id: claim.resource_id?.toString() || claim.order_id?.toString() || '',
