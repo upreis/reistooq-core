@@ -84,7 +84,7 @@ export const Devolucao2025Page = () => {
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoes.length / itemsPerPage);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="w-full px-6 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Devoluções 2025</h1>
