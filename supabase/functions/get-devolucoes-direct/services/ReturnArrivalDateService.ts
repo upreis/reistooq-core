@@ -36,8 +36,12 @@ export async function fetchReturnArrivalDate(
   accessToken: string
 ): Promise<string | null> {
   try {
+    logger.info(`[ReturnArrival] 🔍 Iniciando busca para claim ${claimId}`);
+    
     // 1. Buscar os returns associados ao claim
     const returnsUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`;
+    
+    logger.debug(`[ReturnArrival] 📡 Chamando: ${returnsUrl}`);
     
     const returnsRes = await fetch(returnsUrl, {
       headers: { 
@@ -46,12 +50,23 @@ export async function fetchReturnArrivalDate(
       }
     });
 
+    logger.debug(`[ReturnArrival] 📡 Response status: ${returnsRes.status}`);
+
     if (!returnsRes.ok) {
-      logger.debug(`[ReturnArrival] Não foi possível obter returns para claim ${claimId}`);
+      logger.warn(`[ReturnArrival] ❌ Falha ao obter returns para claim ${claimId} - Status: ${returnsRes.status}`);
       return null;
     }
 
     const returnsData: ReturnData = await returnsRes.json();
+    
+    logger.debug(`[ReturnArrival] 📦 Returns data recebida:`, JSON.stringify({
+      has_shipments: !!returnsData.shipments,
+      shipments_count: returnsData.shipments?.length || 0,
+      shipments_sample: returnsData.shipments?.map(s => ({
+        shipment_id: s.shipment_id,
+        destination_name: s.destination?.name
+      }))
+    }));
 
     // 2. Encontrar o shipment de devolução para o vendedor
     const returnShipment = returnsData.shipments?.find(
@@ -59,14 +74,18 @@ export async function fetchReturnArrivalDate(
     );
 
     if (!returnShipment?.shipment_id) {
-      logger.debug(`[ReturnArrival] Nenhum shipment de retorno ao vendedor encontrado para claim ${claimId}`);
+      logger.warn(`[ReturnArrival] ⚠️ Nenhum shipment com destination='seller_address' encontrado para claim ${claimId}`);
+      logger.debug(`[ReturnArrival] Destinations encontrados:`, returnsData.shipments?.map(s => s.destination?.name));
       return null;
     }
 
     const shipmentId = returnShipment.shipment_id;
+    logger.info(`[ReturnArrival] ✅ Shipment encontrado: ${shipmentId}`);
 
     // 3. Buscar detalhes do shipment
     const shipmentUrl = `https://api.mercadolibre.com/shipments/${shipmentId}`;
+    
+    logger.debug(`[ReturnArrival] 📡 Chamando: ${shipmentUrl}`);
     
     const shipmentRes = await fetch(shipmentUrl, {
       headers: { 
@@ -75,12 +94,20 @@ export async function fetchReturnArrivalDate(
       }
     });
 
+    logger.debug(`[ReturnArrival] 📡 Shipment response status: ${shipmentRes.status}`);
+
     if (!shipmentRes.ok) {
-      logger.debug(`[ReturnArrival] Não foi possível obter shipment ${shipmentId}`);
+      logger.warn(`[ReturnArrival] ❌ Falha ao obter shipment ${shipmentId} - Status: ${shipmentRes.status}`);
       return null;
     }
 
     const shipmentData: ShipmentData = await shipmentRes.json();
+    
+    logger.debug(`[ReturnArrival] 📦 Shipment data recebida:`, JSON.stringify({
+      has_status_history: !!shipmentData.status_history,
+      status_history_count: shipmentData.status_history?.length || 0,
+      statuses: shipmentData.status_history?.map(h => h.status)
+    }));
 
     // 4. Encontrar a data de entrega no histórico de status
     const deliveredStatus = shipmentData.status_history?.find(
@@ -88,15 +115,17 @@ export async function fetchReturnArrivalDate(
     );
 
     if (deliveredStatus?.date) {
-      logger.debug(`[ReturnArrival] ✅ Data de chegada encontrada para claim ${claimId}: ${deliveredStatus.date}`);
+      logger.info(`[ReturnArrival] ✅ Data de chegada encontrada para claim ${claimId}: ${deliveredStatus.date}`);
       return deliveredStatus.date;
     }
 
-    logger.debug(`[ReturnArrival] Status 'delivered' não encontrado no histórico do shipment ${shipmentId}`);
+    logger.warn(`[ReturnArrival] ⚠️ Status 'delivered' não encontrado no histórico do shipment ${shipmentId}`);
+    logger.debug(`[ReturnArrival] Status history completo:`, JSON.stringify(shipmentData.status_history));
     return null;
 
   } catch (error) {
-    logger.error(`[ReturnArrival] Erro ao buscar data de chegada para claim ${claimId}:`, error);
+    logger.error(`[ReturnArrival] ❌ ERRO ao buscar data de chegada para claim ${claimId}:`, error);
+    logger.error(`[ReturnArrival] Stack trace:`, error instanceof Error ? error.stack : 'No stack trace');
     return null;
   }
 }
@@ -111,10 +140,11 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
-  logger.progress(`[ReturnArrival] Enriquecendo ${claims.length} claims com datas de chegada...`);
+  logger.info(`[ReturnArrival] 🚀 Iniciando enriquecimento de ${claims.length} claims com datas de chegada...`);
 
   const enrichedClaims = await Promise.all(
-    claims.map(async (claim) => {
+    claims.map(async (claim, index) => {
+      logger.debug(`[ReturnArrival] Processando claim ${index + 1}/${claims.length} - ID: ${claim.id}`);
       const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
       return {
         ...claim,
@@ -124,7 +154,11 @@ export async function enrichClaimsWithArrivalDates(
   );
 
   const foundCount = enrichedClaims.filter(c => c.return_arrival_date).length;
-  logger.info(`[ReturnArrival] ✅ ${foundCount}/${claims.length} datas de chegada encontradas`);
+  logger.info(`[ReturnArrival] ✅ CONCLUÍDO: ${foundCount}/${claims.length} datas de chegada encontradas`);
+  
+  if (foundCount === 0) {
+    logger.warn(`[ReturnArrival] ⚠️ ATENÇÃO: Nenhuma data de chegada foi encontrada!`);
+  }
 
   return enrichedClaims;
 }
