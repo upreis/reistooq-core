@@ -37,6 +37,7 @@ import { StatusClaimCell } from '@/components/devolucoes/StatusClaimCell';
 import { TipoEnvioCell } from '@/components/devolucoes/TipoEnvioCell';
 import { EnderecoDestinoCell } from '@/components/devolucoes/EnderecoDestinoCell';
 import { WarehouseIndicatorCell } from '@/components/devolucoes/WarehouseIndicatorCell';
+import { ShipmentHistoryCell } from '@/components/devolucoes/ShipmentHistoryCell';
 import { ShippingModeCell } from '@/components/devolucoes/ShippingModeCell';
 import { EstimatedDeliveryCell } from '@/components/devolucoes/EstimatedDeliveryCell';
 import { PrevisaoEntregaCell } from '@/components/devolucoes/PrevisaoEntregaCell';
@@ -534,6 +535,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>🏭 Destino</TableHead>
                 <TableHead>🔄 Status Return</TableHead>
                 <TableHead>💵 Reembolso Em</TableHead>
+                <TableHead>📜 Histórico Envio</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -851,6 +853,9 @@ export default function DevolucoesMercadoLivre() {
                         </Badge>
                       ) : '-'}
                     </TableCell>
+
+                    {/* Histórico de Status do Shipment */}
+                    <ShipmentHistoryCell status_history={(dev as any).status_history} />
                   </TableRow>
                 ))
               )}
