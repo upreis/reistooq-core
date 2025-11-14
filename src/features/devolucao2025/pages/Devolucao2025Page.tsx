@@ -39,45 +39,44 @@ export const Devolucao2025Page = () => {
   });
 
   // Buscar devoluções via Edge Function
+  // ✅ Buscar devoluções DIRETO DO BANCO (como /pedidos faz)
+  // Evita timeout da edge function
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025', selectedAccount, dateRange],
+    queryKey: ['devolucoes-2025-db', selectedAccount, dateRange],
     queryFn: async () => {
-      if (selectedAccount === 'all') {
-        const allDevolucoes = await Promise.all(
-          accounts.map(async (account) => {
-            const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-              body: {
-                integration_account_id: account.id,
-                date_from: dateRange.from.toISOString(),
-                date_to: dateRange.to.toISOString()
-              }
-            });
+      console.log('[Devolucao2025] Buscando do banco...', { selectedAccount, dateRange });
+      
+      let query = supabase
+        .from('ml_devolucoes_reclamacoes')
+        .select('*')
+        .order('data_criacao', { ascending: false });
 
-            if (error) throw error;
-            return data?.data || [];
-          })
-        );
-        return allDevolucoes.flat();
-      } else {
-        const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-          body: {
-            integration_account_id: selectedAccount,
-            date_from: dateRange.from.toISOString(),
-            date_to: dateRange.to.toISOString()
-          }
-        });
-
-        if (error) {
-          console.error('Edge function error:', error);
-          throw error;
-        }
-        return data?.data || [];
+      // Filtrar por conta
+      if (selectedAccount && selectedAccount !== 'all') {
+        query = query.eq('integration_account_id', selectedAccount);
       }
+
+      // Filtrar por período
+      if (dateRange.from) {
+        query = query.gte('data_criacao', dateRange.from.toISOString());
+      }
+      if (dateRange.to) {
+        query = query.lte('data_criacao', dateRange.to.toISOString());
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('[Devolucao2025] Erro ao buscar:', error);
+        throw error;
+      }
+
+      console.log('[Devolucao2025] ✅ Dados carregados:', data?.length || 0);
+      return data || [];
     },
     enabled: accounts.length > 0,
-    retry: 1, // Apenas 1 retry para evitar múltiplas chamadas timeout
-    staleTime: 5 * 60 * 1000, // Cache de 5 minutos
-    gcTime: 10 * 60 * 1000,
+    staleTime: 2 * 60 * 1000, // Cache de 2 minutos
+    gcTime: 5 * 60 * 1000,
   });
 
   // Paginação dos dados
