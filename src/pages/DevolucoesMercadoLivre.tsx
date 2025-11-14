@@ -47,6 +47,9 @@ import { OpcaoFreteCell } from '@/components/devolucoes/OpcaoFreteCell';
 import { PrazoEstimadoCell } from '@/components/devolucoes/PrazoEstimadoCell';
 import { MetodoEnvioCell } from '@/components/devolucoes/MetodoEnvioCell';
 import { HistoricoStatusCell } from '@/components/devolucoes/HistoricoStatusCell';
+import { ReviewStageCell } from '@/components/devolucoes/ReviewStageCell';
+import { AvailableActionsCell } from '@/components/devolucoes/AvailableActionsCell';
+import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 import {
   Pagination,
   PaginationContent,
@@ -536,18 +539,23 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>🔄 Status Return</TableHead>
                 <TableHead>💵 Reembolso Em</TableHead>
                 <TableHead>📜 Histórico Envio</TableHead>
+                
+                {/* 🆕 REVIEWS - 3 NOVAS COLUNAS */}
+                <TableHead>🔄 Stage Review</TableHead>
+                <TableHead>⚡ Ações Disponíveis</TableHead>
+                <TableHead>⚖️ Resolução</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={64} className="text-center py-8">
+                  <TableCell colSpan={67} className="text-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </TableCell>
                 </TableRow>
               ) : devolucoes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={64} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={67} className="text-center py-8 text-muted-foreground">
                     Clique em "Buscar Devoluções" para carregar os dados
                   </TableCell>
                 </TableRow>
@@ -856,6 +864,24 @@ export default function DevolucoesMercadoLivre() {
 
                     {/* Histórico de Status do Shipment */}
                     <ShipmentHistoryCell status_history={(dev as any).status_history} />
+                    
+                    {/* 🆕 REVIEWS - 3 NOVAS CÉLULAS */}
+                    <TableCell>
+                      <ReviewStageCell 
+                        stage={(dev as any).dados_reviews?.stage || (dev as any).review_stage} 
+                        status={(dev as any).dados_reviews?.status || (dev as any).review_status}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <AvailableActionsCell 
+                        actions={(dev as any).dados_reviews?.available_actions || null}
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <ResolutionCell 
+                        resolution={(dev as any).dados_reviews?.resolution || null}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))
               )}
