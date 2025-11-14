@@ -105,9 +105,28 @@ export const Devolucao2025Page = () => {
     setCurrentPage(1); // Reset para primeira página
   };
 
-  // Paginação dos dados - filtrar apenas devoluções com claim_id válido
+  // Paginação dos dados - filtrar apenas devoluções com dados completos
   const devolucoesValidas = useMemo(() => {
-    return devolucoes.filter(dev => dev.claim_id && dev.claim_id !== '-');
+    console.log('[DEBUG] Total de devoluções recebidas:', devolucoes.length);
+    
+    const validas = devolucoes.filter(dev => {
+      // Verificar se tem claim_id válido E dados mínimos essenciais
+      const hasClaimId = dev.claim_id && dev.claim_id !== '-';
+      const hasComprador = dev.comprador_nome_completo && dev.comprador_nome_completo !== '-';
+      const hasProduto = dev.produto_titulo && dev.produto_titulo !== 'Produto não disponível';
+      
+      const isValid = hasClaimId && (hasComprador || hasProduto);
+      
+      if (!isValid) {
+        console.log('[DEBUG] Registro filtrado - Order:', dev.order_id, 'Claim:', dev.claim_id, 
+          'Comprador:', dev.comprador_nome_completo, 'Produto:', dev.produto_titulo);
+      }
+      
+      return isValid;
+    });
+    
+    console.log('[DEBUG] Devoluções válidas após filtro:', validas.length);
+    return validas;
   }, [devolucoes]);
 
   const paginatedDevolucoes = useMemo(() => {
