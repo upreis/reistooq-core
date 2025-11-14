@@ -43,8 +43,8 @@ export const Devolucao2025Filters = ({
     }
   };
   return (
-    <div className="flex flex-wrap gap-4">
-      <div className="flex-1 min-w-[200px]">
+    <div className="flex flex-wrap gap-4 items-center">
+      <div className="w-[240px]">
         <Select value={selectedAccount} onValueChange={onAccountChange}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione a conta" />
