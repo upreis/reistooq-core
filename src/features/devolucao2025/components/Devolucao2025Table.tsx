@@ -14,6 +14,7 @@ import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/LogisticTypeCell';
 import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBadge';
 import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
+import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 
 
 interface Devolucao2025TableProps {
@@ -82,6 +83,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📦 Status Return</TableHead>
             <TableHead>🚚 Status Entrega</TableHead>
             <TableHead>🏭 Destino</TableHead>
+            <TableHead>📎 Evidências</TableHead>
             <TableHead>⚖️ Resolução</TableHead>
 
             {/* GRUPO 4: DATAS */}
@@ -174,6 +176,12 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
                 />
               </TableCell>
               <TableCell>{dev.destino_devolucao || '-'}</TableCell>
+              <TableCell>
+                <EvidencesCell 
+                  attachments={dev.anexos_ml}
+                  totalEvidencias={dev.total_evidencias}
+                />
+              </TableCell>
               <TableCell>
                 <ResolutionCell resolution={dev.resolution || null} />
               </TableCell>
