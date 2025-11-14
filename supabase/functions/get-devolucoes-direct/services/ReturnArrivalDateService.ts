@@ -140,40 +140,45 @@ export async function enrichClaimsWithArrivalDates(
   logger.progress(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
   logger.progress(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
 
-  // Processar em lotes menores para evitar rate limiting
-  const BATCH_SIZE = 3; // Reduzido para evitar 429
-  const DELAY_BETWEEN_BATCHES = 1500; // 1.5 segundos entre lotes
-  
+  // Processar SEQUENCIALMENTE para evitar rate limiting
   const enrichedClaims: any[] = [];
   let successCount = 0;
-  let no404Count = 0; // Claims sem return físico
-  let noSellerAddressCount = 0; // Returns para warehouse
-  let notDeliveredYetCount = 0; // Ainda em trânsito
+  let error429Count = 0;
+  let error404Count = 0;
+  let noSellerAddressCount = 0;
+  let notDeliveredCount = 0;
   
-  for (let i = 0; i < claims.length; i += BATCH_SIZE) {
-    const batch = claims.slice(i, i + BATCH_SIZE);
+  for (let i = 0; i < claims.length; i++) {
+    const claim = claims[i];
     
-    const batchResults = await Promise.all(
-      batch.map(async (claim) => {
-        const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
-        if (arrivalDate) successCount++;
-        return {
-          ...claim,
-          return_arrival_date: arrivalDate
-        };
-      })
-    );
+    try {
+      const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
+      
+      if (arrivalDate) {
+        successCount++;
+        logger.progress(`[ReturnArrival] ✅ ${i+1}/${claims.length} - Data encontrada para claim ${claim.id}`);
+      } else {
+        logger.debug(`[ReturnArrival] ⚠️ ${i+1}/${claims.length} - Sem data para claim ${claim.id}`);
+      }
+      
+      enrichedClaims.push({
+        ...claim,
+        return_arrival_date: arrivalDate
+      });
+      
+    } catch (error) {
+      logger.warn(`[ReturnArrival] ❌ ${i+1}/${claims.length} - Erro no claim ${claim.id}:`, error);
+      enrichedClaims.push(claim);
+    }
     
-    enrichedClaims.push(...batchResults);
-    
-    // Delay entre lotes
-    if (i + BATCH_SIZE < claims.length) {
-      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+    // Delay de 500ms entre CADA requisição para evitar 429
+    if (i < claims.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 500));
     }
   }
 
   logger.progress(`[ReturnArrival] ✅ Concluído: ${successCount}/${claims.length} datas encontradas`);
-  logger.progress(`[ReturnArrival] 📊 Motivos sem data: 404(sem return físico), warehouse(não seller_address), em trânsito`);
+  logger.progress(`[ReturnArrival] 📊 Resumo: ${successCount} com data, ${claims.length - successCount} sem data`);
 
   return enrichedClaims;
 }
