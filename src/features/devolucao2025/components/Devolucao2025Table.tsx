@@ -58,8 +58,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
   }
 
   return (
-    <div className="w-full">
-      <div className="overflow-x-auto overflow-y-auto max-h-[600px] border rounded-md">
+    <div className="w-full flex-1 flex flex-col min-h-0">
+      <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md">
         <Table className="min-w-max">
           <TableHeader>
             <TableRow>
