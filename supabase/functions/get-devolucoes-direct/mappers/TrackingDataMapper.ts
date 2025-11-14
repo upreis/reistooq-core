@@ -55,13 +55,10 @@ export const mapTrackingData = (item: any) => {
     // ===== DATAS CRÍTICAS (conforme doc ML) =====
     data_inicio_return: returnData?.date_created || null,
     data_ultima_atualizacao_return: returnData?.last_updated || null,
-    data_fechamento_devolucao: returnData?.date_closed || claim.date_closed || null,
-    prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
-    data_chegada_produto: returnData?.shipments?.[0]?.arrival_date || claim.shipment_data?.arrival_date || null,
-    estimated_delivery_date: returnData?.estimated_delivery_date || 
-                            returnData?.estimated_delivery_limit?.date || 
-                            claim.shipment_history_enriched?.estimated_delivery_limit || 
-                            null,
+    data_fechamento_devolucao: returnData?.date_closed || null,
+    prazo_limite_analise: returnData?.estimated_handling_limit?.date || null,
+    data_chegada_produto: returnData?.shipments?.[0]?.arrival_date || null,
+    estimated_delivery_date: returnData?.estimated_delivery_date || null,
     
     // ===== TRANSPORTADORA =====
     carrier_name: claim.shipping?.carrier_name || claim.shipment_history_enriched?.carrier || null,
@@ -117,32 +114,21 @@ export const mapTrackingData = (item: any) => {
       return Math.ceil((last.getTime() - first.getTime()) / (1000 * 60 * 60 * 24));
     })(),
     
-    previsao_chegada_vendedor: returnData?.estimated_delivery_date || 
-                               returnData?.estimated_delivery_limit?.date || 
-                               claim.shipment_history_enriched?.estimated_delivery_limit || 
-                               null,
+    previsao_chegada_vendedor: returnData?.estimated_delivery_date || null,
     
     // ===== CAMPOS DETALHADOS (TrackingDetailedCells) =====
-    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || 
-                             claim.shipping?.estimated_delivery_limit?.date || 
-                             returnData?.estimated_delivery_date || 
-                             null,
+    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || null,
     
-    shipment_status: returnData?.shipments?.[0]?.status || claim.shipment_data?.status || null,
-    refund_at: returnData?.refund_at || claim.resolution?.refund_date || null,
+    shipment_status: returnData?.shipments?.[0]?.status || null,
+    refund_at: returnData?.refund_at || null,
     review_method: claim.review_details?.method || claim.review?.method || null,
     review_stage: claim.review_details?.stage || claim.review?.stage || null,
-    localizacao_atual: claim.shipment_history_enriched?.status_history?.[0]?.location || 
-                      claim.tracking_info?.current_location || 
-                      null,
+    localizacao_atual: claim.shipment_history_enriched?.status_history?.[0]?.location || null,
     
     tracking_history: claim.shipment_history_enriched?.status_history || [],
     tracking_events: claim.tracking_info?.events || [],
     
-    // ✅ CORRIGIDO: usar last_updated do returnData (conforme doc ML)
-    data_ultima_movimentacao: returnData?.last_updated ||
-                              claim.shipment_history_enriched?.status_history?.[0]?.date || 
-                              claim.tracking_info?.last_update || 
-                              null,
+    // ✅ ÚNICA FONTE: última movimentação vem do tracking history
+    data_ultima_movimentacao: claim.shipment_history_enriched?.status_history?.[0]?.date || null,
   };
 };
