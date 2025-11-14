@@ -10,13 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
 
-// Importar componentes de células existentes
-import { StatusMoneyCell } from '@/components/devolucoes/StatusMoneyCell';
-import { DataReembolsoCell } from '@/components/devolucoes/DataReembolsoCell';
-import { ShipmentHistoryCell } from '@/components/devolucoes/ShipmentHistoryCell';
-import { ReviewStageCell } from '@/components/devolucoes/ReviewStageCell';
-import { AvailableActionsCell } from '@/components/devolucoes/AvailableActionsCell';
-import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 
 interface Devolucao2025TableProps {
   devolucoes: any[];
@@ -76,12 +69,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>💰 Valor Total</TableHead>
             <TableHead>💵 Valor Produto</TableHead>
             <TableHead>🚚 Frete</TableHead>
-            <TableHead>💳 Taxa ML</TableHead>
             <TableHead>💲 Moeda</TableHead>
             <TableHead>📊 % Reemb.</TableHead>
-            <TableHead>🔄 Troca Diff</TableHead>
-            <TableHead>💰 Status Dinheiro</TableHead>
-            <TableHead>💵 Reembolso Em</TableHead>
             <TableHead>🧾 Método Pagto</TableHead>
             <TableHead>💳 Tipo Pagto</TableHead>
 
@@ -90,10 +79,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📦 Status Return</TableHead>
             <TableHead>🚚 Status Envio</TableHead>
             <TableHead>🏭 Destino</TableHead>
-            <TableHead>📋 Tipo Claim</TableHead>
-            <TableHead>🏷️ Subtipo</TableHead>
-            <TableHead>🎯 Stage</TableHead>
-            <TableHead>🎪 Motivo</TableHead>
 
             {/* GRUPO 4: DATAS */}
             <TableHead>📅 Data Criação</TableHead>
@@ -108,29 +93,10 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
             {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
             <TableHead>📍 Código Rastreio</TableHead>
-            <TableHead>🚚 Modo Envio</TableHead>
             <TableHead>🚚 Tipo Logística</TableHead>
-            <TableHead>📦 Transportadora</TableHead>
-            <TableHead>🔗 URL Track</TableHead>
-            <TableHead>📦 Opção Frete</TableHead>
-            <TableHead>⏱️ Prazo Estimado</TableHead>
-            <TableHead>🛠️ Método Envio</TableHead>
-            <TableHead>🔍 Método Track</TableHead>
-            <TableHead>📜 Histórico Status</TableHead>
-            <TableHead>📜 Histórico Envio</TableHead>
-
-            {/* GRUPO 6: LOCALIZAÇÃO AVANÇADA */}
-            <TableHead>📍 Localização Atual</TableHead>
-            <TableHead>🚛 Status Transporte</TableHead>
-            <TableHead>⏱️ Tempo Trânsito</TableHead>
-            <TableHead>📅 Previsão Chegada</TableHead>
 
             {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            <TableHead>⚖️ Em Mediação</TableHead>
-            <TableHead>📅 Início Mediação</TableHead>
             <TableHead>🔄 É Troca</TableHead>
-            <TableHead>📅 Estimativa Troca</TableHead>
-            <TableHead>📅 Limite Troca</TableHead>
 
             {/* GRUPO 8: COMUNICAÇÃO */}
             <TableHead>💬 Nº Interações</TableHead>
@@ -141,13 +107,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📎 Anexos ML</TableHead>
 
             {/* GRUPO 9: REVIEW & AÇÕES */}
-            <TableHead>🔄 Stage Review</TableHead>
-            <TableHead>📝 Tipo Review</TableHead>
-            <TableHead>⚡ Ações Disponíveis</TableHead>
-            <TableHead>⚖️ Resolução</TableHead>
 
             {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            <TableHead>💰 Custo Dev ML</TableHead>
             <TableHead>💵 Custo Total Log</TableHead>
             <TableHead>🚚 Custo Envio Orig</TableHead>
           </TableRow>
@@ -174,24 +135,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>
                 {dev.valor_reembolso_frete ? `R$ ${dev.valor_reembolso_frete.toFixed(2)}` : '-'}
               </TableCell>
-              <TableCell>
-                {dev.taxa_ml_reembolso ? `R$ ${dev.taxa_ml_reembolso.toFixed(2)}` : '-'}
-              </TableCell>
               <TableCell>{dev.moeda_reembolso || '-'}</TableCell>
               <TableCell>
                 {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.valor_diferenca_troca ? `R$ ${dev.valor_diferenca_troca.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
-                <StatusMoneyCell status={dev.status_dinheiro} />
-              </TableCell>
-              <TableCell>
-                <DataReembolsoCell 
-                  data={dev.data_reembolso || dev.data_estimada_reembolso}
-                  isEstimated={!dev.data_reembolso}
-                />
               </TableCell>
               <TableCell>{dev.metodo_pagamento || '-'}</TableCell>
               <TableCell>{dev.tipo_pagamento || '-'}</TableCell>
@@ -207,10 +153,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               </TableCell>
               <TableCell>{dev.status_envio || '-'}</TableCell>
               <TableCell>{dev.destino_devolucao || '-'}</TableCell>
-              <TableCell>{dev.tipo_claim || '-'}</TableCell>
-              <TableCell>{dev.subtipo_claim || '-'}</TableCell>
-              <TableCell>{dev.claim_stage || '-'}</TableCell>
-              <TableCell>{dev.motivo_categoria || '-'}</TableCell>
 
               {/* GRUPO 4: DATAS */}
               <TableCell>
@@ -237,63 +179,12 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>
                 {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
               </TableCell>
-              <TableCell>
-                {dev.data_ultima_movimentacao ? new Date(dev.data_ultima_movimentacao).toLocaleString('pt-BR') : '-'}
-              </TableCell>
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
               <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>
-              <TableCell>{dev.shipping_mode || '-'}</TableCell>
               <TableCell>{dev.tipo_logistica || '-'}</TableCell>
-              <TableCell>{dev.carrier_name || '-'}</TableCell>
-              <TableCell className="max-w-[150px] truncate">
-                {dev.carrier_tracking_url || '-'}
-              </TableCell>
-              <TableCell>{dev.shipping_option_name || '-'}</TableCell>
-              <TableCell>
-                {dev.estimated_delivery_time && dev.estimated_delivery_time_type 
-                  ? `${dev.estimated_delivery_time} ${dev.estimated_delivery_time_type}`
-                  : '-'}
-              </TableCell>
-              <TableCell>{dev.shipping_method_name || '-'}</TableCell>
-              <TableCell>{dev.tracking_method || '-'}</TableCell>
-              <TableCell>
-                <ShipmentHistoryCell status_history={dev.status_history} />
-              </TableCell>
-              <TableCell>
-                {dev.tracking_history && Array.isArray(dev.tracking_history) 
-                  ? `${dev.tracking_history.length} eventos`
-                  : '-'}
-              </TableCell>
-
-              {/* GRUPO 6: LOCALIZAÇÃO AVANÇADA */}
-              <TableCell>{dev.localizacao_atual_produto || '-'}</TableCell>
-              <TableCell>{dev.status_transporte_atual || '-'}</TableCell>
-              <TableCell>
-                {dev.tempo_transito_dias ? `${dev.tempo_transito_dias} dias` : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.previsao_chegada_vendedor 
-                  ? new Date(dev.previsao_chegada_vendedor).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
 
               {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-              <TableCell>
-                {dev.em_mediacao === true ? (
-                  <Badge variant="default" className="gap-1 bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
-                    <Scale className="h-3 w-3" />
-                    Sim
-                  </Badge>
-                ) : dev.em_mediacao === false ? (
-                  <Badge variant="secondary">Não</Badge>
-                ) : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_inicio_mediacao 
-                  ? new Date(dev.data_inicio_mediacao).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
               <TableCell>
                 {dev.eh_troca === true ? (
                   <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
@@ -303,16 +194,6 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
                 ) : dev.eh_troca === false ? (
                   <Badge variant="secondary">Não</Badge>
                 ) : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_estimada_troca 
-                  ? new Date(dev.data_estimada_troca).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_limite_troca 
-                  ? new Date(dev.data_limite_troca).toLocaleDateString('pt-BR') 
-                  : '-'}
               </TableCell>
 
               {/* GRUPO 8: COMUNICAÇÃO */}
@@ -332,28 +213,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>{dev.total_anexos_ml || '0'}</TableCell>
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
-              <TableCell>
-                <ReviewStageCell 
-                  stage={dev.review_status} 
-                  status={dev.review_type}
-                />
-              </TableCell>
-              <TableCell>{dev.review_type || '-'}</TableCell>
-              <TableCell>
-                <AvailableActionsCell 
-                  actions={dev.dados_available_actions || []}
-                />
-              </TableCell>
-              <TableCell>
-                <ResolutionCell 
-                  resolution={dev.resolution_details || { reason: dev.metodo_resolucao }} 
-                />
-              </TableCell>
 
               {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-              <TableCell>
-                {dev.custo_devolucao_ml ? `R$ ${dev.custo_devolucao_ml.toFixed(2)}` : '-'}
-              </TableCell>
               <TableCell>
                 {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
               </TableCell>
