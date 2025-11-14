@@ -118,8 +118,8 @@ export class SecureClienteService {
       // ✅ SEGURANÇA: Usar função admin segura com verificação de permissões
       const { data: result, error } = await supabase
         .rpc('admin_create_customer', {
-          p_customer_data: cliente
-        })
+          p_customer: cliente
+        } as any)
         .single();
 
       if (error || !result) {
@@ -127,8 +127,12 @@ export class SecureClienteService {
         return { data: null, error: { message: error?.message || 'Erro ao criar cliente' } };
       }
 
-      // Extract customer ID from result
-      const customerId = result.id;
+      // Extract customer ID from result (result is a JSON object)
+      const customerId = (result as any)?.id;
+      if (!customerId) {
+        console.error('❌ ID do cliente não retornado');
+        return { data: null, error: { message: 'ID do cliente não retornado' } };
+      }
       console.log('✅ Cliente criado com sucesso:', customerId);
       
       // Return the newly created customer data
@@ -150,13 +154,14 @@ export class SecureClienteService {
       const { data: result, error } = await supabase
         .rpc('admin_update_customer', {
           p_customer_id: id,
-          p_updates: updates
-        })
+          p_customer: updates
+        } as any)
         .single();
 
-      if (error || !result || !result.success) {
+      if (error || !result) {
         console.error('❌ Erro ao atualizar cliente:', error);
-        return { data: null, error: { message: error?.message || result?.error_message || 'Erro ao atualizar cliente' } };
+        const resultData = result as any;
+        return { data: null, error: { message: error?.message || resultData?.error_message || 'Erro ao atualizar cliente' } };
       }
 
       console.log('✅ Cliente atualizado com sucesso:', id);
