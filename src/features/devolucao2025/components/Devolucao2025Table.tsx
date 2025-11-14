@@ -59,10 +59,10 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
   return (
     <div className="w-full flex-1 flex flex-col min-h-0">
-      <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md">
-        <Table className="min-w-max">
-          <TableHeader>
-            <TableRow>
+      <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
+        <Table className="min-w-max relative">
+          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+            <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             <TableHead>Empresa</TableHead>
             <TableHead>Pedido</TableHead>
