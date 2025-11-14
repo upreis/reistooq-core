@@ -1,0 +1,83 @@
+/**
+ * 📋 FILTROS - DEVOLUÇÕES 2025
+ */
+
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon, RefreshCw } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+
+interface Devolucao2025FiltersProps {
+  accounts: Array<{ id: string; name: string; account_identifier: string }>;
+  selectedAccount: string;
+  onAccountChange: (value: string) => void;
+  dateRange: { from: Date; to: Date };
+  onDateRangeChange: (range: { from: Date; to: Date }) => void;
+  onRefresh: () => void;
+}
+
+export const Devolucao2025Filters = ({
+  accounts,
+  selectedAccount,
+  onAccountChange,
+  dateRange,
+  onDateRangeChange,
+  onRefresh
+}: Devolucao2025FiltersProps) => {
+  return (
+    <div className="flex flex-wrap gap-4">
+      <div className="flex-1 min-w-[200px]">
+        <Select value={selectedAccount} onValueChange={onAccountChange}>
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione a conta" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as Contas</SelectItem>
+            {accounts.map((account) => (
+              <SelectItem key={account.id} value={account.id}>
+                {account.name} ({account.account_identifier})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="justify-start text-left font-normal">
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {dateRange.from && dateRange.to ? (
+              <>
+                {format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
+                {format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}
+              </>
+            ) : (
+              'Selecione o período'
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            selected={{ from: dateRange.from, to: dateRange.to }}
+            onSelect={(range) => {
+              if (range?.from && range?.to) {
+                onDateRangeChange({ from: range.from, to: range.to });
+              }
+            }}
+            locale={ptBR}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+
+      <Button onClick={onRefresh} variant="outline">
+        <RefreshCw className="h-4 w-4 mr-2" />
+        Atualizar
+      </Button>
+    </div>
+  );
+};

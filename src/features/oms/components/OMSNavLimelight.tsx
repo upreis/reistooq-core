@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { ShoppingCart, Users, Settings, Store, UserCheck } from "lucide-react";
+import { ShoppingCart, Users, Settings, Store, UserCheck, PackageX, FileText } from "lucide-react";
 import { LimelightNav } from "@/components/ui/limelight-nav";
 
 const navItems = [
@@ -23,6 +23,16 @@ const navItems = [
     path: "/oms/vendedores",
     label: "Vendedores",
     icon: UserCheck,
+  },
+  {
+    path: "/devolucoes-ml",
+    label: "Devoluções ML",
+    icon: PackageX,
+  },
+  {
+    path: "/devolucao2025",
+    label: "Devoluções 2025",
+    icon: FileText,
   },
   {
     path: "/oms/configuracoes",
