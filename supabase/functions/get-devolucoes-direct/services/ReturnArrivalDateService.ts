@@ -135,7 +135,10 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
-  logger.info(`[ReturnArrival] 🚀 Buscando datas de chegada para ${claims.length} claims...`);
+  console.log(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
+  console.log(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
+  console.log(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
+  logger.info(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada para ${claims.length} claims...`);
 
   // Processar em lotes menores para evitar rate limiting
   const BATCH_SIZE = 3; // Reduzido para evitar 429
