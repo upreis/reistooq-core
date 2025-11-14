@@ -57,7 +57,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
   return (
     <div className="w-full flex flex-col">
-      <div className="border rounded-md relative overflow-x-auto">
+      <div className="border rounded-md relative overflow-auto max-h-[600px]">
         <table className="w-full caption-bottom text-sm">
           <thead className="sticky top-0 z-20 bg-background border-b-2 shadow-sm backdrop-blur-sm">
             <tr className="border-b border-gray-600">
