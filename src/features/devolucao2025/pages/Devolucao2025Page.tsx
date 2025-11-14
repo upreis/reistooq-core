@@ -72,19 +72,13 @@ export const Devolucao2025Page = () => {
 
       console.log('[Devolucao2025] ✅ Dados carregados:', data?.length || 0);
       
-      // Filtrar client-side para suportar registros com data_criacao NULL
-      let filtered = data || [];
-      if (dateRange.from || dateRange.to) {
-        filtered = filtered.filter(item => {
-          const itemDate = new Date(item.data_criacao || item.created_at);
-          if (dateRange.from && itemDate < dateRange.from) return false;
-          if (dateRange.to && itemDate > dateRange.to) return false;
-          return true;
-        });
-      }
+      // 🔍 TEMPORÁRIO: Remover filtro de data para mostrar registros antigos
+      // Os 3 registros do banco são de setembro/2025
+      // Para trazer dados novos, usar botão "Sincronizar"
+      console.log('[Devolucao2025] ℹ️ Mostrando todos os registros (sem filtro de data)');
+      console.log('[Devolucao2025] 💡 Use "Sincronizar" para buscar dados do período selecionado');
       
-      console.log('[Devolucao2025] ✅ Dados após filtro de data:', filtered.length);
-      return filtered;
+      return data || [];
     },
     enabled: accounts.length > 0,
     staleTime: 2 * 60 * 1000,
