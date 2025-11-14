@@ -701,36 +701,7 @@ serve(async (req) => {
 
     // ✅ CORREÇÃO 2: MAPEAR DADOS CORRETAMENTE
     logger.progress('🗺️ Mapeando dados...');
-    
-    // 🐛 DEBUG: Log COMPLETO do primeiro claim para diagnóstico
-    if (allEnrichedClaims.length > 0) {
-      const firstClaim = allEnrichedClaims[0];
-      const claimDebug = JSON.stringify(firstClaim, null, 2);
-      // Limitar a 8000 caracteres para não estourar logs
-      logger.debug('🔍 CLAIM COMPLETO (primeiros 8000 chars):', claimDebug.substring(0, 8000));
-      
-      // Estrutura específica que os mappers esperam
-      logger.debug('🔍 ESTRUTURA PARA MAPPERS:', JSON.stringify({
-        id: firstClaim.id,
-        resource_id: firstClaim.resource_id,
-        seller_amount: firstClaim.seller_amount,
-        resolution: firstClaim.resolution,
-        return_details_v2: firstClaim.return_details_v2,
-        order_data_structure: firstClaim.order_data ? {
-          total_amount: firstClaim.order_data.total_amount,
-          currency_id: firstClaim.order_data.currency_id,
-          payments: firstClaim.order_data.payments,
-          order_items: firstClaim.order_data.order_items?.map((item: any) => ({
-            item_id: item.item?.id,
-            unit_price: item.unit_price,
-            quantity: item.quantity,
-          })),
-        } : null,
-        claim_messages_count: firstClaim.claim_messages?.messages?.length || 0,
-        product_info: firstClaim.product_info,
-        billing_info: firstClaim.billing_info,
-      }, null, 2));
-    }
+    logger.progress(`📊 Total de claims a mapear: ${allEnrichedClaims.length}`);
     
     // 🎯 Enriquecer com datas de chegada da devolução
     logger.progress('📅 Buscando datas de chegada das devoluções...');
