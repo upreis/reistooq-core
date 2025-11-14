@@ -20,13 +20,17 @@ export const mapBasicData = (item: any, accountId: string, accountName: string, 
     claim_stage: claim.stage
   }));
   
+  // ✅ CORREÇÃO: Buscar status correto da devolução
+  const returnData = claim.return_details_v2 || claim.return_details;
+  const statusDevolucao = returnData?.status || claim.status || 'cancelled';
+  
   return {
     // Dados principais
     order_id: claim.resource_id?.toString() || claim.order_id?.toString() || '',
     claim_id: claim.id?.toString() || null,
     integration_account_id: accountId,
     data_criacao: claim.date_created || null,
-    status_devolucao: claim.status || 'cancelled',
+    status_devolucao: statusDevolucao,
     account_name: accountName,
     marketplace_origem: 'ML_BRASIL',
     created_at: new Date().toISOString(),
