@@ -87,6 +87,9 @@ export function ResolutionCell({ resolution }: ResolutionCellProps) {
   };
 
   const getBenefitedIcon = () => {
+    if (!resolution.benefited || !Array.isArray(resolution.benefited)) {
+      return <Clock className="h-4 w-4 text-gray-600" />;
+    }
     if (resolution.benefited.includes('complainant') && resolution.benefited.includes('respondent')) {
       return <Scale className="h-4 w-4 text-blue-600" />;
     }
@@ -100,6 +103,9 @@ export function ResolutionCell({ resolution }: ResolutionCellProps) {
   };
 
   const getBenefitedLabel = () => {
+    if (!resolution.benefited || !Array.isArray(resolution.benefited)) {
+      return 'Não definido';
+    }
     if (resolution.benefited.includes('complainant') && resolution.benefited.includes('respondent')) {
       return 'Ambos';
     }
@@ -109,7 +115,7 @@ export function ResolutionCell({ resolution }: ResolutionCellProps) {
     if (resolution.benefited.includes('respondent')) {
       return 'Vendedor';
     }
-    return 'Indefinido';
+    return 'Não definido';
   };
 
   return (
