@@ -316,7 +316,8 @@ export default function DevolucoesMercadoLivre() {
         body: {
           integration_account_id: selectedAccountId,
           date_from: finalDateFrom,
-          date_to: finalDateTo
+          date_to: finalDateTo,
+          status: statusFilter.length === 1 ? statusFilter[0] : 'all' // Filtro de status pela API
         }
       });
 
