@@ -883,27 +883,29 @@ export default function DevolucoesMercadoLivre() {
 
                     {/* 💰 Status Dinheiro */}
                     <TableCell>
-                      <StatusMoneyCell status={(dev as any).status_money} />
+                      <StatusMoneyCell status={(dev as any).status_dinheiro} />
                     </TableCell>
 
                     {/* 💵 Reembolso Em */}
                     <TableCell>
                       <DataReembolsoCell 
-                        data={(dev as any).refund_at || (dev as any).data_estimada_reembolso}
-                        isEstimated={!(dev as any).refund_at}
+                        data={(dev as any).data_reembolso || (dev as any).data_estimada_reembolso}
+                        isEstimated={!(dev as any).data_reembolso}
                       />
                     </TableCell>
 
                     {/* 📜 Histórico Envio */}
-                    <ShipmentHistoryCell 
-                      status_history={(dev as any).tracking_history || (dev as any).tracking_events || (dev as any).status_history}
-                    />
+                    <TableCell>
+                      <ShipmentHistoryCell 
+                        status_history={(dev as any).status_history}
+                      />
+                    </TableCell>
 
                     {/* 🔄 Stage Review */}
                     <TableCell>
                       <ReviewStageCell 
-                        stage={(dev as any).review_stage} 
-                        status={(dev as any).review_status}
+                        stage={(dev as any).review_status} 
+                        status={(dev as any).review_type}
                       />
                     </TableCell>
 
@@ -916,7 +918,7 @@ export default function DevolucoesMercadoLivre() {
 
                     {/* ⚖️ Resolução */}
                     <TableCell>
-                      <ResolutionCell resolution={(dev as any).resolution} />
+                      <ResolutionCell resolution={(dev as any).resolution_details || { reason: (dev as any).metodo_resolucao }} />
                     </TableCell>
                     
                     {/* 🆕 CUSTO DEVOLUÇÃO ML */}
