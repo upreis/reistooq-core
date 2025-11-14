@@ -29,6 +29,7 @@ interface TrackingDetailedCellsProps {
   tracking_history?: any[] | null;
   tracking_events?: any[] | null;
   data_ultima_movimentacao?: string | null;
+  data_ultima_atualizacao_return?: string | null;
 }
 
 export const TrackingDetailedCells = ({
@@ -39,7 +40,8 @@ export const TrackingDetailedCells = ({
   review_stage,
   tracking_history,
   tracking_events,
-  data_ultima_movimentacao
+  data_ultima_movimentacao,
+  data_ultima_atualizacao_return
 }: TrackingDetailedCellsProps) => {
   return (
     <>
@@ -91,6 +93,11 @@ export const TrackingDetailedCells = ({
       {/* Última Movimentação */}
       <TableCell className="text-sm">
         {formatSafeDate(data_ultima_movimentacao, 'dd/MM HH:mm')}
+      </TableCell>
+
+      {/* Última Atualização Return */}
+      <TableCell className="text-sm">
+        {formatSafeDate(data_ultima_atualizacao_return, 'dd/MM HH:mm')}
       </TableCell>
     </>
   );
