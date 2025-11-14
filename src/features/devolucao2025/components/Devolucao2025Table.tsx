@@ -99,9 +99,12 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📅 Data Criação</TableHead>
             <TableHead>📅 Data Venda</TableHead>
             <TableHead>📅 Data Fechamento</TableHead>
+            <TableHead>📅 Início Return</TableHead>
+            <TableHead>📅 Última Atualização Return</TableHead>
             <TableHead>📅 Prazo Análise</TableHead>
             <TableHead>📅 Data Chegada</TableHead>
             <TableHead>⏰ Última Msg</TableHead>
+            <TableHead>⏰ Última Movimentação</TableHead>
 
             {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
             <TableHead>📍 Código Rastreio</TableHead>
@@ -220,6 +223,12 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
                 {dev.data_fechamento_devolucao ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR') : '-'}
               </TableCell>
               <TableCell>
+                {dev.data_inicio_return ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
+              </TableCell>
+              <TableCell>
+                {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
+              </TableCell>
+              <TableCell>
                 {dev.prazo_limite_analise ? new Date(dev.prazo_limite_analise).toLocaleDateString('pt-BR') : '-'}
               </TableCell>
               <TableCell>
@@ -227,6 +236,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               </TableCell>
               <TableCell>
                 {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
+              </TableCell>
+              <TableCell>
+                {dev.data_ultima_movimentacao ? new Date(dev.data_ultima_movimentacao).toLocaleString('pt-BR') : '-'}
               </TableCell>
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
