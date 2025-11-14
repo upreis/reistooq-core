@@ -104,6 +104,17 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             <TableHead>📎 Anexos ML</TableHead>
 
             {/* GRUPO 9: REVIEW & AÇÕES */}
+            <TableHead>🔍 Review Resource</TableHead>
+            <TableHead>🔢 Review Resource ID</TableHead>
+            <TableHead>🛠️ Review Method</TableHead>
+            <TableHead>📅 Review Created</TableHead>
+            <TableHead>📅 Review Updated</TableHead>
+            <TableHead>🎯 Review Stage</TableHead>
+            <TableHead>✅ Review Status</TableHead>
+            <TableHead>📦 Product Condition</TableHead>
+            <TableHead>🏭 Product Destination</TableHead>
+            <TableHead>🏷️ Reason ID</TableHead>
+            <TableHead>👤 Seller Status</TableHead>
 
             {/* GRUPO 10: CUSTOS OPERACIONAIS */}
             <TableHead>💵 Custo Total Log</TableHead>
@@ -206,6 +217,52 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>{dev.total_anexos_ml || '0'}</TableCell>
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
+              <TableCell>{dev.dados_reviews?.resource || '-'}</TableCell>
+              <TableCell>{dev.dados_reviews?.resource_id || '-'}</TableCell>
+              <TableCell>
+                <Badge variant={dev.dados_reviews?.method === 'triage' ? 'default' : 'secondary'}>
+                  {dev.dados_reviews?.method || '-'}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                {dev.dados_reviews?.date_created 
+                  ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') 
+                  : '-'}
+              </TableCell>
+              <TableCell>
+                {dev.dados_reviews?.last_updated 
+                  ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') 
+                  : '-'}
+              </TableCell>
+              <TableCell>
+                <Badge variant={
+                  dev.dados_reviews?.stage === 'closed' ? 'default' : 
+                  dev.dados_reviews?.stage === 'pending' ? 'outline' :
+                  dev.dados_reviews?.stage === 'timeout' ? 'destructive' : 'secondary'
+                }>
+                  {dev.dados_reviews?.stage || '-'}
+                </Badge>
+              </TableCell>
+              <TableCell>
+                <Badge variant={
+                  dev.dados_reviews?.status === 'success' ? 'default' : 
+                  dev.dados_reviews?.status === 'failed' ? 'destructive' : 'outline'
+                }>
+                  {dev.dados_reviews?.status || '-'}
+                </Badge>
+              </TableCell>
+              <TableCell>{dev.dados_reviews?.product_condition || '-'}</TableCell>
+              <TableCell>{dev.dados_reviews?.product_destination || '-'}</TableCell>
+              <TableCell>{dev.dados_reviews?.reason_id || '-'}</TableCell>
+              <TableCell>
+                <Badge variant={
+                  dev.dados_reviews?.seller_status === 'success' ? 'default' :
+                  dev.dados_reviews?.seller_status === 'failed' ? 'destructive' :
+                  dev.dados_reviews?.seller_status === 'pending' ? 'outline' : 'secondary'
+                }>
+                  {dev.dados_reviews?.seller_status || '-'}
+                </Badge>
+              </TableCell>
 
               {/* GRUPO 10: CUSTOS OPERACIONAIS */}
               <TableCell>
