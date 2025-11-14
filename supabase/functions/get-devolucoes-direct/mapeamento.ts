@@ -46,7 +46,20 @@ export const mapDevolucaoCompleta = (
     // ✅ CRÍTICO: Dados do Produto Enriquecidos (thumbnail, SKU, variation_id, category_id)
     product_info: item.product_info || null,
     
+    // ⚖️ RESOLUTION (dados de resolução do claim)
+    resolution: item.resolution || item.claim_details?.resolution || null,
+    
     // Grupo 8: Dados Brutos (raw data)
-    raw: mapRawData(item)
+    raw: mapRawData(item),
+    
+    // 🐛 DEBUG: Log da resolution no mapeamento
+    ...(item.resolution && console.log('⚖️ [Mapeamento] Resolution encontrada:', JSON.stringify({
+      claim_id: item.claim_details?.id,
+      has_resolution: !!item.resolution,
+      resolution_reason: item.resolution?.reason,
+      resolution_benefited: item.resolution?.benefited,
+      resolution_closed_by: item.resolution?.closed_by,
+      resolution_coverage: item.resolution?.applied_coverage
+    })) && {})
   };
 };
