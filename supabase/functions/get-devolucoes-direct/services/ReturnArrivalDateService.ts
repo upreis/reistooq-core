@@ -11,7 +11,9 @@ interface StatusHistoryItem {
 }
 
 interface ShipmentData {
-  status_history: StatusHistoryItem[];
+  status_history?: StatusHistoryItem[] | any; // Pode não ser array
+  status?: string;
+  [key: string]: any;
 }
 
 interface ReturnShipment {
@@ -103,16 +105,34 @@ export async function fetchReturnArrivalDate(
 
     const shipmentData: ShipmentData = await shipmentRes.json();
     
-    logger.debug(`[ReturnArrival] 📦 Shipment data recebida:`, JSON.stringify({
+    // Log completo da estrutura recebida
+    logger.debug(`[ReturnArrival] 📦 Estrutura completa do shipment:`, JSON.stringify(shipmentData, null, 2));
+    
+    logger.debug(`[ReturnArrival] 📦 Análise de status_history:`, JSON.stringify({
       has_status_history: !!shipmentData.status_history,
-      status_history_count: shipmentData.status_history?.length || 0,
-      statuses: shipmentData.status_history?.map(h => h.status)
+      is_array: Array.isArray(shipmentData.status_history),
+      type: typeof shipmentData.status_history,
+      length: Array.isArray(shipmentData.status_history) ? shipmentData.status_history.length : 'N/A',
+      sample: shipmentData.status_history
     }));
 
     // 4. Encontrar a data de entrega no histórico de status
-    const deliveredStatus = shipmentData.status_history?.find(
-      (h: StatusHistoryItem) => h.status === 'delivered'
-    );
+    let deliveredStatus = null;
+    
+    // Verificar se status_history é realmente um array
+    if (Array.isArray(shipmentData.status_history)) {
+      deliveredStatus = shipmentData.status_history.find(
+        (h: StatusHistoryItem) => h.status === 'delivered'
+      );
+    } else {
+      logger.warn(`[ReturnArrival] ⚠️ status_history não é um array! Tipo: ${typeof shipmentData.status_history}`);
+      
+      // Verificar se o status atual do shipment é 'delivered'
+      if (shipmentData.status === 'delivered' && shipmentData.date_delivered) {
+        logger.info(`[ReturnArrival] Usando date_delivered do shipment diretamente`);
+        return shipmentData.date_delivered;
+      }
+    }
 
     if (deliveredStatus?.date) {
       logger.info(`[ReturnArrival] ✅ Data de chegada encontrada para claim ${claimId}: ${deliveredStatus.date}`);
@@ -120,7 +140,7 @@ export async function fetchReturnArrivalDate(
     }
 
     logger.warn(`[ReturnArrival] ⚠️ Status 'delivered' não encontrado no histórico do shipment ${shipmentId}`);
-    logger.debug(`[ReturnArrival] Status history completo:`, JSON.stringify(shipmentData.status_history));
+    logger.debug(`[ReturnArrival] Campos disponíveis no shipment:`, Object.keys(shipmentData));
     return null;
 
   } catch (error) {
@@ -142,22 +162,43 @@ export async function enrichClaimsWithArrivalDates(
 ): Promise<any[]> {
   logger.info(`[ReturnArrival] 🚀 Iniciando enriquecimento de ${claims.length} claims com datas de chegada...`);
 
-  const enrichedClaims = await Promise.all(
-    claims.map(async (claim, index) => {
-      logger.debug(`[ReturnArrival] Processando claim ${index + 1}/${claims.length} - ID: ${claim.id}`);
-      const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
-      return {
-        ...claim,
-        return_arrival_date: arrivalDate
-      };
-    })
-  );
+  // Processar em lotes para evitar rate limiting
+  const BATCH_SIZE = 5;
+  const DELAY_BETWEEN_BATCHES = 1000; // 1 segundo entre lotes
+  
+  const enrichedClaims: any[] = [];
+  
+  for (let i = 0; i < claims.length; i += BATCH_SIZE) {
+    const batch = claims.slice(i, i + BATCH_SIZE);
+    logger.debug(`[ReturnArrival] Processando lote ${Math.floor(i/BATCH_SIZE) + 1}/${Math.ceil(claims.length/BATCH_SIZE)}`);
+    
+    const batchResults = await Promise.all(
+      batch.map(async (claim, batchIndex) => {
+        const globalIndex = i + batchIndex;
+        logger.debug(`[ReturnArrival] Processando claim ${globalIndex + 1}/${claims.length} - ID: ${claim.id}`);
+        const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
+        return {
+          ...claim,
+          return_arrival_date: arrivalDate
+        };
+      })
+    );
+    
+    enrichedClaims.push(...batchResults);
+    
+    // Delay entre lotes para evitar rate limiting
+    if (i + BATCH_SIZE < claims.length) {
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_BATCHES));
+    }
+  }
 
   const foundCount = enrichedClaims.filter(c => c.return_arrival_date).length;
   logger.info(`[ReturnArrival] ✅ CONCLUÍDO: ${foundCount}/${claims.length} datas de chegada encontradas`);
   
   if (foundCount === 0) {
     logger.warn(`[ReturnArrival] ⚠️ ATENÇÃO: Nenhuma data de chegada foi encontrada!`);
+  } else {
+    logger.info(`[ReturnArrival] Taxa de sucesso: ${((foundCount/claims.length)*100).toFixed(1)}%`);
   }
 
   return enrichedClaims;
