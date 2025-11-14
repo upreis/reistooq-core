@@ -112,9 +112,9 @@ export const Devolucao2025Filters = ({
         </PopoverContent>
       </Popover>
 
-      <Button onClick={onRefresh} variant="outline" disabled={isLoading}>
-        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-        {isLoading ? 'Buscando...' : 'Atualizar'}
+      <Button onClick={onRefresh} variant="default" disabled={isLoading}>
+        <Search className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+        {isLoading ? 'Buscando...' : 'Aplicar Filtros'}
       </Button>
     </div>
   );
