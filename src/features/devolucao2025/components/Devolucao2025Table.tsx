@@ -3,12 +3,10 @@
  * Implementação com todas as 65 colunas mapeadas
  */
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
+import { AlertCircle, Package } from 'lucide-react';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/LogisticTypeCell';
@@ -59,253 +57,205 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
   return (
     <div className="w-full flex-1 flex flex-col min-h-0">
-      <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
-        <Table className="min-w-max relative">
-          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
-            <TableRow className="hover:bg-transparent border-b-2">
+      <div className="flex-1 overflow-auto border rounded-md scroll-smooth relative">
+        <table className="w-full caption-bottom text-sm">
+          <thead className="sticky top-0 z-20 bg-background border-b-2 shadow-sm">
+            <tr className="border-b border-gray-600">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            <TableHead>Empresa</TableHead>
-            <TableHead>Pedido</TableHead>
-            <TableHead>Claim ID</TableHead>
-            <TableHead>👤 Comprador</TableHead>
-            <TableHead>📦 Produto</TableHead>
-            <TableHead>🏷️ SKU</TableHead>
-            <TableHead>📊 Qtd</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Empresa</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Pedido</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">Claim ID</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">👤 Comprador</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Produto</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏷️ SKU</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📊 Qtd</th>
 
             {/* GRUPO 2: FINANCEIRO */}
-            <TableHead>💰 Valor Total</TableHead>
-            <TableHead>💵 Valor Produto</TableHead>
-            <TableHead>📊 % Reemb.</TableHead>
-            <TableHead>🧾 Método Pagto</TableHead>
-            <TableHead>💳 Tipo Pagto</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💰 Valor Total</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💵 Valor Produto</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📊 % Reemb.</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🧾 Método Pagto</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💳 Tipo Pagto</th>
 
             {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            <TableHead>🔄 Status Dev</TableHead>
-            <TableHead>📦 Status Return</TableHead>
-            <TableHead>🚚 Status Entrega</TableHead>
-            <TableHead>🏭 Destino</TableHead>
-            <TableHead>📎 Evidências</TableHead>
-            <TableHead>⚖️ Resolução</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔄 Status Dev</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📦 Status Return</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Status Entrega</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏭 Destino</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Evidências</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⚖️ Resolução</th>
 
             {/* GRUPO 4: DATAS */}
-            <TableHead>📅 Data Criação</TableHead>
-            <TableHead>📅 Data Venda</TableHead>
-            <TableHead>📅 Data Fechamento</TableHead>
-            <TableHead>📅 Início Return</TableHead>
-            <TableHead>📅 Última Atualização Return</TableHead>
-            <TableHead>📅 Prazo Análise</TableHead>
-            <TableHead>📅 Data Chegada</TableHead>
-            <TableHead>⏰ Última Msg</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Criação</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Venda</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Fechamento</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Início Return</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Última Atualização Return</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Prazo Análise</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Data Chegada</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⏰ Última Msg</th>
 
             {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-            <TableHead>📍 Código Rastreio</TableHead>
-            <TableHead>🚚 Tipo Logística</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📍 Código Rastreio</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Tipo Logística</th>
 
             {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            <TableHead>🔄 É Troca</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔄 É Troca</th>
 
             {/* GRUPO 8: COMUNICAÇÃO */}
-            <TableHead>💬 Nº Interações</TableHead>
-            <TableHead>⭐ Qualidade Com</TableHead>
-            <TableHead>🔒 Moderação</TableHead>
-            <TableHead>📎 Anexos Comprador</TableHead>
-            <TableHead>📎 Anexos Vendedor</TableHead>
-            <TableHead>📎 Anexos ML</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💬 Nº Interações</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">⭐ Qualidade Com</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔒 Moderação</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Anexos Comprador</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Anexos Vendedor</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📎 Anexos ML</th>
 
             {/* GRUPO 9: REVIEW & AÇÕES */}
-            <TableHead>🔍 Review Resource</TableHead>
-            <TableHead>🔢 Review Resource ID</TableHead>
-            <TableHead>🛠️ Review Method</TableHead>
-            <TableHead>📅 Review Created</TableHead>
-            <TableHead>📅 Review Updated</TableHead>
-            <TableHead>🎯 Review Stage</TableHead>
-            <TableHead>✅ Review Status</TableHead>
-            <TableHead>📦 Product Condition</TableHead>
-            <TableHead>🏭 Product Destination</TableHead>
-            <TableHead>🏷️ Reason ID</TableHead>
-            <TableHead>👤 Seller Status</TableHead>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔍 Review Resource</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🔢 Review Resource ID</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🛠️ Review Method</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Review Created</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">📅 Review Updated</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🏷️ Reason ID</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">👤 Seller Status</th>
 
             {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            <TableHead>💵 Custo Total Log</TableHead>
-            <TableHead>🚚 Custo Envio Orig</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">💵 Custo Total Log</th>
+            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground bg-background">🚚 Custo Envio Orig</th>
+          </tr>
+        </thead>
+        <tbody className="[&_tr:last-child]:border-0">
           {devolucoes.map((dev, index) => (
-            <TableRow key={`${dev.claim_id}-${index}`}>
+            <tr key={`${dev.claim_id}-${index}`} className="border-b border-gray-600 transition-colors hover:bg-muted/50">
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-              <TableCell className="font-medium">{dev.account_name || '-'}</TableCell>
-              <TableCell>{dev.order_id || '-'}</TableCell>
-              <TableCell>{dev.claim_id || '-'}</TableCell>
-              <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>
-              <TableCell>
+              <td className="p-4 align-middle font-medium">{dev.account_name || '-'}</td>
+              <td className="p-4 align-middle">{dev.order_id || '-'}</td>
+              <td className="p-4 align-middle">{dev.claim_id || '-'}</td>
+              <td className="p-4 align-middle">{dev.comprador_nome_completo || '-'}</td>
+              <td className="p-4 align-middle">
                 <ProductInfoCell productInfo={dev.product_info} />
-              </TableCell>
-              <TableCell>{dev.sku || '-'}</TableCell>
-              <TableCell>{dev.quantidade || '-'}</TableCell>
+              </td>
+              <td className="p-4 align-middle">{dev.sku || '-'}</td>
+              <td className="p-4 align-middle">{dev.quantidade || '-'}</td>
 
               {/* GRUPO 2: FINANCEIRO */}
-              <TableCell>
+              <td className="p-4 align-middle">
                 {dev.valor_reembolso_total ? `R$ ${dev.valor_reembolso_total.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
-              </TableCell>
-              <TableCell>{dev.metodo_pagamento || '-'}</TableCell>
-              <TableCell>{dev.tipo_pagamento || '-'}</TableCell>
+              </td>
+              <td className="p-4 align-middle">{dev.metodo_pagamento || '-'}</td>
+              <td className="p-4 align-middle">{dev.tipo_pagamento || '-'}</td>
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-              <TableCell>
+              <td className="p-4 align-middle">
                 <div className="flex items-center gap-2">
                   <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
                     {dev.status_devolucao || '-'}
                   </Badge>
                   <RecentBadge dataChegada={dev.data_chegada_produto} />
                 </div>
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 <Badge variant="outline">{dev.status_return || '-'}</Badge>
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 <DeliveryStatusCell 
                   statusEnvio={dev.status_envio}
                   dataChegada={dev.data_chegada_produto}
                   estimatedDeliveryDate={dev.estimated_delivery_date}
                 />
-              </TableCell>
-              <TableCell>{dev.destino_devolucao || '-'}</TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">{dev.destino_devolucao || '-'}</td>
+              <td className="p-4 align-middle">
                 <EvidencesCell 
                   attachments={dev.anexos_ml}
                   totalEvidencias={dev.total_evidencias}
                 />
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 <ResolutionCell resolution={dev.resolution || null} />
-              </TableCell>
+              </td>
 
               {/* GRUPO 4: DATAS */}
-              <TableCell>
+              <td className="p-4 align-middle">
                 {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.data_venda_original ? new Date(dev.data_venda_original).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.data_fechamento_devolucao ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.data_inicio_return ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
+              </td>
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-              <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>
-              <TableCell>
+              <td className="p-4 align-middle">{dev.codigo_rastreamento || '-'}</td>
+              <td className="p-4 align-middle">
                 <LogisticTypeCell logisticType={dev.tipo_logistica} />
-              </TableCell>
+              </td>
 
               {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-              <TableCell>
-                {dev.eh_troca === true ? (
-                  <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                    <RefreshCw className="h-3 w-3" />
-                    Sim
-                  </Badge>
-                ) : dev.eh_troca === false ? (
-                  <Badge variant="secondary">Não</Badge>
-                ) : '-'}
-              </TableCell>
+              <td className="p-4 align-middle">
+                <Badge variant={dev.eh_troca ? 'default' : 'outline'}>
+                  {dev.eh_troca ? 'Sim' : 'Não'}
+                </Badge>
+              </td>
 
               {/* GRUPO 8: COMUNICAÇÃO */}
-              <TableCell>{dev.numero_interacoes || '0'}</TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.qualidade_comunicacao === 'excelente' ? 'default' :
-                  dev.qualidade_comunicacao === 'boa' ? 'secondary' :
-                  'outline'
-                }>
-                  {dev.qualidade_comunicacao || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>{dev.status_moderacao || '-'}</TableCell>
-              <TableCell>{dev.total_anexos_comprador || '0'}</TableCell>
-              <TableCell>{dev.total_anexos_vendedor || '0'}</TableCell>
-              <TableCell>{dev.total_anexos_ml || '0'}</TableCell>
+              <td className="p-4 align-middle">{dev.numero_interacoes || 0}</td>
+              <td className="p-4 align-middle">
+                <Badge variant="outline">{dev.qualidade_comunicacao || '-'}</Badge>
+              </td>
+              <td className="p-4 align-middle">
+                <Badge variant="outline">{dev.status_moderacao || '-'}</Badge>
+              </td>
+              <td className="p-4 align-middle">{dev.total_anexos_comprador || 0}</td>
+              <td className="p-4 align-middle">{dev.total_anexos_vendedor || 0}</td>
+              <td className="p-4 align-middle">{dev.total_anexos_ml || 0}</td>
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
-              <TableCell>{dev.dados_reviews?.resource || '-'}</TableCell>
-              <TableCell>{dev.dados_reviews?.resource_id || '-'}</TableCell>
-              <TableCell>
-                <Badge variant={dev.dados_reviews?.method === 'triage' ? 'default' : 'secondary'}>
-                  {dev.dados_reviews?.method || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {dev.dados_reviews?.date_created 
-                  ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.dados_reviews?.last_updated 
-                  ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.dados_reviews?.stage === 'closed' ? 'default' : 
-                  dev.dados_reviews?.stage === 'pending' ? 'outline' :
-                  dev.dados_reviews?.stage === 'timeout' ? 'destructive' : 'secondary'
-                }>
-                  {dev.dados_reviews?.stage || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.dados_reviews?.status === 'success' ? 'default' : 
-                  dev.dados_reviews?.status === 'failed' ? 'destructive' : 'outline'
-                }>
-                  {dev.dados_reviews?.status || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>{dev.dados_reviews?.product_condition || '-'}</TableCell>
-              <TableCell>{dev.dados_reviews?.product_destination || '-'}</TableCell>
-              <TableCell>{dev.dados_reviews?.reason_id || '-'}</TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.dados_reviews?.seller_status === 'success' ? 'default' :
-                  dev.dados_reviews?.seller_status === 'failed' ? 'destructive' :
-                  dev.dados_reviews?.seller_status === 'pending' ? 'outline' : 'secondary'
-                }>
-                  {dev.dados_reviews?.seller_status || '-'}
-                </Badge>
-              </TableCell>
+              <td className="p-4 align-middle">{dev.dados_reviews?.resource || '-'}</td>
+              <td className="p-4 align-middle">{dev.dados_reviews?.resource_id || '-'}</td>
+              <td className="p-4 align-middle">{dev.dados_reviews?.method || '-'}</td>
+              <td className="p-4 align-middle">
+                {dev.dados_reviews?.date_created ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') : '-'}
+              </td>
+              <td className="p-4 align-middle">
+                {dev.dados_reviews?.last_updated ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') : '-'}
+              </td>
+              <td className="p-4 align-middle">{dev.dados_reviews?.reason_id || '-'}</td>
+              <td className="p-4 align-middle">{dev.dados_reviews?.seller_status || '-'}</td>
 
               {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-              <TableCell>
+              <td className="p-4 align-middle">
                 {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
+              </td>
+              <td className="p-4 align-middle">
                 {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
-              </TableCell>
-            </TableRow>
+              </td>
+            </tr>
           ))}
-          </TableBody>
-        </Table>
+        </tbody>
+        </table>
       </div>
     </div>
   );
