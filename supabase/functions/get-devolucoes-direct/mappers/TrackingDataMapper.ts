@@ -14,14 +14,16 @@ export const mapTrackingData = (item: any) => {
     claim_id: claim.id,
     has_return_details: !!returnData,
     has_return_details_v2: !!claim.return_details_v2,
-    has_shipment_history: !!claim.shipment_history_enriched,
     return_status: returnData?.status,
+    return_date_created: returnData?.date_created,
+    return_last_updated: returnData?.last_updated,
+    return_date_closed: returnData?.date_closed,
+    return_refund_at: returnData?.refund_at,
     shipments_count: returnData?.shipments?.length || 0,
     first_shipment_status: returnData?.shipments?.[0]?.status,
     first_shipment_type: returnData?.shipments?.[0]?.type,
     first_shipment_tracking: returnData?.shipments?.[0]?.tracking_number,
-    subtype: returnData?.subtype,
-    estimated_delivery: returnData?.estimated_delivery_date
+    subtype: returnData?.subtype
   }));
   
   return {
@@ -65,35 +67,31 @@ export const mapTrackingData = (item: any) => {
     revisor_responsavel: claim.review_details?.reviewer?.id || claim.review?.reviewer_id || null,
     
     // 📅 FASE 1: Datas críticas para gestão de devolução
-    // ✅ Data de fechamento real (SEM fallback para date_created que já é usado em "Data")
-    data_fechamento_devolucao: claim.date_closed || 
-                               claim.last_updated || 
-                               returnData?.closed_at || 
-                               claim.resolution?.date || 
-                               null,
+    // ✅ Data de fechamento real (date_closed do returnData conforme doc ML)
+    data_fechamento_devolucao: returnData?.date_closed || claim.date_closed || null,
+    
+    // ✅ Prazo limite de análise
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
     
     // ✅ NOVO: Data de chegada do produto no destino
     data_chegada_produto: returnData?.shipments?.[0]?.arrival_date || claim.shipment_data?.arrival_date || null,
     
     // ===== CAMPOS PRIORIDADE ALTA =====
-    // ✅ FASE 1: Priorizar estimated_delivery_limit do shipment enriquecido
-    estimated_delivery_date: claim.shipment_history_enriched?.estimated_delivery_limit || 
-                             returnData?.estimated_delivery_date || 
-                             returnData?.estimated_delivery_limit?.date || null,
-    
-    // ✅ FASE 1: Dados da transportadora do shipment enriquecido
-    carrier_name: claim.shipment_history_enriched?.carrier_name || null,
-    carrier_tracking_url: claim.shipment_history_enriched?.carrier_tracking_url || null,
-    shipping_option_name: claim.shipment_history_enriched?.shipping_option_name || null,
-    
-    // ✅ FASE 2: Prazo estimado de entrega
-    estimated_delivery_time: claim.shipment_history_enriched?.estimated_delivery_time || null,
-    estimated_delivery_time_type: claim.shipment_history_enriched?.estimated_delivery_time_type || null,
-    
-    // ✅ FASE 3: Método de envio e histórico
-    shipping_method_name: claim.shipment_history_enriched?.shipping_method_name || null,
+    // 🆕 CAMPOS SHIPMENT ENRIQUECIDOS (FASE 5)
+    // Dados do envio (carrier, método, opção de envio)
+    carrier_name: claim.shipping?.carrier_name || claim.shipment_history_enriched?.carrier || null,
+    carrier_tracking_url: claim.shipping?.carrier_tracking_url || claim.shipment_history_enriched?.tracking_url || null,
+    shipping_option_name: claim.shipping?.option_name || claim.shipment_history_enriched?.shipping_option || null,
+    estimated_delivery_time: claim.shipping?.estimated_delivery_time?.date || claim.shipment_history_enriched?.estimated_delivery?.date || null,
+    estimated_delivery_time_type: claim.shipping?.estimated_delivery_time?.type || claim.shipment_history_enriched?.estimated_delivery?.type || null,
+    shipping_method_name: claim.shipping?.method?.name || claim.shipment_history_enriched?.method || null,
     tracking_method: claim.shipment_history_enriched?.tracking_method || null,
+    
+    // ✅ NOVO: Data de criação e última atualização da devolução (conforme doc ML)
+    data_inicio_return: returnData?.date_created || null,
+    data_ultima_atualizacao_return: returnData?.last_updated || null,
+    
+    // ✅ Status History - Array completo de eventos
     status_history: claim.shipment_history_enriched?.status_history || null,
 
     has_delay: (() => {
@@ -159,32 +157,37 @@ export const mapTrackingData = (item: any) => {
                                  returnData?.estimated_delivery_limit?.date || null,
     
     // ===== CAMPOS DETALHADOS DE TRACKING (já existentes) =====
-    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || null,
-    shipment_status: claim.shipment_data?.status || claim.shipment_status || null,
+    // 🆕 CAMPOS DETALHADOS DE RASTREAMENTO (FASE 5 - para TrackingDetailedCells)
+    // 10 campos de tracking avançado conforme documentação oficial ML
+    estimated_delivery_limit: returnData?.estimated_delivery_limit?.date || 
+                             claim.shipping?.estimated_delivery_limit?.date || 
+                             returnData?.estimated_delivery_date || 
+                             claim.shipment_history_enriched?.estimated_delivery?.date || 
+                             null,
+    
+    // ✅ Status do Shipment (conforme doc ML: pending, ready_to_ship, shipped, not_delivered, delivered, cancelled)
+    shipment_status: returnData?.shipments?.[0]?.status || claim.shipment_data?.status || null,
+    
+    // ✅ Quando será feito o reembolso (conforme doc ML: pode ser "delivered" ou outra condição)
     refund_at: returnData?.refund_at || claim.resolution?.refund_date || null,
-    review_method: returnData?.review_method || claim.review_method || null,
-    review_stage: returnData?.review_stage || claim.review_stage || null,
     
-    // Localização e status já implementados acima (FASE 2)
-    localizacao_atual: (() => {
-      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
-      if (!history || !Array.isArray(history) || history.length === 0) return null;
-      const latest = history[history.length - 1];
-      return latest?.location || latest?.checkpoint_description || null;
-    })(),
+    review_method: claim.review_details?.method || claim.review?.method || null,
+    review_stage: claim.review_details?.stage || claim.review?.stage || null,
     
-    tracking_history: claim.shipment_history_enriched?.return_shipment?.tracking_history || 
-                      claim.shipment_data?.tracking_history || [],
+    // 🔄 Localizacao Atual (extraída do primeiro evento de histórico)
+    localizacao_atual: claim.shipment_history_enriched?.status_history?.[0]?.location || 
+                      claim.tracking_info?.current_location || 
+                      null,
     
-    tracking_events: claim.shipment_history_enriched?.return_shipment?.tracking_events || 
-                     claim.shipment_data?.tracking_events || [],
+    // 📦 Arrays de tracking (histórico e eventos)
+    tracking_history: claim.shipment_history_enriched?.status_history || [],
+    tracking_events: claim.tracking_info?.events || [],
     
-    data_ultima_movimentacao: (() => {
-      const history = claim.shipment_history_enriched?.return_shipment?.tracking_history;
-      if (!history || !Array.isArray(history) || history.length === 0) return null;
-      const latest = history[history.length - 1];
-      return latest?.date || latest?.checkpoint_date || null;
-    })()
+    // ⏰ Data da última movimentação (last_updated do returnData conforme doc ML)
+    data_ultima_movimentacao: returnData?.last_updated ||
+                              claim.shipment_history_enriched?.status_history?.[0]?.date || 
+                              claim.tracking_info?.last_update || 
+                              null,
   };
   
   // 🐛 DEBUG: Log campos extraídos
