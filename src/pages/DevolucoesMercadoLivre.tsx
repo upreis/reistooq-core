@@ -528,6 +528,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>📦 Data Chegada</TableHead>
+                <TableHead>⏰ Prazo Análise</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -745,6 +746,44 @@ export default function DevolucoesMercadoLivre() {
                         ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR')
                         : '-'
                       }
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        if (!dev.data_fechamento_devolucao) return '-';
+                        
+                        const dataChegada = new Date(dev.data_fechamento_devolucao);
+                        const hoje = new Date();
+                        
+                        // Adicionar 3 dias úteis à data de chegada
+                        let prazoLimite = new Date(dataChegada);
+                        let diasAdicionados = 0;
+                        
+                        while (diasAdicionados < 3) {
+                          prazoLimite.setDate(prazoLimite.getDate() + 1);
+                          const diaSemana = prazoLimite.getDay();
+                          // Pular sábado (6) e domingo (0)
+                          if (diaSemana !== 0 && diaSemana !== 6) {
+                            diasAdicionados++;
+                          }
+                        }
+                        
+                        // Calcular dias restantes
+                        const diffTime = prazoLimite.getTime() - hoje.getTime();
+                        const diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        
+                        const vencido = diasRestantes < 0;
+                        const urgente = diasRestantes >= 0 && diasRestantes <= 1;
+                        
+                        return (
+                          <div className="flex items-center gap-2">
+                            <span className={vencido ? 'text-red-500 font-semibold' : urgente ? 'text-orange-500 font-semibold' : ''}>
+                              {prazoLimite.toLocaleDateString('pt-BR')}
+                            </span>
+                            {vencido && <Badge variant="destructive">Vencido</Badge>}
+                            {urgente && <Badge variant="outline" className="bg-orange-100">Urgente</Badge>}
+                          </div>
+                        );
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))
