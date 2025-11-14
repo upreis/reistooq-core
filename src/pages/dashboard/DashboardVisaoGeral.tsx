@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
+import { NotificationsBell } from '@/components/notifications/NotificationsBell';
+import { supabase } from '@/integrations/supabase/client';
 // useDevolucaoCalendarData removido temporariamente
 const useDevolucaoCalendarData = () => ({ 
   data: [], 
@@ -11,11 +13,40 @@ const useDevolucaoCalendarData = () => ({
 });
 
 export default function DashboardVisaoGeral() {
+  const [organizationId, setOrganizationId] = useState<string | null>(null);
+  
   // Buscar dados reais de devoluções para o calendário
   const { data: calendarData, loading: calendarLoading, error: calendarError, refresh } = useDevolucaoCalendarData();
 
+  useEffect(() => {
+    const fetchOrganizationId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('organizacao_id')
+          .eq('id', user.id)
+          .single();
+        
+        if (data?.organizacao_id) {
+          setOrganizationId(data.organizacao_id);
+        }
+      }
+    };
+    
+    fetchOrganizationId();
+  }, []);
+
   return (
     <div className="space-y-6">
+      {/* Header com notificações */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Visão Geral</h1>
+          <p className="text-muted-foreground">Acompanhe suas métricas em tempo real</p>
+        </div>
+        <NotificationsBell organizationId={organizationId} />
+      </div>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
