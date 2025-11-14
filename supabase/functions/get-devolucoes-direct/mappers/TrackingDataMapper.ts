@@ -52,6 +52,34 @@ export const mapTrackingData = (item: any) => {
     review_type: claim.review_details?.type || claim.review?.type || null,
     revisor_responsavel: claim.review_details?.reviewer?.id || claim.review?.reviewer_id || null,
     
+    // ===== DADOS COMPLETOS DO REVIEW (JSONB) =====
+    dados_reviews: (() => {
+      const reviewData = claim.review_details;
+      if (!reviewData || !reviewData.reviews || reviewData.reviews.length === 0) {
+        return null;
+      }
+      
+      const firstReview = reviewData.reviews[0];
+      const resourceReview = firstReview.resource_reviews?.[0];
+      
+      return {
+        resource: firstReview.resource || null,
+        resource_id: firstReview.resource_id?.toString() || null,
+        method: firstReview.method || null,
+        date_created: firstReview.date_created || null,
+        last_updated: firstReview.last_updated || null,
+        stage: resourceReview?.stage || null,
+        status: resourceReview?.status || null,
+        product_condition: resourceReview?.product_condition || null,
+        product_destination: resourceReview?.product_destination || null,
+        reason_id: resourceReview?.reason_id || null,
+        benefited: resourceReview?.benefited || null,
+        seller_status: resourceReview?.seller_status || null,
+        seller_reason: resourceReview?.seller_reason || null,
+        missing_quantity: resourceReview?.missing_quantity || null
+      };
+    })(),
+    
     // ===== DATAS CRÍTICAS (conforme doc ML) =====
     data_inicio_return: returnData?.date_created || null,
     data_ultima_atualizacao_return: returnData?.last_updated || null,
