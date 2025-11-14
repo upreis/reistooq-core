@@ -25,16 +25,6 @@ const navItems = [
     icon: UserCheck,
   },
   {
-    path: "/devolucoes-ml",
-    label: "Devoluções ML",
-    icon: PackageX,
-  },
-  {
-    path: "/devolucao2025",
-    label: "Devoluções 2025",
-    icon: FileText,
-  },
-  {
     path: "/oms/configuracoes",
     label: "Configurações",
     icon: Settings,
