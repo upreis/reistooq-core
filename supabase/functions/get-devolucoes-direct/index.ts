@@ -36,8 +36,7 @@ serve(async (req) => {
     const { 
       integration_account_id, 
       date_from, 
-      date_to,
-      status 
+      date_to
     } = await req.json();
 
     logger.progress(`[get-devolucoes-direct] Iniciando sincronização para conta ${integration_account_id}`);
@@ -109,6 +108,8 @@ serve(async (req) => {
     let hasMore = true;
 
     while (hasMore) {
+      // ✅ BUSCAR TODAS AS DEVOLUÇÕES sem filtro de status
+      // Permite filtrar por status client-side depois
       const params = new URLSearchParams({
         player_role: 'respondent',
         player_user_id: sellerId.toString(),
@@ -116,11 +117,6 @@ serve(async (req) => {
         offset: offset.toString(),
         sort: 'date_created:desc'
       });
-      
-      // ✅ Adicionar filtro de status se fornecido
-      if (status && status !== 'all') {
-        params.append('status', status);
-      }
 
       const claimsUrl = `https://api.mercadolibre.com/post-purchase/v1/claims/search?${params}`;
       
