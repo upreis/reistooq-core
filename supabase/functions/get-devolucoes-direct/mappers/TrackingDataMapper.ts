@@ -73,6 +73,9 @@ export const mapTrackingData = (item: any) => {
                                null,
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || returnData?.estimated_delivery_date || null,
     
+    // ✅ NOVO: Data de chegada do produto no destino
+    data_chegada_produto: returnData?.shipments?.[0]?.arrival_date || claim.shipment_data?.arrival_date || null,
+    
     // ===== CAMPOS PRIORIDADE ALTA =====
     // ✅ FASE 1: Priorizar estimated_delivery_limit do shipment enriquecido
     estimated_delivery_date: claim.shipment_history_enriched?.estimated_delivery_limit || 

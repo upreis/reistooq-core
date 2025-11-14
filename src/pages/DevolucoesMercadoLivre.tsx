@@ -51,6 +51,8 @@ import { ReviewStageCell } from '@/components/devolucoes/ReviewStageCell';
 import { AvailableActionsCell } from '@/components/devolucoes/AvailableActionsCell';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 import { ReturnCostCell } from '@/components/devolucoes/ReturnCostCell';
+import { PrazoAnaliseCell } from '@/components/devolucoes/PrazoAnaliseCell';
+import { DataReembolsoCell } from '@/components/devolucoes/DataReembolsoCell';
 import {
   Pagination,
   PaginationContent,
@@ -533,6 +535,7 @@ export default function DevolucoesMercadoLivre() {
                 <TableHead>Valor</TableHead>
                 <TableHead>Data</TableHead>
                 <TableHead>📦 Data Chegada</TableHead>
+                <TableHead>📦 Data Chegada</TableHead>
                 <TableHead>⏰ Prazo Análise</TableHead>
                 <TableHead>💰 Status Dinheiro</TableHead>
                 <TableHead>📦 Status Envio</TableHead>
@@ -866,8 +869,56 @@ export default function DevolucoesMercadoLivre() {
                       ) : '-'}
                     </TableCell>
 
+                    {/* 📦 Data Chegada */}
+                    <TableCell>
+                      <span className="text-sm">
+                        {formatSafeDate((dev as any).data_chegada_produto)}
+                      </span>
+                    </TableCell>
+
+                    {/* ⏰ Prazo Análise */}
+                    <TableCell>
+                      <PrazoAnaliseCell prazo={(dev as any).prazo_limite_analise} />
+                    </TableCell>
+
+                    {/* 💰 Status Dinheiro */}
+                    <TableCell>
+                      <StatusMoneyCell status={(dev as any).status_dinheiro} />
+                    </TableCell>
+
+                    {/* 📦 Status Envio (já existe) */}
+                    <TableCell>
+                      <StatusShipmentCell status={(dev as any).status_envio} />
+                    </TableCell>
+
+                    {/* 🏭 Destino (já existe) */}
+                    <TableCell>
+                      {(dev as any).destino_devolucao ? (
+                        <Badge variant="outline">
+                          {(dev as any).destino_devolucao === 'warehouse' ? '🏭 Armazém ML' : '📦 Vendedor'}
+                        </Badge>
+                      ) : '-'}
+                    </TableCell>
+
+                    {/* 🔄 Status Return (já existe) */}
+                    <TableCell>
+                      <StatusReturnCell status={(dev as any).status_return} />
+                    </TableCell>
+
+                    {/* 💵 Reembolso Em */}
+                    <TableCell>
+                      <DataReembolsoCell 
+                        data={(dev as any).data_estimada_reembolso}
+                        isEstimated={true}
+                      />
+                    </TableCell>
+
                     {/* Histórico de Status do Shipment */}
-                    <ShipmentHistoryCell status_history={(dev as any).status_history} />
+                    <TableCell>
+                      <ShipmentHistoryCell 
+                        status_history={(dev as any).dados_tracking_info?.tracking_events || (dev as any).status_history || []}
+                      />
+                    </TableCell>
                     
                     {/* 🆕 REVIEWS - 3 NOVAS CÉLULAS */}
                     <TableCell>
@@ -878,7 +929,7 @@ export default function DevolucoesMercadoLivre() {
                     </TableCell>
                     <TableCell>
                       <AvailableActionsCell 
-                        actions={(dev as any).dados_reviews?.available_actions || null}
+                        actions={(dev as any).dados_available_actions || []}
                       />
                     </TableCell>
                     <TableCell>

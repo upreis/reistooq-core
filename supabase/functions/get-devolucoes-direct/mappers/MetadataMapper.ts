@@ -38,6 +38,9 @@ export const mapMetadata = (item: any) => {
     // ===== METADADOS DETALHADOS =====
     usuario_ultima_acao: claim.last_updated_by || null,
     total_evidencias: claim.attachments?.length || 0,
-    anexos_ml: claim.attachments || []
+    anexos_ml: claim.attachments || [],
+    
+    // ✅ NOVO: Ações disponíveis para o vendedor
+    dados_available_actions: claim.players?.find((p: any) => p.role === 'respondent')?.available_actions || []
   };
 };
