@@ -15,6 +15,7 @@ import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/Logi
 import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBadge';
 import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
+import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 
 
 interface Devolucao2025TableProps {
@@ -203,7 +204,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
                 {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
               </TableCell>
               <TableCell>
-                {dev.prazo_limite_analise ? new Date(dev.prazo_limite_analise).toLocaleDateString('pt-BR') : '-'}
+                <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
               </TableCell>
               <TableCell>
                 {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
