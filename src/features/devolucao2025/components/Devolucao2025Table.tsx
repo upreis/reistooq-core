@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
+import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/LogisticTypeCell';
 
 
 interface Devolucao2025TableProps {
@@ -194,7 +195,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
               <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>
-              <TableCell>{dev.tipo_logistica || '-'}</TableCell>
+              <TableCell>
+                <LogisticTypeCell logisticType={dev.tipo_logistica} />
+              </TableCell>
 
               {/* GRUPO 7: MEDIAÇÃO & TROCA */}
               <TableCell>
