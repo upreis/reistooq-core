@@ -26,6 +26,7 @@ export const Devolucao2025Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [searchTrigger, setSearchTrigger] = useState(0); // Trigger para forçar busca
 
   // Buscar organization_id do usuário
   useEffect(() => {
@@ -63,8 +64,8 @@ export const Devolucao2025Page = () => {
   });
 
   // Buscar devoluções via Edge Function
-  const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025', selectedAccount],
+  const { data: devolucoes = [], isLoading, error } = useQuery({
+    queryKey: ['devolucoes-2025', selectedAccount, searchTrigger],
     queryFn: async () => {
       if (selectedAccount === 'all') {
         const allDevolucoes = await Promise.all(
@@ -95,8 +96,14 @@ export const Devolucao2025Page = () => {
         return data?.data || [];
       }
     },
-    enabled: false // Desabilita busca automática
+    enabled: accounts.length > 0 && searchTrigger > 0
   });
+
+  // Função para disparar busca
+  const handleSearch = () => {
+    setSearchTrigger(prev => prev + 1);
+    setCurrentPage(1); // Reset para primeira página
+  };
 
   // Paginação dos dados - filtrar apenas devoluções com claim_id válido
   const devolucoesValidas = useMemo(() => {
@@ -143,7 +150,7 @@ export const Devolucao2025Page = () => {
           onAccountChange={setSelectedAccount}
           dateRange={dateRange}
           onDateRangeChange={setDateRange}
-          onRefresh={refetch}
+          onRefresh={handleSearch}
           isLoading={isLoading}
         />
       </Card>
