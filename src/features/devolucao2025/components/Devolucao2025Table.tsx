@@ -12,6 +12,8 @@ import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/LogisticTypeCell';
+import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBadge';
+import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
 
 
 interface Devolucao2025TableProps {
@@ -78,7 +80,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
             {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
             <TableHead>🔄 Status Dev</TableHead>
             <TableHead>📦 Status Return</TableHead>
-            <TableHead>🚚 Status Envio</TableHead>
+            <TableHead>🚚 Status Entrega</TableHead>
             <TableHead>🏭 Destino</TableHead>
             <TableHead>⚖️ Resolução</TableHead>
 
@@ -154,14 +156,23 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
               <TableCell>
-                <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
-                  {dev.status_devolucao || '-'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
+                    {dev.status_devolucao || '-'}
+                  </Badge>
+                  <RecentBadge dataChegada={dev.data_chegada_produto} />
+                </div>
               </TableCell>
               <TableCell>
                 <Badge variant="outline">{dev.status_return || '-'}</Badge>
               </TableCell>
-              <TableCell>{dev.status_envio || '-'}</TableCell>
+              <TableCell>
+                <DeliveryStatusCell 
+                  statusEnvio={dev.status_envio}
+                  dataChegada={dev.data_chegada_produto}
+                  estimatedDeliveryDate={dev.estimated_delivery_date}
+                />
+              </TableCell>
               <TableCell>{dev.destino_devolucao || '-'}</TableCell>
               <TableCell>
                 <ResolutionCell resolution={dev.resolution || null} />
