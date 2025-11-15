@@ -1,5 +1,8 @@
 project_id = "tdjyfqnxvjgossuncpwm"
 
+[functions.ai-chat]
+verify_jwt = true
+
 [functions.send-invitation-email]
 verify_jwt = true
 
