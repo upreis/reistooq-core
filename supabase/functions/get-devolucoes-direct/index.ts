@@ -807,6 +807,7 @@ serve(async (req) => {
       console.log('[DEBUG BACKEND] status_dinheiro:', mappedClaims[0].status_dinheiro);
       console.log('[DEBUG BACKEND] estimated_delivery_date:', mappedClaims[0].estimated_delivery_date);
       console.log('[DEBUG BACKEND] qualidade_comunicacao:', mappedClaims[0].qualidade_comunicacao);
+      console.log('[DEBUG BACKEND] data_chegada_produto:', mappedClaims[0].data_chegada_produto || 'NULL'); // ✅ Verificar data de chegada
     }
 
     // ✅ RETORNAR DADOS MAPEADOS

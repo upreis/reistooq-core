@@ -163,7 +163,7 @@ export async function enrichClaimsWithArrivalDates(
       
       enrichedClaims.push({
         ...claim,
-        return_arrival_date: arrivalDate
+        data_chegada_produto: arrivalDate  // ✅ Nome correto do campo
       });
       
     } catch (error) {
