@@ -296,7 +296,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
                     dev.qualidade_comunicacao === 'boa' ? 'secondary' :
                     'outline'
                   }>
-                    {dev.qualidade_comunicacao || '-'}
+                    {dev.qualidade_comunicacao?.replace(/_/g, ' ') || '-'}
                   </Badge>
                 </TableCell>
               )}
