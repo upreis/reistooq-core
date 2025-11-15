@@ -70,7 +70,7 @@ export default function Header() {
     if (path.startsWith('/vendas-online')) return { icon: '🛍️', label: 'Vendas Online' };
     
     if (path.startsWith('/devolucoes-ml')) return { icon: '📮', label: 'Devoluções ML' };
-    if (path.startsWith('/devolucao2025')) return { icon: '📋', label: 'Devoluções 2025' };
+    if (path.startsWith('/devolucoesdevenda')) return { icon: '📋', label: 'Devoluções de Venda' };
     if (path.startsWith('/reclamacoes')) return { icon: '⚠️', label: 'Reclamações' };
     
     // Ferramentas
@@ -147,7 +147,7 @@ export default function Header() {
 
         {/* Navigation - Centered */}
         <div className="flex-1 flex justify-center">
-          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-online' || location.pathname === '/devolucoes-ml' || location.pathname === '/devolucao2025') && <OMSNavLimelight />}
+          {(location.pathname === '/pedidos' || location.pathname.startsWith('/oms') || location.pathname === '/reclamacoes' || location.pathname === '/vendas-online' || location.pathname === '/devolucoes-ml' || location.pathname === '/devolucoesdevenda') && <OMSNavLimelight />}
           {location.pathname.startsWith('/dashboardinicial') && <DashboardInicialNav />}
           {location.pathname.startsWith('/estoque') && <EstoqueNav />}
           {location.pathname.startsWith('/compras') && <ComprasNavLimelight />}
