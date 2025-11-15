@@ -177,22 +177,18 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
+  console.log(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
+  console.log(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
+  console.log(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
+  
   try {
-    logger.progress(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
-    logger.progress(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
-    logger.progress(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
-    
     // 🔍 Debug: estrutura do primeiro claim
     if (claims.length > 0) {
-      logger.debug(`[ReturnArrival] 🔍 ESTRUTURA DO PRIMEIRO CLAIM:`, JSON.stringify({
-        hasId: 'id' in claims[0],
-        hasClaimDetails: 'claim_details' in claims[0],
-        hasReturnData: 'returnData' in claims[0],
-        keys: Object.keys(claims[0]).slice(0, 10)
-      }));
+      console.log(`[ReturnArrival] 🔍 PRIMEIRO CLAIM KEYS:`, Object.keys(claims[0]).slice(0, 15).join(', '));
+      console.log(`[ReturnArrival] 🔍 Tem 'id'? ${!!claims[0].id}, Tem 'claim_id'? ${!!claims[0].claim_id}`);
     }
     
-    logger.progress(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
+    console.log(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
 
   // Processar SEQUENCIALMENTE para evitar rate limiting
   const enrichedClaims: any[] = [];
@@ -205,24 +201,25 @@ export async function enrichClaimsWithArrivalDates(
   for (let i = 0; i < claims.length; i++) {
     const claim = claims[i];
     
-    // ✅ Pegar o ID correto do claim
-    const claimId = claim.id || claim.claim_details?.id;
+    // ✅ Pegar o ID correto do claim - tentar várias possibilidades
+    const claimId = claim.id || claim.claim_id || claim.claim_details?.id;
     
     if (!claimId) {
-      logger.warn(`[ReturnArrival] ⚠️ Claim sem ID encontrado no índice ${i}, pulando...`);
+      console.warn(`[ReturnArrival] ⚠️ Claim sem ID no índice ${i}, keys: ${Object.keys(claim).slice(0, 5).join(',')}`);
       enrichedClaims.push(claim);
       continue;
     }
     
     try {
-      logger.progress(`[ReturnArrival] 🔄 Processando claim ${i+1}/${claims.length} (ID: ${claimId})`);
+      if (i % 10 === 0) { // Log a cada 10 claims
+        console.log(`[ReturnArrival] 🔄 Processando ${i+1}/${claims.length}...`);
+      }
+      
       const arrivalDate = await fetchReturnArrivalDate(claimId, accessToken);
       
       if (arrivalDate) {
         successCount++;
-        logger.progress(`[ReturnArrival] ✅ ${i+1}/${claims.length} - Data encontrada: ${arrivalDate} para claim ${claimId}`);
-      } else {
-        logger.warn(`[ReturnArrival] ⚠️ ${i+1}/${claims.length} - Sem data para claim ${claimId}`);
+        console.log(`[ReturnArrival] ✅ Data encontrada: ${arrivalDate} para claim ${claimId}`);
       }
       
       const enrichedClaim = {
@@ -230,11 +227,10 @@ export async function enrichClaimsWithArrivalDates(
         data_chegada_produto: arrivalDate  // ✅ Nome correto do campo
       };
       
-      logger.debug(`[ReturnArrival] 💾 Claim ${claimId} enriquecido com data_chegada_produto: ${enrichedClaim.data_chegada_produto || 'NULL'}`);
       enrichedClaims.push(enrichedClaim);
       
     } catch (error) {
-      logger.error(`[ReturnArrival] ❌ ${i+1}/${claims.length} - Erro no claim ${claimId}:`, error instanceof Error ? error.message : String(error));
+      console.error(`[ReturnArrival] ❌ Erro no claim ${claimId}:`, error instanceof Error ? error.message : String(error));
       enrichedClaims.push(claim);
     }
     
@@ -244,23 +240,14 @@ export async function enrichClaimsWithArrivalDates(
     }
   }
 
-  logger.progress(`[ReturnArrival] ========== FIM DO ENRIQUECIMENTO ==========`);
-  logger.progress(`[ReturnArrival] ✅ Concluído: ${successCount}/${claims.length} datas encontradas`);
-  logger.progress(`[ReturnArrival] 📊 Resumo: ${successCount} com data, ${claims.length - successCount} sem data`);
-  
-  // Debug: log alguns exemplos de claims enriquecidos
-  if (enrichedClaims.length > 0) {
-    logger.debug(`[ReturnArrival] 🔍 Exemplo do primeiro claim enriquecido:`, JSON.stringify({
-      claim_id: enrichedClaims[0].id,
-      data_chegada_produto: enrichedClaims[0].data_chegada_produto,
-      has_field: 'data_chegada_produto' in enrichedClaims[0]
-    }));
-  }
+  console.log(`[ReturnArrival] ========== FIM DO ENRIQUECIMENTO ==========`);
+  console.log(`[ReturnArrival] ✅ Concluído: ${successCount}/${claims.length} datas encontradas`);
   
   return enrichedClaims;
+  
   } catch (globalError) {
-    logger.error(`[ReturnArrival] ❌ ERRO GLOBAL no enriquecimento:`, globalError instanceof Error ? globalError.message : String(globalError));
-    logger.error(`[ReturnArrival] Stack:`, globalError instanceof Error ? globalError.stack : 'N/A');
+    console.error(`[ReturnArrival] ❌ ERRO GLOBAL:`, globalError);
+    console.error(`[ReturnArrival] Stack:`, globalError instanceof Error ? globalError.stack : 'N/A');
     // Retornar claims originais sem modificação
     return claims;
   }
