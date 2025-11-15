@@ -70,19 +70,33 @@ export async function fetchReturnArrivalDate(
     // Log detalhado dos shipments
     if (returnsData.shipments && returnsData.shipments.length > 0) {
       returnsData.shipments.forEach((s, idx) => {
-        logger.debug(`[ReturnArrival] 📍 Shipment ${idx}: ID=${s.shipment_id}, Destino=${s.destination?.name}`);
+        logger.debug(`[ReturnArrival] 📍 Shipment ${idx}: ID=${s.shipment_id}, Destino=${s.destination?.name}, Type=${s.type || 'N/A'}`);
       });
+      
+      // 🔍 Log completo do primeiro shipment para debug
+      logger.debug(`[ReturnArrival] 🔍 ESTRUTURA COMPLETA do primeiro shipment:`, JSON.stringify(returnsData.shipments[0], null, 2));
     }
 
-    // 2. Encontrar o shipment de devolução para o vendedor
-    const returnShipment = returnsData.shipments?.find(
+    // 2. Encontrar o shipment de devolução
+    // Prioridade 1: seller_address
+    let returnShipment = returnsData.shipments?.find(
       (s: ReturnShipment) => s.destination?.name === 'seller_address'
     );
+    
+    // Prioridade 2: warehouse (caso seja Full)
+    if (!returnShipment) {
+      returnShipment = returnsData.shipments?.find(
+        (s: ReturnShipment) => s.destination?.name === 'warehouse'
+      );
+      if (returnShipment) {
+        logger.info(`[ReturnArrival] ⚠️ Claim ${claimId}: Usando warehouse shipment (pode ser Full)`);
+      }
+    }
 
     if (!returnShipment?.shipment_id) {
       // Muitos retornos vão para warehouse do ML, não para o seller
       const destinations = returnsData.shipments?.map(s => s.destination?.name).join(', ') || 'nenhum';
-      logger.warn(`[ReturnArrival] ❌ Claim ${claimId}: Sem shipment seller_address. Destinos: ${destinations}`);
+      logger.warn(`[ReturnArrival] ❌ Claim ${claimId}: Sem shipment válido. Destinos: ${destinations}`);
       return null;
     }
 
