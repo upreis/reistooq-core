@@ -112,7 +112,7 @@ serve(async (req) => {
       body: { 
         query: message,
         limit: 3,
-        organizationId: profile?.organizacao_id
+        organizationId: profile.organizacao_id
       }
     });
 
@@ -144,16 +144,56 @@ Instruções:
       }
     ];
 
+    // SEGURANÇA CRÍTICA: Validar ownership do conversationId antes de usar
     if (conversationId) {
-      const { data: history } = await supabase
+      console.log('🔍 Validando ownership do conversationId:', conversationId);
+      
+      const { data: conversationOwnership, error: ownershipError } = await supabase
+        .from('ai_chat_conversations')
+        .select('id, organization_id, user_id')
+        .eq('id', conversationId)
+        .single();
+
+      if (ownershipError || !conversationOwnership) {
+        console.error('❌ Conversa não encontrada:', conversationId);
+        return new Response(
+          JSON.stringify({ error: 'Conversa não encontrada.' }), 
+          { 
+            status: 404,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      // Validar que a conversa pertence à mesma organização E ao mesmo usuário
+      if (conversationOwnership.organization_id !== profile.organizacao_id || 
+          conversationOwnership.user_id !== user.id) {
+        console.error('❌ Tentativa de acesso não autorizado à conversa:', conversationId, 
+          'User:', user.id, 'Owner:', conversationOwnership.user_id,
+          'Org:', profile.organizacao_id, 'Conv Org:', conversationOwnership.organization_id);
+        return new Response(
+          JSON.stringify({ error: 'Acesso negado a esta conversa.' }), 
+          { 
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      console.log('✅ Ownership validado. Carregando histórico...');
+      
+      const { data: history, error: historyError } = await supabase
         .from('ai_chat_messages')
         .select('role, content')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true })
         .limit(10);
       
-      if (history) {
+      if (historyError) {
+        console.error('⚠️ Erro ao carregar histórico:', historyError);
+      } else if (history) {
         messages = [...messages, ...history];
+        console.log(`📜 Histórico carregado: ${history.length} mensagens`);
       }
     }
 
@@ -203,26 +243,51 @@ Instruções:
     let finalConversationId = conversationId;
     
     if (!conversationId) {
-      const { data: newConv } = await supabase
-        .from('ai_chat_conversations')
-        .insert({
-          user_id: user.id,
-          organization_id: profile?.organizacao_id,
-          title: message.substring(0, 50)
-        })
-        .select()
-        .single();
-      
-      finalConversationId = newConv?.id;
+      console.log('📝 Criando nova conversa...');
+      try {
+        const { data: newConv, error: convError } = await supabase
+          .from('ai_chat_conversations')
+          .insert({
+            user_id: user.id,
+            organization_id: profile.organizacao_id,
+            title: message.substring(0, 50)
+          })
+          .select()
+          .single();
+        
+        if (convError) {
+          console.error('❌ Erro ao criar conversa:', convError);
+          throw new Error('Falha ao criar nova conversa');
+        }
+        
+        finalConversationId = newConv?.id;
+        console.log('✅ Nova conversa criada:', finalConversationId);
+      } catch (error) {
+        console.error('❌ Erro crítico ao criar conversa:', error);
+        throw error;
+      }
     }
     
-    // Save user message
+    // Save user message with error handling
     if (finalConversationId) {
-      await supabase.from('ai_chat_messages').insert({
-        conversation_id: finalConversationId,
-        role: 'user',
-        content: message
-      });
+      console.log('💾 Salvando mensagem do usuário...');
+      try {
+        const { error: msgError } = await supabase.from('ai_chat_messages').insert({
+          conversation_id: finalConversationId,
+          role: 'user',
+          content: message
+        });
+        
+        if (msgError) {
+          console.error('❌ Erro ao salvar mensagem do usuário:', msgError);
+          throw new Error('Falha ao salvar mensagem');
+        }
+        
+        console.log('✅ Mensagem do usuário salva');
+      } catch (error) {
+        console.error('❌ Erro crítico ao salvar mensagem:', error);
+        throw error;
+      }
     }
 
     // Stream response back to client
@@ -270,13 +335,27 @@ Instruções:
             }
           }
 
-          // Save complete assistant message
+          // Save complete assistant message with proper error handling
           if (finalConversationId && assistantMessage) {
-            await supabase.from('ai_chat_messages').insert({
-              conversation_id: finalConversationId,
-              role: 'assistant',
-              content: assistantMessage
-            });
+            console.log('💾 Salvando resposta do assistente...');
+            try {
+              const { error: assistantMsgError } = await supabase.from('ai_chat_messages').insert({
+                conversation_id: finalConversationId,
+                role: 'assistant',
+                content: assistantMessage
+              });
+              
+              if (assistantMsgError) {
+                console.error('❌ Erro ao salvar resposta do assistente:', assistantMsgError);
+                // Não lançamos erro aqui para não quebrar o streaming que já foi enviado
+                // Log será suficiente para debug
+              } else {
+                console.log('✅ Resposta do assistente salva. Tamanho:', assistantMessage.length);
+              }
+            } catch (error) {
+              console.error('❌ Erro crítico ao salvar resposta:', error);
+              // Não lançamos erro para não quebrar resposta já enviada ao cliente
+            }
           }
 
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
