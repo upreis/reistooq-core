@@ -40,17 +40,17 @@ export const Devolucao2025Filters = ({
   };
 
   return (
-    <div className="flex flex-wrap gap-4">
-      <div className="flex-1 min-w-[200px]">
+    <div className="flex flex-wrap gap-3 items-end">
+      <div className="w-48">
         <Select value={localAccount} onValueChange={setLocalAccount}>
-          <SelectTrigger>
+          <SelectTrigger className="h-10">
             <SelectValue placeholder="Selecione a conta" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas as Contas</SelectItem>
             {accounts.map((account) => (
               <SelectItem key={account.id} value={account.id}>
-                {account.name} ({account.account_identifier})
+                {account.name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -59,12 +59,12 @@ export const Devolucao2025Filters = ({
 
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="justify-start text-left font-normal">
+          <Button variant="outline" className="justify-start text-left font-normal h-10">
             <CalendarIcon className="mr-2 h-4 w-4" />
             {localDateRange.from && localDateRange.to ? (
               <>
-                {format(localDateRange.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
-                {format(localDateRange.to, 'dd/MM/yyyy', { locale: ptBR })}
+                {format(localDateRange.from, 'dd/MM/yy', { locale: ptBR })} -{' '}
+                {format(localDateRange.to, 'dd/MM/yy', { locale: ptBR })}
               </>
             ) : (
               'Selecione o período'
@@ -86,7 +86,7 @@ export const Devolucao2025Filters = ({
         </PopoverContent>
       </Popover>
 
-      <Button onClick={handleApply} disabled={isLoading}>
+      <Button onClick={handleApply} disabled={isLoading} className="h-10">
         <Search className="h-4 w-4 mr-2" />
         {isLoading ? 'Buscando...' : 'Aplicar Filtros'}
       </Button>
