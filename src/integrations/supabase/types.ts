@@ -7566,6 +7566,14 @@ export type Database = {
       }
       get_user_organization_id: { Args: { _user_id: string }; Returns: string }
       get_user_permissions: { Args: never; Returns: string[] }
+      get_user_profile_for_chat: {
+        Args: { user_id: string }
+        Returns: {
+          id: string
+          nome_exibicao: string
+          organizacao_id: string
+        }[]
+      }
       has_permission: { Args: { permission_key: string }; Returns: boolean }
       hv_delete: { Args: { _id: string }; Returns: undefined }
       hv_delete_many: { Args: { _ids: string[] }; Returns: undefined }
