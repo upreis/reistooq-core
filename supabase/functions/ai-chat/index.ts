@@ -25,18 +25,35 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verificar autenticação
+    // Usar busca semântica RAG
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       throw new Error('Unauthorized');
     }
 
-    // Buscar conhecimento relevante
-    const { data: knowledge } = await supabase
-      .from('knowledge_base')
-      .select('title, content')
-      .eq('is_active', true)
-      .limit(5);
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('organizacao_id')
+      .eq('id', user.id)
+      .single();
+
+    // Buscar conhecimento relevante usando embeddings semânticos
+    const searchResponse = await supabase.functions.invoke('semantic-search', {
+      body: { 
+        query: message,
+        limit: 3,
+        organizationId: profile?.organizacao_id
+      }
+    });
+
+    let knowledgeContext = "";
+    if (searchResponse.data?.results) {
+      knowledgeContext = searchResponse.data.results
+        .map((r: any) => `${r.title}:\n${r.content}`)
+        .join("\n\n---\n\n");
+      
+      console.log(`📚 RAG: ${searchResponse.data.results.length} docs relevantes`);
+    }
 
     // Buscar histórico da conversa se existir
     let messages: any[] = [
@@ -44,8 +61,8 @@ serve(async (req) => {
         role: 'system',
         content: `Você é um assistente inteligente do sistema de gestão integrado. 
 
-Base de conhecimento disponível:
-${knowledge?.map(k => `${k.title}: ${k.content}`).join('\n\n') || 'Nenhuma documentação disponível'}
+Base de conhecimento relevante (busca semântica):
+${knowledgeContext || 'Nenhum contexto específico encontrado'}
 
 Contexto do usuário: ${context || 'Usuário está navegando no sistema'}
 
@@ -105,12 +122,6 @@ Instruções:
 
     if (!conversationId) {
       // Criar nova conversa
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('organizacao_id')
-        .eq('id', user.id)
-        .single();
-
       const { data: newConv } = await supabase
         .from('ai_chat_conversations')
         .insert({
