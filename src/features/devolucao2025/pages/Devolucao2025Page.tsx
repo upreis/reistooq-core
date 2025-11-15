@@ -1,9 +1,11 @@
 /**
- * 📋 PÁGINA PRINCIPAL - DEVOLUÇÕES 2025
- * Implementação completa com 65 colunas + Sistema de Alertas
+ * 📋 PÁGINA PRINCIPAL - DEVOLUÇÕES DE VENDA
+ * Implementação completa com 65 colunas + Sistema de Alertas + Cache Inteligente
  */
 
-import { useState, useMemo, useEffect } from 'react';
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -19,16 +21,28 @@ import { ColumnSelector } from '../components/ColumnSelector';
 import { useColumnPreferences } from '../hooks/useColumnPreferences';
 import { COLUMNS_CONFIG } from '../config/columns';
 import { ExportButton } from '../components/ExportButton';
+import { usePersistentDevolucoesState } from '../hooks/usePersistentDevolucoesState';
 import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
-  const [selectedAccount, setSelectedAccount] = useState<string>('all');
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    to: new Date()
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  // Estado de persistência
+  const persistentCache = usePersistentDevolucoesState();
+  
+  const [selectedAccount, setSelectedAccount] = useState<string>(() => 
+    persistentCache.persistedState?.selectedAccount || 'all'
+  );
+  const [dateRange, setDateRange] = useState(() => 
+    persistentCache.persistedState?.dateRange || {
+      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    }
+  );
+  const [currentPage, setCurrentPage] = useState(() => 
+    persistentCache.persistedState?.currentPage || 1
+  );
+  const [itemsPerPage, setItemsPerPage] = useState(() => 
+    persistentCache.persistedState?.itemsPerPage || 50
+  );
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   
   // Gerenciar preferências de colunas
@@ -73,6 +87,19 @@ export const Devolucao2025Page = () => {
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025', selectedAccount, dateRange],
     queryFn: async () => {
+      // Se existe cache válido, usar dados em cache
+      if (persistentCache.hasValidPersistedState() && 
+          persistentCache.persistedState?.selectedAccount === selectedAccount &&
+          persistentCache.persistedState?.dateRange.from.getTime() === dateRange.from.getTime() &&
+          persistentCache.persistedState?.dateRange.to.getTime() === dateRange.to.getTime()) {
+        console.log('✅ Usando dados em cache, sem chamada à API');
+        return persistentCache.persistedState.devolucoes;
+      }
+
+      // Caso contrário, buscar da API
+      console.log('🔄 Buscando dados da API...');
+      let result: any[] = [];
+      
       if (selectedAccount === 'all') {
         const allDevolucoes = await Promise.all(
           accounts.map(async (account) => {
@@ -88,7 +115,7 @@ export const Devolucao2025Page = () => {
             return data?.data || [];
           })
         );
-        return allDevolucoes.flat();
+        result = allDevolucoes.flat();
       } else {
         const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
           body: {
@@ -99,10 +126,23 @@ export const Devolucao2025Page = () => {
         });
 
         if (error) throw error;
-        return data?.data || [];
+        result = data?.data || [];
       }
+
+      // Salvar dados no cache após busca bem-sucedida
+      persistentCache.saveDataCache(
+        result,
+        selectedAccount,
+        dateRange,
+        currentPage,
+        itemsPerPage,
+        visibleColumns
+      );
+
+      return result;
     },
-    enabled: false // Desabilita busca automática
+    enabled: false, // Desabilita busca automática
+    staleTime: CACHE_DURATION // Usar mesma constante do hook de persistência
   });
 
   // Paginação dos dados
@@ -113,6 +153,38 @@ export const Devolucao2025Page = () => {
   }, [devolucoes, currentPage, itemsPerPage]);
 
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoes.length / itemsPerPage);
+
+  // Carregar dados em cache na inicialização
+  useEffect(() => {
+    if (persistentCache.isStateLoaded && persistentCache.hasValidPersistedState()) {
+      console.log('🔄 Carregando dados do cache na inicialização');
+      // Não precisa fazer nada, o useQuery já vai usar os dados em cache
+    } else if (persistentCache.isStateLoaded && accounts.length > 0) {
+      // Se não tem cache válido, buscar dados
+      console.log('🔍 Sem cache válido, buscando dados...');
+      refetch();
+    }
+  }, [persistentCache.isStateLoaded, accounts.length]);
+
+  // Atualizar cache quando página ou items por página mudar
+  useEffect(() => {
+    if (devolucoes.length > 0) {
+      persistentCache.saveDataCache(
+        devolucoes,
+        selectedAccount,
+        dateRange,
+        currentPage,
+        itemsPerPage,
+        visibleColumns
+      );
+    }
+  }, [currentPage, itemsPerPage]);
+
+  // Handler para aplicar filtros (limpa cache e busca novos dados)
+  const handleApplyFilters = useCallback(() => {
+    persistentCache.clearPersistedState();
+    refetch();
+  }, [persistentCache, refetch]);
 
   // Sistema de Alertas
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
@@ -148,7 +220,7 @@ export const Devolucao2025Page = () => {
               onAccountChange={setSelectedAccount}
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
-              onApplyFilters={refetch}
+              onApplyFilters={handleApplyFilters}
               isLoading={isLoading}
             />
             <ColumnSelector 
