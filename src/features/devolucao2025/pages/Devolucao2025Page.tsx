@@ -149,14 +149,23 @@ export const Devolucao2025Page = () => {
     staleTime: CACHE_DURATION // Usar mesma constante do hook de persistência
   });
 
-  // Paginação dos dados
+  // Paginação dos dados (com filtro para remover linhas sem comprador ou produto)
   const paginatedDevolucoes = useMemo(() => {
-    if (itemsPerPage === -1) return devolucoes; // "Todas"
+    // Filtrar devoluções sem comprador ou produto
+    const filteredDevolucoes = devolucoes.filter(dev => 
+      dev.comprador_nome_completo && dev.produto_titulo
+    );
+    
+    if (itemsPerPage === -1) return filteredDevolucoes; // "Todas"
     const startIndex = (currentPage - 1) * itemsPerPage;
-    return devolucoes.slice(startIndex, startIndex + itemsPerPage);
+    return filteredDevolucoes.slice(startIndex, startIndex + itemsPerPage);
   }, [devolucoes, currentPage, itemsPerPage]);
 
-  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoes.length / itemsPerPage);
+  const filteredCount = useMemo(() => 
+    devolucoes.filter(dev => dev.comprador_nome_completo && dev.produto_titulo).length, 
+    [devolucoes]
+  );
+  const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCount / itemsPerPage);
 
   // Carregar dados em cache na inicialização
   useEffect(() => {
