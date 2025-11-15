@@ -7611,6 +7611,22 @@ export type Database = {
       mask_name: { Args: { full_name: string }; Returns: string }
       mask_phone: { Args: { phone: string }; Returns: string }
       mask_phone_secure: { Args: { phone_input: string }; Returns: string }
+      match_knowledge: {
+        Args: {
+          filter_org_id?: string
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+          source: string
+          title: string
+        }[]
+      }
       migrar_estoque_para_locais: { Args: never; Returns: Json }
       migrate_existing_orders_to_unified: { Args: never; Returns: Json }
       processar_recebimento_pedido_compra: {

@@ -6,6 +6,12 @@ verify_jwt = true
 [functions.save-session-replay]
 verify_jwt = true
 
+[functions.generate-embeddings]
+verify_jwt = true
+
+[functions.semantic-search]
+verify_jwt = true
+
 [functions.send-invitation-email]
 verify_jwt = true
 
