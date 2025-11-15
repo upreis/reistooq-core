@@ -22,11 +22,11 @@ const OMS = () => {
     
     return (
       <Routes>
-        <Route path="/" element={<Navigate to="/oms/pedidos" replace />} />
-        <Route path="/pedidos" element={<OrdersPage />} />
-        <Route path="/clientes" element={<CustomersPage />} />
-        <Route path="/vendedores" element={<SalesRepsPage />} />
-        <Route path="/configuracoes" element={<OMSSettingsPage />} />
+        <Route path="/oms" element={<Navigate to="/oms/pedidos" replace />} />
+        <Route path="/oms/pedidos" element={<OrdersPage />} />
+        <Route path="/oms/clientes" element={<CustomersPage />} />
+        <Route path="/oms/vendedores" element={<SalesRepsPage />} />
+        <Route path="/oms/configuracoes" element={<OMSSettingsPage />} />
         <Route path="*" element={<Navigate to="/oms/pedidos" replace />} />
       </Routes>
     );
