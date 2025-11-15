@@ -33,14 +33,21 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     console.log('🔍 Token length:', token?.length);
 
-    // Create Supabase client for authentication validation
-    const supabaseAuth = createClient(
+    // Create Supabase client with user's JWT token (respects RLS)
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: {
+            Authorization: authHeader
+          }
+        }
+      }
     );
 
-    // Verify user authentication - pass token explicitly
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
+    // Verify user authentication using the authenticated client
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     
     if (userError || !user) {
       console.error('❌ Auth error details:', JSON.stringify(userError));
@@ -54,12 +61,6 @@ serve(async (req) => {
     }
 
     console.log('✅ User authenticated:', user.id);
-
-    // Create service role client for database operations
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
 
     // Buscar perfil do usuário com validação adequada
     const { data: profile, error: profileError } = await supabase
