@@ -35,7 +35,7 @@ interface PersistentDevolucoesState {
 }
 
 const STORAGE_KEY = 'devolucoes_venda_persistent_state';
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos em milliseconds
+// Cache sem expiração por tempo - apenas por ação do usuário
 
 export function usePersistentDevolucoesState() {
   const [persistedState, setPersistedState] = useState<PersistentDevolucoesState | null>(null);
@@ -75,22 +75,15 @@ export function usePersistentDevolucoesState() {
             return;
           }
           
-          // Verificar se o cache ainda é válido (não expirou)
+          // Carregar cache (sem expiração por tempo)
           const now = Date.now();
-          const isExpired = now - parsed.cachedAt > CACHE_DURATION;
-          
-          if (!isExpired) {
-            console.log('🔄 Cache de devoluções carregado:', {
-              devolucoesCount: parsed.devolucoes.length,
-              cacheAge: Math.round((now - parsed.cachedAt) / 1000) + 's',
-              account: parsed.selectedAccount,
-              dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`
-            });
-            setPersistedState(parsed);
-          } else {
-            console.log('⏰ Cache expirado, limpando estado persistido');
-            localStorage.removeItem(STORAGE_KEY);
-          }
+          console.log('🔄 Cache de devoluções carregado:', {
+            devolucoesCount: parsed.devolucoes.length,
+            cacheAge: Math.round((now - parsed.cachedAt) / 1000) + 's',
+            account: parsed.selectedAccount,
+            dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`
+          });
+          setPersistedState(parsed);
         }
       } catch (error) {
         console.warn('Erro ao carregar estado persistido:', error);
@@ -154,11 +147,7 @@ export function usePersistentDevolucoesState() {
   // Verificar se existe estado válido
   const hasValidPersistedState = useCallback((): boolean => {
     if (!isStateLoaded || !persistedState) return false;
-    
-    const now = Date.now();
-    const isExpired = now - persistedState.cachedAt > CACHE_DURATION;
-    
-    return !isExpired && persistedState.devolucoes.length > 0;
+    return persistedState.devolucoes.length > 0;
   }, [isStateLoaded, persistedState]);
 
   // Salvar dados após busca bem-sucedida
