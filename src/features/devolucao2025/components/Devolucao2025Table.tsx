@@ -144,7 +144,11 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
             return (
             <TableRow key={`${dev.claim_id}-${index}`}>
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-              {isVisible('account_name') && <TableCell className="font-medium">{dev.account_name || '-'}</TableCell>}
+              {isVisible('account_name') && (
+                <TableCell className="font-medium">
+                  {dev.account_name?.replace(/^(Conta:\s*|Account:\s*)/i, '').trim() || '-'}
+                </TableCell>
+              )}
               {isVisible('order_id') && <TableCell>{dev.order_id || '-'}</TableCell>}
               {isVisible('claim_id') && <TableCell>{dev.claim_id || '-'}</TableCell>}
               {isVisible('comprador') && <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>}
