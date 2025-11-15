@@ -699,18 +699,19 @@ serve(async (req) => {
     
     logger.progress(`✅ ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
+    // 🎯 BUSCAR DATAS DE CHEGADA DAS DEVOLUÇÕES
+    logger.progress('📅 Buscando datas de chegada das devoluções...');
+    const claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
+    logger.progress(`✅ ${claimsWithArrivalDates.length} claims enriquecidos com datas de chegada`);
+
     // ✅ CORREÇÃO 2: MAPEAR DADOS CORRETAMENTE
     logger.progress('🗺️ Mapeando dados...');
-    logger.progress(`📊 Total de claims a mapear: ${allEnrichedClaims.length}`);
+    logger.progress(`📊 Total de claims a mapear: ${claimsWithArrivalDates.length}`);
     
-    // ⚠️ DATA DE CHEGADA DESATIVADA - rate limiting 429
-    // A data de chegada não está disponível de forma confiável via API
-    logger.progress('📊 Prosseguindo sem busca de data de chegada (desativado)');
-    
-    const mappedClaims = allEnrichedClaims.map((claim: any) => {
+    const mappedClaims = claimsWithArrivalDates.map((claim: any) => {
       try {
         // ✅ DEBUG: Log estrutura do primeiro claim enriquecido
-        if (allEnrichedClaims.indexOf(claim) === 0) {
+        if (claimsWithArrivalDates.indexOf(claim) === 0) {
           logger.debug('🔍 PRIMEIRO CLAIM ENRIQUECIDO:', JSON.stringify({
             id: claim.id,
             resource_id: claim.resource_id,
