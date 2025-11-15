@@ -13,6 +13,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { AIChatBubble } from "@/components/ai-chat/AIChatBubble";
+import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -105,14 +106,15 @@ function App() {
       <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
         <TooltipProvider>
           <AuthProvider>
-          <MobileProvider>
-            <SidebarUIProvider>
-              <MobileRedirect />
-              <InactivityTracker />
-              <AIChatBubble />
-              <Toaster />
-              <Sonner />
-              <Routes>
+            <SessionRecordingProvider enabled={true}>
+              <MobileProvider>
+                <SidebarUIProvider>
+                  <MobileRedirect />
+                  <InactivityTracker />
+                  <AIChatBubble />
+                  <Toaster />
+                  <Sonner />
+                  <Routes>
                   {/* Rota pública de autenticação */}
                   <Route path="/auth" element={<Auth />} />
                   {/* Rota pública para redefinição de senha */}
@@ -322,6 +324,7 @@ function App() {
                 </Routes>
               </SidebarUIProvider>
             </MobileProvider>
+            </SessionRecordingProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
