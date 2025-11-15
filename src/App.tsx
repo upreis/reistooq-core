@@ -137,7 +137,7 @@ function App() {
                     <Route index element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
                     
                     {/* Dashboard */}
-                    <Route path="dashboardinicial/visao-geral" element={<DashboardInicialPage />} />
+                    <Route path="dashboardinicial/visao-geral/*" element={<DashboardInicialPage />} />
                     
                     {/* Páginas principais */}
                     <Route path="estoque" element={<Estoque />} />
