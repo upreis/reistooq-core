@@ -86,9 +86,10 @@ export const mapTrackingData = (item: any) => {
     data_fechamento_devolucao: returnData?.date_closed || null,
     prazo_limite_analise: returnData?.estimated_handling_limit?.date || null,
     
-    // 🎯 DATA DE CHEGADA: Busca no histórico do shipment de devolução (status 'delivered')
-    data_chegada_produto: (() => {
-      // Tentar extrair do enriched history primeiro
+    // 🎯 DATA DE CHEGADA: Vem do serviço ReturnArrivalDateService
+    // Busca no histórico do shipment de devolução (status 'delivered')
+    data_chegada_produto: claim.data_chegada_produto || (() => {
+      // Fallback: tentar extrair do enriched history
       const enrichedHistory = claim.shipment_history_enriched?.return_shipment?.tracking_history;
       if (enrichedHistory && Array.isArray(enrichedHistory)) {
         const deliveredEvent = enrichedHistory.find((event: any) => 
@@ -101,15 +102,16 @@ export const mapTrackingData = (item: any) => {
         }
       }
       
-      // Fallback: shipment direto
-      const shipment = returnData?.shipments?.[0];
-      if (shipment?.status === 'delivered' && shipment?.status_history) {
-        const deliveredStatus = shipment.status_history.find((s: any) => s.status === 'delivered');
-        if (deliveredStatus?.date) return deliveredStatus.date;
+      // Fallback 2: tentar do return_details_v2
+      const returnHistory = returnData?.status_history;
+      if (returnHistory && Array.isArray(returnHistory)) {
+        const deliveredEvent = returnHistory.find((event: any) => 
+          event.status === 'delivered'
+        );
+        if (deliveredEvent?.date) {
+          return deliveredEvent.date;
+        }
       }
-      
-      // Último fallback: date_delivered do shipment
-      if (shipment?.date_delivered) return shipment.date_delivered;
       
       return null;
     })(),
