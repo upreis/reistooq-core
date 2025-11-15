@@ -6,13 +6,65 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Input validation schema
+const validateInput = (data: any) => {
+  const errors: string[] = [];
+  
+  // Validate message
+  if (!data.message || typeof data.message !== 'string') {
+    errors.push('Message is required and must be a string');
+  } else if (data.message.trim().length === 0) {
+    errors.push('Message cannot be empty');
+  } else if (data.message.length > 10000) {
+    errors.push('Message must be less than 10,000 characters');
+  }
+  
+  // Validate conversationId (optional, but must be valid UUID if present)
+  if (data.conversationId !== undefined && data.conversationId !== null) {
+    if (typeof data.conversationId !== 'string') {
+      errors.push('ConversationId must be a string');
+    } else {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(data.conversationId)) {
+        errors.push('ConversationId must be a valid UUID');
+      }
+    }
+  }
+  
+  // Validate context (optional string)
+  if (data.context !== undefined && data.context !== null) {
+    if (typeof data.context !== 'string') {
+      errors.push('Context must be a string');
+    } else if (data.context.length > 500) {
+      errors.push('Context must be less than 500 characters');
+    }
+  }
+  
+  return { isValid: errors.length === 0, errors };
+};
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { message, conversationId, context } = await req.json();
+    const requestData = await req.json();
+    
+    // Validate input first
+    const validation = validateInput(requestData);
+    if (!validation.isValid) {
+      console.error('❌ Input validation failed:', validation.errors);
+      return new Response(
+        JSON.stringify({ error: 'Invalid input: ' + validation.errors.join(', ') }), 
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    const { message, conversationId, context } = requestData;
     
     // Get authorization from request
     const authHeader = req.headers.get('Authorization');
@@ -104,8 +156,8 @@ serve(async (req) => {
       );
     }
 
-    console.log('✅ Perfil validado. Organization ID:', profile.organizacao_id);
-    console.log('🔒 Usando Service Role para operações de banco (necessário para evitar bloqueios RLS)');
+    console.log('✅ Perfil validado');
+    console.log('🔒 Usando Service Role para operações de banco');
 
     // Buscar conhecimento relevante usando embeddings semânticos
     const searchResponse = await supabase.functions.invoke('semantic-search', {
@@ -199,96 +251,108 @@ Instruções:
 
     messages.push({ role: 'user', content: message });
 
-    // Chamar Lovable AI
+    // Chamar Lovable AI com timeout
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
       throw new Error('LOVABLE_API_KEY not configured');
     }
 
-    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages,
-        stream: true
-      }),
-    });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error('AI Gateway error:', aiResponse.status, errorText);
-      
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-          status: 429,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: 'Payment required. Please add credits to continue.' }), {
-          status: 402,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-      
-      throw new Error('AI service unavailable');
-    }
-
-    // Save conversation context first
-    let finalConversationId = conversationId;
+    console.log('🤖 Chamando Lovable AI Gateway...');
     
-    if (!conversationId) {
-      console.log('📝 Criando nova conversa...');
-      try {
-        const { data: newConv, error: convError } = await supabase
-          .from('ai_chat_conversations')
-          .insert({
-            user_id: user.id,
-            organization_id: profile.organizacao_id,
-            title: message.substring(0, 50)
-          })
-          .select()
-          .single();
+    // Create AbortController for timeout (30 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+    try {
+      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages,
+          stream: true
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!aiResponse.ok) {
+        const errorText = await aiResponse.text();
+        console.error('❌ AI Gateway error:', aiResponse.status);
         
-        if (convError) {
-          console.error('❌ Erro ao criar conversa:', convError);
-          throw new Error('Falha ao criar nova conversa');
+        if (aiResponse.status === 429) {
+          return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
         
-        finalConversationId = newConv?.id;
-        console.log('✅ Nova conversa criada:', finalConversationId);
-      } catch (error) {
-        console.error('❌ Erro crítico ao criar conversa:', error);
-        throw error;
-      }
-    }
-    
-    // Save user message with error handling
-    if (finalConversationId) {
-      console.log('💾 Salvando mensagem do usuário...');
-      try {
-        const { error: msgError } = await supabase.from('ai_chat_messages').insert({
-          conversation_id: finalConversationId,
-          role: 'user',
-          content: message
-        });
-        
-        if (msgError) {
-          console.error('❌ Erro ao salvar mensagem do usuário:', msgError);
-          throw new Error('Falha ao salvar mensagem');
+        if (aiResponse.status === 402) {
+          return new Response(JSON.stringify({ error: 'Payment required. Please add credits to continue.' }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
         }
         
-        console.log('✅ Mensagem do usuário salva');
-      } catch (error) {
-        console.error('❌ Erro crítico ao salvar mensagem:', error);
-        throw error;
+        throw new Error('AI service unavailable');
       }
-    }
+
+      console.log('✅ AI Gateway respondeu com sucesso');
+
+      // Save conversation context first
+      let finalConversationId = conversationId;
+      
+      if (!conversationId) {
+        console.log('📝 Criando nova conversa...');
+        try {
+          const { data: newConv, error: convError } = await supabase
+            .from('ai_chat_conversations')
+            .insert({
+              user_id: user.id,
+              organization_id: profile.organizacao_id,
+              title: message.substring(0, 50)
+            })
+            .select()
+            .single();
+          
+          if (convError) {
+            console.error('❌ Erro ao criar conversa:', convError);
+            throw new Error('Falha ao criar nova conversa');
+          }
+          
+          finalConversationId = newConv?.id;
+          console.log('✅ Nova conversa criada');
+        } catch (error) {
+          console.error('❌ Erro crítico ao criar conversa:', error);
+          throw error;
+        }
+      }
+      
+      // Save user message with error handling
+      if (finalConversationId) {
+        console.log('💾 Salvando mensagem do usuário...');
+        try {
+          const { error: msgError } = await supabase.from('ai_chat_messages').insert({
+            conversation_id: finalConversationId,
+            role: 'user',
+            content: message
+          });
+          
+          if (msgError) {
+            console.error('❌ Erro ao salvar mensagem do usuário:', msgError);
+            throw new Error('Falha ao salvar mensagem');
+          }
+          
+          console.log('✅ Mensagem do usuário salva');
+        } catch (error) {
+          console.error('❌ Erro crítico ao salvar mensagem:', error);
+          throw error;
+        }
+      }
 
     // Stream response back to client
     const encoder = new TextEncoder();
@@ -350,20 +414,36 @@ Instruções:
                 // Não lançamos erro aqui para não quebrar o streaming que já foi enviado
                 // Log será suficiente para debug
               } else {
-                console.log('✅ Resposta do assistente salva. Tamanho:', assistantMessage.length);
+                console.log('✅ Resposta do assistente salva');
               }
             } catch (error) {
               console.error('❌ Erro crítico ao salvar resposta:', error);
               // Não lançamos erro para não quebrar resposta já enviada ao cliente
             }
           }
-
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         } catch (error) {
-          console.error('Streaming error:', error);
+          console.error('❌ Streaming error:', error);
+          // Send error to client via SSE
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+            error: 'Erro durante streaming' 
+          })}\n\n`));
         } finally {
           controller.close();
         }
+      } catch (timeoutError) {
+        // Handle timeout from AbortController
+        if (timeoutError.name === 'AbortError') {
+          console.error('❌ AI Gateway timeout após 30 segundos');
+          return new Response(
+            JSON.stringify({ error: 'Request timeout. Please try again.' }), 
+            { 
+              status: 408,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+        throw timeoutError;
+      }
       }
     });
 
