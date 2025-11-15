@@ -15,7 +15,7 @@ import { validateAndFetch, ML_ENDPOINTS } from '../_shared/mlEndpointValidator.t
 // ✅ Importar serviços de enriquecimento FASE 2
 import { fetchShipmentHistory, fetchMultipleShipmentHistories } from './services/ShipmentHistoryService.ts';
 import { fetchShippingCosts, fetchMultipleShippingCosts, fetchReturnCost } from './services/ShippingCostsService.ts';
-import { enrichClaimsWithArrivalDates } from './services/ReturnArrivalDateService.ts';
+import { fetchReturnArrivalDate } from './services/ReturnArrivalDateService.ts';
 
 // ✅ Importar função de mapeamento completo
 import { mapDevolucaoCompleta } from './mapeamento.ts';
@@ -700,24 +700,27 @@ serve(async (req) => {
     logger.progress(`✅ ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
     // 🎯 BUSCAR DATAS DE CHEGADA DAS DEVOLUÇÕES
-    console.log('📅 ========== ANTES DE CHAMAR enrichClaimsWithArrivalDates ==========');
-    console.log(`📅 Total de claims: ${allEnrichedClaims.length}`);
-    console.log(`📅 AccessToken: ${accessToken ? 'PRESENTE' : 'AUSENTE'}`);
-    console.log(`📅 Tipo de allEnrichedClaims: ${typeof allEnrichedClaims}, É Array: ${Array.isArray(allEnrichedClaims)}`);
+    logger.progress('📅 Buscando datas de chegada das devoluções...');
     
-    let claimsWithArrivalDates;
-    try {
-      console.log('📅 CHAMANDO enrichClaimsWithArrivalDates...');
-      claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
-      console.log(`📅 RETORNOU enrichClaimsWithArrivalDates: ${claimsWithArrivalDates?.length || 0} claims`);
-    } catch (err) {
-      console.error('❌ ERRO AO CHAMAR enrichClaimsWithArrivalDates:', err);
-      claimsWithArrivalDates = allEnrichedClaims; // Fallback
-    }
+    const claimsWithArrivalDates = await Promise.all(
+      allEnrichedClaims.map(async (claim: any) => {
+        try {
+          const claimId = claim.claim_details?.id || claim.id;
+          if (!claimId) return claim;
+          
+          const arrivalDate = await fetchReturnArrivalDate(String(claimId), accessToken);
+          
+          return {
+            ...claim,
+            data_chegada_produto: arrivalDate
+          };
+        } catch (err) {
+          logger.error(`Erro ao buscar data de chegada para claim ${claim.id}:`, err);
+          return claim;
+        }
+      })
+    );
     
-    logger.progress(`✅ ${claimsWithArrivalDates.length} claims retornados do enriquecimento`);
-    
-    // Verificar quantos têm data_chegada_produto
     const withDate = claimsWithArrivalDates.filter(c => c.data_chegada_produto).length;
     logger.progress(`📊 Claims com data_chegada_produto: ${withDate}/${claimsWithArrivalDates.length}`);
 
