@@ -20,13 +20,20 @@ import { translateColumnValue } from '../config/translations';
 
 
 interface Devolucao2025TableProps {
+  accounts: Array<{ id: string; name: string; account_identifier: string }>;
   devolucoes: any[];
   isLoading: boolean;
   error: any;
   visibleColumns: string[];
 }
 
-export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
+export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
+  // Helper para buscar nome da conta
+  const getAccountName = (integrationAccountId: string) => {
+    const account = accounts.find(acc => acc.id === integrationAccountId);
+    return account?.name || integrationAccountId;
+  };
+  
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -146,7 +153,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
               {isVisible('account_name') && (
                 <TableCell className="font-medium">
-                  {dev.account_name?.replace(/^(Conta:\s*|Account:\s*)/i, '').trim() || '-'}
+                  {getAccountName(dev.integration_account_id)}
                 </TableCell>
               )}
               {isVisible('order_id') && <TableCell>{dev.order_id || '-'}</TableCell>}

@@ -264,6 +264,7 @@ export const Devolucao2025Page = () => {
         )}
         
         <Devolucao2025Table 
+          accounts={accounts}
           devolucoes={paginatedDevolucoes}
           isLoading={isLoading}
           error={error}
