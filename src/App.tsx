@@ -319,7 +319,7 @@ function App() {
                       </PermissionRoute>
                     } />
                     <Route path="/ai-insights" element={
-                      <PermissionRoute requiredPermissions={['dashboard:view']}>
+                      <PermissionRoute requiredPermissions={['system:ai_insights']}>
                         <AIInsights />
                       </PermissionRoute>
                     } />
