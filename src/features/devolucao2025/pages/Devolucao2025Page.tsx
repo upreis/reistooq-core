@@ -18,6 +18,7 @@ import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
 import { ColumnSelector } from '../components/ColumnSelector';
 import { useColumnPreferences } from '../hooks/useColumnPreferences';
 import { COLUMNS_CONFIG } from '../config/columns';
+import { ExportButton } from '../components/ExportButton';
 import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
@@ -139,23 +140,29 @@ export const Devolucao2025Page = () => {
       <Devolucao2025Stats devolucoes={devolucoes} />
 
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Filtros</h2>
-          <ColumnSelector 
-            columns={COLUMNS_CONFIG}
-            visibleColumns={visibleColumns}
-            onVisibleColumnsChange={setVisibleColumns}
-          />
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Devolucao2025Filters
+              accounts={accounts}
+              selectedAccount={selectedAccount}
+              onAccountChange={setSelectedAccount}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onApplyFilters={refetch}
+              isLoading={isLoading}
+            />
+            <ColumnSelector 
+              columns={COLUMNS_CONFIG}
+              visibleColumns={visibleColumns}
+              onVisibleColumnsChange={setVisibleColumns}
+            />
+            <ExportButton 
+              data={devolucoes}
+              visibleColumns={visibleColumns}
+              disabled={isLoading}
+            />
+          </div>
         </div>
-          <Devolucao2025Filters
-            accounts={accounts}
-            selectedAccount={selectedAccount}
-            onAccountChange={setSelectedAccount}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            onApplyFilters={refetch}
-            isLoading={isLoading}
-          />
       </Card>
 
       <Card className="p-6 flex-1 flex flex-col">
