@@ -2,11 +2,12 @@
  * 📋 FILTROS - DEVOLUÇÕES 2025
  */
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, RefreshCw } from 'lucide-react';
+import { CalendarIcon, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -16,7 +17,7 @@ interface Devolucao2025FiltersProps {
   onAccountChange: (value: string) => void;
   dateRange: { from: Date; to: Date };
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
-  onRefresh: () => void;
+  onApplyFilters: () => void;
   isLoading?: boolean;
 }
 
@@ -26,13 +27,22 @@ export const Devolucao2025Filters = ({
   onAccountChange,
   dateRange,
   onDateRangeChange,
-  onRefresh,
+  onApplyFilters,
   isLoading = false
 }: Devolucao2025FiltersProps) => {
+  const [localAccount, setLocalAccount] = useState(selectedAccount);
+  const [localDateRange, setLocalDateRange] = useState(dateRange);
+
+  const handleApply = () => {
+    onAccountChange(localAccount);
+    onDateRangeChange(localDateRange);
+    onApplyFilters();
+  };
+
   return (
     <div className="flex flex-wrap gap-4">
       <div className="flex-1 min-w-[200px]">
-        <Select value={selectedAccount} onValueChange={onAccountChange}>
+        <Select value={localAccount} onValueChange={setLocalAccount}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione a conta" />
           </SelectTrigger>
@@ -51,10 +61,10 @@ export const Devolucao2025Filters = ({
         <PopoverTrigger asChild>
           <Button variant="outline" className="justify-start text-left font-normal">
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {dateRange.from && dateRange.to ? (
+            {localDateRange.from && localDateRange.to ? (
               <>
-                {format(dateRange.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
-                {format(dateRange.to, 'dd/MM/yyyy', { locale: ptBR })}
+                {format(localDateRange.from, 'dd/MM/yyyy', { locale: ptBR })} -{' '}
+                {format(localDateRange.to, 'dd/MM/yyyy', { locale: ptBR })}
               </>
             ) : (
               'Selecione o período'
@@ -64,10 +74,10 @@ export const Devolucao2025Filters = ({
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="range"
-            selected={{ from: dateRange.from, to: dateRange.to }}
+            selected={{ from: localDateRange.from, to: localDateRange.to }}
             onSelect={(range) => {
               if (range?.from && range?.to) {
-                onDateRangeChange({ from: range.from, to: range.to });
+                setLocalDateRange({ from: range.from, to: range.to });
               }
             }}
             locale={ptBR}
@@ -76,9 +86,9 @@ export const Devolucao2025Filters = ({
         </PopoverContent>
       </Popover>
 
-      <Button onClick={onRefresh} variant="outline" disabled={isLoading}>
-        <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-        {isLoading ? 'Buscando...' : 'Atualizar'}
+      <Button onClick={handleApply} disabled={isLoading}>
+        <Search className="h-4 w-4 mr-2" />
+        {isLoading ? 'Buscando...' : 'Aplicar Filtros'}
       </Button>
     </div>
   );
