@@ -135,7 +135,22 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
           </TableRow>
         </TableHeader>
         <TableBody>
-          {devolucoes.map((dev, index) => (
+          {devolucoes.map((dev, index) => {
+            // Debug: Log valores para verificar traduções (apenas primeira linha)
+            if (index === 0) {
+              console.log('🔍 Valores para tradução:', {
+                metodo_pagamento: dev.metodo_pagamento,
+                tipo_pagamento: dev.tipo_pagamento,
+                status_devolucao: dev.status_devolucao,
+                status_return: dev.status_return,
+                destino: dev.destino_devolucao,
+                review_stage: dev.dados_reviews?.stage,
+                review_status: dev.dados_reviews?.status,
+                product_condition: dev.dados_reviews?.product_condition,
+                product_destination: dev.dados_reviews?.product_destination
+              });
+            }
+            return (
             <TableRow key={`${dev.claim_id}-${index}`}>
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
               {isVisible('account_name') && <TableCell className="font-medium">{dev.account_name || '-'}</TableCell>}
@@ -379,7 +394,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
                 </TableCell>
               )}
             </TableRow>
-          ))}
+            );
+          })}
           </TableBody>
         </Table>
       </div>
