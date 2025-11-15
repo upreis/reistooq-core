@@ -1,67 +1,11 @@
 import { useState } from "react";
-import { MessageCircle, X, Send } from "lucide-react";
+import { MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { AIChatWidget } from "@/components/ai/AIChatWidget";
 
 export function AIChatBubble() {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
-
-    const userMessage = input.trim();
-    setInput("");
-    setMessages(prev => [...prev, { role: "user", content: userMessage }]);
-    setIsLoading(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("ai-chat", {
-        body: { message: userMessage }
-      });
-
-      if (error) throw error;
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      setMessages(prev => [
-        ...prev,
-        { role: "assistant", content: data.response }
-      ]);
-    } catch (error: any) {
-      console.error("Chat error:", error);
-      
-      if (error.message?.includes("429") || error.message?.includes("Limite")) {
-        toast({
-          variant: "destructive",
-          title: "Limite excedido",
-          description: "Muitas mensagens em pouco tempo. Aguarde um momento.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro ao enviar mensagem",
-          description: "Tente novamente em instantes.",
-        });
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <>
