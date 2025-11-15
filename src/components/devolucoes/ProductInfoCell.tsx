@@ -89,20 +89,6 @@ export function ProductInfoCell({ productInfo }: ProductInfoCellProps) {
                 )}
               </div>
 
-              {/* SKU + Preço */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {productInfo.sku && (
-                  <Badge variant="secondary" className="text-xs">
-                    SKU: {productInfo.sku}
-                  </Badge>
-                )}
-                {productInfo.price !== undefined && (
-                  <span className="text-sm font-semibold text-green-600 dark:text-green-400">
-                    {formatPrice(productInfo.price, productInfo.currency_id)}
-                  </span>
-                )}
-              </div>
-
               {/* ID do produto */}
               {productInfo.id && (
                 <div className="text-xs text-muted-foreground mt-0.5 font-mono">
