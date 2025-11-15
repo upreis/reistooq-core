@@ -73,12 +73,16 @@ export async function fetchReturnArrivalDate(
 
     // Log detalhado dos shipments
     if (returnsData.shipments && returnsData.shipments.length > 0) {
+      console.log(`🔍 [SHIPMENT DEBUG] Total shipments: ${returnsData.shipments.length}`);
       returnsData.shipments.forEach((s, idx) => {
-        logger.debug(`[ReturnArrival] 📍 Shipment ${idx}: ID=${s.shipment_id}, Destino=${s.destination?.name}`);
+        console.log(`🔍 [SHIPMENT ${idx}] ID: ${s.shipment_id}, Destino: ${s.destination?.name}`);
+        console.log(`🔍 [SHIPMENT ${idx}] Status: ${s.status}`);
+        console.log(`🔍 [SHIPMENT ${idx}] status_history exists: ${!!s.status_history}`);
+        console.log(`🔍 [SHIPMENT ${idx}] status_history length: ${s.status_history?.length || 0}`);
+        if (s.status_history && s.status_history.length > 0) {
+          console.log(`🔍 [SHIPMENT ${idx}] First event:`, JSON.stringify(s.status_history[0]));
+        }
       });
-      
-      // 🔍 Log completo do primeiro shipment para debug
-      logger.debug(`[ReturnArrival] 🔍 ESTRUTURA COMPLETA do primeiro shipment:`, JSON.stringify(returnsData.shipments[0], null, 2));
     }
 
     // 2. Encontrar o shipment de devolução
