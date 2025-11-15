@@ -740,10 +740,14 @@ serve(async (req) => {
         // ✅ ESTRUTURA CORRETA para os mappers
         const item = {
           // Campos de nível superior que os mappers esperam
+          id: claim.id, // ✅ CRÍTICO: ID do claim para ReturnArrivalDateService
           order_id: claim.resource_id, // resource_id é o order_id
           date_created: claim.date_created, // Data de criação do claim
           amount: claim.seller_amount || null,
           reason: claim.reason?.description || null, // Motivo da devolução
+          
+          // ✅ ADICIONAR data_chegada_produto se veio do enrichment
+          data_chegada_produto: claim.data_chegada_produto || null,
           
           // Dados do claim (contém status, stage, resolution, etc.)
           claim_details: claim,

@@ -89,13 +89,15 @@ export const mapTrackingData = (item: any) => {
     // 🎯 DATA DE CHEGADA: Vem do serviço ReturnArrivalDateService
     // Busca no histórico do shipment de devolução (status 'delivered')
     data_chegada_produto: (() => {
-      // Log para debug
-      console.log(`📅 [TrackingMapper] Claim ${claim.id}: data_chegada_produto=${claim.data_chegada_produto || 'NULL'}`);
+      // ✅ Pegar claim ID correto para logs
+      const claimId = claim.id || claim.claim_details?.id || item.id || 'unknown';
+      console.log(`📅 [TrackingMapper] Claim ${claimId}: data_chegada_produto=${claim.data_chegada_produto || item.data_chegada_produto || 'NULL'}`);
       
-      // Prioridade 1: Usar campo enriquecido pelo serviço
-      if (claim.data_chegada_produto) {
-        console.log(`📅 [TrackingMapper] ✅ Usando data do serviço: ${claim.data_chegada_produto}`);
-        return claim.data_chegada_produto;
+      // Prioridade 1: Usar campo enriquecido pelo serviço (pode estar em item ou claim)
+      const arrivedDate = item.data_chegada_produto || claim.data_chegada_produto;
+      if (arrivedDate) {
+        console.log(`📅 [TrackingMapper] ✅ Usando data do serviço: ${arrivedDate}`);
+        return arrivedDate;
       }
       
       // Fallback: tentar extrair do enriched history
