@@ -135,14 +135,16 @@ serve(async (req) => {
     
     // Use the already created service role client for database operations
 
-    // Buscar perfil do usuário usando RPC function que bypassa RLS
+    // Buscar perfil do usuário com service role (tem GRANT SELECT)
     console.log('🔍 Attempting to read profile for user:', user.id);
-    console.log('🔍 Using RPC function to bypass RLS');
+    console.log('🔍 Using service_role with direct SELECT (has GRANT permission)');
     
-    const { data: profileData, error: profileError } = await supabaseService
-      .rpc('get_user_profile_for_chat', { user_id: user.id });
+    const { data: profile, error: profileError } = await supabaseService
+      .from('profiles')
+      .select('id, organizacao_id, nome_exibicao')
+      .eq('id', user.id)
+      .single();
     
-    const profile = profileData?.[0];
     console.log('🔍 Profile query result:', { profile, error: profileError });
 
     // Validar que o perfil existe e tem organization_id
