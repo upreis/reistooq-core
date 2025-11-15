@@ -95,7 +95,7 @@ export const Devolucao2025Page = () => {
         return data?.data || [];
       }
     },
-    enabled: accounts.length > 0
+    enabled: false // Desabilita busca automática
   });
 
   // Paginação dos dados
@@ -133,15 +133,15 @@ export const Devolucao2025Page = () => {
       <Devolucao2025Stats devolucoes={devolucoes} />
 
       <Card className="p-6">
-        <Devolucao2025Filters
-          accounts={accounts}
-          selectedAccount={selectedAccount}
-          onAccountChange={setSelectedAccount}
-          dateRange={dateRange}
-          onDateRangeChange={setDateRange}
-          onRefresh={refetch}
-          isLoading={isLoading}
-        />
+          <Devolucao2025Filters
+            accounts={accounts}
+            selectedAccount={selectedAccount}
+            onAccountChange={setSelectedAccount}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+            onApplyFilters={refetch}
+            isLoading={isLoading}
+          />
       </Card>
 
       <Card className="p-6 flex-1 flex flex-col">
