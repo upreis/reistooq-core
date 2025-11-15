@@ -65,12 +65,16 @@ export async function fetchReturnArrivalDate(
     }
 
     const returnsData: ReturnData = await returnsRes.json();
-    logger.debug(`[ReturnArrival] 📦 Dados do return obtidos. Shipments: ${returnsData.shipments?.length || 0}`);
+    
+    // 🔍 Log COMPLETO da resposta da API (primeiras 500 chars)
+    const returnsDataStr = JSON.stringify(returnsData);
+    logger.debug(`[ReturnArrival] 📦 RESPOSTA /returns/${claimId}: ${returnsDataStr.substring(0, 500)}...`);
+    logger.debug(`[ReturnArrival] 📦 Shipments count: ${returnsData.shipments?.length || 0}`);
 
     // Log detalhado dos shipments
     if (returnsData.shipments && returnsData.shipments.length > 0) {
       returnsData.shipments.forEach((s, idx) => {
-        logger.debug(`[ReturnArrival] 📍 Shipment ${idx}: ID=${s.shipment_id}, Destino=${s.destination?.name}, Type=${s.type || 'N/A'}`);
+        logger.debug(`[ReturnArrival] 📍 Shipment ${idx}: ID=${s.shipment_id}, Destino=${s.destination?.name}`);
       });
       
       // 🔍 Log completo do primeiro shipment para debug
