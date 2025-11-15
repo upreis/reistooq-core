@@ -85,24 +85,23 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     console.log('🔍 Token length:', token?.length);
 
-    // Create Supabase client with user's JWT token for authentication only
-    const supabaseAuth = createClient(
+    // Create service role client for all operations (including auth validation)
+    const supabaseService = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
       {
-        global: {
-          headers: {
-            Authorization: authHeader
-          }
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
         }
       }
     );
 
-    // Verify user authentication using the authenticated client
-    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser();
+    // Verify user authentication using service role client with JWT
+    const { data: { user }, error: userError } = await supabaseService.auth.getUser(token);
     
     if (userError || !user) {
-      console.error('❌ Auth error details:', JSON.stringify(userError));
+      console.error('❌ Auth error details:', userError);
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Please log in again' }), 
         { 
@@ -113,17 +112,12 @@ serve(async (req) => {
     }
 
     console.log('✅ User authenticated:', user.id);
-
-    // Create service role client for database operations (bypasses RLS)
-    // This is necessary because RLS policies might block legitimate operations
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+    
+    // Use the already created service role client for database operations
 
     // Buscar perfil do usuário com validação adequada
     // Using service role here to ensure we can read the profile
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabaseService
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
