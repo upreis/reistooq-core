@@ -14,22 +14,38 @@ serve(async (req) => {
   try {
     const { message, conversationId, context } = await req.json();
     
+    // Get authorization from request
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
 
+    // Create Supabase client with user's auth
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
+      { 
+        global: { 
+          headers: { Authorization: authHeader } 
+        } 
+      }
     );
 
-    // Usar busca semântica RAG
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      throw new Error('Unauthorized');
+    // Verify user authentication
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized - Please log in again' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
+
+    console.log('✅ User authenticated:', user.id);
 
     const { data: profile } = await supabase
       .from('profiles')
