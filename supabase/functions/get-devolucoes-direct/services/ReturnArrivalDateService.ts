@@ -73,14 +73,14 @@ export async function fetchReturnArrivalDate(
 
     // Log detalhado dos shipments
     if (returnsData.shipments && returnsData.shipments.length > 0) {
-      console.log(`🔍 [SHIPMENT DEBUG] Total shipments: ${returnsData.shipments.length}`);
+      console.log(`🔥🔥🔥 SHIPMENT DEBUG - Total: ${returnsData.shipments.length} 🔥🔥🔥`);
       returnsData.shipments.forEach((s, idx) => {
-        console.log(`🔍 [SHIPMENT ${idx}] ID: ${s.shipment_id}, Destino: ${s.destination?.name}`);
-        console.log(`🔍 [SHIPMENT ${idx}] Status: ${s.status}`);
-        console.log(`🔍 [SHIPMENT ${idx}] status_history exists: ${!!s.status_history}`);
-        console.log(`🔍 [SHIPMENT ${idx}] status_history length: ${s.status_history?.length || 0}`);
+        console.log(`🔥 [SHIPMENT ${idx}] ID: ${s.shipment_id}, Destino: ${s.destination?.name}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Status: ${s.status}`);
+        console.log(`🔥 [SHIPMENT ${idx}] status_history exists: ${!!s.status_history}`);
+        console.log(`🔥 [SHIPMENT ${idx}] status_history length: ${s.status_history?.length || 0}`);
         if (s.status_history && s.status_history.length > 0) {
-          console.log(`🔍 [SHIPMENT ${idx}] First event:`, JSON.stringify(s.status_history[0]));
+          console.log(`🔥 [SHIPMENT ${idx}] First event:`, JSON.stringify(s.status_history[0]));
         }
       });
     }
@@ -181,9 +181,9 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
-  console.log('🚀🚀🚀 FUNÇÃO enrichClaimsWithArrivalDates INICIOU! 🚀🚀🚀');
-  console.log(`Total claims: ${claims?.length || 0}`);
-  console.log(`AccessToken: ${accessToken ? 'SIM' : 'NÃO'}`);
+  console.log('🎯🎯🎯 ARRIVAL DATE SERVICE - INÍCIO 🎯🎯🎯');
+  console.log(`🎯 Total claims: ${claims?.length || 0}`);
+  console.log(`🎯 AccessToken: ${accessToken ? 'SIM' : 'NÃO'}`);
   
   if (!claims || !Array.isArray(claims)) {
     console.error('❌ claims não é um array válido!');
