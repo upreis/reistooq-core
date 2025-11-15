@@ -24,6 +24,8 @@ export const TIPO_PAGAMENTO_TRANSLATIONS: Record<string, string> = {
   'cash': 'Dinheiro',
   'installments': 'Parcelado',
   'full_payment': 'À Vista',
+  'account_money': 'Saldo Mercado Pago',
+  'bank_transfer': 'Transferência Bancária',
 };
 
 // Status Devolução
