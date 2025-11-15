@@ -28,7 +28,7 @@ export const Devolucao2025Page = () => {
   // Estado de persistência
   const persistentCache = usePersistentDevolucoesState();
   
-  const [selectedAccount, setSelectedAccount] = useState<string>('all');
+  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date()
@@ -41,7 +41,7 @@ export const Devolucao2025Page = () => {
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
-      setSelectedAccount(cached.selectedAccount);
+      setSelectedAccounts(cached.selectedAccounts || []);
       setDateRange(cached.dateRange);
       setCurrentPage(cached.currentPage);
       setItemsPerPage(cached.itemsPerPage);
@@ -89,11 +89,11 @@ export const Devolucao2025Page = () => {
 
   // Buscar devoluções via Edge Function
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['devolucoes-2025', selectedAccount, dateRange],
+    queryKey: ['devolucoes-2025', selectedAccounts, dateRange],
     queryFn: async () => {
       // Se existe cache válido, usar dados em cache
       if (persistentCache.hasValidPersistedState() && 
-          persistentCache.persistedState?.selectedAccount === selectedAccount &&
+          JSON.stringify(persistentCache.persistedState?.selectedAccounts) === JSON.stringify(selectedAccounts) &&
           persistentCache.persistedState?.dateRange.from.getTime() === dateRange.from.getTime() &&
           persistentCache.persistedState?.dateRange.to.getTime() === dateRange.to.getTime()) {
         console.log('✅ Usando dados em cache, sem chamada à API');
@@ -104,39 +104,31 @@ export const Devolucao2025Page = () => {
       console.log('🔄 Buscando dados da API...');
       let result: any[] = [];
       
-      if (selectedAccount === 'all') {
-        const allDevolucoes = await Promise.all(
-          accounts.map(async (account) => {
-            const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-              body: {
-                integration_account_id: account.id,
-                date_from: dateRange.from.toISOString(),
-                date_to: dateRange.to.toISOString()
-              }
-            });
+      // Se nenhuma conta selecionada ou todas selecionadas
+      const accountsToFetch = selectedAccounts.length === 0 || selectedAccounts.length === accounts.length
+        ? accounts.map(acc => acc.id)
+        : selectedAccounts;
+      
+      const allDevolucoes = await Promise.all(
+        accountsToFetch.map(async (accountId) => {
+          const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
+            body: {
+              integration_account_id: accountId,
+              date_from: dateRange.from.toISOString(),
+              date_to: dateRange.to.toISOString()
+            }
+          });
 
-            if (error) throw error;
-            return data?.data || [];
-          })
-        );
-        result = allDevolucoes.flat();
-      } else {
-        const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
-          body: {
-            integration_account_id: selectedAccount,
-            date_from: dateRange.from.toISOString(),
-            date_to: dateRange.to.toISOString()
-          }
-        });
-
-        if (error) throw error;
-        result = data?.data || [];
-      }
+          if (error) throw error;
+          return data?.data || [];
+        })
+      );
+      result = allDevolucoes.flat();
 
       // Salvar dados no cache após busca bem-sucedida
       persistentCache.saveDataCache(
         result,
-        selectedAccount,
+        selectedAccounts,
         dateRange,
         currentPage,
         itemsPerPage,
@@ -186,7 +178,7 @@ export const Devolucao2025Page = () => {
       const timer = setTimeout(() => {
         persistentCache.saveDataCache(
           devolucoes,
-          selectedAccount,
+          selectedAccounts,
           dateRange,
           currentPage,
           itemsPerPage,
@@ -235,8 +227,8 @@ export const Devolucao2025Page = () => {
           <div className="flex items-center gap-3 flex-wrap">
             <Devolucao2025Filters
               accounts={accounts}
-              selectedAccount={selectedAccount}
-              onAccountChange={setSelectedAccount}
+              selectedAccounts={selectedAccounts}
+              onAccountsChange={setSelectedAccounts}
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
               onApplyFilters={handleApplyFilters}
