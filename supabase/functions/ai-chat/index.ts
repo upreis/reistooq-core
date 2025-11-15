@@ -218,7 +218,7 @@ Instruções:
     if (conversationId) {
       console.log('🔍 Validando ownership do conversationId:', conversationId);
       
-      const { data: conversationOwnership, error: ownershipError } = await supabase
+      const { data: conversationOwnership, error: ownershipError } = await supabaseService
         .from('ai_chat_conversations')
         .select('id, organization_id, user_id')
         .eq('id', conversationId)
@@ -252,7 +252,7 @@ Instruções:
 
       console.log('✅ Ownership validado. Carregando histórico...');
       
-      const { data: history, error: historyError } = await supabase
+      const { data: history, error: historyError } = await supabaseService
         .from('ai_chat_messages')
         .select('role, content')
         .eq('conversation_id', conversationId)
@@ -326,7 +326,7 @@ Instruções:
     if (!conversationId) {
       console.log('📝 Criando nova conversa...');
       try {
-        const { data: newConv, error: convError } = await supabase
+        const { data: newConv, error: convError } = await supabaseService
           .from('ai_chat_conversations')
           .insert({
             user_id: user.id,
@@ -353,7 +353,7 @@ Instruções:
     if (finalConversationId) {
       console.log('💾 Salvando mensagem do usuário...');
       try {
-        const { error: msgError } = await supabase.from('ai_chat_messages').insert({
+        const { error: msgError } = await supabaseService.from('ai_chat_messages').insert({
           conversation_id: finalConversationId,
           role: 'user',
           content: message
@@ -420,7 +420,7 @@ Instruções:
           if (finalConversationId && assistantMessage) {
             console.log('💾 Salvando resposta do assistente...');
             try {
-              const { error: assistantMsgError } = await supabase.from('ai_chat_messages').insert({
+              const { error: assistantMsgError } = await supabaseService.from('ai_chat_messages').insert({
                 conversation_id: finalConversationId,
                 role: 'assistant',
                 content: assistantMessage
