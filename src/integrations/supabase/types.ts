@@ -178,6 +178,80 @@ export type Database = {
           },
         ]
       }
+      ai_insights: {
+        Row: {
+          affected_route: string | null
+          confidence_score: number | null
+          created_at: string
+          description: string
+          id: string
+          implementation_notes: string | null
+          insight_type: string
+          organization_id: string
+          priority: string
+          raw_data: Json | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          session_replay_ids: string[] | null
+          status: string
+          suggested_improvement: string | null
+          title: string
+          updated_at: string
+          user_actions_analyzed: number | null
+        }
+        Insert: {
+          affected_route?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          description: string
+          id?: string
+          implementation_notes?: string | null
+          insight_type: string
+          organization_id: string
+          priority?: string
+          raw_data?: Json | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_replay_ids?: string[] | null
+          status?: string
+          suggested_improvement?: string | null
+          title: string
+          updated_at?: string
+          user_actions_analyzed?: number | null
+        }
+        Update: {
+          affected_route?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string
+          id?: string
+          implementation_notes?: string | null
+          insight_type?: string
+          organization_id?: string
+          priority?: string
+          raw_data?: Json | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          session_replay_ids?: string[] | null
+          status?: string
+          suggested_improvement?: string | null
+          title?: string
+          updated_at?: string
+          user_actions_analyzed?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_organization_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           active: boolean | null

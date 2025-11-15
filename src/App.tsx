@@ -62,6 +62,7 @@ import ResetPassword from "./pages/ResetPassword";
 import CategoryManager from "./pages/CategoryManager";
 import ShopeeCallbackPage from "./pages/ShopeeCallbackPage";
 import Compras from "./pages/Compras";
+import AIInsights from "./pages/AIInsights";
 
 // Create QueryClient instance outside component to avoid recreation
 const queryClient = new QueryClient({
@@ -315,6 +316,11 @@ function App() {
                     <Route path="/icons/solar" element={
                       <PermissionRoute requiredPermissions={['demo:access']}>
                         <SolarIcons />
+                      </PermissionRoute>
+                    } />
+                    <Route path="/ai-insights" element={
+                      <PermissionRoute requiredPermissions={['dashboard:view']}>
+                        <AIInsights />
                       </PermissionRoute>
                     } />
                   </Route>
