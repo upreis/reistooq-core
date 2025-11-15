@@ -48,7 +48,7 @@ export function AIChatWidget() {
 
       console.log('🔐 Enviando mensagem com token JWT');
 
-      // Usar fetch direto para garantir que o header Authorization seja enviado
+      // Fazer chamada à edge function com streaming
       const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chat`;
       const response = await fetch(functionUrl, {
         method: 'POST',
@@ -88,22 +88,67 @@ export function AIChatWidget() {
         throw new Error(errorData.error || 'Erro ao chamar a função');
       }
 
-      const data = await response.json();
-      
-      if (!data) {
-        throw new Error('Nenhuma resposta recebida do assistente');
+      // Processar streaming SSE
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Não foi possível iniciar o streaming');
       }
 
-      // A resposta já vem completamente processada do backend
-      if (data.conversationId) {
-        setConversationId(data.conversationId);
-      }
+      const decoder = new TextDecoder();
+      let assistantContent = '';
+      let receivedConversationId: string | null = null;
 
-      if (data.content) {
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: data.content 
-        }]);
+      // Adicionar mensagem vazia do assistente para atualizar progressivamente
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (!line.trim() || line.startsWith(':')) continue;
+            if (!line.startsWith('data: ')) continue;
+
+            const data = line.slice(6).trim();
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              
+              if (parsed.content) {
+                assistantContent += parsed.content;
+                
+                // Atualizar a última mensagem (do assistente) progressivamente
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    role: 'assistant',
+                    content: assistantContent
+                  };
+                  return newMessages;
+                });
+              }
+
+              if (parsed.conversationId && !receivedConversationId) {
+                receivedConversationId = parsed.conversationId;
+                setConversationId(parsed.conversationId);
+              }
+            } catch (e) {
+              // Ignorar JSON inválido
+              console.warn('Erro ao parsear chunk SSE:', e);
+            }
+          }
+        }
+
+        console.log('✅ Streaming completo. Total de caracteres:', assistantContent.length);
+
+      } catch (streamError) {
+        console.error('❌ Erro durante streaming:', streamError);
+        throw streamError;
       }
 
     } catch (error) {
