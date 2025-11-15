@@ -137,28 +137,36 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
           {devolucoes.map((dev, index) => (
             <TableRow key={`${dev.claim_id}-${index}`}>
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-              <TableCell className="font-medium">{dev.account_name || '-'}</TableCell>
-              <TableCell>{dev.order_id || '-'}</TableCell>
-              <TableCell>{dev.claim_id || '-'}</TableCell>
-              <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>
-              <TableCell>
-                <ProductInfoCell productInfo={dev.product_info} />
-              </TableCell>
-              <TableCell>{dev.sku || '-'}</TableCell>
-              <TableCell>{dev.quantidade || '-'}</TableCell>
+              {isVisible('account_name') && <TableCell className="font-medium">{dev.account_name || '-'}</TableCell>}
+              {isVisible('order_id') && <TableCell>{dev.order_id || '-'}</TableCell>}
+              {isVisible('claim_id') && <TableCell>{dev.claim_id || '-'}</TableCell>}
+              {isVisible('comprador') && <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>}
+              {isVisible('produto') && (
+                <TableCell>
+                  <ProductInfoCell productInfo={dev.product_info} />
+                </TableCell>
+              )}
+              {isVisible('sku') && <TableCell>{dev.sku || '-'}</TableCell>}
+              {isVisible('quantidade') && <TableCell>{dev.quantidade || '-'}</TableCell>}
 
               {/* GRUPO 2: FINANCEIRO */}
-              <TableCell>
-                {dev.valor_reembolso_total ? `R$ ${dev.valor_reembolso_total.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
-              </TableCell>
-              <TableCell>{dev.metodo_pagamento || '-'}</TableCell>
-              <TableCell>{dev.tipo_pagamento || '-'}</TableCell>
+              {isVisible('valor_total') && (
+                <TableCell>
+                  {dev.valor_reembolso_total ? `R$ ${dev.valor_reembolso_total.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
+              {isVisible('valor_produto') && (
+                <TableCell>
+                  {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
+              {isVisible('percentual_reemb') && (
+                <TableCell>
+                  {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
+                </TableCell>
+              )}
+              {isVisible('metodo_pagamento') && <TableCell>{dev.metodo_pagamento || '-'}</TableCell>}
+              {isVisible('tipo_pagamento') && <TableCell>{dev.tipo_pagamento || '-'}</TableCell>}
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
               {isVisible('status_dev') && (
@@ -201,120 +209,158 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
               )}
 
               {/* GRUPO 4: DATAS */}
-              <TableCell>
-                {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_venda_original ? new Date(dev.data_venda_original).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_fechamento_devolucao ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_inicio_return ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
-                <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
-              </TableCell>
-              <TableCell>
-                {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
-              </TableCell>
+              {isVisible('data_criacao') && (
+                <TableCell>
+                  {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('data_venda') && (
+                <TableCell>
+                  {dev.data_venda_original ? new Date(dev.data_venda_original).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('data_fechamento') && (
+                <TableCell>
+                  {dev.data_fechamento_devolucao ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('data_inicio_return') && (
+                <TableCell>
+                  {dev.data_inicio_return ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('data_atualizacao') && (
+                <TableCell>
+                  {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('prazo_analise') && (
+                <TableCell>
+                  <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
+                </TableCell>
+              )}
+              {isVisible('data_chegada') && (
+                <TableCell>
+                  {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('ultima_msg') && (
+                <TableCell>
+                  {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-              <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>
-              <TableCell>
-                <LogisticTypeCell logisticType={dev.tipo_logistica} />
-              </TableCell>
+              {isVisible('codigo_rastreio') && <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>}
+              {isVisible('tipo_logistica') && (
+                <TableCell>
+                  <LogisticTypeCell logisticType={dev.tipo_logistica} />
+                </TableCell>
+              )}
 
               {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-              <TableCell>
-                {dev.eh_troca === true ? (
-                  <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
-                    <RefreshCw className="h-3 w-3" />
-                    Sim
-                  </Badge>
-                ) : dev.eh_troca === false ? (
-                  <Badge variant="secondary">Não</Badge>
-                ) : '-'}
-              </TableCell>
+              {isVisible('eh_troca') && (
+                <TableCell>
+                  {dev.eh_troca === true ? (
+                    <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                      <RefreshCw className="h-3 w-3" />
+                      Sim
+                    </Badge>
+                  ) : dev.eh_troca === false ? (
+                    <Badge variant="secondary">Não</Badge>
+                  ) : '-'}
+                </TableCell>
+              )}
 
               {/* GRUPO 8: COMUNICAÇÃO */}
-              <TableCell>{dev.numero_interacoes || '0'}</TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.qualidade_comunicacao === 'excelente' ? 'default' :
-                  dev.qualidade_comunicacao === 'boa' ? 'secondary' :
-                  'outline'
-                }>
-                  {dev.qualidade_comunicacao || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>{dev.status_moderacao || '-'}</TableCell>
-              <TableCell>{dev.total_anexos_comprador || '0'}</TableCell>
-              <TableCell>{dev.total_anexos_vendedor || '0'}</TableCell>
-              <TableCell>{dev.total_anexos_ml || '0'}</TableCell>
+              {isVisible('num_interacoes') && <TableCell>{dev.numero_interacoes || '0'}</TableCell>}
+              {isVisible('qualidade_com') && (
+                <TableCell>
+                  <Badge variant={
+                    dev.qualidade_comunicacao === 'excelente' ? 'default' :
+                    dev.qualidade_comunicacao === 'boa' ? 'secondary' :
+                    'outline'
+                  }>
+                    {dev.qualidade_comunicacao || '-'}
+                  </Badge>
+                </TableCell>
+              )}
+              {isVisible('moderacao') && <TableCell>{dev.status_moderacao || '-'}</TableCell>}
+              {isVisible('anexos_comprador') && <TableCell>{dev.total_anexos_comprador || '0'}</TableCell>}
+              {isVisible('anexos_vendedor') && <TableCell>{dev.total_anexos_vendedor || '0'}</TableCell>}
+              {isVisible('anexos_ml') && <TableCell>{dev.total_anexos_ml || '0'}</TableCell>}
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
-              <TableCell>{dev.dados_reviews?.resource || '-'}</TableCell>
-              <TableCell>{dev.dados_reviews?.resource_id || '-'}</TableCell>
-              <TableCell>
-                <Badge variant={dev.dados_reviews?.method === 'triage' ? 'default' : 'secondary'}>
-                  {dev.dados_reviews?.method || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                {dev.dados_reviews?.date_created 
-                  ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.dados_reviews?.last_updated 
-                  ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') 
-                  : '-'}
-              </TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.dados_reviews?.stage === 'closed' ? 'default' : 
-                  dev.dados_reviews?.stage === 'pending' ? 'outline' :
-                  dev.dados_reviews?.stage === 'timeout' ? 'destructive' : 'secondary'
-                }>
-                  {dev.dados_reviews?.stage || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.dados_reviews?.status === 'success' ? 'default' : 
-                  dev.dados_reviews?.status === 'failed' ? 'destructive' : 'outline'
-                }>
-                  {dev.dados_reviews?.status || '-'}
-                </Badge>
-              </TableCell>
-              <TableCell>{dev.dados_reviews?.product_condition || '-'}</TableCell>
-              <TableCell>{dev.dados_reviews?.product_destination || '-'}</TableCell>
-              <TableCell>{dev.dados_reviews?.reason_id || '-'}</TableCell>
-              <TableCell>
-                <Badge variant={
-                  dev.dados_reviews?.seller_status === 'success' ? 'default' :
-                  dev.dados_reviews?.seller_status === 'failed' ? 'destructive' :
-                  dev.dados_reviews?.seller_status === 'pending' ? 'outline' : 'secondary'
-                }>
-                  {dev.dados_reviews?.seller_status || '-'}
-                </Badge>
-              </TableCell>
+              {isVisible('review_resource') && <TableCell>{dev.dados_reviews?.resource || '-'}</TableCell>}
+              {isVisible('review_resource_id') && <TableCell>{dev.dados_reviews?.resource_id || '-'}</TableCell>}
+              {isVisible('review_method') && (
+                <TableCell>
+                  <Badge variant={dev.dados_reviews?.method === 'triage' ? 'default' : 'secondary'}>
+                    {dev.dados_reviews?.method || '-'}
+                  </Badge>
+                </TableCell>
+              )}
+              {isVisible('review_created') && (
+                <TableCell>
+                  {dev.dados_reviews?.date_created 
+                    ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') 
+                    : '-'}
+                </TableCell>
+              )}
+              {isVisible('review_updated') && (
+                <TableCell>
+                  {dev.dados_reviews?.last_updated 
+                    ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') 
+                    : '-'}
+                </TableCell>
+              )}
+              {isVisible('review_stage') && (
+                <TableCell>
+                  <Badge variant={
+                    dev.dados_reviews?.stage === 'closed' ? 'default' : 
+                    dev.dados_reviews?.stage === 'pending' ? 'outline' :
+                    dev.dados_reviews?.stage === 'timeout' ? 'destructive' : 'secondary'
+                  }>
+                    {dev.dados_reviews?.stage || '-'}
+                  </Badge>
+                </TableCell>
+              )}
+              {isVisible('review_status') && (
+                <TableCell>
+                  <Badge variant={
+                    dev.dados_reviews?.status === 'success' ? 'default' : 
+                    dev.dados_reviews?.status === 'failed' ? 'destructive' : 'outline'
+                  }>
+                    {dev.dados_reviews?.status || '-'}
+                  </Badge>
+                </TableCell>
+              )}
+              {isVisible('product_condition') && <TableCell>{dev.dados_reviews?.product_condition || '-'}</TableCell>}
+              {isVisible('product_destination') && <TableCell>{dev.dados_reviews?.product_destination || '-'}</TableCell>}
+              {isVisible('reason_id') && <TableCell>{dev.dados_reviews?.reason_id || '-'}</TableCell>}
+              {isVisible('seller_status') && (
+                <TableCell>
+                  <Badge variant={
+                    dev.dados_reviews?.seller_status === 'success' ? 'default' :
+                    dev.dados_reviews?.seller_status === 'failed' ? 'destructive' :
+                    dev.dados_reviews?.seller_status === 'pending' ? 'outline' : 'secondary'
+                  }>
+                    {dev.dados_reviews?.seller_status || '-'}
+                  </Badge>
+                </TableCell>
+              )}
 
               {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-              <TableCell>
-                {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
-              </TableCell>
-              <TableCell>
-                {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
-              </TableCell>
+              {isVisible('custo_total_log') && (
+                <TableCell>
+                  {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
+              {isVisible('custo_envio_orig') && (
+                <TableCell>
+                  {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
             </TableRow>
           ))}
           </TableBody>
