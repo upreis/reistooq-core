@@ -104,24 +104,35 @@ Instruções:
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages,
-        stream: false
+        stream: true
       }),
     });
 
     if (!aiResponse.ok) {
       const errorText = await aiResponse.text();
       console.error('AI Gateway error:', aiResponse.status, errorText);
+      
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: 'Payment required. Please add credits to continue.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
       throw new Error('AI service unavailable');
     }
 
-    const aiData = await aiResponse.json();
-    const assistantMessage = aiData.choices[0].message.content;
-
-    // Salvar conversa no banco
+    // Save conversation context first
     let finalConversationId = conversationId;
-
+    
     if (!conversationId) {
-      // Criar nova conversa
       const { data: newConv } = await supabase
         .from('ai_chat_conversations')
         .insert({
@@ -131,35 +142,91 @@ Instruções:
         })
         .select()
         .single();
-
+      
       finalConversationId = newConv?.id;
     }
-
-    // Salvar mensagens
+    
+    // Save user message
     if (finalConversationId) {
-      await supabase.from('ai_chat_messages').insert([
-        {
-          conversation_id: finalConversationId,
-          role: 'user',
-          content: message
-        },
-        {
-          conversation_id: finalConversationId,
-          role: 'assistant',
-          content: assistantMessage
-        }
-      ]);
+      await supabase.from('ai_chat_messages').insert({
+        conversation_id: finalConversationId,
+        role: 'user',
+        content: message
+      });
     }
 
-    return new Response(
-      JSON.stringify({
-        message: assistantMessage,
-        conversationId: finalConversationId
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Stream response back to client
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = aiResponse.body?.getReader();
+        if (!reader) {
+          controller.close();
+          return;
+        }
+
+        const decoder = new TextDecoder();
+        let assistantMessage = '';
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (!line.trim() || line.startsWith(':')) continue;
+              if (!line.startsWith('data: ')) continue;
+
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                
+                if (content) {
+                  assistantMessage += content;
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ 
+                    content,
+                    conversationId: finalConversationId 
+                  })}\n\n`));
+                }
+              } catch (e) {
+                // Skip invalid JSON
+              }
+            }
+          }
+
+          // Save complete assistant message
+          if (finalConversationId && assistantMessage) {
+            await supabase.from('ai_chat_messages').insert({
+              conversation_id: finalConversationId,
+              role: 'assistant',
+              content: assistantMessage
+            });
+          }
+
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        } catch (error) {
+          console.error('Streaming error:', error);
+        } finally {
+          controller.close();
+        }
       }
-    );
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+
 
   } catch (error) {
     console.error('Error in ai-chat function:', error);
