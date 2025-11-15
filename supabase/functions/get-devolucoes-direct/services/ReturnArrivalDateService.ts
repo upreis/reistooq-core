@@ -175,15 +175,24 @@ export async function enrichClaimsWithArrivalDates(
   for (let i = 0; i < claims.length; i++) {
     const claim = claims[i];
     
+    // ✅ Pegar o ID correto do claim
+    const claimId = claim.id || claim.claim_details?.id;
+    
+    if (!claimId) {
+      logger.warn(`[ReturnArrival] ⚠️ Claim sem ID encontrado no índice ${i}, pulando...`);
+      enrichedClaims.push(claim);
+      continue;
+    }
+    
     try {
-      logger.progress(`[ReturnArrival] 🔄 Processando claim ${i+1}/${claims.length} (ID: ${claim.id})`);
-      const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
+      logger.progress(`[ReturnArrival] 🔄 Processando claim ${i+1}/${claims.length} (ID: ${claimId})`);
+      const arrivalDate = await fetchReturnArrivalDate(claimId, accessToken);
       
       if (arrivalDate) {
         successCount++;
-        logger.progress(`[ReturnArrival] ✅ ${i+1}/${claims.length} - Data encontrada: ${arrivalDate} para claim ${claim.id}`);
+        logger.progress(`[ReturnArrival] ✅ ${i+1}/${claims.length} - Data encontrada: ${arrivalDate} para claim ${claimId}`);
       } else {
-        logger.warn(`[ReturnArrival] ⚠️ ${i+1}/${claims.length} - Sem data para claim ${claim.id}`);
+        logger.warn(`[ReturnArrival] ⚠️ ${i+1}/${claims.length} - Sem data para claim ${claimId}`);
       }
       
       const enrichedClaim = {
@@ -191,11 +200,11 @@ export async function enrichClaimsWithArrivalDates(
         data_chegada_produto: arrivalDate  // ✅ Nome correto do campo
       };
       
-      logger.debug(`[ReturnArrival] 💾 Claim ${claim.id} enriquecido com data_chegada_produto: ${enrichedClaim.data_chegada_produto || 'NULL'}`);
+      logger.debug(`[ReturnArrival] 💾 Claim ${claimId} enriquecido com data_chegada_produto: ${enrichedClaim.data_chegada_produto || 'NULL'}`);
       enrichedClaims.push(enrichedClaim);
       
     } catch (error) {
-      logger.error(`[ReturnArrival] ❌ ${i+1}/${claims.length} - Erro no claim ${claim.id}:`, error instanceof Error ? error.message : String(error));
+      logger.error(`[ReturnArrival] ❌ ${i+1}/${claims.length} - Erro no claim ${claimId}:`, error instanceof Error ? error.message : String(error));
       enrichedClaims.push(claim);
     }
     
