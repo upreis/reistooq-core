@@ -178,7 +178,7 @@ serve(async (req) => {
     console.log('🔒 Usando Service Role para operações de banco');
 
     // Buscar conhecimento relevante usando embeddings semânticos
-    const searchResponse = await supabase.functions.invoke('semantic-search', {
+    const searchResponse = await supabaseService.functions.invoke('semantic-search', {
       body: { 
         query: message,
         limit: 3,
