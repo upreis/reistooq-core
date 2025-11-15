@@ -33,14 +33,14 @@ serve(async (req) => {
     const token = authHeader.replace('Bearer ', '');
     console.log('🔍 Token length:', token?.length);
 
-    // Create Supabase client
-    const supabase = createClient(
+    // Create Supabase client for authentication validation
+    const supabaseAuth = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
     // Verify user authentication - pass token explicitly
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: userError } = await supabaseAuth.auth.getUser(token);
     
     if (userError || !user) {
       console.error('❌ Auth error details:', JSON.stringify(userError));
@@ -54,6 +54,12 @@ serve(async (req) => {
     }
 
     console.log('✅ User authenticated:', user.id);
+
+    // Create service role client for database operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     const { data: profile } = await supabase
       .from('profiles')
