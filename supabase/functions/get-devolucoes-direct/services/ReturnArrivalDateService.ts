@@ -177,12 +177,22 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
-  console.log(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
-  console.log(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
-  console.log(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
+  console.log('🚀🚀🚀 FUNÇÃO enrichClaimsWithArrivalDates INICIOU! 🚀🚀🚀');
+  console.log(`Total claims: ${claims?.length || 0}`);
+  console.log(`AccessToken: ${accessToken ? 'SIM' : 'NÃO'}`);
+  
+  if (!claims || !Array.isArray(claims)) {
+    console.error('❌ claims não é um array válido!');
+    return [];
+  }
+  
+  if (!accessToken) {
+    console.error('❌ accessToken está vazio!');
+    return claims;
+  }
   
   try {
-    // 🔍 Debug: estrutura do primeiro claim
+    console.log('✅ Passando para dentro do try...');
     if (claims.length > 0) {
       console.log(`[ReturnArrival] 🔍 PRIMEIRO CLAIM KEYS:`, Object.keys(claims[0]).slice(0, 15).join(', '));
       console.log(`[ReturnArrival] 🔍 Tem 'id'? ${!!claims[0].id}, Tem 'claim_id'? ${!!claims[0].claim_id}`);
