@@ -117,7 +117,88 @@ function App() {
                 <Sonner />
                 <Routes>
                   {/* Rota pública de autenticação */}
-                  // ... keep existing code
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/accept-invite" element={<AcceptInvite />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  
+                  {/* Rotas públicas sem autenticação */}
+                  <Route path="/faq" element={<FAQ />} />
+                  <Route path="/pricing" element={<Pricing />} />
+                  
+                  {/* Callback de integração Shopee */}
+                  <Route path="/shopee/callback" element={<ShopeeCallbackPage />} />
+
+                  {/* Rotas protegidas com layout */}
+                  <Route path="/" element={
+                    <ProtectedRoute>
+                      <FullLayout />
+                    </ProtectedRoute>
+                  }>
+                    <Route index element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
+                    
+                    {/* Dashboard */}
+                    <Route path="dashboardinicial/visao-geral" element={<DashboardInicialPage />} />
+                    
+                    {/* Páginas principais */}
+                    <Route path="estoque" element={<Estoque />} />
+                    <Route path="pedidos" element={<Pedidos />} />
+                    <Route path="scanner" element={<Scanner />} />
+                    <Route path="historico" element={<Historico />} />
+                    
+                    {/* Vendas */}
+                    <Route path="vendas-online" element={<VendasOnline />} />
+                    
+                    {/* Devoluções */}
+                    <Route path="devolucoes-mercadolivre" element={<DevolucoesMercadoLivre />} />
+                    <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />
+                    
+                    {/* Reclamações */}
+                    <Route path="reclamacoes" element={<Reclamacoes />} />
+                    
+                    {/* De-Para e Alertas */}
+                    <Route path="de-para" element={<DePara />} />
+                    <Route path="alertas" element={<Alertas />} />
+                    
+                    {/* Compras */}
+                    <Route path="compras/*" element={<Compras />} />
+                    
+                    {/* Configurações */}
+                    <Route path="config/integracoes" element={<IntegracoesPage />} />
+                    <Route path="config/account" element={<AccountSettings />} />
+                    <Route path="config/categories" element={<CategoryManager />} />
+                    <Route path="aplicativos" element={<AplicativosPage />} />
+                    
+                    {/* Admin */}
+                    <Route path="admin" element={
+                      <PermissionRoute requiredPermissions={["admin.access"]}>
+                        <AdminPage />
+                      </PermissionRoute>
+                    } />
+                    
+                    {/* AI Insights */}
+                    <Route path="ai-insights" element={<AIInsights />} />
+                    
+                    {/* E-commerce */}
+                    <Route path="shop" element={<Shop />} />
+                    <Route path="shop/:id" element={<ProductDetail />} />
+                    <Route path="ecommerce" element={<Ecommerce />} />
+                    <Route path="product-list" element={<ProductList />} />
+                    <Route path="add-product" element={<AddProduct />} />
+                    <Route path="edit-product/:id" element={<EditProduct />} />
+                    <Route path="product-import" element={<ProductImport />} />
+                    
+                    {/* Outros */}
+                    <Route path="calendar" element={<Calendar />} />
+                    <Route path="notes" element={<Notes />} />
+                    <Route path="oms" element={<OMS />} />
+                    <Route path="cards" element={<Cards />} />
+                    <Route path="banners" element={<Banners />} />
+                    <Route path="charts" element={<Charts />} />
+                    <Route path="solar-icons" element={<SolarIcons />} />
+                  </Route>
+                  
+                  {/* Rota 404 */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </SidebarUIProvider>
             </MobileProvider>
