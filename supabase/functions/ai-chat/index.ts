@@ -137,11 +137,16 @@ serve(async (req) => {
 
     // Buscar perfil do usuário com validação adequada
     // Using service role here to ensure we can read the profile
+    console.log('🔍 Attempting to read profile for user:', user.id);
+    console.log('🔍 Using Service Role client');
+    
     const { data: profile, error: profileError } = await supabaseService
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
       .single();
+    
+    console.log('🔍 Profile query result:', { profile, error: profileError });
 
     // Validar que o perfil existe e tem organization_id
     if (profileError || !profile) {
