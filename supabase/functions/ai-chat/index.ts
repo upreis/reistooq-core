@@ -441,9 +441,9 @@ Instruções:
       },
     });
 
-  } catch (timeoutError) {
+  } catch (error) {
     // Handle timeout from AbortController
-    if (timeoutError.name === 'AbortError') {
+    if (error.name === 'AbortError') {
       console.error('❌ AI Gateway timeout após 30 segundos');
       return new Response(
         JSON.stringify({ error: 'Request timeout. Please try again.' }), 
@@ -453,13 +453,9 @@ Instruções:
         }
       );
     }
-    // Se não for timeout, deixa cair no catch geral abaixo
-    throw timeoutError;
-  }
 
-
-  } catch (error) {
-    console.error('Error in ai-chat function:', error);
+    // Handle other errors
+    console.error('❌ Error in ai-chat function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
