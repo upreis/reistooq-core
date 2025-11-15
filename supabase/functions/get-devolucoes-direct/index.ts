@@ -700,11 +700,20 @@ serve(async (req) => {
     logger.progress(`✅ ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
     // 🎯 BUSCAR DATAS DE CHEGADA DAS DEVOLUÇÕES
-    logger.progress('📅 ========== INICIANDO BUSCA DE DATAS DE CHEGADA ==========');
-    logger.progress(`📅 Total de claims a processar: ${allEnrichedClaims.length}`);
-    logger.progress(`📅 AccessToken disponível: ${!!accessToken}`);
+    console.log('📅 ========== ANTES DE CHAMAR enrichClaimsWithArrivalDates ==========');
+    console.log(`📅 Total de claims: ${allEnrichedClaims.length}`);
+    console.log(`📅 AccessToken: ${accessToken ? 'PRESENTE' : 'AUSENTE'}`);
+    console.log(`📅 Tipo de allEnrichedClaims: ${typeof allEnrichedClaims}, É Array: ${Array.isArray(allEnrichedClaims)}`);
     
-    const claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
+    let claimsWithArrivalDates;
+    try {
+      console.log('📅 CHAMANDO enrichClaimsWithArrivalDates...');
+      claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
+      console.log(`📅 RETORNOU enrichClaimsWithArrivalDates: ${claimsWithArrivalDates?.length || 0} claims`);
+    } catch (err) {
+      console.error('❌ ERRO AO CHAMAR enrichClaimsWithArrivalDates:', err);
+      claimsWithArrivalDates = allEnrichedClaims; // Fallback
+    }
     
     logger.progress(`✅ ${claimsWithArrivalDates.length} claims retornados do enriquecimento`);
     
