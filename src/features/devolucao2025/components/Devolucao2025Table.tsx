@@ -71,7 +71,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
             {isVisible('order_id') && <TableHead>Pedido</TableHead>}
             {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
             {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
-            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
+            {isVisible('produto') && <TableHead className="w-[300px] min-w-[300px] max-w-[300px]">📦 Produto</TableHead>}
             {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
             {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
 
