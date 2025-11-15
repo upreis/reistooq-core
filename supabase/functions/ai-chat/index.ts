@@ -86,13 +86,33 @@ serve(async (req) => {
     console.log('🔍 Token length:', token?.length);
 
     // Create service role client for all operations (including auth validation)
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    
+    console.log('🔧 Service role key configured:', serviceRoleKey ? `Yes (${serviceRoleKey.slice(0, 20)}...)` : 'No');
+    console.log('🔧 Supabase URL:', supabaseUrl);
+    
+    if (!serviceRoleKey || !supabaseUrl) {
+      console.error('❌ Missing Supabase configuration');
+      return new Response(
+        JSON.stringify({ error: 'Server configuration error' }), 
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
     const supabaseService = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+      supabaseUrl,
+      serviceRoleKey,
       {
         auth: {
           autoRefreshToken: false,
           persistSession: false
+        },
+        db: {
+          schema: 'public'
         }
       }
     );
