@@ -411,16 +411,15 @@ Instruções:
               
               if (assistantMsgError) {
                 console.error('❌ Erro ao salvar resposta do assistente:', assistantMsgError);
-                // Não lançamos erro aqui para não quebrar o streaming que já foi enviado
-                // Log será suficiente para debug
               } else {
                 console.log('✅ Resposta do assistente salva');
               }
             } catch (error) {
               console.error('❌ Erro crítico ao salvar resposta:', error);
-              // Não lançamos erro para não quebrar resposta já enviada ao cliente
             }
           }
+
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
         } catch (error) {
           console.error('❌ Streaming error:', error);
           // Send error to client via SSE
@@ -430,20 +429,6 @@ Instruções:
         } finally {
           controller.close();
         }
-      } catch (timeoutError) {
-        // Handle timeout from AbortController
-        if (timeoutError.name === 'AbortError') {
-          console.error('❌ AI Gateway timeout após 30 segundos');
-          return new Response(
-            JSON.stringify({ error: 'Request timeout. Please try again.' }), 
-            { 
-              status: 408,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            }
-          );
-        }
-        throw timeoutError;
-      }
       }
     });
 
@@ -455,6 +440,22 @@ Instruções:
         'Connection': 'keep-alive',
       },
     });
+
+  } catch (timeoutError) {
+    // Handle timeout from AbortController
+    if (timeoutError.name === 'AbortError') {
+      console.error('❌ AI Gateway timeout após 30 segundos');
+      return new Response(
+        JSON.stringify({ error: 'Request timeout. Please try again.' }), 
+        { 
+          status: 408,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    // Se não for timeout, deixa cair no catch geral abaixo
+    throw timeoutError;
+  }
 
 
   } catch (error) {
