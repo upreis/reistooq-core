@@ -110,10 +110,14 @@ const exportToExcel = async ({ data, visibleColumns, filename = 'devolucoes' }: 
     column.width = Math.min(Math.max(maxLength + 2, 15), 50);
   });
   
-  // Adicionar filtros
+  // Adicionar filtros (suporta mais de 26 colunas)
+  const lastColumn = visibleColumns.length <= 26 
+    ? String.fromCharCode(64 + visibleColumns.length) 
+    : `${String.fromCharCode(64 + Math.floor((visibleColumns.length - 1) / 26))}${String.fromCharCode(65 + ((visibleColumns.length - 1) % 26))}`;
+    
   worksheet.autoFilter = {
     from: 'A1',
-    to: String.fromCharCode(64 + visibleColumns.length) + '1'
+    to: lastColumn + '1'
   };
   
   // Gerar arquivo

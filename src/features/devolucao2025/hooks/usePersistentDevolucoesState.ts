@@ -61,17 +61,19 @@ export function usePersistentDevolucoesState() {
         if (saved) {
           const parsed: PersistentDevolucoesState = JSON.parse(saved);
           
-          // VALIDAR INTEGRIDADE DOS DADOS PRIMEIRO
+          // Converter strings de data de volta para Date objects ANTES da validação
+          if (parsed.dateRange) {
+            parsed.dateRange.from = new Date(parsed.dateRange.from);
+            parsed.dateRange.to = new Date(parsed.dateRange.to);
+          }
+          
+          // VALIDAR INTEGRIDADE DOS DADOS
           if (!validatePersistedState(parsed)) {
             console.log('🗑️ Estado com integridade comprometida, removendo:', parsed);
             localStorage.removeItem(STORAGE_KEY);
             setIsStateLoaded(true);
             return;
           }
-          
-          // Converter strings de data de volta para Date objects
-          parsed.dateRange.from = new Date(parsed.dateRange.from);
-          parsed.dateRange.to = new Date(parsed.dateRange.to);
           
           // Verificar se o cache ainda é válido (não expirou)
           const now = Date.now();
