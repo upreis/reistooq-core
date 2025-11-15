@@ -93,9 +93,10 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
 
             {/* GRUPO 4: DATAS */}
             {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
+            {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
             {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
             {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
-            {isVisible('data_atualizacao_return') && <TableHead>📅 Última Atualização Return</TableHead>}
+            {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
             {isVisible('prazo_analise') && <TableHead>📅 Prazo Análise</TableHead>}
             {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
             {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
@@ -226,6 +227,11 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
               {isVisible('data_criacao') && (
                 <TableCell>
                   {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
+              {isVisible('data_venda') && (
+                <TableCell>
+                  {dev.data_venda_original ? new Date(dev.data_venda_original).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('data_fechamento') && (
