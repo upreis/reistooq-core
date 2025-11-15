@@ -15,6 +15,9 @@ import { NotificationsBell } from '@/components/notifications/NotificationsBell'
 import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
 import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
 import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
+import { ColumnSelector } from '../components/ColumnSelector';
+import { useColumnPreferences } from '../hooks/useColumnPreferences';
+import { COLUMNS_CONFIG } from '../config/columns';
 import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
@@ -26,6 +29,9 @@ export const Devolucao2025Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  
+  // Gerenciar preferências de colunas
+  const { visibleColumns, setVisibleColumns } = useColumnPreferences(COLUMNS_CONFIG);
 
   // Buscar organization_id do usuário
   useEffect(() => {
@@ -133,6 +139,14 @@ export const Devolucao2025Page = () => {
       <Devolucao2025Stats devolucoes={devolucoes} />
 
       <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold">Filtros</h2>
+          <ColumnSelector 
+            columns={COLUMNS_CONFIG}
+            visibleColumns={visibleColumns}
+            onVisibleColumnsChange={setVisibleColumns}
+          />
+        </div>
           <Devolucao2025Filters
             accounts={accounts}
             selectedAccount={selectedAccount}
@@ -163,6 +177,7 @@ export const Devolucao2025Page = () => {
           devolucoes={paginatedDevolucoes}
           isLoading={isLoading}
           error={error}
+          visibleColumns={visibleColumns}
         />
 
         {!isLoading && !error && devolucoes.length > 0 && (

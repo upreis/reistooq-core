@@ -22,9 +22,10 @@ interface Devolucao2025TableProps {
   devolucoes: any[];
   isLoading: boolean;
   error: any;
+  visibleColumns: string[];
 }
 
-export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao2025TableProps) => {
+export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -57,6 +58,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
     );
   }
 
+  const isVisible = (columnId: string) => visibleColumns.includes(columnId);
+
   return (
     <div className="w-full flex-1 flex flex-col min-h-0">
       <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
@@ -64,70 +67,70 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
           <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            <TableHead>Empresa</TableHead>
-            <TableHead>Pedido</TableHead>
-            <TableHead>Claim ID</TableHead>
-            <TableHead>👤 Comprador</TableHead>
-            <TableHead>📦 Produto</TableHead>
-            <TableHead>🏷️ SKU</TableHead>
-            <TableHead>📊 Qtd</TableHead>
+            {isVisible('account_name') && <TableHead>Empresa</TableHead>}
+            {isVisible('order_id') && <TableHead>Pedido</TableHead>}
+            {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
+            {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
+            {isVisible('produto') && <TableHead>📦 Produto</TableHead>}
+            {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
+            {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
 
             {/* GRUPO 2: FINANCEIRO */}
-            <TableHead>💰 Valor Total</TableHead>
-            <TableHead>💵 Valor Produto</TableHead>
-            <TableHead>📊 % Reemb.</TableHead>
-            <TableHead>🧾 Método Pagto</TableHead>
-            <TableHead>💳 Tipo Pagto</TableHead>
+            {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
+            {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
+            {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
+            {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
+            {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
 
             {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            <TableHead>🔄 Status Dev</TableHead>
-            <TableHead>📦 Status Return</TableHead>
-            <TableHead>🚚 Status Entrega</TableHead>
-            <TableHead>🏭 Destino</TableHead>
-            <TableHead>📎 Evidências</TableHead>
-            <TableHead>⚖️ Resolução</TableHead>
+            {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
+            {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
+            {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
+            {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
+            {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
+            {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
 
             {/* GRUPO 4: DATAS */}
-            <TableHead>📅 Data Criação</TableHead>
-            <TableHead>📅 Data Venda</TableHead>
-            <TableHead>📅 Data Fechamento</TableHead>
-            <TableHead>📅 Início Return</TableHead>
-            <TableHead>📅 Última Atualização Return</TableHead>
-            <TableHead>📅 Prazo Análise</TableHead>
-            <TableHead>📅 Data Chegada</TableHead>
-            <TableHead>⏰ Última Msg</TableHead>
+            {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
+            {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
+            {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
+            {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
+            {isVisible('data_atualizacao_return') && <TableHead>📅 Última Atualização Return</TableHead>}
+            {isVisible('prazo_analise') && <TableHead>📅 Prazo Análise</TableHead>}
+            {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
+            {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
 
             {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-            <TableHead>📍 Código Rastreio</TableHead>
-            <TableHead>🚚 Tipo Logística</TableHead>
+            {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
+            {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
 
             {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            <TableHead>🔄 É Troca</TableHead>
+            {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
 
             {/* GRUPO 8: COMUNICAÇÃO */}
-            <TableHead>💬 Nº Interações</TableHead>
-            <TableHead>⭐ Qualidade Com</TableHead>
-            <TableHead>🔒 Moderação</TableHead>
-            <TableHead>📎 Anexos Comprador</TableHead>
-            <TableHead>📎 Anexos Vendedor</TableHead>
-            <TableHead>📎 Anexos ML</TableHead>
+            {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
+            {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
+            {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
+            {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
+            {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
+            {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
 
             {/* GRUPO 9: REVIEW & AÇÕES */}
-            <TableHead>🔍 Review Resource</TableHead>
-            <TableHead>🔢 Review Resource ID</TableHead>
-            <TableHead>🛠️ Review Method</TableHead>
-            <TableHead>📅 Review Created</TableHead>
-            <TableHead>📅 Review Updated</TableHead>
-            <TableHead>🎯 Review Stage</TableHead>
-            <TableHead>✅ Review Status</TableHead>
-            <TableHead>📦 Product Condition</TableHead>
-            <TableHead>🏭 Product Destination</TableHead>
-            <TableHead>🏷️ Reason ID</TableHead>
-            <TableHead>👤 Seller Status</TableHead>
+            {isVisible('review_resource') && <TableHead>🔍 Review Resource</TableHead>}
+            {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
+            {isVisible('review_method') && <TableHead>🛠️ Review Method</TableHead>}
+            {isVisible('review_created') && <TableHead>📅 Review Created</TableHead>}
+            {isVisible('review_updated') && <TableHead>📅 Review Updated</TableHead>}
+            {isVisible('review_stage') && <TableHead>🎯 Review Stage</TableHead>}
+            {isVisible('review_status') && <TableHead>✅ Review Status</TableHead>}
+            {isVisible('product_condition') && <TableHead>📦 Product Condition</TableHead>}
+            {isVisible('product_destination') && <TableHead>🏭 Product Destination</TableHead>}
+            {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
+            {isVisible('seller_status') && <TableHead>👤 Seller Status</TableHead>}
 
             {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            <TableHead>💵 Custo Total Log</TableHead>
-            <TableHead>🚚 Custo Envio Orig</TableHead>
+            {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
+            {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -158,34 +161,44 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error }: Devolucao20
               <TableCell>{dev.tipo_pagamento || '-'}</TableCell>
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
-                    {dev.status_devolucao || '-'}
-                  </Badge>
-                  <RecentBadge dataChegada={dev.data_chegada_produto} />
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{dev.status_return || '-'}</Badge>
-              </TableCell>
-              <TableCell>
-                <DeliveryStatusCell 
-                  statusEnvio={dev.status_envio}
-                  dataChegada={dev.data_chegada_produto}
-                  estimatedDeliveryDate={dev.estimated_delivery_date}
-                />
-              </TableCell>
-              <TableCell>{dev.destino_devolucao || '-'}</TableCell>
-              <TableCell>
-                <EvidencesCell 
-                  attachments={dev.anexos_ml}
-                  totalEvidencias={dev.total_evidencias}
-                />
-              </TableCell>
-              <TableCell>
-                <ResolutionCell resolution={dev.resolution || null} />
-              </TableCell>
+              {isVisible('status_dev') && (
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
+                      {dev.status_devolucao || '-'}
+                    </Badge>
+                    <RecentBadge dataChegada={dev.data_chegada_produto} />
+                  </div>
+                </TableCell>
+              )}
+              {isVisible('status_return') && (
+                <TableCell>
+                  <Badge variant="outline">{dev.status_return || '-'}</Badge>
+                </TableCell>
+              )}
+              {isVisible('status_entrega') && (
+                <TableCell>
+                  <DeliveryStatusCell 
+                    statusEnvio={dev.status_envio}
+                    dataChegada={dev.data_chegada_produto}
+                    estimatedDeliveryDate={dev.estimated_delivery_date}
+                  />
+                </TableCell>
+              )}
+              {isVisible('destino') && <TableCell>{dev.destino_devolucao || '-'}</TableCell>}
+              {isVisible('evidencias') && (
+                <TableCell>
+                  <EvidencesCell 
+                    attachments={dev.anexos_ml}
+                    totalEvidencias={dev.total_evidencias}
+                  />
+                </TableCell>
+              )}
+              {isVisible('resolucao') && (
+                <TableCell>
+                  <ResolutionCell resolution={dev.resolution || null} />
+                </TableCell>
+              )}
 
               {/* GRUPO 4: DATAS */}
               <TableCell>
