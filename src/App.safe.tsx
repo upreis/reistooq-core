@@ -13,6 +13,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
+// Desabilitado temporariamente devido a erros de compatibilidade
+// import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
 
 // Import pages básicas
 import NotFound from "./pages/NotFound";
