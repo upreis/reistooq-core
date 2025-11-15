@@ -188,6 +188,7 @@ function App() {
                           <DevolucoesMercadoLivre />
                         </PermissionRoute>
                       } />
+                      <Route path="/devolucao2025" element={<Navigate to="/devolucoesdevenda" replace />} />
                       <Route path="/devolucoesdevenda" element={
                         <PermissionRoute requiredPermissions={['orders:read']}>
                           <DevolucoesDeVenda />
