@@ -260,99 +260,98 @@ Instruções:
     console.log('🤖 Chamando Lovable AI Gateway...');
     
     // Create AbortController for timeout (30 seconds)
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const abortController = new AbortController();
+    const timeoutId = setTimeout(() => abortController.abort(), 30000);
 
-    try {
-      const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${lovableApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages,
-          stream: true
-        }),
-        signal: controller.signal
-      });
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${lovableApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages,
+        stream: true
+      }),
+      signal: abortController.signal
+    });
 
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-      if (!aiResponse.ok) {
-        const errorText = await aiResponse.text();
-        console.error('❌ AI Gateway error:', aiResponse.status);
-        
-        if (aiResponse.status === 429) {
-          return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        
-        if (aiResponse.status === 402) {
-          return new Response(JSON.stringify({ error: 'Payment required. Please add credits to continue.' }), {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        
-        throw new Error('AI service unavailable');
-      }
-
-      console.log('✅ AI Gateway respondeu com sucesso');
-
-      // Save conversation context first
-      let finalConversationId = conversationId;
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.error('❌ AI Gateway error:', aiResponse.status);
       
-      if (!conversationId) {
-        console.log('📝 Criando nova conversa...');
-        try {
-          const { data: newConv, error: convError } = await supabase
-            .from('ai_chat_conversations')
-            .insert({
-              user_id: user.id,
-              organization_id: profile.organizacao_id,
-              title: message.substring(0, 50)
-            })
-            .select()
-            .single();
-          
-          if (convError) {
-            console.error('❌ Erro ao criar conversa:', convError);
-            throw new Error('Falha ao criar nova conversa');
-          }
-          
-          finalConversationId = newConv?.id;
-          console.log('✅ Nova conversa criada');
-        } catch (error) {
-          console.error('❌ Erro crítico ao criar conversa:', error);
-          throw error;
-        }
+      if (aiResponse.status === 429) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
       
-      // Save user message with error handling
-      if (finalConversationId) {
-        console.log('💾 Salvando mensagem do usuário...');
-        try {
-          const { error: msgError } = await supabase.from('ai_chat_messages').insert({
-            conversation_id: finalConversationId,
-            role: 'user',
-            content: message
-          });
-          
-          if (msgError) {
-            console.error('❌ Erro ao salvar mensagem do usuário:', msgError);
-            throw new Error('Falha ao salvar mensagem');
-          }
-          
-          console.log('✅ Mensagem do usuário salva');
-        } catch (error) {
-          console.error('❌ Erro crítico ao salvar mensagem:', error);
-          throw error;
-        }
+      if (aiResponse.status === 402) {
+        return new Response(JSON.stringify({ error: 'Payment required. Please add credits to continue.' }), {
+          status: 402,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       }
+      
+      throw new Error('AI service unavailable');
+    }
+
+    console.log('✅ AI Gateway respondeu com sucesso');
+
+    // Save conversation context first
+    let finalConversationId = conversationId;
+    
+    if (!conversationId) {
+      console.log('📝 Criando nova conversa...');
+      try {
+        const { data: newConv, error: convError } = await supabase
+          .from('ai_chat_conversations')
+          .insert({
+            user_id: user.id,
+            organization_id: profile.organizacao_id,
+            title: message.substring(0, 50)
+          })
+          .select()
+          .single();
+        
+        if (convError) {
+          console.error('❌ Erro ao criar conversa:', convError);
+          throw new Error('Falha ao criar nova conversa');
+        }
+        
+        finalConversationId = newConv?.id;
+        console.log('✅ Nova conversa criada');
+      } catch (error) {
+        console.error('❌ Erro crítico ao criar conversa:', error);
+        throw error;
+      }
+    }
+    
+    // Save user message with error handling
+    if (finalConversationId) {
+      console.log('💾 Salvando mensagem do usuário...');
+      try {
+        const { error: msgError } = await supabase.from('ai_chat_messages').insert({
+          conversation_id: finalConversationId,
+          role: 'user',
+          content: message
+        });
+        
+        if (msgError) {
+          console.error('❌ Erro ao salvar mensagem do usuário:', msgError);
+          throw new Error('Falha ao salvar mensagem');
+        }
+        
+        console.log('✅ Mensagem do usuário salva');
+      } catch (error) {
+        console.error('❌ Erro crítico ao salvar mensagem:', error);
+        throw error;
+      }
+    }
 
     // Stream response back to client
     const encoder = new TextEncoder();
