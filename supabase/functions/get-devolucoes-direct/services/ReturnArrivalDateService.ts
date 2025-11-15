@@ -177,10 +177,22 @@ export async function enrichClaimsWithArrivalDates(
   claims: any[],
   accessToken: string
 ): Promise<any[]> {
-  logger.progress(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
-  logger.progress(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
-  logger.progress(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
-  logger.progress(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
+  try {
+    logger.progress(`[ReturnArrival] ========== INÍCIO DO ENRIQUECIMENTO ==========`);
+    logger.progress(`[ReturnArrival] Total de claims recebidos: ${claims.length}`);
+    logger.progress(`[ReturnArrival] AccessToken presente: ${!!accessToken}`);
+    
+    // 🔍 Debug: estrutura do primeiro claim
+    if (claims.length > 0) {
+      logger.debug(`[ReturnArrival] 🔍 ESTRUTURA DO PRIMEIRO CLAIM:`, JSON.stringify({
+        hasId: 'id' in claims[0],
+        hasClaimDetails: 'claim_details' in claims[0],
+        hasReturnData: 'returnData' in claims[0],
+        keys: Object.keys(claims[0]).slice(0, 10)
+      }));
+    }
+    
+    logger.progress(`[ReturnArrival] 🚀 Iniciando busca de datas de chegada...`);
 
   // Processar SEQUENCIALMENTE para evitar rate limiting
   const enrichedClaims: any[] = [];
@@ -244,6 +256,12 @@ export async function enrichClaimsWithArrivalDates(
       has_field: 'data_chegada_produto' in enrichedClaims[0]
     }));
   }
-
+  
   return enrichedClaims;
+  } catch (globalError) {
+    logger.error(`[ReturnArrival] ❌ ERRO GLOBAL no enriquecimento:`, globalError instanceof Error ? globalError.message : String(globalError));
+    logger.error(`[ReturnArrival] Stack:`, globalError instanceof Error ? globalError.stack : 'N/A');
+    // Retornar claims originais sem modificação
+    return claims;
+  }
 }
