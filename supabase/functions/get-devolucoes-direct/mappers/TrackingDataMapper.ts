@@ -88,7 +88,16 @@ export const mapTrackingData = (item: any) => {
     
     // 🎯 DATA DE CHEGADA: Vem do serviço ReturnArrivalDateService
     // Busca no histórico do shipment de devolução (status 'delivered')
-    data_chegada_produto: claim.data_chegada_produto || (() => {
+    data_chegada_produto: (() => {
+      // Log para debug
+      console.log(`📅 [TrackingMapper] Claim ${claim.id}: data_chegada_produto=${claim.data_chegada_produto || 'NULL'}`);
+      
+      // Prioridade 1: Usar campo enriquecido pelo serviço
+      if (claim.data_chegada_produto) {
+        console.log(`📅 [TrackingMapper] ✅ Usando data do serviço: ${claim.data_chegada_produto}`);
+        return claim.data_chegada_produto;
+      }
+      
       // Fallback: tentar extrair do enriched history
       const enrichedHistory = claim.shipment_history_enriched?.return_shipment?.tracking_history;
       if (enrichedHistory && Array.isArray(enrichedHistory)) {
@@ -98,7 +107,9 @@ export const mapTrackingData = (item: any) => {
           event.checkpoint?.toLowerCase().includes('entregue')
         );
         if (deliveredEvent) {
-          return deliveredEvent.date || deliveredEvent.checkpoint_date || null;
+          const date = deliveredEvent.date || deliveredEvent.checkpoint_date || null;
+          console.log(`📅 [TrackingMapper] ✅ Usando data do enriched history: ${date}`);
+          return date;
         }
       }
       
@@ -109,10 +120,12 @@ export const mapTrackingData = (item: any) => {
           event.status === 'delivered'
         );
         if (deliveredEvent?.date) {
+          console.log(`📅 [TrackingMapper] ✅ Usando data do return_details_v2: ${deliveredEvent.date}`);
           return deliveredEvent.date;
         }
       }
       
+      console.log(`📅 [TrackingMapper] ❌ Nenhuma data encontrada para claim ${claim.id}`);
       return null;
     })(),
     

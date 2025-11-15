@@ -700,9 +700,17 @@ serve(async (req) => {
     logger.progress(`✅ ${allEnrichedClaims.length} claims enriquecidos com sucesso`);
 
     // 🎯 BUSCAR DATAS DE CHEGADA DAS DEVOLUÇÕES
-    logger.progress('📅 Buscando datas de chegada das devoluções...');
+    logger.progress('📅 ========== INICIANDO BUSCA DE DATAS DE CHEGADA ==========');
+    logger.progress(`📅 Total de claims a processar: ${allEnrichedClaims.length}`);
+    logger.progress(`📅 AccessToken disponível: ${!!accessToken}`);
+    
     const claimsWithArrivalDates = await enrichClaimsWithArrivalDates(allEnrichedClaims, accessToken);
-    logger.progress(`✅ ${claimsWithArrivalDates.length} claims enriquecidos com datas de chegada`);
+    
+    logger.progress(`✅ ${claimsWithArrivalDates.length} claims retornados do enriquecimento`);
+    
+    // Verificar quantos têm data_chegada_produto
+    const withDate = claimsWithArrivalDates.filter(c => c.data_chegada_produto).length;
+    logger.progress(`📊 Claims com data_chegada_produto: ${withDate}/${claimsWithArrivalDates.length}`);
 
     // ✅ CORREÇÃO 2: MAPEAR DADOS CORRETAMENTE
     logger.progress('🗺️ Mapeando dados...');
