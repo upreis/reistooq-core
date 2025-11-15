@@ -17,7 +17,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface PersistentDevolucoesState {
   // DADOS DE CACHE
   devolucoes: any[];
-  selectedAccount: string;
+  selectedAccounts: string[];
   dateRange: {
     from: Date;
     to: Date;
@@ -44,7 +44,7 @@ export function usePersistentDevolucoesState() {
   // VALIDAÇÃO DE INTEGRIDADE DOS DADOS
   const validatePersistedState = useCallback((state: PersistentDevolucoesState): boolean => {
     if (!state.devolucoes || !Array.isArray(state.devolucoes)) return false;
-    if (typeof state.selectedAccount !== 'string') return false;
+    if (!Array.isArray(state.selectedAccounts)) return false;
     if (!state.dateRange || !state.dateRange.from || !state.dateRange.to) return false;
     if (typeof state.currentPage !== 'number') return false;
     if (typeof state.itemsPerPage !== 'number') return false;
@@ -80,7 +80,7 @@ export function usePersistentDevolucoesState() {
           console.log('🔄 Cache de devoluções carregado:', {
             devolucoesCount: parsed.devolucoes.length,
             cacheAge: Math.round((now - parsed.cachedAt) / 1000) + 's',
-            account: parsed.selectedAccount,
+            accounts: parsed.selectedAccounts.join(', '),
             dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`
           });
           setPersistedState(parsed);
@@ -101,7 +101,7 @@ export function usePersistentDevolucoesState() {
     try {
       const currentState = persistedState || {
         devolucoes: [],
-        selectedAccount: 'all',
+        selectedAccounts: [],
         dateRange: {
           from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
           to: new Date()
@@ -129,7 +129,7 @@ export function usePersistentDevolucoesState() {
       
       console.log('💾 Estado de devoluções salvo:', {
         devolucoesCount: newState.devolucoes.length,
-        account: newState.selectedAccount,
+        accounts: newState.selectedAccounts.join(', '),
         page: newState.currentPage
       });
     } catch (error) {
@@ -153,7 +153,7 @@ export function usePersistentDevolucoesState() {
   // Salvar dados após busca bem-sucedida
   const saveDataCache = useCallback((
     devolucoes: any[],
-    selectedAccount: string,
+    selectedAccounts: string[],
     dateRange: { from: Date; to: Date },
     currentPage: number,
     itemsPerPage: number,
@@ -161,7 +161,7 @@ export function usePersistentDevolucoesState() {
   ) => {
     saveState({
       devolucoes,
-      selectedAccount,
+      selectedAccounts,
       dateRange,
       currentPage,
       itemsPerPage,
