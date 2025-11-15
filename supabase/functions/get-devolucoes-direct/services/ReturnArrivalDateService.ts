@@ -122,6 +122,8 @@ export async function fetchReturnArrivalDate(
     logger.debug(`[ReturnArrival] ✅ Shipment encontrado: ${shipmentId} para claim ${claimId}`);
 
     // 3. Buscar detalhes do shipment
+    console.log(`🌟🌟🌟 CHAMANDO API /shipments/${shipmentId} 🌟🌟🌟`);
+    
     const shipmentUrl = `https://api.mercadolibre.com/shipments/${shipmentId}`;
     
     const shipmentRes = await fetch(shipmentUrl, {
@@ -131,12 +133,31 @@ export async function fetchReturnArrivalDate(
       }
     });
 
+    console.log(`🌟 Status da resposta: ${shipmentRes.status}`);
+
     if (!shipmentRes.ok) {
+      const errorText = await shipmentRes.text();
+      console.log(`🌟 ❌ ERRO na API: ${errorText}`);
       logger.warn(`[ReturnArrival] ❌ Status ${shipmentRes.status} ao obter shipment ${shipmentId}`);
       return null;
     }
 
     const shipmentData: ShipmentData = await shipmentRes.json();
+    
+    console.log(`🌟🌟🌟 RESPOSTA COMPLETA /shipments/${shipmentId} 🌟🌟🌟`);
+    console.log(`🌟 FULL JSON:`, JSON.stringify(shipmentData, null, 2));
+    console.log(`🌟 date_delivered:`, shipmentData.date_delivered);
+    console.log(`🌟 date_first_visited:`, shipmentData.date_first_visited);
+    console.log(`🌟 date_created:`, shipmentData.date_created);
+    console.log(`🌟 status:`, shipmentData.status);
+    console.log(`🌟 status_history existe:`, !!shipmentData.status_history);
+    console.log(`🌟 status_history length:`, shipmentData.status_history?.length || 0);
+    if (shipmentData.status_history && shipmentData.status_history.length > 0) {
+      console.log(`🌟 Primeiro evento:`, JSON.stringify(shipmentData.status_history[0], null, 2));
+      console.log(`🌟 Último evento:`, JSON.stringify(shipmentData.status_history[shipmentData.status_history.length - 1], null, 2));
+    }
+    console.log(`🌟🌟🌟 ============================== 🌟🌟🌟`);
+    
     logger.debug(`[ReturnArrival] 📊 Shipment ${shipmentId} obtido. Status atual: ${shipmentData.status}`);
     logger.debug(`[ReturnArrival] 📊 Tem status_history? ${!!shipmentData.status_history}, É array? ${Array.isArray(shipmentData.status_history)}`);
 
