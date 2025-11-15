@@ -38,7 +38,7 @@ export function AIChatWidget() {
     setIsLoading(true);
 
     try {
-      // Verificar autenticação
+      // Verificar autenticação e obter token
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         showError('Por favor, faça login para usar o assistente.');
@@ -46,12 +46,15 @@ export function AIChatWidget() {
         return;
       }
 
-      // Fazer chamada à edge function usando supabase.functions.invoke
+      // Fazer chamada à edge function com header de autorização explícito
       const response = await supabase.functions.invoke('ai-chat', {
         body: {
           message: userMessage,
           conversationId,
           context: `Usuário está em: ${window.location.pathname}`
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
       });
 
