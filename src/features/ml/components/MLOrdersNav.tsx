@@ -25,7 +25,7 @@ const subNavItems = [
     icon: Undo2,
   },
   {
-    path: "/devolucoesdevenda",
+    path: "/devolucao2025",
     label: "Devoluções 2025",
     icon: FileText,
   },
