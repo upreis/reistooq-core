@@ -13,7 +13,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { PermissionRoute } from "@/components/auth/PermissionRoute";
 import FullLayout from "@/layouts/full/FullLayout";
 import { AIChatBubble } from "@/components/ai-chat/AIChatBubble";
-import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
+// Desabilitado temporariamente devido a erros de compatibilidade com rrweb
+// import { SessionRecordingProvider } from "@/components/ai-chat/SessionRecordingProvider";
 import { config, validateConfig } from '@/config/environment';
 import { MaintenanceMode } from '@/components/MaintenanceMode';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -107,231 +108,19 @@ function App() {
       <ThemeProvider defaultTheme="materialm-dark" storageKey="reistoq.theme">
         <TooltipProvider>
           <AuthProvider>
-            <SessionRecordingProvider enabled={true}>
-              <MobileProvider>
-                <SidebarUIProvider>
-                  <MobileRedirect />
-                  <InactivityTracker />
-                  <AIChatBubble />
-                  <Toaster />
-                  <Sonner />
-                  <Routes>
+            <MobileProvider>
+              <SidebarUIProvider>
+                <MobileRedirect />
+                <InactivityTracker />
+                <AIChatBubble />
+                <Toaster />
+                <Sonner />
+                <Routes>
                   {/* Rota pública de autenticação */}
-                  <Route path="/auth" element={<Auth />} />
-                  {/* Rota pública para redefinição de senha */}
-                  <Route path="/auth/reset-password" element={<ResetPassword />} />
-                  {/* Rota pública para aceitar convites */}
-                  <Route path="/convite/:token" element={<AcceptInvite />} />
-                  {/* Rota pública para callback da Shopee */}
-                  <Route path="/shopee-callback" element={<ShopeeCallbackPage />} />
-                  
-                  {/* Todas as outras rotas são protegidas com novo layout */}
-                  <Route element={<ProtectedRoute><FullLayout /></ProtectedRoute>}>
-                    <Route path="/dashboardinicial/*" element={
-                      <PermissionRoute requiredPermissions={['dashboard:view']}>
-                        <DashboardInicialPage />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/" element={<Navigate to="/dashboardinicial/visao-geral" replace />} />
-                    <Route path="/oms/*" element={
-                      <PermissionRoute requiredPermissions={['oms:view']}>
-                        <OMS />
-                      </PermissionRoute>
-                     } />
-                     <Route path="/compras/*" element={
-                       <PermissionRoute requiredPermissions={['compras:view']}>
-                         <Compras />
-                       </PermissionRoute>
-                     } />
-                     
-                     {/* eCommerce App Routes */}
-                     <Route path="/apps/ecommerce/*" element={
-                       <PermissionRoute requiredPermissions={['ecommerce:view']}>
-                         <Ecommerce />
-                       </PermissionRoute>
-                     } />
-                    
-                    {/* Aplicativos Routes */}
-                    <Route path="/aplicativos/*" element={
-                      <PermissionRoute requiredPermissions={['dashboard:view']}>
-                        <AplicativosPage />
-                      </PermissionRoute>
-                    } />
-                    
-                    {/* Legacy App Routes - redirect to new structure */}
-                    <Route path="/apps/calendar" element={<Navigate to="/aplicativos/calendario" replace />} />
-                    <Route path="/apps/notes" element={<Navigate to="/aplicativos/notas" replace />} />
-                    
-                     {/* Custom Business Routes */}
-                     <Route path="/estoque/*" element={
-                       <PermissionRoute requiredPermissions={['estoque:view']}>
-                         <Estoque />
-                       </PermissionRoute>
-                     } />
-                    <Route path="/category-manager" element={
-                      <PermissionRoute requiredPermissions={['estoque:view']}>
-                        <CategoryManager />
-                      </PermissionRoute>
-                    } />
-                     <Route path="/pedidos" element={
-                       <PermissionRoute requiredPermissions={['orders:read']}>
-                         <Pedidos />
-                       </PermissionRoute>
-                     } />
-                     <Route path="/vendas-online" element={
-                       <PermissionRoute requiredPermissions={['orders:read']}>
-                         <VendasOnline />
-                       </PermissionRoute>
-                     } />
-                     <Route path="/devolucoes-ml" element={
-                        <PermissionRoute requiredPermissions={['orders:read']}>
-                          <DevolucoesMercadoLivre />
-                        </PermissionRoute>
-                      } />
-                      <Route path="/devolucao2025" element={<Navigate to="/devolucoesdevenda" replace />} />
-                      <Route path="/devolucoesdevenda" element={
-                        <PermissionRoute requiredPermissions={['orders:read']}>
-                          <DevolucoesDeVenda />
-                        </PermissionRoute>
-                      } />
-                      {/* Rota qualidade-dados removida temporariamente */}
-                    <Route path="/reclamacoes" element={
-                      <PermissionRoute requiredPermissions={['integrations:manage']}>
-                        <Reclamacoes />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/scanner" element={
-                      <PermissionRoute requiredPermissions={['scanner:use']}>
-                        <Scanner />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/de-para" element={
-                      <PermissionRoute requiredPermissions={['depara:view']}>
-                        <DePara />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/alertas" element={
-                      <PermissionRoute requiredPermissions={['alerts:view']}>
-                        <Alertas />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/configuracoes" element={
-                      <PermissionRoute requiredPermissions={['settings:view']}>
-                        <IntegracoesPage />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/configuracoes/*" element={
-                      <PermissionRoute requiredPermissions={['settings:view']}>
-                        <IntegracoesPage />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/historico" element={
-                      <PermissionRoute requiredPermissions={['historico:view']}>
-                        <Historico />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/admin/*" element={
-                      <PermissionRoute requiredAny={['users:read', 'roles:manage', 'invites:manage', 'system:audit']}>
-                        <AdminPage />
-                      </PermissionRoute>
-                    } />
-
-                    {/* Demo Routes (protected) */}
-                    <Route path="/_demo/faq" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <FAQ />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/pricing" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Pricing />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/account-settings" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <AccountSettings />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/cards" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Cards />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/banners" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Banners />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/charts" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Charts />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/_demo/icons" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <SolarIcons />
-                      </PermissionRoute>
-                    } />
-
-                    {/* Legacy redirects (protected) */}
-                    <Route path="/dashboards/crm" element={
-                      <PermissionRoute requiredPermissions={['oms:view']}>
-                        <OMS />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/crm" element={
-                      <PermissionRoute requiredPermissions={['oms:view']}>
-                        <OMS />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/theme-pages/faq" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <FAQ />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/theme-pages/pricing" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Pricing />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/theme-pages/account-settings" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <AccountSettings />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/widgets/cards" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Cards />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/widgets/banners" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Banners />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/widgets/charts" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <Charts />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/icons/solar" element={
-                      <PermissionRoute requiredPermissions={['demo:access']}>
-                        <SolarIcons />
-                      </PermissionRoute>
-                    } />
-                    <Route path="/ai-insights" element={
-                      <PermissionRoute requiredPermissions={['system:ai_insights']}>
-                        <AIInsights />
-                      </PermissionRoute>
-                    } />
-                  </Route>
-                  
-                  {/* Catch all */}
-                  <Route path="*" element={<NotFound />} />
+                  // ... keep existing code
                 </Routes>
               </SidebarUIProvider>
             </MobileProvider>
-            </SessionRecordingProvider>
           </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
