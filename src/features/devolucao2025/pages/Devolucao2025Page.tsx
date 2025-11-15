@@ -16,6 +16,7 @@ import { NotificationsBell } from '@/components/notifications/NotificationsBell'
 import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
 import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
 import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
+import { usePersistentDevolucoes2025State } from '@/hooks/usePersistentDevolucoes2025State';
 import { RefreshCw } from 'lucide-react';
 
 const DEFAULT_VISIBLE_COLUMNS = {
@@ -40,15 +41,28 @@ const DEFAULT_VISIBLE_COLUMNS = {
 const STORAGE_KEY = 'devolucoes2025-column-visibility';
 
 export const Devolucao2025Page = () => {
-  const [selectedAccount, setSelectedAccount] = useState<string>('all');
-  const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    to: new Date()
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  // Hook de persistência
+  const persistentState = usePersistentDevolucoes2025State();
+  
+  const [selectedAccount, setSelectedAccount] = useState<string>(() => 
+    persistentState.persistedState?.selectedAccount || 'all'
+  );
+  const [dateRange, setDateRange] = useState(() => 
+    persistentState.persistedState?.dateRange || {
+      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      to: new Date()
+    }
+  );
+  const [currentPage, setCurrentPage] = useState(() => 
+    persistentState.persistedState?.currentPage || 1
+  );
+  const [itemsPerPage, setItemsPerPage] = useState(() => 
+    persistentState.persistedState?.itemsPerPage || 50
+  );
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [searchTrigger, setSearchTrigger] = useState(0); // Trigger para forçar busca
+  const [searchTrigger, setSearchTrigger] = useState(() => 
+    persistentState.hasValidPersistedState() ? 0 : 1
+  );
   
   // Estado para visibilidade de colunas
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>(() => {
@@ -97,9 +111,19 @@ export const Devolucao2025Page = () => {
   });
 
   // Buscar devoluções via Edge Function
+  // Buscar devoluções via Edge Function OU usar cache
   const { data: devolucoes = [], isLoading, error } = useQuery({
     queryKey: ['devolucoes-2025', selectedAccount, searchTrigger],
     queryFn: async () => {
+      // Se tem cache válido e não precisa atualizar, retorna do cache
+      if (searchTrigger === 0 && persistentState.hasValidPersistedState()) {
+        console.log('📦 Usando dados do cache (sem chamada API)');
+        return persistentState.persistedState!.devolucoes;
+      }
+
+      console.log('🔄 Buscando dados da API...');
+      let fetchedData: any[] = [];
+      
       if (selectedAccount === 'all') {
         const allDevolucoes = await Promise.all(
           accounts.map(async (account) => {
@@ -115,7 +139,7 @@ export const Devolucao2025Page = () => {
             return data?.data || [];
           })
         );
-        return allDevolucoes.flat();
+        fetchedData = allDevolucoes.flat();
       } else {
         const { data, error } = await supabase.functions.invoke('get-devolucoes-direct', {
           body: {
@@ -126,16 +150,30 @@ export const Devolucao2025Page = () => {
         });
 
         if (error) throw error;
-        return data?.data || [];
+        fetchedData = data?.data || [];
       }
+
+      // Salvar no cache após buscar
+      const validas = fetchedData.filter(dev => {
+        const hasClaimId = dev.claim_id && dev.claim_id !== '-';
+        const hasComprador = dev.comprador_nome_completo && dev.comprador_nome_completo !== '-';
+        const hasProduto = dev.produto_titulo && dev.produto_titulo !== 'Produto não disponível';
+        return hasClaimId && (hasComprador || hasProduto);
+      });
+      
+      persistentState.saveDevolucoes(fetchedData, validas.length, currentPage);
+      
+      return fetchedData;
     },
-    enabled: accounts.length > 0 && searchTrigger > 0
+    enabled: accounts.length > 0 && persistentState.isStateLoaded
   });
 
   // Função para disparar busca
   const handleSearch = () => {
+    console.log('🔍 Aplicando filtros e buscando...');
+    persistentState.saveAppliedFilters(selectedAccount, dateRange, 1, itemsPerPage);
     setSearchTrigger(prev => prev + 1);
-    setCurrentPage(1); // Reset para primeira página
+    setCurrentPage(1);
   };
 
   const handleResetToDefault = () => {
@@ -181,6 +219,13 @@ export const Devolucao2025Page = () => {
   }, [devolucoesValidas, currentPage, itemsPerPage]);
 
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(devolucoesValidas.length / itemsPerPage);
+
+  // Atualizar página no cache quando mudar
+  useEffect(() => {
+    if (persistentState.hasValidPersistedState()) {
+      persistentState.saveCurrentPage(currentPage);
+    }
+  }, [currentPage, persistentState]);
 
   // Sistema de Alertas - usando devoluções válidas
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoesValidas);
