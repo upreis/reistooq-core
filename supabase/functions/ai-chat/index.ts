@@ -16,26 +16,34 @@ serve(async (req) => {
     
     // Get authorization from request
     const authHeader = req.headers.get('Authorization');
+    console.log('🔑 Auth header received:', authHeader ? 'Yes' : 'No');
+    
     if (!authHeader) {
-      throw new Error('Missing authorization header');
+      console.error('❌ Missing Authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Missing authorization header' }), 
+        { 
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
-    // Create Supabase client with user's auth
+    // Extract token from Bearer header
+    const token = authHeader.replace('Bearer ', '');
+    console.log('🔍 Token length:', token?.length);
+
+    // Create Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { 
-        global: { 
-          headers: { Authorization: authHeader } 
-        } 
-      }
+      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     );
 
-    // Verify user authentication
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Verify user authentication - pass token explicitly
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     
     if (userError || !user) {
-      console.error('Auth error:', userError);
+      console.error('❌ Auth error details:', JSON.stringify(userError));
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Please log in again' }), 
         { 
