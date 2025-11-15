@@ -61,11 +61,41 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { data: profile } = await supabase
+    // Buscar perfil do usuário com validação adequada
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('organizacao_id')
       .eq('id', user.id)
       .single();
+
+    // Validar que o perfil existe e tem organization_id
+    if (profileError || !profile) {
+      console.error('❌ Erro ao buscar perfil do usuário:', JSON.stringify(profileError));
+      return new Response(
+        JSON.stringify({ 
+          error: 'Perfil de usuário não encontrado. Por favor, entre em contato com o suporte.' 
+        }), 
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    if (!profile.organizacao_id) {
+      console.error('❌ Usuário sem organization_id:', user.id);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Usuário não está associado a nenhuma organização. Por favor, entre em contato com o suporte.' 
+        }), 
+        { 
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('✅ Perfil validado. Organization ID:', profile.organizacao_id);
 
     // Buscar conhecimento relevante usando embeddings semânticos
     const searchResponse = await supabase.functions.invoke('semantic-search', {
