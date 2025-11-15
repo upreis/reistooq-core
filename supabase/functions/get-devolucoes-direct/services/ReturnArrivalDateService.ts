@@ -75,13 +75,23 @@ export async function fetchReturnArrivalDate(
     if (returnsData.shipments && returnsData.shipments.length > 0) {
       console.log(`🔥🔥🔥 SHIPMENT DEBUG - Total: ${returnsData.shipments.length} 🔥🔥🔥`);
       returnsData.shipments.forEach((s, idx) => {
-        console.log(`🔥 [SHIPMENT ${idx}] ID: ${s.shipment_id}, Destino: ${s.destination?.name}`);
+        console.log(`🔥 [SHIPMENT ${idx}] ===== ESTRUTURA COMPLETA =====`);
+        console.log(`🔥 [SHIPMENT ${idx}] FULL OBJECT:`, JSON.stringify(s, null, 2));
+        console.log(`🔥 [SHIPMENT ${idx}] ID: ${s.shipment_id}`);
         console.log(`🔥 [SHIPMENT ${idx}] Status: ${s.status}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Type: ${s.type}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Tracking: ${s.tracking_number}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Tracking Method: ${s.tracking_method}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Date Created: ${s.date_created}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Date First Shipped: ${s.date_first_shipped}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Date Delivered: ${s.date_delivered}`);
+        console.log(`🔥 [SHIPMENT ${idx}] Destination: ${s.destination?.name}`);
         console.log(`🔥 [SHIPMENT ${idx}] status_history exists: ${!!s.status_history}`);
         console.log(`🔥 [SHIPMENT ${idx}] status_history length: ${s.status_history?.length || 0}`);
         if (s.status_history && s.status_history.length > 0) {
           console.log(`🔥 [SHIPMENT ${idx}] First event:`, JSON.stringify(s.status_history[0]));
         }
+        console.log(`🔥 [SHIPMENT ${idx}] ======================`);
       });
     }
 
