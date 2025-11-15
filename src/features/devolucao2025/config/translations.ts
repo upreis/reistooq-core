@@ -39,6 +39,10 @@ export const STATUS_DEVOLUCAO_TRANSLATIONS: Record<string, string> = {
   'approved': 'Aprovado',
   'rejected': 'Rejeitado',
   'expired': 'Expirado',
+  'label_generated': 'Etiqueta Gerada',
+  'closed': 'Fechado',
+  'shipped': 'Enviado',
+  'accepted': 'Aceito',
 };
 
 // Status Return
@@ -54,6 +58,10 @@ export const STATUS_RETURN_TRANSLATIONS: Record<string, string> = {
   'expired': 'Expirado',
   'waiting_product': 'Aguardando Produto',
   'in_review': 'Em Revisão',
+  'label_generated': 'Etiqueta Gerada',
+  'closed': 'Fechado',
+  'shipped': 'Enviado',
+  'accepted': 'Aceito',
 };
 
 // Destino do Produto
@@ -66,6 +74,9 @@ export const DESTINO_TRANSLATIONS: Record<string, string> = {
   'keep_seller': 'Fica com Vendedor',
   'warehouse': 'Armazém ML',
   'under_review': 'Em Análise',
+  'seller_address': 'Endereço do Vendedor',
+  'seller': 'Vendedor',
+  'none': 'Nenhum',
 };
 
 // Review Stage
@@ -102,6 +113,8 @@ export const PRODUCT_CONDITION_TRANSLATIONS: Record<string, string> = {
   'good': 'Bom Estado',
   'acceptable': 'Estado Aceitável',
   'poor': 'Estado Ruim',
+  'saleable': 'Vendável',
+  'none': 'Nenhum',
 };
 
 // Product Destination
@@ -113,6 +126,8 @@ export const PRODUCT_DESTINATION_TRANSLATIONS: Record<string, string> = {
   'resale': 'Revenda',
   'warehouse': 'Armazém',
   'under_review': 'Em Análise',
+  'seller': 'Vendedor',
+  'none': 'Nenhum',
 };
 
 // Evidências
@@ -123,6 +138,8 @@ export const EVIDENCIAS_TRANSLATIONS: Record<string, string> = {
   'images': 'Imagens',
   'videos': 'Vídeos',
   'documents': 'Documentos',
+  'sem_mensagens': 'Sem Mensagens',
+  'none': 'Nenhum',
 };
 
 /**
