@@ -49,11 +49,42 @@ export const ExportButton = ({ data, visibleColumns, disabled = false }: ExportB
         description: `${data.length} devolução(ões) exportada(s) para ${format.toUpperCase()}.`
       });
     } catch (error) {
-      toast({
-        title: 'Erro ao exportar',
-        description: 'Não foi possível exportar os dados. Tente novamente.',
-        variant: 'destructive'
-      });
+      console.error('Erro ao exportar:', error);
+      
+      // Se erro foi no Excel, tentar CSV como fallback
+      if (format === 'excel') {
+        toast({
+          title: 'Erro ao exportar Excel',
+          description: 'Tentando exportar como CSV...',
+          variant: 'default'
+        });
+        
+        try {
+          await exportDevolucoes({
+            data,
+            visibleColumns,
+            format: 'csv',
+            filename: 'devolucoes_venda'
+          });
+          
+          toast({
+            title: 'Exportado como CSV',
+            description: `${data.length} devolução(ões) exportada(s).`
+          });
+        } catch (csvError) {
+          toast({
+            title: 'Erro ao exportar',
+            description: 'Não foi possível exportar os dados. Tente novamente.',
+            variant: 'destructive'
+          });
+        }
+      } else {
+        toast({
+          title: 'Erro ao exportar',
+          description: 'Não foi possível exportar os dados. Tente novamente.',
+          variant: 'destructive'
+        });
+      }
     } finally {
       setIsExporting(false);
     }

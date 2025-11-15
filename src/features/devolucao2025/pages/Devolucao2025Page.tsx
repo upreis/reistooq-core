@@ -28,22 +28,26 @@ export const Devolucao2025Page = () => {
   // Estado de persistência
   const persistentCache = usePersistentDevolucoesState();
   
-  const [selectedAccount, setSelectedAccount] = useState<string>(() => 
-    persistentCache.persistedState?.selectedAccount || 'all'
-  );
-  const [dateRange, setDateRange] = useState(() => 
-    persistentCache.persistedState?.dateRange || {
-      from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      to: new Date()
-    }
-  );
-  const [currentPage, setCurrentPage] = useState(() => 
-    persistentCache.persistedState?.currentPage || 1
-  );
-  const [itemsPerPage, setItemsPerPage] = useState(() => 
-    persistentCache.persistedState?.itemsPerPage || 50
-  );
+  const [selectedAccount, setSelectedAccount] = useState<string>('all');
+  const [dateRange, setDateRange] = useState({
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    to: new Date()
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  
+  // Restaurar estado do cache após carregar
+  useEffect(() => {
+    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
+      const cached = persistentCache.persistedState;
+      setSelectedAccount(cached.selectedAccount);
+      setDateRange(cached.dateRange);
+      setCurrentPage(cached.currentPage);
+      setItemsPerPage(cached.itemsPerPage);
+      console.log('🔄 Estado restaurado do cache');
+    }
+  }, [persistentCache.isStateLoaded]);
   
   // Gerenciar preferências de colunas
   const { visibleColumns, setVisibleColumns } = useColumnPreferences(COLUMNS_CONFIG);
@@ -156,32 +160,38 @@ export const Devolucao2025Page = () => {
 
   // Carregar dados em cache na inicialização
   useEffect(() => {
-    if (persistentCache.isStateLoaded && persistentCache.hasValidPersistedState()) {
-      console.log('🔄 Carregando dados do cache na inicialização');
-      // Não precisa fazer nada, o useQuery já vai usar os dados em cache
-    } else if (persistentCache.isStateLoaded && accounts.length > 0) {
-      // Se não tem cache válido, buscar dados
-      console.log('🔍 Sem cache válido, buscando dados...');
-      refetch();
+    if (persistentCache.isStateLoaded) {
+      if (persistentCache.hasValidPersistedState()) {
+        console.log('🔄 Usando cache válido, sem buscar da API');
+        // React Query vai usar os dados em cache
+      } else if (accounts.length > 0) {
+        console.log('🔍 Sem cache válido, buscando dados...');
+        refetch();
+      }
     }
-  }, [persistentCache.isStateLoaded, accounts.length]);
+  }, [persistentCache.isStateLoaded, accounts.length, refetch]);
 
-  // Atualizar cache quando página ou items por página mudar
+  // Atualizar cache quando página ou items por página mudar (debounced)
   useEffect(() => {
-    if (devolucoes.length > 0) {
-      persistentCache.saveDataCache(
-        devolucoes,
-        selectedAccount,
-        dateRange,
-        currentPage,
-        itemsPerPage,
-        visibleColumns
-      );
+    if (devolucoes.length > 0 && persistentCache.isStateLoaded) {
+      const timer = setTimeout(() => {
+        persistentCache.saveDataCache(
+          devolucoes,
+          selectedAccount,
+          dateRange,
+          currentPage,
+          itemsPerPage,
+          visibleColumns
+        );
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, devolucoes.length, persistentCache.isStateLoaded]);
 
   // Handler para aplicar filtros (limpa cache e busca novos dados)
   const handleApplyFilters = useCallback(() => {
+    console.log('🔄 Aplicando filtros, limpando cache...');
     persistentCache.clearPersistedState();
     refetch();
   }, [persistentCache, refetch]);
