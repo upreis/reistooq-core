@@ -117,17 +117,8 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
             {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
 
             {/* GRUPO 9: REVIEW & AÇÕES */}
-            {isVisible('review_resource') && <TableHead>🔍 Review Resource</TableHead>}
             {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
-            {isVisible('review_method') && <TableHead>🛠️ Review Method</TableHead>}
-            {isVisible('review_created') && <TableHead>📅 Review Created</TableHead>}
-            {isVisible('review_updated') && <TableHead>📅 Review Updated</TableHead>}
-            {isVisible('review_stage') && <TableHead>🎯 Review Stage</TableHead>}
-            {isVisible('review_status') && <TableHead>✅ Review Status</TableHead>}
-            {isVisible('product_condition') && <TableHead>📦 Product Condition</TableHead>}
-            {isVisible('product_destination') && <TableHead>🏭 Product Destination</TableHead>}
             {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
-            {isVisible('seller_status') && <TableHead>👤 Seller Status</TableHead>}
 
             {/* GRUPO 10: CUSTOS OPERACIONAIS */}
             {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
@@ -315,71 +306,11 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
               {isVisible('anexos_ml') && <TableCell>{dev.total_anexos_ml || '0'}</TableCell>}
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
-              {isVisible('review_resource') && <TableCell>{dev.dados_reviews?.resource || '-'}</TableCell>}
               {isVisible('review_resource_id') && (
                 <TableCell>{translateColumnValue('review_resource_id', dev.dados_reviews?.resource_id)}</TableCell>
               )}
-              {isVisible('review_method') && (
-                <TableCell>
-                  <Badge variant={dev.dados_reviews?.method === 'triage' ? 'default' : 'secondary'}>
-                    {dev.dados_reviews?.method || '-'}
-                  </Badge>
-                </TableCell>
-              )}
-              {isVisible('review_created') && (
-                <TableCell>
-                  {dev.dados_reviews?.date_created 
-                    ? new Date(dev.dados_reviews.date_created).toLocaleDateString('pt-BR') 
-                    : '-'}
-                </TableCell>
-              )}
-              {isVisible('review_updated') && (
-                <TableCell>
-                  {dev.dados_reviews?.last_updated 
-                    ? new Date(dev.dados_reviews.last_updated).toLocaleDateString('pt-BR') 
-                    : '-'}
-                </TableCell>
-              )}
-              {isVisible('review_stage') && (
-                <TableCell>
-                  <Badge variant={
-                    dev.dados_reviews?.stage === 'closed' ? 'default' : 
-                    dev.dados_reviews?.stage === 'pending' ? 'outline' :
-                    dev.dados_reviews?.stage === 'timeout' ? 'destructive' : 'secondary'
-                  }>
-                    {translateColumnValue('review_stage', dev.dados_reviews?.stage)}
-                  </Badge>
-                </TableCell>
-              )}
-              {isVisible('review_status') && (
-                <TableCell>
-                  <Badge variant={
-                    dev.dados_reviews?.status === 'success' ? 'default' : 
-                    dev.dados_reviews?.status === 'failed' ? 'destructive' : 'outline'
-                  }>
-                    {translateColumnValue('review_status', dev.dados_reviews?.status)}
-                  </Badge>
-                </TableCell>
-              )}
-              {isVisible('product_condition') && (
-                <TableCell>{translateColumnValue('product_condition', dev.dados_reviews?.product_condition)}</TableCell>
-              )}
-              {isVisible('product_destination') && (
-                <TableCell>{translateColumnValue('product_destination', dev.dados_reviews?.product_destination)}</TableCell>
-              )}
               {isVisible('reason_id') && (
                 <TableCell>{translateColumnValue('reason_id', dev.dados_reviews?.reason_id)}</TableCell>
-              )}
-              {isVisible('seller_status') && (
-                <TableCell>
-                  <Badge variant={
-                    dev.dados_reviews?.seller_status === 'success' ? 'default' :
-                    dev.dados_reviews?.seller_status === 'failed' ? 'destructive' :
-                    dev.dados_reviews?.seller_status === 'pending' ? 'outline' : 'secondary'
-                  }>
-                    {dev.dados_reviews?.seller_status || '-'}
-                  </Badge>
-                </TableCell>
               )}
 
               {/* GRUPO 10: CUSTOS OPERACIONAIS */}
