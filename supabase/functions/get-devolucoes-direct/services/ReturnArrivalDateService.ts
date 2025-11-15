@@ -38,8 +38,11 @@ export async function fetchReturnArrivalDate(
   accessToken: string
 ): Promise<string | null> {
   try {
+    logger.debug(`[ReturnArrival] 🔍 INICIANDO busca para claim ${claimId}`);
+    
     // 1. Buscar os returns associados ao claim
     const returnsUrl = `https://api.mercadolibre.com/post-purchase/v2/claims/${claimId}/returns`;
+    logger.debug(`[ReturnArrival] 📡 Chamando: ${returnsUrl}`);
     
     const returnsRes = await fetch(returnsUrl, {
       headers: { 
@@ -48,9 +51,11 @@ export async function fetchReturnArrivalDate(
       }
     });
 
+    logger.debug(`[ReturnArrival] 📊 Status da resposta: ${returnsRes.status}`);
+
     // 404 é esperado quando não há return físico (apenas reembolso)
     if (returnsRes.status === 404) {
-      logger.debug(`[ReturnArrival] Claim ${claimId} não tem return físico (404 - apenas reembolso)`);
+      logger.debug(`[ReturnArrival] ⚠️ Claim ${claimId} não tem return físico (404 - apenas reembolso)`);
       return null;
     }
 
@@ -60,6 +65,14 @@ export async function fetchReturnArrivalDate(
     }
 
     const returnsData: ReturnData = await returnsRes.json();
+    logger.debug(`[ReturnArrival] 📦 Dados do return obtidos. Shipments: ${returnsData.shipments?.length || 0}`);
+
+    // Log detalhado dos shipments
+    if (returnsData.shipments && returnsData.shipments.length > 0) {
+      returnsData.shipments.forEach((s, idx) => {
+        logger.debug(`[ReturnArrival] 📍 Shipment ${idx}: ID=${s.shipment_id}, Destino=${s.destination?.name}`);
+      });
+    }
 
     // 2. Encontrar o shipment de devolução para o vendedor
     const returnShipment = returnsData.shipments?.find(
@@ -69,7 +82,7 @@ export async function fetchReturnArrivalDate(
     if (!returnShipment?.shipment_id) {
       // Muitos retornos vão para warehouse do ML, não para o seller
       const destinations = returnsData.shipments?.map(s => s.destination?.name).join(', ') || 'nenhum';
-      logger.debug(`[ReturnArrival] Claim ${claimId}: Sem shipment seller_address. Destinos: ${destinations}`);
+      logger.warn(`[ReturnArrival] ❌ Claim ${claimId}: Sem shipment seller_address. Destinos: ${destinations}`);
       return null;
     }
 
@@ -92,19 +105,30 @@ export async function fetchReturnArrivalDate(
     }
 
     const shipmentData: ShipmentData = await shipmentRes.json();
+    logger.debug(`[ReturnArrival] 📊 Shipment ${shipmentId} obtido. Status atual: ${shipmentData.status}`);
+    logger.debug(`[ReturnArrival] 📊 Tem status_history? ${!!shipmentData.status_history}, É array? ${Array.isArray(shipmentData.status_history)}`);
 
     // 4. Encontrar a data de entrega no histórico de status
     let deliveredStatus = null;
     
     // Verificar se status_history é realmente um array
     if (Array.isArray(shipmentData.status_history)) {
+      logger.debug(`[ReturnArrival] 📜 Status history tem ${shipmentData.status_history.length} eventos`);
+      
+      // Log todos os status
+      shipmentData.status_history.forEach((h: any, idx: number) => {
+        logger.debug(`[ReturnArrival] 📍 Evento ${idx}: status=${h.status}, date=${h.date}`);
+      });
+      
       deliveredStatus = shipmentData.status_history.find(
         (h: StatusHistoryItem) => h.status === 'delivered'
       );
     } else if (shipmentData.status === 'delivered' && shipmentData.date_delivered) {
       // Fallback: usar date_delivered diretamente se disponível
-      logger.debug(`[ReturnArrival] Usando date_delivered do shipment ${shipmentId}`);
+      logger.info(`[ReturnArrival] ✅ Usando date_delivered do shipment ${shipmentId}: ${shipmentData.date_delivered}`);
       return shipmentData.date_delivered;
+    } else {
+      logger.warn(`[ReturnArrival] ⚠️ Sem status_history válido para shipment ${shipmentId}`);
     }
 
     if (deliveredStatus?.date) {
@@ -152,22 +176,26 @@ export async function enrichClaimsWithArrivalDates(
     const claim = claims[i];
     
     try {
+      logger.progress(`[ReturnArrival] 🔄 Processando claim ${i+1}/${claims.length} (ID: ${claim.id})`);
       const arrivalDate = await fetchReturnArrivalDate(claim.id, accessToken);
       
       if (arrivalDate) {
         successCount++;
-        logger.progress(`[ReturnArrival] ✅ ${i+1}/${claims.length} - Data encontrada para claim ${claim.id}`);
+        logger.progress(`[ReturnArrival] ✅ ${i+1}/${claims.length} - Data encontrada: ${arrivalDate} para claim ${claim.id}`);
       } else {
-        logger.debug(`[ReturnArrival] ⚠️ ${i+1}/${claims.length} - Sem data para claim ${claim.id}`);
+        logger.warn(`[ReturnArrival] ⚠️ ${i+1}/${claims.length} - Sem data para claim ${claim.id}`);
       }
       
-      enrichedClaims.push({
+      const enrichedClaim = {
         ...claim,
         data_chegada_produto: arrivalDate  // ✅ Nome correto do campo
-      });
+      };
+      
+      logger.debug(`[ReturnArrival] 💾 Claim ${claim.id} enriquecido com data_chegada_produto: ${enrichedClaim.data_chegada_produto || 'NULL'}`);
+      enrichedClaims.push(enrichedClaim);
       
     } catch (error) {
-      logger.warn(`[ReturnArrival] ❌ ${i+1}/${claims.length} - Erro no claim ${claim.id}:`, error);
+      logger.error(`[ReturnArrival] ❌ ${i+1}/${claims.length} - Erro no claim ${claim.id}:`, error instanceof Error ? error.message : String(error));
       enrichedClaims.push(claim);
     }
     
@@ -177,8 +205,18 @@ export async function enrichClaimsWithArrivalDates(
     }
   }
 
+  logger.progress(`[ReturnArrival] ========== FIM DO ENRIQUECIMENTO ==========`);
   logger.progress(`[ReturnArrival] ✅ Concluído: ${successCount}/${claims.length} datas encontradas`);
   logger.progress(`[ReturnArrival] 📊 Resumo: ${successCount} com data, ${claims.length - successCount} sem data`);
+  
+  // Debug: log alguns exemplos de claims enriquecidos
+  if (enrichedClaims.length > 0) {
+    logger.debug(`[ReturnArrival] 🔍 Exemplo do primeiro claim enriquecido:`, JSON.stringify({
+      claim_id: enrichedClaims[0].id,
+      data_chegada_produto: enrichedClaims[0].data_chegada_produto,
+      has_field: 'data_chegada_produto' in enrichedClaims[0]
+    }));
+  }
 
   return enrichedClaims;
 }
