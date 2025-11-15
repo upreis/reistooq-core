@@ -137,6 +137,16 @@ export function translateValue(
 }
 
 /**
+ * Formata valores com underscore (ex: label_generated → Label Generated)
+ */
+export function formatUnderscoreValue(value: string): string {
+  return value
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
  * Traduzir valor de coluna específica
  */
 export function translateColumnValue(
@@ -159,5 +169,15 @@ export function translateColumnValue(
   };
 
   const map = translationMaps[columnId];
-  return map ? (map[value] || value) : value;
+  if (map) {
+    // Se existe tradução, usa ela
+    if (map[value]) return map[value];
+    // Se não, formata o underscore
+    if (value.includes('_')) return formatUnderscoreValue(value);
+    return value;
+  }
+
+  // Para colunas sem mapa de tradução, apenas formata underscore
+  if (value.includes('_')) return formatUnderscoreValue(value);
+  return value;
 }

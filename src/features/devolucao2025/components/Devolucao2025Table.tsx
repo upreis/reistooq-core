@@ -16,6 +16,7 @@ import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBad
 import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
+import { translateColumnValue } from '../config/translations';
 
 
 interface Devolucao2025TableProps {
@@ -165,15 +166,19 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
                   {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
                 </TableCell>
               )}
-              {isVisible('metodo_pagamento') && <TableCell>{dev.metodo_pagamento || '-'}</TableCell>}
-              {isVisible('tipo_pagamento') && <TableCell>{dev.tipo_pagamento || '-'}</TableCell>}
+              {isVisible('metodo_pagamento') && (
+                <TableCell>{translateColumnValue('metodo_pagamento', dev.metodo_pagamento)}</TableCell>
+              )}
+              {isVisible('tipo_pagamento') && (
+                <TableCell>{translateColumnValue('tipo_pagamento', dev.tipo_pagamento)}</TableCell>
+              )}
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
               {isVisible('status_dev') && (
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
-                      {dev.status_devolucao || '-'}
+                      {translateColumnValue('status_dev', dev.status_devolucao)}
                     </Badge>
                     <RecentBadge dataChegada={dev.data_chegada_produto} />
                   </div>
@@ -181,7 +186,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
               )}
               {isVisible('status_return') && (
                 <TableCell>
-                  <Badge variant="outline">{dev.status_return || '-'}</Badge>
+                  <Badge variant="outline">
+                    {translateColumnValue('status_return', dev.status_return)}
+                  </Badge>
                 </TableCell>
               )}
               {isVisible('status_entrega') && (
@@ -193,7 +200,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
                   />
                 </TableCell>
               )}
-              {isVisible('destino') && <TableCell>{dev.destino_devolucao || '-'}</TableCell>}
+              {isVisible('destino') && (
+                <TableCell>{translateColumnValue('destino', dev.destino_devolucao)}</TableCell>
+              )}
               {isVisible('evidencias') && (
                 <TableCell>
                   <EvidencesCell 
@@ -292,7 +301,9 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
               {isVisible('review_resource') && <TableCell>{dev.dados_reviews?.resource || '-'}</TableCell>}
-              {isVisible('review_resource_id') && <TableCell>{dev.dados_reviews?.resource_id || '-'}</TableCell>}
+              {isVisible('review_resource_id') && (
+                <TableCell>{translateColumnValue('review_resource_id', dev.dados_reviews?.resource_id)}</TableCell>
+              )}
               {isVisible('review_method') && (
                 <TableCell>
                   <Badge variant={dev.dados_reviews?.method === 'triage' ? 'default' : 'secondary'}>
@@ -321,7 +332,7 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
                     dev.dados_reviews?.stage === 'pending' ? 'outline' :
                     dev.dados_reviews?.stage === 'timeout' ? 'destructive' : 'secondary'
                   }>
-                    {dev.dados_reviews?.stage || '-'}
+                    {translateColumnValue('review_stage', dev.dados_reviews?.stage)}
                   </Badge>
                 </TableCell>
               )}
@@ -331,13 +342,19 @@ export const Devolucao2025Table = ({ devolucoes, isLoading, error, visibleColumn
                     dev.dados_reviews?.status === 'success' ? 'default' : 
                     dev.dados_reviews?.status === 'failed' ? 'destructive' : 'outline'
                   }>
-                    {dev.dados_reviews?.status || '-'}
+                    {translateColumnValue('review_status', dev.dados_reviews?.status)}
                   </Badge>
                 </TableCell>
               )}
-              {isVisible('product_condition') && <TableCell>{dev.dados_reviews?.product_condition || '-'}</TableCell>}
-              {isVisible('product_destination') && <TableCell>{dev.dados_reviews?.product_destination || '-'}</TableCell>}
-              {isVisible('reason_id') && <TableCell>{dev.dados_reviews?.reason_id || '-'}</TableCell>}
+              {isVisible('product_condition') && (
+                <TableCell>{translateColumnValue('product_condition', dev.dados_reviews?.product_condition)}</TableCell>
+              )}
+              {isVisible('product_destination') && (
+                <TableCell>{translateColumnValue('product_destination', dev.dados_reviews?.product_destination)}</TableCell>
+              )}
+              {isVisible('reason_id') && (
+                <TableCell>{translateColumnValue('reason_id', dev.dados_reviews?.reason_id)}</TableCell>
+              )}
               {isVisible('seller_status') && (
                 <TableCell>
                   <Badge variant={
