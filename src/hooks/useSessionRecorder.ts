@@ -66,27 +66,38 @@ export function useSessionRecorder(config: SessionRecorderConfig = {}) {
       sessionId: sessionIdRef.current
     });
 
-    // Iniciar gravação
-    stopRecordingRef.current = rrweb.record({
-      emit(event) {
-        eventsRef.current.push(event);
+    // Iniciar gravação com tratamento de erros
+    try {
+      stopRecordingRef.current = rrweb.record({
+        emit(event) {
+          try {
+            eventsRef.current.push(event);
 
-        // Auto-save se atingir duração máxima
-        if (Date.now() - lastSaveRef.current >= maxDuration) {
-          saveSession();
-        }
-      },
-      // Configurações de privacidade
-      maskAllInputs: true,
-      maskTextSelector: '[data-sensitive]',
-      blockSelector: '[data-private]',
-      sampling: {
-        mousemove: true,
-        mouseInteraction: true,
-        scroll: 150,
-        input: 'last'
-      }
-    });
+            // Auto-save se atingir duração máxima
+            if (Date.now() - lastSaveRef.current >= maxDuration) {
+              saveSession();
+            }
+          } catch (error) {
+            console.warn('Error processing recording event:', error);
+          }
+        },
+        // Configurações de privacidade
+        maskAllInputs: true,
+        maskTextSelector: '[data-sensitive]',
+        blockSelector: '[data-private]',
+        sampling: {
+          mousemove: true,
+          mouseInteraction: true,
+          scroll: 150,
+          input: 'last'
+        },
+        // Bloquear elementos que causam problemas
+        ignoreClass: 'rr-ignore'
+      });
+    } catch (error) {
+      console.error('Failed to start session recording:', error);
+      return;
+    }
 
     // Salvar ao sair da página
     const handleBeforeUnload = () => {

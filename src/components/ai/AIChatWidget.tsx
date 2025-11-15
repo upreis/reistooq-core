@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useToastFeedback } from "@/hooks/useToastFeedback";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -37,127 +38,57 @@ export function AIChatWidget() {
     setIsLoading(true);
 
     try {
-      const CHAT_URL = `https://tdjyfqnxvjgossuncpwm.supabase.co/functions/v1/ai-chat`;
-      
-      const response = await fetch(CHAT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkanlmcW54dmpnb3NzdW5jcHdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4OTczNTMsImV4cCI6MjA2OTQ3MzM1M30.qrEBpARgfuWF74zHoRzGJyWjgxN_oCG5DdKjPVGJYxk`,
-        },
-        body: JSON.stringify({
+      // Verificar autenticação
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        showError('Por favor, faça login para usar o assistente.');
+        setMessages(prev => prev.slice(0, -1));
+        return;
+      }
+
+      // Fazer chamada à edge function usando supabase.functions.invoke
+      const response = await supabase.functions.invoke('ai-chat', {
+        body: {
           message: userMessage,
           conversationId,
           context: `Usuário está em: ${window.location.pathname}`
-        }),
+        }
       });
 
-      if (response.status === 429) {
-        showError('Limite de requisições excedido. Tente novamente mais tarde.');
-        setMessages(prev => prev.slice(0, -1));
-        return;
-      }
-
-      if (response.status === 402) {
-        showError('Créditos insuficientes. Adicione créditos para continuar.');
-        setMessages(prev => prev.slice(0, -1));
-        return;
-      }
-
-      if (!response.ok || !response.body) {
-        throw new Error('Falha ao conectar com o assistente');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let textBuffer = '';
-      let streamDone = false;
-      let assistantContent = '';
-
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        textBuffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = textBuffer.indexOf('\n')) !== -1) {
-          let line = textBuffer.slice(0, newlineIndex);
-          textBuffer = textBuffer.slice(newlineIndex + 1);
-
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            
-            if (parsed.conversationId && !conversationId) {
-              setConversationId(parsed.conversationId);
-            }
-
-            if (parsed.content) {
-              assistantContent += parsed.content;
-              setMessages(prev => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage.role === 'assistant') {
-                  lastMessage.content = assistantContent;
-                }
-                return newMessages;
-              });
-            }
-          } catch {
-            textBuffer = line + '\n' + textBuffer;
-            break;
-          }
+      if (response.error) {
+        if (response.error.message.includes('Rate limit')) {
+          showError('Limite de requisições excedido. Tente novamente mais tarde.');
+          setMessages(prev => prev.slice(0, -1));
+          return;
         }
-      }
-
-      if (textBuffer.trim()) {
-        for (let raw of textBuffer.split('\n')) {
-          if (!raw || raw.startsWith(':') || raw.trim() === '') continue;
-          if (!raw.startsWith('data: ')) continue;
-          
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
-          
-          try {
-            const parsed = JSON.parse(jsonStr);
-            if (parsed.content) {
-              assistantContent += parsed.content;
-              setMessages(prev => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage.role === 'assistant') {
-                  lastMessage.content = assistantContent;
-                }
-                return newMessages;
-              });
-            }
-          } catch { /* ignore */ }
+        if (response.error.message.includes('credits')) {
+          showError('Créditos insuficientes. Adicione créditos para continuar.');
+          setMessages(prev => prev.slice(0, -1));
+          return;
         }
+        throw new Error(response.error.message);
       }
 
-    } catch (error: any) {
+      if (!response.data) {
+        throw new Error('Nenhuma resposta recebida do assistente');
+      }
+
+      // A resposta já vem completamente processada do backend
+      if (response.data.conversationId) {
+        setConversationId(response.data.conversationId);
+      }
+
+      if (response.data.content) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: response.data.content 
+        }]);
+      }
+
+    } catch (error) {
       console.error('Erro ao enviar mensagem:', error);
-      showError(error.message || 'Erro ao enviar mensagem. Tente novamente.');
-      
-      setMessages(prev => {
-        const lastMsg = prev[prev.length - 1];
-        if (lastMsg.role === 'assistant' && !lastMsg.content) {
-          return prev.slice(0, -1);
-        }
-        return prev;
-      });
+      showError(error instanceof Error ? error.message : 'Falha ao enviar mensagem');
+      setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -172,33 +103,34 @@ export function AIChatWidget() {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Messages */}
       <ScrollArea className="flex-1 p-4">
         <div className="space-y-4">
-          {messages.map((msg, idx) => (
+          {messages.map((message, i) => (
             <div
-              key={idx}
+              key={i}
               className={cn(
-                "flex",
-                msg.role === 'user' ? "justify-end" : "justify-start"
+                "flex w-full",
+                message.role === 'user' ? 'justify-end' : 'justify-start'
               )}
             >
               <div
                 className={cn(
-                  "max-w-[80%] rounded-lg px-4 py-2",
-                  msg.role === 'user'
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
+                  "max-w-[80%] rounded-lg p-3",
+                  message.role === 'user'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground'
                 )}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
             </div>
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-muted rounded-lg px-4 py-2 flex items-center gap-2">
+              <div className="bg-muted text-muted-foreground rounded-lg p-3 flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Pensando...</span>
+                <span className="text-sm">Pensando...</span>
               </div>
             </div>
           )}
@@ -206,12 +138,13 @@ export function AIChatWidget() {
         </div>
       </ScrollArea>
 
-      <div className="p-4 border-t">
+      {/* Input */}
+      <div className="p-4 border-t bg-background">
         <div className="flex gap-2">
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             placeholder="Digite sua mensagem..."
             disabled={isLoading}
             className="flex-1"
