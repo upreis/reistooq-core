@@ -274,7 +274,7 @@ export const Devolucao2025Page = () => {
 
           {/* Tabela */}
           <div className="px-4 md:px-6">
-            <Card className="p-6 flex-1 flex flex-col">
+            <Card className="p-6">
               {isLoading && (
                 <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
                   <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
