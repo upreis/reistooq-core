@@ -4,13 +4,7 @@ import { BarChart3, Users, ShoppingCart, TrendingUp } from 'lucide-react';
 import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
-// useDevolucaoCalendarData removido temporariamente
-const useDevolucaoCalendarData = () => ({ 
-  data: [], 
-  loading: false, 
-  error: null, 
-  refresh: () => {} 
-});
+import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
 
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
