@@ -120,38 +120,40 @@ export function ReclamacoesTable({
   return (
     <div className="space-y-4">
       {/* Tabela */}
-      <div className="overflow-x-auto border rounded-lg bg-card">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="bg-card hover:bg-card">
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="whitespace-nowrap bg-card text-card-foreground">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => {
-                return <OptimizedTableRow key={row.id} row={row} />;
-              })
-            ) : (
-              <TableRow className="bg-card hover:bg-card">
-                <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
-                  {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+      <div className="w-full flex-1 flex flex-col min-h-0">
+        <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
+          <Table className="min-w-max relative">
+            <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className="whitespace-nowrap">
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => {
+                  return <OptimizedTableRow key={row.id} row={row} />;
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={table.getAllColumns().length} className="text-center py-8 text-muted-foreground">
+                    {globalFilter ? 'Nenhum resultado encontrado para sua busca.' : 'Nenhuma reclamação encontrada.'}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Informação de total de reclamações */}
