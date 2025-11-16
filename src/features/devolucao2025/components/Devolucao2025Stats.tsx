@@ -1,5 +1,5 @@
 /**
- * 📊 ESTATÍSTICAS - DEVOLUÇÕES 2025
+ * 📊 ESTATÍSTICAS - DEVOLUÇÕES DE VENDAS
  */
 
 import { Card } from '@/components/ui/card';

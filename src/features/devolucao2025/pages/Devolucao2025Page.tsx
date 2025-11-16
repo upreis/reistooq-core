@@ -210,7 +210,7 @@ export const Devolucao2025Page = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-3xl font-bold">Devoluções 2025</h1>
+            <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
             <p className="text-muted-foreground">
               Gestão completa com {devolucoes.length} devoluções
             </p>
