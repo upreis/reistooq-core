@@ -156,11 +156,11 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
 
 
       {/* Tabela Principal */}
-      <Card>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="border-b">
-              <tr className="text-left">
+      <div className="w-full flex-1 flex flex-col min-h-0">
+        <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
+          <table className="w-full min-w-max relative">
+            <thead className="sticky top-0 z-10 bg-background shadow-sm">
+              <tr className="text-left hover:bg-transparent border-b-2">
                 <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">
                   <Checkbox
                     checked={selectedOrders.size === orders.length && orders.length > 0}
@@ -168,7 +168,7 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
                   />
                 </th>
                 {/* Coluna fixa: ID-Único sempre primeiro */}
-                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left">ID-Único</th>
+                <th className="px-4 h-12 text-sm text-muted-foreground font-medium text-left whitespace-nowrap">ID-Único</th>
                 {/* Demais cabeçalhos conforme ordem/seleção */}
                 {visibleDefinitions?.filter((d) => d.key !== 'id').map((def) => (
                   <th 
@@ -1207,7 +1207,9 @@ export const PedidosTableSection = memo<PedidosTableSectionProps>(({
             </tbody>
           </table>
         </div>
+      </div>
 
+      <Card className="mt-4">
         <div className="border-t p-4 bg-muted/5">
 
           <div className="flex items-center justify-between">
