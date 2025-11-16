@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { format, parseISO } from 'date-fns';
 
 interface ContributionDay {
@@ -14,26 +13,38 @@ interface ContributionDay {
   }>;
 }
 
+const STORAGE_KEY = 'devolucoes_venda_persistent_state';
+
 export const useDevolucaoCalendarData = () => {
   const [data, setData] = useState<ContributionDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = () => {
     setLoading(true);
     setError(null);
     
     try {
-      const { data: devolucoes, error: fetchError } = await supabase
-        .from('devolucoes_avancadas')
-        .select('order_id, data_chegada_produto, data_fechamento_devolucao, status_devolucao, produto_titulo, sku')
-        .or('data_chegada_produto.not.is.null,data_fechamento_devolucao.not.is.null')
-        .order('data_chegada_produto', { ascending: true });
+      // Buscar dados do cache (mesma estratégia da página de devoluções)
+      const cached = localStorage.getItem(STORAGE_KEY);
+      
+      if (!cached) {
+        console.log('📊 Sem dados em cache para o calendário');
+        setData([]);
+        setLoading(false);
+        return;
+      }
 
-      if (fetchError) throw fetchError;
+      const parsed = JSON.parse(cached);
+      const devolucoes = parsed.devolucoes || [];
+      
+      console.log('📊 Carregando dados do cache para calendário:', {
+        totalDevolucoes: devolucoes.length,
+        cacheAge: Math.round((Date.now() - parsed.cachedAt) / 1000) + 's'
+      });
 
       // Agrupar devoluções por data (chegada e análise)
-      const groupedByDate = (devolucoes || []).reduce((acc, devolucao) => {
+      const groupedByDate = devolucoes.reduce((acc: Record<string, ContributionDay>, devolucao: any) => {
         // Processar data de chegada (delivery)
         if (devolucao.data_chegada_produto) {
           const dateStr = format(parseISO(devolucao.data_chegada_produto), 'yyyy-MM-dd');
@@ -79,18 +90,18 @@ export const useDevolucaoCalendarData = () => {
         }
         
         return acc;
-      }, {} as Record<string, ContributionDay>);
+      }, {});
 
-      const finalData = Object.values(groupedByDate);
-      console.log('📊 Dados do calendário processados:', {
+      const finalData = Object.values(groupedByDate) as ContributionDay[];
+      console.log('📊 Dados do calendário processados do cache:', {
         total: finalData.length,
-        entregas: finalData.filter(d => d.returns?.some(r => r.dateType === 'delivery')).length,
-        revisoes: finalData.filter(d => d.returns?.some(r => r.dateType === 'review')).length,
+        entregas: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'delivery')).length,
+        revisoes: finalData.filter((d: ContributionDay) => d.returns?.some(r => r.dateType === 'review')).length,
         sample: finalData.slice(0, 3)
       });
       setData(finalData);
     } catch (err: any) {
-      console.error('Erro ao buscar dados do calendário:', err);
+      console.error('❌ Erro ao processar dados do calendário:', err);
       setError(err.message || 'Erro ao carregar dados');
       setData([]);
     } finally {
@@ -100,6 +111,17 @@ export const useDevolucaoCalendarData = () => {
 
   useEffect(() => {
     fetchData();
+    
+    // Escutar mudanças no localStorage (quando a página de devoluções atualiza)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY) {
+        console.log('🔄 Cache atualizado, recarregando calendário...');
+        fetchData();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const refresh = () => {
