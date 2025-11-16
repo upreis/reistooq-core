@@ -83,7 +83,7 @@ export function ReclamacoesFilterBar({
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 items-end">
         {/* Busca Manual */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Buscar · Manual</Label>
+          <Label className="text-xs text-muted-foreground">Buscar</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -97,7 +97,7 @@ export function ReclamacoesFilterBar({
 
         {/* Contas ML */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Contas ML · Manual</Label>
+          <Label className="text-xs text-muted-foreground">Empresas</Label>
           <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -168,7 +168,7 @@ export function ReclamacoesFilterBar({
 
         {/* Período de Busca */}
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Período de Busca · Data da Venda</Label>
+          <Label className="text-xs text-muted-foreground">Período de Busca</Label>
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Select value={periodo} onValueChange={onPeriodoChange}>
