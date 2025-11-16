@@ -5,8 +5,6 @@
 
 import React, { useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Info, XCircle, Shield, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -101,42 +99,37 @@ export function ReclamacoesLifecycleAlert({
   }
   
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <AlertTriangle className="h-4 w-4" />
-            Alertas
-            <Badge variant="destructive" className="text-xs">
-              {relatorio.totalEmRisco}
-            </Badge>
-          </CardTitle>
-          <div className="flex items-center gap-3">
-            {!isOpen && relatorio.totalEmRisco > 0 && (
-              <div className="relative">
-                <span className="flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
-                </span>
-              </div>
-            )}
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsOpen(!isOpen)}
-                className="h-8 w-8 p-0"
-              >
-                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
-            </CollapsibleTrigger>
-          </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Alertas de Ciclo de Vida</h3>
+        <div className="flex items-center gap-3">
+          {!isOpen && relatorio.totalEmRisco > 0 && (
+            <div className="relative">
+              <span className="flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+              </span>
+            </div>
+          )}
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm">
+              {isOpen ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Ocultar
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Expandir ({relatorio.totalEmRisco})
+                </>
+              )}
+            </Button>
+          </CollapsibleTrigger>
         </div>
-      </CardHeader>
+      </div>
       
-      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-        <CollapsibleContent>
-          <CardContent className="pt-0 space-y-3">
+      <CollapsibleContent className="space-y-3">
         {/* Alerta Crítico - Serão Excluídas */}
         {relatorio.seraExcluidas.length > 0 && (
         <Alert variant="destructive">
@@ -209,9 +202,7 @@ export function ReclamacoesLifecycleAlert({
           </p>
         </AlertDescription>
       </Alert>
-          </CardContent>
-        </CollapsibleContent>
-      </Collapsible>
-    </Card>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
