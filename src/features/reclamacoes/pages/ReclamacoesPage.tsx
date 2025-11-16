@@ -384,12 +384,16 @@ export function ReclamacoesPage() {
       <div className="container mx-auto py-6 space-y-6">
         <MLOrdersNav />
 
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
+        <div className="flex justify-between items-start gap-4">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
+          </div>
+          
+          {/* Alertas de ciclo de vida - Posicionado no canto direito */}
+          <div className="w-full max-w-sm shrink-0">
+            <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />
+          </div>
         </div>
-
-        {/* Alertas de ciclo de vida */}
-        <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />
 
         {/* Filtros rápidos de ciclo de vida */}
         <ReclamacoesLifecycleQuickFilter
