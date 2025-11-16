@@ -24,7 +24,6 @@ import NotFound from "./pages/NotFound";
 import Estoque from "./pages/Estoque";
 import Pedidos from "./pages/Pedidos";
 import VendasOnline from "./pages/VendasOnline";
-import DevolucoesMercadoLivre from "./pages/DevolucoesMercadoLivre";
 import DevolucoesDeVenda from "./pages/DevolucoesDeVenda";
 // DadosEnriquecidosQualidade removido temporariamente
 import Scanner from "./pages/Scanner";
@@ -149,7 +148,6 @@ function App() {
                     <Route path="vendas-online" element={<VendasOnline />} />
                     
                     {/* Devoluções */}
-                    <Route path="devolucoes-mercadolivre" element={<DevolucoesMercadoLivre />} />
                     <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />
                     
                     {/* Reclamações */}

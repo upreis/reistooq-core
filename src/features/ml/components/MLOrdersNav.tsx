@@ -20,11 +20,6 @@ const subNavItems = [
     icon: ShoppingBag,
   },
   {
-    path: "/devolucoes-ml",
-    label: "Devoluções ML",
-    icon: Undo2,
-  },
-  {
     path: "/devolucoesdevenda",
     label: "Devoluções de Venda",
     icon: FileText,
