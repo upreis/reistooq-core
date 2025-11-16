@@ -381,111 +381,124 @@ export function ReclamacoesPage() {
 
   return (
     <ErrorBoundary>
-      <div className="container mx-auto py-6 space-y-6">
-        <MLOrdersNav />
+      <div className="h-screen flex flex-col">
+        <div className="flex-1 overflow-auto m-0">
+          <div className="space-y-6">
+            {/* Sub-navegação */}
+            <MLOrdersNav />
+            
+            {/* Header */}
+            <div className="px-4 md:px-6 py-6">
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
+                  <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
+                </div>
+                
+                {/* Alertas de ciclo de vida - Posicionado no canto direito */}
+                <div className="w-full max-w-sm shrink-0">
+                  <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />
+                </div>
+              </div>
+            </div>
 
-        <div className="flex justify-between items-start gap-4">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
-          </div>
-          
-          {/* Alertas de ciclo de vida - Posicionado no canto direito */}
-          <div className="w-full max-w-sm shrink-0">
-            <ReclamacoesLifecycleAlert reclamacoes={reclamacoesEnriquecidas} />
+            {/* Filtros rápidos de ciclo de vida */}
+            <div className="px-4 md:px-6">
+              <ReclamacoesLifecycleQuickFilter
+                onFilterChange={setLifecycleFilter}
+                counts={{
+                  critical: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'critical').length,
+                  urgent: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'urgent').length,
+                  attention: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'attention').length,
+                }}
+              />
+            </div>
+
+            {/* Filtros principais */}
+            <div className="px-4 md:px-6">
+              <ReclamacoesFilterBar
+                accounts={mlAccounts || []}
+                selectedAccountIds={selectedAccountIds}
+                onAccountsChange={setSelectedAccountIds}
+                periodo={filters.periodo}
+                onPeriodoChange={(periodo) => setFilters(prev => ({ ...prev, periodo }))}
+                searchTerm=""
+                onSearchChange={() => {}}
+                onBuscar={handleBuscarReclamacoes}
+                isLoading={isManualSearching || loadingReclamacoes}
+                onCancel={handleCancelarBusca}
+                table={tableInstance}
+              />
+            </div>
+
+            {/* Tabs: Ativas vs Histórico */}
+            <div className="px-4 md:px-6">
+              <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="ativas">
+                    Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
+                  </TabsTrigger>
+                  <TabsTrigger value="historico">
+                    Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value={activeTab}>
+                  <Card className="p-6">
+                    <ReclamacoesTable
+                      reclamacoes={reclamacoesPaginadas}
+                      isLoading={loadingReclamacoes || isManualSearching}
+                      error={errorReclamacoes ? String(errorReclamacoes) : null}
+                      onStatusChange={handleStatusChange}
+                      onDeleteReclamacao={handleDeleteReclamacao}
+                      onOpenAnotacoes={handleOpenAnotacoes}
+                      anotacoes={anotacoes}
+                      onTableReady={setTableInstance}
+                    />
+
+                    {/* Paginação */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                        <div className="text-sm text-muted-foreground">
+                          Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Anterior
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Próxima
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            {/* Modal de anotações */}
+            {selectedClaimForAnotacoes && (
+              <ReclamacoesAnotacoesModal
+                open={anotacoesModalOpen}
+                onOpenChange={setAnotacoesModalOpen}
+                claimId={selectedClaimForAnotacoes.claim_id}
+                orderId={selectedClaimForAnotacoes.order_id}
+                anotacaoAtual={anotacoes[selectedClaimForAnotacoes.claim_id] || ''}
+                onSave={(claimId, anotacao) => handleSaveAnotacao(claimId, anotacao)}
+              />
+            )}
           </div>
         </div>
-
-        {/* Filtros rápidos de ciclo de vida */}
-        <ReclamacoesLifecycleQuickFilter
-          onFilterChange={setLifecycleFilter}
-          counts={{
-            critical: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'critical').length,
-            urgent: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'urgent').length,
-            attention: reclamacoesEnriquecidas.filter(c => c.lifecycle_status?.status === 'attention').length,
-          }}
-        />
-
-        {/* Filtros principais */}
-        <ReclamacoesFilterBar
-          accounts={mlAccounts || []}
-          selectedAccountIds={selectedAccountIds}
-          onAccountsChange={setSelectedAccountIds}
-          periodo={filters.periodo}
-          onPeriodoChange={(periodo) => setFilters(prev => ({ ...prev, periodo }))}
-          searchTerm=""
-          onSearchChange={() => {}}
-          onBuscar={handleBuscarReclamacoes}
-          isLoading={isManualSearching || loadingReclamacoes}
-          onCancel={handleCancelarBusca}
-          table={tableInstance}
-        />
-
-
-        {/* Tabs: Ativas vs Histórico */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="ativas">
-              Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
-            </TabsTrigger>
-            <TabsTrigger value="historico">
-              Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activeTab}>
-            <Card className="p-6">
-              <ReclamacoesTable
-                reclamacoes={reclamacoesPaginadas}
-                isLoading={loadingReclamacoes || isManualSearching}
-                error={errorReclamacoes ? String(errorReclamacoes) : null}
-                onStatusChange={handleStatusChange}
-                onDeleteReclamacao={handleDeleteReclamacao}
-                onOpenAnotacoes={handleOpenAnotacoes}
-                anotacoes={anotacoes}
-                onTableReady={setTableInstance}
-              />
-
-              {/* Paginação */}
-              {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                  <div className="text-sm text-muted-foreground">
-                    Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      Anterior
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      Próxima
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        {/* Modal de anotações */}
-        {selectedClaimForAnotacoes && (
-          <ReclamacoesAnotacoesModal
-            open={anotacoesModalOpen}
-            onOpenChange={setAnotacoesModalOpen}
-            claimId={selectedClaimForAnotacoes.claim_id}
-            orderId={selectedClaimForAnotacoes.order_id}
-            anotacaoAtual={anotacoes[selectedClaimForAnotacoes.claim_id] || ''}
-            onSave={(claimId, anotacao) => handleSaveAnotacao(claimId, anotacao)}
-          />
-        )}
       </div>
     </ErrorBoundary>
   );
