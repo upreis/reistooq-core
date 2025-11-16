@@ -139,7 +139,7 @@ function App() {
                     <Route path="dashboardinicial/visao-geral/*" element={<DashboardInicialPage />} />
                     
                     {/* Páginas principais */}
-                    <Route path="estoque" element={<Estoque />} />
+                    <Route path="estoque/*" element={<Estoque />} />
                     <Route path="pedidos" element={<Pedidos />} />
                     <Route path="scanner" element={<Scanner />} />
                     <Route path="historico" element={<Historico />} />
@@ -161,13 +161,14 @@ function App() {
                     <Route path="compras/*" element={<Compras />} />
                     
                     {/* Configurações */}
-                    <Route path="config/integracoes" element={<IntegracoesPage />} />
-                    <Route path="config/account" element={<AccountSettings />} />
-                    <Route path="config/categories" element={<CategoryManager />} />
-                    <Route path="aplicativos" element={<AplicativosPage />} />
+                    <Route path="configuracoes/*" element={<Navigate to="/configuracoes/integracoes" replace />} />
+                    <Route path="configuracoes/integracoes" element={<IntegracoesPage />} />
+                    <Route path="configuracoes/account" element={<AccountSettings />} />
+                    <Route path="configuracoes/categories" element={<CategoryManager />} />
+                    <Route path="aplicativos/*" element={<AplicativosPage />} />
                     
                     {/* Admin */}
-                    <Route path="admin" element={
+                    <Route path="admin/*" element={
                       <PermissionRoute requiredPermissions={["admin.access"]}>
                         <AdminPage />
                       </PermissionRoute>
@@ -179,7 +180,7 @@ function App() {
                     {/* E-commerce */}
                     <Route path="shop" element={<Shop />} />
                     <Route path="shop/:id" element={<ProductDetail />} />
-                    <Route path="ecommerce" element={<Ecommerce />} />
+                    <Route path="ecommerce/*" element={<Ecommerce />} />
                     <Route path="product-list" element={<ProductList />} />
                     <Route path="add-product" element={<AddProduct />} />
                     <Route path="edit-product/:id" element={<EditProduct />} />
@@ -188,7 +189,7 @@ function App() {
                     {/* Outros */}
                     <Route path="calendar" element={<Calendar />} />
                     <Route path="notes" element={<Notes />} />
-                    <Route path="oms" element={<OMS />} />
+                    <Route path="oms/*" element={<OMS />} />
                     <Route path="cards" element={<Cards />} />
                     <Route path="banners" element={<Banners />} />
                     <Route path="charts" element={<Charts />} />
