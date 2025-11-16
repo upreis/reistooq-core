@@ -6,7 +6,6 @@
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
@@ -221,136 +220,74 @@ export const Devolucao2025Page = () => {
         <NotificationsBell organizationId={organizationId} />
       </div>
 
-      {/* Navegação por Abas */}
-      <Tabs defaultValue="todas" className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="todas">Todas</TabsTrigger>
-          <TabsTrigger value="pendentes">Pendentes</TabsTrigger>
-          <TabsTrigger value="alertas">Alertas ({totalAlerts})</TabsTrigger>
-        </TabsList>
+      {/* Painel de Alertas */}
+      {totalAlerts > 0 && (
+        <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
+      )}
 
-        <TabsContent value="todas" className="space-y-6 mt-6">
-          {/* Painel de Alertas */}
-          {totalAlerts > 0 && (
-            <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
-          )}
+      <Devolucao2025Stats devolucoes={devolucoes} />
 
-          <Devolucao2025Stats devolucoes={devolucoes} />
+      <Card className="p-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 flex-wrap">
+            <Devolucao2025Filters
+              accounts={accounts}
+              selectedAccounts={selectedAccounts}
+              onAccountsChange={setSelectedAccounts}
+              dateRange={dateRange}
+              onDateRangeChange={setDateRange}
+              onApplyFilters={handleApplyFilters}
+              onCancelSearch={handleCancelSearch}
+              isLoading={isLoading}
+            />
+            <ColumnSelector 
+              columns={COLUMNS_CONFIG}
+              visibleColumns={visibleColumns}
+              onVisibleColumnsChange={setVisibleColumns}
+            />
+            <ExportButton 
+              data={devolucoes}
+              visibleColumns={visibleColumns}
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+      </Card>
 
-          <Card className="p-6">
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-3 items-end justify-between">
-                <Devolucao2025Filters
-                  accounts={accounts}
-                  selectedAccounts={selectedAccounts}
-                  onAccountsChange={setSelectedAccounts}
-                  dateRange={dateRange}
-                  onDateRangeChange={setDateRange}
-                  onApplyFilters={handleApplyFilters}
-                  onCancelSearch={handleCancelSearch}
-                  isLoading={isLoading}
-                />
-                <ColumnSelector 
-                  columns={COLUMNS_CONFIG}
-                  visibleColumns={visibleColumns}
-                  onVisibleColumnsChange={setVisibleColumns}
-                />
-                <ExportButton 
-                  data={devolucoes}
-                  visibleColumns={visibleColumns}
-                  disabled={isLoading}
-                />
-              </div>
+      <Card className="p-6 flex-1 flex flex-col">
+        {isLoading && (
+          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
+            <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                Buscando devoluções...
+              </p>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Aguarde enquanto carregamos os dados do Mercado Livre
+              </p>
             </div>
-          </Card>
+          </div>
+        )}
+        
+        <Devolucao2025Table 
+          accounts={accounts}
+          devolucoes={paginatedDevolucoes}
+          isLoading={isLoading}
+          error={error}
+          visibleColumns={visibleColumns}
+        />
 
-          <Card className="p-6 flex-1 flex flex-col">
-            {isLoading && (
-              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
-                <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
-                <div>
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Buscando devoluções...
-                  </p>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    Aguarde enquanto carregamos os dados do Mercado Livre
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {error && (
-              <div className="mb-4 p-4 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-md">
-                <p className="text-sm font-medium text-red-900 dark:text-red-100">
-                  Erro ao carregar devoluções
-                </p>
-                <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                  {error?.message || 'Ocorreu um erro inesperado'}
-                </p>
-              </div>
-            )}
-
-            <Devolucao2025Table 
-              accounts={accounts}
-              devolucoes={paginatedDevolucoes}
-              visibleColumns={visibleColumns}
-              isLoading={isLoading}
-              error={error}
-            />
-
-            {!isLoading && devolucoes.length > 0 && (
-              <div className="mt-auto pt-4">
-                <Devolucao2025Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={filteredCount}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                />
-              </div>
-            )}
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="pendentes" className="space-y-6 mt-6">
-          <Devolucao2025Stats 
-            devolucoes={devolucoes.filter(d => 
-              ['pending', 'in_progress', 'awaiting_seller'].includes(d.status_devolucao || '')
-            )} 
+        {!isLoading && !error && devolucoes.length > 0 && (
+          <Devolucao2025Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            totalItems={devolucoes.length}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={setItemsPerPage}
           />
-
-          <Card className="p-6 flex-1 flex flex-col">
-            <Devolucao2025Table 
-              accounts={accounts}
-              devolucoes={paginatedDevolucoes.filter(d => 
-                ['pending', 'in_progress', 'awaiting_seller'].includes(d.status_devolucao || '')
-              )}
-              visibleColumns={visibleColumns}
-              isLoading={isLoading}
-              error={error}
-            />
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="alertas" className="space-y-6 mt-6">
-          {totalAlerts > 0 && (
-            <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
-          )}
-
-          <Card className="p-6 flex-1 flex flex-col">
-            <Devolucao2025Table 
-              accounts={accounts}
-              devolucoes={paginatedDevolucoes.filter(d => 
-                alerts.some(alert => alert.order_id === d.order_id)
-              )}
-              visibleColumns={visibleColumns}
-              isLoading={isLoading}
-              error={error}
-            />
-          </Card>
-        </TabsContent>
-      </Tabs>
+        )}
+      </Card>
     </div>
   );
 };
