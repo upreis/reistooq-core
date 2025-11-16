@@ -211,26 +211,31 @@ export const Devolucao2025Page = () => {
 
   return (
     <div className="w-full min-h-screen px-6 py-6 space-y-6 flex flex-col">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
-            <p className="text-muted-foreground">
-              Gestão completa com {devolucoes.length} devoluções
-            </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
+              <p className="text-muted-foreground">
+                Gestão completa com {devolucoes.length} devoluções
+              </p>
+            </div>
+            <DevolucaoAlertsBadge alertsByType={alertsByType} />
           </div>
-          <DevolucaoAlertsBadge alertsByType={alertsByType} />
         </div>
+        
+        {/* Painel de Alertas - Posicionado no canto direito */}
+        <div className="w-full max-w-sm shrink-0">
+          {totalAlerts > 0 && (
+            <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
+          )}
+        </div>
+        
         <NotificationsBell organizationId={organizationId} />
       </div>
 
       {/* Navegação por tabs */}
       <MLOrdersNav />
-
-      {/* Painel de Alertas */}
-      {totalAlerts > 0 && (
-        <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
-      )}
 
       
 
