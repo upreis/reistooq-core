@@ -16,6 +16,10 @@ interface ContributionDay {
     dateType: 'delivery' | 'review';
     [key: string]: any;
   }>; // Array de devoluções com tipo
+  claims?: Array<{
+    dateType: 'created' | 'deadline';
+    [key: string]: any;
+  }>; // Array de reclamações com tipo
 }
 
 interface ActivityCalendarProps {
@@ -34,16 +38,31 @@ const ActivityCalendar = ({
   const [contributions, setContributions] = useState<ContributionDay[]>([]);
   const [selectedDay, setSelectedDay] = useState<ContributionDay | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [filterType, setFilterType] = useState<'all' | 'delivery' | 'review'>('all');
+  const [filterType, setFilterType] = useState<'all' | 'delivery' | 'review' | 'claim_created' | 'claim_deadline'>('all');
   const today = new Date();
   const startDate = subDays(today, monthsBack * 30); // Aproximado
   const endDate = addDays(today, monthsForward * 30); // Aproximado
   const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
   const weeks = Math.ceil(totalDays / 7);
 
-  // Process data prop
+  // Process data prop - combinar dados do mesmo dia
   useEffect(() => {
-    setContributions(data.map((item) => ({ ...item, date: new Date(item.date).toISOString() })));
+    const merged = data.reduce((acc: Record<string, ContributionDay>, item) => {
+      const dateStr = new Date(item.date).toISOString();
+      if (!acc[dateStr]) {
+        acc[dateStr] = {
+          date: dateStr,
+          count: 0,
+          returns: [],
+          claims: []
+        };
+      }
+      acc[dateStr].count += item.count || 0;
+      if (item.returns) acc[dateStr].returns = [...(acc[dateStr].returns || []), ...item.returns];
+      if (item.claims) acc[dateStr].claims = [...(acc[dateStr].claims || []), ...item.claims];
+      return acc;
+    }, {});
+    setContributions(Object.values(merged));
   }, [data]);
 
   // Get color based on contribution count using CSS variables
@@ -91,19 +110,35 @@ const ActivityCalendar = ({
             // Contar tipos de eventos
             const allDeliveries = contribution?.returns?.filter(r => r.dateType === 'delivery') || [];
             const allReviews = contribution?.returns?.filter(r => r.dateType === 'review') || [];
+            const allClaimCreated = contribution?.claims?.filter(c => c.dateType === 'created') || [];
+            const allClaimDeadline = contribution?.claims?.filter(c => c.dateType === 'deadline') || [];
             
             // Aplicar filtro
             let deliveryCount = allDeliveries.length;
             let reviewCount = allReviews.length;
+            let claimCreatedCount = allClaimCreated.length;
+            let claimDeadlineCount = allClaimDeadline.length;
             
             if (filterType === 'delivery') {
               reviewCount = 0;
+              claimCreatedCount = 0;
+              claimDeadlineCount = 0;
             } else if (filterType === 'review') {
               deliveryCount = 0;
+              claimCreatedCount = 0;
+              claimDeadlineCount = 0;
+            } else if (filterType === 'claim_created') {
+              deliveryCount = 0;
+              reviewCount = 0;
+              claimDeadlineCount = 0;
+            } else if (filterType === 'claim_deadline') {
+              deliveryCount = 0;
+              reviewCount = 0;
+              claimCreatedCount = 0;
             }
             
-            const hasMultipleTypes = deliveryCount > 0 && reviewCount > 0;
-            const totalCount = deliveryCount + reviewCount;
+            const hasMultipleTypes = [deliveryCount, reviewCount, claimCreatedCount, claimDeadlineCount].filter(c => c > 0).length > 1;
+            const totalCount = deliveryCount + reviewCount + claimCreatedCount + claimDeadlineCount;
             
             // Determinar estilo do quadrado
             let borderStyle = '';
@@ -114,8 +149,8 @@ const ActivityCalendar = ({
               backgroundStyle = 'bg-yellow-400 dark:bg-yellow-500';
               borderStyle = 'border-yellow-600 dark:border-yellow-700';
             } else if (hasMultipleTypes) {
-              // Gradiente diagonal para múltiplos tipos
-              backgroundStyle = 'bg-gradient-to-br from-blue-500 via-blue-500 to-orange-500 [background-size:100%_100%] from-[0%] via-[50%] to-[50%]';
+              // Gradiente para múltiplos tipos
+              backgroundStyle = 'bg-gradient-to-br from-blue-500 via-orange-500 to-purple-500';
               borderStyle = 'border-blue-600';
             } else if (deliveryCount > 0) {
               // Apenas entregas - borda azul
@@ -127,6 +162,16 @@ const ActivityCalendar = ({
               borderStyle = reviewCount <= 2 ? 'border-orange-400/60' : 
                            reviewCount <= 5 ? 'border-orange-500/80' : 
                            'border-orange-600';
+            } else if (claimCreatedCount > 0) {
+              // Reclamações criadas - borda verde
+              borderStyle = claimCreatedCount <= 2 ? 'border-green-400/60' : 
+                           claimCreatedCount <= 5 ? 'border-green-500/80' : 
+                           'border-green-600';
+            } else if (claimDeadlineCount > 0) {
+              // Prazos de reclamação - borda vermelha
+              borderStyle = claimDeadlineCount <= 2 ? 'border-red-400/60' : 
+                           claimDeadlineCount <= 5 ? 'border-red-500/80' : 
+                           'border-red-600';
             } else {
               borderStyle = 'border-border';
               borderWidth = 'border-2';
@@ -140,17 +185,25 @@ const ActivityCalendar = ({
                 onClick={() => handleDayClick(contribution, day)}
               >
                 {/* Ícones pequenos quando há eventos */}
-                {!isTodayDay && deliveryCount > 0 && reviewCount > 0 && (
-                  <div className="absolute top-0 left-0 right-0 flex justify-between px-0.5">
-                    <span className="text-[6px]">📦</span>
-                    <span className="text-[6px]">⏰</span>
+                {!isTodayDay && hasMultipleTypes && (
+                  <div className="absolute top-0 left-0 right-0 flex justify-between px-0.5 gap-0.5">
+                    {deliveryCount > 0 && <span className="text-[5px]">📦</span>}
+                    {reviewCount > 0 && <span className="text-[5px]">⏰</span>}
+                    {claimCreatedCount > 0 && <span className="text-[5px]">📝</span>}
+                    {claimDeadlineCount > 0 && <span className="text-[5px]">🔔</span>}
                   </div>
                 )}
-                {!isTodayDay && deliveryCount > 0 && reviewCount === 0 && (
+                {!isTodayDay && !hasMultipleTypes && deliveryCount > 0 && (
                   <span className="absolute top-0 left-0.5 text-[6px]">📦</span>
                 )}
-                {!isTodayDay && reviewCount > 0 && deliveryCount === 0 && (
+                {!isTodayDay && !hasMultipleTypes && reviewCount > 0 && (
                   <span className="absolute top-0 left-0.5 text-[6px]">⏰</span>
+                )}
+                {!isTodayDay && !hasMultipleTypes && claimCreatedCount > 0 && (
+                  <span className="absolute top-0 left-0.5 text-[6px]">📝</span>
+                )}
+                {!isTodayDay && !hasMultipleTypes && claimDeadlineCount > 0 && (
+                  <span className="absolute top-0 left-0.5 text-[6px]">🔔</span>
                 )}
                 
                 <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
@@ -172,6 +225,18 @@ const ActivityCalendar = ({
                     <div className="flex items-center gap-2 mt-1">
                       <div className="w-3 h-3 rounded-sm bg-orange-500"></div>
                       <span>⏰ {reviewCount} Revisã{reviewCount > 1 ? 'ões' : 'o'}</span>
+                    </div>
+                  )}
+                  {claimCreatedCount > 0 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 rounded-sm bg-green-500"></div>
+                      <span>📝 {claimCreatedCount} Reclamaçã{claimCreatedCount > 1 ? 'ões criadas' : 'o criada'}</span>
+                    </div>
+                  )}
+                  {claimDeadlineCount > 0 && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="w-3 h-3 rounded-sm bg-red-500"></div>
+                      <span>🔔 {claimDeadlineCount} Prazo{claimDeadlineCount > 1 ? 's' : ''} de análise</span>
                     </div>
                   )}
                   {totalCount === 0 && (
@@ -255,6 +320,26 @@ const ActivityCalendar = ({
           >
             ⏰ Revisões
           </button>
+          <button
+            onClick={() => setFilterType('claim_created')}
+            className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+              filterType === 'claim_created' 
+                ? 'bg-green-500 text-white border-green-500' 
+                : 'bg-background border-green-400/50 hover:bg-green-50 dark:hover:bg-green-950'
+            }`}
+          >
+            📝 Reclamações
+          </button>
+          <button
+            onClick={() => setFilterType('claim_deadline')}
+            className={`px-3 py-1 text-xs rounded-md border transition-colors ${
+              filterType === 'claim_deadline' 
+                ? 'bg-red-500 text-white border-red-500' 
+                : 'bg-background border-red-400/50 hover:bg-red-50 dark:hover:bg-red-950'
+            }`}
+          >
+            🔔 Prazos
+          </button>
         </div>
         
         <div className="overflow-x-auto pb-2">
@@ -284,8 +369,16 @@ const ActivityCalendar = ({
               <span>⏰ Prazo Limite Revisão</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md border-2 border-blue-500 bg-gradient-to-br from-blue-500 via-blue-500 to-orange-500 [background-size:100%_100%] from-[0%] via-[50%] to-[50%]"></div>
-              <span>Ambos</span>
+              <div className="w-6 h-6 rounded-md border-2 border-green-500"></div>
+              <span>📝 Reclamação Criada</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md border-2 border-red-500"></div>
+              <span>🔔 Prazo de Análise</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-md border-2 border-blue-500 bg-gradient-to-br from-blue-500 via-orange-500 to-purple-500"></div>
+              <span>Múltiplos</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md border-2 border-yellow-600 bg-yellow-400"></div>
@@ -312,63 +405,100 @@ const ActivityCalendar = ({
         <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>
-              Devoluções de {selectedDay && format(new Date(selectedDay.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              Eventos de {selectedDay && format(new Date(selectedDay.date), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </DialogTitle>
           </DialogHeader>
           
           <ScrollArea className="max-h-[60vh]">
             <div className="space-y-3 pr-4">
-              {selectedDay?.returns && selectedDay.returns.length > 0 ? (
-                selectedDay.returns.map((ret: any, index: number) => (
-                  <div 
-                    key={`${ret.id}-${index}`}
-                    className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-sm">ID: {ret.id || 'N/A'}</span>
-                          <Badge variant={ret.dateType === 'delivery' ? 'default' : 'secondary'}>
-                            {ret.dateType === 'delivery' ? '📦 Entrega' : '⏰ Revisão'}
-                          </Badge>
+              {/* Devoluções */}
+              {selectedDay?.returns && selectedDay.returns.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Devoluções ({selectedDay.returns.length})</h4>
+                  {selectedDay.returns.map((ret: any, index: number) => (
+                    <div 
+                      key={`return-${ret.order_id}-${index}`}
+                      className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">ID: {ret.id || 'N/A'}</span>
+                            <Badge variant={ret.dateType === 'delivery' ? 'default' : 'secondary'}>
+                              {ret.dateType === 'delivery' ? '📦 Entrega' : '⏰ Revisão'}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            <div>Pedido: #{ret.order_id}</div>
+                            {ret.sku && <div>SKU: {ret.sku}</div>}
+                          </div>
                         </div>
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <div>Pedido: #{ret.order_id}</div>
-                          <div>Claim: #{ret.claim_id}</div>
-                          {ret.tracking_number && (
-                            <div>Rastreio: {ret.tracking_number}</div>
+                        
+                        <div className="text-right space-y-1">
+                          {ret.status_devolucao && (
+                            <Badge variant="outline">
+                              {ret.status_devolucao}
+                            </Badge>
                           )}
                         </div>
                       </div>
                       
-                      <div className="text-right space-y-1">
-                        <Badge 
-                          variant={
-                            ret.status?.id === 'closed' ? 'default' :
-                            ret.status?.id === 'shipped' ? 'secondary' :
-                            'outline'
-                          }
-                        >
-                          {ret.status?.id ? translateStatus(ret.status.id) : 'N/A'}
-                        </Badge>
-                        {ret.status_money?.id && (
-                          <Badge variant="outline" className="block mt-1">
-                            {translateStatusMoney(ret.status_money.id)}
-                          </Badge>
-                        )}
+                      {ret.produto_titulo && (
+                        <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                          📦 {ret.produto_titulo}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Reclamações */}
+              {selectedDay?.claims && selectedDay.claims.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold text-sm">Reclamações ({selectedDay.claims.length})</h4>
+                  {selectedDay.claims.map((claim: any, index: number) => (
+                    <div 
+                      key={`claim-${claim.claim_id}-${index}`}
+                      className="p-4 border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-4 mb-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm">Reclamação: #{claim.claim_id}</span>
+                            <Badge variant={claim.dateType === 'created' ? 'default' : 'destructive'}>
+                              {claim.dateType === 'created' ? '📝 Criada' : '🔔 Prazo'}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground space-y-1">
+                            {claim.resource_id && <div>Recurso: #{claim.resource_id}</div>}
+                            {claim.buyer_nickname && <div>Comprador: {claim.buyer_nickname}</div>}
+                          </div>
+                        </div>
+                        
+                        <div className="text-right space-y-1">
+                          {claim.type && (
+                            <Badge variant="outline">
+                              {claim.type}
+                            </Badge>
+                          )}
+                          {claim.status && (
+                            <Badge variant="secondary" className="block mt-1">
+                              {claim.status}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    
-                    {ret.destination_city && (
-                      <div className="text-xs text-muted-foreground mt-2 pt-2 border-t">
-                        📍 {ret.destination_city} - {ret.destination_state}
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
+                  ))}
+                </div>
+              )}
+
+              {/* Sem dados */}
+              {(!selectedDay?.returns || selectedDay.returns.length === 0) && 
+               (!selectedDay?.claims || selectedDay.claims.length === 0) && (
                 <p className="text-sm text-muted-foreground text-center py-8">
-                  Nenhuma devolução encontrada para esta data.
+                  Nenhum evento encontrado para esta data.
                 </p>
               )}
             </div>
