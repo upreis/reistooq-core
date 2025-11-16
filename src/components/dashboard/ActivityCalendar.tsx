@@ -308,7 +308,7 @@ const ActivityCalendar = ({
                 : 'bg-background border-blue-400/50 hover:bg-blue-50 dark:hover:bg-blue-950'
             }`}
           >
-            📦 Entregas
+            📦 Devoluções Recebidas
           </button>
           <button
             onClick={() => setFilterType('review')}
@@ -318,7 +318,7 @@ const ActivityCalendar = ({
                 : 'bg-background border-orange-400/50 hover:bg-orange-50 dark:hover:bg-orange-950'
             }`}
           >
-            ⏰ Revisões
+            ⏰ Devoluções a Revisar
           </button>
           <button
             onClick={() => setFilterType('claim_created')}
@@ -328,7 +328,7 @@ const ActivityCalendar = ({
                 : 'bg-background border-green-400/50 hover:bg-green-50 dark:hover:bg-green-950'
             }`}
           >
-            📝 Reclamações
+            📝 Reclamações Abertas
           </button>
           <button
             onClick={() => setFilterType('claim_deadline')}
@@ -338,7 +338,7 @@ const ActivityCalendar = ({
                 : 'bg-background border-red-400/50 hover:bg-red-50 dark:hover:bg-red-950'
             }`}
           >
-            🔔 Prazos
+            🔔 Reclamações a Responder
           </button>
         </div>
         
