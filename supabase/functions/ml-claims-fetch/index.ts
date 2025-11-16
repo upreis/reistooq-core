@@ -426,12 +426,54 @@ Deno.serve(async (req) => {
     console.log(`✅ ${trackingMap.size} tracking numbers obtidos`);
 
     // ============================================
+    // 📸 FASE 3.5: BUSCAR INFORMAÇÕES DOS PRODUTOS (THUMBNAIL, PRICE, etc.)
+    // ============================================
+    
+    console.log(`📸 Buscando informações de produtos...`);
+    
+    const productInfoMap = new Map<string, any>();
+    
+    for (const [orderId, orderData] of ordersMap) {
+      const itemId = orderData?.order_items?.[0]?.item?.id;
+      if (!itemId) continue;
+      
+      try {
+        const productUrl = `https://api.mercadolibre.com/items/${itemId}`;
+        const productRes = await fetch(productUrl, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        if (productRes.ok) {
+          const productData = await productRes.json();
+          productInfoMap.set(orderId, {
+            id: productData.id,
+            title: productData.title,
+            price: productData.price,
+            currency_id: productData.currency_id,
+            thumbnail: productData.thumbnail || productData.pictures?.[0]?.url || null,
+            permalink: productData.permalink,
+            sku: orderData?.order_items?.[0]?.item?.seller_sku || null,
+            condition: productData.condition,
+            available_quantity: productData.available_quantity,
+            sold_quantity: productData.sold_quantity,
+          });
+          console.log(`✅ Produto ${itemId}: ${productData.title?.substring(0, 50)}...`);
+        }
+      } catch (error) {
+        console.error(`❌ Erro ao buscar produto do pedido ${orderId}:`, error.message);
+      }
+    }
+    
+    console.log(`✅ ${productInfoMap.size} informações de produtos obtidas`);
+
+    // ============================================
     // 4️⃣ MAPEAMENTO FINAL COM DADOS ENRIQUECIDOS
     // ============================================
 
     const fullyEnrichedClaims = enrichedClaims.map((claim) => {
       const orderData = ordersMap.get(claim.order_id || '');
       const trackingData = trackingMap.get(claim.order_id || '');
+      const productInfo = productInfoMap.get(claim.order_id || '');
 
       // Se temos dados do pedido, enriquecer
       if (orderData) {
@@ -456,6 +498,8 @@ Deno.serve(async (req) => {
           tracking_substatus: trackingData?.substatus || null,
           // ✅ COMPATIBILIDADE: Preencher codigo_rastreamento também
           codigo_rastreamento: trackingData?.tracking_number || null,
+          // 📸 ADICIONAR PRODUCT INFO
+          product_info: productInfo || null,
         };
       }
 
