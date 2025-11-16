@@ -13,6 +13,7 @@ import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import { ReclamacaoLifecycleBadge } from './ReclamacaoLifecycleBadge';
 import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 
 export type ReclamacaoRow = any;
 
@@ -486,6 +487,25 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => <span className="text-sm">{formatDate(row.getValue('date_created'))}</span>,
+  },
+  {
+    id: 'prazo_analise',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Prazo Análise
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const dateCreated = row.getValue('date_created') as string | null;
+      return <AnalysisDeadlineCell arrivalDate={dateCreated} />;
+    },
   },
   {
     accessorKey: 'last_updated',
