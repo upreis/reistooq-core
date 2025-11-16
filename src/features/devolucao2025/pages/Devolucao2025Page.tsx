@@ -92,17 +92,7 @@ export const Devolucao2025Page = () => {
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025', selectedAccounts, dateRange],
     queryFn: async () => {
-      // Se existe cache válido, usar dados em cache
-      if (persistentCache.hasValidPersistedState() && 
-          JSON.stringify(persistentCache.persistedState?.selectedAccounts) === JSON.stringify(selectedAccounts) &&
-          persistentCache.persistedState?.dateRange.from.getTime() === dateRange.from.getTime() &&
-          persistentCache.persistedState?.dateRange.to.getTime() === dateRange.to.getTime()) {
-        console.log('✅ Usando dados em cache, sem chamada à API');
-        return persistentCache.persistedState.devolucoes;
-      }
-
-      // Caso contrário, buscar da API
-      console.log('🔄 Buscando dados da API...');
+      console.log('🔍 Buscando devoluções...', { selectedAccounts, dateRange });
       let result: any[] = [];
       
       // Se nenhuma conta selecionada ou todas selecionadas
@@ -138,8 +128,21 @@ export const Devolucao2025Page = () => {
 
       return result;
     },
-    enabled: false, // Desabilita busca automática
-    staleTime: CACHE_DURATION // Usar mesma constante do hook de persistência
+    enabled: organizationId !== null && selectedAccounts.length > 0,
+    refetchOnWindowFocus: false,
+    staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
+    gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
+    // Inicializar com dados do localStorage se disponíveis
+    initialData: () => {
+      if (persistentCache.hasValidPersistedState()) {
+        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState?.devolucoes.length);
+        return persistentCache.persistedState?.devolucoes;
+      }
+      return undefined;
+    },
+    initialDataUpdatedAt: () => {
+      return persistentCache.persistedState?.cachedAt || 0;
+    }
   });
 
   // Paginação dos dados (com filtro para remover linhas sem comprador ou produto)
