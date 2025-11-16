@@ -13,10 +13,6 @@ interface PersistentReclamacoesState {
     status?: string;
     type?: string;
     stage?: string;
-    has_messages?: string;
-    has_evidences?: string;
-    date_from?: string;
-    date_to?: string;
   };
   currentPage: number;
   itemsPerPage: number;

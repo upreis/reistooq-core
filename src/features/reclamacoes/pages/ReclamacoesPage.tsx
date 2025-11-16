@@ -3,7 +3,7 @@
  * Otimizada com cache localStorage + React Query
  */
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
@@ -37,7 +37,7 @@ export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // 💾 CACHE PERSISTENTE (localStorage)
+  // 💾 CACHE PERSISTENTE (localStorage + React Query)
   const persistentCache = usePersistentReclamacoesState();
   
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
@@ -47,17 +47,6 @@ export function ReclamacoesPage() {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [tableInstance, setTableInstance] = useState<any>(null);
   
-  const [filters, setFilters] = useState({
-    periodo: '60',
-    status: '',
-    type: '',
-    stage: '',
-    has_messages: '',
-    has_evidences: '',
-    date_from: '',
-    date_to: ''
-  });
-
   // 💾 STORAGE DE ANOTAÇÕES (mantido separado)
   const {
     analiseStatus,
@@ -70,56 +59,32 @@ export function ReclamacoesPage() {
   // Modal de anotações
   const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
   const [selectedClaimForAnotacoes, setSelectedClaimForAnotacoes] = useState<any | null>(null);
+  
+  const [filters, setFilters] = useState({
+    periodo: '60',
+    status: '',
+    type: '',
+    stage: '',
+    has_messages: '',
+    has_evidences: '',
+    date_from: '',
+    date_to: ''
+  });
+
+  // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
 
-  // 🔄 Restaurar estado do cache (APENAS UMA VEZ ao montar)
+  // Restaurar estado do cache
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
-      console.log('📦 Restaurando de localStorage');
-      
       setSelectedAccountIds(cached.selectedAccounts || []);
-      setFilters(prev => ({
-        periodo: cached.filters?.periodo || prev.periodo,
-        status: cached.filters?.status || prev.status,
-        type: cached.filters?.type || prev.type,
-        stage: cached.filters?.stage || prev.stage,
-        has_messages: cached.filters?.has_messages || prev.has_messages,
-        has_evidences: cached.filters?.has_evidences || prev.has_evidences,
-        date_from: cached.filters?.date_from || prev.date_from,
-        date_to: cached.filters?.date_to || prev.date_to,
-      }));
-      setCurrentPage(cached.currentPage || 1);
-      setItemsPerPage(cached.itemsPerPage || 50);
+      setFilters(prev => ({ ...prev, ...cached.filters }));
+      setCurrentPage(cached.currentPage);
+      setItemsPerPage(cached.itemsPerPage);
+      console.log('🔄 Estado de reclamações restaurado do cache');
     }
-  }, [persistentCache.isStateLoaded]); // Apenas quando carrega
-
-  // 💾 SALVAR NO LOCALSTORAGE quando filtros mudam (COM PROTEÇÃO ANTI-LOOP)
-  const isSavingRef = useRef(false);
-  
-  useEffect(() => {
-    // Prevenir loop infinito
-    if (isSavingRef.current) return;
-    if (selectedAccountIds.length === 0) return;
-    
-    const timer = setTimeout(() => {
-      isSavingRef.current = true;
-      
-      persistentCache.saveState({
-        selectedAccounts: selectedAccountIds,
-        filters,
-        currentPage,
-        itemsPerPage
-      });
-      
-      // Liberar flag após salvamento
-      setTimeout(() => {
-        isSavingRef.current = false;
-      }, 100);
-    }, 500); // Debounce de 500ms
-    
-    return () => clearTimeout(timer);
-  }, [selectedAccountIds, filters, currentPage, itemsPerPage]);
+  }, [persistentCache.isStateLoaded]);
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
@@ -222,21 +187,7 @@ export function ReclamacoesPage() {
               limit,
               offset,
             },
-  });
-
-
-  // 💾 SALVAR NO LOCALSTORAGE quando filtros mudam (complemento ao URL)
-  useEffect(() => {
-    if (selectedAccountIds.length > 0) {
-      persistentCache.saveDataCache(
-        allReclamacoes,
-        selectedAccountIds,
-        filters,
-        currentPage,
-        itemsPerPage
-      );
-    }
-  }, [selectedAccountIds, filters, currentPage, itemsPerPage, allReclamacoes]);
+          });
 
           if (fetchError) {
             console.error(`Erro ao buscar claims de ${account.name}:`, fetchError);
@@ -266,6 +217,16 @@ export function ReclamacoesPage() {
       }
 
       console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
+      
+      // Salvar no cache persistente
+      persistentCache.saveDataCache(
+        allClaims,
+        selectedAccountIds,
+        filters,
+        currentPage,
+        itemsPerPage
+      );
+      
       return allClaims;
     },
     enabled: selectedAccountIds.length > 0 && !isManualSearching,
