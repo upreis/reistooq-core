@@ -91,9 +91,9 @@ export function ReclamacoesFilterBar({
       </div>
 
       {/* Barra de Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 items-end">
         {/* Busca Manual */}
-        <div className="md:col-span-3 space-y-2">
+        <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Buscar · Manual</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -107,7 +107,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Contas ML */}
-        <div className="md:col-span-3 space-y-2">
+        <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Contas ML · Manual</Label>
           <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
             <PopoverTrigger asChild>
@@ -178,7 +178,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Período de Busca */}
-        <div className="md:col-span-3 space-y-2">
+        <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Período de Busca · Data da Venda</Label>
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -197,50 +197,41 @@ export function ReclamacoesFilterBar({
           </div>
         </div>
 
-        {/* Botão Aplicar Filtros e Seletor de Colunas */}
-        <div className="md:col-span-3 space-y-2">
+        {/* Botão Aplicar Filtros */}
+        <div className="space-y-2">
           <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
-          <div className="flex gap-2">
-            {isLoading && onCancel && (
-              <Button
-                onClick={onCancel}
-                variant="destructive"
-                className="flex-1"
-              >
-                <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Cancelar
-              </Button>
-            )}
-            
+          {isLoading && onCancel ? (
+            <Button
+              onClick={onCancel}
+              variant="destructive"
+              className="w-full"
+            >
+              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Cancelar
+            </Button>
+          ) : (
             <Button
               onClick={onBuscar}
               disabled={isLoading || selectedAccountIds.length === 0}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black"
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
             >
-              {isLoading ? (
-                <>
-                  <div className="animate-spin mr-2 h-4 w-4 border-2 border-black border-t-transparent rounded-full" />
-                  Buscando...
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4 mr-2" />
-                  Aplicar Filtros e Buscar
-                </>
-              )}
+              <Search className="h-4 w-4 mr-2" />
+              Aplicar Filtros e Buscar
             </Button>
-          </div>
+          )}
         </div>
+
+        {/* Seletor de Colunas */}
+        {table && (
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground opacity-0">Colunas</Label>
+            <ReclamacoesColumnSelector table={table} />
+          </div>
+        )}
       </div>
 
-      {/* Seletor de Colunas - Alinhado à direita */}
-      {table && (
-        <div className="flex justify-end">
-          <ReclamacoesColumnSelector table={table} />
-        </div>
-      )}
     </div>
   );
 }
