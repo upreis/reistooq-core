@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { usePersistentReclamacoesState } from '../hooks/usePersistentReclamacoesState';
@@ -35,6 +35,7 @@ const validateMLAccounts = (mlAccounts: any[]) => ({
 
 export function ReclamacoesPage() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   // 💾 CACHE PERSISTENTE (localStorage + React Query)
   const persistentCache = usePersistentReclamacoesState();
@@ -69,9 +70,8 @@ export function ReclamacoesPage() {
     date_to: ''
   });
 
-  // Estado de busca
-  const [isSearching, setIsSearching] = useState(false);
-  const [searchAbortController, setSearchAbortController] = useState<AbortController | null>(null);
+  // Estado de busca manual
+  const [isManualSearching, setIsManualSearching] = useState(false);
 
   // Restaurar estado do cache
   useEffect(() => {
@@ -117,7 +117,7 @@ export function ReclamacoesPage() {
   }, [mlAccounts]);
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
-  const { data: allReclamacoes = [], isLoading, error, refetch } = useQuery({
+  const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
     queryKey: ['reclamacoes', selectedAccountIds, filters],
     queryFn: async () => {
       console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
@@ -228,7 +228,7 @@ export function ReclamacoesPage() {
       
       return allClaims;
     },
-    enabled: selectedAccountIds.length > 0,
+    enabled: selectedAccountIds.length > 0 && !isManualSearching,
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
@@ -244,6 +244,50 @@ export function ReclamacoesPage() {
       return persistentCache.persistedState?.cachedAt || 0;
     }
   });
+
+  // 🔍 BUSCAR RECLAMAÇÕES - Função principal
+  const handleBuscarReclamacoes = async () => {
+    if (selectedAccountIds.length === 0) {
+      toast({
+        title: "Atenção",
+        description: "Selecione pelo menos uma conta ML",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsManualSearching(true);
+
+    try {
+      await refetchReclamacoes();
+      
+      toast({
+        title: "✅ Sucesso",
+        description: `Busca concluída com sucesso`,
+      });
+    } catch (error) {
+      console.error('❌ Erro na busca:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao buscar reclamações",
+        variant: "destructive"
+      });
+    } finally {
+      setIsManualSearching(false);
+    }
+  };
+
+  // 🚫 CANCELAR BUSCA
+  const handleCancelarBusca = () => {
+    // Cancelar query do React Query
+    queryClient.cancelQueries({ queryKey: ['reclamacoes', selectedAccountIds, filters] });
+    setIsManualSearching(false);
+    
+    toast({
+      title: "Busca cancelada",
+      description: "A busca foi cancelada pelo usuário",
+    });
+  };
 
   // Enriquecer dados com status de análise
   const reclamacoesEnriquecidas = useMemo(() => {
@@ -319,12 +363,12 @@ export function ReclamacoesPage() {
   };
 
   const handleRefresh = () => {
-    refetch();
+    refetchReclamacoes();
   };
 
   const handleClearCache = () => {
     persistentCache.clearPersistedState();
-    refetch();
+    refetchReclamacoes();
     toast({
       title: "Cache limpo",
       description: "Cache local foi limpo. Buscando dados atualizados...",
@@ -365,9 +409,9 @@ export function ReclamacoesPage() {
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              disabled={isLoading}
+              disabled={loadingReclamacoes || isManualSearching}
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${(loadingReclamacoes || isManualSearching) ? 'animate-spin' : ''}`} />
               Atualizar
             </Button>
           </div>
@@ -396,7 +440,8 @@ export function ReclamacoesPage() {
           searchTerm=""
           onSearchChange={() => {}}
           onBuscar={handleBuscarReclamacoes}
-          isLoading={loadingReclamacoes}
+          isLoading={isManualSearching || loadingReclamacoes}
+          onCancel={handleCancelarBusca}
         />
 
         {/* Estatísticas */}
@@ -417,8 +462,8 @@ export function ReclamacoesPage() {
             <Card className="p-6">
               <ReclamacoesTable
                 reclamacoes={reclamacoesPaginadas}
-                isLoading={isLoading}
-                error={error?.message || null}
+                isLoading={loadingReclamacoes || isManualSearching}
+                error={errorReclamacoes ? String(errorReclamacoes) : null}
                 onStatusChange={handleStatusChange}
                 onDeleteReclamacao={handleDeleteReclamacao}
                 onOpenAnotacoes={handleOpenAnotacoes}
