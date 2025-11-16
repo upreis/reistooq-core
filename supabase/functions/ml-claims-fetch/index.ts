@@ -41,20 +41,20 @@ Deno.serve(async (req) => {
 
     console.log('[ml-claims-fetch] Buscando claims', { accountId, sellerId, filters });
 
-    // ✅ Buscar token ML diretamente do banco (sem descriptografia, usando service role)
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('integration_credentials')
-      .select('encrypted_credentials')
+    // ✅ Buscar token ML diretamente da tabela integration_secrets
+    const { data: secretData, error: secretError } = await supabase
+      .from('integration_secrets')
+      .select('access_token, refresh_token')
       .eq('integration_account_id', accountId)
+      .eq('provider', 'mercadolivre')
       .single();
 
-    if (tokenError || !tokenData) {
-      console.error('[ml-claims-fetch] Erro ao buscar token:', tokenError);
+    if (secretError || !secretData) {
+      console.error('[ml-claims-fetch] Erro ao buscar token:', secretError);
       throw new Error('Token ML não encontrado');
     }
 
-    // O encrypted_credentials já está no formato JSON com access_token
-    const accessToken = tokenData.encrypted_credentials?.access_token;
+    const accessToken = secretData.access_token;
 
     if (!accessToken) {
       throw new Error('Access token não encontrado');
