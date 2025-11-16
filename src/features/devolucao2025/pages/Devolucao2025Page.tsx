@@ -210,96 +210,107 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   return (
-    <div className="w-full min-h-screen px-6 py-6 space-y-6 flex flex-col">
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
-              <p className="text-muted-foreground">
-                Gestão completa com {devolucoes.length} devoluções
-              </p>
+    <div className="h-screen flex flex-col">
+      <div className="flex-1 overflow-auto m-0">
+        <div className="space-y-6">
+          {/* Sub-navegação */}
+          <MLOrdersNav />
+          
+          {/* Header */}
+          <div className="px-4 md:px-6 py-6">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-3">
+                  <div>
+                    <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
+                    <p className="text-muted-foreground">
+                      Gestão completa com {devolucoes.length} devoluções
+                    </p>
+                  </div>
+                  <DevolucaoAlertsBadge alertsByType={alertsByType} />
+                </div>
+              </div>
+              
+              {/* Painel de Alertas - Posicionado no canto direito */}
+              <div className="w-full max-w-sm shrink-0">
+                {totalAlerts > 0 && (
+                  <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
+                )}
+              </div>
+              
+              <NotificationsBell organizationId={organizationId} />
             </div>
-            <DevolucaoAlertsBadge alertsByType={alertsByType} />
+          </div>
+          
+          {/* Filtros e Cards */}
+          <div className="px-4 md:px-6">
+            <Card className="p-6">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Devolucao2025Filters
+                    accounts={accounts}
+                    selectedAccounts={selectedAccounts}
+                    onAccountsChange={setSelectedAccounts}
+                    dateRange={dateRange}
+                    onDateRangeChange={setDateRange}
+                    onApplyFilters={handleApplyFilters}
+                    onCancelSearch={handleCancelSearch}
+                    isLoading={isLoading}
+                  />
+                  <ColumnSelector 
+                    columns={COLUMNS_CONFIG}
+                    visibleColumns={visibleColumns}
+                    onVisibleColumnsChange={setVisibleColumns}
+                  />
+                  <ExportButton 
+                    data={devolucoes}
+                    visibleColumns={visibleColumns}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Tabela */}
+          <div className="px-4 md:px-6">
+            <Card className="p-6 flex-1 flex flex-col">
+              {isLoading && (
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
+                  <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+                  <div>
+                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                      Buscando devoluções...
+                    </p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">
+                      Aguarde enquanto carregamos os dados do Mercado Livre
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              <Devolucao2025Table 
+                accounts={accounts}
+                devolucoes={paginatedDevolucoes}
+                isLoading={isLoading}
+                error={error}
+                visibleColumns={visibleColumns}
+              />
+
+              {!isLoading && !error && devolucoes.length > 0 && (
+                <Devolucao2025Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  itemsPerPage={itemsPerPage}
+                  totalItems={devolucoes.length}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={setItemsPerPage}
+                />
+              )}
+            </Card>
           </div>
         </div>
-        
-        {/* Painel de Alertas - Posicionado no canto direito */}
-        <div className="w-full max-w-sm shrink-0">
-          {totalAlerts > 0 && (
-            <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
-          )}
-        </div>
-        
-        <NotificationsBell organizationId={organizationId} />
       </div>
-
-      {/* Navegação por tabs */}
-      <MLOrdersNav />
-
-      
-
-      <Card className="p-6">
-        <div className="space-y-4">
-          <div className="flex items-center gap-3 flex-wrap">
-            <Devolucao2025Filters
-              accounts={accounts}
-              selectedAccounts={selectedAccounts}
-              onAccountsChange={setSelectedAccounts}
-              dateRange={dateRange}
-              onDateRangeChange={setDateRange}
-              onApplyFilters={handleApplyFilters}
-              onCancelSearch={handleCancelSearch}
-              isLoading={isLoading}
-            />
-            <ColumnSelector 
-              columns={COLUMNS_CONFIG}
-              visibleColumns={visibleColumns}
-              onVisibleColumnsChange={setVisibleColumns}
-            />
-            <ExportButton 
-              data={devolucoes}
-              visibleColumns={visibleColumns}
-              disabled={isLoading}
-            />
-          </div>
-        </div>
-      </Card>
-
-      <Card className="p-6 flex-1 flex flex-col">
-        {isLoading && (
-          <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
-            <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
-            <div>
-              <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                Buscando devoluções...
-              </p>
-              <p className="text-xs text-blue-700 dark:text-blue-300">
-                Aguarde enquanto carregamos os dados do Mercado Livre
-              </p>
-            </div>
-          </div>
-        )}
-        
-        <Devolucao2025Table 
-          accounts={accounts}
-          devolucoes={paginatedDevolucoes}
-          isLoading={isLoading}
-          error={error}
-          visibleColumns={visibleColumns}
-        />
-
-        {!isLoading && !error && devolucoes.length > 0 && (
-          <Devolucao2025Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            itemsPerPage={itemsPerPage}
-            totalItems={devolucoes.length}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={setItemsPerPage}
-          />
-        )}
-      </Card>
     </div>
   );
 };
