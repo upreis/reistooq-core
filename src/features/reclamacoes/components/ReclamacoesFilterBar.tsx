@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { Search, CalendarIcon, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import type { Table } from '@tanstack/react-table';
 
 interface MLAccount {
   id: string;
@@ -30,6 +32,7 @@ interface ReclamacoesFilterBarProps {
   onBuscar: () => void;
   isLoading?: boolean;
   onCancel?: () => void;
+  table?: Table<any>;
 }
 
 export function ReclamacoesFilterBar({
@@ -42,7 +45,8 @@ export function ReclamacoesFilterBar({
   onSearchChange,
   onBuscar,
   isLoading = false,
-  onCancel
+  onCancel,
+  table
 }: ReclamacoesFilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -193,7 +197,7 @@ export function ReclamacoesFilterBar({
           </div>
         </div>
 
-        {/* Botão Aplicar Filtros */}
+        {/* Botão Aplicar Filtros e Seletor de Colunas */}
         <div className="md:col-span-3 space-y-2">
           <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
           <div className="flex gap-2">
@@ -230,6 +234,13 @@ export function ReclamacoesFilterBar({
           </div>
         </div>
       </div>
+
+      {/* Seletor de Colunas - Alinhado à direita */}
+      {table && (
+        <div className="flex justify-end">
+          <ReclamacoesColumnSelector table={table} />
+        </div>
+      )}
     </div>
   );
 }

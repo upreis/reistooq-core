@@ -2,7 +2,7 @@
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  */
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -31,6 +31,7 @@ interface ReclamacoesTableProps {
   onDeleteReclamacao?: (claimId: string) => void;
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
+  onTableReady?: (table: any) => void;
 }
 
 export function ReclamacoesTable({ 
@@ -40,7 +41,8 @@ export function ReclamacoesTable({
   onStatusChange,
   onDeleteReclamacao,
   onOpenAnotacoes,
-  anotacoes
+  anotacoes,
+  onTableReady
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -77,6 +79,13 @@ export function ReclamacoesTable({
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
+
+  // Notificar quando a tabela estiver pronta
+  useMemo(() => {
+    if (onTableReady) {
+      onTableReady(table);
+    }
+  }, [table, onTableReady]);
 
   if (isLoading) {
     return (
@@ -123,8 +132,6 @@ export function ReclamacoesTable({
             />
           </div>
         </div>
-        
-        <ReclamacoesColumnSelector table={table} />
       </div>
 
       {/* Tabela */}
