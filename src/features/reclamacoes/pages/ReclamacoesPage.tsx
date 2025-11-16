@@ -456,8 +456,8 @@ export function ReclamacoesPage() {
             onOpenChange={setAnotacoesModalOpen}
             claimId={selectedClaimForAnotacoes.claim_id}
             orderId={selectedClaimForAnotacoes.order_id}
-            initialValue={anotacoes[selectedClaimForAnotacoes.claim_id] || ''}
-            onSave={(anotacao) => handleSaveAnotacao(selectedClaimForAnotacoes.claim_id, anotacao)}
+            anotacaoAtual={anotacoes[selectedClaimForAnotacoes.claim_id] || ''}
+            onSave={(claimId, anotacao) => handleSaveAnotacao(claimId, anotacao)}
           />
         )}
       </div>
