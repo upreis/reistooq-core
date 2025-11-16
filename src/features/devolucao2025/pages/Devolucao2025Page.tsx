@@ -210,9 +210,8 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="flex-1 overflow-auto m-0">
-        <div className="space-y-6">
+    <div className="w-full">
+      <div className="space-y-6">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
@@ -310,7 +309,6 @@ export const Devolucao2025Page = () => {
             </Card>
           </div>
         </div>
-      </div>
     </div>
   );
 };
