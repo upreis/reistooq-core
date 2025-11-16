@@ -88,7 +88,6 @@ export const Devolucao2025Page = () => {
   });
 
   // Buscar devoluções via Edge Function
-  const abortControllerRef = useState(() => new AbortController())[0];
   const { data: devolucoes = [], isLoading, error, refetch } = useQuery({
     queryKey: ['devolucoes-2025', selectedAccounts, dateRange],
     queryFn: async () => {
@@ -198,12 +197,10 @@ export const Devolucao2025Page = () => {
     refetch();
   }, [persistentCache, refetch]);
 
-  // Handler para cancelar busca
+  // Handler para cancelar busca (recarrega a página)
   const handleCancelSearch = useCallback(() => {
-    console.log('❌ Cancelando busca...');
-    abortControllerRef.abort();
-    window.location.reload(); // Recarrega para cancelar requisições em andamento
-  }, [abortControllerRef]);
+    window.location.reload();
+  }, []);
 
   // Sistema de Alertas
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
