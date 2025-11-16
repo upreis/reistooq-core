@@ -5,12 +5,26 @@ import { ActivityCalendar } from '@/components/dashboard/ActivityCalendar';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { supabase } from '@/integrations/supabase/client';
 import { useDevolucaoCalendarData } from '@/hooks/useDevolucaoCalendarData';
+import { useReclamacoesCalendarData } from '@/hooks/useReclamacoesCalendarData';
 
 export default function DashboardVisaoGeral() {
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   
   // Buscar dados reais de devoluções para o calendário
-  const { data: calendarData, loading: calendarLoading, error: calendarError, refresh } = useDevolucaoCalendarData();
+  const { data: calendarDataDevolucoes, loading: calendarLoadingDevolucoes, error: calendarErrorDevolucoes, refresh: refreshDevolucoes } = useDevolucaoCalendarData();
+  
+  // Buscar dados reais de reclamações para o calendário
+  const { data: calendarDataReclamacoes, loading: calendarLoadingReclamacoes, error: calendarErrorReclamacoes, refresh: refreshReclamacoes } = useReclamacoesCalendarData();
+  
+  // Combinar dados de devoluções e reclamações
+  const calendarData = [...calendarDataDevolucoes, ...calendarDataReclamacoes];
+  const calendarLoading = calendarLoadingDevolucoes || calendarLoadingReclamacoes;
+  const calendarError = calendarErrorDevolucoes || calendarErrorReclamacoes;
+  
+  const refresh = () => {
+    refreshDevolucoes();
+    refreshReclamacoes();
+  };
 
   useEffect(() => {
     const fetchOrganizationId = async () => {
