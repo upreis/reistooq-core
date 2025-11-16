@@ -232,7 +232,7 @@ export const Devolucao2025Page = () => {
         <DevolucaoAlertsPanel alerts={alerts} totalAlerts={totalAlerts} />
       )}
 
-      <Devolucao2025Stats devolucoes={devolucoes} />
+      
 
       <Card className="p-6">
         <div className="space-y-4">
