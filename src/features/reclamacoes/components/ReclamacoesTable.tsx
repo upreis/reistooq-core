@@ -80,9 +80,14 @@ export function ReclamacoesTable({
 
   if (isLoading) {
     return (
-      <div className="p-8 text-center">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-        <p className="mt-4 text-muted-foreground">Carregando reclamações...</p>
+      <div className="p-12 text-center space-y-4">
+        <div className="flex justify-center">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full" />
+        </div>
+        <div className="space-y-2">
+          <p className="text-lg font-medium">Buscando reclamações...</p>
+          <p className="text-sm text-muted-foreground">Isso pode levar alguns segundos</p>
+        </div>
       </div>
     );
   }

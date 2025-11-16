@@ -69,6 +69,10 @@ export function ReclamacoesPage() {
     date_to: ''
   });
 
+  // Estado de busca
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchAbortController, setSearchAbortController] = useState<AbortController | null>(null);
+
   // Restaurar estado do cache
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
@@ -391,7 +395,8 @@ export function ReclamacoesPage() {
           onPeriodoChange={(periodo) => setFilters(prev => ({ ...prev, periodo }))}
           searchTerm=""
           onSearchChange={() => {}}
-          onBuscar={handleRefresh}
+          onBuscar={handleBuscarReclamacoes}
+          isLoading={loadingReclamacoes}
         />
 
         {/* Estatísticas */}
