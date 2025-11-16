@@ -362,18 +362,6 @@ export function ReclamacoesPage() {
     });
   };
 
-  const handleRefresh = () => {
-    refetchReclamacoes();
-  };
-
-  const handleClearCache = () => {
-    persistentCache.clearPersistedState();
-    refetchReclamacoes();
-    toast({
-      title: "Cache limpo",
-      description: "Cache local foi limpo. Buscando dados atualizados...",
-    });
-  };
 
   // Loading state
   if (loadingAccounts) {
@@ -397,24 +385,6 @@ export function ReclamacoesPage() {
 
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold">📋 Reclamações ML</h1>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearCache}
-            >
-              Limpar Cache
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={loadingReclamacoes || isManualSearching}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${(loadingReclamacoes || isManualSearching) ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
-          </div>
         </div>
 
         {/* Alertas de ciclo de vida */}
