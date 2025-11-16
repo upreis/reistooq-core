@@ -18,6 +18,7 @@ interface Devolucao2025FiltersProps {
   dateRange: { from: Date; to: Date };
   onDateRangeChange: (range: { from: Date; to: Date }) => void;
   onApplyFilters: () => void;
+  onCancelSearch?: () => void;
   isLoading?: boolean;
 }
 
@@ -28,15 +29,24 @@ export const Devolucao2025Filters = ({
   dateRange,
   onDateRangeChange,
   onApplyFilters,
+  onCancelSearch,
   isLoading = false
 }: Devolucao2025FiltersProps) => {
   const [localAccounts, setLocalAccounts] = useState(selectedAccounts);
   const [localDateRange, setLocalDateRange] = useState(dateRange);
 
   const handleApply = () => {
+    // Aplicar mudanças imediatamente
     onAccountsChange(localAccounts);
     onDateRangeChange(localDateRange);
-    onApplyFilters();
+    // Chamar refetch sem delay
+    setTimeout(() => onApplyFilters(), 0);
+  };
+
+  const handleCancel = () => {
+    if (onCancelSearch) {
+      onCancelSearch();
+    }
   };
 
   const handleToggleAccount = (accountId: string) => {
@@ -137,10 +147,16 @@ export const Devolucao2025Filters = ({
         </PopoverContent>
       </Popover>
 
-      <Button onClick={handleApply} disabled={isLoading} className="h-10">
-        <Search className="h-4 w-4 mr-2" />
-        {isLoading ? 'Buscando...' : 'Aplicar Filtros'}
-      </Button>
+      {isLoading ? (
+        <Button onClick={handleCancel} variant="destructive" className="h-10">
+          Cancelar Busca
+        </Button>
+      ) : (
+        <Button onClick={handleApply} className="h-10">
+          <Search className="h-4 w-4 mr-2" />
+          Aplicar Filtros
+        </Button>
+      )}
     </div>
   );
 };
