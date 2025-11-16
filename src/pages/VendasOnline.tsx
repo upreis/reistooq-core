@@ -27,9 +27,8 @@ export default function VendasOnline() {
   };
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="flex-1 overflow-auto m-0">
-        <div className="space-y-6">
+    <div className="w-full">
+      <div className="space-y-6">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
@@ -124,7 +123,6 @@ export default function VendasOnline() {
           <div className="px-4 md:px-6 pb-6">
             <VendasPaginationControls />
           </div>
-        </div>
       </div>
     </div>
   );
