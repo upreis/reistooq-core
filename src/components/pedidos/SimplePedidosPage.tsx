@@ -1040,97 +1040,106 @@ useEffect(() => {
 
   // Render principal
   return (
-    <div className="h-screen flex flex-col">{/* Conteúdo */}
-
+    <div className="h-screen flex flex-col">
       <div className="flex-1 overflow-auto m-0">
         <div className="space-y-6">
-      {/* 🛡️ HEADER BLINDADO */}
-      <PedidosHeaderSection
-        fonte={state.fonte}
-        totalCount={total}
-        loading={loading}
-        isRefreshing={state.isRefreshing}
-        onRefresh={actions.refetch}
-        onApplyFilters={() => {
-          console.groupCollapsed('[apply/click] from=header');
-          console.log('draftFilters', filtersManager.filters);
-          console.groupEnd();
-          filtersManager.applyFilters();
-        }}
-        selectedOrdersCount={selectedOrders.size}
-        hasPendingChanges={filtersManager.hasPendingChanges}
-        onOpenConfigLocais={() => setConfigLocaisOpen(true)}
-      />
+          {/* Sub-navegação */}
+          <MLOrdersNav />
+          
+          {/* 🛡️ HEADER BLINDADO */}
+          <div className="px-4 md:px-6 py-6">
+            <PedidosHeaderSection
+              fonte={state.fonte}
+              totalCount={total}
+              loading={loading}
+              isRefreshing={state.isRefreshing}
+              onRefresh={actions.refetch}
+              onApplyFilters={() => {
+                console.groupCollapsed('[apply/click] from=header');
+                console.log('draftFilters', filtersManager.filters);
+                console.groupEnd();
+                filtersManager.applyFilters();
+              }}
+              selectedOrdersCount={selectedOrders.size}
+              hasPendingChanges={filtersManager.hasPendingChanges}
+              onOpenConfigLocais={() => setConfigLocaisOpen(true)}
+            />
+          </div>
 
-      {/* Sub-navegação */}
-      <MLOrdersNav />
+          {/* ⚠️ Feedback sobre status das contas ML */}
+          {state.loading && (
+            <div className="px-4 md:px-6">
+              <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg border mb-4">
+                <p className="font-medium flex items-center gap-2">
+                  ⏳ Verificando contas conectadas e buscando pedidos...
+                </p>
+              </div>
+            </div>
+          )}
 
-      {/* ⚠️ Feedback sobre status das contas ML */}
-      {state.loading && (
-        <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg border mb-4">
-          <p className="font-medium flex items-center gap-2">
-            ⏳ Verificando contas conectadas e buscando pedidos...
-          </p>
-        </div>
-      )}
+          {/* ✅ Barra de resumo com contadores */}
+          <div className="px-4 md:px-6">
+            <PedidosStatusBar 
+              orders={displayedOrders || orders}
+              quickFilter={quickFilter}
+              onQuickFilterChange={(filter) => setQuickFilter(filter)}
+              mappingData={mappingData}
+              isPedidoProcessado={isPedidoProcessado}
+              globalCounts={globalCounts}
+              loadingCounts={loadingCounts}
+              totalRecords={state.total}
+              hasActiveFilters={
+                !!filtersManager.appliedFilters?.dataInicio || 
+                !!filtersManager.appliedFilters?.dataFim || 
+                !!filtersManager.appliedFilters?.search ||
+                (filtersManager.appliedFilters?.contasML && filtersManager.appliedFilters.contasML.length > 0) ||
+                (filtersManager.appliedFilters?.statusPedido && filtersManager.appliedFilters.statusPedido.length > 0)
+              }
+            />
+          </div>
 
-      {/* ✅ Barra de resumo com contadores */}
-      <PedidosStatusBar 
-        orders={displayedOrders || orders}
-        quickFilter={quickFilter}
-        onQuickFilterChange={(filter) => setQuickFilter(filter)}
-        mappingData={mappingData}
-        isPedidoProcessado={isPedidoProcessado}
-        globalCounts={globalCounts}
-        loadingCounts={loadingCounts}
-        totalRecords={state.total}
-        hasActiveFilters={
-          !!filtersManager.appliedFilters?.dataInicio || 
-          !!filtersManager.appliedFilters?.dataFim || 
-          !!filtersManager.appliedFilters?.search ||
-          (filtersManager.appliedFilters?.contasML && filtersManager.appliedFilters.contasML.length > 0) ||
-          (filtersManager.appliedFilters?.statusPedido && filtersManager.appliedFilters.statusPedido.length > 0)
-        }
-      />
+          {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
+          <div className="px-4 md:px-6">
+            <PedidosStickyActions
+              orders={orders}
+              displayedOrders={displayedOrders}
+              selectedOrders={selectedOrders}
+              setSelectedOrders={setSelectedOrders}
+              mappingData={mappingData}
+              isPedidoProcessado={isPedidoProcessado}
+              quickFilter={quickFilter}
+              onBaixaConcluida={() => {
+                setSelectedOrders(new Set());
+                actions.refetch();
+              }}
+            />
+          </div>
 
-      {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
-      <PedidosStickyActions
-        orders={orders}
-        displayedOrders={displayedOrders}
-        selectedOrders={selectedOrders}
-        setSelectedOrders={setSelectedOrders}
-        mappingData={mappingData}
-        isPedidoProcessado={isPedidoProcessado}
-        quickFilter={quickFilter}
-        onBaixaConcluida={() => {
-          setSelectedOrders(new Set());
-          actions.refetch();
-        }}
-      />
-
-      {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
-        {/* F4.3: PedidosFiltersUnified com Error Boundary */}
-        <ErrorBoundary name="PedidosFiltersUnified">
-          <PedidosFiltersUnified
-        filters={filtersManager.filters}
-        appliedFilters={filtersManager.appliedFilters}
-        onFilterChange={filtersManager.updateFilter}
-        onApplyFilters={filtersManager.applyFilters}
-        onCancelChanges={filtersManager.cancelChanges}
-        onClearFilters={filtersManager.clearFilters}
-        hasPendingChanges={filtersManager.hasPendingChanges}
-        needsManualApplication={filtersManager.needsManualApplication}
-        isApplying={filtersManager.isApplying}
-        columnManager={columnManager}
-        activeFiltersCount={filtersManager.activeFiltersCount}
-        contasML={accounts}
-        useAdvancedStatus={useAdvancedStatus}
-        onToggleAdvancedStatus={setUseAdvancedStatus}
-        advancedStatusFilters={advancedStatusFilters}
-        onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
-        onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
-      />
-        </ErrorBoundary>
+          {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
+          <div className="px-4 md:px-6">
+            {/* F4.3: PedidosFiltersUnified com Error Boundary */}
+            <ErrorBoundary name="PedidosFiltersUnified">
+              <PedidosFiltersUnified
+                filters={filtersManager.filters}
+                appliedFilters={filtersManager.appliedFilters}
+                onFilterChange={filtersManager.updateFilter}
+                onApplyFilters={filtersManager.applyFilters}
+                onCancelChanges={filtersManager.cancelChanges}
+                onClearFilters={filtersManager.clearFilters}
+                hasPendingChanges={filtersManager.hasPendingChanges}
+                needsManualApplication={filtersManager.needsManualApplication}
+                isApplying={filtersManager.isApplying}
+                columnManager={columnManager}
+                activeFiltersCount={filtersManager.activeFiltersCount}
+                contasML={accounts}
+                useAdvancedStatus={useAdvancedStatus}
+                onToggleAdvancedStatus={setUseAdvancedStatus}
+                advancedStatusFilters={advancedStatusFilters}
+                onAdvancedStatusFiltersChange={handleAdvancedStatusFiltersChange}
+                onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
+              />
+            </ErrorBoundary>
+          </div>
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
       <Card className="p-4" style={{ display: 'none' }}>
