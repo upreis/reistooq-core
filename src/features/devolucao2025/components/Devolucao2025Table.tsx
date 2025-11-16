@@ -69,12 +69,11 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const isVisible = (columnId: string) => visibleColumns.includes(columnId);
 
   return (
-    <div className="w-full border rounded-md overflow-hidden">
-      <div className="overflow-auto max-h-[calc(100vh-400px)]">
+    <div className="w-full -mx-6 -mt-6">
+      <div className="overflow-x-auto">
         <Table className="min-w-max relative">
-          <TableHeader className="sticky top-0 z-20 bg-background shadow-md border-b-2">
+          <TableHeader className="sticky top-0 z-30 bg-background shadow-md border-b-2">
             <TableRow className="hover:bg-transparent">
-            {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
             {isVisible('order_id') && <TableHead>Pedido</TableHead>}
