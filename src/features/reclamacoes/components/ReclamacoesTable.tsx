@@ -119,21 +119,6 @@ export function ReclamacoesTable({
 
   return (
     <div className="space-y-4">
-      {/* Barra de Ferramentas */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-        <div className="flex-1 max-w-sm">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar em todas as colunas..."
-              value={globalFilter ?? ''}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="w-full pl-9"
-            />
-          </div>
-        </div>
-      </div>
-
       {/* Tabela */}
       <div className="overflow-x-auto border rounded-lg bg-card">
         <Table>
