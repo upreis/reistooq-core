@@ -149,8 +149,8 @@ const ActivityCalendar = ({
               backgroundStyle = 'bg-yellow-400 dark:bg-yellow-500';
               borderStyle = 'border-yellow-600 dark:border-yellow-700';
             } else if (hasMultipleTypes) {
-              // Gradiente para múltiplos tipos
-              backgroundStyle = 'bg-gradient-to-br from-blue-500 via-orange-500 to-purple-500';
+              // Gradiente para múltiplos tipos com fundo mais escuro
+              backgroundStyle = 'bg-gradient-to-br from-blue-600 via-orange-600 to-purple-600';
               borderStyle = 'border-blue-600';
             } else if (deliveryCount > 0) {
               // Apenas entregas - borda azul
@@ -206,7 +206,7 @@ const ActivityCalendar = ({
                   <span className="absolute top-0 left-0.5 text-[6px]">🔔</span>
                 )}
                 
-                <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
+                <span className={`text-[9px] font-medium z-10 ${isTodayDay ? 'text-blue-700 dark:text-blue-900 font-bold' : hasMultipleTypes ? 'text-white font-bold' : isFirstOfMonth ? 'text-primary font-bold' : 'text-foreground/70'}`}>
                   {dayNumber}
                 </span>
                 
@@ -377,7 +377,7 @@ const ActivityCalendar = ({
               <span>🔔 Prazo de Análise</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md border-2 border-blue-500 bg-gradient-to-br from-blue-500 via-orange-500 to-purple-500"></div>
+              <div className="w-6 h-6 rounded-md border-2 border-blue-500 bg-gradient-to-br from-blue-600 via-orange-600 to-purple-600"></div>
               <span>Múltiplos</span>
             </div>
             <div className="flex items-center gap-2">
