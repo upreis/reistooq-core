@@ -27,7 +27,7 @@ export function ReclamacoesLifecycleAlert({
   reclamacoes,
   onExportarEmRisco 
 }: ReclamacoesLifecycleAlertProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   
   const relatorio = useMemo(() => 
     gerarRelatorioExclusao(reclamacoes),
@@ -102,21 +102,31 @@ export function ReclamacoesLifecycleAlert({
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Alertas de Ciclo de Vida</h3>
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" size="sm">
-            {isOpen ? (
-              <>
-                <ChevronUp className="h-4 w-4 mr-2" />
-                Ocultar
-              </>
-            ) : (
-              <>
-                <ChevronDown className="h-4 w-4 mr-2" />
-                Expandir ({relatorio.totalEmRisco})
-              </>
-            )}
-          </Button>
-        </CollapsibleTrigger>
+        <div className="flex items-center gap-3">
+          {!isOpen && relatorio.totalEmRisco > 0 && (
+            <div className="relative">
+              <span className="flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+              </span>
+            </div>
+          )}
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm">
+              {isOpen ? (
+                <>
+                  <ChevronUp className="h-4 w-4 mr-2" />
+                  Ocultar
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4 mr-2" />
+                  Expandir ({relatorio.totalEmRisco})
+                </>
+              )}
+            </Button>
+          </CollapsibleTrigger>
+        </div>
       </div>
       
       <CollapsibleContent className="space-y-3">
