@@ -72,8 +72,8 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     <div className="w-full flex-1 flex flex-col min-h-0">
       <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
         <Table className="min-w-max relative">
-          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
-            <TableRow className="hover:bg-transparent border-b-2">
+          <TableHeader className="sticky top-0 z-20 bg-background shadow-md border-b-2">
+            <TableRow className="hover:bg-transparent">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
             {isVisible('order_id') && <TableHead>Pedido</TableHead>}
