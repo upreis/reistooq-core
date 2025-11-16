@@ -161,10 +161,7 @@ function App() {
                     <Route path="compras/*" element={<Compras />} />
                     
                     {/* Configurações */}
-                    <Route path="configuracoes/*" element={<Navigate to="/configuracoes/integracoes" replace />} />
-                    <Route path="configuracoes/integracoes" element={<IntegracoesPage />} />
-                    <Route path="configuracoes/account" element={<AccountSettings />} />
-                    <Route path="configuracoes/categories" element={<CategoryManager />} />
+                    <Route path="configuracoes/*" element={<IntegracoesPage />} />
                     <Route path="aplicativos/*" element={<AplicativosPage />} />
                     
                     {/* Admin */}
