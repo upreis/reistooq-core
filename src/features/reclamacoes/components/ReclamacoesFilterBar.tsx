@@ -79,17 +79,6 @@ export function ReclamacoesFilterBar({
 
   return (
     <div className="space-y-4">
-      {/* Label Filtros */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="opacity-60">
-          <path d="M2 3h12M4 8h8M6 13h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-        <span className="font-medium">Filtros</span>
-        <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs font-medium">
-          1
-        </span>
-      </div>
-
       {/* Barra de Filtros */}
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 items-end">
         {/* Busca Manual */}
