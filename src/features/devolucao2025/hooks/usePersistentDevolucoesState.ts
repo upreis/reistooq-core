@@ -35,7 +35,7 @@ interface PersistentDevolucoesState {
 }
 
 const STORAGE_KEY = 'devolucoes_venda_persistent_state';
-// Cache sem expiração por tempo - apenas por ação do usuário
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos de validade do cache
 
 export function usePersistentDevolucoesState() {
   const [persistedState, setPersistedState] = useState<PersistentDevolucoesState | null>(null);
@@ -75,15 +75,23 @@ export function usePersistentDevolucoesState() {
             return;
           }
           
-          // Carregar cache (sem expiração por tempo)
+          // Verificar se o cache ainda é válido (30 minutos)
           const now = Date.now();
-          console.log('🔄 Cache de devoluções carregado:', {
-            devolucoesCount: parsed.devolucoes.length,
-            cacheAge: Math.round((now - parsed.cachedAt) / 1000) + 's',
-            accounts: parsed.selectedAccounts.join(', '),
-            dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`
-          });
-          setPersistedState(parsed);
+          const cacheAge = now - parsed.cachedAt;
+          const isExpired = cacheAge > CACHE_DURATION;
+          
+          if (!isExpired) {
+            console.log('🔄 Cache de devoluções carregado:', {
+              devolucoesCount: parsed.devolucoes.length,
+              cacheAge: Math.round(cacheAge / 1000) + 's',
+              accounts: parsed.selectedAccounts.join(', '),
+              dateRange: `${parsed.dateRange.from.toLocaleDateString()} - ${parsed.dateRange.to.toLocaleDateString()}`
+            });
+            setPersistedState(parsed);
+          } else {
+            console.log('⏰ Cache expirado (>30min), removendo...');
+            localStorage.removeItem(STORAGE_KEY);
+          }
         }
       } catch (error) {
         console.warn('Erro ao carregar estado persistido:', error);
