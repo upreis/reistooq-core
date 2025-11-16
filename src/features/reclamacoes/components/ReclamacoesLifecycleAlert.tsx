@@ -3,10 +3,11 @@
  * Mostra avisos sobre reclamações próximas da exclusão
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Info, XCircle, Shield, Download } from 'lucide-react';
+import { AlertTriangle, Info, XCircle, Shield, Download, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { gerarRelatorioExclusao } from '../utils/reclamacaoLifecycle';
 import * as XLSX from 'xlsx';
 
@@ -26,6 +27,8 @@ export function ReclamacoesLifecycleAlert({
   reclamacoes,
   onExportarEmRisco 
 }: ReclamacoesLifecycleAlertProps) {
+  const [isOpen, setIsOpen] = useState(true);
+  
   const relatorio = useMemo(() => 
     gerarRelatorioExclusao(reclamacoes),
     [reclamacoes]
@@ -96,9 +99,29 @@ export function ReclamacoesLifecycleAlert({
   }
   
   return (
-    <div className="space-y-3">
-      {/* Alerta Crítico - Serão Excluídas */}
-      {relatorio.seraExcluidas.length > 0 && (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">Alertas de Ciclo de Vida</h3>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm">
+            {isOpen ? (
+              <>
+                <ChevronUp className="h-4 w-4 mr-2" />
+                Ocultar
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-2" />
+                Expandir ({relatorio.totalEmRisco})
+              </>
+            )}
+          </Button>
+        </CollapsibleTrigger>
+      </div>
+      
+      <CollapsibleContent className="space-y-3">
+        {/* Alerta Crítico - Serão Excluídas */}
+        {relatorio.seraExcluidas.length > 0 && (
         <Alert variant="destructive">
           <XCircle className="h-4 w-4" />
           <AlertTitle className="font-semibold">
@@ -169,6 +192,7 @@ export function ReclamacoesLifecycleAlert({
           </p>
         </AlertDescription>
       </Alert>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
