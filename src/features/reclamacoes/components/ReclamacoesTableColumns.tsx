@@ -271,7 +271,7 @@ export const reclamacoesColumns = (
     size: 180,
   },
   {
-    accessorKey: 'empresa',
+    accessorKey: 'account_name',
     header: ({ column }) => {
       return (
         <Button
@@ -284,7 +284,7 @@ export const reclamacoesColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('empresa') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm font-medium">{row.getValue('account_name') || '-'}</span>,
   },
   // 📝 COLUNA DE ANOTAÇÕES
   {
