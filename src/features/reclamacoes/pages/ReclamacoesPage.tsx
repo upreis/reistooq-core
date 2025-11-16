@@ -3,8 +3,9 @@
  * Otimizada com cache localStorage + React Query
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useUniversalFilters } from '@/hooks/useUniversalFilters';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { usePersistentReclamacoesState } from '../hooks/usePersistentReclamacoesState';
@@ -37,16 +38,48 @@ export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // 💾 CACHE PERSISTENTE (localStorage + React Query)
+  // 💾 CACHE PERSISTENTE (localStorage para fallback)
   const persistentCache = usePersistentReclamacoesState();
   
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
-  const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  // 🔗 CONFIGURAÇÃO DOS FILTROS PARA URL + LOCALSTORAGE (HÍBRIDO)
+  const filterConfigs = useMemo(() => [
+    { key: 'accounts', defaultValue: [] as string[], serialize: (v: string[]) => v.join(','), deserialize: (v: string) => v ? v.split(',') : [] },
+    { key: 'tab', defaultValue: 'ativas' as 'ativas' | 'historico' },
+    { key: 'lifecycle', defaultValue: null as 'critical' | 'urgent' | 'attention' | null },
+    { key: 'page', defaultValue: 1, serialize: (v: number) => String(v), deserialize: (v: string) => parseInt(v) || 1 },
+    { key: 'perPage', defaultValue: 50, serialize: (v: number) => String(v), deserialize: (v: string) => parseInt(v) || 50 },
+    { key: 'periodo', defaultValue: '60' },
+    { key: 'status', defaultValue: '' },
+    { key: 'type', defaultValue: '' },
+    { key: 'stage', defaultValue: '' },
+    { key: 'has_messages', defaultValue: '' },
+    { key: 'has_evidences', defaultValue: '' },
+    { key: 'date_from', defaultValue: '' },
+    { key: 'date_to', defaultValue: '' },
+  ], []);
+
+  // 🔗 HOOK HÍBRIDO: URL + localStorage com prioridade para URL
+  const { filters: urlFilters, updateFilters } = useUniversalFilters(filterConfigs);
+  
+  // Estados sincronizados com URL
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>(urlFilters.accounts || []);
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>(urlFilters.tab || 'ativas');
+  const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(urlFilters.lifecycle || null);
+  const [currentPage, setCurrentPage] = useState(urlFilters.page || 1);
+  const [itemsPerPage, setItemsPerPage] = useState(urlFilters.perPage || 50);
   const [tableInstance, setTableInstance] = useState<any>(null);
   
+  const [filters, setFilters] = useState({
+    periodo: urlFilters.periodo || '60',
+    status: urlFilters.status || '',
+    type: urlFilters.type || '',
+    stage: urlFilters.stage || '',
+    has_messages: urlFilters.has_messages || '',
+    has_evidences: urlFilters.has_evidences || '',
+    date_from: urlFilters.date_from || '',
+    date_to: urlFilters.date_to || ''
+  });
+
   // 💾 STORAGE DE ANOTAÇÕES (mantido separado)
   const {
     analiseStatus,
@@ -59,30 +92,53 @@ export function ReclamacoesPage() {
   // Modal de anotações
   const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
   const [selectedClaimForAnotacoes, setSelectedClaimForAnotacoes] = useState<any | null>(null);
-  
-  const [filters, setFilters] = useState({
-    periodo: '60',
-    status: '',
-    type: '',
-    stage: '',
-    has_messages: '',
-    has_evidences: '',
-    date_from: '',
-    date_to: ''
-  });
-
-  // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
 
-  // Restaurar estado do cache
+  // 🔄 INICIALIZAÇÃO: URL > localStorage (híbrido com prioridade)
   useEffect(() => {
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
+    const hasUrlParams = Object.keys(urlFilters).some(key => {
+      const value = urlFilters[key];
+      const config = filterConfigs.find(c => c.key === key);
+      return value !== config?.defaultValue && value !== '' && (Array.isArray(value) ? value.length > 0 : true);
+    });
+
+    // Se não tem params na URL, usar localStorage como fallback
+    if (!hasUrlParams && persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
+      console.log('📦 Restaurando de localStorage (sem params na URL)');
+      
+      const cachedFilters = cached.filters;
+      
       setSelectedAccountIds(cached.selectedAccounts || []);
-      setFilters(prev => ({ ...prev, ...cached.filters }));
-      setCurrentPage(cached.currentPage);
-      setItemsPerPage(cached.itemsPerPage);
-      console.log('🔄 Estado de reclamações restaurado do cache');
+      setFilters({
+        periodo: cachedFilters.periodo || '60',
+        status: cachedFilters.status || '',
+        type: cachedFilters.type || '',
+        stage: cachedFilters.stage || '',
+        has_messages: cachedFilters.has_messages || '',
+        has_evidences: cachedFilters.has_evidences || '',
+        date_from: cachedFilters.date_from || '',
+        date_to: cachedFilters.date_to || ''
+      });
+      setCurrentPage(cached.currentPage || 1);
+      setItemsPerPage(cached.itemsPerPage || 50);
+      
+      // Sincronizar com URL também
+      updateFilters({
+        accounts: cached.selectedAccounts || [],
+        page: cached.currentPage || 1,
+        perPage: cached.itemsPerPage || 50,
+        periodo: cachedFilters.periodo || '60',
+        status: cachedFilters.status || '',
+        type: cachedFilters.type || '',
+        stage: cachedFilters.stage || '',
+        has_messages: cachedFilters.has_messages || '',
+        has_evidences: cachedFilters.has_evidences || '',
+        date_from: cachedFilters.date_from || '',
+        date_to: cachedFilters.date_to || ''
+      });
+    } else if (hasUrlParams) {
+      console.log('🔗 Usando filtros da URL (prioridade)');
     }
   }, [persistentCache.isStateLoaded]);
 
@@ -187,7 +243,36 @@ export function ReclamacoesPage() {
               limit,
               offset,
             },
-          });
+  });
+
+  // 🔗 SINCRONIZAÇÃO BIDIRECIONAL: Estado → URL (com debounce)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateFilters({
+        accounts: selectedAccountIds,
+        tab: activeTab,
+        lifecycle: lifecycleFilter,
+        page: currentPage,
+        perPage: itemsPerPage,
+        ...filters
+      });
+    }, 300); // Debounce de 300ms
+    
+    return () => clearTimeout(timer);
+  }, [selectedAccountIds, activeTab, lifecycleFilter, currentPage, itemsPerPage, filters]);
+
+  // 💾 SALVAR NO LOCALSTORAGE quando filtros mudam (complemento ao URL)
+  useEffect(() => {
+    if (selectedAccountIds.length > 0) {
+      persistentCache.saveDataCache(
+        allReclamacoes,
+        selectedAccountIds,
+        filters,
+        currentPage,
+        itemsPerPage
+      );
+    }
+  }, [selectedAccountIds, filters, currentPage, itemsPerPage, allReclamacoes]);
 
           if (fetchError) {
             console.error(`Erro ao buscar claims de ${account.name}:`, fetchError);
@@ -217,16 +302,6 @@ export function ReclamacoesPage() {
       }
 
       console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
-      
-      // Salvar no cache persistente
-      persistentCache.saveDataCache(
-        allClaims,
-        selectedAccountIds,
-        filters,
-        currentPage,
-        itemsPerPage
-      );
-      
       return allClaims;
     },
     enabled: selectedAccountIds.length > 0 && !isManualSearching,
