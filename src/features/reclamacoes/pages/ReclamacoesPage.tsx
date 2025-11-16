@@ -168,19 +168,19 @@ export function ReclamacoesPage() {
         let hasMore = true;
 
         while (hasMore) {
-          const { data, error: fetchError } = await supabase.functions.invoke('ml-api-direct', {
+          const { data, error: fetchError } = await supabase.functions.invoke('ml-claims-fetch', {
             body: {
-              action: 'search_claims',
-              integration_account_id: account.id,
+              accountId: account.id,
+              sellerId: account.account_identifier,
               filters: {
                 date_from: dataInicio,
                 date_to: dataFim,
                 status: filters.status,
                 stage: filters.stage,
                 type: filters.type,
-                limit,
-                offset,
               },
+              limit,
+              offset,
             },
           });
 
