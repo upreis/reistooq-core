@@ -3,7 +3,7 @@
  * Otimizada com cache localStorage + React Query
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
@@ -94,17 +94,28 @@ export function ReclamacoesPage() {
     }
   }, [persistentCache.isStateLoaded]); // Apenas quando carrega
 
-  // 💾 SALVAR NO LOCALSTORAGE quando filtros mudam
+  // 💾 SALVAR NO LOCALSTORAGE quando filtros mudam (COM PROTEÇÃO ANTI-LOOP)
+  const isSavingRef = useRef(false);
+  
   useEffect(() => {
+    // Prevenir loop infinito
+    if (isSavingRef.current) return;
+    if (selectedAccountIds.length === 0) return;
+    
     const timer = setTimeout(() => {
-      if (selectedAccountIds.length > 0) {
-        persistentCache.saveState({
-          selectedAccounts: selectedAccountIds,
-          filters,
-          currentPage,
-          itemsPerPage
-        });
-      }
+      isSavingRef.current = true;
+      
+      persistentCache.saveState({
+        selectedAccounts: selectedAccountIds,
+        filters,
+        currentPage,
+        itemsPerPage
+      });
+      
+      // Liberar flag após salvamento
+      setTimeout(() => {
+        isSavingRef.current = false;
+      }, 100);
     }, 500); // Debounce de 500ms
     
     return () => clearTimeout(timer);
