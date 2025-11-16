@@ -5326,6 +5326,7 @@ export type Database = {
           order_status_detail: string | null
           order_total: number | null
           organization_id: string | null
+          product_info: Json | null
           raw_data: Json | null
           reason_category: string | null
           reason_detail: string | null
@@ -5398,6 +5399,7 @@ export type Database = {
           order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
+          product_info?: Json | null
           raw_data?: Json | null
           reason_category?: string | null
           reason_detail?: string | null
@@ -5470,6 +5472,7 @@ export type Database = {
           order_status_detail?: string | null
           order_total?: number | null
           organization_id?: string | null
+          product_info?: Json | null
           raw_data?: Json | null
           reason_category?: string | null
           reason_detail?: string | null
