@@ -1,5 +1,5 @@
 /**
- * 📋 TABELA PRINCIPAL - DEVOLUÇÕES 2025
+ * 📋 TABELA PRINCIPAL - DEVOLUÇÕES DE VENDAS
  * Implementação com todas as 65 colunas mapeadas
  */
 

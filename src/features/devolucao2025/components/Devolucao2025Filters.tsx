@@ -1,5 +1,5 @@
 /**
- * 📋 FILTROS - DEVOLUÇÕES 2025
+ * 📋 FILTROS - DEVOLUÇÕES DE VENDAS
  */
 
 import { useState } from 'react';
