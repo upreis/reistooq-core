@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     // ✅ Buscar token ML diretamente da tabela integration_secrets
     const { data: secretData, error: secretError } = await supabase
       .from('integration_secrets')
-      .select('access_token, refresh_token')
+      .select('simple_tokens, use_simple')
       .eq('integration_account_id', accountId)
       .eq('provider', 'mercadolivre')
       .single();
@@ -54,7 +54,21 @@ Deno.serve(async (req) => {
       throw new Error('Token ML não encontrado');
     }
 
-    const accessToken = secretData.access_token;
+    // Descriptografar simple_tokens: formato "SALT2024::base64_json"
+    let accessToken: string | null = null;
+    
+    if (secretData.simple_tokens) {
+      try {
+        const parts = secretData.simple_tokens.split('::');
+        if (parts.length === 2) {
+          const decoded = atob(parts[1]); // Decodificar base64
+          const tokenData = JSON.parse(decoded);
+          accessToken = tokenData.access_token;
+        }
+      } catch (error) {
+        console.error('[ml-claims-fetch] Erro ao descriptografar token:', error);
+      }
+    }
 
     if (!accessToken) {
       throw new Error('Access token não encontrado');
