@@ -41,33 +41,20 @@ Deno.serve(async (req) => {
 
     console.log('[ml-claims-fetch] Buscando claims', { accountId, sellerId, filters });
 
-    // ✅ Buscar token ML COM RETRY
-    const INTERNAL_TOKEN = Deno.env.get('INTERNAL_SHARED_TOKEN');
-    if (!INTERNAL_TOKEN) {
-      throw new Error('CRITICAL: INTERNAL_SHARED_TOKEN must be configured in Supabase Edge Function secrets');
-    }
-    
-    const tokenUrl = `${supabaseUrl}/functions/v1/integrations-get-secret`;
-    const tokenRes = await fetchWithRetry(tokenUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${supabaseKey}`,
-        'x-internal-call': 'true',
-        'x-internal-token': INTERNAL_TOKEN
-      },
-      body: JSON.stringify({
-        integration_account_id: accountId,
-        provider: 'mercadolivre'
-      })
-    }, { maxRetries: 2, retryDelay: 500 });
+    // ✅ Buscar token ML diretamente do banco (sem descriptografia, usando service role)
+    const { data: tokenData, error: tokenError } = await supabase
+      .from('integration_credentials')
+      .select('encrypted_credentials')
+      .eq('integration_account_id', accountId)
+      .single();
 
-    if (!tokenRes.ok) {
-      throw new Error('Token ML indisponível');
+    if (tokenError || !tokenData) {
+      console.error('[ml-claims-fetch] Erro ao buscar token:', tokenError);
+      throw new Error('Token ML não encontrado');
     }
 
-    const tokenData = await tokenRes.json();
-    const accessToken = tokenData.secret?.access_token;
+    // O encrypted_credentials já está no formato JSON com access_token
+    const accessToken = tokenData.encrypted_credentials?.access_token;
 
     if (!accessToken) {
       throw new Error('Access token não encontrado');
