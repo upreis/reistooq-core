@@ -69,8 +69,8 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const isVisible = (columnId: string) => visibleColumns.includes(columnId);
 
   return (
-    <div className="w-full -mx-6 -mt-6">
-      <div className="overflow-x-auto">
+    <div className="w-full border rounded-md overflow-hidden">
+      <div className="overflow-x-auto overflow-y-auto max-h-[600px]">
         <Table className="min-w-max relative">
           <TableHeader className="sticky top-0 z-30 bg-background shadow-md border-b-2">
             <TableRow className="hover:bg-transparent">
