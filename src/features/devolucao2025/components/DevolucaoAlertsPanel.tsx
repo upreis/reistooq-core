@@ -3,10 +3,12 @@
  * Exibe alertas de prazos, atrasos e mediações
  */
 
-import { Bell, AlertTriangle, Clock, Scale } from 'lucide-react';
+import { useState } from 'react';
+import { Bell, AlertTriangle, Clock, Scale, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { DevolucaoAlert } from '../hooks/useDevolucaoAlerts';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -17,6 +19,8 @@ interface DevolucaoAlertsPanelProps {
 }
 
 export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPanelProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   const getAlertIcon = (type: DevolucaoAlert['type']) => {
     switch (type) {
       case 'prazo_proximo':
@@ -52,75 +56,98 @@ export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPan
 
   if (totalAlerts === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Alertas
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            <Bell className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">Nenhum alerta no momento</p>
-            <p className="text-xs mt-1">Todas as devoluções estão dentro do prazo</p>
+      <Card className="w-full max-w-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="h-4 w-4" />
+              Alertas
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-8 w-8 p-0"
+            >
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
           </div>
-        </CardContent>
+        </CardHeader>
+        {isExpanded && (
+          <CardContent className="pt-0">
+            <div className="text-center py-6 text-muted-foreground">
+              <Bell className="h-10 w-10 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">Nenhum alerta no momento</p>
+            </div>
+          </CardContent>
+        )}
       </Card>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bell className="h-5 w-5" />
-          Alertas
-          <Badge variant="destructive" className="ml-auto">
-            {totalAlerts}
-          </Badge>
-        </CardTitle>
+    <Card className="w-full max-w-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-4 w-4" />
+            Alertas
+            <Badge variant="destructive" className="text-xs">
+              {totalAlerts}
+            </Badge>
+          </CardTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="h-8 w-8 p-0"
+          >
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px] pr-4">
-          <div className="space-y-3">
-            {alerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`p-4 rounded-lg bg-card border ${getAlertBorderColor(alert.priority)} hover:bg-accent/50 transition-colors`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-full ${getAlertColor(alert.priority)}`}>
-                    {getAlertIcon(alert.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="text-sm font-semibold">{alert.title}</h4>
-                      <Badge variant="outline" className="text-xs">
-                        {alert.priority.toUpperCase()}
-                      </Badge>
+      {isExpanded && (
+        <CardContent className="pt-0">
+          <ScrollArea className="h-[300px] pr-3">
+            <div className="space-y-2">
+              {alerts.map((alert) => (
+                <div
+                  key={alert.id}
+                  className={`p-3 rounded-lg bg-card border ${getAlertBorderColor(alert.priority)} hover:bg-accent/50 transition-colors`}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className={`p-1.5 rounded-full ${getAlertColor(alert.priority)}`}>
+                      {getAlertIcon(alert.type)}
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {alert.message}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Claim: {alert.claim_id}</span>
-                      {alert.deadline && (
-                        <span>
-                          {alert.type === 'atrasado' ? 'Venceu' : 'Vence'} {formatDistanceToNow(alert.deadline, { 
-                            addSuffix: true,
-                            locale: ptBR 
-                          })}
-                        </span>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="text-xs font-semibold truncate">{alert.title}</h4>
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                          {alert.priority.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mb-1.5 line-clamp-2">
+                        {alert.message}
+                      </p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                        <span className="truncate">Claim: {alert.claim_id}</span>
+                        {alert.deadline && (
+                          <span className="shrink-0">
+                            {alert.type === 'atrasado' ? 'Venceu' : 'Vence'} {formatDistanceToNow(alert.deadline, { 
+                              addSuffix: true,
+                              locale: ptBR 
+                            })}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </CardContent>
+              ))}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      )}
     </Card>
   );
 };
