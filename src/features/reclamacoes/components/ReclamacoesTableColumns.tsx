@@ -11,6 +11,7 @@ import { ImpactoFinanceiroCell } from '@/components/ml/reclamacoes/ImpactoFinanc
 import { Button } from '@/components/ui/button';
 import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import { ReclamacaoLifecycleBadge } from './ReclamacaoLifecycleBadge';
+import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 export type ReclamacaoRow = any;
@@ -285,6 +286,28 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => <span className="text-sm font-medium">{row.getValue('account_name') || '-'}</span>,
+  },
+  // 📸 COLUNA DE PRODUTO COM IMAGEM
+  {
+    id: 'produto',
+    accessorKey: 'product_info',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Produto
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const productInfo = row.original.product_info;
+      return <ProductInfoCell productInfo={productInfo} />;
+    },
+    size: 280,
   },
   // 📝 COLUNA DE ANOTAÇÕES
   {
