@@ -10,8 +10,10 @@ import AnunciosPage from "./AnunciosPage";
 const ConfiguracoesContent = () => {
   return (
     <div className="space-y-6">
+      {/* Navegação */}
+      <ConfiguracoesNav />
       
-      {/* 3. Conteúdo das rotas */}
+      {/* Conteúdo das rotas */}
       <div className="mt-6">
         <Routes>
           <Route index element={<Navigate to="integracoes" replace />} />
