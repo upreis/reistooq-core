@@ -9,6 +9,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
+import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
@@ -219,6 +220,9 @@ export const Devolucao2025Page = () => {
         </div>
         <NotificationsBell organizationId={organizationId} />
       </div>
+
+      {/* Navegação por tabs */}
+      <MLOrdersNav />
 
       {/* Painel de Alertas */}
       {totalAlerts > 0 && (
