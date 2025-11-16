@@ -56,27 +56,27 @@ export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPan
 
   if (totalAlerts === 0) {
     return (
-      <Card className="w-full max-w-sm">
-        <CardHeader className="pb-3">
+      <Card className="w-full max-w-xs">
+        <CardHeader className="pb-2 px-3 pt-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Bell className="h-4 w-4" />
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Bell className="h-3 w-3" />
               Alertas
             </CardTitle>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8 w-8 p-0"
+              className="h-6 w-6 p-0"
             >
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </Button>
           </div>
         </CardHeader>
         {isExpanded && (
-          <CardContent className="pt-0">
-            <div className="text-center py-6 text-muted-foreground">
-              <Bell className="h-10 w-10 mx-auto mb-2 opacity-50" />
+          <CardContent className="pt-0 px-3 pb-3">
+            <div className="text-center py-4 text-muted-foreground">
+              <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p className="text-xs">Nenhum alerta no momento</p>
             </div>
           </CardContent>
@@ -86,22 +86,22 @@ export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPan
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="pb-3">
+    <Card className="w-full max-w-xs">
+      <CardHeader className="pb-2 px-3 pt-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Bell className="h-4 w-4" />
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Bell className="h-3 w-3" />
             Alertas
-            <Badge variant="destructive" className="text-xs">
+            <Badge variant="destructive" className="text-xs h-4 px-1">
               {totalAlerts}
             </Badge>
           </CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {!isExpanded && totalAlerts > 0 && (
               <div className="relative">
-                <span className="flex h-3 w-3">
+                <span className="flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
                 </span>
               </div>
             )}
@@ -109,37 +109,37 @@ export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPan
               variant="ghost"
               size="sm"
               onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8 w-8 p-0"
+              className="h-6 w-6 p-0"
             >
-              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             </Button>
           </div>
         </div>
       </CardHeader>
       {isExpanded && (
-        <CardContent className="pt-0">
-          <ScrollArea className="h-[300px] pr-3">
+        <CardContent className="pt-0 px-3 pb-3">
+          <ScrollArea className="h-[240px] pr-2">
             <div className="space-y-2">
               {alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`p-3 rounded-lg bg-card border ${getAlertBorderColor(alert.priority)} hover:bg-accent/50 transition-colors`}
+                  className={`p-2 rounded-md bg-card border ${getAlertBorderColor(alert.priority)} hover:bg-accent/50 transition-colors`}
                 >
                   <div className="flex items-start gap-2">
-                    <div className={`p-1.5 rounded-full ${getAlertColor(alert.priority)}`}>
+                    <div className={`p-1 rounded-full ${getAlertColor(alert.priority)}`}>
                       {getAlertIcon(alert.type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
                         <h4 className="text-xs font-semibold truncate">{alert.title}</h4>
-                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                        <Badge variant="outline" className="text-[9px] px-0.5 py-0 h-3">
                           {alert.priority.toUpperCase()}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-1.5 line-clamp-2">
+                      <p className="text-xs text-muted-foreground mb-1 line-clamp-2">
                         {alert.message}
                       </p>
-                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                         <span className="truncate">Claim: {alert.claim_id}</span>
                         {alert.deadline && (
                           <span className="shrink-0">
