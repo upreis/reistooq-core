@@ -168,20 +168,20 @@ export function ReclamacoesPage() {
         let hasMore = true;
 
         while (hasMore) {
-          const { data, error: fetchError } = await supabase.functions.invoke('ml-claims-fetch', {
+          const { data, error: fetchError } = await supabase.functions.invoke('ml-api-direct', {
             body: {
-              accountId: account.id,
-              sellerId: account.account_identifier,
-              date_from: dataInicio,
-              date_to: dataFim,
-              limit,
-              offset,
+              action: 'search_claims',
+              integration_account_id: account.id,
               filters: {
-                status: filters.status || undefined,
-                type: filters.type || undefined,
-                stage: filters.stage || undefined,
-              }
-            }
+                date_from: dataInicio,
+                date_to: dataFim,
+                status: filters.status,
+                stage: filters.stage,
+                type: filters.type,
+                limit,
+                offset,
+              },
+            },
           });
 
           if (fetchError) {
