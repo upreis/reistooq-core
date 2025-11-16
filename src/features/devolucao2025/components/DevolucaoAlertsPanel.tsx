@@ -19,7 +19,7 @@ interface DevolucaoAlertsPanelProps {
 }
 
 export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPanelProps) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const getAlertIcon = (type: DevolucaoAlert['type']) => {
     switch (type) {
@@ -96,14 +96,24 @@ export const DevolucaoAlertsPanel = ({ alerts, totalAlerts }: DevolucaoAlertsPan
               {totalAlerts}
             </Badge>
           </CardTitle>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="h-8 w-8 p-0"
-          >
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-3">
+            {!isExpanded && totalAlerts > 0 && (
+              <div className="relative">
+                <span className="flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-destructive opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-destructive"></span>
+                </span>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-8 w-8 p-0"
+            >
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       {isExpanded && (
