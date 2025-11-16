@@ -170,7 +170,8 @@ export function ReclamacoesPage() {
         while (hasMore) {
           const { data, error: fetchError } = await supabase.functions.invoke('ml-claims-fetch', {
             body: {
-              seller_id: account.account_identifier,
+              accountId: account.id,
+              sellerId: account.account_identifier,
               date_from: dataInicio,
               date_to: dataFim,
               limit,
