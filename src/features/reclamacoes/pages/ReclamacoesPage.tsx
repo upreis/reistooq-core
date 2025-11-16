@@ -45,6 +45,7 @@ export function ReclamacoesPage() {
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [tableInstance, setTableInstance] = useState<any>(null);
   
   // 💾 STORAGE DE ANOTAÇÕES (mantido separado)
   const {
@@ -412,6 +413,7 @@ export function ReclamacoesPage() {
           onBuscar={handleBuscarReclamacoes}
           isLoading={isManualSearching || loadingReclamacoes}
           onCancel={handleCancelarBusca}
+          table={tableInstance}
         />
 
 
@@ -436,6 +438,7 @@ export function ReclamacoesPage() {
                 onDeleteReclamacao={handleDeleteReclamacao}
                 onOpenAnotacoes={handleOpenAnotacoes}
                 anotacoes={anotacoes}
+                onTableReady={setTableInstance}
               />
 
               {/* Paginação */}
