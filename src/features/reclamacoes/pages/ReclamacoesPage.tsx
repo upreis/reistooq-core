@@ -381,9 +381,8 @@ export function ReclamacoesPage() {
 
   return (
     <ErrorBoundary>
-      <div className="h-screen flex flex-col">
-        <div className="flex-1 overflow-auto m-0">
-          <div className="space-y-6">
+      <div className="w-full">
+        <div className="space-y-6">
             {/* Sub-navegação */}
             <MLOrdersNav />
             
@@ -498,7 +497,6 @@ export function ReclamacoesPage() {
               />
             )}
           </div>
-        </div>
       </div>
     </ErrorBoundary>
   );
