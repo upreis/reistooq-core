@@ -81,7 +81,14 @@ export const useDevolucaoCalendarData = () => {
         return acc;
       }, {} as Record<string, ContributionDay>);
 
-      setData(Object.values(groupedByDate));
+      const finalData = Object.values(groupedByDate);
+      console.log('📊 Dados do calendário processados:', {
+        total: finalData.length,
+        entregas: finalData.filter(d => d.returns?.some(r => r.dateType === 'delivery')).length,
+        revisoes: finalData.filter(d => d.returns?.some(r => r.dateType === 'review')).length,
+        sample: finalData.slice(0, 3)
+      });
+      setData(finalData);
     } catch (err: any) {
       console.error('Erro ao buscar dados do calendário:', err);
       setError(err.message || 'Erro ao carregar dados');
