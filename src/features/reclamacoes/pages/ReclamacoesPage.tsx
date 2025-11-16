@@ -41,13 +41,20 @@ export function ReclamacoesPage() {
   // 💾 CACHE PERSISTENTE (localStorage para fallback)
   const persistentCache = usePersistentReclamacoesState();
   
-  // 🔗 CONFIGURAÇÃO DOS FILTROS PARA URL + LOCALSTORAGE (HÍBRIDO)
+  // Serializers estáveis (fora do array de configs)
+  const serializeAccounts = useCallback((v: string[]) => v.join(','), []);
+  const deserializeAccounts = useCallback((v: string) => v ? v.split(',') : [], []);
+  const serializeNumber = useCallback((v: number) => String(v), []);
+  const deserializeNumber = useCallback((v: string) => parseInt(v) || 1, []);
+  const deserializePerPage = useCallback((v: string) => parseInt(v) || 50, []);
+
+  // 🔗 Configuração dos filtros (memoizada e estável)
   const filterConfigs = useMemo(() => [
-    { key: 'accounts', defaultValue: [] as string[], serialize: (v: string[]) => v.join(','), deserialize: (v: string) => v ? v.split(',') : [] },
+    { key: 'accounts', defaultValue: [] as string[], serialize: serializeAccounts, deserialize: deserializeAccounts },
     { key: 'tab', defaultValue: 'ativas' as 'ativas' | 'historico' },
     { key: 'lifecycle', defaultValue: null as 'critical' | 'urgent' | 'attention' | null },
-    { key: 'page', defaultValue: 1, serialize: (v: number) => String(v), deserialize: (v: string) => parseInt(v) || 1 },
-    { key: 'perPage', defaultValue: 50, serialize: (v: number) => String(v), deserialize: (v: string) => parseInt(v) || 50 },
+    { key: 'page', defaultValue: 1, serialize: serializeNumber, deserialize: deserializeNumber },
+    { key: 'perPage', defaultValue: 50, serialize: serializeNumber, deserialize: deserializePerPage },
     { key: 'periodo', defaultValue: '60' },
     { key: 'status', defaultValue: '' },
     { key: 'type', defaultValue: '' },
@@ -56,7 +63,7 @@ export function ReclamacoesPage() {
     { key: 'has_evidences', defaultValue: '' },
     { key: 'date_from', defaultValue: '' },
     { key: 'date_to', defaultValue: '' },
-  ], []);
+  ], [serializeAccounts, deserializeAccounts, serializeNumber, deserializeNumber, deserializePerPage]);
 
   // 🔗 HOOK HÍBRIDO: URL + localStorage com prioridade para URL
   const { filters: urlFilters, updateFilters } = useUniversalFilters(filterConfigs);
@@ -140,7 +147,7 @@ export function ReclamacoesPage() {
     } else if (hasUrlParams) {
       console.log('🔗 Usando filtros da URL (prioridade)');
     }
-  }, [persistentCache.isStateLoaded]);
+  }, [persistentCache.isStateLoaded, urlFilters, filterConfigs, updateFilters]);
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
