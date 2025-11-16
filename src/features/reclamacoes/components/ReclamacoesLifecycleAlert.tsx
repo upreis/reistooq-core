@@ -3,7 +3,7 @@
  * Mostra avisos sobre reclamações próximas da exclusão
  */
 
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertTriangle, Info, XCircle, Shield, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
