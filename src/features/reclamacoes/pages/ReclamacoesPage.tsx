@@ -414,8 +414,6 @@ export function ReclamacoesPage() {
           onCancel={handleCancelarBusca}
         />
 
-        {/* Estatísticas */}
-        <ReclamacoesStats reclamacoes={reclamacoesEnriquecidas} />
 
         {/* Tabs: Ativas vs Histórico */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
