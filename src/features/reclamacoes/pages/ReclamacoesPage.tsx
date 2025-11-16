@@ -385,7 +385,7 @@ export function ReclamacoesPage() {
         <MLOrdersNav />
 
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">📋 Reclamações ML</h1>
+          <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
         </div>
 
         {/* Alertas de ciclo de vida */}
