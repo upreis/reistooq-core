@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export function useStickyHeader<T extends HTMLElement>() {
   const [isSticky, setIsSticky] = useState(false);
