@@ -100,13 +100,9 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           <TableHeader 
             ref={headerRef}
             className={cn(
-              "bg-background",
-              isSticky && "fixed z-50 shadow-md"
+              "sticky top-0 z-[9999] bg-background",
+              isSticky && "shadow-md"
             )}
-            style={{
-              top: isSticky ? headerTop : 'auto',
-              width: isSticky ? tableContainerRef.current?.clientWidth : 'auto',
-            }}
           >
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
