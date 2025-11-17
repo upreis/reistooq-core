@@ -18,6 +18,9 @@ import { EvidencesCell } from '@/features/devolucao2025/components/cells/Evidenc
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 import { translateColumnValue } from '../config/translations';
 import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
+import { StickyHeaderClone } from './StickyHeaderClone';
+import { TableHeaderContent } from './TableHeaderContent';
+import { useRef } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -31,6 +34,10 @@ interface Devolucao2025TableProps {
 export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
   // 🔧 Hook de sticky header
   const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
+  
+  // 📌 Refs para clone e container
+  const containerRef = useRef<HTMLDivElement>(null);
+  const fixedHeaderRef = useRef<HTMLDivElement>(null);
   
   // Helper para buscar nome da conta
   const getAccountName = (integrationAccountId: string) => {
@@ -77,75 +84,29 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
       {/* 🎯 ELEMENTO SENTINELA - Detecta quando tabela rola para baixo */}
       <div ref={sentinelRef} className="h-0" />
       
-      {/* 📊 Log temporário para debug da FASE 1 */}
+      {/* 📌 CLONE FIXO DO CABEÇALHO - Aparece quando isSticky = true */}
+      <StickyHeaderClone
+        isVisible={isSticky}
+        headerRef={fixedHeaderRef}
+        visibleColumns={visibleColumns}
+        isVisibleColumn={isVisible}
+      />
+      
+      {/* 📊 Log temporário para debug da FASE 2 */}
       {isSticky && (
-        <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-4 py-2 rounded-md shadow-lg">
-          ✅ isSticky = {String(isSticky)}
+        <div className="fixed top-4 right-4 z-[9999] bg-blue-500 text-white px-4 py-2 rounded-md shadow-lg">
+          ✅ FASE 2: Clone visível!
         </div>
       )}
       
-      <div className="overflow-x-auto border rounded-md">
+      <div ref={containerRef} className="overflow-x-auto border rounded-md">
         <Table ref={tableRef} className="min-w-max relative">
-          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
-            <TableRow className="hover:bg-transparent border-b-2">
-            {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            {isVisible('account_name') && <TableHead>Empresa</TableHead>}
-            {isVisible('order_id') && <TableHead>Pedido</TableHead>}
-            {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
-            {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
-            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
-            {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
-            {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
-
-            {/* GRUPO 2: FINANCEIRO */}
-            {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
-            {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
-            {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
-            {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
-            {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
-
-            {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
-            {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
-            {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
-            {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
-            {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
-            {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
-
-            {/* GRUPO 4: DATAS */}
-            {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
-            {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
-            {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
-            {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
-            {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
-            {isVisible('prazo_analise') && <TableHead>📅 Prazo Análise</TableHead>}
-            {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
-            {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
-
-            {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-            {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
-            {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
-
-            {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
-
-            {/* GRUPO 8: COMUNICAÇÃO */}
-            {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
-            {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
-            {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
-            {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
-            {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
-            {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
-
-            {/* GRUPO 9: REVIEW & AÇÕES */}
-            {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
-            {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
-
-            {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
-            {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
-          </TableRow>
-        </TableHeader>
+          <TableHeader className="bg-background shadow-sm">
+            <TableHeaderContent 
+              visibleColumns={visibleColumns} 
+              isVisible={isVisible} 
+            />
+          </TableHeader>
         <TableBody>
           {devolucoes.map((dev, index) => {
             // Debug: Log valores para verificar traduções (apenas primeira linha)
