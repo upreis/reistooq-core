@@ -19,7 +19,7 @@ import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/
 import { translateColumnValue } from '../config/translations';
 import { useStickyHeader } from '@/hooks/useStickyHeader';
 import { cn } from '@/lib/utils';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useMemo } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -48,7 +48,71 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     }
   }, [visibleColumns, sentinelRef]);
 
-  // Efeito para sincronizar o scroll horizontal (REMOVIDO - não necessário sem larguras dinâmicas)
+  
+  // Helper para verificar se coluna está visível
+  const isVisible = (columnKey: string) => visibleColumns.includes(columnKey);
+  
+  // Memoizar estrutura do cabeçalho para eliminar duplicação
+  const headerStructure = useMemo(() => (
+    <>
+      {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
+      {isVisible('account_name') && <TableHead>Empresa</TableHead>}
+      {isVisible('order_id') && <TableHead>Pedido</TableHead>}
+      {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
+      {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
+      {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
+      {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
+      {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
+
+      {/* GRUPO 2: FINANCEIRO */}
+      {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
+      {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
+      {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
+      {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
+      {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
+
+      {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
+      {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
+      {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
+      {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
+      {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
+      {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
+      {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
+
+      {/* GRUPO 4: DATAS */}
+      {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
+      {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
+      {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
+      {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
+      {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
+      {isVisible('prazo_analise') && <TableHead>⏰ Prazo Análise</TableHead>}
+      {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
+      {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
+
+      {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
+      {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
+      {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
+
+      {/* GRUPO 7: MEDIAÇÃO & TROCA */}
+      {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
+
+      {/* GRUPO 8: COMUNICAÇÃO */}
+      {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
+      {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
+      {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
+      {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
+      {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
+      {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
+
+      {/* GRUPO 9: REVIEW & AÇÕES */}
+      {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
+      {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
+
+      {/* GRUPO 10: CUSTOS OPERACIONAIS */}
+      {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
+      {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
+    </>
+  ), [visibleColumns]);
   
   // Helper para buscar nome da conta
   const getAccountName = (integrationAccountId: string) => {
@@ -88,7 +152,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     );
   }
 
-  const isVisible = (columnId: string) => visibleColumns.includes(columnId);
+  
 
   return (
     <div className="w-full">
@@ -105,126 +169,16 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
             )}
           >
             <TableRow className="hover:bg-transparent border-b-2">
-            {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            {isVisible('account_name') && <TableHead>Empresa</TableHead>}
-            {isVisible('order_id') && <TableHead>Pedido</TableHead>}
-            {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
-            {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
-            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
-            {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
-            {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
-
-            {/* GRUPO 2: FINANCEIRO */}
-            {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
-            {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
-            {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
-            {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
-            {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
-
-            {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
-            {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
-            {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
-            {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
-            {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
-            {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
-
-            {/* GRUPO 4: DATAS */}
-            {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
-            {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
-            {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
-            {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
-            {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
-            {isVisible('prazo_analise') && <TableHead>⏰ Prazo Análise</TableHead>}
-            {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
-            {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
-
-            {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-            {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
-            {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
-
-            {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
-
-            {/* GRUPO 8: COMUNICAÇÃO */}
-            {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
-            {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
-            {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
-            {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
-            {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
-            {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
-
-            {/* GRUPO 9: REVIEW & AÇÕES */}
-            {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
-            {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
-
-            {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
-            {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
-          </TableRow>
+              {headerStructure}
+            </TableRow>
         </TableHeader>
 
         {/* Cabeçalho Fantasma - Ocupa espaço para evitar o pulo quando o header fica fixed */}
         {isSticky && (
           <thead style={{ visibility: 'hidden' }}>
             <TableRow className="hover:bg-transparent border-b-2">
-            {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            {isVisible('account_name') && <TableHead>Empresa</TableHead>}
-            {isVisible('order_id') && <TableHead>Pedido</TableHead>}
-            {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
-            {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
-            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
-            {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
-            {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
-
-            {/* GRUPO 2: FINANCEIRO */}
-            {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
-            {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
-            {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
-            {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
-            {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
-
-            {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
-            {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
-            {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
-            {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
-            {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
-            {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
-
-            {/* GRUPO 4: DATAS */}
-            {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
-            {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
-            {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
-            {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
-            {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
-            {isVisible('prazo_analise') && <TableHead>📅 Prazo Análise</TableHead>}
-            {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
-            {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
-
-            {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-            {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
-            {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
-
-            {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-            {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
-
-            {/* GRUPO 8: COMUNICAÇÃO */}
-            {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
-            {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
-            {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
-            {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
-            {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
-            {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
-
-            {/* GRUPO 9: REVIEW & AÇÕES */}
-            {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
-            {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
-
-            {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-            {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
-            {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
-          </TableRow>
+              {headerStructure}
+            </TableRow>
           </thead>
         )}
 
