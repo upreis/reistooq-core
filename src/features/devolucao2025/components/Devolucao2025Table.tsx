@@ -17,9 +17,6 @@ import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/De
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 import { translateColumnValue } from '../config/translations';
-import { useStickyHeader } from '@/hooks/useStickyHeader';
-import { cn } from '@/lib/utils';
-import { useRef, useMemo } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -31,75 +28,6 @@ interface Devolucao2025TableProps {
 }
 
 export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
-  const { ref: sentinelRef, isSticky } = useStickyHeader<HTMLDivElement>();
-  const headerRef = useRef<HTMLTableSectionElement>(null);
-  const tableContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Helper para verificar se coluna está visível
-  const isVisible = (columnKey: string) => visibleColumns.includes(columnKey);
-  
-  // Memoizar estrutura do cabeçalho para eliminar duplicação
-  const headerStructure = useMemo(() => (
-    <>
-      {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-      {isVisible('account_name') && <TableHead>Empresa</TableHead>}
-      {isVisible('order_id') && <TableHead>Pedido</TableHead>}
-      {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
-      {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
-      {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
-      {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
-      {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
-
-      {/* GRUPO 2: FINANCEIRO */}
-      {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
-      {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
-      {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
-      {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
-      {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
-
-      {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-      {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
-      {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
-      {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
-      {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
-      {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
-      {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
-
-      {/* GRUPO 4: DATAS */}
-      {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
-      {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
-      {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
-      {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
-      {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
-      {isVisible('prazo_analise') && <TableHead>⏰ Prazo Análise</TableHead>}
-      {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
-      {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
-
-      {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-      {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
-      {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
-
-      {/* GRUPO 7: MEDIAÇÃO & TROCA */}
-      {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
-
-      {/* GRUPO 8: COMUNICAÇÃO */}
-      {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
-      {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
-      {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
-      {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
-      {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
-      {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
-
-      {/* GRUPO 9: REVIEW & AÇÕES */}
-      {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
-      {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
-
-      {/* GRUPO 10: CUSTOS OPERACIONAIS */}
-      {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
-      {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
-    </>
-  ), [visibleColumns]);
-  
   // Helper para buscar nome da conta
   const getAccountName = (integrationAccountId: string) => {
     const account = accounts.find(acc => acc.id === integrationAccountId);
@@ -138,27 +66,72 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     );
   }
 
-  
+  const isVisible = (columnId: string) => visibleColumns.includes(columnId);
 
   return (
     <div className="w-full">
-      {/* Elemento sentinela para detectar scroll */}
-      <div ref={sentinelRef} className="h-0" />
-      
-      <div ref={tableContainerRef} className="border rounded-md overflow-x-auto">
-        <Table className="min-w-max">
-          <TableHeader 
-            ref={headerRef}
-            className={cn(
-              "sticky top-0 z-[9999] bg-background",
-              isSticky && "shadow-md"
-            )}
-          >
+      <div className="overflow-x-auto border rounded-md">
+        <Table className="min-w-max relative">
+          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
             <TableRow className="hover:bg-transparent border-b-2">
-              {headerStructure}
-            </TableRow>
-        </TableHeader>
+            {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
+            {isVisible('account_name') && <TableHead>Empresa</TableHead>}
+            {isVisible('order_id') && <TableHead>Pedido</TableHead>}
+            {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
+            {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
+            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
+            {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
+            {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
 
+            {/* GRUPO 2: FINANCEIRO */}
+            {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
+            {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
+            {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
+            {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
+            {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
+
+            {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
+            {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
+            {isVisible('status_return') && <TableHead>📦 Status Return</TableHead>}
+            {isVisible('status_entrega') && <TableHead>🚚 Status Entrega</TableHead>}
+            {isVisible('destino') && <TableHead>🏭 Destino</TableHead>}
+            {isVisible('evidencias') && <TableHead>📎 Evidências</TableHead>}
+            {isVisible('resolucao') && <TableHead>⚖️ Resolução</TableHead>}
+
+            {/* GRUPO 4: DATAS */}
+            {isVisible('data_criacao') && <TableHead>📅 Data Criação</TableHead>}
+            {isVisible('data_venda') && <TableHead>📅 Data Venda</TableHead>}
+            {isVisible('data_fechamento') && <TableHead>📅 Data Fechamento</TableHead>}
+            {isVisible('data_inicio_return') && <TableHead>📅 Início Return</TableHead>}
+            {isVisible('data_atualizacao') && <TableHead>📅 Última Atualização Return</TableHead>}
+            {isVisible('prazo_analise') && <TableHead>📅 Prazo Análise</TableHead>}
+            {isVisible('data_chegada') && <TableHead>📅 Data Chegada</TableHead>}
+            {isVisible('ultima_msg') && <TableHead>⏰ Última Msg</TableHead>}
+
+            {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
+            {isVisible('codigo_rastreio') && <TableHead>📍 Código Rastreio</TableHead>}
+            {isVisible('tipo_logistica') && <TableHead>🚚 Tipo Logística</TableHead>}
+
+            {/* GRUPO 7: MEDIAÇÃO & TROCA */}
+            {isVisible('eh_troca') && <TableHead>🔄 É Troca</TableHead>}
+
+            {/* GRUPO 8: COMUNICAÇÃO */}
+            {isVisible('num_interacoes') && <TableHead>💬 Nº Interações</TableHead>}
+            {isVisible('qualidade_com') && <TableHead>⭐ Qualidade Com</TableHead>}
+            {isVisible('moderacao') && <TableHead>🔒 Moderação</TableHead>}
+            {isVisible('anexos_comprador') && <TableHead>📎 Anexos Comprador</TableHead>}
+            {isVisible('anexos_vendedor') && <TableHead>📎 Anexos Vendedor</TableHead>}
+            {isVisible('anexos_ml') && <TableHead>📎 Anexos ML</TableHead>}
+
+            {/* GRUPO 9: REVIEW & AÇÕES */}
+            {isVisible('review_resource_id') && <TableHead>🔢 Review Resource ID</TableHead>}
+            {isVisible('reason_id') && <TableHead>🏷️ Reason ID</TableHead>}
+
+            {/* GRUPO 10: CUSTOS OPERACIONAIS */}
+            {isVisible('custo_total_log') && <TableHead>💵 Custo Total Log</TableHead>}
+            {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
+          </TableRow>
+        </TableHeader>
         <TableBody>
           {devolucoes.map((dev, index) => {
             // Debug: Log valores para verificar traduções (apenas primeira linha)
@@ -183,36 +156,16 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                   {getAccountName(dev.integration_account_id)}
                 </TableCell>
               )}
-              {isVisible('order_id') && (
-                <TableCell>
-                  {dev.order_id || '-'}
-                </TableCell>
-              )}
-              {isVisible('claim_id') && (
-                <TableCell>
-                  {dev.claim_id || '-'}
-                </TableCell>
-              )}
-              {isVisible('comprador') && (
-                <TableCell>
-                  {dev.comprador_nome_completo || '-'}
-                </TableCell>
-              )}
+              {isVisible('order_id') && <TableCell>{dev.order_id || '-'}</TableCell>}
+              {isVisible('claim_id') && <TableCell>{dev.claim_id || '-'}</TableCell>}
+              {isVisible('comprador') && <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>}
               {isVisible('produto') && (
                 <TableCell>
                   <ProductInfoCell productInfo={dev.product_info} />
                 </TableCell>
               )}
-              {isVisible('sku') && (
-                <TableCell>
-                  {dev.sku || '-'}
-                </TableCell>
-              )}
-              {isVisible('quantidade') && (
-                <TableCell>
-                  {dev.quantidade || '-'}
-                </TableCell>
-              )}
+              {isVisible('sku') && <TableCell>{dev.sku || '-'}</TableCell>}
+              {isVisible('quantidade') && <TableCell>{dev.quantidade || '-'}</TableCell>}
 
               {/* GRUPO 2: FINANCEIRO */}
               {isVisible('valor_total') && (
@@ -231,14 +184,10 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
               {isVisible('metodo_pagamento') && (
-                <TableCell>
-                  {translateColumnValue('metodo_pagamento', dev.metodo_pagamento)}
-                </TableCell>
+                <TableCell>{translateColumnValue('metodo_pagamento', dev.metodo_pagamento)}</TableCell>
               )}
               {isVisible('tipo_pagamento') && (
-                <TableCell>
-                  {translateColumnValue('tipo_pagamento', dev.tipo_pagamento)}
-                </TableCell>
+                <TableCell>{translateColumnValue('tipo_pagamento', dev.tipo_pagamento)}</TableCell>
               )}
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
@@ -269,9 +218,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
               {isVisible('destino') && (
-                <TableCell>
-                  {translateColumnValue('destino', dev.destino_devolucao)}
-                </TableCell>
+                <TableCell>{translateColumnValue('destino', dev.destino_devolucao)}</TableCell>
               )}
               {isVisible('evidencias') && (
                 <TableCell>
@@ -310,7 +257,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
               )}
               {isVisible('data_atualizacao') && (
                 <TableCell>
-                  {dev.data_atualizacao_devolucao ? new Date(dev.data_atualizacao_devolucao).toLocaleDateString('pt-BR') : '-'}
+                  {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('prazo_analise') && (
@@ -323,139 +270,69 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                   {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
-              {isVisible('prazo_chegada') && (
-                <TableCell>
-                  {dev.estimated_delivery_date ? new Date(dev.estimated_delivery_date).toLocaleDateString('pt-BR') : '-'}
-                </TableCell>
-              )}
-
-              {/* GRUPO 5: TRACKING & LOGÍSTICA */}
-              {isVisible('ultima_mensagem') && (
+              {isVisible('ultima_msg') && (
                 <TableCell>
                   {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
-              {isVisible('codigo_rastreamento') && (
-                <TableCell>
-                  {dev.codigo_rastreamento_devolucao || '-'}
-                </TableCell>
-              )}
+
+              {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
+              {isVisible('codigo_rastreio') && <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>}
               {isVisible('tipo_logistica') && (
                 <TableCell>
                   <LogisticTypeCell logisticType={dev.tipo_logistica} />
                 </TableCell>
               )}
-              {isVisible('transportadora') && (
+
+              {/* GRUPO 7: MEDIAÇÃO & TROCA */}
+              {isVisible('eh_troca') && (
                 <TableCell>
-                  {dev.transportadora_devolucao || '-'}
+                  {dev.eh_troca === true ? (
+                    <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                      <RefreshCw className="h-3 w-3" />
+                      Sim
+                    </Badge>
+                  ) : dev.eh_troca === false ? (
+                    <Badge variant="secondary">Não</Badge>
+                  ) : '-'}
                 </TableCell>
               )}
 
-              {/* GRUPO 6: MEDIAÇÃO & CONTEXTO */}
-              {isVisible('eh_troca') && (
+              {/* GRUPO 8: COMUNICAÇÃO */}
+              {isVisible('num_interacoes') && <TableCell>{dev.numero_interacoes || '0'}</TableCell>}
+              {isVisible('qualidade_com') && (
                 <TableCell>
-                  {dev.eh_troca ? (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <RefreshCw className="w-3 h-3" />
-                      Troca
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
+                  <Badge variant={
+                    dev.qualidade_comunicacao === 'excelente' ? 'default' :
+                    dev.qualidade_comunicacao === 'boa' ? 'secondary' :
+                    'outline'
+                  }>
+                    {dev.qualidade_comunicacao?.replace(/_/g, ' ') || '-'}
+                  </Badge>
                 </TableCell>
               )}
-              
-              {/* GRUPO 7: CUSTOS & VALORES LOGÍSTICA */}
-              {isVisible('custo_devolucao') && (
-                <TableCell>
-                  {dev.custo_devolucao_ml ? `R$ ${dev.custo_devolucao_ml.toFixed(2)}` : '-'}
-                </TableCell>
+              {isVisible('moderacao') && <TableCell>{dev.status_moderacao || '-'}</TableCell>}
+              {isVisible('anexos_comprador') && <TableCell>{dev.total_anexos_comprador || '0'}</TableCell>}
+              {isVisible('anexos_vendedor') && <TableCell>{dev.total_anexos_vendedor || '0'}</TableCell>}
+              {isVisible('anexos_ml') && <TableCell>{dev.total_anexos_ml || '0'}</TableCell>}
+
+              {/* GRUPO 9: REVIEW & AÇÕES */}
+              {isVisible('review_resource_id') && (
+                <TableCell>{translateColumnValue('review_resource_id', dev.dados_reviews?.resource_id)}</TableCell>
               )}
-              {isVisible('custo_total_logistica') && (
+              {isVisible('reason_id') && (
+                <TableCell>{translateColumnValue('reason_id', dev.dados_reviews?.reason_id)}</TableCell>
+              )}
+
+              {/* GRUPO 10: CUSTOS OPERACIONAIS */}
+              {isVisible('custo_total_log') && (
                 <TableCell>
                   {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
                 </TableCell>
               )}
-              {isVisible('custo_envio_original') && (
+              {isVisible('custo_envio_orig') && (
                 <TableCell>
                   {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
-                </TableCell>
-              )}
-              {isVisible('metodo_reembolso') && (
-                <TableCell>
-                  {translateColumnValue('metodo_reembolso', dev.metodo_reembolso)}
-                </TableCell>
-              )}
-
-              {/* GRUPO 8: COMUNICAÇÃO & REVIEW */}
-              {isVisible('numero_interacoes') && (
-                <TableCell>
-                  <span className="text-muted-foreground">
-                    {dev.numero_interacoes || 0}
-                  </span>
-                </TableCell>
-              )}
-              {isVisible('qualidade_comunicacao') && (
-                <TableCell>
-                  {translateColumnValue('qualidade_comunicacao', dev.qualidade_comunicacao)}
-                </TableCell>
-              )}
-              {isVisible('moderacao') && (
-                <TableCell>
-                  <Badge variant={dev.status_moderacao === 'limpo' ? 'secondary' : 'destructive'}>
-                    {translateColumnValue('moderacao', dev.status_moderacao)}
-                  </Badge>
-                </TableCell>
-              )}
-              {isVisible('anexos_comprador') && (
-                <TableCell>
-                  {dev.total_anexos_comprador || 0}
-                </TableCell>
-              )}
-              {isVisible('anexos_vendedor') && (
-                <TableCell>
-                  {dev.total_anexos_vendedor || 0}
-                </TableCell>
-              )}
-              {isVisible('anexos_ml') && (
-                <TableCell>
-                  {dev.total_anexos_ml || 0}
-                </TableCell>
-              )}
-              {isVisible('review_resource_id') && (
-                <TableCell>
-                  {dev.review_id || '-'}
-                </TableCell>
-              )}
-              {isVisible('reason_id') && (
-                <TableCell>
-                  {dev.reason_id || '-'}
-                </TableCell>
-              )}
-              {isVisible('interacoes') && (
-                <TableCell>
-                  <span className="text-muted-foreground">
-                    {dev.numero_interacoes || 0}
-                  </span>
-                </TableCell>
-              )}
-              {isVisible('motivo') && (
-                <TableCell>
-                  <div className="max-w-xs truncate" title={dev.reason_detail || ''}>
-                    {dev.reason_detail || '-'}
-                  </div>
-                </TableCell>
-              )}
-              {isVisible('categoria_motivo') && (
-                <TableCell>
-                  {translateColumnValue('categoria_motivo', dev.reason_category)}
-                </TableCell>
-              )}
-
-              {/* GRUPO 8: METADATA & DETALHES */}
-              {isVisible('observacoes') && (
-                <TableCell>
-                  {dev.observacoes || '-'}
                 </TableCell>
               )}
             </TableRow>
