@@ -19,6 +19,7 @@ import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/
 import { translateColumnValue } from '../config/translations';
 import { useStickyHeader } from '@/hooks/useStickyHeader';
 import { cn } from '@/lib/utils';
+import { useRef } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -30,7 +31,8 @@ interface Devolucao2025TableProps {
 }
 
 export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
-  const { ref: headerRef, isSticky } = useStickyHeader<HTMLTableSectionElement>();
+  const { ref: sentinelRef, isSticky } = useStickyHeader<HTMLDivElement>();
+  const headerRef = useRef<HTMLTableSectionElement>(null);
   
   // Helper para buscar nome da conta
   const getAccountName = (integrationAccountId: string) => {
@@ -76,12 +78,18 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     <div className="w-full">
       <div className="border rounded-md overflow-visible">
         <Table className="min-w-max relative">
+          {/* Elemento SENTINELA invisível - observado pelo IntersectionObserver */}
+          <div ref={sentinelRef} style={{ height: '1px' }} />
+          
           <TableHeader 
             ref={headerRef}
             className={cn(
               "border-b-2 bg-background shadow-md",
-              isSticky && "fixed top-0 left-0 right-0 z-[9999] shadow-lg"
+              isSticky && "fixed top-0 z-[9999] shadow-lg"
             )}
+            style={isSticky && headerRef.current ? {
+              width: `${headerRef.current.offsetWidth}px`
+            } : undefined}
           >
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
@@ -142,7 +150,9 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
             {isVisible('custo_envio_orig') && <TableHead>🚚 Custo Envio Orig</TableHead>}
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody style={isSticky && headerRef.current ? { 
+          paddingTop: `${headerRef.current.offsetHeight}px` 
+        } : undefined}>
           {devolucoes.map((dev, index) => {
             // Debug: Log valores para verificar traduções (apenas primeira linha)
             if (index === 0) {
