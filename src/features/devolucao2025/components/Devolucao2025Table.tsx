@@ -110,34 +110,27 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           
           <TableHeader 
             ref={headerRef}
-            className={cn(
-              "border-b-2 bg-background shadow-md",
-              isSticky && "fixed top-0 z-[9999] shadow-lg overflow-x-auto"
-            )}
-            style={isSticky && tableContainerRef.current ? {
-              width: `${tableContainerRef.current.offsetWidth}px`,
-              left: `${tableContainerRef.current.getBoundingClientRect().left}px`
-            } : undefined}
+            className="sticky top-0 z-50 bg-background border-b-2 shadow-md"
           >
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
-            {isVisible('account_name') && <TableHead style={isSticky && columnWidths[0] ? { width: columnWidths[0], minWidth: columnWidths[0] } : undefined}>Empresa</TableHead>}
-            {isVisible('order_id') && <TableHead style={isSticky && columnWidths[1] ? { width: columnWidths[1], minWidth: columnWidths[1] } : undefined}>Pedido</TableHead>}
-            {isVisible('claim_id') && <TableHead style={isSticky && columnWidths[2] ? { width: columnWidths[2], minWidth: columnWidths[2] } : undefined}>Claim ID</TableHead>}
-            {isVisible('comprador') && <TableHead style={isSticky && columnWidths[3] ? { width: columnWidths[3], minWidth: columnWidths[3] } : undefined}>👤 Comprador</TableHead>}
-            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]" style={isSticky && columnWidths[4] ? { width: columnWidths[4], minWidth: columnWidths[4] } : undefined}>📦 Produto</TableHead>}
-            {isVisible('sku') && <TableHead style={isSticky && columnWidths[5] ? { width: columnWidths[5], minWidth: columnWidths[5] } : undefined}>🏷️ SKU</TableHead>}
-            {isVisible('quantidade') && <TableHead style={isSticky && columnWidths[6] ? { width: columnWidths[6], minWidth: columnWidths[6] } : undefined}>📊 Qtd</TableHead>}
+            {isVisible('account_name') && <TableHead>Empresa</TableHead>}
+            {isVisible('order_id') && <TableHead>Pedido</TableHead>}
+            {isVisible('claim_id') && <TableHead>Claim ID</TableHead>}
+            {isVisible('comprador') && <TableHead>👤 Comprador</TableHead>}
+            {isVisible('produto') && <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">📦 Produto</TableHead>}
+            {isVisible('sku') && <TableHead>🏷️ SKU</TableHead>}
+            {isVisible('quantidade') && <TableHead>📊 Qtd</TableHead>}
 
             {/* GRUPO 2: FINANCEIRO */}
-            {isVisible('valor_total') && <TableHead style={isSticky && columnWidths[7] ? { width: columnWidths[7], minWidth: columnWidths[7] } : undefined}>💰 Valor Total</TableHead>}
-            {isVisible('valor_produto') && <TableHead style={isSticky && columnWidths[8] ? { width: columnWidths[8], minWidth: columnWidths[8] } : undefined}>💵 Valor Produto</TableHead>}
-            {isVisible('percentual_reemb') && <TableHead style={isSticky && columnWidths[9] ? { width: columnWidths[9], minWidth: columnWidths[9] } : undefined}>📊 % Reemb.</TableHead>}
-            {isVisible('metodo_pagamento') && <TableHead style={isSticky && columnWidths[10] ? { width: columnWidths[10], minWidth: columnWidths[10] } : undefined}>🧾 Método Pagto</TableHead>}
-            {isVisible('tipo_pagamento') && <TableHead style={isSticky && columnWidths[11] ? { width: columnWidths[11], minWidth: columnWidths[11] } : undefined}>💳 Tipo Pagto</TableHead>}
+            {isVisible('valor_total') && <TableHead>💰 Valor Total</TableHead>}
+            {isVisible('valor_produto') && <TableHead>💵 Valor Produto</TableHead>}
+            {isVisible('percentual_reemb') && <TableHead>📊 % Reemb.</TableHead>}
+            {isVisible('metodo_pagamento') && <TableHead>🧾 Método Pagto</TableHead>}
+            {isVisible('tipo_pagamento') && <TableHead>💳 Tipo Pagto</TableHead>}
 
             {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
-            {isVisible('status_dev') && <TableHead style={isSticky && columnWidths[12] ? { width: columnWidths[12], minWidth: columnWidths[12] } : undefined}>🔄 Status Dev</TableHead>}
+            {isVisible('status_dev') && <TableHead>🔄 Status Dev</TableHead>}
             {isVisible('status_return') && <TableHead style={isSticky && columnWidths[13] ? { width: columnWidths[13], minWidth: columnWidths[13] } : undefined}>📦 Status Return</TableHead>}
             {isVisible('status_entrega') && <TableHead style={isSticky && columnWidths[14] ? { width: columnWidths[14], minWidth: columnWidths[14] } : undefined}>🚚 Status Entrega</TableHead>}
             {isVisible('destino') && <TableHead style={isSticky && columnWidths[15] ? { width: columnWidths[15], minWidth: columnWidths[15] } : undefined}>🏭 Destino</TableHead>}
