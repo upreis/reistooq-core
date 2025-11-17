@@ -1,9 +1,9 @@
 /**
  * 📋 TABELA PRINCIPAL - DEVOLUÇÕES DE VENDAS
- * Implementação com todas as 65 colunas mapeadas
+ * Implementação com sticky header clone profissional
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -45,58 +45,65 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     return account?.name || integrationAccountId;
   };
 
-  // 🔄 FASE 3.1: Sincronizar scroll horizontal entre tabela original e clone
-  useEffect(() => {
-    if (!isSticky || !containerRef.current || !fixedHeaderRef.current) return;
+  // 🔄 ETAPA 4.2: Sincronizar scroll horizontal (otimizado com useCallback)
+  const handleScrollSync = useCallback(() => {
+    if (fixedHeaderRef.current && containerRef.current) {
+      fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
+    }
+  }, []);
 
-    const handleScroll = () => {
-      if (fixedHeaderRef.current && containerRef.current) {
-        fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
-      }
-    };
+  useEffect(() => {
+    if (!isSticky || !containerRef.current) return;
 
     const container = containerRef.current;
-    container.addEventListener('scroll', handleScroll, { passive: true });
+    container.addEventListener('scroll', handleScrollSync, { passive: true });
     
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener('scroll', handleScrollSync);
     };
-  }, [isSticky]);
+  }, [isSticky, handleScrollSync]);
 
-  // 🔄 FASE 3.2: Sincronizar larguras das colunas
+  // 🔄 ETAPA 4.2: Sincronizar larguras das colunas (otimizado com debounce)
+  const syncColumnWidths = useCallback(() => {
+    const originalHeaders = tableRef.current?.querySelectorAll('thead th');
+    const cloneHeaders = fixedHeaderRef.current?.querySelectorAll('thead th');
+
+    if (!originalHeaders || !cloneHeaders) return;
+
+    originalHeaders.forEach((originalTh, index) => {
+      const cloneTh = cloneHeaders[index] as HTMLElement;
+      if (cloneTh) {
+        const width = originalTh.getBoundingClientRect().width;
+        cloneTh.style.width = `${width}px`;
+        cloneTh.style.minWidth = `${width}px`;
+        cloneTh.style.maxWidth = `${width}px`;
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (!isSticky || !tableRef.current || !fixedHeaderRef.current) return;
-
-    const syncColumnWidths = () => {
-      const originalHeaders = tableRef.current?.querySelectorAll('thead th');
-      const cloneHeaders = fixedHeaderRef.current?.querySelectorAll('thead th');
-
-      if (!originalHeaders || !cloneHeaders) return;
-
-      originalHeaders.forEach((originalTh, index) => {
-        const cloneTh = cloneHeaders[index] as HTMLElement;
-        if (cloneTh) {
-          const width = originalTh.getBoundingClientRect().width;
-          cloneTh.style.width = `${width}px`;
-          cloneTh.style.minWidth = `${width}px`;
-          cloneTh.style.maxWidth = `${width}px`;
-        }
-      });
-    };
 
     // Sincronizar imediatamente quando sticky ativa
     syncColumnWidths();
 
-    // Observar mudanças de tamanho
-    const resizeObserver = new ResizeObserver(syncColumnWidths);
+    // Debounce para ResizeObserver (performance)
+    let timeoutId: NodeJS.Timeout;
+    const debouncedSync = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(syncColumnWidths, 100);
+    };
+
+    const resizeObserver = new ResizeObserver(debouncedSync);
     if (tableRef.current) {
       resizeObserver.observe(tableRef.current);
     }
 
     return () => {
+      clearTimeout(timeoutId);
       resizeObserver.disconnect();
     };
-  }, [isSticky]);
+  }, [isSticky, syncColumnWidths]);
   
   if (isLoading) {
     return (
@@ -144,14 +151,6 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
         visibleColumns={visibleColumns}
         isVisibleColumn={isVisible}
       />
-      
-      {/* 📊 Log temporário para debug da FASE 3 */}
-      {isSticky && (
-        <div className="fixed top-4 right-4 z-[9999] bg-purple-500 text-white px-4 py-2 rounded-md shadow-lg text-xs">
-          <div>✅ FASE 3: Sincronização ativa!</div>
-          <div>Scroll horizontal: {containerRef.current?.scrollLeft || 0}px</div>
-        </div>
-      )}
       
       <div ref={containerRef} className="overflow-x-auto border rounded-md">
         <Table ref={tableRef} className="min-w-max relative">
