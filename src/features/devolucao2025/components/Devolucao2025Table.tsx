@@ -160,7 +160,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
       <div ref={sentinelRef} className="h-0" />
       
       <div ref={tableContainerRef} className="border rounded-md overflow-x-auto overflow-y-visible">
-        <Table className="min-w-max" style={{ tableLayout: 'fixed' }}>
+        <Table className="min-w-max">
           <TableHeader 
             ref={headerRef}
             className={cn(
