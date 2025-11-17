@@ -19,7 +19,7 @@ import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/
 import { translateColumnValue } from '../config/translations';
 import { useStickyHeader } from '@/hooks/useStickyHeader';
 import { cn } from '@/lib/utils';
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { useRef, useMemo } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -34,44 +34,6 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const { ref: sentinelRef, isSticky } = useStickyHeader<HTMLDivElement>();
   const headerRef = useRef<HTMLTableSectionElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  
-  const [headerTop, setHeaderTop] = useState(0);
-  const [headerWidth, setHeaderWidth] = useState<number | undefined>(undefined);
-
-  // Calcular posição top do header
-  useEffect(() => {
-    if (sentinelRef.current) {
-      const sentinelRect = sentinelRef.current.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const topPosition = sentinelRect.top + scrollTop;
-      setHeaderTop(topPosition);
-    }
-  }, [visibleColumns]);
-
-  // Calcular largura usando scrollWidth (não clientWidth)
-  useEffect(() => {
-    if (isSticky && headerRef.current) {
-      const width = headerRef.current.scrollWidth;
-      setHeaderWidth(width);
-    } else {
-      setHeaderWidth(undefined);
-    }
-  }, [isSticky, visibleColumns]);
-
-  // Sincronizar scroll horizontal
-  useEffect(() => {
-    const container = tableContainerRef.current;
-    const header = headerRef.current;
-    
-    if (!container || !header || !isSticky) return;
-
-    const handleScroll = () => {
-      header.style.transform = `translateX(-${container.scrollLeft}px)`;
-    };
-
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [isSticky]);
   
   // Helper para verificar se coluna está visível
   const isVisible = (columnKey: string) => visibleColumns.includes(columnKey);
@@ -188,28 +150,14 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           <TableHeader 
             ref={headerRef}
             className={cn(
-              "bg-background",
-              isSticky && "fixed z-[9999] shadow-md"
+              "sticky top-0 z-[9999] bg-background",
+              isSticky && "shadow-md"
             )}
-            style={isSticky ? {
-              top: 0,
-              left: tableContainerRef.current?.getBoundingClientRect().left || 0,
-              width: headerWidth,
-            } : undefined}
           >
             <TableRow className="hover:bg-transparent border-b-2">
               {headerStructure}
             </TableRow>
         </TableHeader>
-
-        {/* Header Fantasma - necessário para position:fixed */}
-        {isSticky && (
-          <thead style={{ visibility: 'hidden' }}>
-            <TableRow className="hover:bg-transparent border-b-2">
-              {headerStructure}
-            </TableRow>
-          </thead>
-        )}
 
         <TableBody>
           {devolucoes.map((dev, index) => {
