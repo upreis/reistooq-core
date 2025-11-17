@@ -313,6 +313,11 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                   {dev.data_atualizacao_devolucao ? new Date(dev.data_atualizacao_devolucao).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
+              {isVisible('prazo_analise') && (
+                <TableCell>
+                  <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
+                </TableCell>
+              )}
               {isVisible('data_chegada') && (
                 <TableCell>
                   {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
@@ -325,9 +330,19 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
               )}
 
               {/* GRUPO 5: TRACKING & LOGÍSTICA */}
+              {isVisible('ultima_mensagem') && (
+                <TableCell>
+                  {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
+                </TableCell>
+              )}
               {isVisible('codigo_rastreamento') && (
                 <TableCell>
                   {dev.codigo_rastreamento_devolucao || '-'}
+                </TableCell>
+              )}
+              {isVisible('tipo_logistica') && (
+                <TableCell>
+                  <LogisticTypeCell logisticType={dev.tipo_logistica} />
                 </TableCell>
               )}
               {isVisible('transportadora') && (
@@ -336,10 +351,34 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
 
-              {/* GRUPO 6: CUSTOS & VALORES LOGÍSTICA */}
+              {/* GRUPO 6: MEDIAÇÃO & CONTEXTO */}
+              {isVisible('eh_troca') && (
+                <TableCell>
+                  {dev.eh_troca ? (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3" />
+                      Troca
+                    </Badge>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+              )}
+              
+              {/* GRUPO 7: CUSTOS & VALORES LOGÍSTICA */}
               {isVisible('custo_devolucao') && (
                 <TableCell>
                   {dev.custo_devolucao_ml ? `R$ ${dev.custo_devolucao_ml.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
+              {isVisible('custo_total_logistica') && (
+                <TableCell>
+                  {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
+              {isVisible('custo_envio_original') && (
+                <TableCell>
+                  {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
                 </TableCell>
               )}
               {isVisible('metodo_reembolso') && (
@@ -348,7 +387,51 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
 
-              {/* GRUPO 7: COMUNICAÇÃO & CONTEXTO */}
+              {/* GRUPO 8: COMUNICAÇÃO & REVIEW */}
+              {isVisible('numero_interacoes') && (
+                <TableCell>
+                  <span className="text-muted-foreground">
+                    {dev.numero_interacoes || 0}
+                  </span>
+                </TableCell>
+              )}
+              {isVisible('qualidade_comunicacao') && (
+                <TableCell>
+                  {translateColumnValue('qualidade_comunicacao', dev.qualidade_comunicacao)}
+                </TableCell>
+              )}
+              {isVisible('moderacao') && (
+                <TableCell>
+                  <Badge variant={dev.status_moderacao === 'limpo' ? 'secondary' : 'destructive'}>
+                    {translateColumnValue('moderacao', dev.status_moderacao)}
+                  </Badge>
+                </TableCell>
+              )}
+              {isVisible('anexos_comprador') && (
+                <TableCell>
+                  {dev.total_anexos_comprador || 0}
+                </TableCell>
+              )}
+              {isVisible('anexos_vendedor') && (
+                <TableCell>
+                  {dev.total_anexos_vendedor || 0}
+                </TableCell>
+              )}
+              {isVisible('anexos_ml') && (
+                <TableCell>
+                  {dev.total_anexos_ml || 0}
+                </TableCell>
+              )}
+              {isVisible('review_resource_id') && (
+                <TableCell>
+                  {dev.review_id || '-'}
+                </TableCell>
+              )}
+              {isVisible('reason_id') && (
+                <TableCell>
+                  {dev.reason_id || '-'}
+                </TableCell>
+              )}
               {isVisible('interacoes') && (
                 <TableCell>
                   <span className="text-muted-foreground">
