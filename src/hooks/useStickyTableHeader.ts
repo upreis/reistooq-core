@@ -24,7 +24,6 @@ export function useStickyTableHeader() {
       const shouldBeSticky = sentinelRect.top < 0;
       
       if (shouldBeSticky !== isSticky) {
-        console.log(`[useStickyTableHeader] isSticky mudou para: ${shouldBeSticky}`);
         setIsSticky(shouldBeSticky);
       }
     };
