@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export function useStickyHeader<T extends HTMLElement>() {
   const [isSticky, setIsSticky] = useState(false);
@@ -6,29 +6,30 @@ export function useStickyHeader<T extends HTMLElement>() {
 
   useEffect(() => {
     const element = ref.current;
+    // 👇 LOG DE DEBUG
+    console.log('[STICKY DEBUG] Elemento sentinela:', element);
+    
     if (!element) return;
 
-    // Pega a posição do topo do elemento sentinela uma única vez.
-    const sentinelTop = element.getBoundingClientRect().top + window.scrollY;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 👇 LOG DE DEBUG
+        console.log('[STICKY DEBUG] Evento do Observer:', entry);
+        setIsSticky(!entry.isIntersecting);
+      },
+      {
+        rootMargin: '-1px 0px 0px 0px',
+        threshold: [0],
+      }
+    );
 
-    const handleScroll = () => {
-      // A LÓGICA INFALÍVEL:
-      // Compara o scroll vertical da janela com a posição original do sentinela.
-      if (window.scrollY >= sentinelTop) {
-        setIsSticky(true);
-      } else {
-        setIsSticky(false);
+    observer.observe(element);
+
+    return () => {
+      if (element) {
+        observer.unobserve(element);
       }
     };
-
-    // Adiciona o listener de scroll à janela
-    window.addEventListener('scroll', handleScroll);
-
-    // Limpa o listener quando o componente desmontar
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-    // A dependência vazia garante que o setup rode apenas uma vez.
   }, []);
 
   return { ref, isSticky };
