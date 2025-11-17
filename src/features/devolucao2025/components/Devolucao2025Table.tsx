@@ -108,8 +108,10 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
 
   return (
     <div className="w-full">
+      {/* Elemento sentinela para detectar scroll */}
+      <div ref={sentinelRef} className="h-0" />
+      
       <div ref={tableContainerRef} className="border rounded-md overflow-x-auto overflow-y-visible">
-        <div ref={sentinelRef} />
         <Table className="min-w-max" style={{ tableLayout: 'fixed' }}>
           <TableHeader 
             ref={headerRef}
