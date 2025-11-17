@@ -17,6 +17,8 @@ import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/De
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 import { translateColumnValue } from '../config/translations';
+import { useStickyHeader } from '@/hooks/useStickyHeader';
+import { cn } from '@/lib/utils';
 
 
 interface Devolucao2025TableProps {
@@ -28,6 +30,8 @@ interface Devolucao2025TableProps {
 }
 
 export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
+  const { ref: headerRef, isSticky } = useStickyHeader<HTMLTableSectionElement>();
+  
   // Helper para buscar nome da conta
   const getAccountName = (integrationAccountId: string) => {
     const account = accounts.find(acc => acc.id === integrationAccountId);
@@ -72,7 +76,13 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     <div className="w-full">
       <div className="border rounded-md overflow-visible">
         <Table className="min-w-max relative">
-          <TableHeader className="sticky top-0 z-50 bg-background shadow-md border-b-2">
+          <TableHeader 
+            ref={headerRef}
+            className={cn(
+              "border-b-2 bg-background shadow-md",
+              isSticky && "fixed top-0 left-0 right-0 z-[9999] shadow-lg"
+            )}
+          >
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
