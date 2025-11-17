@@ -60,7 +60,7 @@ const InnerLayout = () => {
   };
 
   return (
-    <div className="min-h-screen w-full overflow-x-hidden">
+    <div className="min-h-screen w-full">
       {/* Mobile Header - Only show for pages that don't use MobileAppShell */}
       {isMobile && !usesMobileAppShell() && <AppMobileHeader title={getPageTitle()} />}
         
@@ -97,7 +97,7 @@ const InnerLayout = () => {
                 ? "p-3 pb-20" // mobile padding + bottom nav space
                 : "p-6" // desktop padding
             }`}>
-              <div className="w-full min-w-0 overflow-x-hidden">
+              <div className="w-full min-w-0">
                 <Outlet />
               </div>
             </main>
