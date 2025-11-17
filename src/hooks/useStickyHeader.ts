@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export function useStickyHeader<T extends HTMLElement>() {
   const [isSticky, setIsSticky] = useState(false);
@@ -10,11 +10,16 @@ export function useStickyHeader<T extends HTMLElement>() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
+        // Quando o elemento não está mais intersectando (saiu da tela),
+        // ativamos o estado 'sticky'.
         setIsSticky(!entry.isIntersecting);
       },
       {
-        rootMargin: '-1px 0px 0px 0px',
-        threshold: [0],
+        // Observa a borda superior do viewport.
+        // O threshold 0 significa que o callback dispara assim que o
+        // elemento toca a borda.
+        rootMargin: '0px',
+        threshold: 0,
       }
     );
 
