@@ -210,8 +210,8 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   return (
-    <div className="w-full">
-      <div className="space-y-6">
+    <div className="w-full min-h-screen">
+      <div className="space-y-6 pb-6">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
