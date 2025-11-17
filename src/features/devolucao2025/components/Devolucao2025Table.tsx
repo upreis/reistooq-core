@@ -69,9 +69,10 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const isVisible = (columnId: string) => visibleColumns.includes(columnId);
 
   return (
-    <div className="w-full border rounded-md overflow-x-auto">
-      <Table className="min-w-max">
-        <TableHeader className="sticky top-0 z-20 bg-background border-b-2">
+    <div className="w-full -mx-6">
+      <div className="overflow-x-auto px-6">
+        <Table className="min-w-max">
+          <TableHeader className="sticky top-0 z-50 bg-background backdrop-blur-sm border-b-2 shadow-sm">
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
@@ -339,6 +340,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           })}
           </TableBody>
         </Table>
+      </div>
     </div>
   );
 };
