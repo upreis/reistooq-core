@@ -4,7 +4,6 @@
  */
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { TableWrapper } from '@/components/ui/table-wrapper';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -70,9 +69,9 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const isVisible = (columnId: string) => visibleColumns.includes(columnId);
 
   return (
-    <TableWrapper>
+    <div className="w-full border rounded-md overflow-x-auto">
       <Table className="min-w-max">
-        <TableHeader className="sticky top-0 z-20 bg-background shadow-md border-b-2">
+        <TableHeader className="sticky top-0 z-20 bg-background border-b-2">
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
@@ -340,6 +339,6 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           })}
           </TableBody>
         </Table>
-    </TableWrapper>
+    </div>
   );
 };
