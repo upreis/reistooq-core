@@ -70,7 +70,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
 
   return (
     <div className="w-full">
-      <div className="border rounded-md">
+      <div className="border rounded-md overflow-visible">
         <Table className="min-w-max relative">
           <TableHeader className="sticky top-0 z-50 bg-background shadow-md border-b-2">
             <TableRow className="hover:bg-transparent border-b-2">
