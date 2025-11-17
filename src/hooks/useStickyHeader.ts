@@ -6,20 +6,20 @@ export function useStickyHeader<T extends HTMLElement>() {
 
   useEffect(() => {
     const element = ref.current;
+    // 👇 LOG DE DEBUG
+    console.log('[STICKY DEBUG] Elemento sentinela:', element);
+    
     if (!element) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Quando o elemento não está mais intersectando (saiu da tela),
-        // ativamos o estado 'sticky'.
+        // 👇 LOG DE DEBUG
+        console.log('[STICKY DEBUG] Evento do Observer:', entry);
         setIsSticky(!entry.isIntersecting);
       },
       {
-        // Observa a borda superior do viewport.
-        // O threshold 0 significa que o callback dispara assim que o
-        // elemento toca a borda.
-        rootMargin: '0px',
-        threshold: 0,
+        rootMargin: '-1px 0px 0px 0px',
+        threshold: [0],
       }
     );
 
