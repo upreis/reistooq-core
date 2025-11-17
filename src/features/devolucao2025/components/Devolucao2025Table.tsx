@@ -199,47 +199,74 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
             <TableRow key={`${dev.claim_id}-${index}`}>
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
               {isVisible('account_name') && (
-                <TableCell className="font-medium">
+                <TableCell 
+                  className="font-medium"
+                  style={isSticky && columnWidths[0] ? { width: columnWidths[0], minWidth: columnWidths[0], maxWidth: columnWidths[0] } : undefined}
+                >
                   {getAccountName(dev.integration_account_id)}
                 </TableCell>
               )}
-              {isVisible('order_id') && <TableCell>{dev.order_id || '-'}</TableCell>}
-              {isVisible('claim_id') && <TableCell>{dev.claim_id || '-'}</TableCell>}
-              {isVisible('comprador') && <TableCell>{dev.comprador_nome_completo || '-'}</TableCell>}
+              {isVisible('order_id') && (
+                <TableCell style={isSticky && columnWidths[1] ? { width: columnWidths[1], minWidth: columnWidths[1], maxWidth: columnWidths[1] } : undefined}>
+                  {dev.order_id || '-'}
+                </TableCell>
+              )}
+              {isVisible('claim_id') && (
+                <TableCell style={isSticky && columnWidths[2] ? { width: columnWidths[2], minWidth: columnWidths[2], maxWidth: columnWidths[2] } : undefined}>
+                  {dev.claim_id || '-'}
+                </TableCell>
+              )}
+              {isVisible('comprador') && (
+                <TableCell style={isSticky && columnWidths[3] ? { width: columnWidths[3], minWidth: columnWidths[3], maxWidth: columnWidths[3] } : undefined}>
+                  {dev.comprador_nome_completo || '-'}
+                </TableCell>
+              )}
               {isVisible('produto') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[4] ? { width: columnWidths[4], minWidth: columnWidths[4], maxWidth: columnWidths[4] } : undefined}>
                   <ProductInfoCell productInfo={dev.product_info} />
                 </TableCell>
               )}
-              {isVisible('sku') && <TableCell>{dev.sku || '-'}</TableCell>}
-              {isVisible('quantidade') && <TableCell>{dev.quantidade || '-'}</TableCell>}
+              {isVisible('sku') && (
+                <TableCell style={isSticky && columnWidths[5] ? { width: columnWidths[5], minWidth: columnWidths[5], maxWidth: columnWidths[5] } : undefined}>
+                  {dev.sku || '-'}
+                </TableCell>
+              )}
+              {isVisible('quantidade') && (
+                <TableCell style={isSticky && columnWidths[6] ? { width: columnWidths[6], minWidth: columnWidths[6], maxWidth: columnWidths[6] } : undefined}>
+                  {dev.quantidade || '-'}
+                </TableCell>
+              )}
 
               {/* GRUPO 2: FINANCEIRO */}
               {isVisible('valor_total') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[7] ? { width: columnWidths[7], minWidth: columnWidths[7], maxWidth: columnWidths[7] } : undefined}>
                   {dev.valor_reembolso_total ? `R$ ${dev.valor_reembolso_total.toFixed(2)}` : '-'}
                 </TableCell>
               )}
               {isVisible('valor_produto') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[8] ? { width: columnWidths[8], minWidth: columnWidths[8], maxWidth: columnWidths[8] } : undefined}>
                   {dev.valor_reembolso_produto ? `R$ ${dev.valor_reembolso_produto.toFixed(2)}` : '-'}
                 </TableCell>
               )}
               {isVisible('percentual_reemb') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[9] ? { width: columnWidths[9], minWidth: columnWidths[9], maxWidth: columnWidths[9] } : undefined}>
                   {dev.percentual_reembolsado ? `${dev.percentual_reembolsado}%` : '-'}
                 </TableCell>
               )}
               {isVisible('metodo_pagamento') && (
-                <TableCell>{translateColumnValue('metodo_pagamento', dev.metodo_pagamento)}</TableCell>
+                <TableCell style={isSticky && columnWidths[10] ? { width: columnWidths[10], minWidth: columnWidths[10], maxWidth: columnWidths[10] } : undefined}>
+                  {translateColumnValue('metodo_pagamento', dev.metodo_pagamento)}
+                </TableCell>
               )}
               {isVisible('tipo_pagamento') && (
-                <TableCell>{translateColumnValue('tipo_pagamento', dev.tipo_pagamento)}</TableCell>
+                <TableCell style={isSticky && columnWidths[11] ? { width: columnWidths[11], minWidth: columnWidths[11], maxWidth: columnWidths[11] } : undefined}>
+                  {translateColumnValue('tipo_pagamento', dev.tipo_pagamento)}
+                </TableCell>
               )}
 
               {/* GRUPO 3: STATUS & CLASSIFICAÇÃO */}
               {isVisible('status_dev') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[12] ? { width: columnWidths[12], minWidth: columnWidths[12], maxWidth: columnWidths[12] } : undefined}>
                   <div className="flex items-center gap-2">
                     <Badge variant={dev.status_devolucao === 'closed' ? 'secondary' : 'default'}>
                       {translateColumnValue('status_dev', dev.status_devolucao)}
@@ -249,14 +276,14 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
               {isVisible('status_return') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[13] ? { width: columnWidths[13], minWidth: columnWidths[13], maxWidth: columnWidths[13] } : undefined}>
                   <Badge variant="outline">
                     {translateColumnValue('status_return', dev.status_return)}
                   </Badge>
                 </TableCell>
               )}
               {isVisible('status_entrega') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[14] ? { width: columnWidths[14], minWidth: columnWidths[14], maxWidth: columnWidths[14] } : undefined}>
                   <DeliveryStatusCell 
                     statusEnvio={dev.status_envio}
                     dataChegada={dev.data_chegada_produto}
@@ -265,10 +292,12 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
               {isVisible('destino') && (
-                <TableCell>{translateColumnValue('destino', dev.destino_devolucao)}</TableCell>
+                <TableCell style={isSticky && columnWidths[15] ? { width: columnWidths[15], minWidth: columnWidths[15], maxWidth: columnWidths[15] } : undefined}>
+                  {translateColumnValue('destino', dev.destino_devolucao)}
+                </TableCell>
               )}
               {isVisible('evidencias') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[16] ? { width: columnWidths[16], minWidth: columnWidths[16], maxWidth: columnWidths[16] } : undefined}>
                   <EvidencesCell 
                     attachments={dev.anexos_ml}
                     totalEvidencias={dev.total_evidencias}
@@ -276,64 +305,68 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                 </TableCell>
               )}
               {isVisible('resolucao') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[17] ? { width: columnWidths[17], minWidth: columnWidths[17], maxWidth: columnWidths[17] } : undefined}>
                   <ResolutionCell resolution={dev.resolution || null} />
                 </TableCell>
               )}
 
               {/* GRUPO 4: DATAS */}
               {isVisible('data_criacao') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[18] ? { width: columnWidths[18], minWidth: columnWidths[18], maxWidth: columnWidths[18] } : undefined}>
                   {dev.data_criacao ? new Date(dev.data_criacao).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('data_venda') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[19] ? { width: columnWidths[19], minWidth: columnWidths[19], maxWidth: columnWidths[19] } : undefined}>
                   {dev.data_venda_original ? new Date(dev.data_venda_original).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('data_fechamento') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[20] ? { width: columnWidths[20], minWidth: columnWidths[20], maxWidth: columnWidths[20] } : undefined}>
                   {dev.data_fechamento_devolucao ? new Date(dev.data_fechamento_devolucao).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('data_inicio_return') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[21] ? { width: columnWidths[21], minWidth: columnWidths[21], maxWidth: columnWidths[21] } : undefined}>
                   {dev.data_inicio_return ? new Date(dev.data_inicio_return).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('data_atualizacao') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[22] ? { width: columnWidths[22], minWidth: columnWidths[22], maxWidth: columnWidths[22] } : undefined}>
                   {dev.data_ultima_atualizacao_return ? new Date(dev.data_ultima_atualizacao_return).toLocaleString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('prazo_analise') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[23] ? { width: columnWidths[23], minWidth: columnWidths[23], maxWidth: columnWidths[23] } : undefined}>
                   <AnalysisDeadlineCell arrivalDate={dev.data_chegada_produto} />
                 </TableCell>
               )}
               {isVisible('data_chegada') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[24] ? { width: columnWidths[24], minWidth: columnWidths[24], maxWidth: columnWidths[24] } : undefined}>
                   {dev.data_chegada_produto ? new Date(dev.data_chegada_produto).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
               {isVisible('ultima_msg') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[25] ? { width: columnWidths[25], minWidth: columnWidths[25], maxWidth: columnWidths[25] } : undefined}>
                   {dev.ultima_mensagem_data ? new Date(dev.ultima_mensagem_data).toLocaleDateString('pt-BR') : '-'}
                 </TableCell>
               )}
 
               {/* GRUPO 5: RASTREAMENTO & LOGÍSTICA */}
-              {isVisible('codigo_rastreio') && <TableCell>{dev.codigo_rastreamento || '-'}</TableCell>}
+              {isVisible('codigo_rastreio') && (
+                <TableCell style={isSticky && columnWidths[26] ? { width: columnWidths[26], minWidth: columnWidths[26], maxWidth: columnWidths[26] } : undefined}>
+                  {dev.codigo_rastreamento || '-'}
+                </TableCell>
+              )}
               {isVisible('tipo_logistica') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[27] ? { width: columnWidths[27], minWidth: columnWidths[27], maxWidth: columnWidths[27] } : undefined}>
                   <LogisticTypeCell logisticType={dev.tipo_logistica} />
                 </TableCell>
               )}
 
               {/* GRUPO 7: MEDIAÇÃO & TROCA */}
               {isVisible('eh_troca') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[28] ? { width: columnWidths[28], minWidth: columnWidths[28], maxWidth: columnWidths[28] } : undefined}>
                   {dev.eh_troca === true ? (
                     <Badge variant="default" className="gap-1 bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
                       <RefreshCw className="h-3 w-3" />
@@ -346,9 +379,13 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
               )}
 
               {/* GRUPO 8: COMUNICAÇÃO */}
-              {isVisible('num_interacoes') && <TableCell>{dev.numero_interacoes || '0'}</TableCell>}
+              {isVisible('num_interacoes') && (
+                <TableCell style={isSticky && columnWidths[29] ? { width: columnWidths[29], minWidth: columnWidths[29], maxWidth: columnWidths[29] } : undefined}>
+                  {dev.numero_interacoes || '0'}
+                </TableCell>
+              )}
               {isVisible('qualidade_com') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[30] ? { width: columnWidths[30], minWidth: columnWidths[30], maxWidth: columnWidths[30] } : undefined}>
                   <Badge variant={
                     dev.qualidade_comunicacao === 'excelente' ? 'default' :
                     dev.qualidade_comunicacao === 'boa' ? 'secondary' :
@@ -358,27 +395,47 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
                   </Badge>
                 </TableCell>
               )}
-              {isVisible('moderacao') && <TableCell>{dev.status_moderacao || '-'}</TableCell>}
-              {isVisible('anexos_comprador') && <TableCell>{dev.total_anexos_comprador || '0'}</TableCell>}
-              {isVisible('anexos_vendedor') && <TableCell>{dev.total_anexos_vendedor || '0'}</TableCell>}
-              {isVisible('anexos_ml') && <TableCell>{dev.total_anexos_ml || '0'}</TableCell>}
+              {isVisible('moderacao') && (
+                <TableCell style={isSticky && columnWidths[31] ? { width: columnWidths[31], minWidth: columnWidths[31], maxWidth: columnWidths[31] } : undefined}>
+                  {dev.status_moderacao || '-'}
+                </TableCell>
+              )}
+              {isVisible('anexos_comprador') && (
+                <TableCell style={isSticky && columnWidths[32] ? { width: columnWidths[32], minWidth: columnWidths[32], maxWidth: columnWidths[32] } : undefined}>
+                  {dev.total_anexos_comprador || '0'}
+                </TableCell>
+              )}
+              {isVisible('anexos_vendedor') && (
+                <TableCell style={isSticky && columnWidths[33] ? { width: columnWidths[33], minWidth: columnWidths[33], maxWidth: columnWidths[33] } : undefined}>
+                  {dev.total_anexos_vendedor || '0'}
+                </TableCell>
+              )}
+              {isVisible('anexos_ml') && (
+                <TableCell style={isSticky && columnWidths[34] ? { width: columnWidths[34], minWidth: columnWidths[34], maxWidth: columnWidths[34] } : undefined}>
+                  {dev.total_anexos_ml || '0'}
+                </TableCell>
+              )}
 
               {/* GRUPO 9: REVIEW & AÇÕES */}
               {isVisible('review_resource_id') && (
-                <TableCell>{translateColumnValue('review_resource_id', dev.dados_reviews?.resource_id)}</TableCell>
+                <TableCell style={isSticky && columnWidths[35] ? { width: columnWidths[35], minWidth: columnWidths[35], maxWidth: columnWidths[35] } : undefined}>
+                  {translateColumnValue('review_resource_id', dev.dados_reviews?.resource_id)}
+                </TableCell>
               )}
               {isVisible('reason_id') && (
-                <TableCell>{translateColumnValue('reason_id', dev.dados_reviews?.reason_id)}</TableCell>
+                <TableCell style={isSticky && columnWidths[36] ? { width: columnWidths[36], minWidth: columnWidths[36], maxWidth: columnWidths[36] } : undefined}>
+                  {translateColumnValue('reason_id', dev.dados_reviews?.reason_id)}
+                </TableCell>
               )}
 
               {/* GRUPO 10: CUSTOS OPERACIONAIS */}
               {isVisible('custo_total_log') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[37] ? { width: columnWidths[37], minWidth: columnWidths[37], maxWidth: columnWidths[37] } : undefined}>
                   {dev.custo_total_logistica ? `R$ ${dev.custo_total_logistica.toFixed(2)}` : '-'}
                 </TableCell>
               )}
               {isVisible('custo_envio_orig') && (
-                <TableCell>
+                <TableCell style={isSticky && columnWidths[38] ? { width: columnWidths[38], minWidth: columnWidths[38], maxWidth: columnWidths[38] } : undefined}>
                   {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
                 </TableCell>
               )}
