@@ -46,15 +46,17 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // ✅ CRÍTICO: Força usar uma única instância do React
-      'react': path.resolve(__dirname, './node_modules/react'),
-      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
-      'react/jsx-runtime': path.resolve(__dirname, './node_modules/react/jsx-runtime'),
     },
     // ✅ CRÍTICO: Previne múltiplas instâncias do React
     dedupe: ['react', 'react-dom', 'react-router-dom'],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react/jsx-runtime'],
+    include: [
+      'react',
+      'react-dom',
+      'react/jsx-runtime',
+      'react-dom/client',
+    ],
+    force: true, // Força recompilação das dependências
   },
 }));
