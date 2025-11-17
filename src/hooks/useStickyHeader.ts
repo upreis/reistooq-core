@@ -6,15 +6,10 @@ export function useStickyHeader<T extends HTMLElement>() {
 
   useEffect(() => {
     const element = ref.current;
-    // 👇 LOG DE DEBUG
-    console.log('[STICKY DEBUG] Elemento sentinela:', element);
-    
     if (!element) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // 👇 LOG DE DEBUG
-        console.log('[STICKY DEBUG] Evento do Observer:', entry);
         setIsSticky(!entry.isIntersecting);
       },
       {
@@ -30,7 +25,7 @@ export function useStickyHeader<T extends HTMLElement>() {
         observer.unobserve(element);
       }
     };
-  }, []);
+  }, [ref.current]);
 
   return { ref, isSticky };
 }
