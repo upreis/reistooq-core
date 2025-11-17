@@ -210,13 +210,15 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   return (
-    <div className="w-full">
+    <div className="w-full -m-6">
       <div className="space-y-6 pb-6">
           {/* Sub-navegação */}
-          <MLOrdersNav />
+          <div className="px-10 md:px-12">
+            <MLOrdersNav />
+          </div>
           
           {/* Header */}
-          <div className="px-4 md:px-6 py-6">
+          <div className="px-10 md:px-12 py-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3">
@@ -242,7 +244,7 @@ export const Devolucao2025Page = () => {
           </div>
           
           {/* Filtros e Cards */}
-          <div className="px-4 md:px-6">
+          <div className="px-10 md:px-12">
             <Card className="p-6">
               <div className="space-y-4">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -272,8 +274,8 @@ export const Devolucao2025Page = () => {
           </div>
 
           {/* Tabela */}
-          <div className="px-4 md:px-6">
-            <div className="border-2 border-border/60 bg-card rounded-lg overflow-hidden">
+          <div className="w-full">
+            <div className="border-t-2 border-border/60 bg-card overflow-hidden">
               {isLoading && (
                 <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
                   <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
@@ -288,7 +290,7 @@ export const Devolucao2025Page = () => {
                 </div>
               )}
               
-              <div className="p-6">
+              <div className="px-10 md:px-12 py-6">
                 <Devolucao2025Table 
                   accounts={accounts}
                   devolucoes={paginatedDevolucoes}
@@ -299,7 +301,7 @@ export const Devolucao2025Page = () => {
               </div>
 
               {!isLoading && !error && devolucoes.length > 0 && (
-                <div className="p-6 pt-0">
+                <div className="px-10 md:px-12 pb-6">
                   <Devolucao2025Pagination
                     currentPage={currentPage}
                     totalPages={totalPages}
