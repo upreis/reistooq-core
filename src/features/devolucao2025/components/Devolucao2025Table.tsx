@@ -70,10 +70,9 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
 
   return (
     <div className="w-full">
-      <div className="border rounded-md">
-        <div className="overflow-x-auto max-h-[calc(100vh-300px)] relative">
-          <Table className="min-w-max">
-            <TableHeader className="sticky top-0 z-20 bg-background shadow-md border-b-2">
+      <div className="overflow-x-auto border rounded-md">
+        <Table className="min-w-max relative">
+          <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
@@ -341,7 +340,6 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           })}
           </TableBody>
         </Table>
-        </div>
       </div>
     </div>
   );
