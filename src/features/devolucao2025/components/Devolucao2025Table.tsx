@@ -17,6 +17,7 @@ import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/De
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 import { translateColumnValue } from '../config/translations';
+import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 
 
 interface Devolucao2025TableProps {
@@ -28,6 +29,9 @@ interface Devolucao2025TableProps {
 }
 
 export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
+  // 🔧 Hook de sticky header
+  const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
+  
   // Helper para buscar nome da conta
   const getAccountName = (integrationAccountId: string) => {
     const account = accounts.find(acc => acc.id === integrationAccountId);
@@ -70,8 +74,18 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
 
   return (
     <div className="w-full">
+      {/* 🎯 ELEMENTO SENTINELA - Detecta quando tabela rola para baixo */}
+      <div ref={sentinelRef} className="h-0" />
+      
+      {/* 📊 Log temporário para debug da FASE 1 */}
+      {isSticky && (
+        <div className="fixed top-4 right-4 z-[9999] bg-green-500 text-white px-4 py-2 rounded-md shadow-lg">
+          ✅ isSticky = {String(isSticky)}
+        </div>
+      )}
+      
       <div className="overflow-x-auto border rounded-md">
-        <Table className="min-w-max relative">
+        <Table ref={tableRef} className="min-w-max relative">
           <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
