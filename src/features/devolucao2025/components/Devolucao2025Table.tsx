@@ -3,6 +3,7 @@
  * Implementação com todas as 65 colunas mapeadas
  */
 
+import { useEffect, useRef } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,7 +21,6 @@ import { translateColumnValue } from '../config/translations';
 import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 import { StickyHeaderClone } from './StickyHeaderClone';
 import { TableHeaderContent } from './TableHeaderContent';
-import { useRef } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -44,6 +44,59 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     const account = accounts.find(acc => acc.id === integrationAccountId);
     return account?.name || integrationAccountId;
   };
+
+  // 🔄 FASE 3.1: Sincronizar scroll horizontal entre tabela original e clone
+  useEffect(() => {
+    if (!isSticky || !containerRef.current || !fixedHeaderRef.current) return;
+
+    const handleScroll = () => {
+      if (fixedHeaderRef.current && containerRef.current) {
+        fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
+      }
+    };
+
+    const container = containerRef.current;
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
+  }, [isSticky]);
+
+  // 🔄 FASE 3.2: Sincronizar larguras das colunas
+  useEffect(() => {
+    if (!isSticky || !tableRef.current || !fixedHeaderRef.current) return;
+
+    const syncColumnWidths = () => {
+      const originalHeaders = tableRef.current?.querySelectorAll('thead th');
+      const cloneHeaders = fixedHeaderRef.current?.querySelectorAll('thead th');
+
+      if (!originalHeaders || !cloneHeaders) return;
+
+      originalHeaders.forEach((originalTh, index) => {
+        const cloneTh = cloneHeaders[index] as HTMLElement;
+        if (cloneTh) {
+          const width = originalTh.getBoundingClientRect().width;
+          cloneTh.style.width = `${width}px`;
+          cloneTh.style.minWidth = `${width}px`;
+          cloneTh.style.maxWidth = `${width}px`;
+        }
+      });
+    };
+
+    // Sincronizar imediatamente quando sticky ativa
+    syncColumnWidths();
+
+    // Observar mudanças de tamanho
+    const resizeObserver = new ResizeObserver(syncColumnWidths);
+    if (tableRef.current) {
+      resizeObserver.observe(tableRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isSticky]);
   
   if (isLoading) {
     return (
@@ -92,10 +145,11 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
         isVisibleColumn={isVisible}
       />
       
-      {/* 📊 Log temporário para debug da FASE 2 */}
+      {/* 📊 Log temporário para debug da FASE 3 */}
       {isSticky && (
-        <div className="fixed top-4 right-4 z-[9999] bg-blue-500 text-white px-4 py-2 rounded-md shadow-lg">
-          ✅ FASE 2: Clone visível!
+        <div className="fixed top-4 right-4 z-[9999] bg-purple-500 text-white px-4 py-2 rounded-md shadow-lg text-xs">
+          <div>✅ FASE 3: Sincronização ativa!</div>
+          <div>Scroll horizontal: {containerRef.current?.scrollLeft || 0}px</div>
         </div>
       )}
       
