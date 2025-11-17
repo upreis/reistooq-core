@@ -19,7 +19,7 @@ import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/
 import { translateColumnValue } from '../config/translations';
 import { useStickyHeader } from '@/hooks/useStickyHeader';
 import { cn } from '@/lib/utils';
-import { useRef, useEffect, useState, useMemo } from 'react';
+import { useRef, useMemo } from 'react';
 
 
 interface Devolucao2025TableProps {
@@ -34,20 +34,6 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const { ref: sentinelRef, isSticky } = useStickyHeader<HTMLDivElement>();
   const headerRef = useRef<HTMLTableSectionElement>(null);
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  
-  const [headerTop, setHeaderTop] = useState(0);
-
-  // Efeito para calcular a posição do topo corretamente
-  useEffect(() => {
-    if (sentinelRef.current) {
-      // Calcular posição CORRETA considerando scroll
-      const sentinelRect = sentinelRef.current.getBoundingClientRect();
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const topPosition = sentinelRect.top + scrollTop;
-      setHeaderTop(topPosition);
-    }
-  }, [visibleColumns, sentinelRef]);
-
   
   // Helper para verificar se coluna está visível
   const isVisible = (columnKey: string) => visibleColumns.includes(columnKey);
