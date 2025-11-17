@@ -112,9 +112,10 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
             ref={headerRef}
             className={cn(
               "border-b-2 bg-background shadow-md",
-              isSticky && "fixed top-0 z-[9999] shadow-lg overflow-x-auto"
+              isSticky && "fixed z-[9999] shadow-lg overflow-x-auto"
             )}
             style={isSticky && tableContainerRef.current ? {
+              top: '140px', // Posiciona abaixo da navegação (ajuste conforme necessário)
               width: `${tableContainerRef.current.offsetWidth}px`,
               left: `${tableContainerRef.current.getBoundingClientRect().left}px`
             } : undefined}
