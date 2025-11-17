@@ -210,9 +210,8 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   return (
-    <div className="h-screen flex flex-col">
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto">
-        <div className="space-y-6">
+    <div className="w-full">
+      <div className="space-y-6">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
@@ -273,8 +272,8 @@ export const Devolucao2025Page = () => {
           </div>
 
           {/* Tabela */}
-          <div className="px-4 md:px-6 flex-1 flex flex-col min-h-0">
-            <Card className="p-6 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="px-4 md:px-6">
+            <Card className="p-6">
               {isLoading && (
                 <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
                   <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
@@ -310,7 +309,6 @@ export const Devolucao2025Page = () => {
             </Card>
           </div>
         </div>
-      </div>
     </div>
   );
 };
