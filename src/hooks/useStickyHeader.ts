@@ -25,7 +25,7 @@ export function useStickyHeader<T extends HTMLElement>() {
         observer.unobserve(element);
       }
     };
-  }, [ref.current]);
+  }, []);
 
   return { ref, isSticky };
 }
