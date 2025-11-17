@@ -108,12 +108,16 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
           {/* Elemento SENTINELA invisível - observado pelo IntersectionObserver */}
           <div ref={sentinelRef} style={{ height: '1px' }} />
           
-          <TableHeader
+          <TableHeader 
             ref={headerRef}
             className={cn(
-              "sticky top-[140px] z-50 border-b-2 bg-background shadow-md",
-              isSticky && "shadow-lg"
+              "border-b-2 bg-background shadow-md",
+              isSticky && "fixed top-0 z-[9999] shadow-lg overflow-x-auto"
             )}
+            style={isSticky && tableContainerRef.current ? {
+              width: `${tableContainerRef.current.offsetWidth}px`,
+              left: `${tableContainerRef.current.getBoundingClientRect().left}px`
+            } : undefined}
           >
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
