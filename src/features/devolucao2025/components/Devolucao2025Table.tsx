@@ -69,9 +69,9 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   const isVisible = (columnId: string) => visibleColumns.includes(columnId);
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-x-auto">
       <Table className="min-w-max">
-        <TableHeader className="sticky top-0 z-50 bg-background border-b-2">
+        <TableHeader className="sticky top-0 z-50 bg-card shadow-md border-b-2">
             <TableRow className="hover:bg-transparent border-b-2">
             {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
             {isVisible('account_name') && <TableHead>Empresa</TableHead>}
