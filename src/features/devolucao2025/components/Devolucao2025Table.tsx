@@ -145,7 +145,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
       {/* Elemento sentinela para detectar scroll */}
       <div ref={sentinelRef} className="h-0" />
       
-      <div ref={tableContainerRef} className="border rounded-md overflow-x-auto overflow-y-visible">
+      <div ref={tableContainerRef} className="border rounded-md">
         <Table className="min-w-max">
           <TableHeader 
             ref={headerRef}
@@ -158,15 +158,6 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
               {headerStructure}
             </TableRow>
         </TableHeader>
-
-        {/* Cabeçalho Fantasma - Ocupa espaço para evitar o pulo quando o header fica fixed */}
-        {isSticky && (
-          <thead style={{ visibility: 'hidden' }}>
-            <TableRow className="hover:bg-transparent border-b-2">
-              {headerStructure}
-            </TableRow>
-          </thead>
-        )}
 
         <TableBody>
           {devolucoes.map((dev, index) => {
