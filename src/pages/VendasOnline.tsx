@@ -122,7 +122,7 @@ export default function VendasOnline() {
           </div>
           
           {/* Rodapé Fixado com Paginação */}
-          {!isLoading && orders.length > 0 && (
+          {!isLoading && pagination.total > 0 && (
             <div 
               className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
