@@ -22,6 +22,12 @@ export function useStickyTableHeader() {
       // Ativa sticky quando o sentinela sai do topo da tela (rola para baixo)
       const shouldBeSticky = sentinelRect.top < 0;
       
+      console.log('📍 Sticky detection:', {
+        sentinelTop: sentinelRect.top,
+        shouldBeSticky,
+        currentIsSticky: isSticky
+      });
+      
       setIsSticky(shouldBeSticky);
     };
 
@@ -34,7 +40,7 @@ export function useStickyTableHeader() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []);
+  }, [isSticky]);
 
   return { 
     tableRef, 
