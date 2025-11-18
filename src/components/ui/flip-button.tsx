@@ -45,19 +45,19 @@ export function FlipButton({
         onClick={handleClick}
         animate={show ? 'two' : 'one'}
         variants={flipVariants}
-        transition={{ duration: 0.6, type: 'spring' }}
+        transition={{ duration: 0.05, type: 'spring' }}
         whileTap={{ scale: 0.95 }}
         whileHover={{ scale: 1.05 }}
       >
         <motion.div
           animate={{ rotateX: show ? 180 : 0 }}
-          transition={{ duration: 0.6, type: 'spring' }}
+          transition={{ duration: 0.05, type: 'spring' }}
         >
           {show ? text1 : text2}
         </motion.div>
         <motion.div
           animate={{ rotateX: show ? 0 : -180 }}
-          transition={{ duration: 0.6, type: 'spring' }}
+          transition={{ duration: 0.05, type: 'spring' }}
           className="absolute inset-0"
         ></motion.div>
       </motion.button>
