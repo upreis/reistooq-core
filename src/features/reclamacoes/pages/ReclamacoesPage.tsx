@@ -27,6 +27,7 @@ import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -37,6 +38,7 @@ const validateMLAccounts = (mlAccounts: any[]) => ({
 export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isSidebarCollapsed } = useSidebarUI();
   
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
@@ -464,9 +466,13 @@ export function ReclamacoesPage() {
               </Tabs>
             </div>
 
-            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO - Ajustado para sidebar desktop */}
+            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO - Responsivo ao estado da sidebar */}
             {totalPages > 1 && (
-              <div className="fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 md:left-72">
+              <div 
+                className={`fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 ${
+                  isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+                }`}
+              >
                 <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-muted-foreground">
