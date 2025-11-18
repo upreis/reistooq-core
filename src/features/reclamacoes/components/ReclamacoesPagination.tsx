@@ -104,25 +104,25 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4 py-4 px-2 sm:px-4 text-muted-foreground text-sm",
+        "flex items-center justify-between py-4 px-2 sm:px-6 text-muted-foreground text-sm",
         className
       )}
       role="navigation"
       aria-label="Paginação"
     >
-      {/* Contador e seletor de itens por página */}
+      {/* Informações à esquerda */}
       <div className="flex items-center gap-4">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground whitespace-nowrap">
           Mostrando {startItem} a {endItem} de {totalItems} reclamações
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Itens por página:</span>
+          <span className="text-sm text-muted-foreground whitespace-nowrap">Itens por página:</span>
           <select
             value={itemsPerPage}
             onChange={(e) => {
               onItemsPerPageChange(Number(e.target.value));
-              onPageChange(1); // Reset to first page when changing items per page
+              onPageChange(1);
             }}
             className="text-sm border border-input bg-background px-3 py-1 rounded-md hover:bg-accent transition-colors"
           >
@@ -133,8 +133,8 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
         </div>
       </div>
       
-      {/* Controles de navegação */}
-      <div className="flex items-center space-x-2">
+      {/* Controles de navegação centralizados */}
+      <div className="flex items-center space-x-2 absolute left-1/2 transform -translate-x-1/2">
         {showFirstLastButtons && (
           <Button
             variant="outline"
@@ -187,6 +187,9 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
           </Button>
         )}
       </div>
+      
+      {/* Espaçador para manter layout balanceado */}
+      <div className="w-[300px]"></div>
     </div>
   );
 };
