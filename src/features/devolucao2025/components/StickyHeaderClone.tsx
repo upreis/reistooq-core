@@ -25,7 +25,7 @@ export const StickyHeaderClone = ({
   return (
     <div 
       ref={headerRef}
-      className="fixed top-0 z-[9999] overflow-x-auto bg-background shadow-md border-b-2 pointer-events-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+      className="fixed top-0 z-[9999] bg-background shadow-md border-b-2 pointer-events-none overflow-hidden"
     >
       <Table className="min-w-max">
         <TableHeader className="bg-background">
