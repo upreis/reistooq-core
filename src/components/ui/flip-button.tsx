@@ -38,9 +38,9 @@ export function FlipButton({
   return (
     <div className="w-full max-w-[270px]">
       <motion.button
-        className="w-full cursor-pointer px-6 py-3 font-medium shadow-sm"
+        className="w-full cursor-pointer px-6 py-3 font-medium shadow-sm border"
         style={{
-          borderRadius: 999,
+          borderRadius: 'var(--radius)',
         }}
         onClick={handleClick}
         animate={show ? 'two' : 'one'}
