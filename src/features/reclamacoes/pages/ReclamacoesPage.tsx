@@ -490,15 +490,13 @@ export function ReclamacoesPage() {
               {/* Scroll Horizontal Sincronizado - Sempre Visível */}
               <div 
                 ref={footerScrollRef}
-                className="overflow-x-auto overflow-y-hidden border-b bg-muted/30"
+                className="overflow-x-scroll overflow-y-hidden border-b bg-muted/30"
                 style={{ 
-                  height: '24px',
-                  scrollbarWidth: 'thin',
-                  scrollbarColor: 'hsl(var(--primary)) hsl(var(--muted))'
+                  height: '24px'
                 }}
               >
                 <div 
-                  style={{ width: `${scrollWidth}px`, height: '1px' }}
+                  style={{ width: `${scrollWidth}px`, height: '1px', minWidth: '100%' }}
                   className="pointer-events-none"
                 />
               </div>
@@ -527,6 +525,30 @@ export function ReclamacoesPage() {
                   </Button>
                 </div>
               </div>
+
+              {/* Debug Info */}
+              <style>{`
+                /* Força scrollbar sempre visível em todos os navegadores */
+                .overflow-x-scroll::-webkit-scrollbar {
+                  height: 14px;
+                  display: block !important;
+                }
+                .overflow-x-scroll::-webkit-scrollbar-track {
+                  background: hsl(var(--muted));
+                }
+                .overflow-x-scroll::-webkit-scrollbar-thumb {
+                  background: hsl(var(--primary));
+                  border-radius: 4px;
+                }
+                .overflow-x-scroll::-webkit-scrollbar-thumb:hover {
+                  background: hsl(var(--primary) / 0.8);
+                }
+                /* Firefox */
+                .overflow-x-scroll {
+                  scrollbar-width: auto !important;
+                  scrollbar-color: hsl(var(--primary)) hsl(var(--muted)) !important;
+                }
+              `}</style>
             </div>
           )}
       </div>
