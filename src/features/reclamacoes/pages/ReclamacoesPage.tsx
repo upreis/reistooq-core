@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
+import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -36,6 +37,9 @@ const validateMLAccounts = (mlAccounts: any[]) => ({
 export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+  // 🔴 NOTIFICAÇÕES EM TEMPO REAL
+  useReclamacoesRealtime(true);
   
   // 💾 CACHE PERSISTENTE (localStorage + React Query)
   const persistentCache = usePersistentReclamacoesState();

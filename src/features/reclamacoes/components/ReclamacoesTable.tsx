@@ -2,7 +2,7 @@
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  */
 
-import { useState, useMemo, memo, useEffect } from 'react';
+import { useState, useMemo, memo } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -20,8 +20,6 @@ import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
-import { calcularDiasDesdeAtualizacao, getHighlightConfig } from '../utils/highlight-utils';
-import { cn } from '@/lib/utils';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -178,24 +176,10 @@ export function ReclamacoesTable({
 
 // ⚡ COMPONENTE OTIMIZADO PARA LINHA DA TABELA (memo evita re-renders desnecessários)
 const OptimizedTableRow = memo(({ row }: { row: any }) => {
-  // 🎨 Memoizar cálculo de highlight (só recalcula se claim mudar)
-  const highlightConfig = useMemo(() => {
-    const claim = row.original;
-    const diasDesdeAtualizacao = calcularDiasDesdeAtualizacao(
-      claim.ultima_atualizacao_real || claim.last_updated
-    );
-    return getHighlightConfig(diasDesdeAtualizacao);
-  }, [row.original.ultima_atualizacao_real, row.original.last_updated]);
-
   return (
-    <TableRow 
-      className={cn(
-        "bg-card text-card-foreground hover:bg-muted/50",
-        highlightConfig ? highlightConfig.rowClass : ''
-      )}
-    >
+    <TableRow className="hover:bg-muted/50">
       {row.getVisibleCells().map((cell: any) => (
-        <TableCell key={cell.id} className="bg-card text-card-foreground">
+        <TableCell key={cell.id}>
           {flexRender(cell.column.columnDef.cell, cell.getContext())}
         </TableCell>
       ))}
