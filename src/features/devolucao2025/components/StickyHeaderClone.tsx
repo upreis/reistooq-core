@@ -27,7 +27,7 @@ export const StickyHeaderClone = ({
       ref={headerRef}
       className="fixed top-0 z-[9999] overflow-x-auto bg-background shadow-md border-b-2 pointer-events-none"
     >
-      <Table className="min-w-max pointer-events-auto">
+      <Table className="min-w-max">
         <TableHeader className="bg-background">
             <TableHeaderContent 
               visibleColumns={visibleColumns} 
