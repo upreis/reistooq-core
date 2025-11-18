@@ -70,6 +70,8 @@ import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
+import { PedidosPaginationFooter } from './components/PedidosPaginationFooter';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 import StatusDebugPanel from './StatusDebugPanel';
 import { usePedidosAggregator } from '@/hooks/usePedidosAggregator';
 import { MobilePedidosPage } from './MobilePedidosPage';
@@ -116,6 +118,7 @@ type Props = {
 
 function SimplePedidosPage({ className }: Props) {
   const isMobile = useIsMobile();
+  const { isSidebarCollapsed } = useSidebarUI();
   const { cleanStorage, validateAndGet, checkHealth } = useStorageValidation();
   
   // F4.1: CORREÇÃO CRÍTICA - Limpeza automática e validação de localStorage
@@ -1041,7 +1044,7 @@ useEffect(() => {
   // Render principal
   return (
     <div className="w-full">
-      <div className="space-y-6">
+      <div className="space-y-6 pb-20">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
@@ -1342,6 +1345,26 @@ useEffect(() => {
       />
             </ErrorBoundary>
         </div>
+
+      {/* 📄 RODAPÉ FIXADO COM PAGINAÇÃO */}
+      {!loading && total > 0 && (
+        <div 
+          className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
+            isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+          } left-0`}
+        >
+          <PedidosPaginationFooter
+            totalItems={total}
+            itemsPerPage={state.pageSize}
+            currentPage={currentPage}
+            onPageChange={(page) => actions.setPage(page)}
+            onItemsPerPageChange={(items) => {
+              actions.setPageSize(items);
+              actions.setPage(1); // Reset para página 1 ao mudar itens por página
+            }}
+          />
+        </div>
+      )}
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
     </div>
