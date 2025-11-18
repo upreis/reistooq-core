@@ -458,36 +458,42 @@ export function ReclamacoesPage() {
                       onTableReady={setTableInstance}
                     />
 
-                    {/* Paginação */}
-                    {totalPages > 1 && (
-                      <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                        <div className="text-sm text-muted-foreground">
-                          Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            Anterior
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                          >
-                            Próxima
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    {/* Tabela sem paginação inline - movida para rodapé fixo */}
                   </Card>
                 </TabsContent>
               </Tabs>
             </div>
+
+            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO */}
+            {totalPages > 1 && (
+              <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-lg">
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Próxima
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Modal de anotações */}
             {selectedClaimForAnotacoes && (
