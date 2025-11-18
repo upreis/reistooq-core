@@ -55,6 +55,11 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   useEffect(() => {
     if (!isSticky || !containerRef.current) return;
 
+    // 🎯 CORREÇÃO CRÍTICA: Sincronizar imediatamente o scrollLeft atual quando sticky ativa
+    if (fixedHeaderRef.current && containerRef.current) {
+      fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
+    }
+
     const container = containerRef.current;
     container.addEventListener('scroll', handleScrollSync, { passive: true });
     
