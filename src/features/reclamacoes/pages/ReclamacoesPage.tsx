@@ -15,6 +15,7 @@ import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
+import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
 import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
@@ -437,8 +438,11 @@ export function ReclamacoesPage() {
               />
             </div>
 
-            {/* Tabs: Ativas vs Histórico */}
-            <div className="px-4 md:px-6">
+            {/* Tabs: Ativas vs Histórico + Resumo */}
+            <div className="px-4 md:px-6 space-y-4">
+              {/* Resumo de Métricas */}
+              <ReclamacoesResumo reclamacoes={reclamacoesEnriquecidas} />
+              
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
                 <TabsList className="grid w-full max-w-md grid-cols-2">
                   <TabsTrigger value="ativas">
