@@ -35,8 +35,8 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   // 🔧 Hook de sticky header
   const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
   
-  // 📌 Refs para clone e container
-  const containerRef = useRef<HTMLDivElement>(null);
+  // 📌 Refs para clone e scroll wrapper da tabela
+  const scrollWrapperRef = useRef<HTMLDivElement>(null);
   const fixedHeaderRef = useRef<HTMLDivElement>(null);
   
   // Helper para buscar nome da conta
@@ -47,29 +47,33 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
 
   // 🔄 ETAPA 4.2: Sincronizar scroll horizontal (otimizado com useCallback)
   const handleScrollSync = useCallback(() => {
-    if (fixedHeaderRef.current && containerRef.current) {
-      fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
+    if (fixedHeaderRef.current && scrollWrapperRef.current) {
+      requestAnimationFrame(() => {
+        if (fixedHeaderRef.current && scrollWrapperRef.current) {
+          fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
+        }
+      });
     }
   }, []);
 
   useEffect(() => {
-    if (!isSticky || !containerRef.current) return;
+    if (!isSticky || !scrollWrapperRef.current) return;
 
     // 🎯 CORREÇÃO CRÍTICA: Sincronizar imediatamente o scrollLeft atual quando sticky ativa
-    if (fixedHeaderRef.current && containerRef.current) {
-      fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
+    if (fixedHeaderRef.current && scrollWrapperRef.current) {
+      fixedHeaderRef.current.scrollLeft = scrollWrapperRef.current.scrollLeft;
       
       // 🎯 CORREÇÃO ALINHAMENTO: Ajustar position do clone para alinhar com tabela original
-      const containerRect = containerRef.current.getBoundingClientRect();
-      fixedHeaderRef.current.style.left = `${containerRect.left}px`;
-      fixedHeaderRef.current.style.width = `${containerRect.width}px`;
+      const wrapperRect = scrollWrapperRef.current.getBoundingClientRect();
+      fixedHeaderRef.current.style.left = `${wrapperRect.left}px`;
+      fixedHeaderRef.current.style.width = `${wrapperRect.width}px`;
     }
 
-    const container = containerRef.current;
-    container.addEventListener('scroll', handleScrollSync, { passive: true });
+    const scrollWrapper = scrollWrapperRef.current;
+    scrollWrapper.addEventListener('scroll', handleScrollSync, { passive: true });
     
     return () => {
-      container.removeEventListener('scroll', handleScrollSync);
+      scrollWrapper.removeEventListener('scroll', handleScrollSync);
     };
   }, [isSticky, handleScrollSync]);
 
@@ -164,7 +168,7 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
         isVisibleColumn={isVisible}
       />
       
-      <div ref={containerRef} className="overflow-x-auto border rounded-md">
+      <div ref={scrollWrapperRef} className="overflow-x-auto border rounded-md">
         <Table ref={tableRef} className="min-w-max relative">
           <TableHeader className="bg-background shadow-sm">
             <TableHeaderContent 
