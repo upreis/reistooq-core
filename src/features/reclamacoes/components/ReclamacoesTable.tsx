@@ -21,6 +21,7 @@ import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { useFixedScrollbar } from '../hooks/useFixedScrollbar';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -51,6 +52,7 @@ export function ReclamacoesTable({
     reason_category: false,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { isSidebarCollapsed } = useSidebarUI();
   
   // 📏 Scrollbar horizontal fixo
   const { tableContainerRef, fixedScrollbarRef, scrollWidth } = useFixedScrollbar();
@@ -161,10 +163,12 @@ export function ReclamacoesTable({
         </div>
       </div>
 
-      {/* 📏 Barra de scroll horizontal fixa (acima do rodapé) - Ajustada para sidebar */}
+      {/* 📏 Barra de scroll horizontal fixa (acima do rodapé) - Responsiva ao estado da sidebar */}
       <div 
         ref={fixedScrollbarRef}
-        className="fixed bottom-12 right-0 z-30 overflow-x-auto overflow-y-hidden bg-background/95 backdrop-blur-sm border-t left-0 md:left-72"
+        className={`fixed bottom-12 right-0 z-30 overflow-x-auto overflow-y-hidden bg-background/95 backdrop-blur-sm border-t left-0 ${
+          isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+        }`}
         style={{ height: '16px' }}
       >
         <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
