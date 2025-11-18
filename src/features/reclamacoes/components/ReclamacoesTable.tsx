@@ -19,6 +19,7 @@ import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 
 interface ReclamacoesTableProps {
@@ -124,16 +125,25 @@ export function ReclamacoesTable({
             <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
-                  {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id} className="whitespace-nowrap">
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  ))}
+                  {headerGroup.headers.map((header) => {
+                    const meta = header.column.columnDef.meta as any;
+                    return (
+                      <TableHead 
+                        key={header.id} 
+                        className={cn(
+                          "whitespace-nowrap",
+                          meta?.headerClassName
+                        )}
+                      >
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
               ))}
             </TableHeader>
