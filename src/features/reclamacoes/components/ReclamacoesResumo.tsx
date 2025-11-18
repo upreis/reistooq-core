@@ -36,12 +36,15 @@ export function ReclamacoesResumo({
   const total = reclamacoes.length;
   
   // PRAZOS DE ANÁLISE (vencido e a vencer)
+  // Vencidos = apenas críticas (já passaram do prazo máximo)
   const prazosVencidos = reclamacoes.filter(
-    r => r.lifecycle_status?.statusCiclo === 'critica' || r.lifecycle_status?.statusCiclo === 'urgente'
+    r => r.lifecycle_status?.statusCiclo === 'critica'
   ).length;
   
+  // A Vencer = atenção + urgente (ainda não venceram mas estão próximos do prazo)
   const prazosAVencer = reclamacoes.filter(
-    r => r.lifecycle_status?.statusCiclo === 'atencao'
+    r => r.lifecycle_status?.statusCiclo === 'atencao' || 
+         r.lifecycle_status?.statusCiclo === 'urgente'
   ).length;
   
   // STATUS DA RECLAMAÇÃO (todas as opções)

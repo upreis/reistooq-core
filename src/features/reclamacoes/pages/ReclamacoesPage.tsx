@@ -326,10 +326,12 @@ export function ReclamacoesPage() {
       result = result.filter((claim: any) => {
         if (filtroResumo.tipo === 'prazo') {
           if (filtroResumo.valor === 'vencido') {
-            return claim.lifecycle_status?.statusCiclo === 'critica' || 
-                   claim.lifecycle_status?.statusCiclo === 'urgente';
+            // Vencidos = apenas críticas
+            return claim.lifecycle_status?.statusCiclo === 'critica';
           } else if (filtroResumo.valor === 'a_vencer') {
-            return claim.lifecycle_status?.statusCiclo === 'atencao';
+            // A Vencer = atenção + urgente
+            return claim.lifecycle_status?.statusCiclo === 'atencao' ||
+                   claim.lifecycle_status?.statusCiclo === 'urgente';
           }
         } else if (filtroResumo.tipo === 'status') {
           return claim.status_analise_local === filtroResumo.valor;
