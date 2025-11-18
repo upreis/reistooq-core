@@ -297,7 +297,7 @@ export const reclamacoesColumns = (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
+          className="h-8 px-2 w-[350px] min-w-[350px] max-w-[350px]"
         >
           📦 Produto
           <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -308,7 +308,6 @@ export const reclamacoesColumns = (
       const productInfo = row.original.product_info;
       return <ProductInfoCell productInfo={productInfo} />;
     },
-    size: 350,
   },
   // 👤 COLUNA DE COMPRADOR
   {
