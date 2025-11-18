@@ -58,6 +58,11 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
     // 🎯 CORREÇÃO CRÍTICA: Sincronizar imediatamente o scrollLeft atual quando sticky ativa
     if (fixedHeaderRef.current && containerRef.current) {
       fixedHeaderRef.current.scrollLeft = containerRef.current.scrollLeft;
+      
+      // 🎯 CORREÇÃO ALINHAMENTO: Ajustar position do clone para alinhar com tabela original
+      const containerRect = containerRef.current.getBoundingClientRect();
+      fixedHeaderRef.current.style.left = `${containerRect.left}px`;
+      fixedHeaderRef.current.style.width = `${containerRect.width}px`;
     }
 
     const container = containerRef.current;
