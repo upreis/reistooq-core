@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, RefObject } from 'react';
+import { useState, useEffect, useCallback, RefObject, useRef } from 'react';
 
 interface UseCustomScrollbarProps {
   containerRef: RefObject<HTMLDivElement>;
@@ -9,6 +9,7 @@ interface UseCustomScrollbarReturn {
   thumbPosition: number;
   thumbWidth: number;
   handleThumbMouseDown: (e: React.MouseEvent) => void;
+  handleKeyDown: (e: React.KeyboardEvent) => void;
   isDragging: boolean;
   showScrollbar: boolean;
 }
@@ -20,6 +21,8 @@ interface UseCustomScrollbarReturn {
  * - Estado de drag (arrastar thumb)
  * - Cálculo de posição e largura do thumb
  * - Sincronização bidirecional (tabela ↔ scrollbar)
+ * - Navegação por teclado (accessibility)
+ * - Performance otimizada com debounce
  */
 export function useCustomScrollbar({ 
   containerRef, 
@@ -31,9 +34,13 @@ export function useCustomScrollbar({
   const [dragStartX, setDragStartX] = useState(0);
   const [dragStartScrollLeft, setDragStartScrollLeft] = useState(0);
   const [showScrollbar, setShowScrollbar] = useState(false);
+  
+  // Ref para debounce do scroll
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
   /**
    * 📐 Calcula largura e posição do thumb baseado no scroll atual
+   * Memoizado com useCallback para performance
    */
   const updateThumbMetrics = useCallback(() => {
     if (!containerRef.current) return;
@@ -68,6 +75,7 @@ export function useCustomScrollbar({
 
   /**
    * 🖱️ HANDLER: Inicia drag do thumb
+   * Memoizado para evitar re-criação em cada render
    */
   const handleThumbMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -76,15 +84,42 @@ export function useCustomScrollbar({
     setIsDragging(true);
     setDragStartX(e.clientX);
     setDragStartScrollLeft(containerRef.current?.scrollLeft || 0);
-
-    console.log('🖱️ CustomScrollbar - Drag iniciado:', {
-      startX: e.clientX,
-      startScrollLeft: containerRef.current?.scrollLeft
-    });
   }, [containerRef]);
 
   /**
+   * ⌨️ HANDLER: Navegação por teclado (accessibility)
+   * Setas esquerda/direita para rolar tabela
+   */
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const scrollStep = 100; // pixels por pressão de tecla
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        container.scrollLeft = Math.max(0, container.scrollLeft - scrollStep);
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        const maxScrollLeft = (scrollWidth || container.scrollWidth) - container.clientWidth;
+        container.scrollLeft = Math.min(maxScrollLeft, container.scrollLeft + scrollStep);
+        break;
+      case 'Home':
+        e.preventDefault();
+        container.scrollLeft = 0;
+        break;
+      case 'End':
+        e.preventDefault();
+        container.scrollLeft = (scrollWidth || container.scrollWidth) - container.clientWidth;
+        break;
+    }
+  }, [containerRef, scrollWidth]);
+
+  /**
    * 🖱️ HANDLER: Durante drag do thumb (mousemove global)
+   * Com smooth scrolling e limites
    */
   useEffect(() => {
     if (!isDragging || !containerRef.current) return;
@@ -104,21 +139,13 @@ export function useCustomScrollbar({
       const thumbMovementRatio = currentScrollWidth / containerWidth;
       const scrollDelta = deltaX * thumbMovementRatio;
 
-      // Aplica novo scrollLeft com limites
+      // Aplica novo scrollLeft com limites (smooth scroll desabilitado durante drag para responsividade)
       const newScrollLeft = Math.max(0, Math.min(maxScrollLeft, dragStartScrollLeft + scrollDelta));
       container.scrollLeft = newScrollLeft;
-
-      console.log('🖱️ CustomScrollbar - Dragging:', {
-        deltaX,
-        scrollDelta,
-        newScrollLeft,
-        maxScrollLeft
-      });
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      console.log('🖱️ CustomScrollbar - Drag finalizado');
     };
 
     // Adiciona listeners globais
@@ -133,6 +160,7 @@ export function useCustomScrollbar({
 
   /**
    * 🔄 SINCRONIZAÇÃO: Atualiza thumb quando tabela rola
+   * Com debounce de 16ms (~60fps) para performance
    */
   useEffect(() => {
     if (!containerRef.current || isDragging) return;
@@ -140,11 +168,24 @@ export function useCustomScrollbar({
     const container = containerRef.current;
 
     const handleScroll = () => {
-      updateThumbMetrics();
+      // Debounce: aguarda 16ms (1 frame) antes de atualizar
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      scrollTimeoutRef.current = setTimeout(() => {
+        updateThumbMetrics();
+      }, 16);
     };
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, [containerRef, isDragging, updateThumbMetrics]);
 
   /**
@@ -158,6 +199,7 @@ export function useCustomScrollbar({
     thumbPosition,
     thumbWidth,
     handleThumbMouseDown,
+    handleKeyDown,
     isDragging,
     showScrollbar
   };
