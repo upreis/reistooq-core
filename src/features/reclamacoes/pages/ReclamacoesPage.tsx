@@ -487,13 +487,20 @@ export function ReclamacoesPage() {
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
               } left-0`}
             >
-              {/* Scroll Horizontal Sincronizado */}
+              {/* Scroll Horizontal Sincronizado - Sempre Visível */}
               <div 
                 ref={footerScrollRef}
-                className="overflow-x-auto overflow-y-hidden border-b"
-                style={{ height: '12px' }}
+                className="overflow-x-auto overflow-y-hidden border-b bg-muted/30"
+                style={{ 
+                  height: '24px',
+                  scrollbarWidth: 'thin',
+                  scrollbarColor: 'hsl(var(--primary)) hsl(var(--muted))'
+                }}
               >
-                <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
+                <div 
+                  style={{ width: `${scrollWidth}px`, height: '1px' }}
+                  className="pointer-events-none"
+                />
               </div>
 
               {/* Paginação */}
