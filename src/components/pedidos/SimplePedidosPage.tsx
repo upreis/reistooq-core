@@ -1315,17 +1315,7 @@ useEffect(() => {
         }}
       />
 
-      {/* 🚀 SEÇÃO DE MODAIS - PASSO 7 COMPLETO */}
-      <PedidosModalsSection
-        onExport={actions.exportData}
-        totalRecords={total}
-        isLoading={loading}
-        savedFilters={actions.getSavedFilters()}
-        onSaveFilters={actions.saveCurrentFilters}
-        onLoadFilters={actions.loadSavedFilters}
-        hasActiveFilters={filtersManager.hasActiveFilters}
-        columnManager={columnManager}
-      />
+      {/* 🚀 SEÇÃO DE MODAIS REMOVIDA - Botões de Exportar e Salvar Filtros removidos */}
 
       {/* 🆕 Modal de Cadastro Rápido de Insumo */}
       <CadastroInsumoRapidoModal
