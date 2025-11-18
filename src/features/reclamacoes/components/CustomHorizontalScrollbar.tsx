@@ -14,6 +14,8 @@ interface CustomHorizontalScrollbarProps {
  * - Track: barra de fundo
  * - Thumb: parte arrastável (cor primary)
  * - Sincronização automática com tabela via hook
+ * - Navegação por teclado (acessibilidade)
+ * - Performance otimizada com debounce
  */
 export function CustomHorizontalScrollbar({ 
   scrollWidth, 
@@ -23,7 +25,8 @@ export function CustomHorizontalScrollbar({
   const { 
     thumbPosition, 
     thumbWidth, 
-    handleThumbMouseDown, 
+    handleThumbMouseDown,
+    handleKeyDown,
     isDragging,
     showScrollbar 
   } = useCustomScrollbar({ containerRef, scrollWidth });
@@ -37,51 +40,65 @@ export function CustomHorizontalScrollbar({
     <div 
       className={`relative h-4 bg-muted/20 border-b ${className}`}
       style={{ cursor: isDragging ? 'grabbing' : 'default' }}
+      role="region"
+      aria-label="Barra de rolagem horizontal"
     >
       {/* Track - Barra de fundo */}
       <div 
-        className="absolute inset-0 bg-muted/40"
-        aria-label="Scrollbar track"
+        className="absolute inset-0 bg-muted/40 transition-colors duration-150"
+        aria-hidden="true"
       />
 
       {/* Thumb - Parte arrastável */}
       <div
         className={`
-          absolute top-0 h-full rounded
-          transition-colors duration-150
+          absolute top-0 h-full rounded-sm
+          transition-all duration-150 ease-out
           ${isDragging 
-            ? 'bg-primary shadow-lg' 
-            : 'bg-primary/60 hover:bg-primary/80'
+            ? 'bg-primary shadow-lg scale-105' 
+            : 'bg-primary/60 hover:bg-primary/80 hover:shadow-md'
           }
         `}
         style={{
           left: `${thumbPosition}px`,
           width: `${thumbWidth}px`,
           cursor: isDragging ? 'grabbing' : 'grab',
-          minWidth: '50px' // Mínimo para usabilidade
+          minWidth: '50px', // Mínimo para usabilidade
+          transform: isDragging ? 'translateY(-1px)' : 'translateY(0)', // Lift effect ao arrastar
         }}
         onMouseDown={handleThumbMouseDown}
+        onKeyDown={handleKeyDown}
         role="scrollbar"
         aria-orientation="horizontal"
         aria-valuenow={Math.round(thumbPosition)}
         aria-valuemin={0}
         aria-valuemax={Math.round(containerRef.current?.clientWidth || 0)}
+        aria-label="Arraste para rolar horizontalmente ou use as setas do teclado"
         tabIndex={0}
       >
-        {/* Indicador visual central (3 linhas) */}
+        {/* Indicador visual central (3 linhas verticais) */}
         <div className="absolute inset-0 flex items-center justify-center gap-0.5 pointer-events-none">
-          <div className="w-0.5 h-3 bg-primary-foreground/40 rounded-full" />
-          <div className="w-0.5 h-3 bg-primary-foreground/40 rounded-full" />
-          <div className="w-0.5 h-3 bg-primary-foreground/40 rounded-full" />
+          <div className={`w-0.5 h-3 rounded-full transition-colors ${
+            isDragging ? 'bg-primary-foreground/60' : 'bg-primary-foreground/40'
+          }`} />
+          <div className={`w-0.5 h-3 rounded-full transition-colors ${
+            isDragging ? 'bg-primary-foreground/60' : 'bg-primary-foreground/40'
+          }`} />
+          <div className={`w-0.5 h-3 rounded-full transition-colors ${
+            isDragging ? 'bg-primary-foreground/60' : 'bg-primary-foreground/40'
+          }`} />
         </div>
+
+        {/* Sombra extra ao arrastar para feedback visual */}
+        {isDragging && (
+          <div className="absolute inset-0 rounded-sm shadow-[0_0_12px_rgba(var(--primary)/0.4)] pointer-events-none" />
+        )}
       </div>
 
-      {/* Debug info (remover em produção) */}
-      {isDragging && (
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs bg-popover text-popover-foreground px-2 py-1 rounded shadow-lg pointer-events-none">
-          Arrastando scrollbar
-        </div>
-      )}
+      {/* Tooltip de instruções ao fazer hover (accessibility) */}
+      <div className="sr-only" aria-live="polite">
+        Use as setas do teclado (← →) ou arraste o thumb para rolar a tabela horizontalmente
+      </div>
     </div>
   );
 }
