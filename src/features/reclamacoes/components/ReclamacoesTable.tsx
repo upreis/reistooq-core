@@ -30,6 +30,7 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   onTableReady?: (table: any) => void;
+  tableContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function ReclamacoesTable({ 
@@ -40,7 +41,8 @@ export function ReclamacoesTable({
   onDeleteReclamacao,
   onOpenAnotacoes,
   anotacoes,
-  onTableReady
+  onTableReady,
+  tableContainerRef
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -119,7 +121,10 @@ export function ReclamacoesTable({
     <div className="space-y-4">
       {/* Tabela */}
       <div className="w-full flex-1 flex flex-col min-h-0">
-        <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
+        <div 
+          ref={tableContainerRef}
+          className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth"
+        >
           <Table className="min-w-max relative">
             <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
               {table.getHeaderGroups().map((headerGroup) => (
