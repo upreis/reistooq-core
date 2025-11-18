@@ -29,7 +29,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { useTableScrollSync } from '../hooks/useTableScrollSync';
-import { CustomHorizontalScrollbar } from '../components/CustomHorizontalScrollbar';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -462,6 +461,10 @@ export function ReclamacoesPage() {
                       anotacoes={anotacoes}
                       onTableReady={setTableInstance}
                       tableContainerRef={tableContainerRef}
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                      scrollWidth={scrollWidth}
                     />
                   </Card>
                 </TabsContent>
@@ -480,46 +483,6 @@ export function ReclamacoesPage() {
               />
             )}
           </div>
-
-          {/* Rodapé Fixo com Scrollbar Customizado e Paginação */}
-          {totalPages > 1 && (
-            <div 
-              className={`fixed bottom-0 right-0 bg-background border-t z-40 transition-all duration-300 ${
-                isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
-              } left-0`}
-            >
-              {/* Scrollbar Horizontal Customizado - Sempre Visível e Clicável */}
-              <CustomHorizontalScrollbar
-                scrollWidth={scrollWidth}
-                containerRef={tableContainerRef}
-              />
-
-              {/* Paginação */}
-              <div className="flex justify-between items-center px-4 md:px-6 py-3">
-                <div className="text-sm text-muted-foreground">
-                  Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
       </div>
     </ErrorBoundary>
   );
