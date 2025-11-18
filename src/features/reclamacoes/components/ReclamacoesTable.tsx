@@ -161,10 +161,10 @@ export function ReclamacoesTable({
         </div>
       </div>
 
-      {/* 📏 Barra de scroll horizontal fixa (acima do rodapé) */}
+      {/* 📏 Barra de scroll horizontal fixa (acima do rodapé) - Ajustada para sidebar */}
       <div 
         ref={fixedScrollbarRef}
-        className="fixed bottom-12 left-0 right-0 z-30 overflow-x-auto overflow-y-hidden bg-background/95 backdrop-blur-sm border-t"
+        className="fixed bottom-12 right-0 z-30 overflow-x-auto overflow-y-hidden bg-background/95 backdrop-blur-sm border-t left-0 md:left-72"
         style={{ height: '16px' }}
       >
         <div style={{ width: `${scrollWidth}px`, height: '1px' }} />

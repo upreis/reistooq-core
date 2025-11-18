@@ -464,9 +464,9 @@ export function ReclamacoesPage() {
               </Tabs>
             </div>
 
-            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO */}
+            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO - Ajustado para sidebar desktop */}
             {totalPages > 1 && (
-              <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-lg">
+              <div className="fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 md:left-72">
                 <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
                   <div className="flex justify-between items-center">
                     <div className="text-sm text-muted-foreground">
