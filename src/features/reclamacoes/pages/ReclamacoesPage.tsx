@@ -450,7 +450,8 @@ export function ReclamacoesPage() {
                 </TabsList>
 
                 <TabsContent value={activeTab}>
-                  <Card className="p-6">
+                  {/* Card com altura fixa e scroll interno para sticky footer funcionar */}
+                  <Card className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto relative">
                     <ReclamacoesTable
                       reclamacoes={reclamacoesPaginadas}
                       isLoading={loadingReclamacoes || isManualSearching}
