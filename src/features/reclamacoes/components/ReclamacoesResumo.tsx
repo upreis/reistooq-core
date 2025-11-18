@@ -12,14 +12,26 @@ import {
   HelpCircle,
   Ban
 } from 'lucide-react';
-import { STATUS_ANALISE_LABELS } from '../types/devolucao-analise.types';
+import { STATUS_ANALISE_LABELS, StatusAnalise } from '../types/devolucao-analise.types';
+
+export type FiltroResumo = {
+  tipo: 'prazo' | 'status' | 'tipo' | 'total';
+  valor: string;
+};
 
 interface ReclamacoesResumoProps {
   reclamacoes: any[];
   className?: string;
+  onFiltroClick?: (filtro: FiltroResumo | null) => void;
+  filtroAtivo?: FiltroResumo | null;
 }
 
-export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoProps) {
+export function ReclamacoesResumo({ 
+  reclamacoes, 
+  className, 
+  onFiltroClick,
+  filtroAtivo 
+}: ReclamacoesResumoProps) {
   // Total
   const total = reclamacoes.length;
   
@@ -44,13 +56,21 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
   const tipoClaim = reclamacoes.filter(r => r.type === 'claim').length;
   const tipoMediacao = reclamacoes.filter(r => r.type === 'mediation').length;
 
-  const metricas = [
+  const metricas: Array<{
+    label: string;
+    valor: number;
+    icon: any;
+    destaque: boolean;
+    color: string;
+    filtro: FiltroResumo | null;
+  }> = [
     {
       label: 'Total',
       valor: total,
       icon: FileText,
       destaque: true,
       color: 'bg-primary text-primary-foreground hover:bg-primary/90',
+      filtro: null, // Limpar filtro
     },
     // PRAZOS
     {
@@ -59,6 +79,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: AlertCircle,
       destaque: false,
       color: 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20',
+      filtro: { tipo: 'prazo', valor: 'vencido' },
     },
     {
       label: 'A Vencer',
@@ -66,6 +87,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: Clock,
       destaque: false,
       color: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20',
+      filtro: { tipo: 'prazo', valor: 'a_vencer' },
     },
     // STATUS DA RECLAMAÇÃO
     {
@@ -74,6 +96,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: HelpCircle,
       destaque: false,
       color: 'bg-background text-foreground border hover:bg-muted',
+      filtro: { tipo: 'status', valor: 'pendente' },
     },
     {
       label: STATUS_ANALISE_LABELS.em_analise,
@@ -81,6 +104,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: Clock,
       destaque: false,
       color: 'bg-background text-foreground border hover:bg-muted',
+      filtro: { tipo: 'status', valor: 'em_analise' },
     },
     {
       label: STATUS_ANALISE_LABELS.aguardando_ml,
@@ -88,6 +112,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: Clock,
       destaque: false,
       color: 'bg-background text-foreground border hover:bg-muted',
+      filtro: { tipo: 'status', valor: 'aguardando_ml' },
     },
     {
       label: STATUS_ANALISE_LABELS.resolvido_sem_dinheiro,
@@ -95,6 +120,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: CheckCircle2,
       destaque: false,
       color: 'bg-background text-foreground border hover:bg-muted',
+      filtro: { tipo: 'status', valor: 'resolvido_sem_dinheiro' },
     },
     {
       label: STATUS_ANALISE_LABELS.resolvido_com_dinheiro,
@@ -102,6 +128,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: CheckCircle2,
       destaque: false,
       color: 'bg-background text-foreground border hover:bg-muted',
+      filtro: { tipo: 'status', valor: 'resolvido_com_dinheiro' },
     },
     {
       label: STATUS_ANALISE_LABELS.cancelado,
@@ -109,6 +136,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: Ban,
       destaque: false,
       color: 'bg-background text-foreground border hover:bg-muted',
+      filtro: { tipo: 'status', valor: 'cancelado' },
     },
     // TIPO DE RECLAMAÇÃO
     {
@@ -117,6 +145,7 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: FileText,
       destaque: false,
       color: 'bg-blue-500/10 text-blue-700 dark:text-blue-500 border-blue-500/20 hover:bg-blue-500/20',
+      filtro: { tipo: 'tipo', valor: 'claim' },
     },
     {
       label: 'Mediações',
@@ -124,8 +153,27 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       icon: FileText,
       destaque: false,
       color: 'bg-purple-500/10 text-purple-700 dark:text-purple-500 border-purple-500/20 hover:bg-purple-500/20',
+      filtro: { tipo: 'tipo', valor: 'mediation' },
     },
   ];
+
+  const handleBadgeClick = (filtro: FiltroResumo | null) => {
+    if (!onFiltroClick) return;
+    
+    // Se clicar no mesmo filtro, desativa
+    if (filtroAtivo && filtro && 
+        filtroAtivo.tipo === filtro.tipo && 
+        filtroAtivo.valor === filtro.valor) {
+      onFiltroClick(null);
+    } else {
+      onFiltroClick(filtro);
+    }
+  };
+
+  const isFiltroAtivo = (filtro: FiltroResumo | null) => {
+    if (!filtroAtivo || !filtro) return false;
+    return filtroAtivo.tipo === filtro.tipo && filtroAtivo.valor === filtro.valor;
+  };
 
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
@@ -133,13 +181,17 @@ export function ReclamacoesResumo({ reclamacoes, className }: ReclamacoesResumoP
       
       {metricas.map((metrica) => {
         const Icon = metrica.icon;
+        const ativo = isFiltroAtivo(metrica.filtro);
+        
         return (
           <Badge
             key={metrica.label}
             variant={metrica.destaque ? "default" : "outline"}
+            onClick={() => handleBadgeClick(metrica.filtro)}
             className={cn(
-              "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-colors",
-              metrica.color
+              "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+              metrica.color,
+              ativo && "ring-2 ring-primary ring-offset-2 scale-105"
             )}
           >
             <Icon className="h-4 w-4" />
