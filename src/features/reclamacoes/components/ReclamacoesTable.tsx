@@ -18,9 +18,10 @@ import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
 import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
-import { CustomHorizontalScrollbar } from './CustomHorizontalScrollbar';
 import { Search } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { useFixedScrollbar } from '../hooks/useFixedScrollbar';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -31,12 +32,6 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   onTableReady?: (table: any) => void;
-  tableContainerRef?: React.RefObject<HTMLDivElement>;
-  // Paginação
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  scrollWidth: number;
 }
 
 export function ReclamacoesTable({ 
@@ -46,13 +41,8 @@ export function ReclamacoesTable({
   onStatusChange,
   onDeleteReclamacao,
   onOpenAnotacoes,
-  anotacoes = {},
-  onTableReady,
-  tableContainerRef,
-  currentPage,
-  totalPages,
-  onPageChange,
-  scrollWidth
+  anotacoes,
+  onTableReady
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -62,6 +52,10 @@ export function ReclamacoesTable({
     reason_category: false,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
+  const { isSidebarCollapsed } = useSidebarUI();
+  
+  // 📏 Scrollbar horizontal fixo
+  const { tableContainerRef, fixedScrollbarRef, scrollWidth } = useFixedScrollbar();
   
   const handleOpenMensagens = (claim: any) => {
     setSelectedClaim(claim);
@@ -169,41 +163,23 @@ export function ReclamacoesTable({
         </div>
       </div>
 
-      {/* Rodapé da Tabela: Scrollbar + Paginação - Sticky Bottom */}
-      {totalPages > 1 && (
-        <div className="sticky bottom-0 bg-background border-t z-30">
-          {/* Scrollbar Horizontal Customizado */}
-          <CustomHorizontalScrollbar
-            scrollWidth={scrollWidth}
-            containerRef={tableContainerRef}
-          />
+      {/* 📏 Barra de scroll horizontal fixa (acima do rodapé) - Responsiva ao estado da sidebar */}
+      <div 
+        ref={fixedScrollbarRef}
+        className={`fixed bottom-12 right-0 z-30 overflow-x-auto overflow-y-hidden bg-background/95 backdrop-blur-sm border-t left-0 ${
+          isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+        }`}
+        style={{ height: '16px' }}
+      >
+        <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
+      </div>
 
-          {/* Paginação */}
-          <div className="flex justify-between items-center px-4 md:px-6 py-3">
-            <div className="text-sm text-muted-foreground">
-              Página {currentPage} de {totalPages} ({reclamacoes.length} reclamações)
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                Próxima
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Informação de total de reclamações */}
+      <div className="flex justify-center py-2 text-sm text-muted-foreground">
+        <span>
+          Total: <strong>{reclamacoes.length}</strong> reclamações
+        </span>
+      </div>
     
       {/* Modal de Mensagens */}
       {selectedClaim && (

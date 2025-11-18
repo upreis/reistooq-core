@@ -28,7 +28,6 @@ import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES
 import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
-import { useTableScrollSync } from '../hooks/useTableScrollSync';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -40,7 +39,6 @@ export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isSidebarCollapsed } = useSidebarUI();
-  const { tableContainerRef, footerScrollRef, scrollWidth } = useTableScrollSync();
   
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
@@ -450,8 +448,7 @@ export function ReclamacoesPage() {
                 </TabsList>
 
                 <TabsContent value={activeTab}>
-                  {/* Card com altura fixa e scroll interno para sticky footer funcionar */}
-                  <Card className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto relative">
+                  <Card className="p-6">
                     <ReclamacoesTable
                       reclamacoes={reclamacoesPaginadas}
                       isLoading={loadingReclamacoes || isManualSearching}
@@ -461,16 +458,48 @@ export function ReclamacoesPage() {
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
                       onTableReady={setTableInstance}
-                      tableContainerRef={tableContainerRef}
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      scrollWidth={scrollWidth}
                     />
+
+                    {/* Tabela sem paginação inline - movida para rodapé fixo */}
                   </Card>
                 </TabsContent>
               </Tabs>
             </div>
+
+            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO - Responsivo ao estado da sidebar */}
+            {totalPages > 1 && (
+              <div 
+                className={`fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 ${
+                  isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+                }`}
+              >
+                <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
+                  <div className="flex justify-between items-center">
+                    <div className="text-sm text-muted-foreground">
+                      Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        disabled={currentPage === 1}
+                      >
+                        Anterior
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        disabled={currentPage === totalPages}
+                      >
+                        Próxima
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Modal de anotações */}
             {selectedClaimForAnotacoes && (
