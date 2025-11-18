@@ -23,9 +23,15 @@ export function useStickyTableHeader() {
       // Ativa sticky quando o sentinela sai do topo da tela (rola para baixo)
       const shouldBeSticky = sentinelRect.top < 0;
       
+      console.log('📍 Sticky detection:', {
+        sentinelTop: sentinelRect.top,
+        shouldBeSticky
+      });
+      
       // 🎯 CORREÇÃO: Usar setState funcional para evitar dependência circular
       setIsSticky(prevSticky => {
         if (shouldBeSticky !== prevSticky) {
+          console.log('✅ Mudando isSticky para:', shouldBeSticky);
           return shouldBeSticky;
         }
         return prevSticky;
