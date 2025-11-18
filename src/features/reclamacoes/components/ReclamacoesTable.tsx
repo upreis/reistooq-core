@@ -30,7 +30,6 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   onTableReady?: (table: any) => void;
-  tableContainerRef?: React.RefObject<HTMLDivElement>;
 }
 
 export function ReclamacoesTable({ 
@@ -41,8 +40,7 @@ export function ReclamacoesTable({
   onDeleteReclamacao,
   onOpenAnotacoes,
   anotacoes,
-  onTableReady,
-  tableContainerRef
+  onTableReady
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
