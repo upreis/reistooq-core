@@ -104,7 +104,7 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
   return (
     <div
       className={cn(
-        "flex items-center justify-between space-x-4 py-4 px-2 sm:px-4 text-muted-foreground text-sm",
+        "flex flex-col items-center justify-center gap-4 py-4 px-2 sm:px-4 text-muted-foreground text-sm",
         className
       )}
       role="navigation"
