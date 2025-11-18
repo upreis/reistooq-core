@@ -28,6 +28,7 @@ import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES
 import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
+import { ReclamacoesPagination } from '../components/ReclamacoesPagination';
 
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
@@ -485,29 +486,14 @@ export function ReclamacoesPage() {
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
               } left-0`}
             >
-              <div className="flex justify-between items-center px-4 md:px-6 py-3 bg-muted/30">
-                <div className="text-sm text-muted-foreground">
-                  Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    Anterior
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                  >
-                    Próxima
-                  </Button>
-                </div>
-              </div>
+              <ReclamacoesPagination
+                totalItems={reclamacoesTab.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                showFirstLastButtons={true}
+                pageButtonLimit={5}
+              />
             </div>
           )}
       </div>
