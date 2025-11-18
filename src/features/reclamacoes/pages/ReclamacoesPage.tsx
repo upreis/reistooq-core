@@ -29,6 +29,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { useTableScrollSync } from '../hooks/useTableScrollSync';
+import { CustomHorizontalScrollbar } from '../components/CustomHorizontalScrollbar';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -480,34 +481,18 @@ export function ReclamacoesPage() {
             )}
           </div>
 
-          {/* Rodapé Fixo com Scroll Horizontal CUSTOMIZADO e Paginação */}
+          {/* Rodapé Fixo com Scrollbar Customizado e Paginação */}
           {totalPages > 1 && (
             <div 
               className={`fixed bottom-0 right-0 bg-background border-t z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
               } left-0`}
             >
-              {/* Scroll Horizontal CUSTOMIZADO - Sempre Visível */}
-              <div 
-                ref={footerScrollRef}
-                className="relative overflow-x-auto overflow-y-hidden border-b bg-muted/20"
-                style={{ height: '16px' }}
-              >
-                {/* Barra de fundo do scroll */}
-                <div 
-                  className="absolute inset-0 bg-muted/40"
-                  style={{ height: '16px' }}
-                />
-                
-                {/* Conteúdo scrollável (invisível, apenas para criar o scroll) */}
-                <div 
-                  style={{ 
-                    width: `${scrollWidth}px`, 
-                    height: '16px',
-                    minWidth: `calc(100% + 1px)` // Força pelo menos 1px de overflow
-                  }}
-                />
-              </div>
+              {/* Scrollbar Horizontal Customizado - Sempre Visível e Clicável */}
+              <CustomHorizontalScrollbar
+                scrollWidth={scrollWidth}
+                containerRef={tableContainerRef}
+              />
 
               {/* Paginação */}
               <div className="flex justify-between items-center px-4 md:px-6 py-3">
@@ -533,38 +518,6 @@ export function ReclamacoesPage() {
                   </Button>
                 </div>
               </div>
-
-              {/* Estilo Global do Scrollbar */}
-              <style>{`
-                /* Scrollbar sempre visível - Webkit (Chrome, Safari, Edge) */
-                .overflow-x-auto::-webkit-scrollbar {
-                  height: 16px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-track {
-                  background: transparent;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb {
-                  background: hsl(var(--primary) / 0.6);
-                  border-radius: 8px;
-                  border: 3px solid transparent;
-                  background-clip: content-box;
-                  min-width: 50px;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-                  background: hsl(var(--primary) / 0.8);
-                  background-clip: content-box;
-                }
-                .overflow-x-auto::-webkit-scrollbar-thumb:active {
-                  background: hsl(var(--primary));
-                  background-clip: content-box;
-                }
-                
-                /* Firefox */
-                .overflow-x-auto {
-                  scrollbar-width: auto;
-                  scrollbar-color: hsl(var(--primary) / 0.6) transparent;
-                }
-              `}</style>
             </div>
           )}
       </div>
