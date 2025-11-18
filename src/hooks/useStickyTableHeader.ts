@@ -23,9 +23,13 @@ export function useStickyTableHeader() {
       // Ativa sticky quando o sentinela sai do topo da tela (rola para baixo)
       const shouldBeSticky = sentinelRect.top < 0;
       
-      if (shouldBeSticky !== isSticky) {
-        setIsSticky(shouldBeSticky);
-      }
+      // 🎯 CORREÇÃO: Usar setState funcional para evitar dependência circular
+      setIsSticky(prevSticky => {
+        if (shouldBeSticky !== prevSticky) {
+          return shouldBeSticky;
+        }
+        return prevSticky;
+      });
     };
 
     // Verificação inicial
@@ -37,7 +41,7 @@ export function useStickyTableHeader() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [isSticky]);
+  }, []); // ✅ Sem dependências - só executa uma vez
 
   return { 
     tableRef, 
