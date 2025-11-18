@@ -17,7 +17,9 @@ export function useTableScrollSync() {
       const container = tableContainerRef.current;
       const table = container.querySelector('table');
       if (table) {
-        setScrollWidth(table.scrollWidth);
+        const width = table.scrollWidth;
+        console.log('📏 Scroll Width calculado:', width);
+        setScrollWidth(width);
       }
     }
   }, []);
