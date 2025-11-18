@@ -27,7 +27,6 @@ import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
-import { useSidebarUI } from '@/context/SidebarUIContext';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -38,7 +37,6 @@ const validateMLAccounts = (mlAccounts: any[]) => ({
 export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { isSidebarCollapsed } = useSidebarUI();
   
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
@@ -460,57 +458,35 @@ export function ReclamacoesPage() {
                       onTableReady={setTableInstance}
                     />
 
-                    {/* Tabela sem paginação inline - movida para rodapé fixo */}
+                    {/* Paginação - ao final da tabela */}
+                    {totalPages > 1 && (
+                      <div className="flex justify-between items-center mt-4 pt-4 border-t">
+                        <div className="text-sm text-muted-foreground">
+                          Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Anterior
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Próxima
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </Card>
                 </TabsContent>
               </Tabs>
-            </div>
-
-            {/* 📌 RODAPÉ FIXO COM SCROLL HORIZONTAL + PAGINAÇÃO */}
-            <div 
-              className={`fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 ${
-                isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
-              }`}
-            >
-              <div className="max-w-7xl mx-auto">
-                {/* Scroll Horizontal - sempre visível */}
-                <div 
-                  className="overflow-x-auto overflow-y-hidden border-b"
-                  style={{ height: '20px' }}
-                  id="fixed-scrollbar-container"
-                >
-                  <div style={{ width: '100%', height: '1px' }} id="fixed-scrollbar-content" />
-                </div>
-                
-                {/* Paginação */}
-                {totalPages > 1 && (
-                  <div className="px-4 md:px-6 py-3">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm text-muted-foreground">
-                        Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                          disabled={currentPage === 1}
-                        >
-                          Anterior
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                          disabled={currentPage === totalPages}
-                        >
-                          Próxima
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
             </div>
 
             {/* Modal de anotações */}

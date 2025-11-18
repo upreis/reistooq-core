@@ -20,7 +20,6 @@ import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
-import { useFixedScrollbar } from '../hooks/useFixedScrollbar';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -51,9 +50,6 @@ export function ReclamacoesTable({
     reason_category: false,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
-  
-  // 📏 Scrollbar horizontal fixo
-  const { tableContainerRef } = useFixedScrollbar();
   
   const handleOpenMensagens = (claim: any) => {
     setSelectedClaim(claim);
@@ -123,10 +119,7 @@ export function ReclamacoesTable({
     <div className="space-y-4">
       {/* Tabela */}
       <div className="w-full flex-1 flex flex-col min-h-0">
-        <div 
-          ref={tableContainerRef}
-          className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth"
-        >
+        <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
           <Table className="min-w-max relative">
             <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
               {table.getHeaderGroups().map((headerGroup) => (
