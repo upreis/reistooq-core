@@ -8,6 +8,7 @@ export interface ReclamacoesPaginationProps {
   itemsPerPage: number;
   currentPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange: (items: number) => void;
   className?: string;
   showFirstLastButtons?: boolean;
   pageButtonLimit?: number;
@@ -18,6 +19,7 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
   itemsPerPage,
   currentPage,
   onPageChange,
+  onItemsPerPageChange,
   className,
   showFirstLastButtons = true,
   pageButtonLimit = 5, // Must be an odd number to center around current page
@@ -96,15 +98,42 @@ export const ReclamacoesPagination: React.FC<ReclamacoesPaginationProps> = ({
   const isFirstPage = validatedCurrentPage === 1;
   const isLastPage = validatedCurrentPage === totalPages;
 
+  const startItem = totalItems === 0 ? 0 : ((validatedCurrentPage - 1) * itemsPerPage) + 1;
+  const endItem = Math.min(validatedCurrentPage * itemsPerPage, totalItems);
+
   return (
     <div
       className={cn(
-        "flex items-center justify-center space-x-2 py-4 px-2 sm:px-4 text-muted-foreground text-sm",
+        "flex items-center justify-between space-x-4 py-4 px-2 sm:px-4 text-muted-foreground text-sm",
         className
       )}
       role="navigation"
       aria-label="Paginação"
     >
+      {/* Contador e seletor de itens por página */}
+      <div className="flex items-center gap-4">
+        <div className="text-sm text-muted-foreground">
+          Mostrando {startItem} a {endItem} de {totalItems} reclamações
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Itens por página:</span>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              onItemsPerPageChange(Number(e.target.value));
+              onPageChange(1); // Reset to first page when changing items per page
+            }}
+            className="text-sm border border-input bg-background px-3 py-1 rounded-md hover:bg-accent transition-colors"
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+      </div>
+      
+      {/* Controles de navegação */}
       <div className="flex items-center space-x-2">
         {showFirstLastButtons && (
           <Button
