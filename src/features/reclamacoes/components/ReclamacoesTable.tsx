@@ -154,12 +154,6 @@ export function ReclamacoesTable({
         </div>
       </div>
 
-      {/* Informação de total de reclamações */}
-      <div className="flex justify-center py-2 text-sm text-muted-foreground">
-        <span>
-          Total: <strong>{reclamacoes.length}</strong> reclamações
-        </span>
-      </div>
     
       {/* Modal de Mensagens */}
       {selectedClaim && (
