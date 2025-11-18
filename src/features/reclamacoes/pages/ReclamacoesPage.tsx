@@ -52,6 +52,7 @@ export function ReclamacoesPage() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
+  const [filtroResumo, setFiltroResumo] = useState<{tipo: 'prazo' | 'status' | 'tipo' | 'total'; valor: string} | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [tableInstance, setTableInstance] = useState<any>(null);
@@ -309,14 +310,38 @@ export function ReclamacoesPage() {
     }));
   }, [allReclamacoes, analiseStatus, anotacoes]);
 
-  // Aplicar filtros de lifecycle
+  // Aplicar filtros de lifecycle e resumo
   const reclamacoesFiltradas = useMemo(() => {
-    if (!lifecycleFilter) return reclamacoesEnriquecidas;
+    let result = reclamacoesEnriquecidas;
     
-    return reclamacoesEnriquecidas.filter((claim: any) => {
-      return claim.lifecycle_status?.status === lifecycleFilter;
-    });
-  }, [reclamacoesEnriquecidas, lifecycleFilter]);
+    // Filtro lifecycle
+    if (lifecycleFilter) {
+      result = result.filter((claim: any) => 
+        claim.lifecycle_status?.status === lifecycleFilter
+      );
+    }
+    
+    // Filtro resumo
+    if (filtroResumo) {
+      result = result.filter((claim: any) => {
+        if (filtroResumo.tipo === 'prazo') {
+          if (filtroResumo.valor === 'vencido') {
+            return claim.lifecycle_status?.statusCiclo === 'critica' || 
+                   claim.lifecycle_status?.statusCiclo === 'urgente';
+          } else if (filtroResumo.valor === 'a_vencer') {
+            return claim.lifecycle_status?.statusCiclo === 'atencao';
+          }
+        } else if (filtroResumo.tipo === 'status') {
+          return claim.status_analise_local === filtroResumo.valor;
+        } else if (filtroResumo.tipo === 'tipo') {
+          return claim.type === filtroResumo.valor;
+        }
+        return true;
+      });
+    }
+    
+    return result;
+  }, [reclamacoesEnriquecidas, lifecycleFilter, filtroResumo]);
 
   // Filtrar por tab (ativas vs histórico)
   const reclamacoesTab = useMemo(() => {
@@ -441,7 +466,11 @@ export function ReclamacoesPage() {
             {/* Tabs: Ativas vs Histórico + Resumo */}
             <div className="px-4 md:px-6 space-y-4">
               {/* Resumo de Métricas */}
-              <ReclamacoesResumo reclamacoes={reclamacoesEnriquecidas} />
+              <ReclamacoesResumo 
+                reclamacoes={reclamacoesEnriquecidas} 
+                onFiltroClick={setFiltroResumo}
+                filtroAtivo={filtroResumo}
+              />
               
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
                 <TabsList className="grid w-full max-w-md grid-cols-2">
