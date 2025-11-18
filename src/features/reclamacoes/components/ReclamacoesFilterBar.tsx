@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { FlipButton } from '@/components/ui/flip-button';
 import type { Table } from '@tanstack/react-table';
 
 interface MLAccount {
@@ -189,27 +190,12 @@ export function ReclamacoesFilterBar({
         {/* Botão Aplicar Filtros */}
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
-          {isLoading && onCancel ? (
-            <Button
-              onClick={onCancel}
-              variant="destructive"
-              className="w-full"
-            >
-              <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Cancelar
-            </Button>
-          ) : (
-            <Button
-              onClick={onBuscar}
-              disabled={isLoading || selectedAccountIds.length === 0}
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-black"
-            >
-              <Search className="h-4 w-4 mr-2" />
-              Aplicar Filtros e Buscar
-            </Button>
-          )}
+          <FlipButton
+            text1="Cancelar a Busca"
+            text2="Aplicar Filtros e Buscar"
+            isFlipped={isLoading && !!onCancel}
+            onClick={isLoading && onCancel ? onCancel : onBuscar}
+          />
         </div>
 
         {/* Seletor de Colunas */}
