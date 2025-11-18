@@ -105,13 +105,13 @@ export const PedidosPaginationFooter: React.FC<PedidosPaginationFooterProps> = (
   return (
     <div
       className={cn(
-        "flex items-center justify-between py-4 px-2 sm:px-6 text-muted-foreground text-sm",
+        "flex flex-col items-center gap-4 py-4 px-2 sm:px-6 text-muted-foreground text-sm",
         className
       )}
       role="navigation"
       aria-label="Paginação"
     >
-      {/* Informações à esquerda */}
+      {/* Informações no topo */}
       <div className="flex items-center gap-4">
         <div className="text-sm text-muted-foreground whitespace-nowrap">
           Mostrando <span className="font-semibold text-foreground">{startItem}</span> a{' '}
