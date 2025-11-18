@@ -27,6 +27,7 @@ import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -37,6 +38,7 @@ const validateMLAccounts = (mlAccounts: any[]) => ({
 export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isSidebarCollapsed } = useSidebarUI();
   
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
@@ -457,33 +459,6 @@ export function ReclamacoesPage() {
                       anotacoes={anotacoes}
                       onTableReady={setTableInstance}
                     />
-
-                    {/* Paginação - ao final da tabela */}
-                    {totalPages > 1 && (
-                      <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                        <div className="text-sm text-muted-foreground">
-                          Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                          >
-                            Anterior
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                          >
-                            Próxima
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </Card>
                 </TabsContent>
               </Tabs>
@@ -501,6 +476,39 @@ export function ReclamacoesPage() {
               />
             )}
           </div>
+
+          {/* Rodapé Fixo com Paginação */}
+          {totalPages > 1 && (
+            <div 
+              className={`fixed bottom-0 right-0 bg-background border-t z-40 transition-all duration-300 ${
+                isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+              } left-0`}
+            >
+              <div className="flex justify-between items-center px-4 md:px-6 py-3">
+                <div className="text-sm text-muted-foreground">
+                  Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Próxima
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
       </div>
     </ErrorBoundary>
   );
