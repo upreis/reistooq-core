@@ -14,7 +14,6 @@ export function useStickyTableHeader() {
     const sentinel = sentinelRef.current;
     
     if (!sentinel) {
-      console.warn('[useStickyTableHeader] Sentinel element not found');
       return;
     }
 
@@ -23,19 +22,7 @@ export function useStickyTableHeader() {
       // Ativa sticky quando o sentinela sai do topo da tela (rola para baixo)
       const shouldBeSticky = sentinelRect.top < 0;
       
-      console.log('📍 Sticky detection:', {
-        sentinelTop: sentinelRect.top,
-        shouldBeSticky
-      });
-      
-      // 🎯 CORREÇÃO: Usar setState funcional para evitar dependência circular
-      setIsSticky(prevSticky => {
-        if (shouldBeSticky !== prevSticky) {
-          console.log('✅ Mudando isSticky para:', shouldBeSticky);
-          return shouldBeSticky;
-        }
-        return prevSticky;
-      });
+      setIsSticky(shouldBeSticky);
     };
 
     // Verificação inicial
@@ -47,7 +34,7 @@ export function useStickyTableHeader() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
-  }, []); // ✅ Sem dependências - só executa uma vez
+  }, []);
 
   return { 
     tableRef, 
