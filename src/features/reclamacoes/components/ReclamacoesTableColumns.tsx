@@ -308,7 +308,7 @@ export const reclamacoesColumns = (
       const productInfo = row.original.product_info;
       return <ProductInfoCell productInfo={productInfo} />;
     },
-    size: 280,
+    size: 350,
   },
   // 👤 COLUNA DE COMPRADOR
   {
