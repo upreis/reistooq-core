@@ -119,11 +119,15 @@ export const PedidosStickyActions = memo<PedidosStickyActionsProps>(({
   // Estados do checkbox principal
   const checkboxState = stats.allSelected ? 'checked' : stats.someSelected ? 'indeterminate' : 'unchecked';
 
+  // Não renderizar se nenhum item estiver selecionado
+  if (stats.selected === 0) {
+    return null;
+  }
+
   return (
     <>
       <Card className={cn(
-        "fixed bottom-4 left-4 right-4 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-primary/20",
-        stats.selected > 0 ? "shadow-lg border-l-4 border-l-primary" : "shadow-md",
+        "fixed bottom-4 left-4 right-4 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-primary/20 shadow-lg border-l-4 border-l-primary",
         className
       )}>
         <div className="flex items-center justify-between p-4">
