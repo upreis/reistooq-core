@@ -89,8 +89,10 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
   useEffect(() => {
     if (!isSticky || !tableRef.current || !fixedHeaderRef.current) return;
 
-    // Sincronizar imediatamente quando sticky ativa
-    syncColumnWidths();
+    // 🎯 CORREÇÃO CRÍTICA: Aguardar próximo frame para garantir que clone está montado no DOM
+    requestAnimationFrame(() => {
+      syncColumnWidths();
+    });
 
     // Debounce para ResizeObserver (performance)
     let timeoutId: NodeJS.Timeout;
