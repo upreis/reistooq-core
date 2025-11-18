@@ -19,8 +19,9 @@ export function useStickyTableHeader() {
 
     const handleScroll = () => {
       const sentinelRect = sentinel.getBoundingClientRect();
-      // Ativa sticky quando o sentinela sai do topo da tela (rola para baixo)
-      const shouldBeSticky = sentinelRect.top < 0;
+      // Considera o header fixo da página (aproximadamente 60-80px)
+      // Ativa sticky quando o sentinela está próximo ou passou do topo
+      const shouldBeSticky = sentinelRect.top < 100;
       
       console.log('📍 Sticky detection:', {
         sentinelTop: sentinelRect.top,
