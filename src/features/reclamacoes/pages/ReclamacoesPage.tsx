@@ -480,24 +480,32 @@ export function ReclamacoesPage() {
             )}
           </div>
 
-          {/* Rodapé Fixo com Scroll Horizontal e Paginação */}
+          {/* Rodapé Fixo com Scroll Horizontal CUSTOMIZADO e Paginação */}
           {totalPages > 1 && (
             <div 
               className={`fixed bottom-0 right-0 bg-background border-t z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
               } left-0`}
             >
-              {/* Scroll Horizontal Sincronizado - Sempre Visível */}
+              {/* Scroll Horizontal CUSTOMIZADO - Sempre Visível */}
               <div 
                 ref={footerScrollRef}
-                className="overflow-x-scroll overflow-y-hidden border-b bg-muted/30"
-                style={{ 
-                  height: '24px'
-                }}
+                className="relative overflow-x-auto overflow-y-hidden border-b bg-muted/20"
+                style={{ height: '16px' }}
               >
+                {/* Barra de fundo do scroll */}
                 <div 
-                  style={{ width: `${scrollWidth}px`, height: '1px', minWidth: '100%' }}
-                  className="pointer-events-none"
+                  className="absolute inset-0 bg-muted/40"
+                  style={{ height: '16px' }}
+                />
+                
+                {/* Conteúdo scrollável (invisível, apenas para criar o scroll) */}
+                <div 
+                  style={{ 
+                    width: `${scrollWidth}px`, 
+                    height: '16px',
+                    minWidth: `calc(100% + 1px)` // Força pelo menos 1px de overflow
+                  }}
                 />
               </div>
 
@@ -526,27 +534,35 @@ export function ReclamacoesPage() {
                 </div>
               </div>
 
-              {/* Debug Info */}
+              {/* Estilo Global do Scrollbar */}
               <style>{`
-                /* Força scrollbar sempre visível em todos os navegadores */
-                .overflow-x-scroll::-webkit-scrollbar {
-                  height: 14px;
-                  display: block !important;
+                /* Scrollbar sempre visível - Webkit (Chrome, Safari, Edge) */
+                .overflow-x-auto::-webkit-scrollbar {
+                  height: 16px;
                 }
-                .overflow-x-scroll::-webkit-scrollbar-track {
-                  background: hsl(var(--muted));
+                .overflow-x-auto::-webkit-scrollbar-track {
+                  background: transparent;
                 }
-                .overflow-x-scroll::-webkit-scrollbar-thumb {
-                  background: hsl(var(--primary));
-                  border-radius: 4px;
+                .overflow-x-auto::-webkit-scrollbar-thumb {
+                  background: hsl(var(--primary) / 0.6);
+                  border-radius: 8px;
+                  border: 3px solid transparent;
+                  background-clip: content-box;
+                  min-width: 50px;
                 }
-                .overflow-x-scroll::-webkit-scrollbar-thumb:hover {
+                .overflow-x-auto::-webkit-scrollbar-thumb:hover {
                   background: hsl(var(--primary) / 0.8);
+                  background-clip: content-box;
                 }
+                .overflow-x-auto::-webkit-scrollbar-thumb:active {
+                  background: hsl(var(--primary));
+                  background-clip: content-box;
+                }
+                
                 /* Firefox */
-                .overflow-x-scroll {
-                  scrollbar-width: auto !important;
-                  scrollbar-color: hsl(var(--primary)) hsl(var(--muted)) !important;
+                .overflow-x-auto {
+                  scrollbar-width: auto;
+                  scrollbar-color: hsl(var(--primary) / 0.6) transparent;
                 }
               `}</style>
             </div>
