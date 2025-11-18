@@ -55,7 +55,7 @@ export function CustomHorizontalScrollbar({
           absolute top-0 h-full rounded-sm
           transition-all duration-150 ease-out
           ${isDragging 
-            ? 'bg-primary shadow-lg scale-105' 
+            ? 'bg-primary shadow-lg' 
             : 'bg-primary/60 hover:bg-primary/80 hover:shadow-md'
           }
         `}
@@ -64,7 +64,10 @@ export function CustomHorizontalScrollbar({
           width: `${thumbWidth}px`,
           cursor: isDragging ? 'grabbing' : 'grab',
           minWidth: '50px', // Mínimo para usabilidade
-          transform: isDragging ? 'translateY(-1px)' : 'translateY(0)', // Lift effect ao arrastar
+          // ✅ CORREÇÃO PROBLEMA 3: Transform unificado (scale + translateY)
+          transform: isDragging 
+            ? 'translateY(-1px) scale(1.05)' 
+            : 'translateY(0) scale(1)',
         }}
         onMouseDown={handleThumbMouseDown}
         onKeyDown={handleKeyDown}
