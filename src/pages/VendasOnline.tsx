@@ -5,10 +5,11 @@
 
 import { VendasFiltersBar } from '@/features/vendas-online/components/VendasFiltersBar';
 import { VendasOnlineTable } from '@/features/vendas-online/components/VendasOnlineTable';
-import { VendasPaginationControls } from '@/features/vendas-online/components/VendasPaginationControls';
+import { VendasPaginationFooter } from '@/features/vendas-online/components/VendasPaginationFooter';
 import { VendasAccountSelector } from '@/features/vendas-online/components/VendasAccountSelector';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Package, TrendingUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
@@ -16,7 +17,8 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 
 export default function VendasOnline() {
   const { refresh } = useVendasData();
-  const { orders, pagination, isLoading } = useVendasStore();
+  const { orders, pagination, isLoading, setPage, setItemsPerPage } = useVendasStore();
+  const { isSidebarCollapsed } = useSidebarUI();
   
   // Calcular estatísticas
   const stats = {
@@ -115,14 +117,28 @@ export default function VendasOnline() {
           </div>
           
           {/* Table */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 pb-24">
             <VendasOnlineTable />
           </div>
           
-          {/* Pagination */}
-          <div className="px-4 md:px-6 pb-6">
-            <VendasPaginationControls />
-          </div>
+          {/* Rodapé Fixado com Paginação */}
+          {!isLoading && orders.length > 0 && (
+            <div 
+              className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
+                isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+              } left-0`}
+            >
+              <VendasPaginationFooter
+                totalItems={pagination.total}
+                itemsPerPage={pagination.itemsPerPage}
+                currentPage={pagination.currentPage}
+                onPageChange={setPage}
+                onItemsPerPageChange={setItemsPerPage}
+                showFirstLastButtons={true}
+                pageButtonLimit={5}
+              />
+            </div>
+          )}
       </div>
     </div>
   );
