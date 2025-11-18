@@ -47,11 +47,16 @@ export function useCustomScrollbar({
 
     const container = containerRef.current;
     const containerWidth = container.clientWidth;
-    const currentScrollWidth = scrollWidth || container.scrollWidth;
+    
+    // ✅ CORREÇÃO PROBLEMA 2: Validação robusta de scrollWidth
+    const currentScrollWidth = scrollWidth && scrollWidth > 0 
+      ? scrollWidth 
+      : container.scrollWidth;
+    
     const scrollLeft = container.scrollLeft;
 
     // Verifica se precisa de scrollbar (conteúdo maior que container)
-    const needsScrollbar = currentScrollWidth > containerWidth;
+    const needsScrollbar = currentScrollWidth > containerWidth && containerWidth > 0;
     setShowScrollbar(needsScrollbar);
 
     if (!needsScrollbar) {
@@ -60,17 +65,20 @@ export function useCustomScrollbar({
       return;
     }
 
-    // Calcula largura do thumb (proporcional ao viewport)
-    const calculatedThumbWidth = (containerWidth / currentScrollWidth) * containerWidth;
-    setThumbWidth(Math.max(calculatedThumbWidth, 50)); // Mínimo 50px para usabilidade
+    // ✅ CORREÇÃO PROBLEMA 1: Cálculo correto de thumb width
+    // Thumb width proporcional ao quanto do conteúdo está visível
+    const visibleRatio = containerWidth / currentScrollWidth;
+    const calculatedThumbWidth = containerWidth * visibleRatio;
+    const finalThumbWidth = Math.max(calculatedThumbWidth, 50); // Mínimo 50px para usabilidade
+    setThumbWidth(finalThumbWidth);
 
     // Calcula posição do thumb baseado no scrollLeft
     const maxScrollLeft = currentScrollWidth - containerWidth;
     const scrollPercentage = maxScrollLeft > 0 ? scrollLeft / maxScrollLeft : 0;
-    const maxThumbPosition = containerWidth - calculatedThumbWidth;
+    const maxThumbPosition = containerWidth - finalThumbWidth; // ✅ Usa finalThumbWidth
     const calculatedThumbPosition = scrollPercentage * maxThumbPosition;
     
-    setThumbPosition(calculatedThumbPosition);
+    setThumbPosition(Math.max(0, calculatedThumbPosition)); // ✅ Garante não-negativo
   }, [containerRef, scrollWidth]);
 
   /**
@@ -129,7 +137,7 @@ export function useCustomScrollbar({
       if (!container) return;
 
       const containerWidth = container.clientWidth;
-      const currentScrollWidth = scrollWidth || container.scrollWidth;
+      const currentScrollWidth = scrollWidth && scrollWidth > 0 ? scrollWidth : container.scrollWidth;
       const maxScrollLeft = currentScrollWidth - containerWidth;
 
       // Calcula deslocamento do mouse
@@ -148,8 +156,8 @@ export function useCustomScrollbar({
       setIsDragging(false);
     };
 
-    // Adiciona listeners globais
-    document.addEventListener('mousemove', handleMouseMove);
+    // ✅ CORREÇÃO PROBLEMA 4: Listeners com passive para performance
+    document.addEventListener('mousemove', handleMouseMove, { passive: true });
     document.addEventListener('mouseup', handleMouseUp);
 
     return () => {
@@ -194,6 +202,19 @@ export function useCustomScrollbar({
   useEffect(() => {
     updateThumbMetrics();
   }, [scrollWidth, updateThumbMetrics]);
+
+  /**
+   * ✅ CORREÇÃO PROBLEMA 5: Inicialização no mount
+   * Garante que thumb apareça mesmo sem scroll
+   */
+  useEffect(() => {
+    // Pequeno delay para garantir que DOM está renderizado
+    const initTimer = setTimeout(() => {
+      updateThumbMetrics();
+    }, 100);
+
+    return () => clearTimeout(initTimer);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return {
     thumbPosition,
