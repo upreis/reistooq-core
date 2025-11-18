@@ -28,7 +28,7 @@ import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES
 import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
-import { useTableScrollSync } from '../hooks/useTableScrollSync';
+
 
 const validateMLAccounts = (mlAccounts: any[]) => ({ 
   valid: mlAccounts.length > 0, 
@@ -40,7 +40,6 @@ export function ReclamacoesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isSidebarCollapsed } = useSidebarUI();
-  const { tableContainerRef, footerScrollRef, scrollWidth } = useTableScrollSync();
   
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
@@ -480,24 +479,14 @@ export function ReclamacoesPage() {
             )}
           </div>
 
-          {/* Rodapé Fixo com Scroll Horizontal e Paginação */}
+          {/* Rodapé Fixado com Paginação */}
           {totalPages > 1 && (
             <div 
-              className={`fixed bottom-0 right-0 bg-background border-t z-40 transition-all duration-300 ${
+              className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
               } left-0`}
             >
-              {/* Scroll Horizontal Sincronizado */}
-              <div 
-                ref={footerScrollRef}
-                className="overflow-x-auto overflow-y-hidden border-b"
-                style={{ height: '12px' }}
-              >
-                <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
-              </div>
-
-              {/* Paginação */}
-              <div className="flex justify-between items-center px-4 md:px-6 py-3">
+              <div className="flex justify-between items-center px-4 md:px-6 py-3 bg-muted/30">
                 <div className="text-sm text-muted-foreground">
                   Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
                 </div>
