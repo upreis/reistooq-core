@@ -466,40 +466,52 @@ export function ReclamacoesPage() {
               </Tabs>
             </div>
 
-            {/* 📌 RODAPÉ FIXO COM PAGINAÇÃO - Responsivo ao estado da sidebar */}
-            {totalPages > 1 && (
-              <div 
-                className={`fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 ${
-                  isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
-                }`}
-              >
-                <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
-                  <div className="flex justify-between items-center">
-                    <div className="text-sm text-muted-foreground">
-                      Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                        disabled={currentPage === 1}
-                      >
-                        Anterior
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                        disabled={currentPage === totalPages}
-                      >
-                        Próxima
-                      </Button>
+            {/* 📌 RODAPÉ FIXO COM SCROLL HORIZONTAL + PAGINAÇÃO */}
+            <div 
+              className={`fixed bottom-0 right-0 z-40 bg-background border-t shadow-lg left-0 ${
+                isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+              }`}
+            >
+              <div className="max-w-7xl mx-auto">
+                {/* Scroll Horizontal - sempre visível */}
+                <div 
+                  className="overflow-x-auto overflow-y-hidden border-b"
+                  style={{ height: '20px' }}
+                  id="fixed-scrollbar-container"
+                >
+                  <div style={{ width: '100%', height: '1px' }} id="fixed-scrollbar-content" />
+                </div>
+                
+                {/* Paginação */}
+                {totalPages > 1 && (
+                  <div className="px-4 md:px-6 py-3">
+                    <div className="flex justify-between items-center">
+                      <div className="text-sm text-muted-foreground">
+                        Página {currentPage} de {totalPages} ({reclamacoesTab.length} reclamações)
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          Anterior
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                        >
+                          Próxima
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Modal de anotações */}
             {selectedClaimForAnotacoes && (
