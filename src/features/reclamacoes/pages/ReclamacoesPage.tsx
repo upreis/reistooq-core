@@ -390,7 +390,7 @@ export function ReclamacoesPage() {
   return (
     <ErrorBoundary>
       <div className="w-full">
-        <div className="space-y-6">
+        <div className="space-y-6 pb-20">
             {/* Sub-navegação */}
             <MLOrdersNav />
             
@@ -480,7 +480,7 @@ export function ReclamacoesPage() {
           </div>
 
           {/* Rodapé Fixado com Paginação */}
-          {totalPages > 1 && (
+          {reclamacoesTab.length > 0 && (
             <div 
               className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
