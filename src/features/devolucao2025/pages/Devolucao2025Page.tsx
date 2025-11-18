@@ -302,7 +302,7 @@ export const Devolucao2025Page = () => {
           </div>
 
           {/* Rodapé Fixado com Paginação */}
-          {!isLoading && !error && devolucoes.length > 0 && totalPages > 1 && (
+          {!isLoading && !error && devolucoes.length > 0 && (
             <div 
               className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
