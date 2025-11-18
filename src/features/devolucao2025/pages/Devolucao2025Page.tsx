@@ -13,7 +13,8 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
-import { Devolucao2025Pagination } from '../components/Devolucao2025Pagination';
+import { Devolucao2025PaginationFooter } from '../components/Devolucao2025PaginationFooter';
+import { useSidebarUI } from '@/context/SidebarUIContext';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
 import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
@@ -26,6 +27,8 @@ import { usePersistentDevolucoesState } from '../hooks/usePersistentDevolucoesSt
 import { RefreshCw } from 'lucide-react';
 
 export const Devolucao2025Page = () => {
+  const { isSidebarCollapsed } = useSidebarUI();
+  
   // Estado de persistência
   const persistentCache = usePersistentDevolucoesState();
   
@@ -272,7 +275,7 @@ export const Devolucao2025Page = () => {
           </div>
 
           {/* Tabela */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 pb-24"> {/* pb-24 para espaço do rodapé */}
             <Card className="p-6">
               {isLoading && (
                 <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
@@ -295,19 +298,27 @@ export const Devolucao2025Page = () => {
                 error={error}
                 visibleColumns={visibleColumns}
               />
-
-              {!isLoading && !error && devolucoes.length > 0 && (
-                <Devolucao2025Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={devolucoes.length}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={setItemsPerPage}
-                />
-              )}
             </Card>
           </div>
+
+          {/* Rodapé Fixado com Paginação */}
+          {!isLoading && !error && devolucoes.length > 0 && totalPages > 1 && (
+            <div 
+              className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
+                isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
+              } left-0`}
+            >
+              <Devolucao2025PaginationFooter
+                totalItems={devolucoes.length}
+                itemsPerPage={itemsPerPage}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
+                showFirstLastButtons={true}
+                pageButtonLimit={5}
+              />
+            </div>
+          )}
         </div>
     </div>
   );
