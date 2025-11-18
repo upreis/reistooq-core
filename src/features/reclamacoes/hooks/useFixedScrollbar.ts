@@ -1,26 +1,28 @@
 /**
  * 🎯 HOOK PARA SCROLLBAR HORIZONTAL FIXO
- * Sincroniza scroll horizontal entre barra fixa e tabela
+ * Sincroniza scroll horizontal entre barra fixa (no rodapé) e tabela
  */
 
 import { useEffect, useRef, useState } from 'react';
 
 export function useFixedScrollbar() {
   const tableContainerRef = useRef<HTMLDivElement>(null);
-  const fixedScrollbarRef = useRef<HTMLDivElement>(null);
   const [scrollWidth, setScrollWidth] = useState(0);
 
   useEffect(() => {
     const tableContainer = tableContainerRef.current;
-    const fixedScrollbar = fixedScrollbarRef.current;
+    const fixedScrollbar = document.getElementById('fixed-scrollbar-container');
+    const fixedScrollbarContent = document.getElementById('fixed-scrollbar-content');
     
-    if (!tableContainer || !fixedScrollbar) return;
+    if (!tableContainer || !fixedScrollbar || !fixedScrollbarContent) return;
 
     // Atualizar largura do scroll quando tabela redimensiona
     const updateScrollWidth = () => {
       const table = tableContainer.querySelector('table');
       if (table) {
-        setScrollWidth(table.scrollWidth);
+        const width = table.scrollWidth;
+        setScrollWidth(width);
+        fixedScrollbarContent.style.width = `${width}px`;
       }
     };
 
@@ -61,7 +63,6 @@ export function useFixedScrollbar() {
 
   return {
     tableContainerRef,
-    fixedScrollbarRef,
     scrollWidth,
   };
 }
