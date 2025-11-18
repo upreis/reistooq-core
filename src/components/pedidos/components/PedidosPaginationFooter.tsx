@@ -105,14 +105,14 @@ export const PedidosPaginationFooter: React.FC<PedidosPaginationFooterProps> = (
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-4 py-4 px-2 sm:px-6 text-muted-foreground text-sm",
+        "grid grid-cols-3 items-center py-4 px-2 sm:px-6 text-muted-foreground text-sm",
         className
       )}
       role="navigation"
       aria-label="Paginação"
     >
-      {/* Informações no topo */}
-      <div className="flex items-center gap-4">
+      {/* Informações à esquerda */}
+      <div className="flex items-center gap-4 justify-self-start">
         <div className="text-sm text-muted-foreground whitespace-nowrap">
           Mostrando <span className="font-semibold text-foreground">{startItem}</span> a{' '}
           <span className="font-semibold text-foreground">{endItem}</span> de{' '}
@@ -139,7 +139,7 @@ export const PedidosPaginationFooter: React.FC<PedidosPaginationFooterProps> = (
       </div>
 
       {/* Navegação centralizada */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 justify-self-center">
         {/* Botão Primeira Página */}
         {showFirstLastButtons && (
           <Button
@@ -197,6 +197,9 @@ export const PedidosPaginationFooter: React.FC<PedidosPaginationFooterProps> = (
           </Button>
         )}
       </div>
+
+      {/* Coluna vazia à direita para balancear o grid */}
+      <div></div>
     </div>
   );
 };
