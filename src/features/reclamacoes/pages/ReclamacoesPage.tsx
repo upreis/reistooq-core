@@ -491,6 +491,7 @@ export function ReclamacoesPage() {
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
+                onItemsPerPageChange={setItemsPerPage}
                 showFirstLastButtons={true}
                 pageButtonLimit={5}
               />
