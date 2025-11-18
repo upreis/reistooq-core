@@ -20,6 +20,7 @@ import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { useFixedScrollbar } from '../hooks/useFixedScrollbar';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -50,6 +51,9 @@ export function ReclamacoesTable({
     reason_category: false,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
+  
+  // 📏 Scrollbar horizontal fixo
+  const { tableContainerRef, fixedScrollbarRef, scrollWidth } = useFixedScrollbar();
   
   const handleOpenMensagens = (claim: any) => {
     setSelectedClaim(claim);
@@ -119,7 +123,10 @@ export function ReclamacoesTable({
     <div className="space-y-4">
       {/* Tabela */}
       <div className="w-full flex-1 flex flex-col min-h-0">
-        <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
+        <div 
+          ref={tableContainerRef}
+          className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth"
+        >
           <Table className="min-w-max relative">
             <TableHeader className="sticky top-0 z-10 bg-background shadow-sm">
               {table.getHeaderGroups().map((headerGroup) => (
@@ -152,6 +159,15 @@ export function ReclamacoesTable({
             </TableBody>
           </Table>
         </div>
+      </div>
+
+      {/* 📏 Barra de scroll horizontal fixa (acima do rodapé) */}
+      <div 
+        ref={fixedScrollbarRef}
+        className="fixed bottom-12 left-0 right-0 z-30 overflow-x-auto overflow-y-hidden bg-background/95 backdrop-blur-sm border-t"
+        style={{ height: '16px' }}
+      >
+        <div style={{ width: `${scrollWidth}px`, height: '1px' }} />
       </div>
 
       {/* Informação de total de reclamações */}
