@@ -13,6 +13,9 @@ interface TableHeaderContentProps {
 export const TableHeaderContent = ({ visibleColumns, isVisible }: TableHeaderContentProps) => {
   return (
     <TableRow className="hover:bg-transparent border-b-2">
+      {/* COLUNA ANÁLISE - PRIMEIRA COLUNA */}
+      <TableHead className="sticky left-0 z-10 bg-background">📊 Análise</TableHead>
+      
       {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
       {isVisible('account_name') && <TableHead>Empresa</TableHead>}
       {isVisible('order_id') && <TableHead>Pedido</TableHead>}
