@@ -428,12 +428,12 @@ export function ReclamacoesPage() {
   return (
     <ErrorBoundary>
       <div className="w-full">
-        <div className="space-y-6 pb-20">
+        <div className="space-y-2 pb-20">
             {/* Sub-navegação */}
             <MLOrdersNav />
             
             {/* Header */}
-            <div className="px-4 md:px-6 py-6">
+            <div className="px-4 md:px-6 py-3">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
