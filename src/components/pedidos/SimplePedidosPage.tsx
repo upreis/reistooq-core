@@ -1089,7 +1089,7 @@ useEffect(() => {
           </div>
 
           {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
-          <div className="px-4 md:px-6 space-y-4">
+          <div className="px-4 md:px-6">
             {/* F4.3: PedidosFiltersUnified com Error Boundary */}
             <ErrorBoundary name="PedidosFiltersUnified">
               <PedidosFiltersUnified
@@ -1112,17 +1112,17 @@ useEffect(() => {
                 onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
               />
             </ErrorBoundary>
+          </div>
 
-            {/* 📊 Resumo de Métricas - após as abas */}
-            <div className="mt-8">
-              <PedidosResumo
-                pedidos={displayedOrders || orders}
-                onFiltroClick={(filtro) => setQuickFilter(filtro)}
-                filtroAtivo={quickFilter}
-                mappingData={mappingData}
-                isPedidoProcessado={isPedidoProcessado}
-              />
-            </div>
+          {/* 📊 Resumo de Métricas - após as abas */}
+          <div className="mt-8 px-4 md:px-6">
+            <PedidosResumo
+              pedidos={displayedOrders || orders}
+              onFiltroClick={(filtro) => setQuickFilter(filtro)}
+              filtroAtivo={quickFilter}
+              mappingData={mappingData}
+              isPedidoProcessado={isPedidoProcessado}
+            />
           </div>
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
