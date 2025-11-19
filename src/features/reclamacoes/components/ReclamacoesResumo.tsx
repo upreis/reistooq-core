@@ -195,32 +195,34 @@ export function ReclamacoesResumo({
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
       
-      {metricas.map((metrica) => {
-        const Icon = metrica.icon;
-        const ativo = isFiltroAtivo(metrica.filtro);
-        
-        return (
-          <Badge
-            key={metrica.label}
-            variant={metrica.destaque ? "default" : "outline"}
-            onClick={() => handleBadgeClick(metrica.filtro)}
-            className={cn(
-              "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
-              metrica.color,
-              ativo && "ring-2 ring-primary ring-offset-2 scale-105"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            <span className="font-normal">{metrica.label}</span>
-            <span className={cn(
-              "font-bold ml-1 px-1.5 py-0.5 rounded",
-              metrica.destaque ? "bg-black/20" : "bg-primary/10"
-            )}>
-              {metrica.valor}
-            </span>
-          </Badge>
-        );
-      })}
+      {metricas
+        .filter(metrica => metrica.valor > 0 || metrica.destaque) // Mostra apenas badges com valor > 0 ou o badge Total (destaque)
+        .map((metrica) => {
+          const Icon = metrica.icon;
+          const ativo = isFiltroAtivo(metrica.filtro);
+          
+          return (
+            <Badge
+              key={metrica.label}
+              variant={metrica.destaque ? "default" : "outline"}
+              onClick={() => handleBadgeClick(metrica.filtro)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+                metrica.color,
+                ativo && "ring-2 ring-primary ring-offset-2 scale-105"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="font-normal">{metrica.label}</span>
+              <span className={cn(
+                "font-bold ml-1 px-1.5 py-0.5 rounded",
+                metrica.destaque ? "bg-black/20" : "bg-primary/10"
+              )}>
+                {metrica.valor}
+              </span>
+            </Badge>
+          );
+        })}
     </div>
   );
 }
