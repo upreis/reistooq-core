@@ -55,11 +55,6 @@ export default function VendasOnline() {
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
   
-  // Handler para mudança de status de análise
-  const handleStatusChange = (orderId: string, newStatus: StatusAnalise) => {
-    setAnaliseStatus(orderId, newStatus);
-  };
-  
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
     analiseStatus,
@@ -214,10 +209,7 @@ export default function VendasOnline() {
           
           {/* Table */}
           <div className="px-4 md:px-6">
-            <VendasOnlineTable 
-              onStatusChange={handleStatusChange}
-              activeTab={activeTab}
-            />
+            <VendasOnlineTable />
           </div>
           
           {/* Rodapé Fixado com Paginação */}
