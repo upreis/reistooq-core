@@ -3,6 +3,7 @@
  * Gerenciamento completo de vendas do Mercado Livre
  */
 
+import { useState, useMemo } from 'react';
 import { VendasFiltersBar } from '@/features/vendas-online/components/VendasFiltersBar';
 import { VendasOnlineTable } from '@/features/vendas-online/components/VendasOnlineTable';
 import { VendasPaginationFooter } from '@/features/vendas-online/components/VendasPaginationFooter';
@@ -12,20 +13,63 @@ import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, TrendingUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
+import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage';
+import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise.types';
+import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
 
 export default function VendasOnline() {
   const { refresh } = useVendasData();
   const { orders, pagination, isLoading, setPage, setItemsPerPage } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
   
-  // Calcular estatísticas
+  // 💾 STORAGE DE ANÁLISE (localStorage)
+  const {
+    analiseStatus,
+    setAnaliseStatus
+  } = useVendaStorage();
+  
+  // Estado de abas
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  
+  // Enriquecer vendas com status_analise_local do localStorage
+  const vendasEnriquecidas = useMemo(() => {
+    return orders.map(venda => ({
+      ...venda,
+      status_analise_local: analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise
+    }));
+  }, [orders, analiseStatus]);
+  
+  // Filtrar vendas por aba ativa (Ativas vs Histórico)
+  const vendasFiltradasPorAba = useMemo(() => {
+    if (activeTab === 'ativas') {
+      return vendasEnriquecidas.filter(v => 
+        STATUS_ATIVOS.includes(v.status_analise_local)
+      );
+    } else {
+      return vendasEnriquecidas.filter(v => 
+        STATUS_HISTORICO.includes(v.status_analise_local)
+      );
+    }
+  }, [vendasEnriquecidas, activeTab]);
+  
+  // Contadores de abas
+  const countAtivas = vendasEnriquecidas.filter(v => 
+    STATUS_ATIVOS.includes(v.status_analise_local)
+  ).length;
+  
+  const countHistorico = vendasEnriquecidas.filter(v => 
+    STATUS_HISTORICO.includes(v.status_analise_local)
+  ).length;
+  
+  // Calcular estatísticas (baseado em vendas filtradas por aba)
   const stats = {
-    total: pagination.total,
-    pending: orders.filter(o => o.status === 'payment_in_process').length,
-    completed: orders.filter(o => o.status === 'paid').length,
-    revenue: orders.reduce((sum, o) => sum + o.total_amount, 0)
+    total: vendasFiltradasPorAba.length,
+    pending: vendasFiltradasPorAba.filter(o => o.status === 'payment_in_process').length,
+    completed: vendasFiltradasPorAba.filter(o => o.status === 'paid').length,
+    revenue: vendasFiltradasPorAba.reduce((sum, o) => sum + o.total_amount, 0)
   };
 
   return (
@@ -92,13 +136,16 @@ export default function VendasOnline() {
               
               <Card className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-500/10 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-purple-500" />
+                  <div className="p-2 bg-yellow-500/10 rounded-lg">
+                    <TrendingUp className="h-5 w-5 text-yellow-500" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Faturamento</p>
+                    <p className="text-sm text-muted-foreground">Receita</p>
                     <p className="text-2xl font-bold">
-                      {stats.revenue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      {new Intl.NumberFormat('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      }).format(stats.revenue)}
                     </p>
                   </div>
                 </div>
@@ -109,6 +156,20 @@ export default function VendasOnline() {
           {/* Account Selector */}
           <div className="px-4 md:px-6">
             <VendasAccountSelector />
+          </div>
+          
+          {/* Tabs: Ativas vs Histórico */}
+          <div className="px-4 md:px-6">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+              <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
+                <TabsTrigger value="ativas" className="h-10">
+                  Ativas ({countAtivas})
+                </TabsTrigger>
+                <TabsTrigger value="historico" className="h-10">
+                  Histórico ({countHistorico})
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
           
           {/* Filters */}
@@ -130,16 +191,14 @@ export default function VendasOnline() {
             >
               <VendasPaginationFooter
                 totalItems={pagination.total}
-                itemsPerPage={pagination.itemsPerPage}
                 currentPage={pagination.currentPage}
+                itemsPerPage={pagination.itemsPerPage}
                 onPageChange={setPage}
                 onItemsPerPageChange={setItemsPerPage}
-                showFirstLastButtons={true}
-                pageButtonLimit={5}
               />
             </div>
           )}
-      </div>
+        </div>
     </div>
   );
 }
