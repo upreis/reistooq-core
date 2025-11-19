@@ -1045,12 +1045,12 @@ useEffect(() => {
   // Render principal
   return (
     <div className="w-full">
-      <div className="space-y-2 pb-20">
+      <div className="pb-20">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
           {/* Header */}
-          <div className="px-4 md:px-6 py-3">
+          <div className="px-4 md:px-6 py-3 mt-2">
             <PedidosHeaderSection
               fonte={state.fonte}
               totalCount={total}
@@ -1072,7 +1072,7 @@ useEffect(() => {
 
 
           {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 mt-2">
             <PedidosStickyActions
               orders={orders}
               displayedOrders={displayedOrders}
@@ -1089,7 +1089,7 @@ useEffect(() => {
           </div>
 
           {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 mt-2">
             {/* F4.3: PedidosFiltersUnified com Error Boundary */}
             <ErrorBoundary name="PedidosFiltersUnified">
               <PedidosFiltersUnified
