@@ -110,11 +110,8 @@ export function usePedidosPolling({
     }
     
     if (!enabled) {
-      if (isDev) console.log('🔄 [POLLING] Desativado');
       return;
     }
-    
-    if (isDev) console.log(`🔄 [POLLING] Ativado - intervalo de ${intervalMs}ms (${intervalMs / 1000}s)`);
     
     // ✅ FIX: Criar novo interval (anterior já foi limpo acima)
     intervalRef.current = setInterval(safeRefresh, intervalMs);
@@ -124,10 +121,9 @@ export function usePedidosPolling({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
-        if (isDev) console.log('🔄 [POLLING] Limpo (cleanup)');
       }
     };
-  }, [enabled, intervalMs, safeRefresh]); // ✅ safeRefresh nas deps recria interval quando necessário
+  }, [enabled, intervalMs]); // ✅ CRÍTICO: removido safeRefresh das deps para evitar loop infinito
   
   return {
     lastRefresh: lastRefreshRef.current,
