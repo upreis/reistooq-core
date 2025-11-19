@@ -107,8 +107,8 @@ export function Devolucao2025FilterBar({
               >
                 <span className="truncate">
                   {selectedAccountIds.length === 0 
-                    ? 'Selecione as contas' 
-                    : `${selectedAccountIds.length} selecionada${selectedAccountIds.length > 1 ? 's' : ''}`
+                    ? 'Empresas' 
+                    : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
                   }
                 </span>
                 <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0 ml-2" />
