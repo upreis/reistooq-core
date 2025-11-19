@@ -1045,12 +1045,12 @@ useEffect(() => {
   // Render principal
   return (
     <div className="w-full">
-      <div className="space-y-6 pb-20">
+      <div className="space-y-2 pb-20">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* 🛡️ HEADER BLINDADO */}
-          <div className="px-4 md:px-6 py-6">
+          {/* Header */}
+          <div className="px-4 md:px-6 py-3">
             <PedidosHeaderSection
               fonte={state.fonte}
               totalCount={total}
@@ -1089,7 +1089,7 @@ useEffect(() => {
           </div>
 
           {/* ✅ NOVO SISTEMA DE FILTROS UNIFICADO - UX CONSISTENTE */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 space-y-4">
             {/* F4.3: PedidosFiltersUnified com Error Boundary */}
             <ErrorBoundary name="PedidosFiltersUnified">
               <PedidosFiltersUnified
@@ -1112,17 +1112,17 @@ useEffect(() => {
                 onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
               />
             </ErrorBoundary>
-          </div>
 
-          {/* 📊 Resumo de Métricas - após as abas */}
-          <div className="mt-12 px-4 md:px-6">
-            <PedidosResumo
-              pedidos={displayedOrders || orders}
-              onFiltroClick={(filtro) => setQuickFilter(filtro)}
-              filtroAtivo={quickFilter}
-              mappingData={mappingData}
-              isPedidoProcessado={isPedidoProcessado}
-            />
+            {/* 📊 Resumo de Métricas - após as abas */}
+            <div className="mt-12">
+              <PedidosResumo
+                pedidos={displayedOrders || orders}
+                onFiltroClick={(filtro) => setQuickFilter(filtro)}
+                filtroAtivo={quickFilter}
+                mappingData={mappingData}
+                isPedidoProcessado={isPedidoProcessado}
+              />
+            </div>
           </div>
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
