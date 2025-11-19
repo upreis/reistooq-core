@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { differenceInBusinessDays } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
@@ -330,8 +331,7 @@ export function ReclamacoesPage() {
           const hoje = new Date();
           const dataCriacao = new Date(claim.date_created);
           
-          // Calcular dias úteis usando date-fns
-          const { differenceInBusinessDays } = require('date-fns');
+          // Calcular dias úteis
           const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
           
           if (filtroResumo.valor === 'vencido') {
