@@ -25,6 +25,7 @@ import { logger } from '@/utils/logger';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS as ACTIVE_STATUSES, STATUS_HISTORICO as HISTORIC_STATUSES } from '../types/devolucao-analise.types';
 import { useToast } from '@/hooks/use-toast';
@@ -477,14 +478,34 @@ export function ReclamacoesPage() {
             {/* Tabs: Ativas vs Histórico + Resumo */}
             <div className="px-4 md:px-6 space-y-4">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-                <TabsList className="grid w-full max-w-md grid-cols-2">
-                  <TabsTrigger value="ativas">
-                    Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
-                  </TabsTrigger>
-                  <TabsTrigger value="historico">
-                    Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
-                  </TabsTrigger>
-                </TabsList>
+                <div className="flex items-center gap-4">
+                  <TabsList className="grid max-w-[300px] grid-cols-2">
+                    <TabsTrigger value="ativas">
+                      Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
+                    </TabsTrigger>
+                    <TabsTrigger value="historico">
+                      Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  {/* Filtro de Lifecycle (dropdown) */}
+                  {activeTab === 'historico' && (
+                    <Select 
+                      value={lifecycleFilter} 
+                      onValueChange={(value) => setLifecycleFilter(value as any)}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="mediacao">Mediação</SelectItem>
+                        <SelectItem value="devolucao">Devolução</SelectItem>
+                        <SelectItem value="cancelamento">Cancelamento</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
                 
                 {/* Resumo de Métricas - após as abas */}
                 <div className="mt-4">
