@@ -157,70 +157,58 @@ export default function VendasOnline() {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full pb-20">
       <div className="space-y-6">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* Header */}
-          <div className="px-4 md:px-6 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">Vendas Online</h1>
-                <p className="text-muted-foreground">
-                  Gerencie todas as suas vendas do Mercado Livre em um só lugar
-                </p>
-              </div>
-              
-              <Button onClick={() => refresh()} disabled={isLoading}>
-                <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-                Atualizar
-              </Button>
-            </div>
+          {/* Header - SEM py-6 */}
+          <div className="px-4 md:px-6">
+            <h1 className="text-3xl font-bold">Vendas Online</h1>
           </div>
           
-          {/* Stats Cards - REMOVIDOS conforme padrão /reclamacoes */}
-          
-          {/* Tabs: Ativas vs Histórico */}
+          {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
-                <TabsTrigger value="ativas" className="h-10">
-                  Ativas ({countAtivas})
-                </TabsTrigger>
-                <TabsTrigger value="historico" className="h-10">
-                  Histórico ({countHistorico})
-                </TabsTrigger>
-              </TabsList>
+              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+                <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
+                  <TabsTrigger value="ativas" className="h-10">
+                    Ativas ({countAtivas})
+                  </TabsTrigger>
+                  <TabsTrigger value="historico" className="h-10">
+                    Histórico ({countHistorico})
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Filtros integrados na mesma linha */}
+                <div className="flex-1 min-w-0">
+                  <VendasFilterBar
+                    accounts={accounts}
+                    selectedAccountIds={selectedAccountIds}
+                    onAccountsChange={setSelectedAccountIds}
+                    periodo={periodo}
+                    onPeriodoChange={setPeriodo}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onBuscar={refresh}
+                    isLoading={isLoading}
+                  />
+                </div>
+              </div>
+              
+              {/* Resumo de Métricas - após as abas com mt-12 */}
+              <div className="mt-12">
+                <VendasResumo 
+                  vendas={vendasEnriquecidas}
+                  onFiltroClick={setFiltroResumoAtivo}
+                  filtroAtivo={filtroResumoAtivo}
+                />
+              </div>
             </Tabs>
           </div>
           
-          {/* Filters */}
-          <div className="px-4 md:px-6">
-            <VendasFilterBar
-              accounts={accounts}
-              selectedAccountIds={selectedAccountIds}
-              onAccountsChange={setSelectedAccountIds}
-              periodo={periodo}
-              onPeriodoChange={setPeriodo}
-              searchTerm={searchTerm}
-              onSearchChange={setSearchTerm}
-              onBuscar={refresh}
-              isLoading={isLoading}
-            />
-          </div>
-          
-          {/* Resumo com Badges Clicáveis */}
-          <div className="px-4 md:px-6 mt-12">
-            <VendasResumo 
-              vendas={vendasEnriquecidas}
-              onFiltroClick={setFiltroResumoAtivo}
-              filtroAtivo={filtroResumoAtivo}
-            />
-          </div>
-          
           {/* Table */}
-          <div className="px-4 md:px-6 pb-24">
+          <div className="px-4 md:px-6">
             <VendasOnlineTable />
           </div>
           
