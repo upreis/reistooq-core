@@ -106,6 +106,9 @@ export const VendasTable = ({
               {/* ANÁLISE */}
               <TableHead className="min-w-[180px]">📊 Análise</TableHead>
               
+              {/* EMPRESA */}
+              <TableHead className="min-w-[150px]">Empresa</TableHead>
+              
               {/* IDENTIFICAÇÃO */}
               <TableHead className="min-w-[120px]">ID Pedido</TableHead>
               <TableHead className="min-w-[100px]">Pack ID</TableHead>
@@ -200,6 +203,11 @@ export const VendasTable = ({
                         }
                       />
                     )}
+                  </TableCell>
+                  
+                  {/* EMPRESA */}
+                  <TableCell>
+                    <span className="text-sm font-medium">{(order as any).account_name || '-'}</span>
                   </TableCell>
                   
                   {/* IDENTIFICAÇÃO */}
