@@ -483,6 +483,7 @@ export function ReclamacoesPage() {
                       onSearchChange={(term) => setFilters({ ...filters, status: term })}
                       onBuscar={handleBuscarReclamacoes}
                       isLoading={isManualSearching}
+                      onCancel={handleCancelarBusca}
                       table={tableInstance}
                     />
                   </div>
