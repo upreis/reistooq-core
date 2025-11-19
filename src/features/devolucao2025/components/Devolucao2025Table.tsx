@@ -17,6 +17,9 @@ import { RecentBadge } from '@/features/devolucao2025/components/cells/RecentBad
 import { DeliveryStatusCell } from '@/features/devolucao2025/components/cells/DeliveryStatusCell';
 import { EvidencesCell } from '@/features/devolucao2025/components/cells/EvidencesCell';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
+import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
+import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { translateColumnValue } from '../config/translations';
 import { useStickyTableHeader } from '@/hooks/useStickyTableHeader';
 import { StickyHeaderClone } from './StickyHeaderClone';
@@ -29,9 +32,21 @@ interface Devolucao2025TableProps {
   isLoading: boolean;
   error: any;
   visibleColumns: string[];
+  onStatusChange?: (orderId: string, newStatus: any) => void;
+  anotacoes?: Record<string, string>;
+  activeTab?: 'ativas' | 'historico';
 }
 
-export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, visibleColumns }: Devolucao2025TableProps) => {
+export const Devolucao2025Table = ({ 
+  accounts, 
+  devolucoes, 
+  isLoading, 
+  error, 
+  visibleColumns,
+  onStatusChange,
+  anotacoes,
+  activeTab
+}: Devolucao2025TableProps) => {
   // 🔧 Hook de sticky header
   const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
   
@@ -377,6 +392,17 @@ export const Devolucao2025Table = ({ accounts, devolucoes, isLoading, error, vis
               {isVisible('custo_envio_orig') && (
                 <TableCell>
                   {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
+                </TableCell>
+              )}
+              
+              {/* 📊 COLUNA DE ANÁLISE - Controle de Status */}
+              {isVisible('analise') && onStatusChange && (
+                <TableCell>
+                  <StatusAnaliseSelect
+                    value={(dev as any).status_analise_local || 'pendente'}
+                    onChange={(newStatus: StatusAnalise) => onStatusChange(dev.order_id, newStatus)}
+                    allowedStatuses={activeTab === 'ativas' ? STATUS_ATIVOS : STATUS_HISTORICO}
+                  />
                 </TableCell>
               )}
             </TableRow>

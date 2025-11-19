@@ -71,4 +71,7 @@ export const COLUMNS_CONFIG: ColumnConfig[] = [
   // GRUPO 9: CUSTOS OPERACIONAIS
   { id: 'custo_total_log', label: '💵 Custo Total Log', group: '💰 Custos' },
   { id: 'custo_envio_orig', label: '🚚 Custo Envio Orig', group: '💰 Custos' },
+  
+  // GRUPO 10: ANÁLISE & GESTÃO
+  { id: 'analise', label: '📊 Análise', group: '📊 Gestão' },
 ];
