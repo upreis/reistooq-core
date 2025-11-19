@@ -474,19 +474,19 @@ export function ReclamacoesPage() {
             </div>
 
             {/* Tabs: Ativas vs Histórico + Resumo */}
-            <div className="px-4 md:px-6">
+            <div className="px-4 md:px-6 space-y-4">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-                <div className="flex items-center gap-4 flex-wrap">
-                  <TabsList className="grid grid-cols-2">
-                    <TabsTrigger value="ativas">
-                      Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
-                    </TabsTrigger>
-                    <TabsTrigger value="historico">
-                      Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  {/* Resumo de Métricas - ao lado das abas */}
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="ativas">
+                    Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
+                  </TabsTrigger>
+                  <TabsTrigger value="historico">
+                    Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
+                  </TabsTrigger>
+                </TabsList>
+                
+                {/* Resumo de Métricas - após as abas */}
+                <div className="mt-4">
                   <ReclamacoesResumo 
                     reclamacoes={reclamacoesEnriquecidas} 
                     onFiltroClick={setFiltroResumo}
