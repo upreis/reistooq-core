@@ -509,6 +509,7 @@ export function ReclamacoesPage() {
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
                       onTableReady={setTableInstance}
+                      activeTab={activeTab}
                     />
                   </Card>
                 </TabsContent>

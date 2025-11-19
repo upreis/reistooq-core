@@ -13,6 +13,7 @@ import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import { ReclamacaoLifecycleBadge } from './ReclamacaoLifecycleBadge';
 import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
 import { AnalysisDeadlineCell } from '@/features/devolucao2025/components/cells/AnalysisDeadlineCell';
 
 export type ReclamacaoRow = any;
@@ -246,7 +247,8 @@ export const reclamacoesColumns = (
   onStatusChange?: (claimId: string, newStatus: StatusAnalise) => void,
   onDeleteReclamacao?: (claimId: string) => void,
   onOpenAnotacoes?: (claim: any) => void,
-  anotacoes?: Record<string, string>
+  anotacoes?: Record<string, string>,
+  activeTab?: 'ativas' | 'historico' // ✨ NOVO: Controla quais status mostrar no dropdown
 ): ColumnDef<ReclamacaoRow>[] => [
   // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA STICKY
   {
@@ -261,11 +263,15 @@ export const reclamacoesColumns = (
       const claimId = row.original.claim_id;
       const currentStatus = (row.original.status_analise || 'pendente') as StatusAnalise;
       
+      // ✨ Determinar quais status podem ser selecionados baseado na aba
+      const allowedStatuses = activeTab === 'historico' ? STATUS_HISTORICO : STATUS_ATIVOS;
+      
       return (
         <div className="sticky left-0 bg-background z-10 px-2">
           <StatusAnaliseSelect
             value={currentStatus}
             onChange={(newStatus) => onStatusChange?.(claimId, newStatus)}
+            allowedStatuses={allowedStatuses}
           />
         </div>
       );
