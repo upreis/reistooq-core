@@ -51,7 +51,7 @@ const useMLAccounts = () => {
 
 export default function VendasOnline() {
   const { refresh } = useVendasData();
-  const { orders, pagination, isLoading, setPage, setItemsPerPage } = useVendasStore();
+  const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
   
@@ -77,6 +77,22 @@ export default function VendasOnline() {
   const [periodo, setPeriodo] = useState('60');
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  
+  // 🔥 FUNÇÃO DE BUSCA: Aplicar filtros à store e refresh
+  const handleBuscar = () => {
+    console.log('🔍 Aplicando filtros:', { selectedAccountIds, periodo, searchTerm });
+    
+    // Atualizar filtros na store do Zustand
+    updateFilters({
+      integrationAccountId: selectedAccountIds[0] || '', // unified-orders espera 1 conta
+      search: searchTerm,
+      dateFrom: periodo ? new Date(Date.now() - parseInt(periodo) * 24 * 60 * 60 * 1000).toISOString() : null,
+      dateTo: new Date().toISOString()
+    });
+    
+    // Refresh dispara nova busca com filtros atualizados
+    refresh();
+  };
   
   // Enriquecer vendas com status_analise_local do localStorage
   const vendasEnriquecidas = useMemo(() => {
@@ -195,7 +211,7 @@ export default function VendasOnline() {
                     onPeriodoChange={setPeriodo}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
-                    onBuscar={refresh}
+                    onBuscar={handleBuscar}
                     isLoading={isLoading}
                   />
                 </div>
