@@ -8,6 +8,7 @@ import { VendasFiltersBar } from '@/features/vendas-online/components/VendasFilt
 import { VendasOnlineTable } from '@/features/vendas-online/components/VendasOnlineTable';
 import { VendasPaginationFooter } from '@/features/vendas-online/components/VendasPaginationFooter';
 import { VendasAccountSelector } from '@/features/vendas-online/components/VendasAccountSelector';
+import { VendasResumo, type FiltroResumo } from '@/features/vendas-online/components/VendasResumo';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
 import { useSidebarUI } from '@/context/SidebarUIContext';
@@ -19,6 +20,7 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage';
 import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
+import { differenceInBusinessDays, parseISO } from 'date-fns';
 
 export default function VendasOnline() {
   const { refresh } = useVendasData();
@@ -34,6 +36,9 @@ export default function VendasOnline() {
   // Estado de abas
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
+  // Estado de filtro ativo do resumo
+  const [filtroResumoAtivo, setFiltroResumoAtivo] = useState<FiltroResumo | null>(null);
+  
   // Enriquecer vendas com status_analise_local do localStorage
   const vendasEnriquecidas = useMemo(() => {
     return orders.map(venda => ({
@@ -44,16 +49,61 @@ export default function VendasOnline() {
   
   // Filtrar vendas por aba ativa (Ativas vs Histórico)
   const vendasFiltradasPorAba = useMemo(() => {
+    let resultado = vendasEnriquecidas;
+    
+    // Filtro por aba
     if (activeTab === 'ativas') {
-      return vendasEnriquecidas.filter(v => 
+      resultado = resultado.filter(v => 
         STATUS_ATIVOS.includes(v.status_analise_local)
       );
     } else {
-      return vendasEnriquecidas.filter(v => 
+      resultado = resultado.filter(v => 
         STATUS_HISTORICO.includes(v.status_analise_local)
       );
     }
-  }, [vendasEnriquecidas, activeTab]);
+    
+    // Aplicar filtro do resumo (badges clicáveis)
+    if (filtroResumoAtivo) {
+      const hoje = new Date();
+      
+      switch (filtroResumoAtivo.tipo) {
+        case 'prazo':
+          resultado = resultado.filter(v => {
+            if (!v.date_created) return false;
+            const dataCriacao = parseISO(v.date_created);
+            const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+            
+            if (filtroResumoAtivo.valor === 'vencido') {
+              return diasUteis > 3;
+            } else if (filtroResumoAtivo.valor === 'a_vencer') {
+              return diasUteis >= 0 && diasUteis <= 3;
+            }
+            return false;
+          });
+          break;
+          
+        case 'mediacao':
+          resultado = resultado.filter(v => 
+            v.tags?.includes('mediacao') || v.status === 'mediation'
+          );
+          break;
+          
+        case 'tipo':
+          if (filtroResumoAtivo.valor === 'venda') {
+            resultado = resultado.filter(v => 
+              v.status === 'paid' || v.status === 'confirmed'
+            );
+          } else if (filtroResumoAtivo.valor === 'cancel') {
+            resultado = resultado.filter(v => 
+              v.status === 'cancelled'
+            );
+          }
+          break;
+      }
+    }
+    
+    return resultado;
+  }, [vendasEnriquecidas, activeTab, filtroResumoAtivo]);
   
   // Contadores de abas
   const countAtivas = vendasEnriquecidas.filter(v => 
@@ -95,63 +145,7 @@ export default function VendasOnline() {
             </div>
           </div>
           
-          {/* Stats Cards */}
-          <div className="px-4 md:px-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Package className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Vendas</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
-                  </div>
-                </div>
-              </Card>
-              
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <Clock className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Pendentes</p>
-                    <p className="text-2xl font-bold">{stats.pending}</p>
-                  </div>
-                </div>
-              </Card>
-              
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-500/10 rounded-lg">
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Concluídas</p>
-                    <p className="text-2xl font-bold">{stats.completed}</p>
-                  </div>
-                </div>
-              </Card>
-              
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-500/10 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-yellow-500" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Receita</p>
-                    <p className="text-2xl font-bold">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(stats.revenue)}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          </div>
+          {/* Stats Cards - REMOVIDOS conforme padrão /reclamacoes */}
           
           {/* Account Selector */}
           <div className="px-4 md:px-6">
@@ -175,6 +169,15 @@ export default function VendasOnline() {
           {/* Filters */}
           <div className="px-4 md:px-6">
             <VendasFiltersBar />
+          </div>
+          
+          {/* Resumo com Badges Clicáveis */}
+          <div className="px-4 md:px-6 mt-12">
+            <VendasResumo 
+              vendas={vendasEnriquecidas}
+              onFiltroClick={setFiltroResumoAtivo}
+              filtroAtivo={filtroResumoAtivo}
+            />
           </div>
           
           {/* Table */}
