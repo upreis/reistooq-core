@@ -21,6 +21,7 @@ import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage'
 import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
+import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '@/features/vendas-online/config/vendas-columns-config';
 
 interface MLAccount {
   id: string;
@@ -76,7 +77,7 @@ export default function VendasOnline() {
   const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [periodo, setPeriodo] = useState('60');
   const [searchTerm, setSearchTerm] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  const [visibleColumns, setVisibleColumns] = useState<string[]>(VENDAS_DEFAULT_VISIBLE_COLUMNS);
   
   // 🔥 FUNÇÃO DE BUSCA: Aplicar filtros à store e refresh
   const handleBuscar = async () => {
@@ -228,6 +229,9 @@ export default function VendasOnline() {
                     onSearchChange={setSearchTerm}
                     onBuscar={handleBuscar}
                     isLoading={isLoading}
+                    allColumns={VENDAS_ALL_COLUMNS}
+                    visibleColumns={visibleColumns}
+                    onVisibleColumnsChange={setVisibleColumns}
                   />
                 </div>
               </div>
