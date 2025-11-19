@@ -461,8 +461,8 @@ export function ReclamacoesPage() {
             {/* Tabs: Ativas vs Histórico + Filtros */}
             <div className="px-4 md:px-6 space-y-4">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-                <div className="flex flex-wrap items-center gap-4">
-                  <TabsList className="grid max-w-[300px] grid-cols-2">
+                <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+                  <TabsList className="grid w-auto grid-cols-2 shrink-0">
                     <TabsTrigger value="ativas">
                       Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
                     </TabsTrigger>
@@ -472,7 +472,7 @@ export function ReclamacoesPage() {
                   </TabsList>
                   
                   {/* Filtros integrados */}
-                  <div className="flex-1 w-full lg:w-auto">
+                  <div className="flex-1 min-w-0">
                     <ReclamacoesFilterBar
                       accounts={mlAccounts || []}
                       selectedAccountIds={selectedAccountIds}
