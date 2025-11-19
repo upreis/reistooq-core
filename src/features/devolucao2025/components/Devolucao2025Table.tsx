@@ -209,6 +209,15 @@ export const Devolucao2025Table = ({
             }
             return (
             <TableRow key={`${dev.claim_id}-${index}`}>
+              {/* COLUNA ANÁLISE - PRIMEIRA COLUNA SEMPRE VISÍVEL */}
+              <TableCell className="sticky left-0 z-10 bg-background">
+                <StatusAnaliseSelect
+                  value={dev.status_analise_local || 'pendente'}
+                  onChange={(newStatus) => onStatusChange?.(dev.order_id, newStatus)}
+                  allowedStatuses={activeTab === 'ativas' ? STATUS_ATIVOS : STATUS_HISTORICO}
+                />
+              </TableCell>
+              
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
               {isVisible('account_name') && (
                 <TableCell className="font-medium">
