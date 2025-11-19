@@ -51,9 +51,14 @@ const useMLAccounts = () => {
 
 export default function VendasOnline() {
   const { refresh } = useVendasData();
-  const { orders, pagination, isLoading, setPage, setItemsPerPage } = useVendasStore();
+  const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
+  
+  // Handler para mudança de status de análise
+  const handleStatusChange = (orderId: string, newStatus: StatusAnalise) => {
+    setAnaliseStatus(orderId, newStatus);
+  };
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -72,6 +77,37 @@ export default function VendasOnline() {
   const [periodo, setPeriodo] = useState('60');
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
+  
+  // 🔥 FUNÇÃO DE BUSCA: Aplicar filtros à store e refresh
+  const handleBuscar = () => {
+    console.log('🔍 Aplicando filtros:', { selectedAccountIds, periodo, searchTerm });
+    
+    // Validação: precisa ter pelo menos 1 conta selecionada
+    if (selectedAccountIds.length === 0) {
+      console.warn('⚠️ Nenhuma conta selecionada');
+      return;
+    }
+    
+    // Calcular dateFrom baseado no período
+    const dateFrom = periodo 
+      ? new Date(Date.now() - parseInt(periodo) * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+    
+    console.log('📅 Período calculado:', { periodo, dateFrom });
+    
+    // Atualizar filtros na store do Zustand
+    updateFilters({
+      integrationAccountId: selectedAccountIds[0], // unified-orders espera 1 conta
+      search: searchTerm,
+      dateFrom,
+      dateTo: new Date().toISOString()
+    });
+    
+    console.log('✅ Filtros aplicados, disparando refresh...');
+    
+    // Refresh dispara nova busca com filtros atualizados
+    setTimeout(() => refresh(), 100);
+  };
   
   // Enriquecer vendas com status_analise_local do localStorage
   const vendasEnriquecidas = useMemo(() => {
@@ -170,7 +206,7 @@ export default function VendasOnline() {
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+              <div className="flex items-center gap-3 flex-wrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                   <TabsTrigger value="ativas" className="h-10">
                     Ativas ({countAtivas})
@@ -190,7 +226,7 @@ export default function VendasOnline() {
                     onPeriodoChange={setPeriodo}
                     searchTerm={searchTerm}
                     onSearchChange={setSearchTerm}
-                    onBuscar={refresh}
+                    onBuscar={handleBuscar}
                     isLoading={isLoading}
                   />
                 </div>
@@ -209,7 +245,10 @@ export default function VendasOnline() {
           
           {/* Table */}
           <div className="px-4 md:px-6">
-            <VendasOnlineTable />
+            <VendasOnlineTable 
+              onStatusChange={handleStatusChange}
+              activeTab={activeTab}
+            />
           </div>
           
           {/* Rodapé Fixado com Paginação */}
