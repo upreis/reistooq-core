@@ -1124,8 +1124,8 @@ useEffect(() => {
             </ErrorBoundary>
           </div>
 
-          {/* 📊 FASE 2: Resumo com Badges Clicáveis (padrão /reclamacoes) */}
-          <div className="px-4 md:px-6 mt-6">
+          {/* 📊 Resumo de Métricas - após as abas */}
+          <div className="mt-12 px-4 md:px-6">
             <PedidosResumo
               pedidos={displayedOrders || orders}
               onFiltroClick={(filtro) => setQuickFilter(filtro)}
