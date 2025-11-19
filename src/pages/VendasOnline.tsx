@@ -3,11 +3,11 @@
  * Gerenciamento completo de vendas do Mercado Livre
  */
 
-import { useState, useMemo } from 'react';
-import { VendasFiltersBar } from '@/features/vendas-online/components/VendasFiltersBar';
+import { useState, useMemo, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { VendasFilterBar } from '@/features/vendas-online/components/VendasFilterBar';
 import { VendasOnlineTable } from '@/features/vendas-online/components/VendasOnlineTable';
 import { VendasPaginationFooter } from '@/features/vendas-online/components/VendasPaginationFooter';
-import { VendasAccountSelector } from '@/features/vendas-online/components/VendasAccountSelector';
 import { VendasResumo, type FiltroResumo } from '@/features/vendas-online/components/VendasResumo';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
@@ -22,10 +22,38 @@ import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 
+interface MLAccount {
+  id: string;
+  name: string;
+  account_identifier: string;
+}
+
+// Mock de contas ML (substituir por hook real depois)
+const useMLAccounts = () => {
+  const [accounts, setAccounts] = useState<MLAccount[]>([]);
+  
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const { data } = await supabase
+        .from('integration_accounts')
+        .select('id, name, account_identifier')
+        .eq('provider', 'mercadolivre')
+        .eq('is_active', true);
+      
+      if (data) setAccounts(data);
+    };
+    
+    fetchAccounts();
+  }, []);
+  
+  return { accounts };
+};
+
 export default function VendasOnline() {
   const { refresh } = useVendasData();
   const { orders, pagination, isLoading, setPage, setItemsPerPage } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
+  const { accounts } = useMLAccounts();
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -38,6 +66,12 @@ export default function VendasOnline() {
   
   // Estado de filtro ativo do resumo
   const [filtroResumoAtivo, setFiltroResumoAtivo] = useState<FiltroResumo | null>(null);
+  
+  // Estados de filtros manuais
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  const [periodo, setPeriodo] = useState('60');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   
   // Enriquecer vendas com status_analise_local do localStorage
   const vendasEnriquecidas = useMemo(() => {
@@ -147,11 +181,6 @@ export default function VendasOnline() {
           
           {/* Stats Cards - REMOVIDOS conforme padrão /reclamacoes */}
           
-          {/* Account Selector */}
-          <div className="px-4 md:px-6">
-            <VendasAccountSelector />
-          </div>
-          
           {/* Tabs: Ativas vs Histórico */}
           <div className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
@@ -168,7 +197,17 @@ export default function VendasOnline() {
           
           {/* Filters */}
           <div className="px-4 md:px-6">
-            <VendasFiltersBar />
+            <VendasFilterBar
+              accounts={accounts}
+              selectedAccountIds={selectedAccountIds}
+              onAccountsChange={setSelectedAccountIds}
+              periodo={periodo}
+              onPeriodoChange={setPeriodo}
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+              onBuscar={refresh}
+              isLoading={isLoading}
+            />
           </div>
           
           {/* Resumo com Badges Clicáveis */}
