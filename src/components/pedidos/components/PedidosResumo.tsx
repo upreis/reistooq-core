@@ -72,48 +72,48 @@ export function PedidosResumo({
       label: 'Total',
       valor: total,
       icon: ShoppingCart,
-      variant: 'default' as const,
-      alwaysShow: true
+      destaque: true,
+      color: 'bg-primary text-primary-foreground hover:bg-primary/90'
     },
     {
       id: 'pronto_baixar' as FiltroResumo,
       label: 'Prontos p/ Baixar',
       valor: prontosBaixa,
       icon: CheckCircle2,
-      variant: 'default' as const,
-      color: 'text-green-600 dark:text-green-400'
+      destaque: false,
+      color: 'bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20 hover:bg-green-500/20'
     },
     {
       id: 'mapear_incompleto' as FiltroResumo,
       label: 'Mapeamento Pendente',
       valor: mapeamentoPendente,
       icon: AlertTriangle,
-      variant: 'default' as const,
-      color: 'text-amber-600 dark:text-amber-400'
+      destaque: false,
+      color: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20'
     },
     {
       id: 'baixado' as FiltroResumo,
       label: 'Baixados',
       valor: baixados,
       icon: Package,
-      variant: 'default' as const,
-      color: 'text-blue-600 dark:text-blue-400'
+      destaque: false,
+      color: 'bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20'
     },
     {
       id: 'sem_estoque' as FiltroResumo,
       label: 'Sem Estoque',
       valor: semEstoque,
       icon: XCircle,
-      variant: 'default' as const,
-      color: 'text-red-600 dark:text-red-400'
+      destaque: false,
+      color: 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
     },
     {
       id: 'sku_nao_cadastrado' as FiltroResumo,
       label: 'SKU Não Cadastrado',
       valor: skuNaoCadastrado,
       icon: Clock,
-      variant: 'default' as const,
-      color: 'text-orange-600 dark:text-orange-400'
+      destaque: false,
+      color: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/20'
     }
   ];
 
@@ -121,7 +121,7 @@ export function PedidosResumo({
   const badgesVisiveis = badges;
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
+    <div className={cn("flex flex-wrap gap-3", className)}>
       {badgesVisiveis.map((badge) => {
         const Icon = badge.icon;
         const isActive = filtroAtivo === badge.id;
@@ -129,18 +129,22 @@ export function PedidosResumo({
         return (
           <Badge
             key={badge.id}
-            variant={badge.variant}
+            variant={badge.destaque ? "default" : "outline"}
             className={cn(
-              "h-8 px-3 py-1.5 cursor-pointer transition-all flex items-center gap-1.5",
-              "hover:scale-105",
-              isActive && "ring-2 ring-primary ring-offset-2 ring-offset-background",
-              badge.color
+              "px-4 py-2 text-base font-semibold cursor-pointer transition-all",
+              "flex items-center gap-2",
+              badge.destaque 
+                ? badge.color 
+                : cn(
+                    badge.color,
+                    isActive && "ring-2 ring-primary ring-offset-2"
+                  )
             )}
             onClick={() => onFiltroClick?.(badge.id)}
           >
             <Icon className="h-4 w-4" />
-            <span className="font-medium">{badge.label}</span>
-            <span className="ml-1 font-bold">{badge.valor}</span>
+            <span>{badge.label}:</span>
+            <span className="font-bold">{badge.valor}</span>
           </Badge>
         );
       })}
