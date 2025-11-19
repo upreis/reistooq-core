@@ -319,15 +319,7 @@ export const Devolucao2025Page = () => {
           <div className="px-4 md:px-6 py-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
-                    <p className="text-muted-foreground">
-                      Gestão completa com {devolucoes.length} devoluções
-                    </p>
-                  </div>
-                  <DevolucaoAlertsBadge alertsByType={alertsByType} />
-                </div>
+                <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
               </div>
               
               {/* Painel de Alertas - Posicionado no canto direito */}
