@@ -489,7 +489,7 @@ export function ReclamacoesPage() {
                 </div>
                 
                 {/* Resumo de Métricas - após as abas */}
-                <div className="mt-8">
+                <div className="mt-12">
                   <ReclamacoesResumo 
                     reclamacoes={reclamacoesEnriquecidas} 
                     onFiltroClick={setFiltroResumo}
