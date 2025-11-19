@@ -132,21 +132,21 @@ export function PedidosResumo({
           <Badge
             key={badge.id}
             variant={badge.destaque ? "default" : "outline"}
-            className={cn(
-              "px-4 py-2 text-base font-semibold cursor-pointer transition-all",
-              "flex items-center gap-2",
-              badge.destaque 
-                ? badge.color 
-                : cn(
-                    badge.color,
-                    isActive && "ring-2 ring-primary ring-offset-2"
-                  )
-            )}
             onClick={() => onFiltroClick?.(badge.id)}
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+              badge.color,
+              isActive && "ring-2 ring-primary ring-offset-2 scale-105"
+            )}
           >
             <Icon className="h-4 w-4" />
-            <span>{badge.label}:</span>
-            <span className="font-bold">{badge.valor}</span>
+            <span className="font-normal">{badge.label}</span>
+            <span className={cn(
+              "font-bold ml-1 px-1.5 py-0.5 rounded",
+              badge.destaque ? "bg-black/20" : "bg-primary/10"
+            )}>
+              {badge.valor}
+            </span>
           </Badge>
         );
       })}
