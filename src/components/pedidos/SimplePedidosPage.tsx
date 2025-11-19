@@ -68,6 +68,7 @@ import { PedidosHeaderSection } from './components/PedidosHeaderSection';
 import { PedidosBulkActionsSection } from './components/PedidosBulkActionsSection';
 import { PedidosModalsSection } from './components/PedidosModalsSection';
 import { PedidosStatusBar } from './components/PedidosStatusBar';
+import { PedidosResumo } from './components/PedidosResumo';
 import { PedidosStickyActions } from './components/PedidosStickyActions';
 import { usePedidosMappingsOptimized } from './hooks/usePedidosMappingsOptimized';
 import { PedidosPaginationFooter } from './components/PedidosPaginationFooter';
@@ -1079,24 +1080,14 @@ useEffect(() => {
             </div>
           )}
 
-          {/* ✅ Barra de resumo com contadores */}
-          <div className="px-4 md:px-6">
-            <PedidosStatusBar 
-              orders={displayedOrders || orders}
-              quickFilter={quickFilter}
-              onQuickFilterChange={(filter) => setQuickFilter(filter)}
+          {/* 📊 FASE 2: Resumo com Badges Clicáveis (padrão /reclamacoes) */}
+          <div className="px-4 md:px-6 mt-12">
+            <PedidosResumo
+              pedidos={displayedOrders || orders}
+              onFiltroClick={(filtro) => setQuickFilter(filtro)}
+              filtroAtivo={quickFilter}
               mappingData={mappingData}
               isPedidoProcessado={isPedidoProcessado}
-              globalCounts={globalCounts}
-              loadingCounts={loadingCounts}
-              totalRecords={state.total}
-              hasActiveFilters={
-                !!filtersManager.appliedFilters?.dataInicio || 
-                !!filtersManager.appliedFilters?.dataFim || 
-                !!filtersManager.appliedFilters?.search ||
-                (filtersManager.appliedFilters?.contasML && filtersManager.appliedFilters.contasML.length > 0) ||
-                (filtersManager.appliedFilters?.statusPedido && filtersManager.appliedFilters.statusPedido.length > 0)
-              }
             />
           </div>
 
