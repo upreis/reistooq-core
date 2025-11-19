@@ -198,3 +198,5 @@ export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector
     </DropdownMenu>
   );
 });
+
+ReclamacoesColumnSelector.displayName = 'ReclamacoesColumnSelector';

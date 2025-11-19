@@ -136,3 +136,5 @@ export const ProductInfoCell = memo(function ProductInfoCell({ productInfo }: Pr
     </TooltipProvider>
   );
 });
+
+ProductInfoCell.displayName = 'ProductInfoCell';

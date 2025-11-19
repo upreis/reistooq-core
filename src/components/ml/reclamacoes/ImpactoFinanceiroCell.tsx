@@ -118,3 +118,5 @@ export const ImpactoFinanceiroCell = memo(function ImpactoFinanceiroCell({
     </div>
   );
 });
+
+ImpactoFinanceiroCell.displayName = 'ImpactoFinanceiroCell';

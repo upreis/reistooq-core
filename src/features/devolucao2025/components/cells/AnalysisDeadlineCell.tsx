@@ -86,3 +86,5 @@ export const AnalysisDeadlineCell = memo(function AnalysisDeadlineCell({ arrival
     </TooltipProvider>
   );
 });
+
+AnalysisDeadlineCell.displayName = 'AnalysisDeadlineCell';
