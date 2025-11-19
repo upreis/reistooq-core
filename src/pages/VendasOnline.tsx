@@ -82,16 +82,31 @@ export default function VendasOnline() {
   const handleBuscar = () => {
     console.log('🔍 Aplicando filtros:', { selectedAccountIds, periodo, searchTerm });
     
+    // Validação: precisa ter pelo menos 1 conta selecionada
+    if (selectedAccountIds.length === 0) {
+      console.warn('⚠️ Nenhuma conta selecionada');
+      return;
+    }
+    
+    // Calcular dateFrom baseado no período
+    const dateFrom = periodo 
+      ? new Date(Date.now() - parseInt(periodo) * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+    
+    console.log('📅 Período calculado:', { periodo, dateFrom });
+    
     // Atualizar filtros na store do Zustand
     updateFilters({
-      integrationAccountId: selectedAccountIds[0] || '', // unified-orders espera 1 conta
+      integrationAccountId: selectedAccountIds[0], // unified-orders espera 1 conta
       search: searchTerm,
-      dateFrom: periodo ? new Date(Date.now() - parseInt(periodo) * 24 * 60 * 60 * 1000).toISOString() : null,
+      dateFrom,
       dateTo: new Date().toISOString()
     });
     
+    console.log('✅ Filtros aplicados, disparando refresh...');
+    
     // Refresh dispara nova busca com filtros atualizados
-    refresh();
+    setTimeout(() => refresh(), 100);
   };
   
   // Enriquecer vendas com status_analise_local do localStorage
@@ -191,7 +206,7 @@ export default function VendasOnline() {
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+              <div className="flex items-center gap-3 flex-wrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                   <TabsTrigger value="ativas" className="h-10">
                     Ativas ({countAtivas})
