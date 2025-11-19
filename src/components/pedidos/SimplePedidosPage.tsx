@@ -1069,16 +1069,6 @@ useEffect(() => {
             />
           </div>
 
-          {/* ⚠️ Feedback sobre status das contas ML */}
-          {state.loading && (
-            <div className="px-4 md:px-6">
-              <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg border mb-4">
-                <p className="font-medium flex items-center gap-2">
-                  ⏳ Verificando contas conectadas e buscando pedidos...
-                </p>
-              </div>
-            </div>
-          )}
 
 
           {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
