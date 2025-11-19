@@ -185,7 +185,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Botão Aplicar Filtros */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 min-w-[220px]">
           <FlipButton
             text1="Cancelar a Busca"
             text2="Aplicar Filtros e Buscar"
