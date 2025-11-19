@@ -13,6 +13,7 @@ import {
   Ban
 } from 'lucide-react';
 import { STATUS_ANALISE_LABELS, StatusAnalise } from '../types/devolucao-analise.types';
+import { differenceInBusinessDays, parseISO } from 'date-fns';
 
 export type FiltroResumo = {
   tipo: 'prazo' | 'status' | 'tipo' | 'total';
@@ -35,17 +36,24 @@ export function ReclamacoesResumo({
   // Total
   const total = reclamacoes.length;
   
-  // PRAZOS DE ANÁLISE (vencido e a vencer)
-  // Vencidos = apenas críticas (já passaram do prazo máximo)
-  const prazosVencidos = reclamacoes.filter(
-    r => r.lifecycle_status?.statusCiclo === 'critica'
-  ).length;
+  // PRAZOS DE ANÁLISE (vencido e a vencer) - baseado em dias úteis
+  const hoje = new Date();
   
-  // A Vencer = atenção + urgente (ainda não venceram mas estão próximos do prazo)
-  const prazosAVencer = reclamacoes.filter(
-    r => r.lifecycle_status?.statusCiclo === 'atencao' || 
-         r.lifecycle_status?.statusCiclo === 'urgente'
-  ).length;
+  // Vencidos = acima de 3 dias úteis desde a data de criação
+  const prazosVencidos = reclamacoes.filter(r => {
+    if (!r.date_created) return false;
+    const dataCriacao = parseISO(r.date_created);
+    const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+    return diasUteis > 3;
+  }).length;
+  
+  // A Vencer = de 0 a 3 dias úteis desde a data de criação
+  const prazosAVencer = reclamacoes.filter(r => {
+    if (!r.date_created) return false;
+    const dataCriacao = parseISO(r.date_created);
+    const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+    return diasUteis >= 0 && diasUteis <= 3;
+  }).length;
   
   // STATUS DA RECLAMAÇÃO (todas as opções)
   const statusPendente = reclamacoes.filter(r => r.status_analise_local === 'pendente').length;

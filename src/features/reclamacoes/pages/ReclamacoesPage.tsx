@@ -325,13 +325,21 @@ export function ReclamacoesPage() {
     if (filtroResumo) {
       result = result.filter((claim: any) => {
         if (filtroResumo.tipo === 'prazo') {
+          if (!claim.date_created) return false;
+          
+          const hoje = new Date();
+          const dataCriacao = new Date(claim.date_created);
+          
+          // Calcular dias úteis usando date-fns
+          const { differenceInBusinessDays } = require('date-fns');
+          const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+          
           if (filtroResumo.valor === 'vencido') {
-            // Vencidos = apenas críticas
-            return claim.lifecycle_status?.statusCiclo === 'critica';
+            // Vencidos = acima de 3 dias úteis
+            return diasUteis > 3;
           } else if (filtroResumo.valor === 'a_vencer') {
-            // A Vencer = atenção + urgente
-            return claim.lifecycle_status?.statusCiclo === 'atencao' ||
-                   claim.lifecycle_status?.statusCiclo === 'urgente';
+            // A Vencer = de 0 a 3 dias úteis
+            return diasUteis >= 0 && diasUteis <= 3;
           }
         } else if (filtroResumo.tipo === 'status') {
           return claim.status_analise_local === filtroResumo.valor;
