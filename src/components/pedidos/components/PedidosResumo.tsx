@@ -12,10 +12,13 @@ import {
   Package,
   XCircle,
   Clock,
-  ShoppingCart
+  ShoppingCart,
+  Box,
+  PackageX,
+  Boxes
 } from 'lucide-react';
 
-export type FiltroResumo = 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao';
+export type FiltroResumo = 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao' | 'insumo_pronto' | 'insumo_sem_mapeamento' | 'insumo_sem_cadastro' | 'insumo_pendente';
 
 interface PedidosResumoProps {
   pedidos: any[];
@@ -66,6 +69,27 @@ export function PedidosResumo({
   const semComposicao = pedidos.filter(p => {
     const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
     return mapping?.statusBaixa === 'sem_composicao';
+  }).length;
+
+  // Contagem por Status Insumo
+  const insumoPronto = pedidos.filter(p => {
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusInsumo === 'pronto';
+  }).length;
+
+  const insumoSemMapeamento = pedidos.filter(p => {
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusInsumo === 'sem_mapeamento_insumo';
+  }).length;
+
+  const insumoSemCadastro = pedidos.filter(p => {
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusInsumo === 'sem_cadastro_insumo';
+  }).length;
+
+  const insumoPendente = pedidos.filter(p => {
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusInsumo === 'pendente_insumo';
   }).length;
 
   const badges = [
@@ -124,6 +148,38 @@ export function PedidosResumo({
       icon: FileText,
       destaque: false,
       color: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
+    },
+    {
+      id: 'insumo_pronto' as FiltroResumo,
+      label: 'Insumo Pronto',
+      valor: insumoPronto,
+      icon: Boxes,
+      destaque: false,
+      color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+    },
+    {
+      id: 'insumo_sem_mapeamento' as FiltroResumo,
+      label: 'Insumo Sem Mapear',
+      valor: insumoSemMapeamento,
+      icon: Box,
+      destaque: false,
+      color: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
+    },
+    {
+      id: 'insumo_sem_cadastro' as FiltroResumo,
+      label: 'Insumo Não Cadastrado',
+      valor: insumoSemCadastro,
+      icon: PackageX,
+      destaque: false,
+      color: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+    },
+    {
+      id: 'insumo_pendente' as FiltroResumo,
+      label: 'Insumo Pendente',
+      valor: insumoPendente,
+      icon: Clock,
+      destaque: false,
+      color: 'bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20'
     }
   ];
 
