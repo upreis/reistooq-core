@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import {
   Select,
   SelectContent,
@@ -37,7 +37,7 @@ const STATUS_COLORS: Record<StatusAnalise, string> = {
   cancelado: "text-red-700 dark:text-red-300"
 };
 
-export function StatusAnaliseSelect({
+export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
   value,
   onChange,
   disabled = false,
@@ -45,14 +45,14 @@ export function StatusAnaliseSelect({
 }: StatusAnaliseSelectProps) {
   const [isChanging, setIsChanging] = useState(false);
 
-  const handleValueChange = async (newValue: string) => {
+  const handleValueChange = useCallback(async (newValue: string) => {
     setIsChanging(true);
     try {
       await onChange(newValue as StatusAnalise);
     } finally {
       setIsChanging(false);
     }
-  };
+  }, [onChange]);
 
   return (
     <Select
@@ -88,4 +88,4 @@ export function StatusAnaliseSelect({
       </SelectContent>
     </Select>
   );
-}
+});

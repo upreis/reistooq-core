@@ -3,6 +3,8 @@
  * Exibe informações do produto com imagem thumbnail
  */
 
+import { memo } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ExternalLink, Package } from 'lucide-react';
@@ -25,7 +27,7 @@ interface ProductInfoCellProps {
   productInfo?: ProductInfo | null;
 }
 
-export function ProductInfoCell({ productInfo }: ProductInfoCellProps) {
+export const ProductInfoCell = memo(function ProductInfoCell({ productInfo }: ProductInfoCellProps) {
   if (!productInfo || !productInfo.title) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground">
@@ -133,4 +135,4 @@ export function ProductInfoCell({ productInfo }: ProductInfoCellProps) {
       </Tooltip>
     </TooltipProvider>
   );
-}
+});

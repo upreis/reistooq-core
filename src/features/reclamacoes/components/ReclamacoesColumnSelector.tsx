@@ -2,6 +2,7 @@
  * 🎛️ SELETOR DE COLUNAS PARA TABELA DE RECLAMAÇÕES
  */
 
+import { memo, useCallback } from 'react';
 import { Table } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -56,7 +57,7 @@ const columnLabels: Record<string, string> = {
   'actions': 'Ações'
 };
 
-export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorProps) {
+export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorProps) {
   const allColumns = table.getAllLeafColumns();
   const visibleColumns = allColumns.filter(col => col.getIsVisible());
   
@@ -71,15 +72,15 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
     'Ações': ['actions']
   };
 
-  const handleToggleAll = (show: boolean) => {
+  const handleToggleAll = useCallback((show: boolean) => {
     allColumns.forEach(column => {
       if (column.id !== 'status_analise' && column.id !== 'actions') {
         column.toggleVisibility(show);
       }
     });
-  };
+  }, [allColumns]);
 
-  const handleResetToDefault = () => {
+  const handleResetToDefault = useCallback(() => {
     allColumns.forEach(column => {
       // Sempre visíveis
       if (['status_analise', 'empresa', 'claim_id', 'type', 'status', 'actions'].includes(column.id)) {
@@ -94,7 +95,7 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
         column.toggleVisibility(true);
       }
     });
-  };
+  }, [allColumns]);
 
   return (
     <DropdownMenu>
@@ -196,4 +197,4 @@ export function ReclamacoesColumnSelector({ table }: ReclamacoesColumnSelectorPr
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});
