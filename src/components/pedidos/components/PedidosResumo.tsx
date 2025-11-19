@@ -121,7 +121,9 @@ export function PedidosResumo({
   const badgesVisiveis = badges;
 
   return (
-    <div className={cn("flex flex-wrap gap-3", className)}>
+    <div className={cn("flex items-center gap-2 flex-wrap", className)}>
+      <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
+      
       {badgesVisiveis.map((badge) => {
         const Icon = badge.icon;
         const isActive = filtroAtivo === badge.id;
