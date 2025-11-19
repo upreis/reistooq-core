@@ -117,8 +117,8 @@ export function PedidosResumo({
     }
   ];
 
-  // Filtrar badges: sempre mostrar Total, ocultar outros se count = 0
-  const badgesVisiveis = badges.filter(b => b.alwaysShow || b.valor > 0);
+  // Mostrar todos os badges sempre
+  const badgesVisiveis = badges;
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
