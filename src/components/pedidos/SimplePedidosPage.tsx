@@ -1114,7 +1114,7 @@ useEffect(() => {
             </ErrorBoundary>
 
             {/* 📊 Resumo de Métricas - após as abas */}
-            <div className="mt-12">
+            <div className="mt-8">
               <PedidosResumo
                 pedidos={displayedOrders || orders}
                 onFiltroClick={(filtro) => setQuickFilter(filtro)}
