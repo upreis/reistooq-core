@@ -187,46 +187,6 @@ export function PedidosFiltersUnified({
           </div>
         </div>
 
-        {/* ✅ NOVO: Status do Pedido */}
-        <div className="lg:col-span-2 xl:col-span-2">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Status do Pedido
-          </label>
-          <Popover open={statusPedidoOpen} onOpenChange={setStatusPedidoOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={statusPedidoOpen}
-                className="w-full justify-between"
-              >
-                {selectedStatusPedido.length === 0
-                  ? "Todos os status"
-                  : selectedStatusPedido.length === 1
-                  ? selectedStatusPedido[0]
-                  : `${selectedStatusPedido.length} selecionados`
-                }
-                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-0">
-              <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
-                {STATUS_PEDIDO.map((status) => (
-                  <div key={status} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`status-pedido-${status}`}
-                      checked={selectedStatusPedido.includes(status)}
-                      onCheckedChange={(checked) => handleStatusPedidoChange(status, checked as boolean)}
-                    />
-                    <label htmlFor={`status-pedido-${status}`} className="text-sm">{status}</label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-
         {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
