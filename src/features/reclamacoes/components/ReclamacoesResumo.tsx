@@ -100,6 +100,23 @@ export function ReclamacoesResumo({
       color: 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-500 border-yellow-500/20 hover:bg-yellow-500/20',
       filtro: { tipo: 'prazo', valor: 'a_vencer' },
     },
+    // TIPO DE RECLAMAÇÃO
+    {
+      label: 'Claims',
+      valor: tipoClaim,
+      icon: FileText,
+      destaque: false,
+      color: 'bg-blue-500/10 text-blue-700 dark:text-blue-500 border-blue-500/20 hover:bg-blue-500/20',
+      filtro: { tipo: 'tipo', valor: 'claim' },
+    },
+    {
+      label: 'Mediações',
+      valor: tipoMediacao,
+      icon: FileText,
+      destaque: false,
+      color: 'bg-purple-500/10 text-purple-700 dark:text-purple-500 border-purple-500/20 hover:bg-purple-500/20',
+      filtro: { tipo: 'tipo', valor: 'mediation' },
+    },
   ];
 
   const handleBadgeClick = (filtro: FiltroResumo | null) => {
