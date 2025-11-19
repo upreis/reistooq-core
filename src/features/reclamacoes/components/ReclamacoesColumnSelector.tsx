@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Settings2, Eye, EyeOff } from 'lucide-react';
+import { Columns3, Eye, EyeOff } from 'lucide-react';
 
 interface ReclamacoesColumnSelectorProps {
   table: Table<any>;
@@ -101,7 +101,7 @@ export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon">
-          <Settings2 className="h-4 w-4" />
+          <Columns3 className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
