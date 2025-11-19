@@ -117,11 +117,7 @@ export function PedidosFiltersUnified({
     <div className="space-y-4">
       {/* Layout principal dos filtros */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 xl:grid-cols-8 gap-4 items-end">
-        {/* Busca - Aplicação manual */}
         <div className="sm:col-span-1 lg:col-span-1 xl:col-span-1">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Buscar
-          </label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -136,11 +132,7 @@ export function PedidosFiltersUnified({
           </div>
         </div>
 
-        {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-2 xl:col-span-2">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Empresas
-          </label>
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -206,11 +198,7 @@ export function PedidosFiltersUnified({
           </Popover>
         </div>
 
-        {/* Período + Colunas + Limpar - Aplicação manual */}
         <div className="lg:col-span-3 xl:col-span-3">
-          <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Período
-          </label>
           <div className="flex items-end gap-2">
             <SimplifiedPeriodFilter
               startDate={filters.dataInicio}
