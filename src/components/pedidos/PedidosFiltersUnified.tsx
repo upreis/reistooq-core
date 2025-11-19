@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Settings } from 'lucide-react';
+import { Search, Calendar, X, ChevronDown, Loader2, CheckCircle2, AlertCircle, Columns3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -219,10 +219,8 @@ export function PedidosFiltersUnified({
               <ColumnManager 
                 manager={columnManager}
                 trigger={
-                  <Button variant="outline" size="sm" className="h-9 px-3">
-                    <Settings className="h-4 w-4 mr-1.5" />
-                    <span className="hidden sm:inline">Colunas ({columnManager.state?.visibleColumns?.size || 0})</span>
-                    <span className="sm:hidden">Cols</span>
+                  <Button variant="outline" size="sm" className="h-10 w-10 p-0">
+                    <Columns3 className="h-4 w-4" />
                   </Button>
                 }
               />
