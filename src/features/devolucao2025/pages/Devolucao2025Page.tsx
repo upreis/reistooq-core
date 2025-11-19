@@ -11,19 +11,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
-import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
+import { Devolucao2025FilterBar } from '../components/Devolucao2025FilterBar';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
 import { Devolucao2025Resumo, FiltroResumo } from '../components/Devolucao2025Resumo';
 import { Devolucao2025PaginationFooter } from '../components/Devolucao2025PaginationFooter';
+import { ExportButton } from '../components/ExportButton';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
 import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
 import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
 import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
-import { ColumnSelector } from '../components/ColumnSelector';
 import { useColumnPreferences } from '../hooks/useColumnPreferences';
 import { COLUMNS_CONFIG } from '../config/columns';
-import { ExportButton } from '../components/ExportButton';
 import { usePersistentDevolucoesState } from '../hooks/usePersistentDevolucoesState';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,14 +48,17 @@ export const Devolucao2025Page = () => {
   
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
+  const [periodo, setPeriodo] = useState('60');
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
+  const [isManualSearching, setIsManualSearching] = useState(false);
   
   // Restaurar estado do cache após carregar
   useEffect(() => {
@@ -352,18 +354,31 @@ export const Devolucao2025Page = () => {
                   </TabsTrigger>
                 </TabsList>
                 
-                <Devolucao2025Filters
+                <Devolucao2025FilterBar
                   accounts={accounts}
-                  selectedAccounts={selectedAccounts}
+                  selectedAccountIds={selectedAccounts}
                   onAccountsChange={setSelectedAccounts}
-                  dateRange={dateRange}
-                  onDateRangeChange={setDateRange}
-                  onApplyFilters={handleApplyFilters}
-                  onCancelSearch={handleCancelSearch}
-                  isLoading={isLoading}
-                />
-                <ColumnSelector 
-                  columns={COLUMNS_CONFIG}
+                  periodo={periodo}
+                  onPeriodoChange={(p) => {
+                    setPeriodo(p);
+                    // Atualizar dateRange baseado no período
+                    const hoje = new Date();
+                    const inicio = new Date();
+                    inicio.setDate(hoje.getDate() - parseInt(p));
+                    setDateRange({ from: inicio, to: hoje });
+                  }}
+                  searchTerm={searchTerm}
+                  onSearchChange={setSearchTerm}
+                  onBuscar={() => {
+                    setIsManualSearching(true);
+                    handleApplyFilters();
+                  }}
+                  isLoading={isManualSearching}
+                  onCancel={() => {
+                    setIsManualSearching(false);
+                    handleCancelSearch();
+                  }}
+                  allColumns={COLUMNS_CONFIG}
                   visibleColumns={visibleColumns}
                   onVisibleColumnsChange={setVisibleColumns}
                 />
