@@ -318,11 +318,7 @@ export const Devolucao2025Page = () => {
           {/* Header */}
           <div className="px-4 md:px-6 py-6">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex-1">
-                <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
-              </div>
-              
-              <NotificationsBell organizationId={organizationId} />
+              <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
             </div>
           </div>
           
