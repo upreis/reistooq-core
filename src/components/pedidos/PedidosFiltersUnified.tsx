@@ -139,7 +139,7 @@ export function PedidosFiltersUnified({
         {/* Contas ML - Aplicação manual */}
         <div className="lg:col-span-2 xl:col-span-2">
           <label className="text-sm font-medium mb-1 block flex items-center gap-2">
-            Nome do Vendedor
+            Empresas
           </label>
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
@@ -153,12 +153,10 @@ export function PedidosFiltersUnified({
                 )}
               >
                 {selectedContasML.length === 0 
-                  ? "Todas as contas"
+                  ? "Selecionar Empresas"
                   : selectedContasML.length === 1
-                  ? (contasML.find(c => c.id === selectedContasML[0])?.nickname || 
-                     contasML.find(c => c.id === selectedContasML[0])?.name || 
-                     selectedContasML[0])
-                  : `${selectedContasML.length} selecionadas`
+                  ? "1 Empresa"
+                  : `${selectedContasML.length} Empresas`
                 }
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
