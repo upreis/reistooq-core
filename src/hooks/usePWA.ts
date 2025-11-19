@@ -167,16 +167,36 @@ export const usePWA = (): [PWAState, PWAActions] => {
 
   const updateApp = useCallback(async (): Promise<void> => {
     if ('serviceWorker' in navigator) {
-      const registration = await navigator.serviceWorker.getRegistration();
-      
-      if (registration?.waiting) {
-        // Instruir o service worker a assumir controle
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
         
-        // Recarregar após o novo SW assumir controle
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          window.location.reload();
-        });
+        if (registration?.waiting) {
+          // ✅ Timeout para prevenir espera infinita
+          const timeout = setTimeout(() => {
+            console.warn('⚠️ Timeout aguardando service worker, recarregando forçadamente');
+            window.location.reload();
+          }, 5000);
+
+          // Instruir o service worker a assumir controle
+          try {
+            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+          } catch (error) {
+            console.error('❌ Erro ao enviar mensagem para service worker:', error);
+            clearTimeout(timeout);
+            window.location.reload();
+            return;
+          }
+          
+          // Recarregar após o novo SW assumir controle
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            clearTimeout(timeout);
+            window.location.reload();
+          }, { once: true }); // ✅ Remover listener após primeira execução
+        }
+      } catch (error) {
+        console.error('❌ Erro ao atualizar app:', error);
+        // Fallback: recarregar de qualquer forma
+        window.location.reload();
       }
     }
   }, []);
