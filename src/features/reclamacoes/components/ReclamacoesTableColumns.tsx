@@ -665,22 +665,6 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_category'))}</span>,
   },
   {
-    accessorKey: 'buyer_nickname',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Nome do Cliente
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('buyer_nickname') || '-'}</span>,
-  },
-  {
     accessorKey: 'order_item_title',
     header: ({ column }) => {
       return (
