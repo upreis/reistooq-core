@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Shield, Clock } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -10,7 +10,7 @@ interface ImpactoFinanceiroCellProps {
   moeda?: string;
 }
 
-export function ImpactoFinanceiroCell({
+export const ImpactoFinanceiroCell = memo(function ImpactoFinanceiroCell({
   impacto,
   valor,
   moeda = 'BRL'
@@ -117,4 +117,4 @@ export function ImpactoFinanceiroCell({
       </span>
     </div>
   );
-}
+});

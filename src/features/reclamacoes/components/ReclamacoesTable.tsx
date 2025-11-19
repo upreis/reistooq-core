@@ -2,7 +2,7 @@
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
  */
 
-import { useState, useMemo, memo } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -33,7 +33,7 @@ interface ReclamacoesTableProps {
   onTableReady?: (table: any) => void;
 }
 
-export function ReclamacoesTable({ 
+export const ReclamacoesTable = memo(function ReclamacoesTable({ 
   reclamacoes, 
   isLoading, 
   error, 
@@ -52,10 +52,10 @@ export function ReclamacoesTable({
   });
   const [sorting, setSorting] = useState<SortingState>([]);
   
-  const handleOpenMensagens = (claim: any) => {
+  const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
-  };
+  }, []);
 
   // ⚡ Memoizar colunas para evitar re-criação
   const columns = useMemo(() => 
@@ -177,7 +177,7 @@ export function ReclamacoesTable({
       )}
     </div>
   );
-}
+});
 
 // ⚡ COMPONENTE OTIMIZADO PARA LINHA DA TABELA (memo evita re-renders desnecessários)
 const OptimizedTableRow = memo(({ row }: { row: any }) => {

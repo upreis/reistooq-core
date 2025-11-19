@@ -3,6 +3,8 @@
  * Calcula e exibe o prazo de 3 dias úteis após chegada do produto
  */
 
+import { memo } from 'react';
+
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { calculateAnalysisDeadline } from '../../utils/businessDays';
@@ -14,7 +16,7 @@ interface AnalysisDeadlineCellProps {
   arrivalDate: string | null;
 }
 
-export const AnalysisDeadlineCell = ({ arrivalDate }: AnalysisDeadlineCellProps) => {
+export const AnalysisDeadlineCell = memo(function AnalysisDeadlineCell({ arrivalDate }: AnalysisDeadlineCellProps) {
   if (!arrivalDate) {
     return (
       <span className="text-muted-foreground text-sm">
@@ -83,4 +85,4 @@ export const AnalysisDeadlineCell = ({ arrivalDate }: AnalysisDeadlineCellProps)
       </Tooltip>
     </TooltipProvider>
   );
-};
+});

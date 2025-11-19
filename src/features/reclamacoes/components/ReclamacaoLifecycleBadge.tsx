@@ -3,6 +3,7 @@
  * Substituição VISUAL do sistema de cores de linhas
  */
 
+import { memo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Clock, AlertTriangle, Trash2, Shield, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -19,7 +20,7 @@ interface ReclamacaoLifecycleBadgeProps {
   className?: string;
 }
 
-export function ReclamacaoLifecycleBadge({ 
+export const ReclamacaoLifecycleBadge = memo(function ReclamacaoLifecycleBadge({ 
   reclamacao, 
   compact = false,
   className 
@@ -100,4 +101,4 @@ export function ReclamacaoLifecycleBadge({
       </Tooltip>
     </TooltipProvider>
   );
-}
+});
