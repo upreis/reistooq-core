@@ -486,24 +486,6 @@ export function ReclamacoesPage() {
                       table={tableInstance}
                     />
                   </div>
-                  
-                  {/* Filtro de Lifecycle (dropdown) - só no histórico */}
-                  {activeTab === 'historico' && (
-                    <Select 
-                      value={lifecycleFilter} 
-                      onValueChange={(value) => setLifecycleFilter(value as any)}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="mediacao">Mediação</SelectItem>
-                        <SelectItem value="devolucao">Devolução</SelectItem>
-                        <SelectItem value="cancelamento">Cancelamento</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
                 </div>
                 
                 {/* Resumo de Métricas - após as abas */}
