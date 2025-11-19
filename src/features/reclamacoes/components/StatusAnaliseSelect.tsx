@@ -15,6 +15,7 @@ interface StatusAnaliseSelectProps {
   onChange: (newStatus: StatusAnalise) => void;
   disabled?: boolean;
   className?: string;
+  allowedStatuses?: StatusAnalise[]; // ✨ NOVO: Controla quais status podem ser selecionados
 }
 
 // Ícones por status
@@ -41,7 +42,8 @@ export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
   value,
   onChange,
   disabled = false,
-  className
+  className,
+  allowedStatuses // ✨ NOVO: Array de status permitidos
 }: StatusAnaliseSelectProps) {
   const [isChanging, setIsChanging] = useState(false);
 
@@ -53,6 +55,9 @@ export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
       setIsChanging(false);
     }
   }, [onChange]);
+
+  // Se allowedStatuses não for fornecido, mostra todos
+  const availableStatuses = allowedStatuses || Object.keys(STATUS_ANALISE_LABELS) as StatusAnalise[];
 
   return (
     <Select
@@ -73,7 +78,7 @@ export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
         </div>
       </SelectTrigger>
       <SelectContent className="bg-background z-50">
-        {Object.entries(STATUS_ANALISE_LABELS).map(([statusKey, label]) => (
+        {availableStatuses.map((statusKey) => (
           <SelectItem
             key={statusKey}
             value={statusKey}
@@ -81,7 +86,7 @@ export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
           >
             <div className="flex items-center gap-2">
               {STATUS_ICONS[statusKey as StatusAnalise]}
-              <span>{label}</span>
+              <span>{STATUS_ANALISE_LABELS[statusKey]}</span>
             </div>
           </SelectItem>
         ))}

@@ -31,17 +31,19 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   onTableReady?: (table: any) => void;
+  activeTab?: 'ativas' | 'historico'; // ✨ NOVO: Para controlar status disponíveis no dropdown
 }
 
-export const ReclamacoesTable = memo(function ReclamacoesTable({ 
-  reclamacoes, 
-  isLoading, 
-  error, 
+export const ReclamacoesTable = memo(function ReclamacoesTable({
+  reclamacoes,
+  isLoading,
+  error,
   onStatusChange,
   onDeleteReclamacao,
   onOpenAnotacoes,
   anotacoes,
-  onTableReady
+  onTableReady,
+  activeTab // ✨ NOVO
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -59,8 +61,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   // ⚡ Memoizar colunas para evitar re-criação
   const columns = useMemo(() => 
-    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes), 
-    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes]
+    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab), 
+    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
   );
 
   const table = useReactTable({
