@@ -475,13 +475,6 @@ export function ReclamacoesPage() {
 
             {/* Tabs: Ativas vs Histórico + Resumo */}
             <div className="px-4 md:px-6 space-y-4">
-              {/* Resumo de Métricas */}
-              <ReclamacoesResumo 
-                reclamacoes={reclamacoesEnriquecidas} 
-                onFiltroClick={setFiltroResumo}
-                filtroAtivo={filtroResumo}
-              />
-              
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
                 <TabsList className="grid w-full max-w-md grid-cols-2">
                   <TabsTrigger value="ativas">
@@ -491,6 +484,15 @@ export function ReclamacoesPage() {
                     Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
                   </TabsTrigger>
                 </TabsList>
+                
+                {/* Resumo de Métricas - após as abas */}
+                <div className="mt-4">
+                  <ReclamacoesResumo 
+                    reclamacoes={reclamacoesEnriquecidas} 
+                    onFiltroClick={setFiltroResumo}
+                    filtroAtivo={filtroResumo}
+                  />
+                </div>
 
                 <TabsContent value={activeTab}>
                   <Card className="p-6">
