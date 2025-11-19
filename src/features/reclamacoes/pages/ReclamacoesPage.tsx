@@ -458,27 +458,10 @@ export function ReclamacoesPage() {
               />
             </div>
 
-            {/* Filtros principais */}
-            <div className="px-4 md:px-6">
-              <ReclamacoesFilterBar
-                accounts={mlAccounts || []}
-                selectedAccountIds={selectedAccountIds}
-                onAccountsChange={setSelectedAccountIds}
-                periodo={filters.periodo}
-                onPeriodoChange={(periodo) => setFilters(prev => ({ ...prev, periodo }))}
-                searchTerm=""
-                onSearchChange={() => {}}
-                onBuscar={handleBuscarReclamacoes}
-                isLoading={isManualSearching || loadingReclamacoes}
-                onCancel={handleCancelarBusca}
-                table={tableInstance}
-              />
-            </div>
-
-            {/* Tabs: Ativas vs Histórico + Resumo */}
+            {/* Tabs: Ativas vs Histórico + Filtros */}
             <div className="px-4 md:px-6 space-y-4">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
                   <TabsList className="grid max-w-[300px] grid-cols-2">
                     <TabsTrigger value="ativas">
                       Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
@@ -488,7 +471,23 @@ export function ReclamacoesPage() {
                     </TabsTrigger>
                   </TabsList>
                   
-                  {/* Filtro de Lifecycle (dropdown) */}
+                  {/* Filtros integrados */}
+                  <div className="flex-1 w-full lg:w-auto">
+                    <ReclamacoesFilterBar
+                      accounts={mlAccounts || []}
+                      selectedAccountIds={selectedAccountIds}
+                      onAccountsChange={setSelectedAccountIds}
+                      periodo={filters.periodo}
+                      onPeriodoChange={(periodo) => setFilters({ ...filters, periodo })}
+                      searchTerm={filters.status}
+                      onSearchChange={(term) => setFilters({ ...filters, status: term })}
+                      onBuscar={handleBuscarReclamacoes}
+                      isLoading={isManualSearching}
+                      table={tableInstance}
+                    />
+                  </div>
+                  
+                  {/* Filtro de Lifecycle (dropdown) - só no histórico */}
                   {activeTab === 'historico' && (
                     <Select 
                       value={lifecycleFilter} 
