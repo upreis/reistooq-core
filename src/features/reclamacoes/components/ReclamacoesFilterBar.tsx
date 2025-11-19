@@ -90,7 +90,7 @@ export function ReclamacoesFilterBar({
               placeholder="Order ID, Claim ID, Produto..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9"
+              className="pl-9 h-10"
             />
           </div>
         </div>
@@ -101,7 +101,7 @@ export function ReclamacoesFilterBar({
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between"
+                className="w-full justify-between h-10"
               >
                 <span>
                   {selectedAccountIds.length === 0 
@@ -170,7 +170,7 @@ export function ReclamacoesFilterBar({
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Select value={periodo} onValueChange={onPeriodoChange}>
-              <SelectTrigger className="pl-9">
+              <SelectTrigger className="pl-9 h-10">
                 <SelectValue placeholder="Selecione o período" />
               </SelectTrigger>
               <SelectContent>

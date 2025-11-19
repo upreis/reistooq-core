@@ -462,11 +462,11 @@ export function ReclamacoesPage() {
             <div className="px-4 md:px-6 space-y-4">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
                 <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
-                  <TabsList className="grid w-auto grid-cols-2 shrink-0">
-                    <TabsTrigger value="ativas">
+                  <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
+                    <TabsTrigger value="ativas" className="h-10">
                       Ativas ({reclamacoesEnriquecidas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length})
                     </TabsTrigger>
-                    <TabsTrigger value="historico">
+                    <TabsTrigger value="historico" className="h-10">
                       Histórico ({reclamacoesEnriquecidas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length})
                     </TabsTrigger>
                   </TabsList>
