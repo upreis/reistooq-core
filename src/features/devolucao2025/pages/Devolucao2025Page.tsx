@@ -315,73 +315,66 @@ export const Devolucao2025Page = () => {
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* Header */}
-          <div className="px-4 md:px-6 py-6">
-            <div className="flex items-center justify-between gap-4">
-              <h1 className="text-3xl font-bold">Devoluções de Vendas</h1>
-            </div>
+          {/* Header - sem py, apenas px */}
+          <div className="px-4 md:px-6">
+            <h1 className="text-3xl font-bold">📋 Devoluções de Vendas</h1>
           </div>
           
           {/* Tabs: Ativas vs Histórico + Filtros */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <div className="flex items-center gap-3 flex-nowrap">
+              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
-                  <TabsTrigger value="ativas" className="h-8">
+                  <TabsTrigger value="ativas" className="h-10">
                     Ativas ({countAtivas})
                   </TabsTrigger>
-                  <TabsTrigger value="historico" className="h-8">
+                  <TabsTrigger value="historico" className="h-10">
                     Histórico ({countHistorico})
                   </TabsTrigger>
                 </TabsList>
                 
-                <Devolucao2025FilterBar
-                  accounts={accounts}
-                  selectedAccountIds={selectedAccounts}
-                  onAccountsChange={setSelectedAccounts}
-                  periodo={periodo}
-                  onPeriodoChange={(p) => {
-                    setPeriodo(p);
-                    // Atualizar dateRange baseado no período
-                    const hoje = new Date();
-                    const inicio = new Date();
-                    inicio.setDate(hoje.getDate() - parseInt(p));
-                    setDateRange({ from: inicio, to: hoje });
-                  }}
-                  searchTerm={searchTerm}
-                  onSearchChange={setSearchTerm}
-                  onBuscar={() => {
-                    setIsManualSearching(true);
-                    handleApplyFilters();
-                  }}
-                  isLoading={isManualSearching}
-                  onCancel={() => {
-                    setIsManualSearching(false);
-                    handleCancelSearch();
-                  }}
-                  allColumns={COLUMNS_CONFIG}
-                  visibleColumns={visibleColumns}
-                  onVisibleColumnsChange={setVisibleColumns}
-                />
-                
-                <div className="flex-shrink-0">
-                  <ExportButton 
-                    data={devolucoes}
+                {/* Filtros integrados */}
+                <div className="flex-1 min-w-0">
+                  <Devolucao2025FilterBar
+                    accounts={accounts}
+                    selectedAccountIds={selectedAccounts}
+                    onAccountsChange={setSelectedAccounts}
+                    periodo={periodo}
+                    onPeriodoChange={(p) => {
+                      setPeriodo(p);
+                      // Atualizar dateRange baseado no período
+                      const hoje = new Date();
+                      const inicio = new Date();
+                      inicio.setDate(hoje.getDate() - parseInt(p));
+                      setDateRange({ from: inicio, to: hoje });
+                    }}
+                    searchTerm={searchTerm}
+                    onSearchChange={setSearchTerm}
+                    onBuscar={() => {
+                      setIsManualSearching(true);
+                      handleApplyFilters();
+                    }}
+                    isLoading={isManualSearching}
+                    onCancel={() => {
+                      setIsManualSearching(false);
+                      handleCancelSearch();
+                    }}
+                    allColumns={COLUMNS_CONFIG}
                     visibleColumns={visibleColumns}
-                    disabled={isLoading}
+                    onVisibleColumnsChange={setVisibleColumns}
                   />
                 </div>
               </div>
+              
+              {/* Resumo com badges clicáveis - mt-12 após as abas */}
+              <div className="mt-12">
+                <Devolucao2025Resumo 
+                  devolucoes={devolucoesFiltradasPorAba}
+                  onFiltroClick={setFiltroResumo}
+                  filtroAtivo={filtroResumo}
+                />
+              </div>
             </Tabs>
-          </div>
-
-          {/* Resumo com badges clicáveis */}
-          <div className="px-4 md:px-6">
-            <Devolucao2025Resumo 
-              devolucoes={devolucoesFiltradasPorAba}
-              onFiltroClick={setFiltroResumo}
-              filtroAtivo={filtroResumo}
-            />
           </div>
 
           {/* Tabela */}
