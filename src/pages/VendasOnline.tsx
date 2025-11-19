@@ -79,7 +79,7 @@ export default function VendasOnline() {
   const [visibleColumns, setVisibleColumns] = useState<string[]>([]);
   
   // 🔥 FUNÇÃO DE BUSCA: Aplicar filtros à store e refresh
-  const handleBuscar = () => {
+  const handleBuscar = async () => {
     console.log('🔍 Aplicando filtros:', { selectedAccountIds, periodo, searchTerm });
     
     // Validação: precisa ter pelo menos 1 conta selecionada
@@ -106,7 +106,7 @@ export default function VendasOnline() {
     console.log('✅ Filtros aplicados, disparando refresh...');
     
     // Refresh dispara nova busca com filtros atualizados
-    setTimeout(() => refresh(), 100);
+    refresh();
   };
   
   // Enriquecer vendas com status_analise_local do localStorage
@@ -206,7 +206,7 @@ export default function VendasOnline() {
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                   <TabsTrigger value="ativas" className="h-10">
                     Ativas ({countAtivas})
