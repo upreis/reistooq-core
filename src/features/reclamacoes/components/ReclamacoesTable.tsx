@@ -66,6 +66,7 @@ export function ReclamacoesTable({
   const table = useReactTable({
     data: reclamacoes,
     columns,
+    getRowId: (row) => row.claim_id || row.id || `row-${Math.random()}`, // ✅ Garantir key única
     state: {
       globalFilter,
       columnVisibility,
