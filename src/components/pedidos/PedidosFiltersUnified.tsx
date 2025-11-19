@@ -337,13 +337,6 @@ export function PedidosFiltersUnified({
               />
             )}
 
-            {/* Botão de Limpar */}
-            {activeFiltersCount > 0 && (
-              <Button variant="outline" size="sm" onClick={onClearFilters} className="h-9 px-2.5">
-                <X className="h-4 w-4 sm:mr-1.5" />
-                <span className="hidden sm:inline">Limpar</span>
-              </Button>
-            )}
           </div>
         </div>
 
