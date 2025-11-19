@@ -89,3 +89,5 @@ export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
     </Select>
   );
 });
+
+StatusAnaliseSelect.displayName = 'StatusAnaliseSelect';

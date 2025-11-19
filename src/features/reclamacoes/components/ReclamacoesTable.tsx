@@ -179,8 +179,10 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   );
 });
 
+ReclamacoesTable.displayName = 'ReclamacoesTable';
+
 // ⚡ COMPONENTE OTIMIZADO PARA LINHA DA TABELA (memo evita re-renders desnecessários)
-const OptimizedTableRow = memo(({ row }: { row: any }) => {
+const OptimizedTableRow = memo(function OptimizedTableRow({ row }: { row: any }) {
   return (
     <TableRow className="hover:bg-muted/50">
       {row.getVisibleCells().map((cell: any) => (
@@ -191,3 +193,5 @@ const OptimizedTableRow = memo(({ row }: { row: any }) => {
     </TableRow>
   );
 });
+
+OptimizedTableRow.displayName = 'OptimizedTableRow';

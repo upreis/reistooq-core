@@ -102,3 +102,5 @@ export const ReclamacaoLifecycleBadge = memo(function ReclamacaoLifecycleBadge({
     </TooltipProvider>
   );
 });
+
+ReclamacaoLifecycleBadge.displayName = 'ReclamacaoLifecycleBadge';
