@@ -113,24 +113,25 @@ export function ReclamacoesPage() {
     },
   });
 
-  // Auto-selecionar contas
+  // Auto-selecionar contas APENAS se não há cache de contas
   useEffect(() => {
-    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
+    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && !persistentCache.persistedState) {
       const { accountIds } = validateMLAccounts(mlAccounts);
       if (accountIds.length > 0) {
         setSelectedAccountIds(accountIds);
-        logger.debug('Contas auto-selecionadas', { 
+        logger.debug('Contas auto-selecionadas (primeira vez)', { 
           context: 'ReclamacoesPage',
           count: accountIds.length,
           accountIds 
         });
       }
     }
-  }, [mlAccounts]);
+  }, [mlAccounts, persistentCache.persistedState]);
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
     queryKey: ['reclamacoes', selectedAccountIds, filters],
+    enabled: false, // Desabilitar busca automática - só via handleBuscarReclamacoes
     queryFn: async () => {
       console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
       
@@ -240,7 +241,7 @@ export function ReclamacoesPage() {
       
       return allClaims;
     },
-    enabled: selectedAccountIds.length > 0 && !isManualSearching,
+    
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
