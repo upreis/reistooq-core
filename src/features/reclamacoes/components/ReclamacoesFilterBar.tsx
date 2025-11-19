@@ -80,10 +80,10 @@ export function ReclamacoesFilterBar({
 
   return (
     <div className="space-y-4">
-      {/* Barra de Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_1fr_auto_auto] gap-4 items-end">
+      {/* Barra de Filtros - Inline com espaçamento uniforme */}
+      <div className="flex items-center gap-3 overflow-x-auto">
         {/* Busca Manual */}
-        <div>
+        <div className="min-w-[200px] flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -96,7 +96,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Contas ML */}
-        <div>
+        <div className="min-w-[180px] flex-shrink-0">
           <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -166,7 +166,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Período de Busca */}
-        <div>
+        <div className="min-w-[180px] flex-shrink-0">
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Select value={periodo} onValueChange={onPeriodoChange}>
@@ -185,8 +185,7 @@ export function ReclamacoesFilterBar({
         </div>
 
         {/* Botão Aplicar Filtros */}
-        <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground opacity-0">Ação</Label>
+        <div className="flex-shrink-0">
           <FlipButton
             text1="Cancelar a Busca"
             text2="Aplicar Filtros e Buscar"
@@ -197,8 +196,7 @@ export function ReclamacoesFilterBar({
 
         {/* Seletor de Colunas */}
         {table && (
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground opacity-0">Colunas</Label>
+          <div className="flex-shrink-0">
             <ReclamacoesColumnSelector table={table} />
           </div>
         )}
