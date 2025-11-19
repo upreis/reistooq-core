@@ -272,6 +272,34 @@ export const reclamacoesColumns = (
     },
     size: 180,
   },
+  // 📝 COLUNA DE ANOTAÇÕES
+  {
+    id: 'anotacoes',
+    header: () => (
+      <div className="text-center">
+        <span className="font-semibold text-xs">Anotações</span>
+      </div>
+    ),
+    cell: ({ row }) => {
+      const claimId = row.original.claim_id;
+      const hasAnotacao = anotacoes?.[claimId]?.trim().length > 0;
+      
+      return (
+        <div className="flex justify-center">
+          <Button
+            variant={hasAnotacao ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => onOpenAnotacoes?.(row.original)}
+            className="h-8 w-8 p-0"
+            title={hasAnotacao ? 'Ver/Editar anotações' : 'Adicionar anotações'}
+          >
+            <FileText className={`h-4 w-4 ${hasAnotacao ? '' : 'text-muted-foreground'}`} />
+          </Button>
+        </div>
+      );
+    },
+    size: 80,
+  },
   {
     accessorKey: 'account_name',
     header: ({ column }) => {
@@ -403,34 +431,6 @@ export const reclamacoesColumns = (
       const total = row.getValue('order_total') as number;
       return <span className="text-sm">{formatCurrency(total)}</span>;
     },
-  },
-  // 📝 COLUNA DE ANOTAÇÕES
-  {
-    id: 'anotacoes',
-    header: () => (
-      <div className="text-center">
-        <span className="font-semibold text-xs">Anotações</span>
-      </div>
-    ),
-    cell: ({ row }) => {
-      const claimId = row.original.claim_id;
-      const hasAnotacao = anotacoes?.[claimId]?.trim().length > 0;
-      
-      return (
-        <div className="flex justify-center">
-          <Button
-            variant={hasAnotacao ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => onOpenAnotacoes?.(row.original)}
-            className="h-8 w-8 p-0"
-            title={hasAnotacao ? 'Ver/Editar anotações' : 'Adicionar anotações'}
-          >
-            <FileText className={`h-4 w-4 ${hasAnotacao ? '' : 'text-muted-foreground'}`} />
-          </Button>
-        </div>
-      );
-    },
-    size: 80,
   },
   {
     accessorKey: 'claim_id',
