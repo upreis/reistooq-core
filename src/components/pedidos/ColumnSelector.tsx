@@ -133,9 +133,8 @@ export function ColumnSelector({ columns, onColumnsChange }: ColumnSelectorProps
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
-          Colunas ({visibleColumnsCount})
+        <Button variant="outline" size="icon">
+          <Settings className="h-4 w-4" />
         </Button>
       </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px]">

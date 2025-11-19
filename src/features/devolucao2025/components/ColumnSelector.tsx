@@ -81,12 +81,8 @@ export const ColumnSelector = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline">
-          <Columns3 className="h-4 w-4 mr-2" />
-          Colunas
-          <Badge variant="secondary" className="ml-2">
-            {visibleColumns.length}/{columns.length}
-          </Badge>
+        <Button variant="outline" size="icon">
+          <Columns3 className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="end">

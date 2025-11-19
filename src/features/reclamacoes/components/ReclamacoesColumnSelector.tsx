@@ -100,12 +100,8 @@ export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2">
+        <Button variant="outline" size="icon">
           <Settings2 className="h-4 w-4" />
-          Colunas
-          <span className="text-xs text-muted-foreground ml-1">
-            ({visibleColumns.length}/{allColumns.length})
-          </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
