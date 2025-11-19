@@ -37,33 +37,35 @@ export function PedidosResumo({
   // Total
   const total = pedidos.length;
   
-  // Cálculo de métricas baseado em status de mapeamento e estoque
+  // Contar por statusBaixa da coluna "Status da Baixa"
   const prontosBaixa = pedidos.filter(p => {
-    if (!mappingData) return false;
-    const mapping = mappingData.get(p.id_unico || p.id || p.numero);
-    if (!mapping) return false;
-    return mapping.status === 'completo' && !isPedidoProcessado?.(p);
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusBaixa === 'pronto_baixar';
   }).length;
 
   const mapeamentoPendente = pedidos.filter(p => {
-    if (!mappingData) return false;
-    const mapping = mappingData.get(p.id_unico || p.id || p.numero);
-    if (!mapping) return true; // Sem mapeamento = pendente
-    return mapping.status === 'incompleto' || mapping.status === 'parcial';
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusBaixa === 'sem_mapear' || !mapping;
   }).length;
 
-  const baixados = pedidos.filter(p => isPedidoProcessado?.(p)).length;
+  const baixados = pedidos.filter(p => {
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusBaixa === 'pedido_baixado' || isPedidoProcessado?.(p);
+  }).length;
 
   const semEstoque = pedidos.filter(p => {
-    if (!mappingData) return false;
-    const mapping = mappingData.get(p.id_unico || p.id || p.numero);
-    return mapping?.status === 'sem_estoque';
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusBaixa === 'sem_estoque';
   }).length;
 
   const skuNaoCadastrado = pedidos.filter(p => {
-    if (!mappingData) return false;
-    const mapping = mappingData.get(p.id_unico || p.id || p.numero);
-    return mapping?.status === 'sku_nao_cadastrado';
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusBaixa === 'sku_nao_cadastrado';
+  }).length;
+
+  const semComposicao = pedidos.filter(p => {
+    const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
+    return mapping?.statusBaixa === 'sem_composicao';
   }).length;
 
   const badges = [
@@ -85,7 +87,7 @@ export function PedidosResumo({
     },
     {
       id: 'mapear_incompleto' as FiltroResumo,
-      label: 'Mapeamento Pendente',
+      label: 'Sem Mapear',
       valor: mapeamentoPendente,
       icon: AlertTriangle,
       destaque: false,
@@ -114,6 +116,14 @@ export function PedidosResumo({
       icon: Clock,
       destaque: false,
       color: 'bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/20'
+    },
+    {
+      id: 'sem_composicao' as FiltroResumo,
+      label: 'Sem Composição',
+      valor: semComposicao,
+      icon: FileText,
+      destaque: false,
+      color: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
     }
   ];
 
