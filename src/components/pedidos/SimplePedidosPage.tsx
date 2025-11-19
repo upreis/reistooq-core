@@ -335,7 +335,7 @@ function SimplePedidosPage({ className }: Props) {
   );
   
   // Filtro rápido (apenas client-side) - COM PERSISTÊNCIA
-  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao'>(() => {
+  const [quickFilter, setQuickFilter] = useState<'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao' | 'insumo_pronto' | 'insumo_sem_mapeamento' | 'insumo_sem_cadastro' | 'insumo_pendente'>(() => {
     return persistentState.persistedState?.quickFilter as any || 'all';
   });
   
