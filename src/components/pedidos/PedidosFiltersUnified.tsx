@@ -116,40 +116,36 @@ export function PedidosFiltersUnified({
   return (
     <div className="space-y-4">
       {/* Layout principal dos filtros */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 xl:grid-cols-8 gap-4 items-end">
-        <div className="sm:col-span-1 lg:col-span-1 xl:col-span-1">
+      <div className="flex items-center gap-3 flex-nowrap">
+        <div className="min-w-[200px] flex-shrink-0">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Número, cliente, CPF/CNPJ..."
               value={filters.search || ''}
               onChange={(e) => onFilterChange('search', e.target.value)}
-              className={cn(
-                "pl-10",
-                hasPendingChanges && filters.search !== appliedFilters.search && "border-warning"
-              )}
+              className="pl-10 h-10"
             />
           </div>
         </div>
 
-        <div className="lg:col-span-2 xl:col-span-2">
+        <div className="min-w-[180px] flex-shrink-0">
           <Popover open={contasMLOpen} onOpenChange={setContasMLOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
                 role="combobox"
                 aria-expanded={contasMLOpen}
-                className={cn(
-                  "w-full justify-between",
-                  hasPendingChanges && JSON.stringify(filters.contasML || []) !== JSON.stringify(appliedFilters.contasML || []) && "border-warning"
-                )}
+                className="w-full justify-between h-10"
               >
-                {selectedContasML.length === 0 
-                  ? "Selecionar Empresas"
-                  : selectedContasML.length === 1
-                  ? "1 Empresa"
-                  : `${selectedContasML.length} Empresas`
-                }
+                <span className="truncate">
+                  {selectedContasML.length === 0 
+                    ? "Selecionar Empresas"
+                    : selectedContasML.length === 1
+                    ? "1 Empresa"
+                    : `${selectedContasML.length} Empresas`
+                  }
+                </span>
                 <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
