@@ -6,6 +6,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ExternalLink, Package } from 'lucide-react';
+import { sanitizeMlImageUrl, createImagePlaceholder } from '@/utils/imageUtils';
 
 interface ProductInfo {
   id?: string;
@@ -50,11 +51,11 @@ export function ProductInfoCell({ productInfo }: ProductInfoCellProps) {
             {/* Thumbnail */}
             {productInfo.thumbnail ? (
               <img 
-                src={productInfo.thumbnail} 
+                src={sanitizeMlImageUrl(productInfo.thumbnail) || createImagePlaceholder(48, 48)} 
                 alt={productInfo.title}
                 className="w-12 h-12 object-cover rounded border border-border flex-shrink-0"
                 onError={(e) => {
-                  e.currentTarget.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="48" height="48"%3E%3Crect width="48" height="48" fill="%23f0f0f0"/%3E%3Ctext x="24" y="24" text-anchor="middle" dy=".3em" fill="%23999" font-family="sans-serif" font-size="12"%3ESem imagem%3C/text%3E%3C/svg%3E';
+                  e.currentTarget.src = createImagePlaceholder(48, 48, 'Erro');
                 }}
               />
             ) : (
