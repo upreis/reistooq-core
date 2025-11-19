@@ -25,12 +25,25 @@ import { COLUMNS_CONFIG } from '../config/columns';
 import { ExportButton } from '../components/ExportButton';
 import { usePersistentDevolucoesState } from '../hooks/usePersistentDevolucoesState';
 import { RefreshCw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
+import type { StatusAnalise } from '../types/devolucao-analise.types';
+import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
 
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
   
   // Estado de persistência
   const persistentCache = usePersistentDevolucoesState();
+  
+  // 💾 STORAGE DE ANÁLISE (localStorage)
+  const {
+    analiseStatus,
+    setAnaliseStatus,
+    anotacoes,
+    saveAnotacao,
+    removeDevolucao
+  } = useDevolucaoStorage();
   
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [dateRange, setDateRange] = useState({
@@ -40,6 +53,7 @@ export const Devolucao2025Page = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   
   // Restaurar estado do cache após carregar
   useEffect(() => {
@@ -148,21 +162,42 @@ export const Devolucao2025Page = () => {
     }
   });
 
+  // Enriquecer devoluções com status de análise local
+  const devolucoesEnriquecidas = useMemo(() => {
+    return devolucoes.map(dev => ({
+      ...dev,
+      status_analise_local: analiseStatus[dev.order_id] || 'pendente' as StatusAnalise
+    }));
+  }, [devolucoes, analiseStatus]);
+
+  // Filtrar por aba ativa
+  const devolucoesFiltradasPorAba = useMemo(() => {
+    if (activeTab === 'ativas') {
+      return devolucoesEnriquecidas.filter(dev => 
+        STATUS_ATIVOS.includes(dev.status_analise_local)
+      );
+    } else {
+      return devolucoesEnriquecidas.filter(dev => 
+        STATUS_HISTORICO.includes(dev.status_analise_local)
+      );
+    }
+  }, [devolucoesEnriquecidas, activeTab]);
+
   // Paginação dos dados (com filtro para remover linhas sem comprador ou produto)
   const paginatedDevolucoes = useMemo(() => {
     // Filtrar devoluções sem comprador ou produto
-    const filteredDevolucoes = devolucoes.filter(dev => 
+    const filteredDevolucoes = devolucoesFiltradasPorAba.filter(dev => 
       dev.comprador_nome_completo && dev.produto_titulo
     );
     
     if (itemsPerPage === -1) return filteredDevolucoes; // "Todas"
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredDevolucoes.slice(startIndex, startIndex + itemsPerPage);
-  }, [devolucoes, currentPage, itemsPerPage]);
+  }, [devolucoesFiltradasPorAba, currentPage, itemsPerPage]);
 
   const filteredCount = useMemo(() => 
-    devolucoes.filter(dev => dev.comprador_nome_completo && dev.produto_titulo).length, 
-    [devolucoes]
+    devolucoesFiltradasPorAba.filter(dev => dev.comprador_nome_completo && dev.produto_titulo).length, 
+    [devolucoesFiltradasPorAba]
   );
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCount / itemsPerPage);
 
@@ -209,8 +244,25 @@ export const Devolucao2025Page = () => {
     window.location.reload();
   }, []);
 
+  // Handler para mudança de status de análise
+  const handleStatusChange = useCallback((orderId: string, newStatus: StatusAnalise) => {
+    setAnaliseStatus(orderId, newStatus);
+    console.log(`✅ Status de análise atualizado: ${orderId} → ${newStatus}`);
+  }, [setAnaliseStatus]);
+
   // Sistema de Alertas
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
+
+  // Contadores para as abas
+  const countAtivas = useMemo(() => 
+    devolucoesEnriquecidas.filter(dev => STATUS_ATIVOS.includes(dev.status_analise_local)).length,
+    [devolucoesEnriquecidas]
+  );
+  
+  const countHistorico = useMemo(() => 
+    devolucoesEnriquecidas.filter(dev => STATUS_HISTORICO.includes(dev.status_analise_local)).length,
+    [devolucoesEnriquecidas]
+  );
 
   return (
     <div className="w-full">
@@ -244,34 +296,41 @@ export const Devolucao2025Page = () => {
             </div>
           </div>
           
-          {/* Filtros e Cards */}
+          {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6">
-            <Card className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <Devolucao2025Filters
-                    accounts={accounts}
-                    selectedAccounts={selectedAccounts}
-                    onAccountsChange={setSelectedAccounts}
-                    dateRange={dateRange}
-                    onDateRangeChange={setDateRange}
-                    onApplyFilters={handleApplyFilters}
-                    onCancelSearch={handleCancelSearch}
-                    isLoading={isLoading}
-                  />
-                  <ColumnSelector 
-                    columns={COLUMNS_CONFIG}
-                    visibleColumns={visibleColumns}
-                    onVisibleColumnsChange={setVisibleColumns}
-                  />
-                  <ExportButton 
-                    data={devolucoes}
-                    visibleColumns={visibleColumns}
-                    disabled={isLoading}
-                  />
-                </div>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+                <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
+                  <TabsTrigger value="ativas" className="h-10">
+                    Ativas ({countAtivas})
+                  </TabsTrigger>
+                  <TabsTrigger value="historico" className="h-10">
+                    Histórico ({countHistorico})
+                  </TabsTrigger>
+                </TabsList>
+                
+                <Devolucao2025Filters
+                  accounts={accounts}
+                  selectedAccounts={selectedAccounts}
+                  onAccountsChange={setSelectedAccounts}
+                  dateRange={dateRange}
+                  onDateRangeChange={setDateRange}
+                  onApplyFilters={handleApplyFilters}
+                  onCancelSearch={handleCancelSearch}
+                  isLoading={isLoading}
+                />
+                <ColumnSelector 
+                  columns={COLUMNS_CONFIG}
+                  visibleColumns={visibleColumns}
+                  onVisibleColumnsChange={setVisibleColumns}
+                />
+                <ExportButton 
+                  data={devolucoes}
+                  visibleColumns={visibleColumns}
+                  disabled={isLoading}
+                />
               </div>
-            </Card>
+            </Tabs>
           </div>
 
           {/* Tabela */}
@@ -297,19 +356,22 @@ export const Devolucao2025Page = () => {
                 isLoading={isLoading}
                 error={error}
                 visibleColumns={visibleColumns}
+                onStatusChange={handleStatusChange}
+                anotacoes={anotacoes}
+                activeTab={activeTab}
               />
             </Card>
           </div>
 
           {/* Rodapé Fixado com Paginação */}
-          {!isLoading && !error && devolucoes.length > 0 && (
+          {!isLoading && !error && devolucoesFiltradasPorAba.length > 0 && (
             <div 
               className={`fixed bottom-0 right-0 bg-background border-t shadow-lg z-40 transition-all duration-300 ${
                 isSidebarCollapsed ? 'md:left-[72px]' : 'md:left-72'
               } left-0`}
             >
               <Devolucao2025PaginationFooter
-                totalItems={devolucoes.length}
+                totalItems={filteredCount}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
