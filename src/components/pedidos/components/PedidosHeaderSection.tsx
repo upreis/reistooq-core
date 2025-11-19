@@ -26,8 +26,8 @@ interface PedidosHeaderSectionProps {
 }
 
 export const PedidosHeaderSection = memo(function PedidosHeaderSection({
-  title = "Pedidos",
-  subtitle = "Gerencie seus pedidos do Mercado Livre",
+  title = "Pedidos de Venda",
+  subtitle,
   fonte,
   totalCount,
   loading = false,
@@ -47,14 +47,9 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="text-muted-foreground">
-            {subtitle}
-            {totalCount !== undefined && (
-              <Badge variant="secondary" className="ml-2">
-                {totalCount} pedidos
-              </Badge>
-            )}
-          </p>
+          {subtitle && (
+            <p className="text-muted-foreground">{subtitle}</p>
+          )}
         </div>
 
         <div className="flex items-center gap-2">
