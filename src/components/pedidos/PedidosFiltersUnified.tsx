@@ -115,57 +115,6 @@ export function PedidosFiltersUnified({
 
   return (
     <div className="space-y-4">
-      {/* Aviso de filtros pendentes */}
-      {needsManualApplication && (
-        <Alert className="border-warning bg-warning/10">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription className="flex items-center justify-between">
-            <span>Você tem filtros pendentes. Clique em "Aplicar Filtros" para ativá-los.</span>
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                onClick={onCancelChanges}
-                disabled={isApplying}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                size="sm" 
-                onClick={async () => {
-                  console.groupCollapsed('[apply/click] from=modal - SYNC CALL');
-                  console.log('draftFilters', filters);
-                  console.log('appliedFilters (antes)', appliedFilters);
-                  console.groupEnd();
-                  
-                  try {
-                    console.log('🚀 [FILTERS UI] Chamando onApplyFilters...');
-                    await onApplyFilters();
-                    console.log('✅ [FILTERS UI] onApplyFilters completado com sucesso');
-                  } catch (error) {
-                    console.error('❌ [FILTERS UI] Erro em onApplyFilters:', error);
-                  }
-                }}
-                disabled={isApplying}
-                className="min-w-[100px]"
-              >
-                {isApplying ? (
-                  <>
-                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                    Aplicando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Aplicar Filtros
-                  </>
-                )}
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
       {/* Layout principal dos filtros */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-8 xl:grid-cols-8 gap-4 items-end">
         {/* Busca - Aplicação manual */}
