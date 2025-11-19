@@ -103,12 +103,12 @@ export const VendasTable = ({
         <Table>
           <TableHeader>
             <TableRow>
+              {/* ANÁLISE */}
+              <TableHead className="min-w-[180px]">📊 Análise</TableHead>
+              
               {/* IDENTIFICAÇÃO */}
               <TableHead className="min-w-[120px]">ID Pedido</TableHead>
               <TableHead className="min-w-[100px]">Pack ID</TableHead>
-              
-              {/* ANÁLISE */}
-              <TableHead className="min-w-[180px]">📊 Análise</TableHead>
               
               {/* STATUS */}
               <TableHead className="min-w-[120px]">Status</TableHead>
@@ -188,10 +188,6 @@ export const VendasTable = ({
 
               return (
                 <TableRow key={order.id}>
-                  {/* IDENTIFICAÇÃO */}
-                  <TableCell className="font-mono text-xs">{order.id}</TableCell>
-                  <TableCell className="font-mono text-xs">{order.pack_id || '-'}</TableCell>
-                  
                   {/* ANÁLISE */}
                   <TableCell>
                     {onStatusChange && (
@@ -205,6 +201,10 @@ export const VendasTable = ({
                       />
                     )}
                   </TableCell>
+                  
+                  {/* IDENTIFICAÇÃO */}
+                  <TableCell className="font-mono text-xs">{order.id}</TableCell>
+                  <TableCell className="font-mono text-xs">{order.pack_id || '-'}</TableCell>
                   
                   {/* STATUS */}
                   <TableCell>
