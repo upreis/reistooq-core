@@ -1080,16 +1080,6 @@ useEffect(() => {
             </div>
           )}
 
-          {/* 📊 FASE 2: Resumo com Badges Clicáveis (padrão /reclamacoes) */}
-          <div className="px-4 md:px-6 mt-12">
-            <PedidosResumo
-              pedidos={displayedOrders || orders}
-              onFiltroClick={(filtro) => setQuickFilter(filtro)}
-              filtroAtivo={quickFilter}
-              mappingData={mappingData}
-              isPedidoProcessado={isPedidoProcessado}
-            />
-          </div>
 
           {/* ✅ Ações sticky unificadas (substituindo componente antigo) */}
           <div className="px-4 md:px-6">
@@ -1132,6 +1122,17 @@ useEffect(() => {
                 onResetAdvancedStatusFilters={handleResetAdvancedStatusFilters}
               />
             </ErrorBoundary>
+          </div>
+
+          {/* 📊 FASE 2: Resumo com Badges Clicáveis (padrão /reclamacoes) */}
+          <div className="px-4 md:px-6 mt-6">
+            <PedidosResumo
+              pedidos={displayedOrders || orders}
+              onFiltroClick={(filtro) => setQuickFilter(filtro)}
+              filtroAtivo={quickFilter}
+              mappingData={mappingData}
+              isPedidoProcessado={isPedidoProcessado}
+            />
           </div>
       
       {/* BACKUP - CÓDIGO ORIGINAL DOS FILTROS */}
