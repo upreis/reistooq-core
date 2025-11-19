@@ -76,17 +76,6 @@ export const PedidosHeaderSection = memo(function PedidosHeaderSection({
             </Button>
           )}
 
-          {/* Botão Refresh */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRefresh}
-            disabled={loading || isRefreshing}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${(loading || isRefreshing) ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Atualizando...' : 'Atualizar'}
-          </Button>
 
           {children}
         </div>
