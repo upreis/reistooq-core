@@ -114,7 +114,7 @@ export function PedidosFiltersUnified({
   const selectedContasML = filters.contasML || [];
 
   return (
-    <div className="space-y-4 p-4 bg-card rounded-lg border border-border">
+    <div className="space-y-4">
       {/* Aviso de filtros pendentes */}
       {needsManualApplication && (
         <Alert className="border-warning bg-warning/10">
