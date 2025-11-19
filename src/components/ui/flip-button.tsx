@@ -18,11 +18,13 @@ export function FlipButton({
   const flipVariants = {
     one: {
       rotateX: 0,
-      // Usar cores sólidas ao invés de HSL para evitar erros de animação
+      backgroundColor: 'hsl(var(--primary))',
+      color: 'hsl(var(--primary-foreground))',
     },
     two: {
       rotateX: 180,
-      // Usar cores sólidas ao invés de HSL para evitar erros de animação
+      backgroundColor: 'hsl(var(--destructive))',
+      color: 'hsl(var(--destructive-foreground))',
     },
   }
 
@@ -36,11 +38,7 @@ export function FlipButton({
   return (
     <div className="w-full">
       <motion.button
-        className={`w-full h-10 cursor-pointer px-3 font-medium shadow-sm border text-sm transition-colors ${
-          show 
-            ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' 
-            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-        }`}
+        className="w-full h-10 cursor-pointer px-3 font-medium shadow-sm border text-sm"
         style={{
           borderRadius: 'var(--radius)',
         }}

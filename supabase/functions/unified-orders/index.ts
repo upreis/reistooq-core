@@ -736,7 +736,6 @@ function transformMLOrders(orders: any[], integration_account_id: string, accoun
     return {
       id: order.id?.toString() || '',
       numero: order.id?.toString() || '',
-      account_name: accountName || 'Mercado Livre', // ✅ ADICIONAR NOME DA EMPRESA
       nome_cliente: buyer.nickname || buyer.first_name || `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim() || null,
       cpf_cnpj: buyer.identification?.number || null,
       data_pedido: order.date_created || null,

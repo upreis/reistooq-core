@@ -83,8 +83,7 @@ export function VendasFilterBar({
   };
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
-      {/* Busca Manual */}
+    <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
       {/* Busca Manual */}
       <div className="min-w-[200px] flex-shrink-0">
         <div className="relative">
