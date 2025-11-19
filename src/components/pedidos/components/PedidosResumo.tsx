@@ -12,7 +12,9 @@ import {
   Package,
   XCircle,
   Clock,
-  ShoppingCart
+  ShoppingCart,
+  Truck,
+  PackageCheck
 } from 'lucide-react';
 
 export type FiltroResumo = 'all' | 'pronto_baixar' | 'mapear_incompleto' | 'baixado' | 'shipped' | 'delivered' | 'sem_estoque' | 'sku_nao_cadastrado' | 'sem_composicao';
@@ -66,6 +68,17 @@ export function PedidosResumo({
   const semComposicao = pedidos.filter(p => {
     const mapping = mappingData?.get(p.id_unico || p.id || p.numero);
     return mapping?.statusBaixa === 'sem_composicao';
+  }).length;
+
+  // Contar por status da coluna "Status"
+  const shipped = pedidos.filter(p => {
+    const statuses = Array.isArray(p.status) ? p.status : [p.status];
+    return statuses.some((s: string) => s?.includes('shipped') || s?.includes('ready_to_ship'));
+  }).length;
+
+  const delivered = pedidos.filter(p => {
+    const statuses = Array.isArray(p.status) ? p.status : [p.status];
+    return statuses.some((s: string) => s?.includes('delivered'));
   }).length;
 
   const badges = [
@@ -124,6 +137,22 @@ export function PedidosResumo({
       icon: FileText,
       destaque: false,
       color: 'bg-purple-500/10 text-purple-700 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
+    },
+    {
+      id: 'shipped' as FiltroResumo,
+      label: 'Enviados',
+      valor: shipped,
+      icon: Truck,
+      destaque: false,
+      color: 'bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border-cyan-500/20 hover:bg-cyan-500/20'
+    },
+    {
+      id: 'delivered' as FiltroResumo,
+      label: 'Entregues',
+      valor: delivered,
+      icon: PackageCheck,
+      destaque: false,
+      color: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
     }
   ];
 
