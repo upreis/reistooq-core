@@ -329,6 +329,81 @@ export const reclamacoesColumns = (
     },
     cell: ({ row }) => <span className="text-sm">{row.getValue('buyer_nickname') || '-'}</span>,
   },
+  // 📅 DATA DA VENDA
+  {
+    accessorKey: 'order_date_created',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Data da Venda
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <span className="text-sm">{formatDate(row.getValue('order_date_created'))}</span>,
+  },
+  // 📦 QUANTIDADE
+  {
+    accessorKey: 'order_item_quantity',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Quantidade
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <span className="text-sm text-center block">{row.getValue('order_item_quantity') || '-'}</span>,
+  },
+  // 💰 VALOR DO PRODUTO
+  {
+    accessorKey: 'order_item_unit_price',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Valor do Produto
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const price = row.getValue('order_item_unit_price') as number;
+      const currency = row.original.amount_currency;
+      return <span className="text-sm font-medium">{formatCurrency(price, currency)}</span>;
+    },
+  },
+  // 💵 TOTAL DA VENDA
+  {
+    accessorKey: 'order_total',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Total da Venda
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const total = row.getValue('order_total') as number;
+      return <span className="text-sm">{formatCurrency(total)}</span>;
+    },
+  },
   // 📝 COLUNA DE ANOTAÇÕES
   {
     id: 'anotacoes',
@@ -590,22 +665,6 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_category'))}</span>,
   },
   {
-    accessorKey: 'order_date_created',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Data da Venda
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="text-sm">{formatDate(row.getValue('order_date_created'))}</span>,
-  },
-  {
     accessorKey: 'buyer_nickname',
     header: ({ column }) => {
       return (
@@ -636,42 +695,6 @@ export const reclamacoesColumns = (
       );
     },
     cell: ({ row }) => <span className="max-w-[250px] text-sm truncate block">{row.getValue('order_item_title') || '-'}</span>,
-  },
-  {
-    accessorKey: 'order_item_quantity',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Quantidade
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="text-sm text-center block">{row.getValue('order_item_quantity') || '-'}</span>,
-  },
-  {
-    accessorKey: 'order_item_unit_price',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Valor do Produto
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const price = row.getValue('order_item_unit_price') as number;
-      const currency = row.original.amount_currency;
-      return <span className="text-sm font-medium">{formatCurrency(price, currency)}</span>;
-    },
   },
   {
     accessorKey: 'order_item_seller_sku',
@@ -830,25 +853,6 @@ export const reclamacoesColumns = (
       ) : (
         <span className="text-muted-foreground text-xs">-</span>
       );
-    },
-  },
-  {
-    accessorKey: 'order_total',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Total da Venda
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const total = row.getValue('order_total') as number;
-      return <span className="text-sm">{formatCurrency(total)}</span>;
     },
   },
   {
