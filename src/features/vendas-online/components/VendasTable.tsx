@@ -26,6 +26,8 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getOrderStatusLabel, getShippingStatusLabel, getShippingSubstatusLabel, getShippingSubstatusDescription } from '../utils/statusMapping';
 import { formatShippingStatus, formatLogisticType, formatSubstatus } from '@/utils/orderFormatters';
+import { StatusAnaliseSelect } from './StatusAnaliseSelect';
+import type { StatusAnalise } from '../types/venda-analise.types';
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -34,6 +36,8 @@ interface VendasTableProps {
   currentPage: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
+  activeTab?: 'ativas' | 'historico';
 }
 
 export const VendasTable = ({
@@ -42,7 +46,9 @@ export const VendasTable = ({
   loading,
   currentPage,
   itemsPerPage,
-  onPageChange
+  onPageChange,
+  onStatusChange,
+  activeTab
 }: VendasTableProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
@@ -100,6 +106,9 @@ export const VendasTable = ({
               {/* IDENTIFICAÇÃO */}
               <TableHead className="min-w-[120px]">ID Pedido</TableHead>
               <TableHead className="min-w-[100px]">Pack ID</TableHead>
+              
+              {/* ANÁLISE */}
+              <TableHead className="min-w-[180px]">📊 Análise</TableHead>
               
               {/* STATUS */}
               <TableHead className="min-w-[120px]">Status</TableHead>
@@ -182,6 +191,20 @@ export const VendasTable = ({
                   {/* IDENTIFICAÇÃO */}
                   <TableCell className="font-mono text-xs">{order.id}</TableCell>
                   <TableCell className="font-mono text-xs">{order.pack_id || '-'}</TableCell>
+                  
+                  {/* ANÁLISE */}
+                  <TableCell>
+                    {onStatusChange && (
+                      <StatusAnaliseSelect
+                        value={(order as any).status_analise_local || 'pendente'}
+                        onChange={(newStatus) => onStatusChange(order.id.toString(), newStatus)}
+                        allowedStatuses={activeTab === 'ativas' 
+                          ? ['pendente', 'em_analise', 'aguardando_ml'] 
+                          : ['resolvido_sem_dinheiro', 'resolvido_com_dinheiro', 'cancelado']
+                        }
+                      />
+                    )}
+                  </TableCell>
                   
                   {/* STATUS */}
                   <TableCell>

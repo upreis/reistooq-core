@@ -11,8 +11,14 @@ import { VendasPackDialog } from './VendasPackDialog';
 import { VendasShippingDialog } from './VendasShippingDialog';
 import { VendasFeedbackDialog } from './VendasFeedbackDialog';
 import { useState } from 'react';
+import type { StatusAnalise } from '../types/venda-analise.types';
 
-export const VendasOnlineTable = () => {
+interface VendasOnlineTableProps {
+  onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
+  activeTab?: 'ativas' | 'historico';
+}
+
+export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTableProps) => {
   const { 
     orders, 
     filters, 
@@ -40,6 +46,8 @@ export const VendasOnlineTable = () => {
         currentPage={pagination.currentPage}
         itemsPerPage={pagination.itemsPerPage}
         onPageChange={setPage}
+        onStatusChange={onStatusChange}
+        activeTab={activeTab}
       />
 
       {/* Dialogs */}
