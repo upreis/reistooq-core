@@ -179,7 +179,7 @@ export function VendasFilterBar({
         />
       </div>
 
-      {/* Seletor de Colunas */}
+      {/* Seletor de Colunas - APÓS o botão aplicar filtros */}
       {allColumns && visibleColumns && onVisibleColumnsChange && (
         <div className="flex-shrink-0">
           <ColumnSelector
