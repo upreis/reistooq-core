@@ -59,6 +59,8 @@ export function useMappingWorker() {
 
   // Inicializar worker
   useEffect(() => {
+    let isCleanedUp = false; // ✅ Flag para prevenir uso após cleanup
+    
     if (typeof Worker !== 'undefined') {
       try {
         workerRef.current = new Worker(
@@ -67,6 +69,11 @@ export function useMappingWorker() {
         );
 
         workerRef.current.onmessage = (e) => {
+          // ✅ Ignorar mensagens se worker já foi terminado
+          if (isCleanedUp || !workerRef.current) {
+            console.warn('⚠️ Mensagem recebida de worker já encerrado, ignorando');
+            return;
+          }
           const { type, payload, id } = e.data;
 
           setState(prev => ({ ...prev, isWorking: false }));
@@ -141,8 +148,15 @@ export function useMappingWorker() {
     }
 
     return () => {
+      isCleanedUp = true; // ✅ Marcar como limpo
       if (workerRef.current) {
-        workerRef.current.terminate();
+        try {
+          workerRef.current.terminate();
+        } catch (error) {
+          console.warn('⚠️ Erro ao terminar worker:', error);
+        } finally {
+          workerRef.current = null;
+        }
       }
     };
   }, []);
@@ -151,58 +165,88 @@ export function useMappingWorker() {
   const calculateMappings = useCallback((orders: any[], mapeamentos: any[]) => {
     if (!workerRef.current) {
       console.warn('Worker não disponível, processando no thread principal');
+      setState(prev => ({ ...prev, error: 'Worker não disponível' }));
       return;
     }
 
     setState(prev => ({ ...prev, isWorking: true, error: null }));
 
-    workerRef.current.postMessage({
-      type: 'CALCULATE_MAPPINGS',
-      payload: {
-        orders,
-        mapeamentos,
-        startTime: Date.now()
-      },
-      id: `mapping-${Date.now()}`
-    });
+    try {
+      workerRef.current.postMessage({
+        type: 'CALCULATE_MAPPINGS',
+        payload: {
+          orders,
+          mapeamentos,
+          startTime: Date.now()
+        },
+        id: `mapping-${Date.now()}`
+      });
+    } catch (error) {
+      console.error('❌ Erro ao enviar mensagem para worker:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isWorking: false,
+        error: 'Falha ao comunicar com worker - canal fechado'
+      }));
+    }
   }, []);
 
   // Calcular métricas financeiras
   const calculateFinancials = useCallback((orders: any[]) => {
     if (!workerRef.current) {
       console.warn('Worker não disponível');
+      setState(prev => ({ ...prev, error: 'Worker não disponível' }));
       return;
     }
 
     setState(prev => ({ ...prev, isWorking: true, error: null }));
 
-    workerRef.current.postMessage({
-      type: 'CALCULATE_FINANCIAL',
-      payload: {
-        orders,
-        startTime: Date.now()
-      },
-      id: `financial-${Date.now()}`
-    });
+    try {
+      workerRef.current.postMessage({
+        type: 'CALCULATE_FINANCIAL',
+        payload: {
+          orders,
+          startTime: Date.now()
+        },
+        id: `financial-${Date.now()}`
+      });
+    } catch (error) {
+      console.error('❌ Erro ao enviar mensagem para worker:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isWorking: false,
+        error: 'Falha ao comunicar com worker - canal fechado'
+      }));
+    }
   }, []);
 
   // Validar pedidos
   const validateOrders = useCallback((orders: any[]) => {
     if (!workerRef.current) {
       console.warn('Worker não disponível');
+      setState(prev => ({ ...prev, error: 'Worker não disponível' }));
       return;
     }
 
     setState(prev => ({ ...prev, isWorking: true, error: null }));
 
-    workerRef.current.postMessage({
-      type: 'VALIDATE_ORDERS',
-      payload: {
-        orders,
-        startTime: Date.now()
-      },
-      id: `validation-${Date.now()}`
-    });
+    try {
+      workerRef.current.postMessage({
+        type: 'VALIDATE_ORDERS',
+        payload: {
+          orders,
+          startTime: Date.now()
+        },
+        id: `validation-${Date.now()}`
+      });
+    } catch (error) {
+      console.error('❌ Erro ao enviar mensagem para worker:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isWorking: false,
+        error: 'Falha ao comunicar com worker - canal fechado'
+      }));
+    }
   }, []);
 
   // Helpers para acessar resultados
