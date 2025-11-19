@@ -344,12 +344,12 @@ export const Devolucao2025Page = () => {
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+              <div className="flex items-center gap-3 flex-nowrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
-                  <TabsTrigger value="ativas" className="h-10">
+                  <TabsTrigger value="ativas" className="h-8">
                     Ativas ({countAtivas})
                   </TabsTrigger>
-                  <TabsTrigger value="historico" className="h-10">
+                  <TabsTrigger value="historico" className="h-8">
                     Histórico ({countHistorico})
                   </TabsTrigger>
                 </TabsList>
@@ -382,11 +382,14 @@ export const Devolucao2025Page = () => {
                   visibleColumns={visibleColumns}
                   onVisibleColumnsChange={setVisibleColumns}
                 />
-                <ExportButton 
-                  data={devolucoes}
-                  visibleColumns={visibleColumns}
-                  disabled={isLoading}
-                />
+                
+                <div className="flex-shrink-0">
+                  <ExportButton 
+                    data={devolucoes}
+                    visibleColumns={visibleColumns}
+                    disabled={isLoading}
+                  />
+                </div>
               </div>
             </Tabs>
           </div>

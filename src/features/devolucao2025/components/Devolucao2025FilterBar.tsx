@@ -83,25 +83,23 @@ export function Devolucao2025FilterBar({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Barra de Filtros - Inline com espaçamento uniforme */}
-      <div className="flex items-center gap-3 flex-nowrap">
-        {/* Busca Manual */}
-        <div className="min-w-[200px] flex-shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Order ID, Claim ID, Produto..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9 h-10"
-            />
-          </div>
+    <div className="flex items-center gap-3 flex-shrink-0">
+      {/* Busca Manual */}
+      <div className="min-w-[200px] flex-shrink-0">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Order ID, Claim ID, Produto..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9 h-10"
+          />
         </div>
+      </div>
 
-        {/* Contas ML */}
-        <div className="min-w-[180px] flex-shrink-0">
-          <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
+      {/* Contas ML */}
+      <div className="min-w-[180px] flex-shrink-0">
+        <Popover open={accountsPopoverOpen} onOpenChange={setAccountsPopoverOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
@@ -180,17 +178,16 @@ export function Devolucao2025FilterBar({
           />
         </div>
 
-        {/* Seletor de Colunas */}
-        {allColumns && visibleColumns && onVisibleColumnsChange && (
-          <div className="flex-shrink-0">
-            <ColumnSelector
-              columns={allColumns}
-              visibleColumns={visibleColumns}
-              onVisibleColumnsChange={onVisibleColumnsChange}
-            />
-          </div>
-        )}
-      </div>
+      {/* Seletor de Colunas */}
+      {allColumns && visibleColumns && onVisibleColumnsChange && (
+        <div className="flex-shrink-0">
+          <ColumnSelector
+            columns={allColumns}
+            visibleColumns={visibleColumns}
+            onVisibleColumnsChange={onVisibleColumnsChange}
+          />
+        </div>
+      )}
     </div>
   );
 }
