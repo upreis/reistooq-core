@@ -214,6 +214,16 @@ export function PedidosFiltersUnified({
               placeholder="Selecionar período"
             />
 
+            {/* Botão Aplicar Filtros */}
+            <Button
+              onClick={onApplyFilters}
+              disabled={!hasPendingChanges}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              Aplicar Filtros
+            </Button>
+
             {/* Botão de Colunas */}
             {columnManager && (
               <ColumnManager 
