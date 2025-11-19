@@ -13,6 +13,7 @@ import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { Devolucao2025Table } from '../components/Devolucao2025Table';
 import { Devolucao2025Filters } from '../components/Devolucao2025Filters';
 import { Devolucao2025Stats } from '../components/Devolucao2025Stats';
+import { Devolucao2025Resumo, FiltroResumo } from '../components/Devolucao2025Resumo';
 import { Devolucao2025PaginationFooter } from '../components/Devolucao2025PaginationFooter';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { NotificationsBell } from '@/components/notifications/NotificationsBell';
@@ -29,6 +30,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
+import { differenceInBusinessDays, parseISO } from 'date-fns';
 
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
@@ -54,6 +56,7 @@ export const Devolucao2025Page = () => {
   const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
+  const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
   
   // Restaurar estado do cache após carregar
   useEffect(() => {
@@ -183,21 +186,61 @@ export const Devolucao2025Page = () => {
     }
   }, [devolucoesEnriquecidas, activeTab]);
 
+  // Aplicar filtro do resumo
+  const devolucoesComFiltroResumo = useMemo(() => {
+    if (!filtroResumo) return devolucoesFiltradasPorAba;
+    
+    const hoje = new Date();
+    
+    return devolucoesFiltradasPorAba.filter(dev => {
+      // Filtro por prazo
+      if (filtroResumo.tipo === 'prazo') {
+        if (!dev.data_criacao) return false;
+        const dataCriacao = parseISO(dev.data_criacao);
+        const diasUteis = differenceInBusinessDays(hoje, dataCriacao);
+        
+        if (filtroResumo.valor === 'vencido') {
+          return diasUteis > 3;
+        }
+        if (filtroResumo.valor === 'a_vencer') {
+          return diasUteis >= 0 && diasUteis <= 3;
+        }
+      }
+      
+      // Filtro por mediação
+      if (filtroResumo.tipo === 'mediacao') {
+        return dev.em_mediacao === true;
+      }
+      
+      // Filtro por tipo
+      if (filtroResumo.tipo === 'tipo') {
+        if (filtroResumo.valor === 'return') {
+          return dev.tipo_claim === 'return' || dev.return_id;
+        }
+        if (filtroResumo.valor === 'cancel') {
+          return dev.status_devolucao === 'cancelled' || dev.tipo_claim === 'cancel';
+        }
+      }
+      
+      return true;
+    });
+  }, [devolucoesFiltradasPorAba, filtroResumo]);
+
   // Paginação dos dados (com filtro para remover linhas sem comprador ou produto)
   const paginatedDevolucoes = useMemo(() => {
     // Filtrar devoluções sem comprador ou produto
-    const filteredDevolucoes = devolucoesFiltradasPorAba.filter(dev => 
+    const filteredDevolucoes = devolucoesComFiltroResumo.filter(dev => 
       dev.comprador_nome_completo && dev.produto_titulo
     );
     
     if (itemsPerPage === -1) return filteredDevolucoes; // "Todas"
     const startIndex = (currentPage - 1) * itemsPerPage;
     return filteredDevolucoes.slice(startIndex, startIndex + itemsPerPage);
-  }, [devolucoesFiltradasPorAba, currentPage, itemsPerPage]);
+  }, [devolucoesComFiltroResumo, currentPage, itemsPerPage]);
 
   const filteredCount = useMemo(() => 
-    devolucoesFiltradasPorAba.filter(dev => dev.comprador_nome_completo && dev.produto_titulo).length, 
-    [devolucoesFiltradasPorAba]
+    devolucoesComFiltroResumo.filter(dev => dev.comprador_nome_completo && dev.produto_titulo).length, 
+    [devolucoesComFiltroResumo]
   );
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCount / itemsPerPage);
 
@@ -331,6 +374,15 @@ export const Devolucao2025Page = () => {
                 />
               </div>
             </Tabs>
+          </div>
+
+          {/* Resumo com badges clicáveis */}
+          <div className="px-4 md:px-6">
+            <Devolucao2025Resumo 
+              devolucoes={devolucoesFiltradasPorAba}
+              onFiltroClick={setFiltroResumo}
+              filtroAtivo={filtroResumo}
+            />
           </div>
 
           {/* Tabela */}
