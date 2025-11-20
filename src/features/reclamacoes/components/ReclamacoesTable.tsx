@@ -1,8 +1,9 @@
 /**
  * 📋 TABELA DE RECLAMAÇÕES - COM TANSTACK TABLE
+ * 🎯 FASE 3: Integrado com ColumnManager avançado
  */
 
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -21,6 +22,7 @@ import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
+import type { UseColumnManagerReturn } from '../types/columns.types';
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -31,7 +33,8 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   onTableReady?: (table: any) => void;
-  activeTab?: 'ativas' | 'historico'; // ✨ NOVO: Para controlar status disponíveis no dropdown
+  activeTab?: 'ativas' | 'historico';
+  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3: ColumnManager avançado
 }
 
 export const ReclamacoesTable = memo(function ReclamacoesTable({
@@ -43,16 +46,27 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   onOpenAnotacoes,
   anotacoes,
   onTableReady,
-  activeTab // ✨ NOVO
+  activeTab,
+  columnManager // 🎯 FASE 3
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    reason_id: false,
-    reason_category: false,
-  });
   const [sorting, setSorting] = useState<SortingState>([]);
+  
+  // 🎯 FASE 3: Sincronizar columnVisibility com columnManager
+  const columnVisibility = useMemo<VisibilityState>(() => {
+    if (!columnManager) {
+      return { reason_id: false, reason_category: false };
+    }
+    
+    const visibility: VisibilityState = {};
+    columnManager.definitions.forEach(def => {
+      visibility[def.key] = columnManager.state.visibleColumns.has(def.key);
+    });
+    
+    return visibility;
+  }, [columnManager]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
@@ -68,14 +82,24 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const table = useReactTable({
     data: reclamacoes,
     columns,
-    getRowId: (row) => row.claim_id || row.id || `row-${Math.random()}`, // ✅ Garantir key única
+    getRowId: (row) => row.claim_id || row.id || `row-${Math.random()}`,
     state: {
       globalFilter,
       columnVisibility,
       sorting,
     },
     onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: (updater) => {
+      // 🎯 FASE 3: Sincronizar mudanças de visibilidade com columnManager
+      if (!columnManager) return;
+      
+      const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
+      const visibleKeys = Object.entries(newVisibility)
+        .filter(([_, isVisible]) => isVisible)
+        .map(([key, _]) => key);
+      
+      columnManager.actions.setVisibleColumns(visibleKeys);
+    },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -121,6 +145,20 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="space-y-4">
+      {/* Search bar e Column Selector */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar em todas as colunas..."
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <ReclamacoesColumnSelector table={table} columnManager={columnManager} />
+      </div>
+      
       {/* Tabela */}
       <div className="w-full flex-1 flex flex-col min-h-0">
         <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
