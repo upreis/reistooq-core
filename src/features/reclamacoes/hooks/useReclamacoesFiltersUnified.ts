@@ -3,7 +3,7 @@
  * FASE 2: Gerenciamento centralizado com sincronização URL + localStorage
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useReclamacoesFiltersSync, ReclamacoesFilters } from './useReclamacoesFiltersSync';
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
 
@@ -23,11 +23,13 @@ const DEFAULT_FILTERS: ReclamacoesFilters = {
 export function useReclamacoesFiltersUnified() {
   const persistentCache = usePersistentReclamacoesState();
   
-  // Estado dos filtros
-  const [filters, setFilters] = useState<ReclamacoesFilters>(() => {
-    // Prioridade: URL > Cache > Default
+  // Estado dos filtros - iniciar com defaults
+  const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
+
+  // 🔥 CORREÇÃO: Restaurar filtros do cache quando carregar
+  useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      return {
+      const cachedFilters = {
         periodo: persistentCache.persistedState.filters.periodo || DEFAULT_FILTERS.periodo,
         status: persistentCache.persistedState.filters.status || DEFAULT_FILTERS.status,
         type: persistentCache.persistedState.filters.type || DEFAULT_FILTERS.type,
@@ -36,9 +38,11 @@ export function useReclamacoesFiltersUnified() {
         currentPage: persistentCache.persistedState.currentPage || DEFAULT_FILTERS.currentPage,
         itemsPerPage: persistentCache.persistedState.itemsPerPage || DEFAULT_FILTERS.itemsPerPage
       };
+      
+      console.log('🔄 Restaurando filtros do cache:', cachedFilters);
+      setFilters(cachedFilters);
     }
-    return DEFAULT_FILTERS;
-  });
+  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
 
   // Sincronizar com URL
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
