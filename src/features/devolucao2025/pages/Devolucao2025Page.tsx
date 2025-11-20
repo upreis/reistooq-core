@@ -248,18 +248,9 @@ export const Devolucao2025Page = () => {
   );
   const totalPages = itemsPerPage === -1 ? 1 : Math.ceil(filteredCount / itemsPerPage);
 
-  // Carregar dados em cache na inicialização
-  useEffect(() => {
-    if (persistentCache.isStateLoaded) {
-      if (persistentCache.hasValidPersistedState()) {
-        console.log('🔄 Usando cache válido, sem buscar da API');
-        // React Query vai usar os dados em cache
-      } else if (accounts.length > 0) {
-        console.log('🔍 Sem cache válido, buscando dados...');
-        refetch();
-      }
-    }
-  }, [persistentCache.isStateLoaded, accounts.length, refetch]);
+  // ✅ CORREÇÃO 1: Não faz busca automática ao acessar a página
+  // - Apenas restaura filtros do cache (linhas 64-74)
+  // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
   // Atualizar cache quando página ou items por página mudar (debounced)
   useEffect(() => {
