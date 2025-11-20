@@ -59,6 +59,7 @@ export const Devolucao2025Page = () => {
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
   const [isManualSearching, setIsManualSearching] = useState(false);
+  const [shouldFetch, setShouldFetch] = useState(false); // Controla se busca pode ocorrer
   
   // Restaurar estado do cache após carregar
   useEffect(() => {
@@ -152,7 +153,7 @@ export const Devolucao2025Page = () => {
 
       return result;
     },
-    enabled: organizationId !== null && selectedAccounts.length > 0,
+    enabled: organizationId !== null && selectedAccounts.length > 0 && shouldFetch,
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
@@ -275,12 +276,14 @@ export const Devolucao2025Page = () => {
   const handleApplyFilters = useCallback(() => {
     console.log('🔄 Aplicando filtros, limpando cache...');
     persistentCache.clearPersistedState();
+    setShouldFetch(true); // Permitir busca
     refetch();
   }, [persistentCache, refetch]);
 
-  // Handler para cancelar busca (recarrega a página)
+  // ✅ CORREÇÃO 2: Cancelar busca sem reload
   const handleCancelSearch = useCallback(() => {
-    window.location.reload();
+    setIsManualSearching(false);
+    setShouldFetch(false); // Desabilitar busca
   }, []);
 
   // Handler para mudança de status de análise
@@ -288,6 +291,14 @@ export const Devolucao2025Page = () => {
     setAnaliseStatus(orderId, newStatus);
     console.log(`✅ Status de análise atualizado: ${orderId} → ${newStatus}`);
   }, [setAnaliseStatus]);
+
+  // Resetar shouldFetch após busca completar
+  useEffect(() => {
+    if (!isLoading && shouldFetch) {
+      setShouldFetch(false);
+      setIsManualSearching(false);
+    }
+  }, [isLoading, shouldFetch]);
 
   // Sistema de Alertas
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
