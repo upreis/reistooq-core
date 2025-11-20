@@ -23,7 +23,7 @@ import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
 import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
 import { useColumnPreferences } from '../hooks/useColumnPreferences';
 import { COLUMNS_CONFIG } from '../config/columns';
-import { usePersistentDevolucoesState } from '../hooks/usePersistentDevolucoesState';
+import { usePersistentDevolucoesStateV2 } from '../hooks/usePersistentDevolucoesStateV2';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -34,8 +34,8 @@ import { differenceInBusinessDays, parseISO } from 'date-fns';
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
   
-  // Estado de persistência
-  const persistentCache = usePersistentDevolucoesState();
+  // FASE 1: Estado de persistência com validação robusta
+  const persistentCache = usePersistentDevolucoesStateV2();
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
