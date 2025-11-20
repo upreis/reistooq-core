@@ -542,6 +542,7 @@ export function ReclamacoesPage() {
                       anotacoes={anotacoes}
                       onTableReady={setTableInstance}
                       activeTab={activeTab}
+                      columnManager={columnManager}
                     />
                   </Card>
                 </TabsContent>
