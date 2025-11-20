@@ -30,6 +30,9 @@ interface PersistentDevolucoesState {
   // COLUNAS VISÍVEIS
   visibleColumns: string[];
   
+  // FILTROS
+  periodo: string;
+  
   // TIMESTAMPS
   cachedAt: number; // timestamp do cache dos dados
 }
@@ -49,6 +52,7 @@ export function usePersistentDevolucoesState() {
     if (typeof state.currentPage !== 'number') return false;
     if (typeof state.itemsPerPage !== 'number') return false;
     if (!Array.isArray(state.visibleColumns)) return false;
+    if (typeof state.periodo !== 'string') return false;
     if (typeof state.cachedAt !== 'number') return false;
     return true;
   }, []);
@@ -123,6 +127,7 @@ export function usePersistentDevolucoesState() {
       const newState: PersistentDevolucoesState = {
         ...currentState,
         ...state,
+        periodo: state.periodo || '60',
         cachedAt: Date.now()
       };
 
@@ -165,7 +170,8 @@ export function usePersistentDevolucoesState() {
     dateRange: { from: Date; to: Date },
     currentPage: number,
     itemsPerPage: number,
-    visibleColumns: string[]
+    visibleColumns: string[],
+    periodo: string
   ) => {
     saveState({
       devolucoes,
@@ -173,7 +179,8 @@ export function usePersistentDevolucoesState() {
       dateRange,
       currentPage,
       itemsPerPage,
-      visibleColumns
+      visibleColumns,
+      periodo
     });
   }, [saveState]);
 

@@ -66,6 +66,7 @@ export const Devolucao2025Page = () => {
       const cached = persistentCache.persistedState;
       setSelectedAccounts(cached.selectedAccounts || []);
       setDateRange(cached.dateRange);
+      setPeriodo(cached.periodo || '60');
       setCurrentPage(cached.currentPage);
       setItemsPerPage(cached.itemsPerPage);
       console.log('🔄 Estado restaurado do cache');
@@ -145,7 +146,8 @@ export const Devolucao2025Page = () => {
         dateRange,
         currentPage,
         itemsPerPage,
-        visibleColumns
+        visibleColumns,
+        periodo
       );
 
       return result;
@@ -269,13 +271,14 @@ export const Devolucao2025Page = () => {
           dateRange,
           currentPage,
           itemsPerPage,
-          visibleColumns
+          visibleColumns,
+          periodo
         );
       }, 500);
       
       return () => clearTimeout(timer);
     }
-  }, [currentPage, itemsPerPage, devolucoes.length, persistentCache.isStateLoaded]);
+  }, [currentPage, itemsPerPage, devolucoes.length, persistentCache.isStateLoaded, periodo]);
 
   // Handler para aplicar filtros (limpa cache e busca novos dados)
   const handleApplyFilters = useCallback(() => {
