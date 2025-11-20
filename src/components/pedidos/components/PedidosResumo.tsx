@@ -208,7 +208,7 @@ export function PedidosResumo({
             <Icon className="h-4 w-4" />
             <span className="font-normal">{badge.label}</span>
             <span className={cn(
-              "font-bold ml-1 px-1.5 py-0.5 rounded text-xl",
+              "ml-1 px-1.5 py-0.5 rounded text-lg",
               badge.destaque ? "bg-black/20" : "bg-primary/10"
             )}>
               {badge.valor}
