@@ -272,13 +272,12 @@ export const Devolucao2025Page = () => {
     }
   }, [currentPage, itemsPerPage, devolucoes.length, persistentCache.isStateLoaded, periodo]);
 
-  // Handler para aplicar filtros (limpa cache e busca novos dados)
+  // Handler para aplicar filtros (apenas ativa flag)
   const handleApplyFilters = useCallback(() => {
     console.log('🔄 Aplicando filtros, limpando cache...');
     persistentCache.clearPersistedState();
-    setShouldFetch(true); // Permitir busca
-    refetch();
-  }, [persistentCache, refetch]);
+    setShouldFetch(true); // Ativa flag - useEffect vai disparar refetch
+  }, [persistentCache]);
 
   // ✅ CORREÇÃO 2: Cancelar busca sem reload
   const handleCancelSearch = useCallback(() => {
@@ -292,11 +291,20 @@ export const Devolucao2025Page = () => {
     console.log(`✅ Status de análise atualizado: ${orderId} → ${newStatus}`);
   }, [setAnaliseStatus]);
 
+  // ✅ Dispara refetch quando shouldFetch é ativado
+  useEffect(() => {
+    if (shouldFetch && organizationId && selectedAccounts.length > 0) {
+      console.log('🚀 Disparando busca via shouldFetch=true');
+      refetch();
+    }
+  }, [shouldFetch, organizationId, selectedAccounts.length, refetch]);
+
   // Resetar shouldFetch após busca completar
   useEffect(() => {
     if (!isLoading && shouldFetch) {
       setShouldFetch(false);
       setIsManualSearching(false);
+      console.log('✅ Busca concluída, resetando shouldFetch');
     }
   }, [isLoading, shouldFetch]);
 
