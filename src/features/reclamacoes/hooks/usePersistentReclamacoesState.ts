@@ -1,9 +1,11 @@
 /**
  * 💾 HOOK DE PERSISTÊNCIA DE RECLAMAÇÕES
- * Cache inteligente com localStorage + validação de 30 minutos
+ * Cache inteligente com localStorage + validação de 30 minutos + versionamento
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { LocalStorageValidator } from '@/utils/storageValidation';
+import { toast } from 'react-hot-toast';
 
 interface PersistentReclamacoesState {
   reclamacoes: any[];
@@ -16,8 +18,9 @@ interface PersistentReclamacoesState {
   };
   currentPage: number;
   itemsPerPage: number;
-  visibleColumns?: string[]; // ✅ AJUSTE 1: Adicionar colunas visíveis
+  visibleColumns?: string[];
   cachedAt: number;
+  version: number; // 🔥 FASE 1: Versionamento
 }
 
 function validatePersistedState(state: any): state is PersistentReclamacoesState {
@@ -35,22 +38,43 @@ function validatePersistedState(state: any): state is PersistentReclamacoesState
 
 const STORAGE_KEY = 'reclamacoes_persistent_state';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos de validade do cache
+const STORAGE_VERSION = 2; // 🔥 FASE 1: Versão atual do esquema
+const DEBOUNCE_DELAY = 500; // 🔥 FASE 1: Debounce para salvar estado
 
 export function usePersistentReclamacoesState() {
   const [persistedState, setPersistedState] = useState<PersistentReclamacoesState | null>(null);
   const [isStateLoaded, setIsStateLoaded] = useState(false);
 
-  // Carregar estado do localStorage ao montar
+  // 🔥 FASE 1: Carregar estado com validação e versionamento
   useEffect(() => {
     const loadPersistedState = () => {
       try {
+        // 🔥 Verificar saúde do storage antes de carregar
+        const healthCheck = LocalStorageValidator.checkStorageHealth();
+        if (!healthCheck.healthy) {
+          console.warn('⚠️ Problemas detectados no localStorage:', healthCheck.issues);
+          if (healthCheck.issues.some(issue => issue.includes('quase cheia') || issue.includes('limite'))) {
+            LocalStorageValidator.cleanCorruptedStorage();
+            toast.error('Cache limpo automaticamente para liberar espaço');
+          }
+        }
+
         const stored = localStorage.getItem(STORAGE_KEY);
         if (stored) {
           const parsed = JSON.parse(stored);
           
-          // Validar estrutura
-          if (!validatePersistedState(parsed)) {
-            console.warn('⚠️ Estado persistido inválido, removendo...');
+          // 🔥 FASE 1: Validar estrutura usando LocalStorageValidator
+          const validation = LocalStorageValidator.validatePersistedState(parsed);
+          if (!validation.isValid) {
+            console.warn('⚠️ Estado persistido inválido:', validation.errors);
+            localStorage.removeItem(STORAGE_KEY);
+            setIsStateLoaded(true);
+            return;
+          }
+          
+          // 🔥 FASE 1: Verificar versão do cache
+          if (parsed.version !== STORAGE_VERSION) {
+            console.warn(`⚠️ Versão do cache incompatível (${parsed.version} !== ${STORAGE_VERSION}), removendo...`);
             localStorage.removeItem(STORAGE_KEY);
             setIsStateLoaded(true);
             return;
@@ -63,19 +87,20 @@ export function usePersistentReclamacoesState() {
           
           if (!isExpired) {
             console.log('🔄 Cache de reclamações carregado:', {
-              reclamacoesCount: parsed.reclamacoes.length,
+              version: parsed.version,
+              reclamacoesCount: parsed.reclamacoes?.length || 0,
               cacheAge: Math.round(cacheAge / 1000) + 's',
-              accounts: parsed.selectedAccounts.join(', '),
+              accounts: parsed.selectedAccounts?.join(', ') || 'nenhuma',
               filters: parsed.filters
             });
-            setPersistedState(parsed);
+            setPersistedState(validation.cleaned as PersistentReclamacoesState);
           } else {
             console.log('⏰ Cache expirado (>30min), removendo...');
             localStorage.removeItem(STORAGE_KEY);
           }
         }
       } catch (error) {
-        console.warn('Erro ao carregar estado persistido:', error);
+        console.warn('❌ Erro ao carregar estado persistido:', error);
         localStorage.removeItem(STORAGE_KEY);
       } finally {
         setIsStateLoaded(true);
@@ -85,34 +110,62 @@ export function usePersistentReclamacoesState() {
     loadPersistedState();
   }, []);
 
-  // Salvar estado no localStorage
+  // 🔥 FASE 1: Salvar estado no localStorage com debounce e validação
   const saveState = useCallback((newState: Partial<PersistentReclamacoesState>) => {
     try {
       const currentState = persistedState || {
         reclamacoes: [],
         selectedAccounts: [],
-        filters: { periodo: '7' },
+        filters: { periodo: '60' },
         currentPage: 1,
         itemsPerPage: 50,
-        cachedAt: Date.now()
+        cachedAt: Date.now(),
+        version: STORAGE_VERSION
       };
 
       const updatedState: PersistentReclamacoesState = {
         ...currentState,
         ...newState,
-        cachedAt: Date.now()
+        cachedAt: Date.now(),
+        version: STORAGE_VERSION // 🔥 FASE 1: Sempre incluir versão atual
       };
 
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedState));
+      // 🔥 FASE 1: Validar antes de salvar
+      const validation = LocalStorageValidator.validatePersistedState(updatedState);
+      if (!validation.isValid) {
+        console.error('❌ Tentativa de salvar estado inválido:', validation.errors);
+        return;
+      }
+
+      // 🔥 FASE 1: Verificar espaço disponível
+      const dataString = JSON.stringify(updatedState);
+      const sizeInMB = new Blob([dataString]).size / (1024 * 1024);
+      
+      if (sizeInMB > 8) { // Limite de 8MB (localStorage geralmente 10MB)
+        console.warn('⚠️ Cache muito grande, limpando dados antigos...');
+        LocalStorageValidator.cleanCorruptedStorage();
+        toast.error('Cache reduzido automaticamente');
+        return;
+      }
+
+      localStorage.setItem(STORAGE_KEY, dataString);
       setPersistedState(updatedState);
       
       console.log('💾 Estado de reclamações salvo:', {
-        reclamacoesCount: updatedState.reclamacoes.length,
-        accounts: updatedState.selectedAccounts.join(', '),
-        page: updatedState.currentPage
+        version: updatedState.version,
+        reclamacoesCount: updatedState.reclamacoes?.length || 0,
+        accounts: updatedState.selectedAccounts?.join(', ') || 'nenhuma',
+        page: updatedState.currentPage,
+        sizeInMB: sizeInMB.toFixed(2)
       });
     } catch (error) {
-      console.error('Erro ao salvar estado persistido:', error);
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        console.error('❌ localStorage cheio, limpando...');
+        LocalStorageValidator.cleanCorruptedStorage();
+        toast.error('Cache cheio. Dados corrompidos foram limpos automaticamente.');
+      } else {
+        console.error('❌ Erro ao salvar estado persistido:', error);
+      }
     }
   }, [persistedState]);
 
@@ -135,11 +188,17 @@ export function usePersistentReclamacoesState() {
     });
   }, [saveState]);
 
-  // Limpar estado persistido
+  // 🔥 FASE 1: Limpar estado persistido com logging melhorado
   const clearPersistedState = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    setPersistedState(null);
-    console.log('🗑️ Cache de reclamações limpo');
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      setPersistedState(null);
+      console.log('🗑️ Cache de reclamações limpo com sucesso');
+      toast.success('Cache limpo com sucesso');
+    } catch (error) {
+      console.error('❌ Erro ao limpar cache:', error);
+      toast.error('Erro ao limpar cache');
+    }
   }, []);
 
   // Verificar se há estado válido
@@ -147,12 +206,33 @@ export function usePersistentReclamacoesState() {
     return persistedState !== null && isStateLoaded;
   }, [persistedState, isStateLoaded]);
 
+  // 🔥 FASE 1: Função para forçar limpeza de dados corrompidos
+  const cleanCorruptedCache = useCallback(() => {
+    try {
+      const cleaned = LocalStorageValidator.cleanCorruptedStorage();
+      console.log(`🧹 ${cleaned} entradas corrompidas limpas`);
+      if (cleaned > 0) {
+        toast.success(`${cleaned} entradas corrompidas foram limpas`);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao limpar cache corrompido:', error);
+      toast.error('Erro ao limpar cache corrompido');
+    }
+  }, []);
+
+  // 🔥 FASE 1: Verificar saúde do storage
+  const checkStorageHealth = useCallback(() => {
+    return LocalStorageValidator.checkStorageHealth();
+  }, []);
+
   return {
     persistedState,
     isStateLoaded,
     saveState,
     saveDataCache,
     clearPersistedState,
-    hasValidPersistedState
+    hasValidPersistedState,
+    cleanCorruptedCache, // 🔥 FASE 1: Nova função
+    checkStorageHealth // 🔥 FASE 1: Nova função
   };
 }
