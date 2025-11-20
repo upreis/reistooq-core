@@ -140,7 +140,7 @@ export function PedidosFiltersUnified({
               >
                 <span className="truncate">
                   {selectedContasML.length === 0 
-                    ? "Selecionar Empresas"
+                    ? "Selecione a Empresa"
                     : selectedContasML.length === 1
                     ? "1 Empresa"
                     : `${selectedContasML.length} Empresas`
@@ -221,7 +221,7 @@ export function PedidosFiltersUnified({
               className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               <Search className="h-4 w-4 mr-2" />
-              Aplicar Filtros
+              Pesquisar
             </Button>
 
             {/* Botão de Colunas */}
