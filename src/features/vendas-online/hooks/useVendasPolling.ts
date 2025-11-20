@@ -39,18 +39,27 @@ export const useVendasPolling = ({
     try {
       console.log('🔄 [VENDAS POLLING] Iniciando atualização automática...');
       
+      // Obter dados atuais antes de invalidar
+      const currentData = queryClient.getQueryData(['vendas-ml']) as any;
+      const currentCount = currentData?.length || 0;
+      
       // Invalidar query para forçar refetch
       await queryClient.invalidateQueries({ 
         queryKey: ['vendas-ml'],
         exact: false 
       });
       
+      // Aguardar refetch e obter novos dados
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      const newData = queryClient.getQueryData(['vendas-ml']) as any;
+      const newCount = newData?.length || 0;
+      
       console.log('✅ [VENDAS POLLING] Dados atualizados com sucesso');
       
-      // Notificar sobre novos dados se callback fornecido
-      if (onNewData) {
-        // Aqui poderia comparar dados antigos vs novos e contar diferenças
-        onNewData(0);
+      // Notificar sobre novos dados se houver diferença
+      if (onNewData && newCount > currentCount) {
+        const diff = newCount - currentCount;
+        onNewData(diff);
       }
     } catch (error) {
       console.error('❌ [VENDAS POLLING] Erro ao atualizar dados:', error);

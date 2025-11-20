@@ -181,7 +181,8 @@ export default function VendasOnline() {
       ? new Date(Date.now() - parseInt(filters.periodo) * 24 * 60 * 60 * 1000).toISOString()
       : null;
     
-    // Atualizar filtros na store
+    // 🎯 LOW 8: Atualizar filtros usando primeira conta selecionada
+    // TODO: Implementar busca multi-conta quando backend suportar
     updateStoreFilters({
       integrationAccountId: filters.selectedAccounts[0],
       search: filters.searchTerm,
@@ -192,21 +193,26 @@ export default function VendasOnline() {
     // Ativar busca
     setShouldFetch(true);
     
-    // Aguardar busca completar e salvar cache
-    setTimeout(() => {
-      if (orders.length > 0) {
+    // 🎯 MÉDIO 4: Aguardar query concluir antes de salvar cache
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event?.query?.queryKey?.[0] === 'vendas-ml' &&
+        event.type === 'updated' &&
+        event.query.state.status === 'success'
+      ) {
         persistentCache.saveDataCache(
           orders,
           filters.selectedAccounts,
           { search: filters.searchTerm, periodo: filters.periodo },
           pagination.currentPage,
           pagination.itemsPerPage,
-          Array.from(columnManager.state.visibleColumns) // 🎯 FASE 3
+          Array.from(columnManager.state.visibleColumns)
         );
+        setIsManualSearching(false);
+        setShouldFetch(false);
+        unsubscribe();
       }
-      setIsManualSearching(false);
-      setShouldFetch(false);
-    }, 2000);
+    });
   };
   
   // ✅ CANCELAR BUSCA
@@ -400,6 +406,7 @@ export default function VendasOnline() {
             <VendasOnlineTable 
               onStatusChange={handleStatusChange}
               activeTab={activeTab}
+              columnManager={columnManager} // 🎯 CRÍTICO 1: Passar columnManager
             />
           </div>
           
