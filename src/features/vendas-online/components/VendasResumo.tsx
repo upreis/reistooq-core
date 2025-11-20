@@ -148,33 +148,37 @@ export function VendasResumo({
   };
 
   return (
-    <div className={cn("flex flex-wrap gap-3", className)}>
-      {metricas.map((metrica, idx) => {
-        const Icon = metrica.icon;
-        const isAtivo = isFiltroAtivo(metrica.filtro);
-        
-        return (
-          <Badge
-            key={idx}
-            variant={metrica.destaque ? "default" : "outline"}
-            className={cn(
-              "px-4 py-2 text-base font-semibold cursor-pointer transition-all",
-              "flex items-center gap-2",
-              metrica.destaque 
-                ? metrica.color 
-                : cn(
-                    metrica.color,
-                    isAtivo && "ring-2 ring-primary ring-offset-2"
-                  )
-            )}
-            onClick={() => handleBadgeClick(metrica.filtro)}
-          >
-            <Icon className="h-4 w-4" />
-            <span>{metrica.label}:</span>
-            <span className="font-bold">{metrica.valor}</span>
-          </Badge>
-        );
-      })}
+    <div className={cn("flex items-center gap-2 flex-wrap", className)}>
+      <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
+      
+      {metricas
+        .filter(metrica => metrica.valor > 0 || metrica.destaque)
+        .map((metrica) => {
+          const Icon = metrica.icon;
+          const isAtivo = isFiltroAtivo(metrica.filtro);
+          
+          return (
+            <Badge
+              key={metrica.label}
+              variant={metrica.destaque ? "default" : "outline"}
+              onClick={() => handleBadgeClick(metrica.filtro)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+                metrica.color,
+                isAtivo && "ring-2 ring-primary ring-offset-2 scale-105"
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="font-normal">{metrica.label}</span>
+              <span className={cn(
+                "font-bold ml-1 px-1.5 py-0.5 rounded",
+                metrica.destaque ? "bg-black/20" : "bg-primary/10"
+              )}>
+                {metrica.valor}
+              </span>
+            </Badge>
+          );
+        })}
     </div>
   );
 }
