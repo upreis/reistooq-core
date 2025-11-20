@@ -16,6 +16,7 @@ interface PersistentReclamacoesState {
   };
   currentPage: number;
   itemsPerPage: number;
+  visibleColumns?: string[]; // ✅ AJUSTE 1: Adicionar colunas visíveis
   cachedAt: number;
 }
 
@@ -121,14 +122,16 @@ export function usePersistentReclamacoesState() {
     selectedAccounts: string[],
     filters: any,
     currentPage: number,
-    itemsPerPage: number
+    itemsPerPage: number,
+    visibleColumns?: string[] // ✅ AJUSTE 1: Adicionar parâmetro opcional
   ) => {
     saveState({
       reclamacoes,
       selectedAccounts,
       filters,
       currentPage,
-      itemsPerPage
+      itemsPerPage,
+      visibleColumns
     });
   }, [saveState]);
 
