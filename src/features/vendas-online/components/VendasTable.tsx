@@ -137,7 +137,7 @@ export const VendasTable = ({
               <TableHead className="min-w-[100px]">ID Item</TableHead>
               <TableHead className="min-w-[250px]">Título Produto</TableHead>
               <TableHead className="min-w-[80px]">Quantidade</TableHead>
-              <TableHead className="min-w-[100px]">SKU</TableHead>
+              <TableHead className="min-w-[200px]">SKU</TableHead>
               <TableHead className="min-w-[120px]">Categoria</TableHead>
               <TableHead className="min-w-[120px]">Condição</TableHead>
               
