@@ -1,5 +1,7 @@
 /**
  * 📦 VENDAS ONLINE - Página Principal
+ * 🎯 FASE 2: Integrado com sincronização URL + localStorage
+ * 
  * Gerenciamento completo de vendas do Mercado Livre
  */
 
@@ -12,7 +14,7 @@ import { VendasPaginationFooter } from '@/features/vendas-online/components/Vend
 import { VendasResumo, type FiltroResumo } from '@/features/vendas-online/components/VendasResumo';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
-import { usePersistentVendasState } from '@/features/vendas-online/hooks/usePersistentVendasState';
+import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVendasFiltersUnified'; // 🎯 FASE 2
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,12 +56,13 @@ const useMLAccounts = () => {
 
 export default function VendasOnline() {
   const queryClient = useQueryClient();
-  const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters, setOrders } = useVendasStore();
+  const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters: updateStoreFilters, setOrders } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
   
-  // 💾 PERSISTÊNCIA DE ESTADO
-  const persistentCache = usePersistentVendasState();
+  // 🎯 FASE 2: SISTEMA UNIFICADO DE FILTROS (URL + Cache)
+  const filtersManager = useVendasFiltersUnified();
+  const { filters, updateFilter, updateFilters, persistentCache } = filtersManager;
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -67,10 +70,7 @@ export default function VendasOnline() {
     setAnaliseStatus
   } = useVendaStorage();
   
-  // Estados de filtros manuais
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
-  const [periodo, setPeriodo] = useState('60');
-  const [searchTerm, setSearchTerm] = useState('');
+  // Estado de colunas visíveis (será migrado para ColumnManager na FASE 3)
   const [visibleColumns, setVisibleColumns] = useState<string[]>(VENDAS_DEFAULT_VISIBLE_COLUMNS);
   
   // ✅ CONTROLE MANUAL DE BUSCA
@@ -91,77 +91,80 @@ export default function VendasOnline() {
   // ✅ Hook de dados com controle manual
   const { data, isLoading: loadingVendas, error, refetch } = useVendasData(shouldFetch);
   
-  // ✅ RESTAURAR CACHE na montagem
+  // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
       const cached = persistentCache.persistedState;
       
-      console.log('📦 Restaurando cache:', {
+      console.log('📦 [VENDAS] Restaurando cache:', {
         vendas: cached.vendas.length,
         contas: cached.selectedAccounts.length,
         periodo: cached.filters.periodo
       });
       
-      // Restaurar filtros
-      setSelectedAccountIds(cached.selectedAccounts);
-      setPeriodo(cached.filters.periodo);
-      setSearchTerm(cached.filters.search);
-      if (cached.visibleColumns) {
-        setVisibleColumns(cached.visibleColumns);
-      }
-      
       // Restaurar dados da última busca
       setOrders(cached.vendas, cached.vendas.length);
       setPage(cached.currentPage);
       setItemsPerPage(cached.itemsPerPage);
+      
+      if (cached.visibleColumns) {
+        setVisibleColumns(cached.visibleColumns);
+      }
+      
+      // 🎯 FASE 2: Filtros já foram restaurados pelo useVendasFiltersUnified
+      console.log('🔗 [VENDAS] Filtros ativos:', filters);
     }
   }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
   
   // ✅ AUTO-SELECIONAR CONTAS na primeira visita
   useEffect(() => {
     if (persistentCache.isStateLoaded && accounts && accounts.length > 0) {
-      // Se há cache, contas já foram restauradas
-      if (persistentCache.persistedState) {
+      // Se há cache OU filtros na URL, não auto-selecionar
+      if (persistentCache.persistedState || filters.selectedAccounts.length > 0) {
         return;
       }
       
       // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
-      if (selectedAccountIds.length === 0) {
+      if (filters.selectedAccounts.length === 0) {
         const accountIds = accounts.map(acc => acc.id);
-        setSelectedAccountIds(accountIds);
-        console.log('✨ Contas auto-selecionadas (primeira visita):', accountIds.length);
+        updateFilter('selectedAccounts', accountIds);
+        console.log('✨ [VENDAS] Contas auto-selecionadas (primeira visita):', accountIds.length);
       }
     }
-  }, [persistentCache.isStateLoaded, accounts, persistentCache.persistedState, selectedAccountIds.length]);
+  }, [persistentCache.isStateLoaded, accounts, persistentCache.persistedState, filters.selectedAccounts.length]);
   
   // ✅ Disparar refetch quando shouldFetch muda
   useEffect(() => {
-    if (shouldFetch && selectedAccountIds.length > 0) {
-      console.log('🔄 Disparando refetch manual...');
+    if (shouldFetch && filters.selectedAccounts.length > 0) {
+      console.log('🔄 [VENDAS] Disparando refetch manual...');
       refetch();
     }
-  }, [shouldFetch, selectedAccountIds.length]);
+  }, [shouldFetch, filters.selectedAccounts.length]);
   
   // 🔥 FUNÇÃO DE BUSCA MANUAL
   const handleBuscar = async () => {
-    console.log('🔍 Iniciando busca manual:', { selectedAccountIds, periodo, searchTerm });
+    console.log('🔍 [VENDAS] Iniciando busca manual:', {
+      selectedAccounts: filters.selectedAccounts,
+      periodo: filters.periodo,
+      searchTerm: filters.searchTerm
+    });
     
-    if (selectedAccountIds.length === 0) {
-      console.warn('⚠️ Nenhuma conta selecionada');
+    if (filters.selectedAccounts.length === 0) {
+      console.warn('⚠️ [VENDAS] Nenhuma conta selecionada');
       return;
     }
     
     setIsManualSearching(true);
     
     // Calcular dateFrom baseado no período
-    const dateFrom = periodo 
-      ? new Date(Date.now() - parseInt(periodo) * 24 * 60 * 60 * 1000).toISOString()
+    const dateFrom = filters.periodo 
+      ? new Date(Date.now() - parseInt(filters.periodo) * 24 * 60 * 60 * 1000).toISOString()
       : null;
     
     // Atualizar filtros na store
-    updateFilters({
-      integrationAccountId: selectedAccountIds[0],
-      search: searchTerm,
+    updateStoreFilters({
+      integrationAccountId: filters.selectedAccounts[0],
+      search: filters.searchTerm,
       dateFrom,
       dateTo: new Date().toISOString()
     });
@@ -174,8 +177,8 @@ export default function VendasOnline() {
       if (orders.length > 0) {
         persistentCache.saveDataCache(
           orders,
-          selectedAccountIds,
-          { search: searchTerm, periodo },
+          filters.selectedAccounts,
+          { search: filters.searchTerm, periodo: filters.periodo },
           pagination.currentPage,
           pagination.itemsPerPage,
           visibleColumns
@@ -305,12 +308,12 @@ export default function VendasOnline() {
                 <div className="flex-1 min-w-0">
                   <VendasFilterBar
                     accounts={accounts}
-                    selectedAccountIds={selectedAccountIds}
-                    onAccountsChange={setSelectedAccountIds}
-                    periodo={periodo}
-                    onPeriodoChange={setPeriodo}
-                    searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
+                    selectedAccountIds={filters.selectedAccounts}
+                    onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
+                    periodo={filters.periodo}
+                    onPeriodoChange={(p) => updateFilter('periodo', p)}
+                    searchTerm={filters.searchTerm}
+                    onSearchChange={(s) => updateFilter('searchTerm', s)}
                     onBuscar={handleBuscar}
                     onCancel={handleCancelarBusca}
                     isLoading={isManualSearching}
