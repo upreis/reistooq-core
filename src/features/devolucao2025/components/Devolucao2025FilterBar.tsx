@@ -89,7 +89,7 @@ export function Devolucao2025FilterBar({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Order ID, Claim ID, Produto..."
+            placeholder="Pesquisar"
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-9 h-10"
@@ -107,7 +107,7 @@ export function Devolucao2025FilterBar({
               >
                 <span className="truncate">
                   {selectedAccountIds.length === 0 
-                    ? 'Empresas' 
+                    ? 'Selecione a Empresa' 
                     : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
                   }
                 </span>
@@ -172,7 +172,7 @@ export function Devolucao2025FilterBar({
         <div className="min-w-[220px] flex-shrink-0">
           <FlipButton
             text1="Cancelar a Busca"
-            text2="Aplicar Filtros e Buscar"
+            text2="Aplicar Filtros"
             onClick={isLoading ? onCancel : onBuscar}
             isFlipped={isLoading}
           />
