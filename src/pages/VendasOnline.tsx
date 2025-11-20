@@ -1,6 +1,11 @@
 /**
  * 📦 VENDAS ONLINE - Página Principal
- * 🎯 FASE 2: Integrado com sincronização URL + localStorage
+ * 🎯 EVOLUÍDA: Fases 1-4 completas
+ * 
+ * FASE 1: Cache Validation e Versionamento ✅
+ * FASE 2: URL Parameters Sync ✅
+ * FASE 3: Advanced Column Management ✅
+ * FASE 4: Analytics & Polling ✅
  * 
  * Gerenciamento completo de vendas do Mercado Livre
  */
@@ -27,6 +32,9 @@ import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '@/features/vendas-online/config/vendas-columns-config';
 import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager'; // 🎯 FASE 3
+import { useVendasPolling } from '@/features/vendas-online/hooks/useVendasPolling'; // 🎯 FASE 4
+import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator'; // 🎯 FASE 4
+import { toast } from 'sonner'; // 🎯 FASE 4
 
 interface MLAccount {
   id: string;
@@ -60,7 +68,7 @@ export default function VendasOnline() {
   const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters: updateStoreFilters, setOrders } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
-  
+
   // 🎯 FASE 2: SISTEMA UNIFICADO DE FILTROS (URL + Cache)
   const filtersManager = useVendasFiltersUnified();
   const { filters, updateFilter, updateFilters, persistentCache } = filtersManager;
@@ -73,6 +81,18 @@ export default function VendasOnline() {
   
   // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
   const columnManager = useVendasColumnManager();
+  
+  // 🎯 FASE 4: POLLING AUTOMÁTICO
+  const [pollingEnabled, setPollingEnabled] = useState(false);
+  const { forceRefresh, isPolling } = useVendasPolling({
+    enabled: pollingEnabled,
+    interval: 60000, // 1 minuto
+    onNewData: (count) => {
+      if (count > 0) {
+        toast.success(`${count} nova${count > 1 ? 's' : ''} venda${count > 1 ? 's' : ''} detectada${count > 1 ? 's' : ''}!`);
+      }
+    }
+  });
   
   // ✅ CONTROLE MANUAL DE BUSCA
   const [isManualSearching, setIsManualSearching] = useState(false);
@@ -205,6 +225,9 @@ export default function VendasOnline() {
     }));
   }, [orders, analiseStatus]);
   
+  // 🎯 FASE 4: MÉTRICAS AGREGADAS
+  const metrics = useVendasAggregator(vendasEnriquecidas, analiseStatus);
+  
   // Filtrar vendas por aba ativa (Ativas vs Histórico)
   const vendasFiltradasPorAba = useMemo(() => {
     let resultado = vendasEnriquecidas;
@@ -280,15 +303,54 @@ export default function VendasOnline() {
     revenue: vendasFiltradasPorAba.reduce((sum, o) => sum + o.total_amount, 0)
   };
 
+  // Console de métricas para debug
+  useEffect(() => {
+    if (metrics.total > 0) {
+      console.log('📊 [VENDAS ANALYTICS]', {
+        total: metrics.total,
+        ativas: metrics.totalAtivas,
+        historico: metrics.totalHistorico,
+        valorTotal: `R$ ${metrics.valorTotal.toFixed(2)}`,
+        valorMedio: `R$ ${metrics.valorMedio.toFixed(2)}`,
+        polling: isPolling ? '🔄 Ativo' : '⏸️ Pausado'
+      });
+    }
+  }, [metrics, isPolling]);
+
   return (
     <div className="w-full pb-20">
       <div className="space-y-6">
           {/* Sub-navegação */}
           <MLOrdersNav />
           
-          {/* Header - SEM py-6 */}
-          <div className="px-4 md:px-6">
+          {/* Header com controle de polling */}
+          <div className="px-4 md:px-6 flex items-center justify-between">
             <h1 className="text-3xl font-bold">Vendas Online</h1>
+            
+            {/* 🎯 FASE 4: Controle de Polling */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={pollingEnabled ? "default" : "outline"}
+                size="sm"
+                onClick={() => setPollingEnabled(!pollingEnabled)}
+                className="h-8"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isPolling ? 'animate-spin' : ''}`} />
+                {pollingEnabled ? 'Auto-Atualização Ativa' : 'Ativar Auto-Atualização'}
+              </Button>
+              
+              {!pollingEnabled && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={forceRefresh}
+                  className="h-8"
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Atualizar Agora
+                </Button>
+              )}
+            </div>
           </div>
           
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
