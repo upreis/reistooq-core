@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom'; // 🎯 CRÍTICO 2
 import { useVendasFiltersSync, VendasFilters } from './useVendasFiltersSync';
 import { usePersistentVendasState } from './usePersistentVendasState';
 
@@ -19,21 +20,27 @@ const DEFAULT_FILTERS: VendasFilters = {
  * Hook unificado para gestão de filtros com sincronização URL + cache
  */
 export function useVendasFiltersUnified() {
+  const [searchParams] = useSearchParams(); // 🎯 CRÍTICO 2: Ler URL primeiro
   const persistentCache = usePersistentVendasState();
   
   // Estado dos filtros
   const [filters, setFilters] = useState<VendasFilters>(() => {
-    // Prioridade: URL > Cache > Default
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      return {
-        periodo: persistentCache.persistedState.filters.periodo || DEFAULT_FILTERS.periodo,
-        selectedAccounts: persistentCache.persistedState.selectedAccounts || DEFAULT_FILTERS.selectedAccounts,
-        searchTerm: persistentCache.persistedState.filters.search || DEFAULT_FILTERS.searchTerm,
-        currentPage: persistentCache.persistedState.currentPage || DEFAULT_FILTERS.currentPage,
-        itemsPerPage: persistentCache.persistedState.itemsPerPage || DEFAULT_FILTERS.itemsPerPage
-      };
-    }
-    return DEFAULT_FILTERS;
+    // 🎯 CRÍTICO 2: Prioridade corrigida: URL > Cache > Default
+    const urlPeriodo = searchParams.get('periodo');
+    const urlAccounts = searchParams.get('contas');
+    const urlSearch = searchParams.get('busca');
+    const urlPage = searchParams.get('pagina');
+    const urlItemsPerPage = searchParams.get('itensPorPagina');
+    
+    const cached = persistentCache.persistedState;
+    
+    return {
+      periodo: urlPeriodo || cached?.filters.periodo || DEFAULT_FILTERS.periodo,
+      selectedAccounts: urlAccounts ? urlAccounts.split(',') : (cached?.selectedAccounts || DEFAULT_FILTERS.selectedAccounts),
+      searchTerm: urlSearch || cached?.filters.search || DEFAULT_FILTERS.searchTerm,
+      currentPage: urlPage ? parseInt(urlPage) : (cached?.currentPage || DEFAULT_FILTERS.currentPage),
+      itemsPerPage: urlItemsPerPage ? parseInt(urlItemsPerPage) : (cached?.itemsPerPage || DEFAULT_FILTERS.itemsPerPage),
+    };
   });
 
   // Sincronizar com URL

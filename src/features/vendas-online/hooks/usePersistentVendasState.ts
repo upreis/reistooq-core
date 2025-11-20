@@ -9,7 +9,7 @@
  * - Validação de integridade e estrutura
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react'; // 🎯 MÉDIO 6
 import { MLOrder, VendasFilters } from '../types/vendas.types';
 import { LocalStorageValidator } from '@/utils/storageValidation';
 
@@ -48,6 +48,7 @@ const validatePersistedState = (state: any): state is PersistentVendasState => {
 export const usePersistentVendasState = () => {
   const [isStateLoaded, setIsStateLoaded] = useState(false);
   const [persistedState, setPersistedState] = useState<PersistentVendasState | null>(null);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null); // 🎯 MÉDIO 6: useRef ao invés de useState
 
   // 🎯 FASE 1: Carregar estado com validação robusta
   useEffect(() => {
@@ -164,22 +165,18 @@ export const usePersistentVendasState = () => {
     }
   }, []);
   
-  // 🎯 FASE 1: Timer para debounce de 500ms
-  const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
-  
+  // 🎯 MÉDIO 6: Debounce usando useRef (não causa re-renders)
   const saveState = useCallback((state: Omit<PersistentVendasState, 'cachedAt' | 'version'>) => {
     // Cancelar timer anterior
-    if (saveTimer) {
-      clearTimeout(saveTimer);
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
     }
     
     // Agendar save com debounce de 500ms
-    const timer = setTimeout(() => {
+    saveTimerRef.current = setTimeout(() => {
       saveStateDebounced(state);
     }, 500);
-    
-    setSaveTimer(timer);
-  }, [saveTimer, saveStateDebounced]);
+  }, [saveStateDebounced]);
 
   // Salvar cache de dados após busca bem-sucedida
   const saveDataCache = useCallback((
@@ -202,13 +199,13 @@ export const usePersistentVendasState = () => {
 
   // Limpar cache
   const clearPersistedState = useCallback(() => {
-    if (saveTimer) {
-      clearTimeout(saveTimer);
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
     }
     localStorage.removeItem(STORAGE_KEY);
     setPersistedState(null);
     console.log('🗑️ [VENDAS CACHE] Cache limpo');
-  }, [saveTimer]);
+  }, []);
   
   // 🎯 FASE 1: Health check do storage
   const hasValidPersistedState = useCallback(() => {

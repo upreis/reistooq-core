@@ -50,7 +50,8 @@ export const VendasTable = ({
   itemsPerPage,
   onPageChange,
   onStatusChange,
-  activeTab
+  activeTab,
+  columnManager // 🎯 CRÍTICO 1: Receber e usar columnManager
 }: VendasTableProps) => {
   const totalPages = Math.ceil(total / itemsPerPage);
 
