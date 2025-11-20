@@ -248,7 +248,7 @@ export const VendasTable = ({
                   {/* PRODUTO */}
                   <TableCell className="font-mono text-xs">{firstItem?.item?.id || '-'}</TableCell>
                   <TableCell className="max-w-[250px]">
-                    <div className="truncate" title={firstItem?.item?.title}>
+                    <div className="whitespace-normal break-words">
                       {firstItem?.item?.title || '-'}
                     </div>
                   </TableCell>
