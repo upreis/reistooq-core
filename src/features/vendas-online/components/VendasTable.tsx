@@ -176,7 +176,7 @@ export const VendasTable = ({
               
               
               {/* OUTROS */}
-              <TableHead className="min-w-[100px]">Tags</TableHead>
+              <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">Tags</TableHead>
               <TableHead className="min-w-[150px]">Tipo Pedido</TableHead>
               <TableHead className="min-w-[80px]">Ações</TableHead>
             </TableRow>
