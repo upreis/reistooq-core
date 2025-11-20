@@ -153,7 +153,7 @@ export const Devolucao2025Page = () => {
 
       return result;
     },
-    enabled: organizationId !== null && selectedAccounts.length > 0 && shouldFetch,
+    enabled: organizationId !== null && shouldFetch,
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
@@ -293,11 +293,11 @@ export const Devolucao2025Page = () => {
 
   // ✅ Dispara refetch quando shouldFetch é ativado
   useEffect(() => {
-    if (shouldFetch && organizationId && selectedAccounts.length > 0) {
+    if (shouldFetch && organizationId) {
       console.log('🚀 Disparando busca via shouldFetch=true');
       refetch();
     }
-  }, [shouldFetch, organizationId, selectedAccounts.length, refetch]);
+  }, [shouldFetch, organizationId, refetch]);
 
   // Resetar shouldFetch após busca completar
   useEffect(() => {
