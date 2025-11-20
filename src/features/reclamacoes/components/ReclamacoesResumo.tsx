@@ -195,7 +195,9 @@ export function ReclamacoesResumo({
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
       
-      {metricas.map((metrica) => {
+      {metricas
+        .filter(metrica => metrica.valor > 0 || metrica.destaque)
+        .map((metrica) => {
           const Icon = metrica.icon;
           const ativo = isFiltroAtivo(metrica.filtro);
           
