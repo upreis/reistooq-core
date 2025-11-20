@@ -26,12 +26,15 @@ import { COLUMNS_CONFIG } from '../config/columns';
 import { usePersistentDevolucoesStateV2 } from '../hooks/usePersistentDevolucoesStateV2';
 import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnified';
 import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
+import { useDevolucoesPolling } from '../hooks/useDevolucoesPolling';
+import { useDevolucoesAggregator } from '../hooks/useDevolucoesAggregator';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
+import { toast } from 'sonner';
 
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
@@ -39,6 +42,7 @@ export const Devolucao2025Page = () => {
   // FASE 1: Estado de persistência com validação robusta
   // FASE 2: Gerenciamento unificado de filtros com URL sync
   // FASE 3: Gerenciamento avançado de colunas
+  // FASE 4: Polling automático e agregação de métricas
   const {
     filters,
     updateFilter,
@@ -319,16 +323,25 @@ export const Devolucao2025Page = () => {
   // Sistema de Alertas
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
-  // Contadores para as abas
-  const countAtivas = useMemo(() => 
-    devolucoesEnriquecidas.filter(dev => STATUS_ATIVOS.includes(dev.status_analise_local)).length,
-    [devolucoesEnriquecidas]
-  );
-  
-  const countHistorico = useMemo(() => 
-    devolucoesEnriquecidas.filter(dev => STATUS_HISTORICO.includes(dev.status_analise_local)).length,
-    [devolucoesEnriquecidas]
-  );
+  // FASE 4: Polling automático
+  const { forceRefresh, isPolling } = useDevolucoesPolling({
+    enabled: !isLoading && !error && shouldFetch, // Só faz polling após primeira busca manual
+    interval: 60000, // 1 minuto
+    onNewData: (newCount) => {
+      toast.success(`${newCount} nova(s) devolução(ões) detectada(s)`, {
+        description: 'Os dados foram atualizados automaticamente',
+        duration: 5000,
+      });
+    },
+    pauseOnInteraction: true,
+  });
+
+  // FASE 4: Agregação de métricas
+  const metrics = useDevolucoesAggregator(devolucoes, analiseStatus);
+
+  // Contadores para as abas (usando metrics agregadas)
+  const countAtivas = metrics.totalAtivas;
+  const countHistorico = metrics.totalHistorico;
 
   return (
     <div className="w-full">
