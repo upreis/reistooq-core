@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
+import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
@@ -59,6 +60,9 @@ export function ReclamacoesPage() {
     activeFilterCount,
     persistentCache
   } = useReclamacoesFiltersUnified();
+  
+  // 🎯 FASE 3: Hook avançado de gerenciamento de colunas
+  const columnManager = useReclamacoesColumnManager();
   
   // Estados locais adicionais (não relacionados a filtros)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
