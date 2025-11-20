@@ -323,7 +323,7 @@ export const Devolucao2025Page = () => {
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
-              <div className="flex items-center gap-3 flex-nowrap overflow-x-auto">
+              <div className="flex items-center gap-3 flex-nowrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
                   <TabsTrigger value="ativas" className="h-10">
                     Ativas ({countAtivas})
