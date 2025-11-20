@@ -261,15 +261,14 @@ export function ReclamacoesPage() {
 
       console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
       
-      // ✅ AJUSTE 3: Salvar período junto com filtros no cache
-      // Nota: colunas visíveis são gerenciadas pela tabela TanStack internamente
-      // e não precisam ser persistidas pois o ColumnSelector já mantém estado
+      // ✅ Salvar dados + filtros + colunas visíveis no cache
       persistentCache.saveDataCache(
         allClaims,
         selectedAccountIds,
         filters, // Já inclui período
         currentPage,
-        itemsPerPage
+        itemsPerPage,
+        Array.from(columnManager.state.visibleColumns) // 🔥 CORREÇÃO: Converter Set para Array
       );
       
       return allClaims;
