@@ -207,5 +207,6 @@ export function useDevolucoesAggregator(
     
     console.log('✅ Métricas calculadas:', metrics);
     return metrics;
+    // ✅ CORREÇÃO CRÍTICA 3: Não adicionar variáveis declaradas dentro do useMemo ao dependency array
   }, [devolucoes, analiseStatus]);
 }

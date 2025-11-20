@@ -31,7 +31,7 @@ interface Devolucao2025TableProps {
   devolucoes: any[];
   isLoading: boolean;
   error: any;
-  visibleColumns: string[];
+  visibleColumns: string[]; // ✅ Array de IDs de colunas visíveis (vem de columnManager)
   onStatusChange?: (orderId: string, newStatus: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';

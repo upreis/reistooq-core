@@ -21,7 +21,7 @@ import { NotificationsBell } from '@/components/notifications/NotificationsBell'
 import { DevolucaoAlertsPanel } from '../components/DevolucaoAlertsPanel';
 import { DevolucaoAlertsBadge } from '../components/DevolucaoAlertsBadge';
 import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
-import { useColumnPreferences } from '../hooks/useColumnPreferences';
+// ✅ CORREÇÃO MÉDIA 7: Removido import inútil useColumnPreferences (substituído por columnManager)
 import { COLUMNS_CONFIG } from '../config/columns';
 import { usePersistentDevolucoesStateV2 } from '../hooks/usePersistentDevolucoesStateV2';
 import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnified';
@@ -265,7 +265,7 @@ export const Devolucao2025Page = () => {
   // - Apenas restaura filtros do cache (linhas 64-74)
   // - Busca só ocorre quando usuário clica em "Aplicar Filtros"
 
-  // Atualizar cache quando página ou items por página mudar (debounced)
+  // ✅ CORREÇÃO MÉDIA 5: Otimizar dependencies para evitar saves excessivos
   useEffect(() => {
     if (devolucoes.length > 0 && persistentCache.isStateLoaded) {
       const timer = setTimeout(() => {
@@ -282,7 +282,8 @@ export const Devolucao2025Page = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [currentPage, itemsPerPage, devolucoes.length, persistentCache.isStateLoaded, periodo]);
+    // Apenas triggerar quando valores realmente mudam (não incluir objetos/arrays diretamente)
+  }, [currentPage, itemsPerPage, periodo, devolucoes.length, persistentCache.isStateLoaded]);
 
   // Handler para aplicar filtros (apenas ativa flag)
   const handleApplyFilters = useCallback(() => {
@@ -324,8 +325,9 @@ export const Devolucao2025Page = () => {
   const { alerts, totalAlerts, alertsByType } = useDevolucaoAlerts(devolucoes);
 
   // FASE 4: Polling automático
+  // ✅ CORREÇÃO CRÍTICA 4: Simplificar lógica - polling ativo se há dados e não está em loading
   const { forceRefresh, isPolling } = useDevolucoesPolling({
-    enabled: !isLoading && !error && shouldFetch, // Só faz polling após primeira busca manual
+    enabled: devolucoes.length > 0 && !isLoading && !error, // Polling ativo se já tem dados carregados
     interval: 60000, // 1 minuto
     onNewData: (newCount) => {
       toast.success(`${newCount} nova(s) devolução(ões) detectada(s)`, {

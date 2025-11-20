@@ -75,25 +75,24 @@ export function useDevolucoesPolling({
     console.log('🔄 Polling: verificando novos dados...');
     lastRefreshRef.current = now;
 
+    // ✅ CORREÇÃO CRÍTICA 1: Usar refetch() ao invés de invalidateQueries + setTimeout
     // Buscar dados atuais do cache
     const currentData = queryClient.getQueryData(['devolucoes-2025']) as any[] | undefined;
     const oldCount = currentData?.length || 0;
     lastCountRef.current = oldCount;
 
-    // Invalidar query para forçar refetch
-    await queryClient.invalidateQueries({ queryKey: ['devolucoes-2025'] });
+    // Refetch para buscar novos dados imediatamente (garante dados atualizados)
+    const result = await queryClient.refetchQueries({ queryKey: ['devolucoes-2025'] });
+    
+    // Verificar novos dados após refetch concluído
+    const newData = queryClient.getQueryData(['devolucoes-2025']) as any[] | undefined;
+    const newCount = newData?.length || 0;
 
-    // Aguardar próximo tick para dados atualizarem
-    setTimeout(() => {
-      const newData = queryClient.getQueryData(['devolucoes-2025']) as any[] | undefined;
-      const newCount = newData?.length || 0;
-
-      if (newCount > oldCount && onNewData) {
-        const diff = newCount - oldCount;
-        console.log(`✨ Novos dados detectados: +${diff} devoluções`);
-        onNewData(diff);
-      }
-    }, 1000);
+    if (newCount > oldCount && onNewData) {
+      const diff = newCount - oldCount;
+      console.log(`✨ Novos dados detectados: +${diff} devoluções`);
+      onNewData(diff);
+    }
   }, [queryClient, onNewData, pauseOnInteraction]);
 
   // Configurar intervalo de polling
