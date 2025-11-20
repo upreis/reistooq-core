@@ -4,7 +4,6 @@
  */
 
 import { useVendasStore } from '../store/vendasStore';
-import { useVendasData } from '../hooks/useVendasData';
 import { VendasTable } from './VendasTable';
 import { VendasNoteDialog } from './VendasNoteDialog';
 import { VendasPackDialog } from './VendasPackDialog';
@@ -23,10 +22,9 @@ export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTab
     orders, 
     filters, 
     pagination,
+    isLoading,
     setPage 
   } = useVendasStore();
-  
-  const { isLoading, refresh } = useVendasData();
 
   const [noteDialog, setNoteDialog] = useState<{ open: boolean; packId: string } | null>(null);
   const [packDialog, setPackDialog] = useState<{ open: boolean; packId: string } | null>(null);
@@ -57,7 +55,6 @@ export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTab
           onOpenChange={(open) => !open && setNoteDialog(null)}
           packId={noteDialog.packId}
           integrationAccountId={filters.integrationAccountId}
-          onSuccess={() => refresh()}
         />
       )}
       
@@ -76,7 +73,6 @@ export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTab
           shippingId={shippingDialog.shippingId}
           currentStatus={shippingDialog.currentStatus}
           integrationAccountId={filters.integrationAccountId}
-          onSuccess={() => refresh()}
         />
       )}
       
@@ -86,7 +82,6 @@ export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTab
           onOpenChange={(open) => !open && setFeedbackDialog(null)}
           orderId={feedbackDialog.orderId}
           integrationAccountId={filters.integrationAccountId}
-          onSuccess={() => refresh()}
         />
       )}
     </>

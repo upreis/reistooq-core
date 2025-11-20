@@ -80,7 +80,7 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
   };
 };
 
-export const useVendasData = () => {
+export const useVendasData = (shouldFetch: boolean = false) => {
   const {
     filters,
     pagination,
@@ -91,8 +91,8 @@ export const useVendasData = () => {
     setError
   } = useVendasStore();
 
-  // ✅ SÓ buscar se tiver integration_account_id
-  const swrKey = filters.integrationAccountId && filters.integrationAccountId.trim()
+  // ✅ CONTROLE MANUAL: só buscar quando shouldFetch = true
+  const swrKey = shouldFetch && filters.integrationAccountId && filters.integrationAccountId.trim()
     ? [
         'vendas-ml',
         filters.integrationAccountId,
@@ -105,7 +105,7 @@ export const useVendasData = () => {
       ]
     : null;
 
-  // Fetch com SWR (cache automático)
+  // Fetch com SWR (NÃO automático, depende de shouldFetch)
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
     () => fetchVendasFromML({
@@ -130,13 +130,8 @@ export const useVendasData = () => {
       setOrders(data.orders, data.total);
       setPacks(data.packs);
       setShippings(data.shippings);
-    } else if (!filters.integrationAccountId) {
-      // Limpar se não tiver conta selecionada
-      setOrders([], 0);
-      setPacks({});
-      setShippings({});
     }
-  }, [data, filters.integrationAccountId, setOrders, setPacks, setShippings]);
+  }, [data, setOrders, setPacks, setShippings]);
 
   // Gerenciar loading state
   useEffect(() => {
@@ -152,6 +147,6 @@ export const useVendasData = () => {
     data,
     isLoading,
     error,
-    refresh: mutate
+    refetch: mutate // Usar refetch para busca manual
   };
 };
