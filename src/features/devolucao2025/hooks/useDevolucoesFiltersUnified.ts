@@ -3,7 +3,7 @@
  * FASE 2: Gerenciamento centralizado com sincronização URL + localStorage
  */
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useDevolucoesFiltersSync, DevolucoesFilters } from './useDevolucoesFiltersSync';
 import { usePersistentDevolucoesStateV2 } from './usePersistentDevolucoesStateV2';
@@ -24,51 +24,33 @@ export function useDevolucoesFiltersUnified() {
   const persistentCache = usePersistentDevolucoesStateV2();
   const [searchParams] = useSearchParams();
   
-  // PRIORIDADE: URL > Cache > Default
-  const [filters, setFilters] = useState<DevolucoesFilters>(() => {
-    // 1. Tentar carregar da URL primeiro
-    const urlPeriodo = searchParams.get('periodo');
-    const urlAccounts = searchParams.get('accounts');
-    const urlSearch = searchParams.get('search');
-    const urlPage = searchParams.get('page');
-    const urlLimit = searchParams.get('limit');
-    const urlTab = searchParams.get('tab');
-    
-    // Se tem parâmetros de URL, usar eles
-    if (urlPeriodo || urlAccounts || urlSearch || urlPage || urlLimit || urlTab) {
-      return {
-        periodo: urlPeriodo || DEFAULT_FILTERS.periodo,
-        selectedAccounts: urlAccounts ? urlAccounts.split(',') : DEFAULT_FILTERS.selectedAccounts,
-        searchTerm: urlSearch || DEFAULT_FILTERS.searchTerm,
-        currentPage: urlPage ? parseInt(urlPage, 10) : DEFAULT_FILTERS.currentPage,
-        itemsPerPage: urlLimit ? parseInt(urlLimit, 10) : DEFAULT_FILTERS.itemsPerPage,
-        activeTab: (urlTab === 'ativas' || urlTab === 'historico') ? urlTab : DEFAULT_FILTERS.activeTab
-      };
-    }
-    
-    // 2. Se não tem URL, tentar cache
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      return {
-        periodo: persistentCache.persistedState.periodo || DEFAULT_FILTERS.periodo,
-        selectedAccounts: persistentCache.persistedState.selectedAccounts || DEFAULT_FILTERS.selectedAccounts,
-        searchTerm: DEFAULT_FILTERS.searchTerm, // Search term não persiste
-        currentPage: persistentCache.persistedState.currentPage || DEFAULT_FILTERS.currentPage,
-        itemsPerPage: persistentCache.persistedState.itemsPerPage || DEFAULT_FILTERS.itemsPerPage,
-        activeTab: DEFAULT_FILTERS.activeTab
-      };
-    }
-    
-    // 3. Fallback para default
-    return DEFAULT_FILTERS;
-  });
+  // ✅ CORREÇÃO CRÍTICA 2: Inicializar com DEFAULT, deixar useEffect carregar URL/cache
+  const [filters, setFilters] = useState<DevolucoesFilters>(DEFAULT_FILTERS);
 
-  // Sincronizar com URL
+  // Sincronizar com URL (useEffect interno do hook vai aplicar filtros da URL automaticamente)
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useDevolucoesFiltersSync(
     filters,
     (urlFilters) => {
       setFilters(prev => ({ ...prev, ...urlFilters }));
     }
   );
+  
+  // ✅ CORREÇÃO: Carregar do cache APENAS se não houver URL params
+  useEffect(() => {
+    // Só carrega cache se URL não tem parâmetros E cache está carregado
+    const hasUrlParams = searchParams.toString().length > 0;
+    
+    if (!hasUrlParams && persistentCache.isStateLoaded && persistentCache.persistedState) {
+      console.log('📦 Restaurando filtros do cache (sem URL params)');
+      setFilters(prev => ({
+        ...prev,
+        periodo: persistentCache.persistedState!.periodo || DEFAULT_FILTERS.periodo,
+        selectedAccounts: persistentCache.persistedState!.selectedAccounts || DEFAULT_FILTERS.selectedAccounts,
+        currentPage: persistentCache.persistedState!.currentPage || DEFAULT_FILTERS.currentPage,
+        itemsPerPage: persistentCache.persistedState!.itemsPerPage || DEFAULT_FILTERS.itemsPerPage,
+      }));
+    }
+  }, [persistentCache.isStateLoaded, searchParams]);
 
   // Atualizar um filtro específico
   const updateFilter = useCallback(<K extends keyof DevolucoesFilters>(
