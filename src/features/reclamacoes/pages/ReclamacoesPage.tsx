@@ -280,9 +280,9 @@ export function ReclamacoesPage() {
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
     // Inicializar com dados do localStorage se disponíveis
     initialData: () => {
-      if (persistentCache.hasValidPersistedState()) {
-        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState?.reclamacoes.length);
-        return persistentCache.persistedState?.reclamacoes;
+      if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
+        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState.reclamacoes.length);
+        return persistentCache.persistedState.reclamacoes;
       }
       return undefined;
     },
