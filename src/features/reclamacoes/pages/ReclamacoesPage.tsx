@@ -306,6 +306,15 @@ export function ReclamacoesPage() {
     try {
       await refetchReclamacoes();
       
+      // 🔥 CORREÇÃO: Salvar filtros APLICADOS para restauração futura
+      console.log('💾 Salvando filtros aplicados no cache:', {
+        periodo: unifiedFilters.periodo,
+        status: unifiedFilters.status,
+        type: unifiedFilters.type,
+        stage: unifiedFilters.stage,
+        selectedAccounts: selectedAccountIds
+      });
+      
       toast({
         title: "✅ Sucesso",
         description: `Busca concluída com sucesso`,

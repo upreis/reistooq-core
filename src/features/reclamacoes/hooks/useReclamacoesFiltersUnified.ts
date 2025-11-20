@@ -29,32 +29,54 @@ export function useReclamacoesFiltersUnified() {
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 🔥 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults
+  // 🔥 CORREÇÃO: Restaurar filtros priorizando Cache quando SEM URL params
   useEffect(() => {
     if (persistentCache.isStateLoaded && !isInitialized) {
       // 1. Parsear filtros da URL
       const urlFilters: Partial<ReclamacoesFilters> = {};
+      let hasUrlParams = false;
       
       const periodo = searchParams.get('periodo');
-      if (periodo) urlFilters.periodo = periodo;
+      if (periodo) {
+        urlFilters.periodo = periodo;
+        hasUrlParams = true;
+      }
       
       const status = searchParams.get('status');
-      if (status) urlFilters.status = status;
+      if (status) {
+        urlFilters.status = status;
+        hasUrlParams = true;
+      }
       
       const type = searchParams.get('type');
-      if (type) urlFilters.type = type;
+      if (type) {
+        urlFilters.type = type;
+        hasUrlParams = true;
+      }
       
       const stage = searchParams.get('stage');
-      if (stage) urlFilters.stage = stage;
+      if (stage) {
+        urlFilters.stage = stage;
+        hasUrlParams = true;
+      }
       
       const accounts = searchParams.get('accounts');
-      if (accounts) urlFilters.selectedAccounts = accounts.split(',');
+      if (accounts) {
+        urlFilters.selectedAccounts = accounts.split(',');
+        hasUrlParams = true;
+      }
       
       const page = searchParams.get('page');
-      if (page) urlFilters.currentPage = parseInt(page, 10);
+      if (page) {
+        urlFilters.currentPage = parseInt(page, 10);
+        hasUrlParams = true;
+      }
       
       const limit = searchParams.get('limit');
-      if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
+      if (limit) {
+        urlFilters.itemsPerPage = parseInt(limit, 10);
+        hasUrlParams = true;
+      }
       
       // 2. Carregar filtros do cache
       const cachedFilters = persistentCache.persistedState ? {
@@ -67,18 +89,29 @@ export function useReclamacoesFiltersUnified() {
         itemsPerPage: persistentCache.persistedState.itemsPerPage
       } : {};
       
-      // 3. Merge: Defaults → Cache → URL (URL tem prioridade máxima)
-      const mergedFilters: ReclamacoesFilters = {
-        ...DEFAULT_FILTERS,
-        ...cachedFilters,
-        ...urlFilters
-      };
+      // 3. Lógica de merge inteligente:
+      //    - Se TEM URL params → usar URL (compartilhamento de link)
+      //    - Se NÃO TEM URL params → usar CACHE (retorno à página)
+      let mergedFilters: ReclamacoesFilters;
       
-      console.log('🔄 Restaurando filtros:', {
-        cache: cachedFilters,
-        url: urlFilters,
-        final: mergedFilters
-      });
+      if (hasUrlParams) {
+        // URL tem prioridade quando presente
+        mergedFilters = {
+          ...DEFAULT_FILTERS,
+          ...cachedFilters,
+          ...urlFilters
+        };
+        console.log('🔗 Restaurando filtros da URL (link compartilhado):', urlFilters);
+      } else {
+        // Cache tem prioridade quando não há URL params
+        mergedFilters = {
+          ...DEFAULT_FILTERS,
+          ...cachedFilters
+        };
+        console.log('💾 Restaurando filtros do cache (última busca aplicada):', cachedFilters);
+      }
+      
+      console.log('🔄 Filtros finais restaurados:', mergedFilters);
       
       setFilters(mergedFilters);
       setIsInitialized(true);
