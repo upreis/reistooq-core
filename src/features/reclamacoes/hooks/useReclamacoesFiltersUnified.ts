@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useReclamacoesFiltersSync, ReclamacoesFilters } from './useReclamacoesFiltersSync';
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
 
@@ -22,34 +23,72 @@ const DEFAULT_FILTERS: ReclamacoesFilters = {
  */
 export function useReclamacoesFiltersUnified() {
   const persistentCache = usePersistentReclamacoesState();
+  const [searchParams] = useSearchParams();
   
   // Estado dos filtros - iniciar com defaults
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // 🔥 CORREÇÃO: Restaurar filtros do cache quando carregar
+  // 🔥 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults
   useEffect(() => {
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      const cachedFilters = {
-        periodo: persistentCache.persistedState.filters.periodo || DEFAULT_FILTERS.periodo,
-        status: persistentCache.persistedState.filters.status || DEFAULT_FILTERS.status,
-        type: persistentCache.persistedState.filters.type || DEFAULT_FILTERS.type,
-        stage: persistentCache.persistedState.filters.stage || DEFAULT_FILTERS.stage,
-        selectedAccounts: persistentCache.persistedState.selectedAccounts || DEFAULT_FILTERS.selectedAccounts,
-        currentPage: persistentCache.persistedState.currentPage || DEFAULT_FILTERS.currentPage,
-        itemsPerPage: persistentCache.persistedState.itemsPerPage || DEFAULT_FILTERS.itemsPerPage
+    if (persistentCache.isStateLoaded && !isInitialized) {
+      // 1. Parsear filtros da URL
+      const urlFilters: Partial<ReclamacoesFilters> = {};
+      
+      const periodo = searchParams.get('periodo');
+      if (periodo) urlFilters.periodo = periodo;
+      
+      const status = searchParams.get('status');
+      if (status) urlFilters.status = status;
+      
+      const type = searchParams.get('type');
+      if (type) urlFilters.type = type;
+      
+      const stage = searchParams.get('stage');
+      if (stage) urlFilters.stage = stage;
+      
+      const accounts = searchParams.get('accounts');
+      if (accounts) urlFilters.selectedAccounts = accounts.split(',');
+      
+      const page = searchParams.get('page');
+      if (page) urlFilters.currentPage = parseInt(page, 10);
+      
+      const limit = searchParams.get('limit');
+      if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
+      
+      // 2. Carregar filtros do cache
+      const cachedFilters = persistentCache.persistedState ? {
+        periodo: persistentCache.persistedState.filters.periodo,
+        status: persistentCache.persistedState.filters.status,
+        type: persistentCache.persistedState.filters.type,
+        stage: persistentCache.persistedState.filters.stage,
+        selectedAccounts: persistentCache.persistedState.selectedAccounts,
+        currentPage: persistentCache.persistedState.currentPage,
+        itemsPerPage: persistentCache.persistedState.itemsPerPage
+      } : {};
+      
+      // 3. Merge: Defaults → Cache → URL (URL tem prioridade máxima)
+      const mergedFilters: ReclamacoesFilters = {
+        ...DEFAULT_FILTERS,
+        ...cachedFilters,
+        ...urlFilters
       };
       
-      console.log('🔄 Restaurando filtros do cache:', cachedFilters);
-      setFilters(cachedFilters);
+      console.log('🔄 Restaurando filtros:', {
+        cache: cachedFilters,
+        url: urlFilters,
+        final: mergedFilters
+      });
+      
+      setFilters(mergedFilters);
+      setIsInitialized(true);
     }
-  }, [persistentCache.isStateLoaded, persistentCache.persistedState]);
+  }, [persistentCache.isStateLoaded, isInitialized, searchParams]);
 
-  // Sincronizar com URL
+  // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
     filters,
-    (urlFilters) => {
-      setFilters(prev => ({ ...prev, ...urlFilters }));
-    }
+    () => {} // Não fazer nada quando URL mudar - restauração já foi feita acima
   );
 
   // Atualizar um filtro específico

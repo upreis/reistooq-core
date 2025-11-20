@@ -92,15 +92,8 @@ export function useReclamacoesFiltersSync(
 ) {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Carregar filtros da URL na montagem do componente
-  useEffect(() => {
-    const urlFilters = parseFiltersFromUrl(searchParams);
-    
-    if (Object.keys(urlFilters).length > 0) {
-      console.log('🔗 Carregando filtros da URL:', urlFilters);
-      onFiltersChange(urlFilters);
-    }
-  }, []); // Executar apenas uma vez na montagem
+  // 🔥 REMOVIDO: Carregar filtros da URL na montagem
+  // Agora isso é feito no useReclamacoesFiltersUnified com merge correto Cache + URL
 
   // Atualizar URL quando filtros mudarem (debounced)
   useEffect(() => {
