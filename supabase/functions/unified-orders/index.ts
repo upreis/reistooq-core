@@ -347,26 +347,6 @@ async function enrichOrdersWithShipping(orders: any[], accessToken: string, cid:
         // 7. Returns são acessados via claim_id (conforme análise do usuário)
         // Implementado na seção de claims abaixo
 
-        // TESTE: Verificar se token tem acesso à Claims API
-        try {
-          const testResp = await fetch(
-            `https://api.mercadolibre.com/post-purchase/v1/claims/search?limit=1`,
-            {
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-                'x-format-new': 'true'
-              }
-            }
-          );
-          console.log(`[unified-orders:${cid}] 🔑 Claims API test status: ${testResp.status}`);
-          if (!testResp.ok) {
-            const errorText = await testResp.text();
-            console.log(`[unified-orders:${cid}] ❌ Claims API error: ${errorText}`);
-          }
-        } catch (err) {
-          console.log(`[unified-orders:${cid}] ❌ Claims API connection error:`, err);
-        }
-
         // 8. Buscar Claims relacionadas ao pedido (IMPLEMENTAÇÃO CORRIGIDA)
         if (order.id) {
           try {
