@@ -8,7 +8,7 @@ import { differenceInBusinessDays } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
-import { usePersistentReclamacoesState } from '../hooks/usePersistentReclamacoesState';
+import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
 import { ReclamacoesStats } from '../components/ReclamacoesStats';
@@ -48,15 +48,22 @@ export function ReclamacoesPage() {
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
   
-  // 💾 CACHE PERSISTENTE (localStorage + React Query)
-  const persistentCache = usePersistentReclamacoesState();
+  // 🎯 FASE 2: Hook unificado de filtros (com URL sync + localStorage)
+  const {
+    filters: unifiedFilters,
+    updateFilter,
+    updateFilters,
+    resetFilters,
+    resetSearchFilters,
+    hasActiveFilters,
+    activeFilterCount,
+    persistentCache
+  } = useReclamacoesFiltersUnified();
   
-  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
+  // Estados locais adicionais (não relacionados a filtros)
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   const [filtroResumo, setFiltroResumo] = useState<{tipo: 'prazo' | 'status' | 'tipo' | 'total'; valor: string} | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [tableInstance, setTableInstance] = useState<any>(null);
   
   // 💾 STORAGE DE ANOTAÇÕES (mantido separado)
@@ -72,11 +79,8 @@ export function ReclamacoesPage() {
   const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
   const [selectedClaimForAnotacoes, setSelectedClaimForAnotacoes] = useState<any | null>(null);
   
-  const [filters, setFilters] = useState({
-    periodo: '60',
-    status: '',
-    type: '',
-    stage: '',
+  // Filtros adicionais não gerenciados pelo hook unificado
+  const [additionalFilters, setAdditionalFilters] = useState({
     has_messages: '',
     has_evidences: '',
     date_from: '',
@@ -85,18 +89,33 @@ export function ReclamacoesPage() {
 
   // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
-
-  // Restaurar estado do cache
-  useEffect(() => {
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      const cached = persistentCache.persistedState;
-      setSelectedAccountIds(cached.selectedAccounts || []);
-      setFilters(prev => ({ ...prev, ...cached.filters }));
-      setCurrentPage(cached.currentPage);
-      setItemsPerPage(cached.itemsPerPage);
-      console.log('🔄 Estado de reclamações restaurado do cache');
-    }
-  }, [persistentCache.isStateLoaded]);
+  
+  // 🎯 FASE 2: Aliases para compatibilidade com código existente
+  const selectedAccountIds = unifiedFilters.selectedAccounts;
+  const currentPage = unifiedFilters.currentPage;
+  const itemsPerPage = unifiedFilters.itemsPerPage;
+  const setSelectedAccountIds = (ids: string[]) => updateFilter('selectedAccounts', ids);
+  const setCurrentPage = (page: number) => updateFilter('currentPage', page);
+  const setItemsPerPage = (limit: number) => updateFilter('itemsPerPage', limit);
+  
+  // Combinar filtros unificados + adicionais
+  const filters = {
+    periodo: unifiedFilters.periodo,
+    status: unifiedFilters.status,
+    type: unifiedFilters.type,
+    stage: unifiedFilters.stage,
+    ...additionalFilters
+  };
+  
+  const setFilters = (newFilters: typeof filters | ((prev: typeof filters) => typeof filters)) => {
+    const resolved = typeof newFilters === 'function' ? newFilters(filters) : newFilters;
+    
+    // Separar filtros unificados dos adicionais
+    const { periodo, status, type, stage, has_messages, has_evidences, date_from, date_to } = resolved;
+    
+    updateFilters({ periodo, status, type, stage });
+    setAdditionalFilters({ has_messages, has_evidences, date_from, date_to });
+  };
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
@@ -114,12 +133,11 @@ export function ReclamacoesPage() {
     },
   });
 
-  // ✅ AJUSTE 2: Melhorar auto-seleção de contas
-  // Só auto-seleciona se: não tem cache E não tem contas selecionadas E state carregou
+  // 🎯 FASE 2: Auto-seleção de contas na primeira visita
   useEffect(() => {
     if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
-      // Se há cache, as contas já foram restauradas (linha 93)
-      if (persistentCache.persistedState) {
+      // Se há cache, as contas já foram restauradas pelo hook unificado
+      if (persistentCache.persistedState && persistentCache.persistedState.selectedAccounts.length > 0) {
         return; // Não fazer nada, usar cache
       }
       
@@ -127,7 +145,7 @@ export function ReclamacoesPage() {
       if (selectedAccountIds.length === 0) {
         const { accountIds } = validateMLAccounts(mlAccounts);
         if (accountIds.length > 0) {
-          setSelectedAccountIds(accountIds);
+          updateFilter('selectedAccounts', accountIds);
           logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
             context: 'ReclamacoesPage',
             count: accountIds.length
