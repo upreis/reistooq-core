@@ -195,9 +195,7 @@ export function ReclamacoesResumo({
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
       <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
       
-      {metricas
-        .filter(metrica => metrica.valor > 0 || metrica.destaque) // Mostra apenas badges com valor > 0 ou o badge Total (destaque)
-        .map((metrica) => {
+      {metricas.map((metrica) => {
           const Icon = metrica.icon;
           const ativo = isFiltroAtivo(metrica.filtro);
           
