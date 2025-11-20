@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FlipButton } from '@/components/ui/flip-button';
 import type { Table } from '@tanstack/react-table';
 import type { ColumnConfig } from './ColumnSelector';
+import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FASE 3
 
 interface MLAccount {
   id: string;
@@ -33,6 +34,8 @@ interface VendasFilterBarProps {
   isLoading?: boolean;
   onCancel?: () => void;
   table?: Table<any>;
+  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3 - NOVO
+  // Deprecated - mantidos para compatibilidade temporária
   allColumns?: ColumnConfig[];
   visibleColumns?: string[];
   onVisibleColumnsChange?: (columns: string[]) => void;
@@ -50,6 +53,7 @@ export function VendasFilterBar({
   isLoading = false,
   onCancel,
   table,
+  columnManager, // 🎯 FASE 3 - NOVO
   allColumns,
   visibleColumns,
   onVisibleColumnsChange
@@ -179,8 +183,20 @@ export function VendasFilterBar({
         />
       </div>
 
-      {/* Seletor de Colunas - APÓS o botão aplicar filtros */}
-      {allColumns && visibleColumns && onVisibleColumnsChange && (
+      {/* Seletor de Colunas - integrado com columnManager */}
+      {columnManager ? (
+        <div className="flex-shrink-0">
+          <ColumnSelector
+            columns={columnManager.definitions.map(def => ({
+              id: def.key,
+              label: def.label,
+              group: def.category
+            }))}
+            visibleColumns={Array.from(columnManager.state.visibleColumns)}
+            onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
+          />
+        </div>
+      ) : allColumns && visibleColumns && onVisibleColumnsChange && (
         <div className="flex-shrink-0">
           <ColumnSelector
             columns={allColumns}

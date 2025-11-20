@@ -26,6 +26,7 @@ import type { StatusAnalise } from '@/features/vendas-online/types/venda-analise
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '@/features/vendas-online/types/venda-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { VENDAS_ALL_COLUMNS, VENDAS_DEFAULT_VISIBLE_COLUMNS } from '@/features/vendas-online/config/vendas-columns-config';
+import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendasColumnManager'; // 🎯 FASE 3
 
 interface MLAccount {
   id: string;
@@ -70,8 +71,8 @@ export default function VendasOnline() {
     setAnaliseStatus
   } = useVendaStorage();
   
-  // Estado de colunas visíveis (será migrado para ColumnManager na FASE 3)
-  const [visibleColumns, setVisibleColumns] = useState<string[]>(VENDAS_DEFAULT_VISIBLE_COLUMNS);
+  // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
+  const columnManager = useVendasColumnManager();
   
   // ✅ CONTROLE MANUAL DE BUSCA
   const [isManualSearching, setIsManualSearching] = useState(false);
@@ -107,9 +108,8 @@ export default function VendasOnline() {
       setPage(cached.currentPage);
       setItemsPerPage(cached.itemsPerPage);
       
-      if (cached.visibleColumns) {
-        setVisibleColumns(cached.visibleColumns);
-      }
+      // 🎯 FASE 3: Colunas gerenciadas pelo columnManager (persistência automática)
+      // Não precisa restaurar manualmente - columnManager já faz isso
       
       // 🎯 FASE 2: Filtros já foram restaurados pelo useVendasFiltersUnified
       console.log('🔗 [VENDAS] Filtros ativos:', filters);
@@ -181,7 +181,7 @@ export default function VendasOnline() {
           { search: filters.searchTerm, periodo: filters.periodo },
           pagination.currentPage,
           pagination.itemsPerPage,
-          visibleColumns
+          Array.from(columnManager.state.visibleColumns) // 🎯 FASE 3
         );
       }
       setIsManualSearching(false);
@@ -317,9 +317,7 @@ export default function VendasOnline() {
                     onBuscar={handleBuscar}
                     onCancel={handleCancelarBusca}
                     isLoading={isManualSearching}
-                    allColumns={VENDAS_ALL_COLUMNS}
-                    visibleColumns={visibleColumns}
-                    onVisibleColumnsChange={setVisibleColumns}
+                    columnManager={columnManager} // 🎯 FASE 3
                   />
                 </div>
               </div>

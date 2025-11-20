@@ -11,13 +11,15 @@ import { VendasShippingDialog } from './VendasShippingDialog';
 import { VendasFeedbackDialog } from './VendasFeedbackDialog';
 import { useState } from 'react';
 import type { StatusAnalise } from '../types/venda-analise.types';
+import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FASE 3
 
 interface VendasOnlineTableProps {
   onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
   activeTab?: 'ativas' | 'historico';
+  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
 }
 
-export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTableProps) => {
+export const VendasOnlineTable = ({ onStatusChange, activeTab, columnManager }: VendasOnlineTableProps) => {
   const { 
     orders, 
     filters, 
@@ -46,6 +48,7 @@ export const VendasOnlineTable = ({ onStatusChange, activeTab }: VendasOnlineTab
         onPageChange={setPage}
         onStatusChange={onStatusChange}
         activeTab={activeTab}
+        columnManager={columnManager} // 🎯 FASE 3
       />
 
       {/* Dialogs */}
