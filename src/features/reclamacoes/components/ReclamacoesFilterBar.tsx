@@ -81,7 +81,7 @@ export function ReclamacoesFilterBar({
   return (
     <div className="space-y-4">
       {/* Barra de Filtros - Inline com espaçamento uniforme */}
-      <div className="flex items-center gap-3 overflow-x-auto">
+      <div className="flex items-center gap-3 flex-nowrap">
         {/* Busca Manual */}
         <div className="min-w-[200px] flex-shrink-0">
           <div className="relative">
