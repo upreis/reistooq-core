@@ -28,6 +28,7 @@ import { getOrderStatusLabel, getShippingStatusLabel, getShippingSubstatusLabel,
 import { formatShippingStatus, formatLogisticType, formatSubstatus } from '@/utils/orderFormatters';
 import { StatusAnaliseSelect } from './StatusAnaliseSelect';
 import type { StatusAnalise } from '../types/venda-analise.types';
+import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FASE 3
 
 interface VendasTableProps {
   orders: MLOrder[];
@@ -38,6 +39,7 @@ interface VendasTableProps {
   onPageChange: (page: number) => void;
   onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
   activeTab?: 'ativas' | 'historico';
+  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
 }
 
 export const VendasTable = ({
