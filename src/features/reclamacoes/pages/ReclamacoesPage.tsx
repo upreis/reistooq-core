@@ -114,20 +114,28 @@ export function ReclamacoesPage() {
     },
   });
 
-  // Auto-selecionar contas APENAS se não há cache de contas
+  // ✅ AJUSTE 2: Melhorar auto-seleção de contas
+  // Só auto-seleciona se: não tem cache E não tem contas selecionadas E state carregou
   useEffect(() => {
-    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && !persistentCache.persistedState) {
-      const { accountIds } = validateMLAccounts(mlAccounts);
-      if (accountIds.length > 0) {
-        setSelectedAccountIds(accountIds);
-        logger.debug('Contas auto-selecionadas (primeira vez)', { 
-          context: 'ReclamacoesPage',
-          count: accountIds.length,
-          accountIds 
-        });
+    if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
+      // Se há cache, as contas já foram restauradas (linha 93)
+      if (persistentCache.persistedState) {
+        return; // Não fazer nada, usar cache
+      }
+      
+      // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
+      if (selectedAccountIds.length === 0) {
+        const { accountIds } = validateMLAccounts(mlAccounts);
+        if (accountIds.length > 0) {
+          setSelectedAccountIds(accountIds);
+          logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
+            context: 'ReclamacoesPage',
+            count: accountIds.length
+          });
+        }
       }
     }
-  }, [mlAccounts, persistentCache.persistedState]);
+  }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState, selectedAccountIds.length]);
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
@@ -231,11 +239,13 @@ export function ReclamacoesPage() {
 
       console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
       
-      // Salvar no cache persistente
+      // ✅ AJUSTE 3: Salvar período junto com filtros no cache
+      // Nota: colunas visíveis são gerenciadas pela tabela TanStack internamente
+      // e não precisam ser persistidas pois o ColumnSelector já mantém estado
       persistentCache.saveDataCache(
         allClaims,
         selectedAccountIds,
-        filters,
+        filters, // Já inclui período
         currentPage,
         itemsPerPage
       );
