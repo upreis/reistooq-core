@@ -183,8 +183,8 @@ export function PedidosResumo({
     }
   ];
 
-  // Mostrar todos os badges sempre
-  const badgesVisiveis = badges;
+  // Mostrar apenas badges com valor > 0 ou o badge Total (destaque)
+  const badgesVisiveis = badges.filter(badge => badge.valor > 0 || badge.destaque);
 
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
