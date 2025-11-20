@@ -119,7 +119,6 @@ export const VendasTable = ({
               
               {/* DATAS */}
               <TableHead className="min-w-[150px]">Data Criação</TableHead>
-              <TableHead className="min-w-[150px]">Data Fechamento</TableHead>
               <TableHead className="min-w-[150px]">Última Atualização</TableHead>
               <TableHead className="min-w-[150px]">Validade</TableHead>
               
@@ -141,12 +140,8 @@ export const VendasTable = ({
               <TableHead className="min-w-[100px]">SKU</TableHead>
               <TableHead className="min-w-[120px]">Categoria</TableHead>
               <TableHead className="min-w-[120px]">Condição</TableHead>
-              <TableHead className="min-w-[100px]">Garantia</TableHead>
               
               {/* PAGAMENTO */}
-              <TableHead className="min-w-[120px]">Método Pagamento</TableHead>
-              <TableHead className="min-w-[120px]">Tipo Pagamento</TableHead>
-              <TableHead className="min-w-[80px]">Parcelas</TableHead>
               <TableHead className="min-w-[120px]">Status Pagamento</TableHead>
               
               {/* ENVIO */}
@@ -230,7 +225,6 @@ export const VendasTable = ({
                   
                   {/* DATAS */}
                   <TableCell className="text-xs">{formatDateTime(order.date_created)}</TableCell>
-                  <TableCell className="text-xs">{order.date_closed ? formatDateTime(order.date_closed) : '-'}</TableCell>
                   <TableCell className="text-xs">{order.last_updated ? formatDateTime(order.last_updated) : '-'}</TableCell>
                   <TableCell className="text-xs">{order.expiration_date ? formatDateTime(order.expiration_date) : '-'}</TableCell>
                   
@@ -262,12 +256,8 @@ export const VendasTable = ({
                   <TableCell className="font-mono text-xs">{firstItem?.item?.seller_sku || '-'}</TableCell>
                   <TableCell className="text-xs">{firstItem?.item?.category_id || '-'}</TableCell>
                   <TableCell className="text-xs">{firstItem?.item?.condition || '-'}</TableCell>
-                  <TableCell className="text-xs">{firstItem?.item?.warranty || '-'}</TableCell>
                   
                   {/* PAGAMENTO */}
-                  <TableCell className="text-xs">{payment?.payment_method_id || '-'}</TableCell>
-                  <TableCell className="text-xs">{payment?.payment_type || '-'}</TableCell>
-                  <TableCell className="text-center">{payment?.installments || '-'}</TableCell>
                   <TableCell>
                     {payment?.status && (
                       <Badge variant={payment.status === 'approved' ? 'default' : 'secondary'}>
