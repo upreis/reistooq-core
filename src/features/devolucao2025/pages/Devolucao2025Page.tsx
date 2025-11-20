@@ -25,6 +25,7 @@ import { useColumnPreferences } from '../hooks/useColumnPreferences';
 import { COLUMNS_CONFIG } from '../config/columns';
 import { usePersistentDevolucoesStateV2 } from '../hooks/usePersistentDevolucoesStateV2';
 import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnified';
+import { useDevolucoesColumnManager } from '../hooks/useDevolucoesColumnManager';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -37,12 +38,15 @@ export const Devolucao2025Page = () => {
   
   // FASE 1: Estado de persistência com validação robusta
   // FASE 2: Gerenciamento unificado de filtros com URL sync
+  // FASE 3: Gerenciamento avançado de colunas
   const {
     filters,
     updateFilter,
     updateFilters,
     persistentCache
   } = useDevolucoesFiltersUnified();
+  
+  const columnManager = useDevolucoesColumnManager();
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -79,8 +83,7 @@ export const Devolucao2025Page = () => {
     setDateRange({ from: inicio, to: hoje });
   }, [periodo]);
   
-  // Gerenciar preferências de colunas
-  const { visibleColumns, setVisibleColumns } = useColumnPreferences(COLUMNS_CONFIG);
+  // ✅ REMOVIDO: useColumnPreferences (substituído por columnManager FASE 3)
 
   // Buscar organization_id do usuário
   useEffect(() => {
@@ -152,7 +155,7 @@ export const Devolucao2025Page = () => {
         dateRange,
         currentPage,
         itemsPerPage,
-        visibleColumns,
+        Array.from(columnManager.state.visibleColumns),
         periodo
       );
 
@@ -268,7 +271,7 @@ export const Devolucao2025Page = () => {
           dateRange,
           currentPage,
           itemsPerPage,
-          visibleColumns,
+          Array.from(columnManager.state.visibleColumns),
           periodo
         );
       }, 500);
@@ -379,8 +382,8 @@ export const Devolucao2025Page = () => {
                       handleCancelSearch();
                     }}
                     allColumns={COLUMNS_CONFIG}
-                    visibleColumns={visibleColumns}
-                    onVisibleColumnsChange={setVisibleColumns}
+                    visibleColumns={Array.from(columnManager.state.visibleColumns)}
+                    onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
                   />
                 </div>
               </div>
@@ -418,7 +421,7 @@ export const Devolucao2025Page = () => {
                 devolucoes={paginatedDevolucoes}
                 isLoading={isLoading}
                 error={error}
-                visibleColumns={visibleColumns}
+                visibleColumns={Array.from(columnManager.state.visibleColumns)}
                 onStatusChange={handleStatusChange}
                 anotacoes={anotacoes}
                 activeTab={activeTab}
