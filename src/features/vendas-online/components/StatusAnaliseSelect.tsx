@@ -72,10 +72,7 @@ export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
           className
         )}
       >
-        <div className="flex items-center gap-2">
-          {STATUS_ICONS[value]}
-          <SelectValue />
-        </div>
+        <SelectValue />
       </SelectTrigger>
       <SelectContent className="bg-background z-50">
         {availableStatuses.map((statusKey) => (
