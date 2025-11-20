@@ -34,48 +34,50 @@ export function useReclamacoesFiltersUnified() {
     if (persistentCache.isStateLoaded && !isInitialized) {
       // 1. Parsear filtros da URL
       const urlFilters: Partial<ReclamacoesFilters> = {};
-      let hasUrlParams = false;
+      let hasUrlParams = false; // ✅ Detecta se há filtros de BUSCA na URL (não accounts)
       
       const periodo = searchParams.get('periodo');
       if (periodo) {
         urlFilters.periodo = periodo;
-        hasUrlParams = true;
+        hasUrlParams = true; // ✅ Período é filtro de busca
       }
       
       const status = searchParams.get('status');
       if (status) {
         urlFilters.status = status;
-        hasUrlParams = true;
+        hasUrlParams = true; // ✅ Status é filtro de busca
       }
       
       const type = searchParams.get('type');
       if (type) {
         urlFilters.type = type;
-        hasUrlParams = true;
+        hasUrlParams = true; // ✅ Type é filtro de busca
       }
       
       const stage = searchParams.get('stage');
       if (stage) {
         urlFilters.stage = stage;
-        hasUrlParams = true;
+        hasUrlParams = true; // ✅ Stage é filtro de busca
       }
       
+      // ✅ CORREÇÃO PROBLEMA 1: Accounts não marca hasUrlParams
+      // Accounts é seleção de contas, não filtro de busca aplicado
       const accounts = searchParams.get('accounts');
       if (accounts) {
         urlFilters.selectedAccounts = accounts.split(',');
-        hasUrlParams = true;
+        // ❌ NÃO marcar hasUrlParams = true aqui
       }
       
       const page = searchParams.get('page');
       if (page) {
         urlFilters.currentPage = parseInt(page, 10);
-        hasUrlParams = true;
+        // ❌ Paginação também NÃO marca hasUrlParams
       }
       
       const limit = searchParams.get('limit');
       if (limit) {
         urlFilters.itemsPerPage = parseInt(limit, 10);
-        hasUrlParams = true;
+        // ❌ Items per page também NÃO marca hasUrlParams
       }
       
       // 2. Carregar filtros do cache
@@ -90,25 +92,37 @@ export function useReclamacoesFiltersUnified() {
       } : {};
       
       // 3. Lógica de merge inteligente:
-      //    - Se TEM URL params → usar URL (compartilhamento de link)
-      //    - Se NÃO TEM URL params → usar CACHE (retorno à página)
+      //    - Se TEM filtros de busca na URL (periodo/status/type/stage) → usar URL (link compartilhado)
+      //    - Se NÃO TEM filtros de busca na URL → usar CACHE (retorno à página)
       let mergedFilters: ReclamacoesFilters;
       
       if (hasUrlParams) {
-        // URL tem prioridade quando presente
+        // URL tem filtros de busca → prioridade URL
         mergedFilters = {
           ...DEFAULT_FILTERS,
           ...cachedFilters,
           ...urlFilters
         };
-        console.log('🔗 Restaurando filtros da URL (link compartilhado):', urlFilters);
+        console.log('🔗 Restaurando filtros da URL (link compartilhado):', {
+          urlFilters,
+          hasUrlParams: true
+        });
       } else {
-        // Cache tem prioridade quando não há URL params
+        // Sem filtros de busca na URL → prioridade CACHE
+        // MAS ainda aceita accounts/page/limit da URL se presentes
         mergedFilters = {
           ...DEFAULT_FILTERS,
-          ...cachedFilters
+          ...cachedFilters,
+          // ✅ Sobrescrever apenas accounts/page/limit se vieram da URL
+          ...(urlFilters.selectedAccounts && { selectedAccounts: urlFilters.selectedAccounts }),
+          ...(urlFilters.currentPage && { currentPage: urlFilters.currentPage }),
+          ...(urlFilters.itemsPerPage && { itemsPerPage: urlFilters.itemsPerPage })
         };
-        console.log('💾 Restaurando filtros do cache (última busca aplicada):', cachedFilters);
+        console.log('💾 Restaurando filtros do cache (última busca aplicada):', {
+          cachedFilters,
+          urlAccounts: urlFilters.selectedAccounts,
+          hasUrlParams: false
+        });
       }
       
       console.log('🔄 Filtros finais restaurados:', mergedFilters);
