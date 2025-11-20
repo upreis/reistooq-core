@@ -1141,7 +1141,7 @@ useEffect(() => {
           <div className="mb-4">
             <label className="text-sm font-medium mb-2 block">Buscar Pedidos</label>
             <Input
-              placeholder="Buscar por número, cliente, CPF/CNPJ..."
+              placeholder="Pesquisar"
               value={filtersManager.filters.search || ''}
               onChange={(e) => filtersManager.updateFilter('search', e.target.value)}
               className="w-full"
