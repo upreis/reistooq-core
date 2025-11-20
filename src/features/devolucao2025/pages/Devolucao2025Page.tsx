@@ -24,6 +24,7 @@ import { useDevolucaoAlerts } from '../hooks/useDevolucaoAlerts';
 import { useColumnPreferences } from '../hooks/useColumnPreferences';
 import { COLUMNS_CONFIG } from '../config/columns';
 import { usePersistentDevolucoesStateV2 } from '../hooks/usePersistentDevolucoesStateV2';
+import { useDevolucoesFiltersUnified } from '../hooks/useDevolucoesFiltersUnified';
 import { RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDevolucaoStorage } from '../hooks/useDevolucaoStorage';
@@ -35,7 +36,13 @@ export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
   
   // FASE 1: Estado de persistência com validação robusta
-  const persistentCache = usePersistentDevolucoesStateV2();
+  // FASE 2: Gerenciamento unificado de filtros com URL sync
+  const {
+    filters,
+    updateFilter,
+    updateFilters,
+    persistentCache
+  } = useDevolucoesFiltersUnified();
   
   // 💾 STORAGE DE ANÁLISE (localStorage)
   const {
@@ -46,33 +53,31 @@ export const Devolucao2025Page = () => {
     removeDevolucao
   } = useDevolucaoStorage();
   
-  const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
+  // Estados derivados dos filtros
+  const selectedAccounts = filters.selectedAccounts;
+  const periodo = filters.periodo;
+  const searchTerm = filters.searchTerm;
+  const currentPage = filters.currentPage;
+  const itemsPerPage = filters.itemsPerPage;
+  const activeTab = filters.activeTab;
+  
+  // Estados locais não gerenciados por filtros
   const [dateRange, setDateRange] = useState({
     from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
     to: new Date()
   });
-  const [periodo, setPeriodo] = useState('60');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
   const [isManualSearching, setIsManualSearching] = useState(false);
-  const [shouldFetch, setShouldFetch] = useState(false); // Controla se busca pode ocorrer
+  const [shouldFetch, setShouldFetch] = useState(false);
   
-  // Restaurar estado do cache após carregar
+  // Sincronizar dateRange com periodo quando periodo mudar
   useEffect(() => {
-    if (persistentCache.isStateLoaded && persistentCache.persistedState) {
-      const cached = persistentCache.persistedState;
-      setSelectedAccounts(cached.selectedAccounts || []);
-      setDateRange(cached.dateRange);
-      setPeriodo(cached.periodo || '60');
-      setCurrentPage(cached.currentPage);
-      setItemsPerPage(cached.itemsPerPage);
-      console.log('🔄 Estado restaurado do cache');
-    }
-  }, [persistentCache.isStateLoaded]);
+    const hoje = new Date();
+    const inicio = new Date();
+    inicio.setDate(hoje.getDate() - parseInt(periodo));
+    setDateRange({ from: inicio, to: hoje });
+  }, [periodo]);
   
   // Gerenciar preferências de colunas
   const { visibleColumns, setVisibleColumns } = useColumnPreferences(COLUMNS_CONFIG);
@@ -335,13 +340,21 @@ export const Devolucao2025Page = () => {
           
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 space-y-4">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
+            <Tabs value={activeTab} onValueChange={(v) => updateFilter('activeTab', v as 'ativas' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
-                  <TabsTrigger value="ativas" className="h-10">
+                  <TabsTrigger 
+                    value="ativas" 
+                    className="h-10"
+                    onClick={() => updateFilter('activeTab', 'ativas')}
+                  >
                     Ativas ({countAtivas})
                   </TabsTrigger>
-                  <TabsTrigger value="historico" className="h-10">
+                  <TabsTrigger 
+                    value="historico" 
+                    className="h-10"
+                    onClick={() => updateFilter('activeTab', 'historico')}
+                  >
                     Histórico ({countHistorico})
                   </TabsTrigger>
                 </TabsList>
@@ -351,18 +364,11 @@ export const Devolucao2025Page = () => {
                   <Devolucao2025FilterBar
                     accounts={accounts}
                     selectedAccountIds={selectedAccounts}
-                    onAccountsChange={setSelectedAccounts}
+                    onAccountsChange={(accounts) => updateFilter('selectedAccounts', accounts)}
                     periodo={periodo}
-                    onPeriodoChange={(p) => {
-                      setPeriodo(p);
-                      // Atualizar dateRange baseado no período
-                      const hoje = new Date();
-                      const inicio = new Date();
-                      inicio.setDate(hoje.getDate() - parseInt(p));
-                      setDateRange({ from: inicio, to: hoje });
-                    }}
+                    onPeriodoChange={(p) => updateFilter('periodo', p)}
                     searchTerm={searchTerm}
-                    onSearchChange={setSearchTerm}
+                    onSearchChange={(term) => updateFilter('searchTerm', term)}
                     onBuscar={() => {
                       setIsManualSearching(true);
                       handleApplyFilters();
@@ -431,8 +437,8 @@ export const Devolucao2025Page = () => {
                 totalItems={filteredCount}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
+                onPageChange={(page) => updateFilter('currentPage', page)}
+                onItemsPerPageChange={(items) => updateFilter('itemsPerPage', items)}
                 showFirstLastButtons={true}
                 pageButtonLimit={5}
               />
