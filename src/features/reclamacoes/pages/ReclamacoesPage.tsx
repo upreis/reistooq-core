@@ -140,8 +140,8 @@ export function ReclamacoesPage() {
   // 🎯 FASE 2: Auto-seleção de contas na primeira visita
   useEffect(() => {
     if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
-      // Se há cache, as contas já foram restauradas pelo hook unificado
-      if (persistentCache.persistedState && persistentCache.persistedState.selectedAccounts.length > 0) {
+      // ✅ CORREÇÃO: Verificar se persistedState e selectedAccounts existem antes de acessar length
+      if (persistentCache.persistedState?.selectedAccounts && persistentCache.persistedState.selectedAccounts.length > 0) {
         return; // Não fazer nada, usar cache
       }
       
