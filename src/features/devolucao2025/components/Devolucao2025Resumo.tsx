@@ -147,9 +147,10 @@ export function Devolucao2025Resumo({
 
   return (
     <div className={cn("flex items-center gap-2 flex-wrap", className)}>
-      <span className="text-sm font-medium text-muted-foreground mr-2">Resumo:</span>
+      <span className="text-sm font-medium text-muted-foreground">Resumo:</span>
+      
       {metricas
-        .filter(m => m.valor > 0 || m.label === 'Total')
+        .filter(metrica => metrica.valor > 0 || metrica.destaque)
         .map((metrica) => {
           const Icon = metrica.icon;
           const isAtivo = isFiltroAtivo(metrica.filtro);
@@ -157,21 +158,19 @@ export function Devolucao2025Resumo({
           return (
             <Badge
               key={metrica.label}
-              variant="outline"
-              className={cn(
-                'px-3 py-1.5 gap-2 cursor-pointer transition-all h-8',
-                metrica.color,
-                metrica.destaque && 'font-semibold',
-                isAtivo && 'ring-2 ring-primary ring-offset-2 ring-offset-background scale-105',
-                'hover:scale-105'
-              )}
+              variant={metrica.destaque ? "default" : "outline"}
               onClick={() => handleBadgeClick(metrica.filtro)}
+              className={cn(
+                "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+                metrica.color,
+                isAtivo && "ring-2 ring-primary ring-offset-2 scale-105"
+              )}
             >
               <Icon className="h-4 w-4" />
-              <span className="font-medium">{metrica.label}</span>
+              <span className="font-normal">{metrica.label}</span>
               <span className={cn(
-                "font-bold",
-                metrica.destaque && "text-lg"
+                "font-bold ml-1 px-1.5 py-0.5 rounded",
+                metrica.destaque ? "bg-black/20" : "bg-primary/10"
               )}>
                 {metrica.valor}
               </span>
