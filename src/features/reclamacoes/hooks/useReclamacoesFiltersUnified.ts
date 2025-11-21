@@ -27,60 +27,56 @@ export function useReclamacoesFiltersUnified() {
   
   // Estado dos filtros - iniciar com defaults
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // ✅ PADRÃO /PEDIDOS: Filtros vêm APENAS da URL
+  // ✅ PADRÃO /PEDIDOS: Filtros vêm SEMPRE da URL (recarrega quando URL muda)
   useEffect(() => {
-    if (!isInitialized) {
-      const urlFilters: Partial<ReclamacoesFilters> = {};
-      
-      const periodo = searchParams.get('periodo');
-      if (periodo) urlFilters.periodo = periodo;
-      
-      const status = searchParams.get('status');
-      if (status) urlFilters.status = status;
-      
-      const type = searchParams.get('type');
-      if (type) urlFilters.type = type;
-      
-      const stage = searchParams.get('stage');
-      if (stage) urlFilters.stage = stage;
-      
-      const accounts = searchParams.get('accounts');
-      if (accounts) {
-        const accountsList = accounts.split(',').filter(id => id.trim().length > 0);
-        if (accountsList.length > 0) {
-          urlFilters.selectedAccounts = accountsList;
-        }
+    const urlFilters: Partial<ReclamacoesFilters> = {};
+    
+    const periodo = searchParams.get('periodo');
+    if (periodo) urlFilters.periodo = periodo;
+    
+    const status = searchParams.get('status');
+    if (status) urlFilters.status = status;
+    
+    const type = searchParams.get('type');
+    if (type) urlFilters.type = type;
+    
+    const stage = searchParams.get('stage');
+    if (stage) urlFilters.stage = stage;
+    
+    const accounts = searchParams.get('accounts');
+    if (accounts) {
+      const accountsList = accounts.split(',').filter(id => id.trim().length > 0);
+      if (accountsList.length > 0) {
+        urlFilters.selectedAccounts = accountsList;
       }
-      
-      const page = searchParams.get('page');
-      if (page) {
-        const parsedPage = parseInt(page, 10);
-        if (!isNaN(parsedPage) && parsedPage >= 1) {
-          urlFilters.currentPage = parsedPage;
-        }
-      }
-      
-      const limit = searchParams.get('limit');
-      if (limit) {
-        const parsedLimit = parseInt(limit, 10);
-        if (!isNaN(parsedLimit) && parsedLimit >= 25 && parsedLimit <= 100) {
-          urlFilters.itemsPerPage = parsedLimit;
-        }
-      }
-      
-      const mergedFilters: ReclamacoesFilters = {
-        ...DEFAULT_FILTERS,
-        ...urlFilters
-      };
-      
-      console.log('✅ Filtros carregados da URL:', mergedFilters);
-      
-      setFilters(mergedFilters);
-      setIsInitialized(true);
     }
-  }, [isInitialized, searchParams]);
+    
+    const page = searchParams.get('page');
+    if (page) {
+      const parsedPage = parseInt(page, 10);
+      if (!isNaN(parsedPage) && parsedPage >= 1) {
+        urlFilters.currentPage = parsedPage;
+      }
+    }
+    
+    const limit = searchParams.get('limit');
+    if (limit) {
+      const parsedLimit = parseInt(limit, 10);
+      if (!isNaN(parsedLimit) && parsedLimit >= 25 && parsedLimit <= 100) {
+        urlFilters.itemsPerPage = parsedLimit;
+      }
+    }
+    
+    const mergedFilters: ReclamacoesFilters = {
+      ...DEFAULT_FILTERS,
+      ...urlFilters
+    };
+    
+    console.log('✅ Filtros carregados da URL:', mergedFilters);
+    
+    setFilters(mergedFilters);
+  }, [searchParams]); // ✅ Recarrega SEMPRE que URL mudar
 
   // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
