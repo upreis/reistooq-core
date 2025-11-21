@@ -1,9 +1,10 @@
 /**
  * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS
  * ✅ SOLUÇÃO RADICAL: URL é a ÚNICA fonte de verdade (sem estado local)
+ * ✅ PERSISTÊNCIA: Salva filtros em localStorage antes de navegar
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
 
@@ -27,12 +28,43 @@ const DEFAULT_FILTERS: ReclamacoesFilters = {
   itemsPerPage: 50
 };
 
+const FILTERS_STORAGE_KEY = 'reclamacoes_last_filters';
+
 /**
- * Hook unificado - URL é a única fonte de verdade
+ * Hook unificado - URL é a única fonte de verdade + localStorage para persistência
  */
 export function useReclamacoesFiltersUnified() {
   const persistentCache = usePersistentReclamacoesState();
   const [searchParams, setSearchParams] = useSearchParams();
+  
+  // ✅ RESTAURAR filtros do localStorage na primeira montagem
+  useEffect(() => {
+    // Só restaurar se URL está vazia (primeira visita ou volta de outra página)
+    const hasUrlFilters = searchParams.toString().length > 0;
+    
+    if (!hasUrlFilters) {
+      try {
+        const saved = localStorage.getItem(FILTERS_STORAGE_KEY);
+        if (saved) {
+          const savedFilters = JSON.parse(saved);
+          console.log('📦 Restaurando filtros salvos:', savedFilters);
+          
+          const params = new URLSearchParams();
+          if (savedFilters.periodo) params.set('periodo', savedFilters.periodo);
+          if (savedFilters.status) params.set('status', savedFilters.status);
+          if (savedFilters.type) params.set('type', savedFilters.type);
+          if (savedFilters.stage) params.set('stage', savedFilters.stage);
+          if (savedFilters.accounts) params.set('accounts', savedFilters.accounts);
+          if (savedFilters.page) params.set('page', savedFilters.page);
+          if (savedFilters.limit) params.set('limit', savedFilters.limit);
+          
+          setSearchParams(params, { replace: true });
+        }
+      } catch (error) {
+        console.warn('❌ Erro ao restaurar filtros:', error);
+      }
+    }
+  }, []); // Só roda na montagem inicial
   
   // ✅ Ler filtros DIRETO da URL (useMemo, não useState)
   const filters = useMemo<ReclamacoesFilters>(() => {
@@ -62,6 +94,26 @@ export function useReclamacoesFiltersUnified() {
       itemsPerPage
     };
   }, [searchParams]);
+
+  // ✅ SALVAR filtros no localStorage sempre que mudarem
+  useEffect(() => {
+    try {
+      const filtersToSave = {
+        periodo: filters.periodo,
+        status: filters.status,
+        type: filters.type,
+        stage: filters.stage,
+        accounts: filters.selectedAccounts.join(','),
+        page: filters.currentPage.toString(),
+        limit: filters.itemsPerPage.toString()
+      };
+      
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(filtersToSave));
+      console.log('💾 Filtros salvos no localStorage:', filtersToSave);
+    } catch (error) {
+      console.warn('❌ Erro ao salvar filtros:', error);
+    }
+  }, [filters]);
 
   // ✅ Atualizar um filtro = atualizar URL diretamente
   const updateFilter = useCallback(<K extends keyof ReclamacoesFilters>(
