@@ -408,7 +408,7 @@ export const Devolucao2025Page = () => {
               </div>
 
               {/* Resumo com badges clicáveis */}
-              <div className="mt-12 mb-2">
+              <div className="mt-12 mb-2 px-4 md:px-6">
                 <Devolucao2025Resumo 
                   devolucoes={devolucoesFiltradasPorAba}
                   onFiltroClick={setFiltroResumo}
