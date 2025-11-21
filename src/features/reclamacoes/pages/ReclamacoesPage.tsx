@@ -162,7 +162,7 @@ export function ReclamacoesPage() {
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
     queryKey: ['reclamacoes', selectedAccountIds, filters],
-    enabled: false, // Desabilitar busca automática - só via handleBuscarReclamacoes
+    enabled: false, // 🔥 Desabilitar busca automática - só via handleBuscarReclamacoes
     queryFn: async () => {
       console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
       
@@ -277,16 +277,16 @@ export function ReclamacoesPage() {
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
-    // Inicializar com dados do localStorage se disponíveis
-    initialData: () => {
+    
+    // 🔥 CORREÇÃO CRÍTICA: Usar placeholderData ao invés de initialData
+    // placeholderData é reavaliado SEMPRE que a query está desabilitada (enabled: false)
+    // Isso permite restaurar dados do cache ao retornar à página
+    placeholderData: () => {
       if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
-        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState.reclamacoes.length);
+        console.log('📦 Restaurando dados do cache:', persistentCache.persistedState.reclamacoes.length);
         return persistentCache.persistedState.reclamacoes;
       }
       return undefined;
-    },
-    initialDataUpdatedAt: () => {
-      return persistentCache.persistedState?.cachedAt || 0;
     }
   });
 
