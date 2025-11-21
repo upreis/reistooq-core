@@ -169,13 +169,7 @@ export function ReclamacoesFilterBar({
         <div className="min-w-[180px] flex-shrink-0">
           <div className="relative">
             <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Select 
-              value={periodo} 
-              onValueChange={(value) => {
-                console.log('🔍 [FILTRO] Período selecionado:', value);
-                onPeriodoChange(value);
-              }}
-            >
+            <Select value={periodo} onValueChange={onPeriodoChange}>
               <SelectTrigger className="pl-9 h-10">
                 <SelectValue placeholder="Selecione o período" />
               </SelectTrigger>

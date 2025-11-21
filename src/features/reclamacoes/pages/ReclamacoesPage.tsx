@@ -137,30 +137,32 @@ export function ReclamacoesPage() {
     },
   });
 
-  // 🎯 Auto-seleção de contas APENAS se NÃO há filtros salvos
+  // 🎯 FASE 2: Auto-seleção de contas na primeira visita
   useEffect(() => {
-    // ✅ CORREÇÃO CRÍTICA: Não auto-selecionar se há filtros restaurados do localStorage
-    const hasSavedFilters = localStorage.getItem('reclamacoes_last_filters');
-    
-    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && !hasSavedFilters) {
-      const { accountIds } = validateMLAccounts(mlAccounts);
-      if (accountIds.length > 0) {
-        updateFilter('selectedAccounts', accountIds);
-        logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
-          context: 'ReclamacoesPage',
-          count: accountIds.length
-        });
+    if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
+      // ✅ CORREÇÃO: Verificar se persistedState e selectedAccounts existem antes de acessar length
+      if (persistentCache.persistedState?.selectedAccounts && persistentCache.persistedState.selectedAccounts.length > 0) {
+        return; // Não fazer nada, usar cache
+      }
+      
+      // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
+      if (selectedAccountIds.length === 0) {
+        const { accountIds } = validateMLAccounts(mlAccounts);
+        if (accountIds.length > 0) {
+          updateFilter('selectedAccounts', accountIds);
+          logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
+            context: 'ReclamacoesPage',
+            count: accountIds.length
+          });
+        }
       }
     }
-  }, [mlAccounts, selectedAccountIds.length, updateFilter]);
+  }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState, selectedAccountIds.length]);
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
-    // ✅ CORREÇÃO PROBLEMA 3: queryKey FIXA para evitar invalidação ao mudar filtros
-    // A validação de filtros é feita MANUALMENTE dentro de placeholderData (linhas 290-322)
-    // Isso permite que cache persista mesmo quando filtros mudam temporariamente (sem buscar)
-    queryKey: ['reclamacoes-cache'],
-    enabled: false, // 🔥 Desabilitar busca automática - só via handleBuscarReclamacoes
+    queryKey: ['reclamacoes', selectedAccountIds, filters],
+    enabled: false, // Desabilitar busca automática - só via handleBuscarReclamacoes
     queryFn: async () => {
       console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
       
@@ -259,11 +261,14 @@ export function ReclamacoesPage() {
 
       console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
       
-      // ✅ PADRÃO /PEDIDOS: Salvar apenas dados no cache
+      // ✅ Salvar dados + filtros + colunas visíveis no cache
       persistentCache.saveDataCache(
         allClaims,
-        allClaims.length,
-        currentPage
+        selectedAccountIds,
+        filters, // Já inclui período
+        currentPage,
+        itemsPerPage,
+        Array.from(columnManager.state.visibleColumns) // 🔥 CORREÇÃO: Converter Set para Array
       );
       
       return allClaims;
@@ -272,15 +277,16 @@ export function ReclamacoesPage() {
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
-    
-    // ✅ PADRÃO /PEDIDOS: placeholderData simples - sem validação de filtros
-    placeholderData: () => {
-      if (!persistentCache.isStateLoaded || !persistentCache.persistedState) {
-        return undefined;
+    // Inicializar com dados do localStorage se disponíveis
+    initialData: () => {
+      if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
+        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState.reclamacoes.length);
+        return persistentCache.persistedState.reclamacoes;
       }
-      
-      console.log('📦 Cache restaurado:', persistentCache.persistedState.total);
-      return persistentCache.persistedState.reclamacoes;
+      return undefined;
+    },
+    initialDataUpdatedAt: () => {
+      return persistentCache.persistedState?.cachedAt || 0;
     }
   });
 
@@ -302,7 +308,7 @@ export function ReclamacoesPage() {
       
       toast({
         title: "✅ Sucesso",
-        description: `Busca concluída`,
+        description: `Busca concluída com sucesso`,
       });
     } catch (error) {
       console.error('❌ Erro na busca:', error);
@@ -318,8 +324,8 @@ export function ReclamacoesPage() {
 
   // 🚫 CANCELAR BUSCA
   const handleCancelarBusca = () => {
-    // ✅ CORREÇÃO: Usar queryKey FIXA
-    queryClient.cancelQueries({ queryKey: ['reclamacoes-cache'] });
+    // Cancelar query do React Query
+    queryClient.cancelQueries({ queryKey: ['reclamacoes', selectedAccountIds, filters] });
     setIsManualSearching(false);
     
     toast({
@@ -498,22 +504,19 @@ export function ReclamacoesPage() {
                   
                   {/* Filtros integrados */}
                   <div className="flex-1 min-w-0">
-                  <ReclamacoesFilterBar
-                    accounts={mlAccounts || []}
-                    selectedAccountIds={selectedAccountIds}
-                    onAccountsChange={setSelectedAccountIds}
-                    periodo={unifiedFilters.periodo}
-                    onPeriodoChange={(periodo) => {
-                      console.log('🔍 [RECLAMACOES PAGE] onPeriodoChange recebido:', periodo);
-                      updateFilter('periodo', periodo);
-                    }}
-                    searchTerm={unifiedFilters.status}
-                    onSearchChange={(status) => updateFilter('status', status)}
-                    onBuscar={handleBuscarReclamacoes}
-                    isLoading={isManualSearching}
-                    onCancel={handleCancelarBusca}
-                    table={tableInstance}
-                  />
+                    <ReclamacoesFilterBar
+                      accounts={mlAccounts || []}
+                      selectedAccountIds={selectedAccountIds}
+                      onAccountsChange={setSelectedAccountIds}
+                      periodo={filters.periodo}
+                      onPeriodoChange={(periodo) => setFilters({ ...filters, periodo })}
+                      searchTerm={filters.status}
+                      onSearchChange={(term) => setFilters({ ...filters, status: term })}
+                      onBuscar={handleBuscarReclamacoes}
+                      isLoading={isManualSearching}
+                      onCancel={handleCancelarBusca}
+                      table={tableInstance}
+                    />
                   </div>
                 </div>
                 

@@ -145,6 +145,20 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
 
   return (
     <div className="space-y-4">
+      {/* Search bar e Column Selector */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar em todas as colunas..."
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <ReclamacoesColumnSelector table={table} columnManager={columnManager} />
+      </div>
+      
       {/* Tabela */}
       <div className="w-full flex-1 flex flex-col min-h-0">
         <div className="overflow-x-auto overflow-y-auto flex-1 border rounded-md scroll-smooth">
