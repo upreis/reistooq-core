@@ -325,15 +325,15 @@ export default function VendasOnline() {
   }, [metrics, isPolling]);
 
   return (
-    <div className="w-full pb-20">
-      <div className="space-y-6">
+    <div className="w-full">
+      <div className="pb-20">
           {/* Sub-navegação */}
           <div className="px-4 md:px-6">
             <MLOrdersNav />
           </div>
           
           {/* Header com controle de polling */}
-          <div className="px-4 md:px-6 flex items-center justify-between">
+          <div className="px-4 md:px-6 py-3 mt-2 flex items-center justify-between">
             <h1 className="text-3xl font-bold">Vendas Online</h1>
             
             {/* 🎯 FASE 4: Controle de Polling */}
@@ -366,7 +366,7 @@ export default function VendasOnline() {
           {(loadingVendas || isManualSearching) && <LoadingIndicator />}
           
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
-          <div className="px-4 md:px-6">
+          <div className="px-4 md:px-6 mt-2">
             <Tabs value={activeTab} onValueChange={(v) => {
               console.log('🔄 Mudando aba para:', v);
               setActiveTab(v as 'ativas' | 'historico');
