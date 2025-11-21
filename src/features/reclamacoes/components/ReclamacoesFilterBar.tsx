@@ -126,7 +126,7 @@ export function ReclamacoesFilterBar({
                     onClick={handleSelectAllAccounts}
                     className="text-xs text-primary hover:underline"
                   >
-                    {selectedAccountIds.length === accounts.length ? 'Desmarcar todas' : 'Selecionar todas'}
+                    {(selectedAccountIds?.length || 0) === accounts.length ? 'Desmarcar todas' : 'Selecionar todas'}
                   </button>
                 </div>
 
