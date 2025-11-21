@@ -32,6 +32,7 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
+  visibleColumns?: string[]; // IDs das colunas visíveis
 }
 
 export const ReclamacoesTable = memo(function ReclamacoesTable({
@@ -42,7 +43,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   onDeleteReclamacao,
   onOpenAnotacoes,
   anotacoes,
-  activeTab
+  activeTab,
+  visibleColumns
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -51,8 +53,8 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   
   // ⚡ Memoizar colunas para evitar re-criação
   const columns = useMemo(() => 
-    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab), 
-    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
+    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumns), 
+    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumns]
   );
   
   const handleOpenMensagens = useCallback((claim: any) => {
