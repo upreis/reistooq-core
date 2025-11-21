@@ -1048,7 +1048,9 @@ useEffect(() => {
     <div className="w-full">
       <div className="pb-20">
           {/* Sub-navegação */}
-          <MLOrdersNav />
+          <div className="px-4 md:px-6">
+            <MLOrdersNav />
+          </div>
           
           {/* Header */}
           <div className="px-4 md:px-6 py-3 mt-2">
