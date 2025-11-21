@@ -52,7 +52,7 @@ function parseFiltersFromUrl(searchParams: URLSearchParams): Partial<Reclamacoes
 function encodeFiltersToUrl(filters: ReclamacoesFilters): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.periodo && filters.periodo !== '7') { // 🔥 CORREÇÃO 1: Alterado de '60' para '7'
+  if (filters.periodo) { // 🔥 CORREÇÃO: Sempre incluir periodo na URL (removido !== '7')
     params.set('periodo', filters.periodo);
   }
 
