@@ -91,26 +91,31 @@ export function useReclamacoesFiltersUnified() {
       // 2. Carregar filtros do cache com SAFE ACCESS
       const cachedFilters: Partial<ReclamacoesFilters> = {};
       
+      // 🔥 CORREÇÃO ERRO 4: Validar persistedState E persistedState.filters antes de acessar
+      if (persistentCache.persistedState?.filters) {
+        const filters = persistentCache.persistedState.filters;
+        
+        // Safe access garantido - filters existe
+        if (filters.periodo) cachedFilters.periodo = filters.periodo;
+        if (filters.status) cachedFilters.status = filters.status;
+        if (filters.type) cachedFilters.type = filters.type;
+        if (filters.stage) cachedFilters.stage = filters.stage;
+      }
+      
+      // Outros campos do estado (fora de filters)
       if (persistentCache.persistedState) {
         const state = persistentCache.persistedState;
         
-        // ✅ CORREÇÃO ERRO 4: Safe access com optional chaining
-        if (state.filters) {
-          cachedFilters.periodo = state.filters.periodo;
-          cachedFilters.status = state.filters.status;
-          cachedFilters.type = state.filters.type;
-          cachedFilters.stage = state.filters.stage;
-        }
-        
-        // Outros campos do estado
         // 🔥 CORREÇÃO: Validar que array não está vazio (evitar busca sem contas)
         if (state.selectedAccounts && state.selectedAccounts.length > 0) {
           cachedFilters.selectedAccounts = state.selectedAccounts;
         }
-        if (typeof state.currentPage === 'number') {
+        // 🔥 CORREÇÃO: Validar range válido para página (>= 1)
+        if (typeof state.currentPage === 'number' && state.currentPage >= 1) {
           cachedFilters.currentPage = state.currentPage;
         }
-        if (typeof state.itemsPerPage === 'number') {
+        // 🔥 CORREÇÃO: Validar range válido para items por página (25-100)
+        if (typeof state.itemsPerPage === 'number' && state.itemsPerPage >= 25 && state.itemsPerPage <= 100) {
           cachedFilters.itemsPerPage = state.itemsPerPage;
         }
       }
