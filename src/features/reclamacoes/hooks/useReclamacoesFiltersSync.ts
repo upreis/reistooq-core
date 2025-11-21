@@ -95,22 +95,18 @@ export function useReclamacoesFiltersSync(
   // 🔥 REMOVIDO: Carregar filtros da URL na montagem
   // Agora isso é feito no useReclamacoesFiltersUnified com merge correto Cache + URL
 
-  // Atualizar URL quando filtros mudarem (debounced)
+  // ✅ Atualizar URL IMEDIATAMENTE quando filtros mudarem (sem debounce)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const newParams = encodeFiltersToUrl(filters);
-      const currentParams = searchParams.toString();
-      const newParamsString = newParams.toString();
+    const newParams = encodeFiltersToUrl(filters);
+    const currentParams = searchParams.toString();
+    const newParamsString = newParams.toString();
 
-      // Só atualizar se realmente mudou
-      if (currentParams !== newParamsString) {
-        console.log('🔗 Atualizando URL com filtros:', filters);
-        setSearchParams(newParams, { replace: true });
-      }
-    }, 500); // Debounce de 500ms
-
-    return () => clearTimeout(timer);
-  }, [filters, setSearchParams]);
+    // Só atualizar se realmente mudou
+    if (currentParams !== newParamsString) {
+      console.log('🔗 Atualizando URL com filtros:', filters);
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [filters, searchParams, setSearchParams]);
 
   return {
     parseFiltersFromUrl,
