@@ -48,37 +48,39 @@ function parseFiltersFromUrl(searchParams: URLSearchParams): Partial<Reclamacoes
 
 /**
  * Codifica filtros para parâmetros de URL
+ * ✅ RADICAL: SEMPRE adiciona TODOS os filtros (sem omitir padrões)
  */
 function encodeFiltersToUrl(filters: ReclamacoesFilters): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.periodo && filters.periodo !== '60') {
-    params.set('periodo', filters.periodo);
-  }
+  // ✅ SEMPRE adicionar período (sem verificar se é padrão)
+  params.set('periodo', filters.periodo);
 
-  if (filters.status && filters.status !== '') {
+  // ✅ SEMPRE adicionar status (mesmo vazio)
+  if (filters.status !== undefined) {
     params.set('status', filters.status);
   }
 
-  if (filters.type && filters.type !== '') {
+  // ✅ SEMPRE adicionar type (mesmo vazio)
+  if (filters.type !== undefined) {
     params.set('type', filters.type);
   }
 
-  if (filters.stage && filters.stage !== '') {
+  // ✅ SEMPRE adicionar stage (mesmo vazio)
+  if (filters.stage !== undefined) {
     params.set('stage', filters.stage);
   }
 
+  // ✅ SEMPRE adicionar contas (mesmo vazio)
   if (filters.selectedAccounts && filters.selectedAccounts.length > 0) {
     params.set('accounts', filters.selectedAccounts.join(','));
   }
 
-  if (filters.currentPage && filters.currentPage !== 1) {
-    params.set('page', filters.currentPage.toString());
-  }
+  // ✅ SEMPRE adicionar página
+  params.set('page', filters.currentPage.toString());
 
-  if (filters.itemsPerPage && filters.itemsPerPage !== 50) {
-    params.set('limit', filters.itemsPerPage.toString());
-  }
+  // ✅ SEMPRE adicionar limite
+  params.set('limit', filters.itemsPerPage.toString());
 
   return params;
 }
