@@ -495,19 +495,19 @@ export function ReclamacoesPage() {
                   
                   {/* Filtros integrados */}
                   <div className="flex-1 min-w-0">
-                    <ReclamacoesFilterBar
-                      accounts={mlAccounts || []}
-                      selectedAccountIds={selectedAccountIds}
-                      onAccountsChange={setSelectedAccountIds}
-                      periodo={filters.periodo}
-                      onPeriodoChange={(periodo) => setFilters({ ...filters, periodo })}
-                      searchTerm={filters.status}
-                      onSearchChange={(term) => setFilters({ ...filters, status: term })}
-                      onBuscar={handleBuscarReclamacoes}
-                      isLoading={isManualSearching}
-                      onCancel={handleCancelarBusca}
-                      table={tableInstance}
-                    />
+                  <ReclamacoesFilterBar
+                    accounts={mlAccounts || []}
+                    selectedAccountIds={selectedAccountIds}
+                    onAccountsChange={setSelectedAccountIds}
+                    periodo={unifiedFilters.periodo}
+                    onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
+                    searchTerm={unifiedFilters.status}
+                    onSearchChange={(status) => updateFilter('status', status)}
+                    onBuscar={handleBuscarReclamacoes}
+                    isLoading={isManualSearching}
+                    onCancel={handleCancelarBusca}
+                    table={tableInstance}
+                  />
                   </div>
                 </div>
                 
