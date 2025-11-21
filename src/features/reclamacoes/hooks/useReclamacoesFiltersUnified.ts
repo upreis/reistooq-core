@@ -29,41 +29,25 @@ export function useReclamacoesFiltersUnified() {
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 🔥 CORREÇÃO FINAL: Lógica simplificada e robusta
+  // ✅ PADRÃO /PEDIDOS: Filtros vêm APENAS da URL
   useEffect(() => {
-    if (persistentCache.isStateLoaded && !isInitialized) {
-      // 1. Parsear filtros da URL
+    if (!isInitialized) {
       const urlFilters: Partial<ReclamacoesFilters> = {};
-      let hasUrlParams = false; // ✅ Detecta se há filtros de BUSCA na URL (não accounts)
       
       const periodo = searchParams.get('periodo');
-      if (periodo) {
-        urlFilters.periodo = periodo;
-        hasUrlParams = true; // ✅ Período é filtro de busca
-      }
+      if (periodo) urlFilters.periodo = periodo;
       
       const status = searchParams.get('status');
-      if (status) {
-        urlFilters.status = status;
-        hasUrlParams = true; // ✅ Status é filtro de busca
-      }
+      if (status) urlFilters.status = status;
       
       const type = searchParams.get('type');
-      if (type) {
-        urlFilters.type = type;
-        hasUrlParams = true; // ✅ Type é filtro de busca
-      }
+      if (type) urlFilters.type = type;
       
       const stage = searchParams.get('stage');
-      if (stage) {
-        urlFilters.stage = stage;
-        hasUrlParams = true; // ✅ Stage é filtro de busca
-      }
+      if (stage) urlFilters.stage = stage;
       
-      // ✅ Accounts/page/limit SÓ são usados se hasUrlParams=true (link compartilhado)
       const accounts = searchParams.get('accounts');
       if (accounts) {
-        // 🔥 CORREÇÃO: Filtrar strings vazias (ex: "?accounts=,,," → não criar array inválido)
         const accountsList = accounts.split(',').filter(id => id.trim().length > 0);
         if (accountsList.length > 0) {
           urlFilters.selectedAccounts = accountsList;
@@ -73,7 +57,6 @@ export function useReclamacoesFiltersUnified() {
       const page = searchParams.get('page');
       if (page) {
         const parsedPage = parseInt(page, 10);
-        // 🔥 CORREÇÃO: Páginas começam em 1 (não 0), validar número inteiro positivo
         if (!isNaN(parsedPage) && parsedPage >= 1) {
           urlFilters.currentPage = parsedPage;
         }
@@ -82,78 +65,22 @@ export function useReclamacoesFiltersUnified() {
       const limit = searchParams.get('limit');
       if (limit) {
         const parsedLimit = parseInt(limit, 10);
-        // 🔥 CORREÇÃO: Limitar items por página entre 25 e 100 (valores razoáveis)
         if (!isNaN(parsedLimit) && parsedLimit >= 25 && parsedLimit <= 100) {
           urlFilters.itemsPerPage = parsedLimit;
         }
       }
       
-      // 2. Carregar filtros do cache com SAFE ACCESS
-      const cachedFilters: Partial<ReclamacoesFilters> = {};
+      const mergedFilters: ReclamacoesFilters = {
+        ...DEFAULT_FILTERS,
+        ...urlFilters
+      };
       
-      // 🔥 CORREÇÃO ERRO 4: Validar persistedState antes de acessar qualquer propriedade
-      if (persistentCache.persistedState) {
-        const state = persistentCache.persistedState;
-        
-        // ✅ CORREÇÃO CRÍTICA: Validar EXISTÊNCIA (!== undefined) ao invés de truthy
-        // Strings vazias ('') são valores VÁLIDOS e devem ser restauradas do cache
-        if (state.filters) {
-          const filters = state.filters;
-          
-          if (filters.periodo !== undefined) cachedFilters.periodo = filters.periodo;
-          if (filters.status !== undefined) cachedFilters.status = filters.status;
-          if (filters.type !== undefined) cachedFilters.type = filters.type;
-          if (filters.stage !== undefined) cachedFilters.stage = filters.stage;
-        }
-        
-        // Outros campos do estado (fora de filters)
-        // 🔥 CORREÇÃO: Validar que array não está vazio (evitar busca sem contas)
-        if (state.selectedAccounts && state.selectedAccounts.length > 0) {
-          cachedFilters.selectedAccounts = state.selectedAccounts;
-        }
-        // 🔥 CORREÇÃO: Validar range válido para página (>= 1)
-        if (typeof state.currentPage === 'number' && state.currentPage >= 1) {
-          cachedFilters.currentPage = state.currentPage;
-        }
-        // 🔥 CORREÇÃO: Validar range válido para items por página (25-100)
-        if (typeof state.itemsPerPage === 'number' && state.itemsPerPage >= 25 && state.itemsPerPage <= 100) {
-          cachedFilters.itemsPerPage = state.itemsPerPage;
-        }
-      }
-      
-      // 3. Lógica SIMPLIFICADA:
-      //    - Link compartilhado (TEM filtros de busca na URL) → usar URL completa
-      //    - Retorno à página (SEM filtros de busca na URL) → usar CACHE completo
-      let mergedFilters: ReclamacoesFilters;
-      
-      if (hasUrlParams) {
-        // ✅ Link compartilhado: URL tem prioridade TOTAL
-        mergedFilters = {
-          ...DEFAULT_FILTERS,
-          ...urlFilters
-        };
-        console.log('🔗 Link compartilhado detectado - usando APENAS URL:', {
-          urlFilters,
-          ignorandoCache: true
-        });
-      } else {
-        // ✅ Retorno à página: CACHE tem prioridade TOTAL (ignora URL)
-        mergedFilters = {
-          ...DEFAULT_FILTERS,
-          ...cachedFilters
-        };
-        console.log('💾 Retorno à página - usando APENAS CACHE:', {
-          cachedFilters,
-          ignorandoURL: true
-        });
-      }
-      
-      console.log('🔄 Filtros finais restaurados:', mergedFilters);
+      console.log('✅ Filtros carregados da URL:', mergedFilters);
       
       setFilters(mergedFilters);
       setIsInitialized(true);
     }
-  }, [persistentCache.isStateLoaded, isInitialized, searchParams]);
+  }, [isInitialized, searchParams]);
 
   // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
