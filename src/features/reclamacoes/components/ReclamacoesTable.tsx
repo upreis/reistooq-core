@@ -60,13 +60,20 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       return {};
     }
     
+    // Criar objeto de visibilidade para TODAS as colunas definidas
     const visibility: VisibilityState = {};
     columnManager.definitions.forEach(def => {
       visibility[def.key] = columnManager.state.visibleColumns.has(def.key);
     });
     
+    console.log('🔍 [ReclamacoesTable] Visibilidade sincronizada:', {
+      totalDefinitions: columnManager.definitions.length,
+      visibleCount: columnManager.state.visibleColumns.size,
+      visibility
+    });
+    
     return visibility;
-  }, [columnManager?.state.visibleColumns]);
+  }, [columnManager?.state.visibleColumns, columnManager?.definitions]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
