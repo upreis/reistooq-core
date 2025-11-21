@@ -31,59 +31,62 @@ export function useReclamacoesFiltersUnified() {
 
   // 🔥 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults
   useEffect(() => {
-    if (persistentCache.isStateLoaded && !isInitialized) {
-      // 1. Parsear filtros da URL
-      const urlFilters: Partial<ReclamacoesFilters> = {};
-      
-      const periodo = searchParams.get('periodo');
-      if (periodo) urlFilters.periodo = periodo;
-      
-      const status = searchParams.get('status');
-      if (status) urlFilters.status = status;
-      
-      const type = searchParams.get('type');
-      if (type) urlFilters.type = type;
-      
-      const stage = searchParams.get('stage');
-      if (stage) urlFilters.stage = stage;
-      
-      const accounts = searchParams.get('accounts');
-      if (accounts) urlFilters.selectedAccounts = accounts.split(',');
-      
-      const page = searchParams.get('page');
-      if (page) urlFilters.currentPage = parseInt(page, 10);
-      
-      const limit = searchParams.get('limit');
-      if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
-      
-      // 2. Carregar filtros do cache
-      const cachedFilters = persistentCache.persistedState ? {
-        periodo: persistentCache.persistedState.filters.periodo,
-        status: persistentCache.persistedState.filters.status,
-        type: persistentCache.persistedState.filters.type,
-        stage: persistentCache.persistedState.filters.stage,
-        selectedAccounts: persistentCache.persistedState.selectedAccounts,
-        currentPage: persistentCache.persistedState.currentPage,
-        itemsPerPage: persistentCache.persistedState.itemsPerPage
-      } : {};
-      
-      // 3. Merge: Defaults → Cache → URL (URL tem prioridade máxima)
-      const mergedFilters: ReclamacoesFilters = {
-        ...DEFAULT_FILTERS,
-        ...cachedFilters,
-        ...urlFilters
-      };
-      
-      console.log('🔄 Restaurando filtros:', {
-        cache: cachedFilters,
-        url: urlFilters,
-        final: mergedFilters
-      });
-      
-      setFilters(mergedFilters);
+    if (!persistentCache.isStateLoaded) return;
+    
+    // 1. Parsear filtros da URL
+    const urlFilters: Partial<ReclamacoesFilters> = {};
+    
+    const periodo = searchParams.get('periodo');
+    if (periodo) urlFilters.periodo = periodo;
+    
+    const status = searchParams.get('status');
+    if (status) urlFilters.status = status;
+    
+    const type = searchParams.get('type');
+    if (type) urlFilters.type = type;
+    
+    const stage = searchParams.get('stage');
+    if (stage) urlFilters.stage = stage;
+    
+    const accounts = searchParams.get('accounts');
+    if (accounts) urlFilters.selectedAccounts = accounts.split(',');
+    
+    const page = searchParams.get('page');
+    if (page) urlFilters.currentPage = parseInt(page, 10);
+    
+    const limit = searchParams.get('limit');
+    if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
+    
+    // 2. Carregar filtros do cache (apenas na primeira inicialização)
+    const cachedFilters = !isInitialized && persistentCache.persistedState ? {
+      periodo: persistentCache.persistedState.filters.periodo,
+      status: persistentCache.persistedState.filters.status,
+      type: persistentCache.persistedState.filters.type,
+      stage: persistentCache.persistedState.filters.stage,
+      selectedAccounts: persistentCache.persistedState.selectedAccounts,
+      currentPage: persistentCache.persistedState.currentPage,
+      itemsPerPage: persistentCache.persistedState.itemsPerPage
+    } : {};
+    
+    // 3. Merge: Defaults → Cache (só primeira vez) → URL (sempre tem prioridade)
+    const mergedFilters: ReclamacoesFilters = {
+      ...DEFAULT_FILTERS,
+      ...cachedFilters,
+      ...urlFilters
+    };
+    
+    console.log('🔄 Restaurando filtros:', {
+      cache: cachedFilters,
+      url: urlFilters,
+      final: mergedFilters
+    });
+    
+    setFilters(mergedFilters);
+    
+    if (!isInitialized) {
       setIsInitialized(true);
     }
-  }, [persistentCache.isStateLoaded, isInitialized, searchParams]);
+  }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora mudanças na URL
 
   // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
