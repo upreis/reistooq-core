@@ -333,6 +333,11 @@ export function ReclamacoesPage() {
 
   // Enriquecer dados com status de análise
   const reclamacoesEnriquecidas = useMemo(() => {
+    console.log('🔍 Enriquecendo reclamações:', { 
+      total: allReclamacoes.length,
+      primeiraReclamacao: allReclamacoes[0]?.claim_id 
+    });
+    
     return allReclamacoes.map((claim: any) => ({
       ...claim,
       status_analise_local: analiseStatus[claim.claim_id] || 'pendente',
@@ -385,7 +390,7 @@ export function ReclamacoesPage() {
 
   // Filtrar por tab (ativas vs histórico)
   const reclamacoesTab = useMemo(() => {
-    return reclamacoesFiltradas.filter((claim: any) => {
+    const filtered = reclamacoesFiltradas.filter((claim: any) => {
       const status = claim.status_analise_local;
       if (activeTab === 'ativas') {
         return ACTIVE_STATUSES.includes(status as any);
@@ -393,6 +398,19 @@ export function ReclamacoesPage() {
         return HISTORIC_STATUSES.includes(status as any);
       }
     });
+    
+    console.log('📊 Reclamações filtradas por tab:', {
+      activeTab,
+      totalFiltradas: reclamacoesFiltradas.length,
+      totalTab: filtered.length,
+      activeStatuses: ACTIVE_STATUSES,
+      statusCount: filtered.reduce((acc: any, r: any) => {
+        acc[r.status_analise_local] = (acc[r.status_analise_local] || 0) + 1;
+        return acc;
+      }, {})
+    });
+    
+    return filtered;
   }, [reclamacoesFiltradas, activeTab]);
 
   // Paginação
