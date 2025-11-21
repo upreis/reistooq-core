@@ -111,8 +111,8 @@ export const VendasTable = ({
           <TableHeader>
             <TableRow>
               {/* ANÁLISE */}
-              <TableHead className="min-w-[180px]">📊 Análise</TableHead>
-              <TableHead className="text-center min-w-[80px]">📝 Anotações</TableHead>
+              <TableHead className="min-w-[180px]">Análise</TableHead>
+              <TableHead className="text-center min-w-[80px]">Anotações</TableHead>
               
               {/* EMPRESA */}
               <TableHead className="min-w-[150px]">Empresa</TableHead>
