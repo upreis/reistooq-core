@@ -82,6 +82,7 @@ import { StatusInsumoWithTooltip } from './StatusInsumoWithTooltip';
 import { CadastroInsumoRapidoModal } from './CadastroInsumoRapidoModal';
 import { ConfiguracaoLocaisModal } from './ConfiguracaoLocaisModal';
 import { useLocalEstoqueEnriquecimento } from '@/hooks/useLocalEstoqueEnriquecimento';
+import { LoadingIndicator } from './LoadingIndicator';
 
 import { FEATURES } from '@/config/features';
 
@@ -1253,10 +1254,11 @@ useEffect(() => {
         </Card>
       )}
 
-
       
 
-      {/* 🚀 FASE 2: Loading otimizado */}
+      {/* 🔄 INDICADOR DE LOADING */}
+      {loading && <LoadingIndicator />}
+
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
       <div className="mt-2">
         {/* F4.3: PedidosTableSection com Error Boundary */}
