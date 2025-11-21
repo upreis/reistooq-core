@@ -52,15 +52,17 @@ export function ReclamacoesFilterBar({
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
   const handleToggleAccount = (accountId: string) => {
-    if (selectedAccountIds.includes(accountId)) {
-      onAccountsChange(selectedAccountIds.filter(id => id !== accountId));
+    const currentIds = selectedAccountIds || [];
+    if (currentIds.includes(accountId)) {
+      onAccountsChange(currentIds.filter(id => id !== accountId));
     } else {
-      onAccountsChange([...selectedAccountIds, accountId]);
+      onAccountsChange([...currentIds, accountId]);
     }
   };
 
   const handleSelectAllAccounts = () => {
-    if (selectedAccountIds.length === accounts.length) {
+    const currentIds = selectedAccountIds || [];
+    if (currentIds.length === accounts.length) {
       onAccountsChange([]);
     } else {
       onAccountsChange(accounts.map(acc => acc.id));
@@ -104,7 +106,7 @@ export function ReclamacoesFilterBar({
                 className="w-full justify-between h-10"
               >
                 <span>
-                  {selectedAccountIds.length === 0 
+                  {!selectedAccountIds || selectedAccountIds.length === 0 
                     ? 'Selecione a Empresa' 
                     : `${selectedAccountIds.length} Empresa${selectedAccountIds.length > 1 ? 's' : ''}`
                   }
@@ -134,7 +136,7 @@ export function ReclamacoesFilterBar({
                     >
                       <input
                         type="checkbox"
-                        checked={selectedAccountIds.includes(account.id)}
+                        checked={selectedAccountIds?.includes(account.id) || false}
                         onChange={() => handleToggleAccount(account.id)}
                         className="h-4 w-4 rounded border-gray-300"
                       />
