@@ -369,8 +369,6 @@ export default function VendasOnline() {
             </div>
           </div>
           
-          {/* 🔄 INDICADOR DE LOADING */}
-          {(loadingVendas || isManualSearching) && <LoadingIndicator />}
           
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6 mt-2">
@@ -425,8 +423,15 @@ export default function VendasOnline() {
             </Tabs>
           </div>
           
-          {/* Table */}
-          <div className="px-4 md:px-6 mt-2">
+          {/* Table com loader localizado */}
+          <div className="px-4 md:px-6 mt-2 relative">
+            {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
+            {(loadingVendas || isManualSearching) && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
+                <LoadingIndicator />
+              </div>
+            )}
+            
             <VendasOnlineTable
               onStatusChange={handleStatusChange}
               activeTab={activeTab}
