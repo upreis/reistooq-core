@@ -7,7 +7,8 @@ export type StatusAnalise =
   | 'resolvido_com_dinheiro'
   | 'em_analise'
   | 'aguardando_ml'
-  | 'cancelado';
+  | 'cancelado'
+  | 'foi_para_devolucao';
 
 // Tipo base da devolução do Supabase
 export type DevolucaoAvancada = Database['public']['Tables']['devolucoes_avancadas']['Row'];
@@ -41,11 +42,12 @@ export interface HighlightConfig {
 // Mapa de status com labels
 export const STATUS_ANALISE_LABELS: Record<StatusAnalise, string> = {
   pendente: 'Pendente',
-  resolvido_sem_dinheiro: 'Resolvido (Sem $)',
-  resolvido_com_dinheiro: 'Resolvido (Com $)',
+  resolvido_sem_dinheiro: 'Resolvido s/ dinheiro',
+  resolvido_com_dinheiro: 'Resolvido c/ dinheiro',
   em_analise: 'Em Análise',
   aguardando_ml: 'Aguardando ML',
-  cancelado: 'Cancelado'
+  cancelado: 'Cancelado',
+  foi_para_devolucao: 'Foi p/ devolução'
 };
 
 // Status que devem aparecer na aba "Ativas"
@@ -59,5 +61,6 @@ export const STATUS_ATIVOS: StatusAnalise[] = [
 export const STATUS_HISTORICO: StatusAnalise[] = [
   'resolvido_sem_dinheiro',
   'resolvido_com_dinheiro',
-  'cancelado'
+  'cancelado',
+  'foi_para_devolucao'
 ];
