@@ -348,7 +348,7 @@ export const Devolucao2025Page = () => {
 
   return (
     <div className="w-full">
-      <div className="space-y-6">
+      <div className="pb-20">
           {/* Sub-navegação */}
           <div className="px-4 md:px-6">
             <MLOrdersNav />
