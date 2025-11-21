@@ -3,7 +3,7 @@
  * FASE 2: Gerenciamento centralizado com sincronização URL + localStorage
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useReclamacoesFiltersSync, ReclamacoesFilters } from './useReclamacoesFiltersSync';
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
@@ -28,6 +28,7 @@ export function useReclamacoesFiltersUnified() {
   // Estado dos filtros - iniciar com defaults
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
   const [isInitialized, setIsInitialized] = useState(false);
+  const isFirstRender = useRef(true); // 🔥 Rastrear primeira renderização
 
   // 🔥 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults
   useEffect(() => {
@@ -96,7 +97,13 @@ export function useReclamacoesFiltersUnified() {
 
   // 🔥 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem (com debounce)
   useEffect(() => {
-    if (!isInitialized) return; // Não salvar durante inicialização
+    // 🔥 ERRO 4 CORRIGIDO: Ignorar salvamento durante inicialização
+    if (!isInitialized || isFirstRender.current) {
+      if (isInitialized && isFirstRender.current) {
+        isFirstRender.current = false; // Marcar que inicialização terminou
+      }
+      return;
+    }
     
     const timer = setTimeout(() => {
       // Salvar apenas os filtros (não os dados de reclamações)
