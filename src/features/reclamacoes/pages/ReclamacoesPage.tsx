@@ -160,7 +160,7 @@ export function ReclamacoesPage() {
   }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState, selectedAccountIds.length]);
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
-  const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
+  const { data: queryData, isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
     queryKey: ['reclamacoes', selectedAccountIds, filters],
     enabled: false, // Desabilitar busca automática - só via handleBuscarReclamacoes manualmente
     queryFn: async () => {
@@ -277,15 +277,25 @@ export function ReclamacoesPage() {
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
-    // ✅ CORREÇÃO: Usar placeholderData ao invés de initialData para exibir cache enquanto enabled=false
-    placeholderData: () => {
-      if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
-        console.log('📦 Exibindo dados do cache:', persistentCache.persistedState.reclamacoes.length);
-        return persistentCache.persistedState.reclamacoes;
-      }
-      return [];
-    }
   });
+
+  // ✅ CORREÇÃO CRÍTICA: Usar cache ou dados da query
+  const allReclamacoes = useMemo(() => {
+    // Se tem dados da query (busca foi feita), usar eles
+    if (queryData && queryData.length > 0) {
+      console.log('✅ Usando dados da query:', queryData.length);
+      return queryData;
+    }
+    
+    // Caso contrário, tentar usar cache se válido
+    if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
+      console.log('📦 Usando dados do cache:', persistentCache.persistedState.reclamacoes.length);
+      return persistentCache.persistedState.reclamacoes;
+    }
+    
+    console.log('⚠️ Sem dados (nem query nem cache)');
+    return [];
+  }, [queryData, persistentCache.persistedState?.reclamacoes, persistentCache.hasValidPersistedState]);
 
   // 🔍 BUSCAR RECLAMAÇÕES - Função principal
   const handleBuscarReclamacoes = async () => {
