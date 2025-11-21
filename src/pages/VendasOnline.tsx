@@ -328,7 +328,9 @@ export default function VendasOnline() {
     <div className="w-full pb-20">
       <div className="space-y-6">
           {/* Sub-navegação */}
-          <MLOrdersNav />
+          <div className="px-4 md:px-6">
+            <MLOrdersNav />
+          </div>
           
           {/* Header com controle de polling */}
           <div className="px-4 md:px-6 flex items-center justify-between">
@@ -398,7 +400,7 @@ export default function VendasOnline() {
               </div>
               
               {/* Conteúdo das Tabs */}
-              <TabsContent value="ativas" className="mt-12">
+              <TabsContent value="ativas" className="mt-12 px-4 md:px-6">
                 <VendasResumo 
                   vendas={vendasEnriquecidas}
                   onFiltroClick={setFiltroResumoAtivo}
@@ -406,7 +408,7 @@ export default function VendasOnline() {
                 />
               </TabsContent>
               
-              <TabsContent value="historico" className="mt-12">
+              <TabsContent value="historico" className="mt-12 px-4 md:px-6">
                 <VendasResumo 
                   vendas={vendasEnriquecidas}
                   onFiltroClick={setFiltroResumoAtivo}
