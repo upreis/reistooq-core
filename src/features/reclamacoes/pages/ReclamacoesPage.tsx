@@ -35,11 +35,6 @@ import { useSidebarUI } from '@/context/SidebarUIContext';
 import { ReclamacoesPagination } from '../components/ReclamacoesPagination';
 
 
-const validateMLAccounts = (mlAccounts: any[]) => ({ 
-  valid: mlAccounts.length > 0, 
-  accountIds: mlAccounts.map(acc => acc.id), 
-  error: null 
-});
 
 export function ReclamacoesPage() {
   const { toast } = useToast();
@@ -82,44 +77,14 @@ export function ReclamacoesPage() {
   // Modal de anotações
   const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
   const [selectedClaimForAnotacoes, setSelectedClaimForAnotacoes] = useState<any | null>(null);
-  
-  // Filtros adicionais não gerenciados pelo hook unificado
-  const [additionalFilters, setAdditionalFilters] = useState({
-    has_messages: '',
-    has_evidences: '',
-    date_from: '',
-    date_to: ''
-  });
 
   // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
   
-  // 🎯 FASE 2: Aliases para compatibilidade com código existente
+  // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
-  const currentPage = unifiedFilters.currentPage || 1; // 🔥 CORREÇÃO: Fallback para 1
-  const itemsPerPage = unifiedFilters.itemsPerPage || 50; // 🔥 CORREÇÃO: Fallback para 50
-  const setSelectedAccountIds = (ids: string[]) => updateFilter('selectedAccounts', ids);
-  const setCurrentPage = (page: number) => updateFilter('currentPage', page);
-  const setItemsPerPage = (limit: number) => updateFilter('itemsPerPage', limit);
-  
-  // Combinar filtros unificados + adicionais
-  const filters = {
-    periodo: unifiedFilters.periodo,
-    status: unifiedFilters.status,
-    type: unifiedFilters.type,
-    stage: unifiedFilters.stage,
-    ...additionalFilters
-  };
-  
-  const setFilters = (newFilters: typeof filters | ((prev: typeof filters) => typeof filters)) => {
-    const resolved = typeof newFilters === 'function' ? newFilters(filters) : newFilters;
-    
-    // Separar filtros unificados dos adicionais
-    const { periodo, status, type, stage, has_messages, has_evidences, date_from, date_to } = resolved;
-    
-    updateFilters({ periodo, status, type, stage });
-    setAdditionalFilters({ has_messages, has_evidences, date_from, date_to });
-  };
+  const currentPage = unifiedFilters.currentPage || 1;
+  const itemsPerPage = unifiedFilters.itemsPerPage || 50;
 
   // Buscar contas ML disponíveis
   const { data: mlAccounts, isLoading: loadingAccounts } = useQuery({
@@ -137,34 +102,27 @@ export function ReclamacoesPage() {
     },
   });
 
-  // 🎯 FASE 2: Auto-seleção de contas na primeira visita
+  // Auto-seleção de contas na primeira visita
   useEffect(() => {
     if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
-      // ✅ CORREÇÃO: Verificar se persistedState e selectedAccounts existem antes de acessar length
-      if (persistentCache.persistedState?.selectedAccounts && persistentCache.persistedState.selectedAccounts.length > 0) {
-        return; // Não fazer nada, usar cache
+      if (persistentCache.persistedState?.selectedAccounts?.length > 0) {
+        return;
       }
       
-      // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
       if (!selectedAccountIds || selectedAccountIds.length === 0) {
-        const { accountIds } = validateMLAccounts(mlAccounts);
+        const accountIds = mlAccounts.map(acc => acc.id);
         if (accountIds.length > 0) {
           updateFilter('selectedAccounts', accountIds);
-          logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
-            context: 'ReclamacoesPage',
-            count: accountIds.length
-          });
         }
       }
     }
   }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState, selectedAccountIds.length]);
 
-  // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
+  // Buscar reclamações com React Query + Cache
   const { data: queryData, isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
-    queryKey: ['reclamacoes', selectedAccountIds, filters],
-    enabled: false, // Desabilitar busca automática - só via handleBuscarReclamacoes manualmente
+    queryKey: ['reclamacoes', selectedAccountIds, unifiedFilters.periodo, unifiedFilters.status, unifiedFilters.type, unifiedFilters.stage],
+    enabled: false,
     queryFn: async () => {
-      console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
       
       if (!selectedAccountIds || selectedAccountIds.length === 0) {
         return [];
@@ -189,8 +147,6 @@ export function ReclamacoesPage() {
           continue;
         }
 
-        console.log(`🔍 Buscando claims de ${account.name}...`);
-
         // Calcular data inicial baseada no período
         const calcularDataInicio = (periodo: string) => {
           const hoje = new Date();
@@ -199,16 +155,8 @@ export function ReclamacoesPage() {
           return hoje.toISOString();
         };
 
-        let dataInicio: string;
-        let dataFim: string;
-
-        if (filters.periodo === 'custom') {
-          dataInicio = filters.date_from || calcularDataInicio('7');
-          dataFim = filters.date_to || new Date().toISOString();
-        } else {
-          dataInicio = calcularDataInicio(filters.periodo);
-          dataFim = new Date().toISOString();
-        }
+        const dataInicio = calcularDataInicio(unifiedFilters.periodo);
+        const dataFim = new Date().toISOString();
 
         // Buscar em lotes de 100
         let offset = 0;
@@ -223,9 +171,9 @@ export function ReclamacoesPage() {
               filters: {
                 date_from: dataInicio,
                 date_to: dataFim,
-                status: filters.status,
-                stage: filters.stage,
-                type: filters.type,
+                status: unifiedFilters.status,
+                stage: unifiedFilters.stage,
+                type: unifiedFilters.type,
               },
               limit,
               offset,
@@ -259,16 +207,14 @@ export function ReclamacoesPage() {
         }
       }
 
-      console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
-      
-      // ✅ Salvar dados + filtros + colunas visíveis no cache
+      // Salvar dados + filtros + colunas visíveis no cache
       persistentCache.saveDataCache(
         allClaims,
         selectedAccountIds,
-        filters, // Já inclui período
+        unifiedFilters.periodo,
         currentPage,
         itemsPerPage,
-        Array.from(columnManager.state.visibleColumns) // 🔥 CORREÇÃO: Converter Set para Array
+        Array.from(columnManager.state.visibleColumns)
       );
       
       return allClaims;
@@ -279,27 +225,22 @@ export function ReclamacoesPage() {
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
   });
 
-  // ✅ CORREÇÃO CRÍTICA: Usar cache ou dados da query
+  // Usar cache ou dados da query
   const allReclamacoes = useMemo(() => {
-    // Se tem dados da query (busca foi feita), usar eles
     if (queryData && queryData.length > 0) {
-      console.log('✅ Usando dados da query:', queryData.length);
       return queryData;
     }
     
-    // Caso contrário, tentar usar cache se válido
     if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
-      console.log('📦 Usando dados do cache:', persistentCache.persistedState.reclamacoes.length);
       return persistentCache.persistedState.reclamacoes;
     }
     
-    console.log('⚠️ Sem dados (nem query nem cache)');
     return [];
   }, [queryData, persistentCache.persistedState?.reclamacoes, persistentCache.hasValidPersistedState]);
 
-  // 🔍 BUSCAR RECLAMAÇÕES - Função principal
+  // Buscar reclamações - Função principal
   const handleBuscarReclamacoes = async () => {
-    if (selectedAccountIds.length === 0) {
+    if (!selectedAccountIds?.length) {
       toast({
         title: "Atenção",
         description: "Selecione pelo menos uma conta ML",
@@ -318,7 +259,6 @@ export function ReclamacoesPage() {
         description: `Busca concluída com sucesso`,
       });
     } catch (error) {
-      console.error('❌ Erro na busca:', error);
       toast({
         title: "Erro",
         description: error instanceof Error ? error.message : "Erro ao buscar reclamações",
@@ -329,10 +269,9 @@ export function ReclamacoesPage() {
     }
   };
 
-  // 🚫 CANCELAR BUSCA
+  // Cancelar busca
   const handleCancelarBusca = () => {
-    // Cancelar query do React Query
-    queryClient.cancelQueries({ queryKey: ['reclamacoes', selectedAccountIds, filters] });
+    queryClient.cancelQueries({ queryKey: ['reclamacoes', selectedAccountIds, unifiedFilters.periodo, unifiedFilters.status, unifiedFilters.type, unifiedFilters.stage] });
     setIsManualSearching(false);
     
     toast({
@@ -343,11 +282,6 @@ export function ReclamacoesPage() {
 
   // Enriquecer dados com status de análise
   const reclamacoesEnriquecidas = useMemo(() => {
-    console.log('🔍 Enriquecendo reclamações:', { 
-      total: allReclamacoes.length,
-      primeiraReclamacao: allReclamacoes[0]?.claim_id 
-    });
-    
     return allReclamacoes.map((claim: any) => ({
       ...claim,
       status_analise_local: analiseStatus[claim.claim_id] || 'pendente',
@@ -400,7 +334,7 @@ export function ReclamacoesPage() {
 
   // Filtrar por tab (ativas vs histórico)
   const reclamacoesTab = useMemo(() => {
-    const filtered = reclamacoesFiltradas.filter((claim: any) => {
+    return reclamacoesFiltradas.filter((claim: any) => {
       const status = claim.status_analise_local;
       if (activeTab === 'ativas') {
         return ACTIVE_STATUSES.includes(status as any);
@@ -408,40 +342,21 @@ export function ReclamacoesPage() {
         return HISTORIC_STATUSES.includes(status as any);
       }
     });
-    
-    console.log('📊 Reclamações filtradas por tab:', {
-      activeTab,
-      totalFiltradas: reclamacoesFiltradas.length,
-      totalTab: filtered.length,
-      activeStatuses: ACTIVE_STATUSES,
-      statusCount: filtered.reduce((acc: any, r: any) => {
-        acc[r.status_analise_local] = (acc[r.status_analise_local] || 0) + 1;
-        return acc;
-      }, {})
-    });
-    
-    return filtered;
   }, [reclamacoesFiltradas, activeTab]);
 
-  // Paginação
+  // Paginação e contadores de abas
   const totalPages = Math.ceil(reclamacoesTab.length / itemsPerPage);
+  
   const reclamacoesPaginadas = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    const paginated = reclamacoesTab.slice(start, end);
-    
-    console.log('📄 Dados paginados para tabela:', {
-      totalTab: reclamacoesTab.length,
-      currentPage,
-      itemsPerPage,
-      start,
-      end,
-      paginatedCount: paginated.length,
-      primeiraDaPagina: paginated[0]?.claim_id
-    });
-    
-    return paginated;
+    return reclamacoesTab.slice(start, end);
   }, [reclamacoesTab, currentPage, itemsPerPage]);
+  
+  const tabCounts = useMemo(() => ({
+    ativas: reclamacoesFiltradas.filter(c => ACTIVE_STATUSES.includes(c.status_analise_local as any)).length,
+    historico: reclamacoesFiltradas.filter(c => HISTORIC_STATUSES.includes(c.status_analise_local as any)).length
+  }), [reclamacoesFiltradas]);
 
   // Handlers
   const handleStatusChange = (claimId: string, newStatus: StatusAnalise) => {
@@ -544,11 +459,11 @@ export function ReclamacoesPage() {
                     <ReclamacoesFilterBar
                       accounts={mlAccounts || []}
                       selectedAccountIds={selectedAccountIds}
-                      onAccountsChange={setSelectedAccountIds}
-                      periodo={filters.periodo}
-                      onPeriodoChange={(periodo) => setFilters({ ...filters, periodo })}
-                      searchTerm={filters.status}
-                      onSearchChange={(term) => setFilters({ ...filters, status: term })}
+                      onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
+                      periodo={unifiedFilters.periodo}
+                      onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
+                      searchTerm={unifiedFilters.status}
+                      onSearchChange={(term) => updateFilter('status', term)}
                       onBuscar={handleBuscarReclamacoes}
                       isLoading={isManualSearching}
                       onCancel={handleCancelarBusca}
@@ -609,8 +524,8 @@ export function ReclamacoesPage() {
                 totalItems={reclamacoesTab.length}
                 itemsPerPage={itemsPerPage}
                 currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={setItemsPerPage}
+                onPageChange={(page) => updateFilter('currentPage', page)}
+                onItemsPerPageChange={(limit) => updateFilter('itemsPerPage', limit)}
                 showFirstLastButtons={true}
                 pageButtonLimit={5}
               />
