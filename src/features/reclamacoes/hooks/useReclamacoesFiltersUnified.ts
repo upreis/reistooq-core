@@ -62,16 +62,32 @@ export function useReclamacoesFiltersUnified() {
     const limit = searchParams.get('limit');
     if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
     
-    // 2. Carregar filtros do cache (apenas se URL não tiver os parâmetros E primeira vez)
-    const cachedFilters = (!isInitialized && persistentCache.persistedState) ? {
-      periodo: urlFilters.periodo ? undefined : persistentCache.persistedState.filters.periodo,
-      status: urlFilters.status ? undefined : persistentCache.persistedState.filters.status,
-      type: urlFilters.type ? undefined : persistentCache.persistedState.filters.type,
-      stage: urlFilters.stage ? undefined : persistentCache.persistedState.filters.stage,
-      selectedAccounts: urlFilters.selectedAccounts ? undefined : persistentCache.persistedState.selectedAccounts,
-      currentPage: urlFilters.currentPage ? undefined : persistentCache.persistedState.currentPage,
-      itemsPerPage: urlFilters.itemsPerPage ? undefined : persistentCache.persistedState.itemsPerPage
-    } : {};
+    // 2. Carregar filtros do cache (apenas campos que NÃO estão na URL)
+    const cachedFilters: Partial<ReclamacoesFilters> = {};
+    
+    if (!isInitialized && persistentCache.persistedState) {
+      if (!urlFilters.periodo) {
+        cachedFilters.periodo = persistentCache.persistedState.filters.periodo;
+      }
+      if (!urlFilters.status) {
+        cachedFilters.status = persistentCache.persistedState.filters.status;
+      }
+      if (!urlFilters.type) {
+        cachedFilters.type = persistentCache.persistedState.filters.type;
+      }
+      if (!urlFilters.stage) {
+        cachedFilters.stage = persistentCache.persistedState.filters.stage;
+      }
+      if (!urlFilters.selectedAccounts) {
+        cachedFilters.selectedAccounts = persistentCache.persistedState.selectedAccounts;
+      }
+      if (!urlFilters.currentPage) {
+        cachedFilters.currentPage = persistentCache.persistedState.currentPage;
+      }
+      if (!urlFilters.itemsPerPage) {
+        cachedFilters.itemsPerPage = persistentCache.persistedState.itemsPerPage;
+      }
+    }
     
     // 3. Merge: Defaults → Cache (só primeira vez) → URL (sempre tem prioridade)
     const mergedFilters: ReclamacoesFilters = {
