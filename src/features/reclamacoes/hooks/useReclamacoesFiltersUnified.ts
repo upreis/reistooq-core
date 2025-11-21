@@ -9,7 +9,7 @@ import { useReclamacoesFiltersSync, ReclamacoesFilters } from './useReclamacoesF
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
 
 const DEFAULT_FILTERS: ReclamacoesFilters = {
-  periodo: '60',
+  periodo: '7', // 🔥 CORREÇÃO 1: Alterado de '60' para '7' (padrão: Últimos 7 dias)
   status: '',
   type: '',
   stage: '',
