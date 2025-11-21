@@ -225,11 +225,6 @@ export const VendasTable = ({
                   {/* EMPRESA */}
                   <TableCell className="font-medium">{(order as any).account_name || '-'}</TableCell>
                   
-                  {/* EMPRESA */}
-                  <TableCell>
-                    <span className="text-sm font-medium">{(order as any).account_name || '-'}</span>
-                  </TableCell>
-                  
                   {/* IDENTIFICAÇÃO */}
                   <TableCell className="font-mono text-xs">{order.id}</TableCell>
                   <TableCell className="font-mono text-xs">{order.pack_id || '-'}</TableCell>
