@@ -96,8 +96,8 @@ export function ReclamacoesPage() {
   
   // 🎯 FASE 2: Aliases para compatibilidade com código existente
   const selectedAccountIds = unifiedFilters.selectedAccounts;
-  const currentPage = unifiedFilters.currentPage;
-  const itemsPerPage = unifiedFilters.itemsPerPage;
+  const currentPage = unifiedFilters.currentPage || 1; // 🔥 CORREÇÃO: Fallback para 1
+  const itemsPerPage = unifiedFilters.itemsPerPage || 50; // 🔥 CORREÇÃO: Fallback para 50
   const setSelectedAccountIds = (ids: string[]) => updateFilter('selectedAccounts', ids);
   const setCurrentPage = (page: number) => updateFilter('currentPage', page);
   const setItemsPerPage = (limit: number) => updateFilter('itemsPerPage', limit);
