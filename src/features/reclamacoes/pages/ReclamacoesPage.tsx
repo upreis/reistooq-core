@@ -16,7 +16,6 @@ import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
-import { SimpleColumnSelector } from '../components/SimpleColumnSelector';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
 import { Card } from '@/components/ui/card';
@@ -64,7 +63,6 @@ export function ReclamacoesPage() {
   const [activeTab, setActiveTab] = useState<'ativas' | 'historico'>('ativas');
   const [lifecycleFilter, setLifecycleFilter] = useState<'critical' | 'urgent' | 'attention' | null>(null);
   const [filtroResumo, setFiltroResumo] = useState<{tipo: 'prazo' | 'status' | 'tipo' | 'total'; valor: string} | null>(null);
-  const [tableInstance, setTableInstance] = useState<any>(null);
   
   // 💾 STORAGE DE ANOTAÇÕES (mantido separado)
   const {
@@ -479,14 +477,8 @@ export function ReclamacoesPage() {
                         onBuscar={handleBuscarReclamacoes}
                         isLoading={isManualSearching}
                         onCancel={handleCancelarBusca}
-                        table={tableInstance}
                       />
                     </div>
-                    
-                    {/* Seletor de Colunas */}
-                    {tableInstance && (
-                      <SimpleColumnSelector table={tableInstance} />
-                    )}
                   </div>
                 </div>
                 
@@ -517,9 +509,7 @@ export function ReclamacoesPage() {
                       onDeleteReclamacao={handleDeleteReclamacao}
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
-                      onTableReady={setTableInstance}
                       activeTab={activeTab}
-                      
                     />
                   </TabsContent>
                 </div>
