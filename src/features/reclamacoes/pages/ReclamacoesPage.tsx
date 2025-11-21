@@ -418,7 +418,19 @@ export function ReclamacoesPage() {
   const reclamacoesPaginadas = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
-    return reclamacoesTab.slice(start, end);
+    const paginated = reclamacoesTab.slice(start, end);
+    
+    console.log('📄 Dados paginados para tabela:', {
+      totalTab: reclamacoesTab.length,
+      currentPage,
+      itemsPerPage,
+      start,
+      end,
+      paginatedCount: paginated.length,
+      primeiraDaPagina: paginated[0]?.claim_id
+    });
+    
+    return paginated;
   }, [reclamacoesTab, currentPage, itemsPerPage]);
 
   // Handlers
