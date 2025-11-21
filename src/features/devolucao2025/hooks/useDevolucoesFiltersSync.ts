@@ -50,7 +50,7 @@ function parseFiltersFromUrl(searchParams: URLSearchParams): Partial<DevolucoesF
 function encodeFiltersToUrl(filters: DevolucoesFilters): URLSearchParams {
   const params = new URLSearchParams();
 
-  if (filters.periodo && filters.periodo !== '60') {
+  if (filters.periodo) {
     params.set('periodo', filters.periodo);
   }
 

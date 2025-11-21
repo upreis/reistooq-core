@@ -9,7 +9,7 @@ import { useDevolucoesFiltersSync, DevolucoesFilters } from './useDevolucoesFilt
 import { usePersistentDevolucoesStateV2 } from './usePersistentDevolucoesStateV2';
 
 const DEFAULT_FILTERS: DevolucoesFilters = {
-  periodo: '60',
+  periodo: '7',
   selectedAccounts: [],
   searchTerm: '',
   currentPage: 1,
@@ -35,7 +35,7 @@ export function useDevolucoesFiltersUnified() {
     }
   );
   
-  // ✅ CORREÇÃO: Carregar do cache APENAS se não houver URL params
+  // ✅ CORREÇÃO 2: Carregar do cache APENAS se não houver URL params (SEM searchParams dependency)
   useEffect(() => {
     // Só carrega cache se URL não tem parâmetros E cache está carregado
     const hasUrlParams = searchParams.toString().length > 0;
@@ -50,7 +50,7 @@ export function useDevolucoesFiltersUnified() {
         itemsPerPage: persistentCache.persistedState!.itemsPerPage || DEFAULT_FILTERS.itemsPerPage,
       }));
     }
-  }, [persistentCache.isStateLoaded, searchParams]);
+  }, [persistentCache.isStateLoaded]); // 🔥 REMOVIDO searchParams para evitar loop
 
   // Atualizar um filtro específico
   const updateFilter = useCallback(<K extends keyof DevolucoesFilters>(
