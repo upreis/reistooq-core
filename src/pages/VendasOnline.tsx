@@ -121,8 +121,8 @@ export default function VendasOnline() {
     setAnotacoesModalOpen(true);
   };
   
-  // ✅ Hook de dados com controle manual
-  const { data, isLoading: loadingVendas, error, refetch } = useVendasData(shouldFetch);
+  // ✅ Hook de dados com controle manual (passar contas selecionadas)
+  const { data, isLoading: loadingVendas, error, refetch } = useVendasData(shouldFetch, filters.selectedAccounts);
   
   // 🔥 CORREÇÃO: Resetar isManualSearching quando loadingVendas terminar
   useEffect(() => {
@@ -195,18 +195,28 @@ export default function VendasOnline() {
     
     setIsManualSearching(true);
     
-    // Calcular dateFrom baseado no período
-    const dateFrom = filters.periodo 
-      ? new Date(Date.now() - parseInt(filters.periodo) * 24 * 60 * 60 * 1000).toISOString()
-      : null;
+    // ✅ Calcular dateFrom baseado no período (igual /reclamacoes)
+    const calcularDataInicio = (periodo: string) => {
+      const hoje = new Date();
+      const dias = parseInt(periodo);
+      hoje.setDate(hoje.getDate() - dias);
+      return hoje.toISOString();
+    };
     
-    // 🎯 LOW 8: Atualizar filtros usando primeira conta selecionada
-    // TODO: Implementar busca multi-conta quando backend suportar
+    const dateFrom = calcularDataInicio(filters.periodo);
+    const dateTo = new Date().toISOString();
+    
+    console.log('📅 [VENDAS] Período calculado:', {
+      periodo: filters.periodo,
+      dateFrom,
+      dateTo
+    });
+    
+    // ✅ Atualizar filtros no store com datas calculadas
     updateStoreFilters({
-      integrationAccountId: filters.selectedAccounts[0],
       search: filters.searchTerm,
       dateFrom,
-      dateTo: new Date().toISOString()
+      dateTo
     });
     
     // Ativar busca
