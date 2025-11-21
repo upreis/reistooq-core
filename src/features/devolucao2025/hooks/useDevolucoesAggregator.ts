@@ -87,6 +87,7 @@ export function useDevolucoesAggregator(
       resolvido_sem_dinheiro: 0,
       resolvido_com_dinheiro: 0,
       cancelado: 0,
+      foi_para_devolucao: 0
     };
     
     devolucoesEnriquecidas.forEach(dev => {
