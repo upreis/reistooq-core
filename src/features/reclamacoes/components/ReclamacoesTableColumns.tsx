@@ -333,7 +333,7 @@ export const reclamacoesColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          📦 Produto
+          Produto
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
@@ -356,7 +356,7 @@ export const reclamacoesColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          👤 Comprador
+          Comprador
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
