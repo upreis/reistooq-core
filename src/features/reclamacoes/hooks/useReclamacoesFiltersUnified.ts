@@ -63,7 +63,11 @@ export function useReclamacoesFiltersUnified() {
       // ✅ Accounts/page/limit SÓ são usados se hasUrlParams=true (link compartilhado)
       const accounts = searchParams.get('accounts');
       if (accounts) {
-        urlFilters.selectedAccounts = accounts.split(',');
+        // 🔥 CORREÇÃO: Filtrar strings vazias (ex: "?accounts=,,," → não criar array inválido)
+        const accountsList = accounts.split(',').filter(id => id.trim().length > 0);
+        if (accountsList.length > 0) {
+          urlFilters.selectedAccounts = accountsList;
+        }
       }
       
       const page = searchParams.get('page');
@@ -91,7 +95,8 @@ export function useReclamacoesFiltersUnified() {
         }
         
         // Outros campos do estado
-        if (state.selectedAccounts) {
+        // 🔥 CORREÇÃO: Validar que array não está vazio (evitar busca sem contas)
+        if (state.selectedAccounts && state.selectedAccounts.length > 0) {
           cachedFilters.selectedAccounts = state.selectedAccounts;
         }
         if (typeof state.currentPage === 'number') {
