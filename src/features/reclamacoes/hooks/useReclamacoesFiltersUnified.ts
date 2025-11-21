@@ -1,9 +1,9 @@
 /**
- * 🎯 HOOK DE FILTROS - PADRÃO /PEDIDOS
- * ✅ Cópia EXATA do padrão comprovadamente funcional
+ * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS
+ * ✅ SOLUÇÃO RADICAL: URL é a ÚNICA fonte de verdade (sem estado local)
  */
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
 
@@ -27,79 +27,140 @@ const DEFAULT_FILTERS: ReclamacoesFilters = {
   itemsPerPage: 50
 };
 
+/**
+ * Hook unificado - URL é a única fonte de verdade
+ */
 export function useReclamacoesFiltersUnified() {
   const persistentCache = usePersistentReclamacoesState();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
+  
+  // ✅ Ler filtros DIRETO da URL (useMemo, não useState)
+  const filters = useMemo<ReclamacoesFilters>(() => {
+    const periodo = searchParams.get('periodo') || DEFAULT_FILTERS.periodo;
+    const status = searchParams.get('status') || DEFAULT_FILTERS.status;
+    const type = searchParams.get('type') || DEFAULT_FILTERS.type;
+    const stage = searchParams.get('stage') || DEFAULT_FILTERS.stage;
+    
+    const accounts = searchParams.get('accounts');
+    const selectedAccounts = accounts 
+      ? accounts.split(',').filter(id => id.trim().length > 0)
+      : DEFAULT_FILTERS.selectedAccounts;
+    
+    const page = searchParams.get('page');
+    const currentPage = page ? parseInt(page, 10) : DEFAULT_FILTERS.currentPage;
+    
+    const limit = searchParams.get('limit');
+    const itemsPerPage = limit ? parseInt(limit, 10) : DEFAULT_FILTERS.itemsPerPage;
+    
+    return {
+      periodo,
+      status,
+      type,
+      stage,
+      selectedAccounts,
+      currentPage,
+      itemsPerPage
+    };
+  }, [searchParams]);
 
-  // ✅ Carregar filtros da URL na montagem (UMA VEZ)
-  useEffect(() => {
-    const urlFilters = parseFiltersFromUrl();
-    if (Object.keys(urlFilters).length > 0) {
-      setFilters(prev => ({ ...prev, ...urlFilters }));
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ✅ Array vazio = roda só na montagem
-
-  // ✅ Sincronizar filtros para URL quando mudarem
-  useEffect(() => {
-    const urlParams = encodeFiltersToUrl();
-    setSearchParams(urlParams, { replace: true });
-  }, [filters, setSearchParams]);
-
-  // Atualizar um filtro específico
+  // ✅ Atualizar um filtro = atualizar URL diretamente
   const updateFilter = useCallback(<K extends keyof ReclamacoesFilters>(
     key: K,
     value: ReclamacoesFilters[K]
   ) => {
-    setFilters(prev => {
-      const newFilters = { ...prev, [key]: value };
+    console.log(`🎯 [RECLAMACOES] updateFilter: ${key} =`, value);
+    
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
       
-      // Se mudou o filtro (não paginação), resetar para página 1
-      if (key !== 'currentPage' && key !== 'itemsPerPage') {
-        newFilters.currentPage = 1;
+      if (key === 'selectedAccounts' && Array.isArray(value)) {
+        if (value.length > 0) {
+          newParams.set('accounts', value.join(','));
+        } else {
+          newParams.delete('accounts');
+        }
+      } else if (key === 'currentPage') {
+        newParams.set('page', String(value));
+      } else if (key === 'itemsPerPage') {
+        newParams.set('limit', String(value));
+      } else {
+        newParams.set(key, String(value));
       }
       
-      console.log(`🎯 Filtro atualizado: ${key} =`, value);
-      return newFilters;
-    });
-  }, []);
-
-  // Atualizar múltiplos filtros
-  const updateFilters = useCallback((newFilters: Partial<ReclamacoesFilters>) => {
-    setFilters(prev => {
-      const updated = { ...prev, ...newFilters };
+      // Se mudou filtro (não paginação), resetar página
+      if (key !== 'currentPage' && key !== 'itemsPerPage') {
+        newParams.set('page', '1');
+      }
       
+      console.log('📋 Nova URL:', newParams.toString());
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // ✅ Atualizar múltiplos filtros de uma vez
+  const updateFilters = useCallback((newFilters: Partial<ReclamacoesFilters>) => {
+    console.log('🎯 Múltiplos filtros atualizados:', newFilters);
+    
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (key === 'selectedAccounts' && Array.isArray(value)) {
+          if (value.length > 0) {
+            newParams.set('accounts', value.join(','));
+          } else {
+            newParams.delete('accounts');
+          }
+        } else if (key === 'currentPage') {
+          newParams.set('page', String(value));
+        } else if (key === 'itemsPerPage') {
+          newParams.set('limit', String(value));
+        } else {
+          newParams.set(key, String(value));
+        }
+      });
+      
+      // Se mudou algum filtro (não paginação), resetar página
       const hasNonPaginationChange = Object.keys(newFilters).some(
         key => key !== 'currentPage' && key !== 'itemsPerPage'
       );
       
       if (hasNonPaginationChange) {
-        updated.currentPage = 1;
+        newParams.set('page', '1');
       }
       
-      return updated;
-    });
-  }, []);
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
 
-  // Resetar todos os filtros
+  // ✅ Resetar todos os filtros
   const resetFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
-  }, []);
-
-  // Resetar apenas filtros de busca
-  const resetSearchFilters = useCallback(() => {
-    setFilters(prev => ({
-      ...prev,
+    console.log('🔄 Resetando todos os filtros');
+    setSearchParams({
       periodo: DEFAULT_FILTERS.periodo,
       status: DEFAULT_FILTERS.status,
       type: DEFAULT_FILTERS.type,
       stage: DEFAULT_FILTERS.stage,
-      currentPage: 1
-    }));
-  }, []);
+      page: '1',
+      limit: '50'
+    }, { replace: true });
+  }, [setSearchParams]);
 
-  // Verificar se há filtros ativos
+  // ✅ Resetar apenas filtros de busca
+  const resetSearchFilters = useCallback(() => {
+    console.log('🔄 Resetando filtros de busca');
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('periodo', DEFAULT_FILTERS.periodo);
+      newParams.set('status', DEFAULT_FILTERS.status);
+      newParams.set('type', DEFAULT_FILTERS.type);
+      newParams.set('stage', DEFAULT_FILTERS.stage);
+      newParams.set('page', '1');
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // ✅ Verificar se há filtros ativos
   const hasActiveFilters = useMemo(() => {
     return (
       filters.periodo !== DEFAULT_FILTERS.periodo ||
@@ -109,7 +170,7 @@ export function useReclamacoesFiltersUnified() {
     );
   }, [filters]);
 
-  // Contar filtros ativos
+  // ✅ Contar filtros ativos
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.periodo !== DEFAULT_FILTERS.periodo) count++;
@@ -119,83 +180,29 @@ export function useReclamacoesFiltersUnified() {
     return count;
   }, [filters]);
 
-  // Helpers que usam closures
-  const parseFiltersFromUrl = useCallback(() => {
-    return parseFiltersFromUrlHelper(searchParams);
-  }, [searchParams]);
-  
-  const encodeFiltersToUrl = useCallback(() => {
-    return encodeFiltersToUrlHelper(filters);
-  }, [filters]);
+  // Helpers legados (compatibilidade)
+  const parseFiltersFromUrl = () => filters;
+  const encodeFiltersToUrl = () => searchParams;
 
   return {
+    // Estado
     filters,
+    
+    // Ações
     updateFilter,
     updateFilters,
     resetFilters,
     resetSearchFilters,
+    
+    // Computados
     hasActiveFilters,
     activeFilterCount,
+    
+    // Helpers
     parseFiltersFromUrl,
     encodeFiltersToUrl,
+    
+    // Cache management
     persistentCache
   };
-}
-
-// ===== HELPER FUNCTIONS =====
-function parseFiltersFromUrlHelper(searchParams: URLSearchParams): Partial<ReclamacoesFilters> {
-  const filters: Partial<ReclamacoesFilters> = {};
-
-  const periodo = searchParams.get('periodo');
-  if (periodo) filters.periodo = periodo;
-
-  const status = searchParams.get('status');
-  if (status) filters.status = status;
-
-  const type = searchParams.get('type');
-  if (type) filters.type = type;
-
-  const stage = searchParams.get('stage');
-  if (stage) filters.stage = stage;
-
-  const accounts = searchParams.get('accounts');
-  if (accounts) {
-    filters.selectedAccounts = accounts.split(',').filter(id => id.trim().length > 0);
-  }
-
-  const page = searchParams.get('page');
-  if (page) {
-    const parsed = parseInt(page, 10);
-    if (!isNaN(parsed) && parsed >= 1) {
-      filters.currentPage = parsed;
-    }
-  }
-
-  const limit = searchParams.get('limit');
-  if (limit) {
-    const parsed = parseInt(limit, 10);
-    if (!isNaN(parsed)) {
-      filters.itemsPerPage = parsed;
-    }
-  }
-
-  return filters;
-}
-
-function encodeFiltersToUrlHelper(filters: ReclamacoesFilters): URLSearchParams {
-  const params = new URLSearchParams();
-
-  // ✅ Adicionar TODOS os filtros (sem omitir padrões)
-  params.set('periodo', filters.periodo);
-  params.set('status', filters.status);
-  params.set('type', filters.type);
-  params.set('stage', filters.stage);
-  params.set('page', filters.currentPage.toString());
-  params.set('limit', filters.itemsPerPage.toString());
-
-  if (filters.selectedAccounts && filters.selectedAccounts.length > 0) {
-    params.set('accounts', filters.selectedAccounts.join(','));
-  }
-
-  return params;
 }
