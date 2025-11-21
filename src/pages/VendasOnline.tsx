@@ -208,8 +208,14 @@ export default function VendasOnline() {
         event.type === 'updated' &&
         event.query.state.status === 'success'
       ) {
+        // ✅ ENRIQUECER COM account_name antes de salvar cache
+        const ordersEnriquecidos = orders.map(order => ({
+          ...order,
+          account_name: accountsMap.get((order as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
+        }));
+        
         persistentCache.saveDataCache(
-          orders,
+          ordersEnriquecidos,
           filters.selectedAccounts,
           { search: filters.searchTerm, periodo: filters.periodo },
           pagination.currentPage,
@@ -231,13 +237,22 @@ export default function VendasOnline() {
     setShouldFetch(false);
   };
   
-  // Enriquecer vendas com status_analise_local do localStorage
+  // ✅ Criar mapa de contas para lookup rápido
+  const accountsMap = useMemo(() => {
+    const map = new Map();
+    accounts.forEach(acc => map.set(acc.id, acc));
+    return map;
+  }, [accounts]);
+
+  // Enriquecer vendas com status_analise_local E account_name
   const vendasEnriquecidas = useMemo(() => {
     return orders.map(venda => ({
       ...venda,
-      status_analise_local: analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise
+      status_analise_local: analiseStatus[venda.id.toString()] || 'pendente' as StatusAnalise,
+      // ✅ ADICIONAR account_name seguindo padrão /reclamacoes
+      account_name: accountsMap.get((venda as any).integration_account_id || filters.selectedAccounts[0])?.name || '-'
     }));
-  }, [orders, analiseStatus]);
+  }, [orders, analiseStatus, accountsMap, filters.selectedAccounts]);
   
   // 🎯 FASE 4: MÉTRICAS AGREGADAS
   const metrics = useVendasAggregator(vendasEnriquecidas, analiseStatus);
