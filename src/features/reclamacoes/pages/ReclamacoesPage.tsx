@@ -162,7 +162,7 @@ export function ReclamacoesPage() {
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
     queryKey: ['reclamacoes', selectedAccountIds, filters],
-    enabled: false, // Desabilitar busca automática - só via handleBuscarReclamacoes
+    enabled: selectedAccountIds.length > 0, // Habilitar quando há contas selecionadas
     queryFn: async () => {
       console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
       
