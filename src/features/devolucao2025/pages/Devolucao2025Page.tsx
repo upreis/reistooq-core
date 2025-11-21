@@ -354,8 +354,8 @@ export const Devolucao2025Page = () => {
             <MLOrdersNav />
           </div>
           
-          {/* Header - sem py, apenas px */}
-          <div className="px-4 md:px-6">
+          {/* Header */}
+          <div className="px-4 md:px-6 py-3 mt-2">
             <h1 className="text-3xl font-bold">📋 Devoluções de Vendas</h1>
           </div>
 
@@ -363,7 +363,7 @@ export const Devolucao2025Page = () => {
           {(isLoading || isManualSearching) && <LoadingIndicator />}
 
           {/* Tabs: Ativas vs Histórico + Filtros */}
-          <div className="px-4 md:px-6 space-y-4">
+          <div className="px-4 md:px-6 mt-2">
             <Tabs value={activeTab} onValueChange={(v) => updateFilter('activeTab', v as 'ativas' | 'historico')}>
               <div className="flex items-center gap-3 flex-nowrap">
                 <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
@@ -408,18 +408,22 @@ export const Devolucao2025Page = () => {
                   />
                 </div>
               </div>
+            </Tabs>
+          </div>
 
-              {/* Resumo com badges clicáveis */}
-              <div className="mt-12 mb-2">
-                <Devolucao2025Resumo 
-                  devolucoes={devolucoesFiltradasPorAba}
-                  onFiltroClick={setFiltroResumo}
-                  filtroAtivo={filtroResumo}
-                />
-              </div>
+          {/* 📊 Resumo de Métricas - após as abas */}
+          <div className="mt-12 px-4 md:px-6">
+            <Devolucao2025Resumo 
+              devolucoes={devolucoesFiltradasPorAba}
+              onFiltroClick={setFiltroResumo}
+              filtroAtivo={filtroResumo}
+            />
+          </div>
 
-              {/* Tabela dentro de TabsContent */}
-              <TabsContent value={activeTab} className="mt-0 px-4 md:px-6">
+          {/* Tabela */}
+          <div className="px-4 md:px-6 mt-2">
+            <Tabs value={activeTab}>
+              <TabsContent value={activeTab} className="mt-0">
                 {isLoading && (
                   <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
                     <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
