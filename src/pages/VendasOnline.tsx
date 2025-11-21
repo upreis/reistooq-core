@@ -113,6 +113,13 @@ export default function VendasOnline() {
   // ✅ Hook de dados com controle manual
   const { data, isLoading: loadingVendas, error, refetch } = useVendasData(shouldFetch);
   
+  // 🔥 CORREÇÃO: Resetar isManualSearching quando loadingVendas terminar
+  useEffect(() => {
+    if (!loadingVendas && isManualSearching) {
+      setIsManualSearching(false);
+    }
+  }, [loadingVendas]);
+  
   // 🎯 FASE 2: RESTAURAR CACHE + APLICAR FILTROS DA URL na montagem
   useEffect(() => {
     if (persistentCache.isStateLoaded && persistentCache.persistedState) {
