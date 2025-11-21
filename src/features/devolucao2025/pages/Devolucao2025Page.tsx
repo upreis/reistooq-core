@@ -430,7 +430,7 @@ export const Devolucao2025Page = () => {
               </div>
             )}
             
-            <div className="mt-2">
+            <TabsContent value={activeTab} className="mt-2">
               <Devolucao2025Table 
                 accounts={accounts}
                 devolucoes={paginatedDevolucoes}
@@ -441,7 +441,7 @@ export const Devolucao2025Page = () => {
                 anotacoes={anotacoes}
                 activeTab={activeTab}
               />
-            </div>
+            </TabsContent>
           </div>
 
           {/* Rodapé Fixado com Paginação */}
