@@ -17,12 +17,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ReclamacoesMensagensModal } from './modals/ReclamacoesMensagensModal';
-import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
+
 import { reclamacoesColumns } from './ReclamacoesTableColumns';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { StatusAnalise } from '../types/devolucao-analise.types';
-import type { UseColumnManagerReturn } from '../types/columns.types';
+
 
 interface ReclamacoesTableProps {
   reclamacoes: any[];
@@ -34,7 +34,6 @@ interface ReclamacoesTableProps {
   anotacoes?: Record<string, string>;
   onTableReady?: (table: any) => void;
   activeTab?: 'ativas' | 'historico';
-  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3: ColumnManager avançado
 }
 
 export const ReclamacoesTable = memo(function ReclamacoesTable({
@@ -46,8 +45,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   onOpenAnotacoes,
   anotacoes,
   onTableReady,
-  activeTab,
-  columnManager // 🎯 FASE 3
+  activeTab
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
