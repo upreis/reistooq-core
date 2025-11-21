@@ -56,17 +56,8 @@ export const COLUMNS_CONFIG: ColumnConfig[] = [
   { id: 'anexos_ml', label: '📎 Anexos ML', group: '💬 Comunicação' },
 
   // GRUPO 8: REVIEW & AÇÕES
-  { id: 'review_resource', label: '🔍 Review Resource', group: '🔍 Review' },
   { id: 'review_resource_id', label: '🔢 Review Resource ID', group: '🔍 Review' },
-  { id: 'review_method', label: '🛠️ Review Method', group: '🔍 Review' },
-  { id: 'review_created', label: '📅 Review Created', group: '🔍 Review' },
-  { id: 'review_updated', label: '📅 Review Updated', group: '🔍 Review' },
-  { id: 'review_stage', label: '🎯 Review Stage', group: '🔍 Review' },
-  { id: 'review_status', label: '✅ Review Status', group: '🔍 Review' },
-  { id: 'product_condition', label: '📦 Product Condition', group: '🔍 Review' },
-  { id: 'product_destination', label: '🏭 Product Destination', group: '🔍 Review' },
   { id: 'reason_id', label: '🏷️ Reason ID', group: '🔍 Review' },
-  { id: 'seller_status', label: '👤 Seller Status', group: '🔍 Review' },
 
   // GRUPO 9: CUSTOS OPERACIONAIS
   { id: 'custo_total_log', label: '💵 Custo Total Log', group: '💰 Custos' },
