@@ -97,7 +97,7 @@ export function PedidosResumo({
       id: 'all' as FiltroResumo,
       label: 'Total',
       valor: total,
-      icon: ShoppingCart,
+      icon: FileText,
       destaque: true,
       color: 'bg-primary text-primary-foreground hover:bg-primary/90'
     },
