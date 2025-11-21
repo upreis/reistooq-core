@@ -359,8 +359,6 @@ export const Devolucao2025Page = () => {
             <h1 className="text-3xl font-bold">📋 Devoluções de Vendas</h1>
           </div>
 
-          {/* 🔄 INDICADOR DE LOADING */}
-          {(isLoading || isManualSearching) && <LoadingIndicator />}
 
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 mt-2">
@@ -421,20 +419,13 @@ export const Devolucao2025Page = () => {
           </div>
 
           {/* Tabela */}
-          <div className="px-4 md:px-6 mt-2">
+          <div className="px-4 md:px-6 mt-2 relative">
             <Tabs value={activeTab}>
               <TabsContent value={activeTab} className="mt-0">
-                {isLoading && (
-                  <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
-                    <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
-                    <div>
-                      <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                        Buscando devoluções...
-                      </p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Aguarde enquanto carregamos os dados do Mercado Livre
-                      </p>
-                    </div>
+                {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
+                {(isLoading || isManualSearching) && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
+                    <LoadingIndicator />
                   </div>
                 )}
                 
