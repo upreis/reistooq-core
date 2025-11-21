@@ -72,12 +72,20 @@ export function useReclamacoesFiltersUnified() {
       
       const page = searchParams.get('page');
       if (page) {
-        urlFilters.currentPage = parseInt(page, 10);
+        const parsedPage = parseInt(page, 10);
+        // 🔥 CORREÇÃO ERRO 3: Aceitar 0 como valor válido (não é erro, pode ser edge case)
+        if (!isNaN(parsedPage) && parsedPage >= 0) {
+          urlFilters.currentPage = parsedPage;
+        }
       }
       
       const limit = searchParams.get('limit');
       if (limit) {
-        urlFilters.itemsPerPage = parseInt(limit, 10);
+        const parsedLimit = parseInt(limit, 10);
+        // ✅ Validar que limit é número positivo válido
+        if (!isNaN(parsedLimit) && parsedLimit > 0) {
+          urlFilters.itemsPerPage = parsedLimit;
+        }
       }
       
       // 2. Carregar filtros do cache com SAFE ACCESS
