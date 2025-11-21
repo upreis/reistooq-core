@@ -261,7 +261,7 @@ export const reclamacoesColumns = (
     ),
     cell: ({ row }) => {
       const claimId = row.original.claim_id;
-      const currentStatus = (row.original.status_analise || 'pendente') as StatusAnalise;
+      const currentStatus = (row.original.status_analise_local || row.original.status_analise || 'pendente') as StatusAnalise;
       
       // ✨ Todas as opções disponíveis em ambas as abas
       const allowedStatuses = undefined; // undefined = mostrar todas
