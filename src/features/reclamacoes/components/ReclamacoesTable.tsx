@@ -54,22 +54,30 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
   
-  // 🎯 FASE 3: Sincronizar columnVisibility com columnManager
+  // 🎯 SINCRONIZAÇÃO COMPLETA columnVisibility com columnManager
   const columnVisibility = useMemo<VisibilityState>(() => {
     if (!columnManager) {
       return {};
     }
     
-    // Criar objeto de visibilidade para TODAS as colunas definidas
+    // Criar objeto de visibilidade baseado APENAS nas colunas que o columnManager diz que estão visíveis
     const visibility: VisibilityState = {};
+    
+    // Para TODAS as definições, marcar como false primeiro
     columnManager.definitions.forEach(def => {
-      visibility[def.key] = columnManager.state.visibleColumns.has(def.key);
+      visibility[def.key] = false;
     });
     
-    console.log('🔍 [ReclamacoesTable] Visibilidade sincronizada:', {
+    // Depois marcar como true APENAS as que estão no visibleColumns
+    columnManager.state.visibleColumns.forEach(key => {
+      visibility[key] = true;
+    });
+    
+    console.log('✅ [ReclamacoesTable] Visibilidade ATUALIZADA:', {
       totalDefinitions: columnManager.definitions.length,
       visibleCount: columnManager.state.visibleColumns.size,
-      visibility
+      visibleKeys: Array.from(columnManager.state.visibleColumns),
+      invisibleKeys: columnManager.definitions.filter(d => !columnManager.state.visibleColumns.has(d.key)).map(d => d.key)
     });
     
     return visibility;
