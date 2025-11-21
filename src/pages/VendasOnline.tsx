@@ -17,6 +17,7 @@ import { VendasFilterBar } from '@/features/vendas-online/components/VendasFilte
 import { VendasOnlineTable } from '@/features/vendas-online/components/VendasOnlineTable';
 import { VendasPaginationFooter } from '@/features/vendas-online/components/VendasPaginationFooter';
 import { VendasResumo, type FiltroResumo } from '@/features/vendas-online/components/VendasResumo';
+import { VendasAnotacoesModal } from '@/features/vendas-online/components/modals/VendasAnotacoesModal';
 import { useVendasData } from '@/features/vendas-online/hooks/useVendasData';
 import { useVendasStore } from '@/features/vendas-online/store/vendasStore';
 import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVendasFiltersUnified'; // 🎯 FASE 2
@@ -66,7 +67,7 @@ const useMLAccounts = () => {
 
 export default function VendasOnline() {
   const queryClient = useQueryClient();
-  const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters: updateStoreFilters, setOrders } = useVendasStore();
+  const { orders, pagination, isLoading, setPage, setItemsPerPage, updateFilters: updateStoreFilters, setOrders, anotacoes, setAnotacao } = useVendasStore();
   const { isSidebarCollapsed } = useSidebarUI();
   const { accounts } = useMLAccounts();
 
@@ -79,6 +80,10 @@ export default function VendasOnline() {
     analiseStatus,
     setAnaliseStatus
   } = useVendaStorage();
+  
+  // Modal de anotações
+  const [anotacoesModalOpen, setAnotacoesModalOpen] = useState(false);
+  const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<any | null>(null);
   
   // 🎯 FASE 3: COLUMN MANAGER AVANÇADO
   const columnManager = useVendasColumnManager();
@@ -108,6 +113,12 @@ export default function VendasOnline() {
   // Handler para mudança de status de análise
   const handleStatusChange = (orderId: string, newStatus: StatusAnalise) => {
     setAnaliseStatus(orderId, newStatus);
+  };
+  
+  // Handler para abrir modal de anotações
+  const handleOpenAnotacoes = (order: any) => {
+    setSelectedOrderForAnotacoes(order);
+    setAnotacoesModalOpen(true);
   };
   
   // ✅ Hook de dados com controle manual
@@ -449,11 +460,25 @@ export default function VendasOnline() {
             
             <VendasOnlineTable
               onStatusChange={handleStatusChange}
+              onOpenAnotacoes={handleOpenAnotacoes}
+              anotacoes={anotacoes}
               activeTab={activeTab}
               columnManager={columnManager}
               filteredOrders={vendasFiltradasPorAba}
             />
           </div>
+          
+          {/* Modal de anotações */}
+          {selectedOrderForAnotacoes && (
+            <VendasAnotacoesModal
+              open={anotacoesModalOpen}
+              onOpenChange={setAnotacoesModalOpen}
+              orderId={selectedOrderForAnotacoes.id.toString()}
+              packId={selectedOrderForAnotacoes.pack_id}
+              anotacaoAtual={anotacoes[selectedOrderForAnotacoes.id.toString()] || ''}
+              onSave={setAnotacao}
+            />
+          )}
           
           {/* Rodapé Fixado com Paginação */}
           {!isLoading && pagination.total > 0 && (

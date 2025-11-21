@@ -15,12 +15,21 @@ import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FA
 
 interface VendasOnlineTableProps {
   onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
+  onOpenAnotacoes?: (order: any) => void;
+  anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
   columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
   filteredOrders?: any[]; // 🎯 Vendas já filtradas por aba
 }
 
-export const VendasOnlineTable = ({ onStatusChange, activeTab, columnManager, filteredOrders }: VendasOnlineTableProps) => {
+export const VendasOnlineTable = ({ 
+  onStatusChange, 
+  onOpenAnotacoes,
+  anotacoes,
+  activeTab, 
+  columnManager, 
+  filteredOrders 
+}: VendasOnlineTableProps) => {
   const { 
     orders: storeOrders, 
     filters, 
@@ -51,6 +60,8 @@ export const VendasOnlineTable = ({ onStatusChange, activeTab, columnManager, fi
         itemsPerPage={pagination.itemsPerPage}
         onPageChange={setPage}
         onStatusChange={onStatusChange}
+        onOpenAnotacoes={onOpenAnotacoes}
+        anotacoes={anotacoes}
         activeTab={activeTab}
         columnManager={columnManager} // 🎯 FASE 3
       />
