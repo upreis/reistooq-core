@@ -307,6 +307,7 @@ export const reclamacoesColumns = (
     size: 80,
   },
   {
+    id: 'account_name',
     accessorKey: 'account_name',
     header: ({ column }) => {
       return (
@@ -348,6 +349,7 @@ export const reclamacoesColumns = (
   },
   // 👤 COLUNA DE COMPRADOR
   {
+    id: 'buyer_nickname',
     accessorKey: 'buyer_nickname',
     header: ({ column }) => {
       return (
@@ -365,6 +367,7 @@ export const reclamacoesColumns = (
   },
   // 📅 DATA DA VENDA
   {
+    id: 'order_date_created',
     accessorKey: 'order_date_created',
     header: ({ column }) => {
       return (
@@ -382,6 +385,7 @@ export const reclamacoesColumns = (
   },
   // 📦 QUANTIDADE
   {
+    id: 'order_item_quantity',
     accessorKey: 'order_item_quantity',
     header: ({ column }) => {
       return (
@@ -399,6 +403,7 @@ export const reclamacoesColumns = (
   },
   // 💰 VALOR DO PRODUTO
   {
+    id: 'order_item_unit_price',
     accessorKey: 'order_item_unit_price',
     header: ({ column }) => {
       return (
@@ -420,6 +425,7 @@ export const reclamacoesColumns = (
   },
   // 💵 TOTAL DA VENDA
   {
+    id: 'order_total',
     accessorKey: 'order_total',
     header: ({ column }) => {
       return (
@@ -439,6 +445,7 @@ export const reclamacoesColumns = (
     },
   },
   {
+    id: 'claim_id',
     accessorKey: 'claim_id',
     header: ({ column }) => {
       return (
@@ -460,6 +467,7 @@ export const reclamacoesColumns = (
     ),
   },
   {
+    id: 'type',
     accessorKey: 'type',
     header: ({ column }) => {
       return (
@@ -476,6 +484,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => getTypeBadge(row.getValue('type')),
   },
   {
+    id: 'status',
     accessorKey: 'status',
     header: ({ column }) => {
       return (
@@ -492,6 +501,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => getStatusBadge(row.getValue('status')),
   },
   {
+    id: 'stage',
     accessorKey: 'stage',
     header: ({ column }) => {
       return (
@@ -508,54 +518,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => getStageBadge(row.getValue('stage')),
   },
   {
-    accessorKey: 'resource_id',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          N.º do Recurso Origem
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('resource_id') || '-'}</span>,
-  },
-  {
-    accessorKey: 'resource',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Tipo do Recurso
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('resource'))}</span>,
-  },
-  {
-    accessorKey: 'reason_id',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          N.º da Razão da Reclamação
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('reason_id') || '-'}</span>,
-  },
-  {
+    id: 'date_created',
     accessorKey: 'date_created',
     header: ({ column }) => {
       return (
@@ -572,25 +535,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{formatDate(row.getValue('date_created'))}</span>,
   },
   {
-    id: 'prazo_analise',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Prazo Análise
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const dateCreated = row.getValue('date_created') as string | null;
-      return <AnalysisDeadlineCell arrivalDate={dateCreated} />;
-    },
-  },
-  {
+    id: 'last_updated',
     accessorKey: 'last_updated',
     header: ({ column }) => {
       return (
@@ -607,7 +552,8 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{formatDate(row.getValue('last_updated'))}</span>,
   },
   {
-    accessorKey: 'site_id',
+    id: 'prazo_analise',
+    accessorKey: 'prazo_analise',
     header: ({ column }) => {
       return (
         <Button
@@ -615,14 +561,99 @@ export const reclamacoesColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Site ID
+          Prazo Análise
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => <span className="text-sm">{row.getValue('site_id') || '-'}</span>,
+    cell: ({ row }) => {
+      const arrivalDate = row.original.data_chegada_produto;
+      return <AnalysisDeadlineCell arrivalDate={arrivalDate} />;
+    },
   },
   {
+    id: 'order_item_seller_sku',
+    accessorKey: 'order_item_seller_sku',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          SKU
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const sku = row.getValue('order_item_seller_sku') as string;
+      if (!sku) return '-';
+      return <Badge variant="outline" className="font-mono text-xs">{sku}</Badge>;
+    },
+  },
+  {
+    id: 'amount_value',
+    accessorKey: 'amount_value',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Valor na Reclamação
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const amount = row.getValue('amount_value') as number;
+      const currency = row.original.amount_currency;
+      return <span className="text-sm">{formatCurrency(amount, currency)}</span>;
+    },
+  },
+  {
+    id: 'impacto_financeiro',
+    accessorKey: 'impacto_financeiro',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Impacto Financeiro
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const impacto = row.original.impacto_financeiro;
+      const valor = row.original.amount_value || 0;
+      const moeda = row.original.amount_currency || 'BRL';
+      return <ImpactoFinanceiroCell impacto={impacto} valor={valor} moeda={moeda} />;
+    },
+  },
+  {
+    id: 'reason_id',
+    accessorKey: 'reason_id',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          N.º da Razão da Reclamação
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <span className="text-xs font-mono">{row.getValue('reason_id') || '-'}</span>,
+  },
+  {
+    id: 'reason_name',
     accessorKey: 'reason_name',
     header: ({ column }) => {
       return (
@@ -636,9 +667,10 @@ export const reclamacoesColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => <span className="max-w-[200px] block whitespace-normal break-words">{translateText(row.getValue('reason_name'))}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_name'))}</span>,
   },
   {
+    id: 'reason_detail',
     accessorKey: 'reason_detail',
     header: ({ column }) => {
       return (
@@ -652,9 +684,10 @@ export const reclamacoesColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => <span className="max-w-[20rem] block whitespace-normal break-words text-sm">{row.getValue('reason_detail') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_detail'))}</span>,
   },
   {
+    id: 'reason_category',
     accessorKey: 'reason_category',
     header: ({ column }) => {
       return (
@@ -671,7 +704,8 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('reason_category'))}</span>,
   },
   {
-    accessorKey: 'order_item_title',
+    id: 'resource_id',
+    accessorKey: 'resource_id',
     header: ({ column }) => {
       return (
         <Button
@@ -679,15 +713,16 @@ export const reclamacoesColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Nome do Produto
+          N.º do Recurso Origem
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => <span className="max-w-[250px] text-sm truncate block">{row.getValue('order_item_title') || '-'}</span>,
+    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('resource_id') || '-'}</span>,
   },
   {
-    accessorKey: 'order_item_seller_sku',
+    id: 'resource',
+    accessorKey: 'resource',
     header: ({ column }) => {
       return (
         <Button
@@ -695,34 +730,15 @@ export const reclamacoesColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          SKU
+          Tipo do Recurso
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => <span className="font-mono text-xs whitespace-nowrap">{row.getValue('order_item_seller_sku') || '-'}</span>,
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('resource'))}</span>,
   },
   {
-    accessorKey: 'amount_value',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
-        >
-          Valor na Reclamação
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-      const value = row.getValue('amount_value') as number;
-      const currency = row.original.amount_currency;
-      return <span className="text-sm font-medium">{formatCurrency(value, currency)}</span>;
-    },
-  },
-  {
+    id: 'resolution_benefited',
     accessorKey: 'resolution_benefited',
     header: ({ column }) => {
       return (
@@ -739,6 +755,24 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('resolution_benefited'))}</span>,
   },
   {
+    id: 'resolution_reason',
+    accessorKey: 'resolution_reason',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Razão da Resolução
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('resolution_reason'))}</span>,
+  },
+  {
+    id: 'resolution_date',
     accessorKey: 'resolution_date',
     header: ({ column }) => {
       return (
@@ -755,7 +789,8 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{formatDate(row.getValue('resolution_date'))}</span>,
   },
   {
-    accessorKey: 'resolution_reason',
+    id: 'site_id',
+    accessorKey: 'site_id',
     header: ({ column }) => {
       return (
         <Button
@@ -763,32 +798,50 @@ export const reclamacoesColumns = (
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Razão da Resolução
+          Site ID
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => <span className="max-w-[200px] truncate block">{translateText(row.getValue('resolution_reason'))}</span>,
+    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('site_id') || '-'}</span>,
   },
   {
+    id: 'order_item_title',
+    accessorKey: 'order_item_title',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          className="h-8 px-2"
+        >
+          Nome do Produto
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <span className="text-sm">{row.getValue('order_item_title') || '-'}</span>,
+  },
+  {
+    id: 'tem_trocas',
     accessorKey: 'tem_trocas',
-    header: () => <div className="text-center">Trocas</div>,
-    cell: ({ row }) => (
-      <div className="text-center">
-        {row.getValue('tem_trocas') ? <Package className="h-4 w-4 inline text-green-500" /> : '-'}
-      </div>
-    ),
+    header: () => <span className="font-semibold text-sm">Trocas</span>,
+    cell: ({ row }) => {
+      const temTrocas = row.getValue('tem_trocas');
+      return temTrocas ? <Badge variant="outline">Sim</Badge> : <span className="text-muted-foreground text-xs">Não</span>;
+    },
   },
   {
+    id: 'tem_mediacao',
     accessorKey: 'tem_mediacao',
-    header: () => <div className="text-center">Mediação</div>,
-    cell: ({ row }) => (
-      <div className="text-center">
-        {row.getValue('tem_mediacao') ? '✅' : '-'}
-      </div>
-    ),
+    header: () => <span className="font-semibold text-sm">Mediação</span>,
+    cell: ({ row }) => {
+      const temMediacao = row.getValue('tem_mediacao');
+      return temMediacao ? <Badge variant="destructive">Sim</Badge> : <span className="text-muted-foreground text-xs">Não</span>;
+    },
   },
   {
+    id: 'order_id',
     accessorKey: 'order_id',
     header: ({ column }) => {
       return (
@@ -805,6 +858,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('order_id') || '-'}</span>,
   },
   {
+    id: 'order_status',
     accessorKey: 'order_status',
     header: ({ column }) => {
       return (
@@ -821,6 +875,7 @@ export const reclamacoesColumns = (
     cell: ({ row }) => <span className="text-sm">{translateText(row.getValue('order_status'))}</span>,
   },
   {
+    id: 'tracking_number',
     accessorKey: 'tracking_number',
     header: ({ column }) => {
       return (
@@ -834,68 +889,26 @@ export const reclamacoesColumns = (
         </Button>
       );
     },
-    cell: ({ row }) => {
-      // ✅ Buscar tracking_number do campo codigo_rastreamento (agora atualizado pela API)
-      const trackingNumber = row.original.codigo_rastreamento;
-      
-      return trackingNumber ? (
-        <span className="font-mono text-xs">{trackingNumber}</span>
-      ) : (
-        <span className="text-muted-foreground text-xs">-</span>
-      );
-    },
+    cell: ({ row }) => <span className="font-mono text-xs">{row.getValue('tracking_number') || '-'}</span>,
   },
+  // ⚙️ AÇÕES
   {
-    accessorKey: 'impacto_financeiro',
-    header: ({ column }) => {
+    id: 'actions',
+    header: () => <span className="font-semibold text-sm">Ações</span>,
+    cell: ({ row }) => {
+      const claimId = row.original.claim_id;
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="h-8 px-2"
+          size="sm"
+          onClick={() => onDeleteReclamacao?.(claimId)}
+          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+          title="Excluir reclamação"
         >
-          Impacto Financeiro
-          <ArrowUpDown className="ml-2 h-4 w-4" />
+          <Trash2 className="h-4 w-4" />
         </Button>
       );
     },
-    cell: ({ row }) => {
-      const impacto = row.getValue('impacto_financeiro') as 'coberto_ml' | 'ganho' | 'neutro' | 'perda';
-      const valor = impacto === 'neutro' 
-        ? (row.original.amount_value || 0)
-        : (row.original.valor_impacto || 0);
-      const moeda = row.original.amount_currency || 'BRL';
-      
-      return (
-        <ImpactoFinanceiroCell
-          impacto={impacto}
-          valor={valor}
-          moeda={moeda}
-        />
-      );
-    },
-  },
-  // 🗑️ COLUNA DE AÇÕES (DELETAR)
-  {
-    id: 'actions',
-    header: () => <div className="text-center">Ações</div>,
-    cell: ({ row }) => {
-      const claimId = row.original.claim_id;
-      
-      return (
-        <div className="flex justify-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={() => onDeleteReclamacao?.(claimId)}
-            title="Excluir reclamação"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      );
-    },
     size: 80,
-  },
+  }
 ];
