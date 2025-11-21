@@ -7,7 +7,7 @@
 import { ColumnDefinition, ColumnProfile } from '../types/columns.types';
 
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
-  // ====== ESSENCIAIS (sempre visíveis por padrão) ======
+  // ====== BÁSICAS (7 colunas) ======
   {
     key: 'status_analise',
     label: 'Análise',
@@ -40,6 +40,49 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
+    key: 'claim_id',
+    label: 'N.º da Reclamação',
+    category: 'basic',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Número identificador da reclamação',
+    width: 150,
+    sortable: true
+  },
+  {
+    key: 'type',
+    label: 'Tipo de Reclamação',
+    category: 'basic',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Tipo da reclamação (Mediação, Devolução, Cancelamento)',
+    width: 160
+  },
+  {
+    key: 'status',
+    label: 'Status da Reclamação',
+    category: 'basic',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Status atual da reclamação',
+    width: 180
+  },
+  {
+    key: 'stage',
+    label: 'Estagio da Reclamação',
+    category: 'basic',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Estágio atual do processo',
+    width: 180
+  },
+
+  // ====== PRODUTO (5 colunas) ======
+  {
     key: 'produto',
     label: 'Produto',
     category: 'product',
@@ -49,6 +92,50 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Informações do produto com imagem',
     width: 350
   },
+  {
+    key: 'order_item_quantity',
+    label: 'Quantidade',
+    category: 'product',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Quantidade de itens',
+    width: 100,
+    sortable: true
+  },
+  {
+    key: 'order_item_unit_price',
+    label: 'Valor do Produto',
+    category: 'product',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Preço unitário do item',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'order_item_seller_sku',
+    label: 'SKU',
+    category: 'product',
+    priority: 'optional',
+    visible: true,
+    default: true,
+    description: 'SKU do vendedor',
+    width: 150
+  },
+  {
+    key: 'order_item_title',
+    label: 'Nome do Produto',
+    category: 'product',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Título completo do produto',
+    width: 300
+  },
+
+  // ====== CLIENTE (1 coluna) ======
   {
     key: 'buyer_nickname',
     label: 'Comprador',
@@ -60,7 +147,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
 
-  // ====== DATAS (importantes) ======
+  // ====== DATAS (5 colunas) ======
   {
     key: 'order_date_created',
     label: 'Data da Venda',
@@ -117,51 +204,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
 
-  // ====== PRODUTO (importantes) ======
-  {
-    key: 'order_item_quantity',
-    label: 'Quantidade',
-    category: 'product',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Quantidade de itens',
-    width: 100,
-    sortable: true
-  },
-  {
-    key: 'order_item_unit_price',
-    label: 'Valor do Produto',
-    category: 'product',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Preço unitário do item',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'order_item_seller_sku',
-    label: 'SKU',
-    category: 'product',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'SKU do vendedor',
-    width: 150
-  },
-  {
-    key: 'order_item_title',
-    label: 'Nome do Produto',
-    category: 'product',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Título completo do produto',
-    width: 300
-  },
-
-  // ====== FINANCEIRAS (importantes) ======
+  // ====== FINANCEIRAS (3 colunas) ======
   {
     key: 'order_total',
     label: 'Total da Venda',
@@ -196,50 +239,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
 
-  // ====== BÁSICAS DA RECLAMAÇÃO (essenciais) ======
-  {
-    key: 'claim_id',
-    label: 'N.º da Reclamação',
-    category: 'basic',
-    priority: 'essential',
-    visible: true,
-    default: true,
-    description: 'Número identificador da reclamação',
-    width: 150,
-    sortable: true
-  },
-  {
-    key: 'type',
-    label: 'Tipo de Reclamação',
-    category: 'basic',
-    priority: 'essential',
-    visible: true,
-    default: true,
-    description: 'Tipo da reclamação (Mediação, Devolução, Cancelamento)',
-    width: 160
-  },
-  {
-    key: 'status',
-    label: 'Status da Reclamação',
-    category: 'basic',
-    priority: 'essential',
-    visible: true,
-    default: true,
-    description: 'Status atual da reclamação',
-    width: 180
-  },
-  {
-    key: 'stage',
-    label: 'Estagio da Reclamação',
-    category: 'basic',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Estágio atual do processo',
-    width: 180
-  },
-
-  // ====== RAZÃO (opcionais) ======
+  // ====== RAZÃO (4 colunas) ======
   {
     key: 'reason_id',
     label: 'N.º da Razão da Reclamação',
@@ -281,7 +281,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
 
-  // ====== RECURSO (opcionais) ======
+  // ====== RECURSO (2 colunas) ======
   {
     key: 'resource_id',
     label: 'N.º do Recurso Origem',
@@ -303,7 +303,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
 
-  // ====== RESOLUÇÃO (opcionais) ======
+  // ====== RESOLUÇÃO (2 colunas) ======
   {
     key: 'resolution_benefited',
     label: 'Resolução Beneficiada',
@@ -325,7 +325,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 200
   },
 
-  // ====== METADADOS (opcionais) ======
+  // ====== METADADOS (6 colunas) ======
   {
     key: 'site_id',
     label: 'Site ID',
@@ -387,7 +387,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 160
   },
 
-  // ====== AÇÕES (essencial) ======
+  // ====== AÇÕES (1 coluna) ======
   {
     key: 'actions',
     label: 'Ações',
