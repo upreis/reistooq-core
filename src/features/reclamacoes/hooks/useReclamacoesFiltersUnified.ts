@@ -29,10 +29,14 @@ export function useReclamacoesFiltersUnified() {
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
   const [isInitialized, setIsInitialized] = useState(false);
   const isFirstRender = useRef(true); // 🔥 Rastrear primeira renderização
+  const isRestoringFromUrl = useRef(false); // 🔥 ERRO 5: Flag para evitar loop de re-renderização
 
   // 🔥 CORREÇÃO: Restaurar filtros com prioridade URL > Cache > Defaults
   useEffect(() => {
     if (!persistentCache.isStateLoaded) return;
+    
+    // 🔥 ERRO 5: Marcar que estamos restaurando da URL
+    isRestoringFromUrl.current = true;
     
     // 1. Parsear filtros da URL
     const urlFilters: Partial<ReclamacoesFilters> = {};
@@ -87,6 +91,11 @@ export function useReclamacoesFiltersUnified() {
     if (!isInitialized) {
       setIsInitialized(true);
     }
+
+    // 🔥 ERRO 5: Resetar flag após restauração completar
+    setTimeout(() => {
+      isRestoringFromUrl.current = false;
+    }, 0);
   }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora mudanças na URL
 
   // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
@@ -102,6 +111,12 @@ export function useReclamacoesFiltersUnified() {
       if (isInitialized && isFirstRender.current) {
         isFirstRender.current = false; // Marcar que inicialização terminou
       }
+      return;
+    }
+
+    // 🔥 ERRO 5 CORRIGIDO: Não salvar se estamos restaurando da URL
+    if (isRestoringFromUrl.current) {
+      console.log('⏭️ [RECLAMACOES FILTERS] Ignorando salvamento durante restauração da URL');
       return;
     }
     
