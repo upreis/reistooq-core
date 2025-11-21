@@ -214,7 +214,6 @@ export const Devolucao2025Table = ({
                 <StatusAnaliseSelect
                   value={dev.status_analise_local || 'pendente'}
                   onChange={(newStatus) => onStatusChange?.(dev.order_id, newStatus)}
-                  allowedStatuses={activeTab === 'ativas' ? STATUS_ATIVOS : STATUS_HISTORICO}
                 />
               </TableCell>
               
@@ -410,7 +409,6 @@ export const Devolucao2025Table = ({
                   <StatusAnaliseSelect
                     value={(dev as any).status_analise_local || 'pendente'}
                     onChange={(newStatus: StatusAnalise) => onStatusChange(dev.order_id, newStatus)}
-                    allowedStatuses={activeTab === 'ativas' ? STATUS_ATIVOS : STATUS_HISTORICO}
                   />
                 </TableCell>
               )}
