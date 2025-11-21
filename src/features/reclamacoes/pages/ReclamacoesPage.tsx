@@ -480,6 +480,7 @@ export function ReclamacoesPage() {
                       isLoading={isManualSearching}
                       onCancel={handleCancelarBusca}
                       table={tableInstance}
+                      columnManager={columnManager}
                     />
                   </div>
                 </div>
