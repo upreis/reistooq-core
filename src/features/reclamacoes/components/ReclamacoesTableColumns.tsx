@@ -250,14 +250,12 @@ export const reclamacoesColumns = (
   anotacoes?: Record<string, string>,
   activeTab?: 'ativas' | 'historico' // ✨ NOVO: Controla quais status mostrar no dropdown
 ): ColumnDef<ReclamacaoRow>[] => [
-  // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA STICKY
+  // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA
   {
     id: 'status_analise',
     accessorKey: 'status_analise',
     header: () => (
-      <div className="sticky left-0 bg-background z-10 px-2">
-        <span className="font-semibold">Análise</span>
-      </div>
+      <span className="font-semibold">Análise</span>
     ),
     cell: ({ row }) => {
       const claimId = row.original.claim_id;
@@ -267,13 +265,11 @@ export const reclamacoesColumns = (
       const allowedStatuses = undefined; // undefined = mostrar todas
       
       return (
-        <div className="sticky left-0 bg-background z-10 px-2">
-          <StatusAnaliseSelect
-            value={currentStatus}
-            onChange={(newStatus) => onStatusChange?.(claimId, newStatus)}
-            allowedStatuses={allowedStatuses}
-          />
-        </div>
+        <StatusAnaliseSelect
+          value={currentStatus}
+          onChange={(newStatus) => onStatusChange?.(claimId, newStatus)}
+          allowedStatuses={allowedStatuses}
+        />
       );
     },
     size: 180,
