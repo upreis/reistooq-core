@@ -414,7 +414,9 @@ export function ReclamacoesPage() {
       <div className="w-full">
         <div className="space-y-2 pb-20">
             {/* Sub-navegação */}
-            <MLOrdersNav />
+            <div className="px-4 md:px-6">
+              <MLOrdersNav />
+            </div>
             
             {/* Header */}
             <div className="px-4 md:px-6 py-3">
@@ -477,7 +479,7 @@ export function ReclamacoesPage() {
                 </div>
                 
                 {/* Resumo de Métricas - após as abas */}
-                <div className="mt-12">
+                <div className="mt-12 px-4 md:px-6">
                   <ReclamacoesResumo 
                     reclamacoes={reclamacoesEnriquecidas} 
                     onFiltroClick={setFiltroResumo}
