@@ -123,7 +123,6 @@ export const VendasTable = ({
               
               {/* STATUS */}
               <TableHead className="min-w-[120px]">Status</TableHead>
-              <TableHead className="min-w-[120px]">Status Detail</TableHead>
               
               {/* DATAS */}
               <TableHead className="min-w-[150px]">Data Criação</TableHead>
@@ -147,7 +146,6 @@ export const VendasTable = ({
               <TableHead className="min-w-[80px]">Quantidade</TableHead>
               <TableHead className="min-w-[200px]">SKU</TableHead>
               <TableHead className="min-w-[120px]">Categoria</TableHead>
-              <TableHead className="min-w-[120px]">Condição</TableHead>
               
               {/* PAGAMENTO */}
               <TableHead className="min-w-[120px]">Status Pagamento</TableHead>
@@ -179,7 +177,6 @@ export const VendasTable = ({
               
               
               {/* OUTROS */}
-              <TableHead className="w-[350px] min-w-[350px] max-w-[350px]">Tags</TableHead>
               <TableHead className="min-w-[150px]">Tipo Pedido</TableHead>
               <TableHead className="min-w-[80px]">Ações</TableHead>
             </TableRow>
@@ -235,13 +232,6 @@ export const VendasTable = ({
                       {getOrderStatusLabel(order.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-xs">
-                    {order.status_detail 
-                      ? (typeof order.status_detail === 'object' 
-                          ? order.status_detail?.description || order.status_detail?.code || '-'
-                          : order.status_detail)
-                      : '-'}
-                  </TableCell>
                   
                   {/* DATAS */}
                   <TableCell className="text-xs">{formatDateTime(order.date_created)}</TableCell>
@@ -275,7 +265,6 @@ export const VendasTable = ({
                   <TableCell className="text-center">{firstItem?.quantity || '-'}</TableCell>
                   <TableCell className="font-mono text-xs">{firstItem?.item?.seller_sku || '-'}</TableCell>
                   <TableCell className="text-xs">{firstItem?.item?.category_id || '-'}</TableCell>
-                  <TableCell className="text-xs">{firstItem?.item?.condition || '-'}</TableCell>
                   
                   {/* PAGAMENTO */}
                   <TableCell>
@@ -391,17 +380,6 @@ export const VendasTable = ({
                   </TableCell>
                   
                   {/* OUTROS */}
-                  <TableCell className="text-xs">
-                    {order.tags && order.tags.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {order.tags.map((tag, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : '-'}
-                  </TableCell>
                   <TableCell className="text-xs">{order.order_request?.return ? 'Devolução' : 'Normal'}</TableCell>
                   <TableCell>
                     <Button
