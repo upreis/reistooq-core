@@ -137,13 +137,16 @@ export function ReclamacoesPage() {
     },
   });
 
-  // 🎯 Auto-seleção de contas na primeira visita
+  // 🎯 Auto-seleção de contas APENAS se NÃO há filtros salvos
   useEffect(() => {
-    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
+    // ✅ CORREÇÃO CRÍTICA: Não auto-selecionar se há filtros restaurados do localStorage
+    const hasSavedFilters = localStorage.getItem('reclamacoes_last_filters');
+    
+    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0 && !hasSavedFilters) {
       const { accountIds } = validateMLAccounts(mlAccounts);
       if (accountIds.length > 0) {
         updateFilter('selectedAccounts', accountIds);
-        logger.debug('✨ Contas auto-selecionadas', { 
+        logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
           context: 'ReclamacoesPage',
           count: accountIds.length
         });
