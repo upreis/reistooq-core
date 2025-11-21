@@ -80,7 +80,7 @@ const fetchVendasFromML = async (params: FetchVendasParams) => {
   };
 };
 
-export const useVendasData = (shouldFetch: boolean = false) => {
+export const useVendasData = (shouldFetch: boolean = false, selectedAccountIds: string[] = []) => {
   const {
     filters,
     pagination,
@@ -91,11 +91,11 @@ export const useVendasData = (shouldFetch: boolean = false) => {
     setError
   } = useVendasStore();
 
-  // ✅ CONTROLE MANUAL: só buscar quando shouldFetch = true
-  const swrKey = shouldFetch && filters.integrationAccountId && filters.integrationAccountId.trim()
+  // ✅ CONTROLE MANUAL: só buscar quando shouldFetch = true E há contas selecionadas
+  const swrKey = shouldFetch && selectedAccountIds.length > 0
     ? [
         'vendas-ml',
-        filters.integrationAccountId,
+        selectedAccountIds.join(','), // ✅ Múltiplas contas
         filters.search,
         filters.status.join(','),
         filters.dateFrom,
@@ -108,15 +108,31 @@ export const useVendasData = (shouldFetch: boolean = false) => {
   // Fetch com SWR (NÃO automático, depende de shouldFetch)
   const { data, error, isLoading, mutate } = useSWR(
     swrKey,
-    () => fetchVendasFromML({
-      integrationAccountId: filters.integrationAccountId,
-      search: filters.search,
-      status: filters.status,
-      dateFrom: filters.dateFrom,
-      dateTo: filters.dateTo,
-      offset: (pagination.currentPage - 1) * pagination.itemsPerPage,
-      limit: pagination.itemsPerPage
-    }),
+    async () => {
+      // ✅ Buscar de TODAS as contas selecionadas (similar a /reclamacoes)
+      const allOrders: any[] = [];
+      
+      for (const accountId of selectedAccountIds) {
+        const result = await fetchVendasFromML({
+          integrationAccountId: accountId,
+          search: filters.search,
+          status: filters.status,
+          dateFrom: filters.dateFrom,
+          dateTo: filters.dateTo,
+          offset: (pagination.currentPage - 1) * pagination.itemsPerPage,
+          limit: pagination.itemsPerPage
+        });
+        
+        allOrders.push(...result.orders);
+      }
+      
+      return {
+        orders: allOrders,
+        total: allOrders.length,
+        packs: {},
+        shippings: {}
+      };
+    },
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
