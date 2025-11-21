@@ -93,6 +93,7 @@ export function useReclamacoesFiltersUnified() {
     key: K,
     value: ReclamacoesFilters[K]
   ) => {
+    console.log(`🔍 [RECLAMACOES] updateFilter chamado: ${key} =`, value);
     setFilters(prev => {
       const newFilters = { ...prev, [key]: value };
       
@@ -102,6 +103,7 @@ export function useReclamacoesFiltersUnified() {
       }
       
       console.log(`🎯 Filtro atualizado: ${key} =`, value);
+      console.log('📋 Novos filtros completos:', newFilters);
       return newFilters;
     });
   }, []);

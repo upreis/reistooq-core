@@ -500,7 +500,10 @@ export function ReclamacoesPage() {
                     selectedAccountIds={selectedAccountIds}
                     onAccountsChange={setSelectedAccountIds}
                     periodo={unifiedFilters.periodo}
-                    onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
+                    onPeriodoChange={(periodo) => {
+                      console.log('🔍 [RECLAMACOES PAGE] onPeriodoChange recebido:', periodo);
+                      updateFilter('periodo', periodo);
+                    }}
                     searchTerm={unifiedFilters.status}
                     onSearchChange={(status) => updateFilter('status', status)}
                     onBuscar={handleBuscarReclamacoes}
