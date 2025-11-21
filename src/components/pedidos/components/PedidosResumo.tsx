@@ -201,6 +201,7 @@ export function PedidosResumo({
             onClick={() => onFiltroClick?.(badge.id)}
             className={cn(
               "flex items-center gap-2 px-3 py-1.5 cursor-pointer transition-all",
+              badge.destaque && "border-0",
               badge.color,
               isActive && "ring-2 ring-primary ring-offset-2 scale-105"
             )}
