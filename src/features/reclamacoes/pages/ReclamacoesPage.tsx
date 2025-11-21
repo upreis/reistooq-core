@@ -282,6 +282,13 @@ export function ReclamacoesPage() {
     // placeholderData é reavaliado SEMPRE que a query está desabilitada (enabled: false)
     // Isso permite restaurar dados do cache ao retornar à página
     placeholderData: () => {
+      // ✅ CORREÇÃO PROBLEMA 2: Aguardar cache estar carregado antes de tentar restaurar
+      // Evita race condition onde placeholderData executa antes de useReclamacoesFiltersUnified carregar cache
+      if (!persistentCache.isStateLoaded) {
+        console.log('⏳ Cache ainda não carregado - aguardando...');
+        return undefined;
+      }
+
       if (!persistentCache.hasValidPersistedState() || !persistentCache.persistedState?.reclamacoes) {
         return undefined;
       }
