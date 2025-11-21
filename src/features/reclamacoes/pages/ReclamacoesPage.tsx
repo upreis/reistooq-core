@@ -117,7 +117,7 @@ export function ReclamacoesPage() {
         }
       }
     }
-  }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState, selectedAccountIds.length]);
+  }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState?.selectedAccounts, selectedAccountIds]);
 
   // Buscar reclamações com React Query + Cache
   const { data: queryData, isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
@@ -452,8 +452,6 @@ export function ReclamacoesPage() {
               />
             </div>
 
-            {/* 🔄 INDICADOR DE LOADING */}
-            {(loadingReclamacoes || isManualSearching) && <LoadingIndicator />}
 
             {/* Tabs: Ativas vs Histórico + Filtros */}
             <div className="px-4 md:px-6 mt-2">
@@ -495,20 +493,30 @@ export function ReclamacoesPage() {
                   />
                 </div>
 
-                <TabsContent value={activeTab} className="mt-2">
-                  <ReclamacoesTable
-                    reclamacoes={reclamacoesPaginadas}
-                    isLoading={loadingReclamacoes || isManualSearching}
-                    error={errorReclamacoes ? String(errorReclamacoes) : null}
-                    onStatusChange={handleStatusChange}
-                    onDeleteReclamacao={handleDeleteReclamacao}
-                    onOpenAnotacoes={handleOpenAnotacoes}
-                    anotacoes={anotacoes}
-                    onTableReady={setTableInstance}
-                    activeTab={activeTab}
-                    columnManager={columnManager}
-                  />
-                </TabsContent>
+                {/* Área da tabela com loader localizado */}
+                <div className="relative">
+                  {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
+                  {(loadingReclamacoes || isManualSearching) && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
+                      <LoadingIndicator />
+                    </div>
+                  )}
+                  
+                  <TabsContent value={activeTab} className="mt-2">
+                    <ReclamacoesTable
+                      reclamacoes={reclamacoesPaginadas}
+                      isLoading={loadingReclamacoes || isManualSearching}
+                      error={errorReclamacoes ? String(errorReclamacoes) : null}
+                      onStatusChange={handleStatusChange}
+                      onDeleteReclamacao={handleDeleteReclamacao}
+                      onOpenAnotacoes={handleOpenAnotacoes}
+                      anotacoes={anotacoes}
+                      onTableReady={setTableInstance}
+                      activeTab={activeTab}
+                      columnManager={columnManager}
+                    />
+                  </TabsContent>
+                </div>
               </Tabs>
             </div>
 
