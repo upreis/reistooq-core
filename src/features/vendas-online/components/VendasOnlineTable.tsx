@@ -17,16 +17,20 @@ interface VendasOnlineTableProps {
   onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
   activeTab?: 'ativas' | 'historico';
   columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
+  filteredOrders?: any[]; // 🎯 Vendas já filtradas por aba
 }
 
-export const VendasOnlineTable = ({ onStatusChange, activeTab, columnManager }: VendasOnlineTableProps) => {
+export const VendasOnlineTable = ({ onStatusChange, activeTab, columnManager, filteredOrders }: VendasOnlineTableProps) => {
   const { 
-    orders, 
+    orders: storeOrders, 
     filters, 
     pagination,
     isLoading,
     setPage 
   } = useVendasStore();
+
+  // Usar vendas filtradas se fornecidas, senão usar do store
+  const orders = filteredOrders || storeOrders;
 
   const [noteDialog, setNoteDialog] = useState<{ open: boolean; packId: string } | null>(null);
   const [packDialog, setPackDialog] = useState<{ open: boolean; packId: string } | null>(null);
