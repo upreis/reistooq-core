@@ -97,7 +97,8 @@ export const useVendasAggregator = (
       aguardando_ml: 0,
       resolvido_sem_dinheiro: 0,
       resolvido_com_dinheiro: 0,
-      cancelado: 0
+      cancelado: 0,
+      foi_para_devolucao: 0
     };
     vendasEnriquecidas.forEach(v => {
       porAnalise[v.status_analise_local] = (porAnalise[v.status_analise_local] || 0) + 1;

@@ -195,10 +195,6 @@ export const VendasTable = ({
                       <StatusAnaliseSelect
                         value={(order as any).status_analise_local || 'pendente'}
                         onChange={(newStatus) => onStatusChange(order.id.toString(), newStatus)}
-                        allowedStatuses={activeTab === 'ativas' 
-                          ? ['pendente', 'em_analise', 'aguardando_ml'] 
-                          : ['resolvido_sem_dinheiro', 'resolvido_com_dinheiro', 'cancelado']
-                        }
                       />
                     )}
                   </TableCell>
