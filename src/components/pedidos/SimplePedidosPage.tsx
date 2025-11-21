@@ -1258,11 +1258,16 @@ useEffect(() => {
 
       
 
-      {/* 🔄 INDICADOR DE LOADING */}
-      {loading && <LoadingIndicator />}
 
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
-      <div className="mt-2">
+      <div className="mt-2 relative">
+        {/* 🔄 LOADER APENAS NA ÁREA DA TABELA */}
+        {loading && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-md">
+            <LoadingIndicator />
+          </div>
+        )}
+        
         {/* F4.3: PedidosTableSection com Error Boundary */}
         <ErrorBoundary name="PedidosTableSection">
           <PedidosTableSection
