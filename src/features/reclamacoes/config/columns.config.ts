@@ -1,12 +1,13 @@
 /**
  * 🎯 CONFIGURAÇÃO CENTRALIZADA DE COLUNAS - RECLAMAÇÕES
  * Define todas as colunas disponíveis com metadados para gerenciamento avançado
+ * Baseado nas colunas reais da ReclamacoesTableColumns.tsx
  */
 
 import { ColumnDefinition, ColumnProfile } from '../types/columns.types';
 
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
-  // ====== ESSENCIAIS ======
+  // ====== ESSENCIAIS (sempre visíveis por padrão) ======
   {
     key: 'status_analise',
     label: 'Análise',
@@ -15,11 +16,21 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     visible: true,
     default: true,
     description: 'Status de análise da reclamação',
-    width: 150,
+    width: 180,
     sortable: false
   },
   {
-    key: 'empresa',
+    key: 'anotacoes',
+    label: 'Anotações',
+    category: 'basic',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Anotações internas da reclamação',
+    width: 80
+  },
+  {
+    key: 'account_name',
     label: 'Empresa',
     category: 'basic',
     priority: 'essential',
@@ -28,6 +39,164 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Empresa/Conta do Mercado Livre',
     width: 120
   },
+  {
+    key: 'produto',
+    label: 'Produto',
+    category: 'product',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Informações do produto com imagem',
+    width: 350
+  },
+  {
+    key: 'buyer_nickname',
+    label: 'Comprador',
+    category: 'customer',
+    priority: 'essential',
+    visible: true,
+    default: true,
+    description: 'Nome/apelido do comprador',
+    width: 150
+  },
+
+  // ====== DATAS (importantes) ======
+  {
+    key: 'order_date_created',
+    label: 'Data da Venda',
+    category: 'dates',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Data de criação do pedido',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'date_created',
+    label: 'Data Criação',
+    category: 'dates',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Data de criação da reclamação',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'last_updated',
+    label: 'Última Atualização',
+    category: 'dates',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Data da última atualização',
+    width: 160,
+    sortable: true
+  },
+  {
+    key: 'prazo_analise',
+    label: 'Prazo Análise',
+    category: 'dates',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Prazo para análise da reclamação',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'resolution_date',
+    label: 'Data da Resolução',
+    category: 'dates',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Data de resolução da reclamação',
+    width: 140,
+    sortable: true
+  },
+
+  // ====== PRODUTO (importantes) ======
+  {
+    key: 'order_item_quantity',
+    label: 'Quantidade',
+    category: 'product',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Quantidade de itens',
+    width: 100,
+    sortable: true
+  },
+  {
+    key: 'order_item_unit_price',
+    label: 'Valor do Produto',
+    category: 'product',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Preço unitário do item',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'order_item_seller_sku',
+    label: 'SKU',
+    category: 'product',
+    priority: 'optional',
+    visible: true,
+    default: true,
+    description: 'SKU do vendedor',
+    width: 150
+  },
+  {
+    key: 'order_item_title',
+    label: 'Nome do Produto',
+    category: 'product',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Título completo do produto',
+    width: 300
+  },
+
+  // ====== FINANCEIRAS (importantes) ======
+  {
+    key: 'order_total',
+    label: 'Total da Venda',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Valor total do pedido',
+    width: 130,
+    sortable: true
+  },
+  {
+    key: 'amount_value',
+    label: 'Valor na Reclamação',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Valor reclamado',
+    width: 140,
+    sortable: true
+  },
+  {
+    key: 'impacto_financeiro',
+    label: 'Impacto Financeiro',
+    category: 'financial',
+    priority: 'important',
+    visible: true,
+    default: true,
+    description: 'Impacto financeiro da reclamação',
+    width: 150,
+    sortable: true
+  },
+
+  // ====== BÁSICAS DA RECLAMAÇÃO (essenciais) ======
   {
     key: 'claim_id',
     label: 'N.º da Reclamação',
@@ -59,21 +228,9 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Status atual da reclamação',
     width: 180
   },
-
-  // ====== IMPORTANTES ======
-  {
-    key: 'anotacoes',
-    label: 'Anotações',
-    category: 'basic',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Anotações internas da reclamação',
-    width: 120
-  },
   {
     key: 'stage',
-    label: 'Estágio da Reclamação',
+    label: 'Estagio da Reclamação',
     category: 'basic',
     priority: 'important',
     visible: true,
@@ -81,61 +238,50 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Estágio atual do processo',
     width: 180
   },
+
+  // ====== RAZÃO (opcionais) ======
   {
-    key: 'date_created',
-    label: 'Data Criação',
-    category: 'dates',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Data de criação da reclamação',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'last_updated',
-    label: 'Última Atualização',
-    category: 'dates',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Data da última atualização',
-    width: 160,
-    sortable: true
-  },
-  {
-    key: 'buyer_nickname',
-    label: 'Apelido Comprador',
-    category: 'customer',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Nome/apelido do comprador',
+    key: 'reason_id',
+    label: 'N.º da Razão da Reclamação',
+    category: 'reason',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'ID da razão da reclamação',
     width: 150
   },
   {
-    key: 'order_item_title',
-    label: 'Título Item',
-    category: 'product',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Título do produto',
-    width: 300
+    key: 'reason_name',
+    label: 'Nome da Razão',
+    category: 'reason',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Nome descritivo da razão',
+    width: 200
   },
   {
-    key: 'amount_value',
-    label: 'Valor Reclamado',
-    category: 'financial',
-    priority: 'important',
-    visible: true,
-    default: true,
-    description: 'Valor total reclamado',
-    width: 140,
-    sortable: true
+    key: 'reason_detail',
+    label: 'Detalhe da Razão',
+    category: 'reason',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Detalhes adicionais da razão',
+    width: 250
+  },
+  {
+    key: 'reason_category',
+    label: 'Categoria da Razão',
+    category: 'reason',
+    priority: 'optional',
+    visible: false,
+    default: false,
+    description: 'Categoria da razão da reclamação',
+    width: 150
   },
 
-  // ====== OPCIONAIS ======
+  // ====== RECURSO (opcionais) ======
   {
     key: 'resource_id',
     label: 'N.º do Recurso Origem',
@@ -156,115 +302,11 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Tipo do recurso relacionado',
     width: 150
   },
-  {
-    key: 'reason_id',
-    label: 'N.º da Razão',
-    category: 'reason',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'ID da razão da reclamação',
-    width: 120
-  },
-  {
-    key: 'reason_name',
-    label: 'Nome da Razão',
-    category: 'reason',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'Nome descritivo da razão',
-    width: 200
-  },
-  {
-    key: 'reason_detail',
-    label: 'Detalhe da Razão',
-    category: 'reason',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Detalhes adicionais da razão',
-    width: 250
-  },
-  {
-    key: 'order_date_created',
-    label: 'Data Criação Pedido',
-    category: 'dates',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data de criação do pedido original',
-    width: 160,
-    sortable: true
-  },
-  {
-    key: 'resolution_date',
-    label: 'Data Resolução',
-    category: 'dates',
-    priority: 'optional',
-    visible: false,
-    default: false,
-    description: 'Data de resolução da reclamação',
-    width: 140,
-    sortable: true
-  },
-  {
-    key: 'order_item_quantity',
-    label: 'Quantidade',
-    category: 'product',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'Quantidade de itens',
-    width: 100,
-    sortable: true
-  },
-  {
-    key: 'order_item_unit_price',
-    label: 'Preço Unitário',
-    category: 'product',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'Preço unitário do item',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'order_item_seller_sku',
-    label: 'SKU',
-    category: 'product',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'SKU do vendedor',
-    width: 150
-  },
-  {
-    key: 'order_total',
-    label: 'Total Pedido',
-    category: 'financial',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'Valor total do pedido',
-    width: 130,
-    sortable: true
-  },
-  {
-    key: 'impacto_financeiro',
-    label: 'Impacto Financeiro',
-    category: 'financial',
-    priority: 'optional',
-    visible: true,
-    default: true,
-    description: 'Impacto financeiro da reclamação',
-    width: 150,
-    sortable: true
-  },
+
+  // ====== RESOLUÇÃO (opcionais) ======
   {
     key: 'resolution_benefited',
-    label: 'Beneficiado',
+    label: 'Resolução Beneficiada',
     category: 'resolution',
     priority: 'optional',
     visible: false,
@@ -274,7 +316,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'resolution_reason',
-    label: 'Razão Resolução',
+    label: 'Razão da Resolução',
     category: 'resolution',
     priority: 'optional',
     visible: false,
@@ -282,6 +324,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Razão da resolução final',
     width: 200
   },
+
+  // ====== METADADOS (opcionais) ======
   {
     key: 'site_id',
     label: 'Site ID',
@@ -294,7 +338,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'tem_trocas',
-    label: 'Tem Trocas',
+    label: 'Trocas',
     category: 'meta',
     priority: 'optional',
     visible: false,
@@ -304,7 +348,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'tem_mediacao',
-    label: 'Tem Mediação',
+    label: 'Mediação',
     category: 'meta',
     priority: 'optional',
     visible: false,
@@ -314,17 +358,17 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   },
   {
     key: 'order_id',
-    label: 'N.º Pedido',
+    label: 'N.º da Venda',
     category: 'meta',
     priority: 'optional',
-    visible: true,
-    default: true,
+    visible: false,
+    default: false,
     description: 'Número do pedido original',
     width: 150
   },
   {
     key: 'order_status',
-    label: 'Status Pedido',
+    label: 'Status da Venda',
     category: 'meta',
     priority: 'optional',
     visible: false,
@@ -342,6 +386,8 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     description: 'Código de rastreamento',
     width: 160
   },
+
+  // ====== AÇÕES (essencial) ======
   {
     key: 'actions',
     label: 'Ações',
@@ -380,6 +426,14 @@ export const DEFAULT_PROFILES: ColumnProfile[] = [
     description: 'Foco em valores e impacto financeiro',
     columns: COLUMN_DEFINITIONS.filter(col => 
       col.priority === 'essential' || col.category === 'financial'
+    ).map(col => col.key)
+  },
+  {
+    id: 'analysis',
+    name: 'Análise Completa',
+    description: 'Todas as informações para análise detalhada',
+    columns: COLUMN_DEFINITIONS.filter(col => 
+      col.priority === 'essential' || col.priority === 'important'
     ).map(col => col.key)
   }
 ];

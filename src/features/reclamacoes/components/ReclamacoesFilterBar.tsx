@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { ReclamacoesColumnSelector } from './ReclamacoesColumnSelector';
+import { ColumnManager } from './ColumnManager';
 import { Search, CalendarIcon, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { FlipButton } from '@/components/ui/flip-button';
 import type { Table } from '@tanstack/react-table';
+import { UseColumnManagerReturn } from '../types/columns.types';
 
 interface MLAccount {
   id: string;
@@ -34,6 +35,7 @@ interface ReclamacoesFilterBarProps {
   isLoading?: boolean;
   onCancel?: () => void;
   table?: Table<any>;
+  columnManager?: UseColumnManagerReturn;
 }
 
 export function ReclamacoesFilterBar({
@@ -47,7 +49,8 @@ export function ReclamacoesFilterBar({
   onBuscar,
   isLoading = false,
   onCancel,
-  table
+  table,
+  columnManager
 }: ReclamacoesFilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -196,12 +199,10 @@ export function ReclamacoesFilterBar({
           />
         </div>
 
-        {/* Seletor de Colunas */}
-        {table && (
-          <div className="flex-shrink-0">
-            <ReclamacoesColumnSelector table={table} />
-          </div>
-        )}
+        {/* Seletor de Colunas Avançado */}
+        <div className="flex-shrink-0">
+          <ColumnManager manager={columnManager} />
+        </div>
       </div>
 
     </div>
