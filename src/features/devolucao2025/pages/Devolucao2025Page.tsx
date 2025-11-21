@@ -402,16 +402,16 @@ export const Devolucao2025Page = () => {
                   />
                 </div>
               </div>
-              
-              {/* Resumo com badges clicáveis - mt-12 após as abas */}
-              <div className="mt-12">
-                <Devolucao2025Resumo 
-                  devolucoes={devolucoesFiltradasPorAba}
-                  onFiltroClick={setFiltroResumo}
-                  filtroAtivo={filtroResumo}
-                />
-              </div>
             </Tabs>
+            
+            {/* Resumo com badges clicáveis - mt-12 após as abas */}
+            <div className="mt-12">
+              <Devolucao2025Resumo 
+                devolucoes={devolucoesFiltradasPorAba}
+                onFiltroClick={setFiltroResumo}
+                filtroAtivo={filtroResumo}
+              />
+            </div>
           </div>
 
           {/* Tabela */}
