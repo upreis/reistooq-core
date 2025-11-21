@@ -73,8 +73,8 @@ export function useReclamacoesFiltersUnified() {
       const page = searchParams.get('page');
       if (page) {
         const parsedPage = parseInt(page, 10);
-        // 🔥 CORREÇÃO ERRO 3: Aceitar 0 como valor válido (não é erro, pode ser edge case)
-        if (!isNaN(parsedPage) && parsedPage >= 0) {
+        // 🔥 CORREÇÃO: Páginas começam em 1 (não 0), validar número inteiro positivo
+        if (!isNaN(parsedPage) && parsedPage >= 1) {
           urlFilters.currentPage = parsedPage;
         }
       }
@@ -82,8 +82,8 @@ export function useReclamacoesFiltersUnified() {
       const limit = searchParams.get('limit');
       if (limit) {
         const parsedLimit = parseInt(limit, 10);
-        // ✅ Validar que limit é número positivo válido
-        if (!isNaN(parsedLimit) && parsedLimit > 0) {
+        // 🔥 CORREÇÃO: Limitar items por página entre 25 e 100 (valores razoáveis)
+        if (!isNaN(parsedLimit) && parsedLimit >= 25 && parsedLimit <= 100) {
           urlFilters.itemsPerPage = parsedLimit;
         }
       }
