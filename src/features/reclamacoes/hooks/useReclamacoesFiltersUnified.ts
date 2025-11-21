@@ -62,15 +62,15 @@ export function useReclamacoesFiltersUnified() {
     const limit = searchParams.get('limit');
     if (limit) urlFilters.itemsPerPage = parseInt(limit, 10);
     
-    // 2. Carregar filtros do cache (apenas na primeira inicialização)
-    const cachedFilters = !isInitialized && persistentCache.persistedState ? {
-      periodo: persistentCache.persistedState.filters.periodo,
-      status: persistentCache.persistedState.filters.status,
-      type: persistentCache.persistedState.filters.type,
-      stage: persistentCache.persistedState.filters.stage,
-      selectedAccounts: persistentCache.persistedState.selectedAccounts,
-      currentPage: persistentCache.persistedState.currentPage,
-      itemsPerPage: persistentCache.persistedState.itemsPerPage
+    // 2. Carregar filtros do cache (apenas se URL não tiver os parâmetros E primeira vez)
+    const cachedFilters = (!isInitialized && persistentCache.persistedState) ? {
+      periodo: urlFilters.periodo ? undefined : persistentCache.persistedState.filters.periodo,
+      status: urlFilters.status ? undefined : persistentCache.persistedState.filters.status,
+      type: urlFilters.type ? undefined : persistentCache.persistedState.filters.type,
+      stage: urlFilters.stage ? undefined : persistentCache.persistedState.filters.stage,
+      selectedAccounts: urlFilters.selectedAccounts ? undefined : persistentCache.persistedState.selectedAccounts,
+      currentPage: urlFilters.currentPage ? undefined : persistentCache.persistedState.currentPage,
+      itemsPerPage: urlFilters.itemsPerPage ? undefined : persistentCache.persistedState.itemsPerPage
     } : {};
     
     // 3. Merge: Defaults → Cache (só primeira vez) → URL (sempre tem prioridade)
@@ -93,7 +93,7 @@ export function useReclamacoesFiltersUnified() {
     setTimeout(() => {
       isRestoringFromUrl.current = false;
     }, 0);
-  }, [persistentCache.isStateLoaded]); // 🔥 CORREÇÃO 2: Só monitora quando cache carrega (não searchParams)
+  }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora URL mas só carrega cache se URL não tem parâmetro
 
   // 🔥 CORREÇÃO 1: Cleanup separado - só roda no unmount real do componente
   useEffect(() => {
