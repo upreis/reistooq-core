@@ -413,8 +413,8 @@ export default function VendasOnline() {
           </div>
           
           {/* Table */}
-          <div className="px-4 md:px-6">
-            <VendasOnlineTable 
+          <div className="px-4 md:px-6 mt-2">
+            <VendasOnlineTable
               onStatusChange={handleStatusChange}
               activeTab={activeTab}
               columnManager={columnManager}
