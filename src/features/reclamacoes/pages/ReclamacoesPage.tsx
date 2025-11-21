@@ -277,17 +277,6 @@ export function ReclamacoesPage() {
     refetchOnWindowFocus: false,
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
-    // Inicializar com dados do localStorage se disponíveis
-    initialData: () => {
-      if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
-        console.log('📦 Iniciando com dados do cache:', persistentCache.persistedState.reclamacoes.length);
-        return persistentCache.persistedState.reclamacoes;
-      }
-      return undefined;
-    },
-    initialDataUpdatedAt: () => {
-      return persistentCache.persistedState?.cachedAt || 0;
-    }
   });
 
   // 🔍 BUSCAR RECLAMAÇÕES - Função principal
