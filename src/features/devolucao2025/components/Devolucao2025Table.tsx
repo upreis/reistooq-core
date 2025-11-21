@@ -417,16 +417,6 @@ export const Devolucao2025Table = ({
                   {dev.custo_envio_original ? `R$ ${dev.custo_envio_original.toFixed(2)}` : '-'}
                 </TableCell>
               )}
-              
-              {/* 📊 COLUNA DE ANÁLISE - Controle de Status */}
-              {isVisible('analise') && onStatusChange && (
-                <TableCell>
-                  <StatusAnaliseSelect
-                    value={(dev as any).status_analise_local || 'pendente'}
-                    onChange={(newStatus: StatusAnalise) => onStatusChange(dev.order_id, newStatus)}
-                  />
-                </TableCell>
-              )}
             </TableRow>
             );
           })}
