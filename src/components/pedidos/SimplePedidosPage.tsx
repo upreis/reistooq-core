@@ -1115,7 +1115,7 @@ useEffect(() => {
           </div>
 
           {/* 📊 Resumo de Métricas - após as abas */}
-          <div className="mt-8 px-4 md:px-6">
+          <div className="mt-12 px-4 md:px-6">
             <PedidosResumo
               pedidos={displayedOrders || orders}
               onFiltroClick={(filtro) => setQuickFilter(filtro)}
