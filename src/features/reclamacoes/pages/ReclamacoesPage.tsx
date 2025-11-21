@@ -482,20 +482,18 @@ export function ReclamacoesPage() {
                 </div>
 
                 <TabsContent value={activeTab}>
-                  <Card className="p-6">
-                    <ReclamacoesTable
-                      reclamacoes={reclamacoesPaginadas}
-                      isLoading={loadingReclamacoes || isManualSearching}
-                      error={errorReclamacoes ? String(errorReclamacoes) : null}
-                      onStatusChange={handleStatusChange}
-                      onDeleteReclamacao={handleDeleteReclamacao}
-                      onOpenAnotacoes={handleOpenAnotacoes}
-                      anotacoes={anotacoes}
-                      onTableReady={setTableInstance}
-                      activeTab={activeTab}
-                      columnManager={columnManager}
-                    />
-                  </Card>
+                  <ReclamacoesTable
+                    reclamacoes={reclamacoesPaginadas}
+                    isLoading={loadingReclamacoes || isManualSearching}
+                    error={errorReclamacoes ? String(errorReclamacoes) : null}
+                    onStatusChange={handleStatusChange}
+                    onDeleteReclamacao={handleDeleteReclamacao}
+                    onOpenAnotacoes={handleOpenAnotacoes}
+                    anotacoes={anotacoes}
+                    onTableReady={setTableInstance}
+                    activeTab={activeTab}
+                    columnManager={columnManager}
+                  />
                 </TabsContent>
               </Tabs>
             </div>
