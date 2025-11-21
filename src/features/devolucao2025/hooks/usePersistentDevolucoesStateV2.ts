@@ -140,13 +140,13 @@ export function usePersistentDevolucoesStateV2() {
           devolucoes: [],
           selectedAccounts: [],
           dateRange: {
-            from: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+            from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             to: new Date()
           },
           currentPage: 1,
           itemsPerPage: 50,
           visibleColumns: [],
-          periodo: '60',
+          periodo: '7',
           version: STORAGE_VERSION,
           cachedAt: 0
         };
