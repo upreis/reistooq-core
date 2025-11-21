@@ -3,14 +3,13 @@
  * 🎯 FASE 3: Integrado com ColumnManager avançado
  */
 
-import { useState, useMemo, memo, useCallback, useEffect } from 'react';
+import { useState, useMemo, memo, useCallback } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
   getFilteredRowModel,
   getSortedRowModel,
   flexRender,
-  VisibilityState,
   SortingState,
 } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -32,7 +31,6 @@ interface ReclamacoesTableProps {
   onDeleteReclamacao?: (claimId: string) => void;
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
-  onTableReady?: (table: any) => void;
   activeTab?: 'ativas' | 'historico';
 }
 
@@ -44,7 +42,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   onDeleteReclamacao,
   onOpenAnotacoes,
   anotacoes,
-  onTableReady,
   activeTab
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
@@ -58,9 +55,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
   );
   
-  // 🔧 SOLUÇÃO EXTREMA: NÃO usar columnManager, apenas TanStack Table nativo
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
@@ -72,29 +66,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     getRowId: (row) => row.claim_id || row.id || `row-${Math.random()}`,
     state: {
       globalFilter,
-      columnVisibility,
       sorting,
     },
     onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: (updater) => {
-      console.log('🔧 Column Visibility CHANGING:', updater);
-      setColumnVisibility(updater);
-    },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    debugTable: true,
-    debugHeaders: true,
-    debugColumns: true,
   });
-
-  // Notificar quando a tabela estiver pronta
-  useMemo(() => {
-    if (onTableReady) {
-      onTableReady(table);
-    }
-  }, [table, onTableReady]);
 
   if (isLoading) {
     return (
@@ -136,9 +115,6 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id} className="hover:bg-transparent border-b-2">
                   {headerGroup.headers.map((header) => {
-                    // 🔧 VERIFICAR VISIBILIDADE DO HEADER
-                    if (!header.column.getIsVisible()) return null;
-                    
                     const meta = header.column.columnDef.meta as any;
                     return (
                       <TableHead 
