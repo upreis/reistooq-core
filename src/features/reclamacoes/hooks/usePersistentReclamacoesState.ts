@@ -116,7 +116,7 @@ export function usePersistentReclamacoesState() {
       const currentState = persistedState || {
         reclamacoes: [],
         selectedAccounts: [],
-        filters: { periodo: '60' },
+        filters: { periodo: '7' }, // 🔥 CORREÇÃO 1: Alterado de '60' para '7'
         currentPage: 1,
         itemsPerPage: 50,
         cachedAt: Date.now(),
