@@ -54,45 +54,44 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
   
+  // ⚡ Memoizar colunas para evitar re-criação (ANTES do columnVisibility)
+  const columns = useMemo(() => 
+    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab), 
+    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
+  );
+  
   // 🎯 SINCRONIZAÇÃO COMPLETA columnVisibility com columnManager
   const columnVisibility = useMemo<VisibilityState>(() => {
     if (!columnManager) {
       return {};
     }
     
-    // Criar objeto de visibilidade baseado APENAS nas colunas que o columnManager diz que estão visíveis
+    // 🔧 CORREÇÃO CRÍTICA: Criar visibilidade SOMENTE para colunas que existem na tabela
     const visibility: VisibilityState = {};
     
-    // Para TODAS as definições, marcar como false primeiro
-    columnManager.definitions.forEach(def => {
-      visibility[def.key] = false;
+    // Obter todas as colunas que realmente existem na definição da tabela
+    const realColumnIds = new Set(columns.map(col => col.id).filter(Boolean));
+    
+    // Para cada coluna REAL da tabela, definir visibilidade baseado no columnManager
+    realColumnIds.forEach(columnId => {
+      visibility[columnId] = columnManager.state.visibleColumns.has(columnId);
     });
     
-    // Depois marcar como true APENAS as que estão no visibleColumns
-    columnManager.state.visibleColumns.forEach(key => {
-      visibility[key] = true;
-    });
-    
-    console.log('✅ [ReclamacoesTable] Visibilidade ATUALIZADA:', {
-      totalDefinitions: columnManager.definitions.length,
+    console.log('✅ [ReclamacoesTable] Visibilidade SINCRONIZADA:', {
+      totalDefinitionsConfig: columnManager.definitions.length,
+      totalRealColumns: realColumnIds.size,
       visibleCount: columnManager.state.visibleColumns.size,
       visibleKeys: Array.from(columnManager.state.visibleColumns),
-      invisibleKeys: columnManager.definitions.filter(d => !columnManager.state.visibleColumns.has(d.key)).map(d => d.key)
+      realColumnIds: Array.from(realColumnIds),
     });
     
     return visibility;
-  }, [columnManager?.state.visibleColumns, columnManager?.definitions]);
+  }, [columnManager?.state.visibleColumns, columnManager?.definitions, columns]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
     setMensagensModalOpen(true);
   }, []);
-
-  // ⚡ Memoizar colunas para evitar re-criação
-  const columns = useMemo(() => 
-    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab), 
-    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
-  );
 
   const table = useReactTable({
     data: reclamacoes,
