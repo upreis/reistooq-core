@@ -188,11 +188,16 @@ ReclamacoesTable.displayName = 'ReclamacoesTable';
 const OptimizedTableRow = memo(function OptimizedTableRow({ row }: { row: any }) {
   return (
     <TableRow className="hover:bg-muted/50">
-      {row.getVisibleCells().map((cell: any) => (
-        <TableCell key={cell.id}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-        </TableCell>
-      ))}
+      {row.getVisibleCells().map((cell: any) => {
+        // 🔧 GARANTIR que apenas células visíveis sejam renderizadas
+        if (!cell.column.getIsVisible()) return null;
+        
+        return (
+          <TableCell key={cell.id}>
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        );
+      })}
     </TableRow>
   );
 });
