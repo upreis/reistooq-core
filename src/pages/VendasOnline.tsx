@@ -35,6 +35,7 @@ import { useVendasColumnManager } from '@/features/vendas-online/hooks/useVendas
 import { useVendasPolling } from '@/features/vendas-online/hooks/useVendasPolling'; // 🎯 FASE 4
 import { useVendasAggregator } from '@/features/vendas-online/hooks/useVendasAggregator'; // 🎯 FASE 4
 import { toast } from 'sonner'; // 🎯 FASE 4
+import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 interface MLAccount {
   id: string;
@@ -358,6 +359,9 @@ export default function VendasOnline() {
               )}
             </div>
           </div>
+          
+          {/* 🔄 INDICADOR DE LOADING */}
+          {(loadingVendas || isManualSearching) && <LoadingIndicator />}
           
           {/* Tabs: Ativas vs Histórico + Filtros na mesma linha */}
           <div className="px-4 md:px-6">

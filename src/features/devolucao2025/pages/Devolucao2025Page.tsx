@@ -35,6 +35,7 @@ import type { StatusAnalise } from '../types/devolucao-analise.types';
 import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.types';
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
+import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
@@ -355,7 +356,10 @@ export const Devolucao2025Page = () => {
           <div className="px-4 md:px-6">
             <h1 className="text-3xl font-bold">📋 Devoluções de Vendas</h1>
           </div>
-          
+
+          {/* 🔄 INDICADOR DE LOADING */}
+          {(isLoading || isManualSearching) && <LoadingIndicator />}
+
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => updateFilter('activeTab', v as 'ativas' | 'historico')}>
