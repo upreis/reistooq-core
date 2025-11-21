@@ -350,7 +350,9 @@ export const Devolucao2025Page = () => {
     <div className="w-full">
       <div className="space-y-6">
           {/* Sub-navegação */}
-          <MLOrdersNav />
+          <div className="px-4 md:px-6">
+            <MLOrdersNav />
+          </div>
           
           {/* Header - sem py, apenas px */}
           <div className="px-4 md:px-6">
@@ -408,7 +410,7 @@ export const Devolucao2025Page = () => {
               </div>
 
               {/* Resumo com badges clicáveis */}
-              <div className="mt-12 mb-2 px-4 md:px-6">
+              <div className="mt-12 mb-2">
                 <Devolucao2025Resumo 
                   devolucoes={devolucoesFiltradasPorAba}
                   onFiltroClick={setFiltroResumo}
