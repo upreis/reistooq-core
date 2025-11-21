@@ -16,6 +16,7 @@ import { ReclamacoesStats } from '../components/ReclamacoesStats';
 import { ReclamacoesEmptyState } from '../components/ReclamacoesEmptyState';
 import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAlert';
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
+import { SimpleColumnSelector } from '../components/SimpleColumnSelector';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
 import { Card } from '@/components/ui/card';
@@ -465,20 +466,27 @@ export function ReclamacoesPage() {
                   </TabsList>
                   
                   {/* Filtros integrados */}
-                  <div className="flex-1 min-w-0">
-                    <ReclamacoesFilterBar
-                      accounts={mlAccounts || []}
-                      selectedAccountIds={selectedAccountIds}
-                      onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
-                      periodo={unifiedFilters.periodo}
-                      onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
-                      searchTerm={unifiedFilters.status}
-                      onSearchChange={(term) => updateFilter('status', term)}
-                      onBuscar={handleBuscarReclamacoes}
-                      isLoading={isManualSearching}
-                      onCancel={handleCancelarBusca}
-                      table={tableInstance}
-                    />
+                  <div className="flex-1 min-w-0 flex items-center gap-3">
+                    <div className="flex-1">
+                      <ReclamacoesFilterBar
+                        accounts={mlAccounts || []}
+                        selectedAccountIds={selectedAccountIds}
+                        onAccountsChange={(ids) => updateFilter('selectedAccounts', ids)}
+                        periodo={unifiedFilters.periodo}
+                        onPeriodoChange={(periodo) => updateFilter('periodo', periodo)}
+                        searchTerm={unifiedFilters.status}
+                        onSearchChange={(term) => updateFilter('status', term)}
+                        onBuscar={handleBuscarReclamacoes}
+                        isLoading={isManualSearching}
+                        onCancel={handleCancelarBusca}
+                        table={tableInstance}
+                      />
+                    </div>
+                    
+                    {/* Seletor de Colunas */}
+                    {tableInstance && (
+                      <SimpleColumnSelector table={tableInstance} />
+                    )}
                   </div>
                 </div>
                 
