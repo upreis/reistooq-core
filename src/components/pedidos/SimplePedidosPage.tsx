@@ -1258,30 +1258,33 @@ useEffect(() => {
 
       {/* 🚀 FASE 2: Loading otimizado */}
       {/* 🎯 SEÇÃO DA TABELA DE PEDIDOS - MIGRAÇÃO GRADUAL */}
-            {/* F4.3: PedidosTableSection com Error Boundary */}
-            <ErrorBoundary name="PedidosTableSection">
-              <PedidosTableSection
-        orders={displayedOrders}
-        total={total}
-        loading={loading}
-        error={error}
-        state={state}
-        filters={filtersManager.appliedFilters}
-        actions={actions}
-        selectedOrders={selectedOrders}
-        setSelectedOrders={setSelectedOrders}
-        mappingData={mappingData}
-        visibleColumns={visibleColumns}
-        visibleDefinitions={columnManager.visibleDefinitions}
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={(page) => {
-          actions.setPage(page);
-        }}
-        isPedidoProcessado={isPedidoProcessado}
-        renderStatusBaixa={renderStatusBaixa}
-        renderStatusInsumos={renderStatusInsumos}
-      />
+      <div className="mt-2">
+        {/* F4.3: PedidosTableSection com Error Boundary */}
+        <ErrorBoundary name="PedidosTableSection">
+          <PedidosTableSection
+            orders={displayedOrders}
+            total={total}
+            loading={loading}
+            error={error}
+            state={state}
+            filters={filtersManager.appliedFilters}
+            actions={actions}
+            selectedOrders={selectedOrders}
+            setSelectedOrders={setSelectedOrders}
+            mappingData={mappingData}
+            visibleColumns={visibleColumns}
+            visibleDefinitions={columnManager.visibleDefinitions}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={(page) => {
+              actions.setPage(page);
+            }}
+            isPedidoProcessado={isPedidoProcessado}
+            renderStatusBaixa={renderStatusBaixa}
+            renderStatusInsumos={renderStatusInsumos}
+          />
+        </ErrorBoundary>
+      </div>
 
 
       {/* 🔗 Modal de Mapeamento Inline */}
@@ -1325,8 +1328,6 @@ useEffect(() => {
         empresasSelecionadas={filtersManager.appliedFilters?.contasML || []}
         contasML={accounts}
       />
-            </ErrorBoundary>
-        </div>
 
       {/* 📄 RODAPÉ FIXADO COM PAGINAÇÃO */}
       {!loading && total > 0 && (
@@ -1349,6 +1350,7 @@ useEffect(() => {
       )}
 
       {/* 🛡️ MIGRAÇÃO GRADUAL COMPLETA - Todos os 7 passos implementados */}
+      </div>
     </div>
   );
 }
