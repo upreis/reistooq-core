@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { ColumnSelector } from './ColumnSelector';
+import { ColumnManager } from './ColumnManager';
 import { Search, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,8 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { FlipButton } from '@/components/ui/flip-button';
 import type { Table } from '@tanstack/react-table';
-import type { ColumnConfig } from './ColumnSelector';
-import type { UseColumnManagerReturn } from '../types/columns.types'; // 🎯 FASE 3
+import type { UseColumnManagerReturn } from '../types/columns.types';
 
 interface MLAccount {
   id: string;
@@ -34,11 +33,7 @@ interface VendasFilterBarProps {
   isLoading?: boolean;
   onCancel?: () => void;
   table?: Table<any>;
-  columnManager?: UseColumnManagerReturn; // 🎯 FASE 3 - NOVO
-  // Deprecated - mantidos para compatibilidade temporária
-  allColumns?: ColumnConfig[];
-  visibleColumns?: string[];
-  onVisibleColumnsChange?: (columns: string[]) => void;
+  columnManager?: UseColumnManagerReturn;
 }
 
 export function VendasFilterBar({
@@ -53,10 +48,7 @@ export function VendasFilterBar({
   isLoading = false,
   onCancel,
   table,
-  columnManager, // 🎯 FASE 3 - NOVO
-  allColumns,
-  visibleColumns,
-  onVisibleColumnsChange
+  columnManager
 }: VendasFilterBarProps) {
   const [accountsPopoverOpen, setAccountsPopoverOpen] = useState(false);
 
@@ -183,26 +175,10 @@ export function VendasFilterBar({
         />
       </div>
 
-      {/* Seletor de Colunas - integrado com columnManager */}
-      {columnManager ? (
+      {/* Seletor de Colunas Avançado */}
+      {columnManager && (
         <div className="flex-shrink-0">
-          <ColumnSelector
-            columns={columnManager.definitions.map(def => ({
-              id: def.key,
-              label: def.label,
-              group: def.category
-            }))}
-            visibleColumns={Array.from(columnManager.state.visibleColumns)}
-            onVisibleColumnsChange={(cols) => columnManager.actions.setVisibleColumns(cols)}
-          />
-        </div>
-      ) : allColumns && visibleColumns && onVisibleColumnsChange && (
-        <div className="flex-shrink-0">
-          <ColumnSelector
-            columns={allColumns}
-            visibleColumns={visibleColumns}
-            onVisibleColumnsChange={onVisibleColumnsChange}
-          />
+          <ColumnManager manager={columnManager} />
         </div>
       )}
     </div>
