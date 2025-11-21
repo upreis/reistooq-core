@@ -417,7 +417,8 @@ export default function VendasOnline() {
             <VendasOnlineTable 
               onStatusChange={handleStatusChange}
               activeTab={activeTab}
-              columnManager={columnManager} // 🎯 CRÍTICO 1: Passar columnManager
+              columnManager={columnManager}
+              filteredOrders={vendasFiltradasPorAba}
             />
           </div>
           
