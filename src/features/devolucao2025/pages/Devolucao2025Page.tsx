@@ -360,6 +360,15 @@ export const Devolucao2025Page = () => {
           {/* 🔄 INDICADOR DE LOADING */}
           {(isLoading || isManualSearching) && <LoadingIndicator />}
 
+          {/* Resumo com badges clicáveis */}
+          <div className="px-4 md:px-6 mt-12 mb-2">
+            <Devolucao2025Resumo 
+              devolucoes={devolucoesFiltradasPorAba}
+              onFiltroClick={setFiltroResumo}
+              filtroAtivo={filtroResumo}
+            />
+          </div>
+
           {/* Tabs: Ativas vs Histórico + Filtros */}
           <div className="px-4 md:px-6 space-y-4">
             <Tabs value={activeTab} onValueChange={(v) => updateFilter('activeTab', v as 'ativas' | 'historico')}>
@@ -434,15 +443,6 @@ export const Devolucao2025Page = () => {
                 />
               </TabsContent>
             </Tabs>
-            
-            {/* Resumo com badges clicáveis */}
-            <div className="mt-12 mb-2">
-              <Devolucao2025Resumo 
-                devolucoes={devolucoesFiltradasPorAba}
-                onFiltroClick={setFiltroResumo}
-                filtroAtivo={filtroResumo}
-              />
-            </div>
           </div>
 
           {/* Espaço para rodapé */}
