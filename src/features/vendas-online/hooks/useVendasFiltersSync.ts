@@ -65,8 +65,8 @@ export const parseFiltersFromUrl = (searchParams: URLSearchParams): Partial<Vend
 export const encodeFiltersToUrl = (filters: VendasFilters): URLSearchParams => {
   const params = new URLSearchParams();
 
-  // Período (omitir padrão de 60 dias)
-  if (filters.periodo && filters.periodo !== '60') {
+  // Período (sempre incluir na URL)
+  if (filters.periodo) { // 🔥 CORREÇÃO: Sempre incluir periodo (removido !== '60')
     params.set('periodo', filters.periodo);
   }
 
