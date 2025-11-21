@@ -29,7 +29,7 @@ export function useReclamacoesFiltersUnified() {
   const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // 🔥 CORREÇÃO: Restaurar filtros priorizando Cache quando SEM URL params
+  // 🔥 CORREÇÃO FINAL: Lógica simplificada e robusta
   useEffect(() => {
     if (persistentCache.isStateLoaded && !isInitialized) {
       // 1. Parsear filtros da URL
@@ -60,68 +60,72 @@ export function useReclamacoesFiltersUnified() {
         hasUrlParams = true; // ✅ Stage é filtro de busca
       }
       
-      // ✅ CORREÇÃO PROBLEMA 1: Accounts não marca hasUrlParams
-      // Accounts é seleção de contas, não filtro de busca aplicado
+      // ✅ Accounts/page/limit SÓ são usados se hasUrlParams=true (link compartilhado)
       const accounts = searchParams.get('accounts');
       if (accounts) {
         urlFilters.selectedAccounts = accounts.split(',');
-        // ❌ NÃO marcar hasUrlParams = true aqui
       }
       
       const page = searchParams.get('page');
       if (page) {
         urlFilters.currentPage = parseInt(page, 10);
-        // ❌ Paginação também NÃO marca hasUrlParams
       }
       
       const limit = searchParams.get('limit');
       if (limit) {
         urlFilters.itemsPerPage = parseInt(limit, 10);
-        // ❌ Items per page também NÃO marca hasUrlParams
       }
       
-      // 2. Carregar filtros do cache
-      const cachedFilters = persistentCache.persistedState ? {
-        periodo: persistentCache.persistedState.filters.periodo,
-        status: persistentCache.persistedState.filters.status,
-        type: persistentCache.persistedState.filters.type,
-        stage: persistentCache.persistedState.filters.stage,
-        selectedAccounts: persistentCache.persistedState.selectedAccounts,
-        currentPage: persistentCache.persistedState.currentPage,
-        itemsPerPage: persistentCache.persistedState.itemsPerPage
-      } : {};
+      // 2. Carregar filtros do cache com SAFE ACCESS
+      const cachedFilters: Partial<ReclamacoesFilters> = {};
       
-      // 3. Lógica de merge inteligente:
-      //    - Se TEM filtros de busca na URL (periodo/status/type/stage) → usar URL (link compartilhado)
-      //    - Se NÃO TEM filtros de busca na URL → usar CACHE (retorno à página)
+      if (persistentCache.persistedState) {
+        const state = persistentCache.persistedState;
+        
+        // ✅ CORREÇÃO ERRO 4: Safe access com optional chaining
+        if (state.filters) {
+          cachedFilters.periodo = state.filters.periodo;
+          cachedFilters.status = state.filters.status;
+          cachedFilters.type = state.filters.type;
+          cachedFilters.stage = state.filters.stage;
+        }
+        
+        // Outros campos do estado
+        if (state.selectedAccounts) {
+          cachedFilters.selectedAccounts = state.selectedAccounts;
+        }
+        if (typeof state.currentPage === 'number') {
+          cachedFilters.currentPage = state.currentPage;
+        }
+        if (typeof state.itemsPerPage === 'number') {
+          cachedFilters.itemsPerPage = state.itemsPerPage;
+        }
+      }
+      
+      // 3. Lógica SIMPLIFICADA:
+      //    - Link compartilhado (TEM filtros de busca na URL) → usar URL completa
+      //    - Retorno à página (SEM filtros de busca na URL) → usar CACHE completo
       let mergedFilters: ReclamacoesFilters;
       
       if (hasUrlParams) {
-        // URL tem filtros de busca → prioridade URL
+        // ✅ Link compartilhado: URL tem prioridade TOTAL
         mergedFilters = {
           ...DEFAULT_FILTERS,
-          ...cachedFilters,
           ...urlFilters
         };
-        console.log('🔗 Restaurando filtros da URL (link compartilhado):', {
+        console.log('🔗 Link compartilhado detectado - usando APENAS URL:', {
           urlFilters,
-          hasUrlParams: true
+          ignorandoCache: true
         });
       } else {
-        // Sem filtros de busca na URL → prioridade CACHE
-        // MAS ainda aceita accounts/page/limit da URL se presentes
+        // ✅ Retorno à página: CACHE tem prioridade TOTAL (ignora URL)
         mergedFilters = {
           ...DEFAULT_FILTERS,
-          ...cachedFilters,
-          // ✅ Sobrescrever apenas accounts/page/limit se vieram da URL
-          ...(urlFilters.selectedAccounts && { selectedAccounts: urlFilters.selectedAccounts }),
-          ...(urlFilters.currentPage && { currentPage: urlFilters.currentPage }),
-          ...(urlFilters.itemsPerPage && { itemsPerPage: urlFilters.itemsPerPage })
+          ...cachedFilters
         };
-        console.log('💾 Restaurando filtros do cache (última busca aplicada):', {
+        console.log('💾 Retorno à página - usando APENAS CACHE:', {
           cachedFilters,
-          urlAccounts: urlFilters.selectedAccounts,
-          hasUrlParams: false
+          ignorandoURL: true
         });
       }
       
