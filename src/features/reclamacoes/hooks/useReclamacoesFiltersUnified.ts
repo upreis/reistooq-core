@@ -91,21 +91,22 @@ export function useReclamacoesFiltersUnified() {
       // 2. Carregar filtros do cache com SAFE ACCESS
       const cachedFilters: Partial<ReclamacoesFilters> = {};
       
-      // 🔥 CORREÇÃO ERRO 4: Validar persistedState E persistedState.filters antes de acessar
-      if (persistentCache.persistedState?.filters) {
-        const filters = persistentCache.persistedState.filters;
-        
-        // Safe access garantido - filters existe
-        if (filters.periodo) cachedFilters.periodo = filters.periodo;
-        if (filters.status) cachedFilters.status = filters.status;
-        if (filters.type) cachedFilters.type = filters.type;
-        if (filters.stage) cachedFilters.stage = filters.stage;
-      }
-      
-      // Outros campos do estado (fora de filters)
+      // 🔥 CORREÇÃO ERRO 4: Validar persistedState antes de acessar qualquer propriedade
       if (persistentCache.persistedState) {
         const state = persistentCache.persistedState;
         
+        // ✅ CORREÇÃO CRÍTICA: Validar EXISTÊNCIA (!== undefined) ao invés de truthy
+        // Strings vazias ('') são valores VÁLIDOS e devem ser restauradas do cache
+        if (state.filters) {
+          const filters = state.filters;
+          
+          if (filters.periodo !== undefined) cachedFilters.periodo = filters.periodo;
+          if (filters.status !== undefined) cachedFilters.status = filters.status;
+          if (filters.type !== undefined) cachedFilters.type = filters.type;
+          if (filters.stage !== undefined) cachedFilters.stage = filters.stage;
+        }
+        
+        // Outros campos do estado (fora de filters)
         // 🔥 CORREÇÃO: Validar que array não está vazio (evitar busca sem contas)
         if (state.selectedAccounts && state.selectedAccounts.length > 0) {
           cachedFilters.selectedAccounts = state.selectedAccounts;
