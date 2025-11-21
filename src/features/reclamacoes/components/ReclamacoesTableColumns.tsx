@@ -263,8 +263,8 @@ export const reclamacoesColumns = (
       const claimId = row.original.claim_id;
       const currentStatus = (row.original.status_analise || 'pendente') as StatusAnalise;
       
-      // ✨ Determinar quais status podem ser selecionados baseado na aba
-      const allowedStatuses = activeTab === 'historico' ? STATUS_HISTORICO : STATUS_ATIVOS;
+      // ✨ Todas as opções disponíveis em ambas as abas
+      const allowedStatuses = undefined; // undefined = mostrar todas
       
       return (
         <div className="sticky left-0 bg-background z-10 px-2">
