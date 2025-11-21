@@ -87,10 +87,7 @@ export function useReclamacoesFiltersUnified() {
     });
     
     setFilters(mergedFilters);
-    
-    if (!isInitialized) {
-      setIsInitialized(true);
-    }
+    setIsInitialized(true); // 🔥 CORREÇÃO 3: Sempre seta após restaurar (sem condicional)
 
     // 🔥 ERRO 5: Resetar flag após restauração completar
     setTimeout(() => {
