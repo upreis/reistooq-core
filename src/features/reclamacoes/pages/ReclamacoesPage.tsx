@@ -282,11 +282,46 @@ export function ReclamacoesPage() {
     // placeholderData é reavaliado SEMPRE que a query está desabilitada (enabled: false)
     // Isso permite restaurar dados do cache ao retornar à página
     placeholderData: () => {
-      if (persistentCache.hasValidPersistedState() && persistentCache.persistedState?.reclamacoes) {
-        console.log('📦 Restaurando dados do cache:', persistentCache.persistedState.reclamacoes.length);
-        return persistentCache.persistedState.reclamacoes;
+      if (!persistentCache.hasValidPersistedState() || !persistentCache.persistedState?.reclamacoes) {
+        return undefined;
       }
-      return undefined;
+
+      const cached = persistentCache.persistedState;
+
+      // ✅ VALIDAÇÃO CRÍTICA: Verificar se filtros atuais CORRESPONDEM aos filtros salvos com dados
+      // Evita mostrar dados incorretos quando filtros foram alterados sem buscar
+      
+      // 1. Validar contas selecionadas
+      const accountsMatch = 
+        cached.selectedAccounts?.length === selectedAccountIds.length &&
+        cached.selectedAccounts?.every(acc => selectedAccountIds.includes(acc));
+
+      if (!accountsMatch) {
+        console.log('⚠️ Cache ignorado: contas não correspondem', {
+          cached: cached.selectedAccounts,
+          current: selectedAccountIds
+        });
+        return undefined;
+      }
+
+      // 2. Validar filtros de busca
+      const filtersMatch = 
+        cached.filters?.periodo === filters.periodo &&
+        cached.filters?.status === filters.status &&
+        cached.filters?.type === filters.type &&
+        cached.filters?.stage === filters.stage;
+
+      if (!filtersMatch) {
+        console.log('⚠️ Cache ignorado: filtros não correspondem', {
+          cached: cached.filters,
+          current: filters
+        });
+        return undefined;
+      }
+
+      // ✅ Filtros correspondem - seguro restaurar dados
+      console.log('📦 Restaurando dados do cache (filtros validados):', cached.reclamacoes.length);
+      return cached.reclamacoes;
     }
   });
 
