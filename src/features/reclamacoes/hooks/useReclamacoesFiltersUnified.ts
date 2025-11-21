@@ -91,9 +91,11 @@ export function useReclamacoesFiltersUnified() {
     () => {} // Não fazer nada quando URL mudar - restauração já foi feita acima
   );
 
-  // 🔥 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem
+  // 🔥 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem (com debounce)
   useEffect(() => {
-    if (isInitialized && filters) {
+    if (!isInitialized) return; // Não salvar durante inicialização
+    
+    const timer = setTimeout(() => {
       // Salvar apenas os filtros (não os dados de reclamações)
       persistentCache.saveState({
         filters: {
@@ -118,8 +120,10 @@ export function useReclamacoesFiltersUnified() {
         accounts: filters.selectedAccounts.length,
         page: filters.currentPage
       });
-    }
-  }, [filters, isInitialized, persistentCache]);
+    }, 300); // Debounce de 300ms
+    
+    return () => clearTimeout(timer);
+  }, [filters, isInitialized]); // 🔥 REMOVIDO persistentCache das dependências para evitar loop
 
   // Atualizar um filtro específico
   const updateFilter = useCallback(<K extends keyof ReclamacoesFilters>(
