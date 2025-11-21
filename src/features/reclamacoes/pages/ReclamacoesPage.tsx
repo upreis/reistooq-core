@@ -412,14 +412,14 @@ export function ReclamacoesPage() {
   return (
     <ErrorBoundary>
       <div className="w-full">
-        <div className="space-y-2 pb-20">
+        <div className="pb-20">
             {/* Sub-navegação */}
             <div className="px-4 md:px-6">
               <MLOrdersNav />
             </div>
             
             {/* Header */}
-            <div className="px-4 md:px-6 py-3">
+            <div className="px-4 md:px-6 py-3 mt-2">
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1">
                   <h1 className="text-3xl font-bold">📋 Reclamações de Vendas</h1>
@@ -433,7 +433,7 @@ export function ReclamacoesPage() {
             </div>
 
             {/* Filtros rápidos de ciclo de vida */}
-            <div className="px-4 md:px-6">
+            <div className="px-4 md:px-6 mt-2">
               <ReclamacoesLifecycleQuickFilter
                 onFilterChange={setLifecycleFilter}
                 counts={{
@@ -448,7 +448,7 @@ export function ReclamacoesPage() {
             {(loadingReclamacoes || isManualSearching) && <LoadingIndicator />}
 
             {/* Tabs: Ativas vs Histórico + Filtros */}
-            <div className="px-4 md:px-6 space-y-4">
+            <div className="px-4 md:px-6 mt-2">
               <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'ativas' | 'historico')}>
                 <div className="flex items-center gap-3 flex-nowrap">
                   <TabsList className="grid w-auto grid-cols-2 shrink-0 h-10">
@@ -479,7 +479,7 @@ export function ReclamacoesPage() {
                 </div>
                 
                 {/* Resumo de Métricas - após as abas */}
-                <div className="mt-12 px-4 md:px-6">
+                <div className="mt-12">
                   <ReclamacoesResumo 
                     reclamacoes={reclamacoesEnriquecidas} 
                     onFiltroClick={setFiltroResumo}
@@ -487,7 +487,7 @@ export function ReclamacoesPage() {
                   />
                 </div>
 
-                <TabsContent value={activeTab}>
+                <TabsContent value={activeTab} className="mt-2">
                   <ReclamacoesTable
                     reclamacoes={reclamacoesPaginadas}
                     isLoading={loadingReclamacoes || isManualSearching}
