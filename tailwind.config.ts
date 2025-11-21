@@ -146,12 +146,42 @@ export default {
 					'100%': {
 						transform: 'translateX(100%)'
 					}
+				},
+				'loaderAnim': {
+					'0%': {
+						inset: '0 35px 35px 0'
+					},
+					'12.5%': {
+						inset: '0 35px 0 0'
+					},
+					'25%': {
+						inset: '35px 35px 0 0'
+					},
+					'37.5%': {
+						inset: '35px 0 0 0'
+					},
+					'50%': {
+						inset: '35px 0 0 35px'
+					},
+					'62.5%': {
+						inset: '0 0 0 35px'
+					},
+					'75%': {
+						inset: '0 0 35px 35px'
+					},
+					'87.5%': {
+						inset: '0 0 35px 0'
+					},
+					'100%': {
+						inset: '0 35px 35px 0'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'shimmer': 'shimmer 2s infinite'
+				'shimmer': 'shimmer 2s infinite',
+				'loaderAnim': 'loaderAnim 2.5s infinite'
 			}
 		}
 	},
