@@ -146,7 +146,7 @@ export function ReclamacoesPage() {
       }
       
       // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
-      if (selectedAccountIds.length === 0) {
+      if (!selectedAccountIds || selectedAccountIds.length === 0) {
         const { accountIds } = validateMLAccounts(mlAccounts);
         if (accountIds.length > 0) {
           updateFilter('selectedAccounts', accountIds);
