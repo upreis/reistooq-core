@@ -1,12 +1,21 @@
 /**
  * 🎯 HOOK UNIFICADO DE GESTÃO DE FILTROS
- * FASE 2: Gerenciamento centralizado com sincronização URL + localStorage
+ * ✅ SOLUÇÃO RADICAL: URL é a ÚNICA fonte de verdade (sem estado local)
  */
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useReclamacoesFiltersSync, ReclamacoesFilters } from './useReclamacoesFiltersSync';
 import { usePersistentReclamacoesState } from './usePersistentReclamacoesState';
+
+export interface ReclamacoesFilters {
+  periodo: string;
+  status: string;
+  type: string;
+  stage: string;
+  selectedAccounts: string[];
+  currentPage: number;
+  itemsPerPage: number;
+}
 
 const DEFAULT_FILTERS: ReclamacoesFilters = {
   periodo: '60',
@@ -19,130 +28,139 @@ const DEFAULT_FILTERS: ReclamacoesFilters = {
 };
 
 /**
- * Hook unificado para gestão de filtros com sincronização URL + cache
+ * Hook unificado - URL é a única fonte de verdade
  */
 export function useReclamacoesFiltersUnified() {
   const persistentCache = usePersistentReclamacoesState();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  // Estado dos filtros - iniciar com defaults
-  const [filters, setFilters] = useState<ReclamacoesFilters>(DEFAULT_FILTERS);
-
-  // ✅ PADRÃO /PEDIDOS: Filtros vêm SEMPRE da URL (recarrega quando URL muda)
-  useEffect(() => {
-    const urlFilters: Partial<ReclamacoesFilters> = {};
-    
-    const periodo = searchParams.get('periodo');
-    if (periodo) urlFilters.periodo = periodo;
-    
-    const status = searchParams.get('status');
-    if (status) urlFilters.status = status;
-    
-    const type = searchParams.get('type');
-    if (type) urlFilters.type = type;
-    
-    const stage = searchParams.get('stage');
-    if (stage) urlFilters.stage = stage;
+  // ✅ Ler filtros DIRETO da URL (useMemo, não useState)
+  const filters = useMemo<ReclamacoesFilters>(() => {
+    const periodo = searchParams.get('periodo') || DEFAULT_FILTERS.periodo;
+    const status = searchParams.get('status') || DEFAULT_FILTERS.status;
+    const type = searchParams.get('type') || DEFAULT_FILTERS.type;
+    const stage = searchParams.get('stage') || DEFAULT_FILTERS.stage;
     
     const accounts = searchParams.get('accounts');
-    if (accounts) {
-      const accountsList = accounts.split(',').filter(id => id.trim().length > 0);
-      if (accountsList.length > 0) {
-        urlFilters.selectedAccounts = accountsList;
-      }
-    }
+    const selectedAccounts = accounts 
+      ? accounts.split(',').filter(id => id.trim().length > 0)
+      : DEFAULT_FILTERS.selectedAccounts;
     
     const page = searchParams.get('page');
-    if (page) {
-      const parsedPage = parseInt(page, 10);
-      if (!isNaN(parsedPage) && parsedPage >= 1) {
-        urlFilters.currentPage = parsedPage;
-      }
-    }
+    const currentPage = page ? parseInt(page, 10) : DEFAULT_FILTERS.currentPage;
     
     const limit = searchParams.get('limit');
-    if (limit) {
-      const parsedLimit = parseInt(limit, 10);
-      if (!isNaN(parsedLimit) && parsedLimit >= 25 && parsedLimit <= 100) {
-        urlFilters.itemsPerPage = parsedLimit;
-      }
-    }
+    const itemsPerPage = limit ? parseInt(limit, 10) : DEFAULT_FILTERS.itemsPerPage;
     
-    const mergedFilters: ReclamacoesFilters = {
-      ...DEFAULT_FILTERS,
-      ...urlFilters
+    return {
+      periodo,
+      status,
+      type,
+      stage,
+      selectedAccounts,
+      currentPage,
+      itemsPerPage
     };
-    
-    console.log('✅ Filtros carregados da URL:', mergedFilters);
-    
-    setFilters(mergedFilters);
-  }, [searchParams]); // ✅ Recarrega SEMPRE que URL mudar
+  }, [searchParams]);
 
-  // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
-  const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
-    filters,
-    () => {} // Não fazer nada quando URL mudar - restauração já foi feita acima
-  );
-
-  // Atualizar um filtro específico
+  // ✅ Atualizar um filtro = atualizar URL diretamente
   const updateFilter = useCallback(<K extends keyof ReclamacoesFilters>(
     key: K,
     value: ReclamacoesFilters[K]
   ) => {
-    console.log(`🔍 [RECLAMACOES] updateFilter chamado: ${key} =`, value);
-    setFilters(prev => {
-      const newFilters = { ...prev, [key]: value };
+    console.log(`🎯 [RECLAMACOES] updateFilter: ${key} =`, value);
+    
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
       
-      // Se mudou o filtro (não paginação), resetar para página 1
-      if (key !== 'currentPage' && key !== 'itemsPerPage') {
-        newFilters.currentPage = 1;
+      if (key === 'selectedAccounts' && Array.isArray(value)) {
+        if (value.length > 0) {
+          newParams.set('accounts', value.join(','));
+        } else {
+          newParams.delete('accounts');
+        }
+      } else if (key === 'currentPage') {
+        newParams.set('page', String(value));
+      } else if (key === 'itemsPerPage') {
+        newParams.set('limit', String(value));
+      } else {
+        newParams.set(key, String(value));
       }
       
-      console.log(`🎯 Filtro atualizado: ${key} =`, value);
-      console.log('📋 Novos filtros completos:', newFilters);
-      return newFilters;
-    });
-  }, []);
-
-  // Atualizar múltiplos filtros de uma vez
-  const updateFilters = useCallback((newFilters: Partial<ReclamacoesFilters>) => {
-    setFilters(prev => {
-      const updated = { ...prev, ...newFilters };
+      // Se mudou filtro (não paginação), resetar página
+      if (key !== 'currentPage' && key !== 'itemsPerPage') {
+        newParams.set('page', '1');
+      }
       
-      // Se mudou algum filtro (não paginação), resetar para página 1
+      console.log('📋 Nova URL:', newParams.toString());
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // ✅ Atualizar múltiplos filtros de uma vez
+  const updateFilters = useCallback((newFilters: Partial<ReclamacoesFilters>) => {
+    console.log('🎯 Múltiplos filtros atualizados:', newFilters);
+    
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (key === 'selectedAccounts' && Array.isArray(value)) {
+          if (value.length > 0) {
+            newParams.set('accounts', value.join(','));
+          } else {
+            newParams.delete('accounts');
+          }
+        } else if (key === 'currentPage') {
+          newParams.set('page', String(value));
+        } else if (key === 'itemsPerPage') {
+          newParams.set('limit', String(value));
+        } else {
+          newParams.set(key, String(value));
+        }
+      });
+      
+      // Se mudou algum filtro (não paginação), resetar página
       const hasNonPaginationChange = Object.keys(newFilters).some(
         key => key !== 'currentPage' && key !== 'itemsPerPage'
       );
       
       if (hasNonPaginationChange) {
-        updated.currentPage = 1;
+        newParams.set('page', '1');
       }
       
-      console.log('🎯 Múltiplos filtros atualizados:', newFilters);
-      return updated;
-    });
-  }, []);
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
 
-  // Resetar todos os filtros
+  // ✅ Resetar todos os filtros
   const resetFilters = useCallback(() => {
     console.log('🔄 Resetando todos os filtros');
-    setFilters(DEFAULT_FILTERS);
-  }, []);
-
-  // Resetar apenas filtros de busca (manter contas e paginação)
-  const resetSearchFilters = useCallback(() => {
-    console.log('🔄 Resetando filtros de busca');
-    setFilters(prev => ({
-      ...prev,
+    setSearchParams({
       periodo: DEFAULT_FILTERS.periodo,
       status: DEFAULT_FILTERS.status,
       type: DEFAULT_FILTERS.type,
       stage: DEFAULT_FILTERS.stage,
-      currentPage: 1
-    }));
-  }, []);
+      page: '1',
+      limit: '50'
+    }, { replace: true });
+  }, [setSearchParams]);
 
-  // Verificar se há filtros ativos (além dos defaults)
+  // ✅ Resetar apenas filtros de busca
+  const resetSearchFilters = useCallback(() => {
+    console.log('🔄 Resetando filtros de busca');
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      newParams.set('periodo', DEFAULT_FILTERS.periodo);
+      newParams.set('status', DEFAULT_FILTERS.status);
+      newParams.set('type', DEFAULT_FILTERS.type);
+      newParams.set('stage', DEFAULT_FILTERS.stage);
+      newParams.set('page', '1');
+      return newParams;
+    }, { replace: true });
+  }, [setSearchParams]);
+
+  // ✅ Verificar se há filtros ativos
   const hasActiveFilters = useMemo(() => {
     return (
       filters.periodo !== DEFAULT_FILTERS.periodo ||
@@ -152,7 +170,7 @@ export function useReclamacoesFiltersUnified() {
     );
   }, [filters]);
 
-  // Contar quantos filtros estão ativos
+  // ✅ Contar filtros ativos
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (filters.periodo !== DEFAULT_FILTERS.periodo) count++;
@@ -161,6 +179,10 @@ export function useReclamacoesFiltersUnified() {
     if (filters.stage !== DEFAULT_FILTERS.stage) count++;
     return count;
   }, [filters]);
+
+  // Helpers legados (compatibilidade)
+  const parseFiltersFromUrl = () => filters;
+  const encodeFiltersToUrl = () => searchParams;
 
   return {
     // Estado
