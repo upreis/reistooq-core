@@ -96,7 +96,7 @@ export function useReclamacoesFiltersUnified() {
     setTimeout(() => {
       isRestoringFromUrl.current = false;
     }, 0);
-  }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora mudanças na URL
+  }, [persistentCache.isStateLoaded]); // 🔥 CORREÇÃO 2: Só monitora quando cache carrega (não searchParams)
 
   // 🔥 CORREÇÃO 1: Cleanup separado - só roda no unmount real do componente
   useEffect(() => {
