@@ -23,7 +23,7 @@ import { useVendasFiltersUnified } from '@/features/vendas-online/hooks/useVenda
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Package, TrendingUp, Clock, CheckCircle, RefreshCw } from 'lucide-react';
 import { MLOrdersNav } from '@/features/ml/components/MLOrdersNav';
 import { useVendaStorage } from '@/features/vendas-online/hooks/useVendaStorage';
@@ -390,14 +390,22 @@ export default function VendasOnline() {
                 </div>
               </div>
               
-              {/* Resumo de Métricas - após as abas com mt-12 */}
-              <div className="mt-12">
+              {/* Conteúdo das Tabs */}
+              <TabsContent value="ativas" className="mt-12">
                 <VendasResumo 
                   vendas={vendasEnriquecidas}
                   onFiltroClick={setFiltroResumoAtivo}
                   filtroAtivo={filtroResumoAtivo}
                 />
-              </div>
+              </TabsContent>
+              
+              <TabsContent value="historico" className="mt-12">
+                <VendasResumo 
+                  vendas={vendasEnriquecidas}
+                  onFiltroClick={setFiltroResumoAtivo}
+                  filtroAtivo={filtroResumoAtivo}
+                />
+              </TabsContent>
             </Tabs>
           </div>
           
