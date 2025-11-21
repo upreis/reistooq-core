@@ -416,32 +416,30 @@ export const Devolucao2025Page = () => {
 
           {/* Tabela */}
           <div className="px-4 md:px-6 pb-24"> {/* pb-24 para espaço do rodapé */}
-            <Card className="p-6">
-              {isLoading && (
-                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
-                  <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
-                  <div>
-                    <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Buscando devoluções...
-                    </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">
-                      Aguarde enquanto carregamos os dados do Mercado Livre
-                    </p>
-                  </div>
+            {isLoading && (
+              <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
+                <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                    Buscando devoluções...
+                  </p>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Aguarde enquanto carregamos os dados do Mercado Livre
+                  </p>
                 </div>
-              )}
-              
-              <Devolucao2025Table 
-                accounts={accounts}
-                devolucoes={paginatedDevolucoes}
-                isLoading={isLoading}
-                error={error}
-                visibleColumns={Array.from(columnManager.state.visibleColumns)}
-                onStatusChange={handleStatusChange}
-                anotacoes={anotacoes}
-                activeTab={activeTab}
-              />
-            </Card>
+              </div>
+            )}
+            
+            <Devolucao2025Table 
+              accounts={accounts}
+              devolucoes={paginatedDevolucoes}
+              isLoading={isLoading}
+              error={error}
+              visibleColumns={Array.from(columnManager.state.visibleColumns)}
+              onStatusChange={handleStatusChange}
+              anotacoes={anotacoes}
+              activeTab={activeTab}
+            />
           </div>
 
           {/* Rodapé Fixado com Paginação */}
