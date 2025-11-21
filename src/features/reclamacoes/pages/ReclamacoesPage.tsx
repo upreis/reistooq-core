@@ -137,27 +137,19 @@ export function ReclamacoesPage() {
     },
   });
 
-  // 🎯 FASE 2: Auto-seleção de contas na primeira visita
+  // 🎯 Auto-seleção de contas na primeira visita
   useEffect(() => {
-    if (persistentCache.isStateLoaded && mlAccounts && mlAccounts.length > 0) {
-      // ✅ CORREÇÃO: Verificar se persistedState e selectedAccounts existem antes de acessar length
-      if (persistentCache.persistedState?.selectedAccounts && persistentCache.persistedState.selectedAccounts.length > 0) {
-        return; // Não fazer nada, usar cache
-      }
-      
-      // Se não há cache E não há seleção, auto-selecionar todas (primeira visita)
-      if (selectedAccountIds.length === 0) {
-        const { accountIds } = validateMLAccounts(mlAccounts);
-        if (accountIds.length > 0) {
-          updateFilter('selectedAccounts', accountIds);
-          logger.debug('✨ Contas auto-selecionadas (primeira visita)', { 
-            context: 'ReclamacoesPage',
-            count: accountIds.length
-          });
-        }
+    if (mlAccounts && mlAccounts.length > 0 && selectedAccountIds.length === 0) {
+      const { accountIds } = validateMLAccounts(mlAccounts);
+      if (accountIds.length > 0) {
+        updateFilter('selectedAccounts', accountIds);
+        logger.debug('✨ Contas auto-selecionadas', { 
+          context: 'ReclamacoesPage',
+          count: accountIds.length
+        });
       }
     }
-  }, [persistentCache.isStateLoaded, mlAccounts, persistentCache.persistedState, selectedAccountIds.length]);
+  }, [mlAccounts, selectedAccountIds.length, updateFilter]);
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
@@ -264,14 +256,11 @@ export function ReclamacoesPage() {
 
       console.log(`✅ Total de ${allClaims.length} reclamações carregadas`);
       
-      // ✅ Salvar dados + filtros + colunas visíveis no cache
+      // ✅ PADRÃO /PEDIDOS: Salvar apenas dados no cache
       persistentCache.saveDataCache(
         allClaims,
-        selectedAccountIds,
-        filters, // Já inclui período
-        currentPage,
-        itemsPerPage,
-        Array.from(columnManager.state.visibleColumns) // 🔥 CORREÇÃO: Converter Set para Array
+        allClaims.length,
+        currentPage
       );
       
       return allClaims;
@@ -281,57 +270,14 @@ export function ReclamacoesPage() {
     staleTime: 2 * 60 * 1000, // 2 minutos - dados considerados "frescos"
     gcTime: 30 * 60 * 1000, // 30 minutos - manter em cache do React Query
     
-    // 🔥 CORREÇÃO CRÍTICA: Usar placeholderData ao invés de initialData
-    // placeholderData é reavaliado SEMPRE que a query está desabilitada (enabled: false)
-    // Isso permite restaurar dados do cache ao retornar à página
+    // ✅ PADRÃO /PEDIDOS: placeholderData simples - sem validação de filtros
     placeholderData: () => {
-      // ✅ CORREÇÃO PROBLEMA 2: Aguardar cache estar carregado antes de tentar restaurar
-      // Evita race condition onde placeholderData executa antes de useReclamacoesFiltersUnified carregar cache
-      if (!persistentCache.isStateLoaded) {
-        console.log('⏳ Cache ainda não carregado - aguardando...');
+      if (!persistentCache.isStateLoaded || !persistentCache.persistedState) {
         return undefined;
       }
-
-      if (!persistentCache.hasValidPersistedState() || !persistentCache.persistedState?.reclamacoes) {
-        return undefined;
-      }
-
-      const cached = persistentCache.persistedState;
-
-      // ✅ VALIDAÇÃO CRÍTICA: Verificar se filtros atuais CORRESPONDEM aos filtros salvos com dados
-      // Evita mostrar dados incorretos quando filtros foram alterados sem buscar
       
-      // 1. Validar contas selecionadas
-      const accountsMatch = 
-        cached.selectedAccounts?.length === selectedAccountIds.length &&
-        cached.selectedAccounts?.every(acc => selectedAccountIds.includes(acc));
-
-      if (!accountsMatch) {
-        console.log('⚠️ Cache ignorado: contas não correspondem', {
-          cached: cached.selectedAccounts,
-          current: selectedAccountIds
-        });
-        return undefined;
-      }
-
-      // 2. Validar filtros de busca
-      const filtersMatch = 
-        cached.filters?.periodo === filters.periodo &&
-        cached.filters?.status === filters.status &&
-        cached.filters?.type === filters.type &&
-        cached.filters?.stage === filters.stage;
-
-      if (!filtersMatch) {
-        console.log('⚠️ Cache ignorado: filtros não correspondem', {
-          cached: cached.filters,
-          current: filters
-        });
-        return undefined;
-      }
-
-      // ✅ Filtros correspondem - seguro restaurar dados
-      console.log('📦 Restaurando dados do cache (filtros validados):', cached.reclamacoes.length);
-      return cached.reclamacoes;
+      console.log('📦 Cache restaurado:', persistentCache.persistedState.total);
+      return persistentCache.persistedState.reclamacoes;
     }
   });
 
@@ -351,18 +297,9 @@ export function ReclamacoesPage() {
     try {
       await refetchReclamacoes();
       
-      // 🔥 CORREÇÃO: Salvar filtros APLICADOS para restauração futura
-      console.log('💾 Salvando filtros aplicados no cache:', {
-        periodo: unifiedFilters.periodo,
-        status: unifiedFilters.status,
-        type: unifiedFilters.type,
-        stage: unifiedFilters.stage,
-        selectedAccounts: selectedAccountIds
-      });
-      
       toast({
         title: "✅ Sucesso",
-        description: `Busca concluída com sucesso`,
+        description: `Busca concluída`,
       });
     } catch (error) {
       console.error('❌ Erro na busca:', error);

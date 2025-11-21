@@ -7,39 +7,32 @@ import { useState, useEffect, useCallback } from 'react';
 import { LocalStorageValidator } from '@/utils/storageValidation';
 import { toast } from 'react-hot-toast';
 
+// ✅ PADRÃO /PEDIDOS: Cache apenas para DADOS, filtros na URL
 interface PersistentReclamacoesState {
   reclamacoes: any[];
-  selectedAccounts: string[];
-  filters: {
-    periodo: string;
-    status?: string;
-    type?: string;
-    stage?: string;
-  };
+  total: number;
   currentPage: number;
-  itemsPerPage: number;
-  visibleColumns?: string[];
   cachedAt: number;
-  version: number; // 🔥 FASE 1: Versionamento
+  version: number;
 }
 
+// ✅ PADRÃO /PEDIDOS: Validação simplificada apenas para dados
 function validatePersistedState(state: any): state is PersistentReclamacoesState {
   return (
     state &&
     typeof state === 'object' &&
     Array.isArray(state.reclamacoes) &&
-    Array.isArray(state.selectedAccounts) &&
-    typeof state.filters === 'object' &&
+    typeof state.total === 'number' &&
     typeof state.currentPage === 'number' &&
-    typeof state.itemsPerPage === 'number' &&
-    typeof state.cachedAt === 'number'
+    typeof state.cachedAt === 'number' &&
+    typeof state.version === 'number'
   );
 }
 
 const STORAGE_KEY = 'reclamacoes_persistent_state';
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutos de validade do cache
-const STORAGE_VERSION = 2; // 🔥 FASE 1: Versão atual do esquema
-const DEBOUNCE_DELAY = 500; // 🔥 FASE 1: Debounce para salvar estado
+const CACHE_DURATION = 5 * 60 * 1000; // ✅ PADRÃO /PEDIDOS: 5 minutos
+const STORAGE_VERSION = 3; // ✅ Nova versão (padrão /pedidos)
+const DEBOUNCE_DELAY = 500;
 
 export function usePersistentReclamacoesState() {
   const [persistedState, setPersistedState] = useState<PersistentReclamacoesState | null>(null);
@@ -86,16 +79,14 @@ export function usePersistentReclamacoesState() {
           const isExpired = cacheAge > CACHE_DURATION;
           
           if (!isExpired) {
-            console.log('🔄 Cache de reclamações carregado:', {
+            console.log('✅ Cache carregado:', {
               version: parsed.version,
-              reclamacoesCount: parsed.reclamacoes?.length || 0,
-              cacheAge: Math.round(cacheAge / 1000) + 's',
-              accounts: parsed.selectedAccounts?.join(', ') || 'nenhuma',
-              filters: parsed.filters
+              total: parsed.total,
+              cacheAge: Math.round(cacheAge / 1000) + 's'
             });
             setPersistedState(validation.cleaned as PersistentReclamacoesState);
           } else {
-            console.log('⏰ Cache expirado (>30min), removendo...');
+            console.log('⏰ Cache expirado (>5min), removendo...');
             localStorage.removeItem(STORAGE_KEY);
           }
         }
@@ -110,15 +101,13 @@ export function usePersistentReclamacoesState() {
     loadPersistedState();
   }, []);
 
-  // 🔥 FASE 1: Salvar estado no localStorage com debounce e validação
+  // ✅ PADRÃO /PEDIDOS: Salvar apenas dados
   const saveState = useCallback((newState: Partial<PersistentReclamacoesState>) => {
     try {
       const currentState = persistedState || {
         reclamacoes: [],
-        selectedAccounts: [],
-        filters: { periodo: '60' },
+        total: 0,
         currentPage: 1,
-        itemsPerPage: 50,
         cachedAt: Date.now(),
         version: STORAGE_VERSION
       };
@@ -127,7 +116,7 @@ export function usePersistentReclamacoesState() {
         ...currentState,
         ...newState,
         cachedAt: Date.now(),
-        version: STORAGE_VERSION // 🔥 FASE 1: Sempre incluir versão atual
+        version: STORAGE_VERSION
       };
 
       // 🔥 FASE 1: Validar antes de salvar
@@ -151,12 +140,10 @@ export function usePersistentReclamacoesState() {
       localStorage.setItem(STORAGE_KEY, dataString);
       setPersistedState(updatedState);
       
-      console.log('💾 Estado de reclamações salvo:', {
+      console.log('💾 Cache salvo:', {
         version: updatedState.version,
-        reclamacoesCount: updatedState.reclamacoes?.length || 0,
-        accounts: updatedState.selectedAccounts?.join(', ') || 'nenhuma',
-        page: updatedState.currentPage,
-        sizeInMB: sizeInMB.toFixed(2)
+        total: updatedState.total,
+        page: updatedState.currentPage
       });
     } catch (error) {
       if (error instanceof Error && error.name === 'QuotaExceededError') {
@@ -169,22 +156,16 @@ export function usePersistentReclamacoesState() {
     }
   }, [persistedState]);
 
-  // Função helper para salvar cache de dados
+  // ✅ PADRÃO /PEDIDOS: Salvar apenas dados (sem filtros)
   const saveDataCache = useCallback((
     reclamacoes: any[],
-    selectedAccounts: string[],
-    filters: any,
-    currentPage: number,
-    itemsPerPage: number,
-    visibleColumns?: string[] // ✅ AJUSTE 1: Adicionar parâmetro opcional
+    total: number,
+    currentPage: number
   ) => {
     saveState({
       reclamacoes,
-      selectedAccounts,
-      filters,
-      currentPage,
-      itemsPerPage,
-      visibleColumns
+      total,
+      currentPage
     });
   }, [saveState]);
 
