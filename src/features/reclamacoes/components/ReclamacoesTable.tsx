@@ -76,11 +76,17 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       sorting,
     },
     onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: (updater) => {
+      console.log('🔧 Column Visibility CHANGING:', updater);
+      setColumnVisibility(updater);
+    },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    debugTable: true,
+    debugHeaders: true,
+    debugColumns: true,
   });
 
   // Notificar quando a tabela estiver pronta
