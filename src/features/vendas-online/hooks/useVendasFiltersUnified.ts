@@ -9,7 +9,7 @@ import { useVendasFiltersSync, VendasFilters } from './useVendasFiltersSync';
 import { usePersistentVendasState } from './usePersistentVendasState';
 
 const DEFAULT_FILTERS: VendasFilters = {
-  periodo: '60',
+  periodo: '7', // 🔥 CORREÇÃO: Alterado de '60' para '7' (padrão: Últimos 7 dias)
   selectedAccounts: [],
   searchTerm: '',
   currentPage: 1,
