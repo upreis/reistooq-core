@@ -5,6 +5,7 @@ export type StatusAnalise =
   | 'pendente'
   | 'resolvido_sem_dinheiro'
   | 'resolvido_com_dinheiro'
+  | 'em_devolucao'
   | 'em_analise'
   | 'aguardando_ml'
   | 'cancelado';
@@ -41,8 +42,9 @@ export interface HighlightConfig {
 // Mapa de status com labels
 export const STATUS_ANALISE_LABELS: Record<StatusAnalise, string> = {
   pendente: 'Pendente',
-  resolvido_sem_dinheiro: 'Resolvido (Sem $)',
-  resolvido_com_dinheiro: 'Resolvido (Com $)',
+  resolvido_sem_dinheiro: 'Resolvido s/ Dinheiro',
+  resolvido_com_dinheiro: 'Resolvido c/ Dinheiro',
+  em_devolucao: 'Em Devolução',
   em_analise: 'Em Análise',
   aguardando_ml: 'Aguardando ML',
   cancelado: 'Cancelado'
@@ -50,14 +52,15 @@ export const STATUS_ANALISE_LABELS: Record<StatusAnalise, string> = {
 
 // Status que devem aparecer na aba "Ativas"
 export const STATUS_ATIVOS: StatusAnalise[] = [
-  'pendente',
-  'em_analise',
-  'aguardando_ml'
+  'pendente'
 ];
 
 // Status que devem aparecer na aba "Histórico"
 export const STATUS_HISTORICO: StatusAnalise[] = [
   'resolvido_sem_dinheiro',
   'resolvido_com_dinheiro',
+  'em_devolucao',
+  'em_analise',
+  'aguardando_ml',
   'cancelado'
 ];
