@@ -208,15 +208,23 @@ export function ReclamacoesPage() {
         }
       }
 
-      // Salvar dados + filtros + colunas visíveis no cache
-      persistentCache.saveDataCache(
-        allClaims,
-        selectedAccountIds,
-        unifiedFilters.periodo,
-        currentPage,
-        itemsPerPage,
-        Array.from(columnManager.state.visibleColumns)
-      );
+      // 🔥 CORREÇÃO: Salvar apenas dados de reclamações (filtros são salvos automaticamente pelo hook)
+      persistentCache.saveState({
+        reclamacoes: allClaims,
+        visibleColumns: Array.from(columnManager.state.visibleColumns),
+        // Filtros, contas, página são mantidos do estado atual do cache
+        selectedAccounts: persistentCache.persistedState?.selectedAccounts || selectedAccountIds,
+        filters: persistentCache.persistedState?.filters || {
+          periodo: unifiedFilters.periodo,
+          status: unifiedFilters.status,
+          type: unifiedFilters.type,
+          stage: unifiedFilters.stage
+        },
+        currentPage: persistentCache.persistedState?.currentPage || currentPage,
+        itemsPerPage: persistentCache.persistedState?.itemsPerPage || itemsPerPage,
+        cachedAt: Date.now(),
+        version: 2
+      });
       
       return allClaims;
     },

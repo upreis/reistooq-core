@@ -91,6 +91,36 @@ export function useReclamacoesFiltersUnified() {
     () => {} // Não fazer nada quando URL mudar - restauração já foi feita acima
   );
 
+  // 🔥 CORREÇÃO: Salvar filtros automaticamente no cache quando mudarem
+  useEffect(() => {
+    if (isInitialized && filters) {
+      // Salvar apenas os filtros (não os dados de reclamações)
+      persistentCache.saveState({
+        filters: {
+          periodo: filters.periodo,
+          status: filters.status,
+          type: filters.type,
+          stage: filters.stage
+        },
+        selectedAccounts: filters.selectedAccounts,
+        currentPage: filters.currentPage,
+        itemsPerPage: filters.itemsPerPage,
+        reclamacoes: persistentCache.persistedState?.reclamacoes || [], // Manter reclamações existentes
+        cachedAt: Date.now(),
+        version: 2
+      });
+      
+      console.log('💾 Filtros salvos automaticamente:', {
+        periodo: filters.periodo,
+        status: filters.status,
+        type: filters.type,
+        stage: filters.stage,
+        accounts: filters.selectedAccounts.length,
+        page: filters.currentPage
+      });
+    }
+  }, [filters, isInitialized, persistentCache]);
+
   // Atualizar um filtro específico
   const updateFilter = useCallback(<K extends keyof ReclamacoesFilters>(
     key: K,
