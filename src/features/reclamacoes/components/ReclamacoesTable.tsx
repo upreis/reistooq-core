@@ -57,7 +57,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   // 🎯 FASE 3: Sincronizar columnVisibility com columnManager
   const columnVisibility = useMemo<VisibilityState>(() => {
     if (!columnManager) {
-      return { reason_id: false, reason_category: false };
+      return {};
     }
     
     const visibility: VisibilityState = {};
@@ -66,7 +66,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     });
     
     return visibility;
-  }, [columnManager]);
+  }, [columnManager?.state.visibleColumns]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
@@ -90,13 +90,13 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     },
     onGlobalFilterChange: setGlobalFilter,
     onColumnVisibilityChange: (updater) => {
-      // 🎯 FASE 3: Sincronizar mudanças de visibilidade com columnManager
+      // 🎯 FASE 3: Sincronizar mudanças de visibilidade com columnManager  
       if (!columnManager) return;
       
       const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
       const visibleKeys = Object.entries(newVisibility)
         .filter(([_, isVisible]) => isVisible)
-        .map(([key, _]) => key);
+        .map(([key]) => key);
       
       columnManager.actions.setVisibleColumns(visibleKeys);
     },
