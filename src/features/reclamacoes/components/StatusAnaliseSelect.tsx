@@ -7,7 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatusAnalise, STATUS_ANALISE_LABELS } from "../types/devolucao-analise.types";
-import { CheckCircle2, Clock, AlertCircle, XCircle, HelpCircle, PackageX } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle, XCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface StatusAnaliseSelectProps {
@@ -22,7 +22,6 @@ interface StatusAnaliseSelectProps {
 const STATUS_ICONS: Record<StatusAnalise, React.ReactNode> = {
   pendente: <Clock className="h-4 w-4 text-yellow-500" />,
   em_analise: <HelpCircle className="h-4 w-4 text-blue-500" />,
-  em_devolucao: <PackageX className="h-4 w-4 text-purple-500" />,
   aguardando_ml: <AlertCircle className="h-4 w-4 text-orange-500" />,
   resolvido_sem_dinheiro: <CheckCircle2 className="h-4 w-4 text-green-500" />,
   resolvido_com_dinheiro: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
@@ -33,7 +32,6 @@ const STATUS_ICONS: Record<StatusAnalise, React.ReactNode> = {
 const STATUS_COLORS: Record<StatusAnalise, string> = {
   pendente: "text-yellow-700 dark:text-yellow-300",
   em_analise: "text-blue-700 dark:text-blue-300",
-  em_devolucao: "text-purple-700 dark:text-purple-300",
   aguardando_ml: "text-orange-700 dark:text-orange-300",
   resolvido_sem_dinheiro: "text-green-700 dark:text-green-300",
   resolvido_com_dinheiro: "text-emerald-700 dark:text-emerald-300",
