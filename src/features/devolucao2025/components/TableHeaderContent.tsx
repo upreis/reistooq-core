@@ -16,6 +16,9 @@ export const TableHeaderContent = ({ visibleColumns, isVisible }: TableHeaderCon
       {/* COLUNA ANÁLISE - PRIMEIRA COLUNA */}
       <TableHead className="sticky left-0 z-10 bg-background">📊 Análise</TableHead>
       
+      {/* COLUNA ANOTAÇÕES - APÓS ANÁLISE */}
+      <TableHead>📝 Anotações</TableHead>
+      
       {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
       {isVisible('account_name') && <TableHead>Empresa</TableHead>}
       {isVisible('order_id') && <TableHead>Pedido</TableHead>}

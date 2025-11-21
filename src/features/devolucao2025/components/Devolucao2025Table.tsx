@@ -6,10 +6,11 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Package, RefreshCw, Scale } from 'lucide-react';
+import { AlertCircle, Package, RefreshCw, Scale, FileText } from 'lucide-react';
 import { ResolutionCell } from '@/components/devolucoes/ResolutionCell';
 import { ProductInfoCell } from '@/components/devolucoes/ProductInfoCell';
 import { LogisticTypeCell } from '@/features/devolucao2025/components/cells/LogisticTypeCell';
@@ -35,6 +36,7 @@ interface Devolucao2025TableProps {
   onStatusChange?: (orderId: string, newStatus: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
+  onOpenAnotacoes?: (orderId: string) => void;
 }
 
 export const Devolucao2025Table = ({ 
@@ -45,7 +47,8 @@ export const Devolucao2025Table = ({
   visibleColumns,
   onStatusChange,
   anotacoes,
-  activeTab
+  activeTab,
+  onOpenAnotacoes
 }: Devolucao2025TableProps) => {
   // 🔧 Hook de sticky header
   const { tableRef, sentinelRef, isSticky } = useStickyTableHeader();
@@ -215,6 +218,18 @@ export const Devolucao2025Table = ({
                   value={dev.status_analise_local || 'pendente'}
                   onChange={(newStatus) => onStatusChange?.(dev.order_id, newStatus)}
                 />
+              </TableCell>
+
+              {/* COLUNA ANOTAÇÕES - APÓS ANÁLISE */}
+              <TableCell>
+                <Button
+                  variant={anotacoes?.[dev.order_id] ? 'default' : 'ghost'}
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => onOpenAnotacoes?.(dev.order_id)}
+                >
+                  <FileText className={`h-4 w-4 ${anotacoes?.[dev.order_id] ? 'text-primary-foreground' : 'text-muted-foreground'}`} />
+                </Button>
               </TableCell>
               
               {/* GRUPO 1: IDENTIFICAÇÃO & BÁSICOS */}
