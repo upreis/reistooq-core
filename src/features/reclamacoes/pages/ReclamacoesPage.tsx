@@ -161,7 +161,10 @@ export function ReclamacoesPage() {
 
   // 🔍 BUSCAR RECLAMAÇÕES COM REACT QUERY + CACHE
   const { data: allReclamacoes = [], isLoading: loadingReclamacoes, error: errorReclamacoes, refetch: refetchReclamacoes } = useQuery({
-    queryKey: ['reclamacoes', selectedAccountIds, filters],
+    // ✅ CORREÇÃO PROBLEMA 3: queryKey FIXA para evitar invalidação ao mudar filtros
+    // A validação de filtros é feita MANUALMENTE dentro de placeholderData (linhas 290-322)
+    // Isso permite que cache persista mesmo quando filtros mudam temporariamente (sem buscar)
+    queryKey: ['reclamacoes-cache'],
     enabled: false, // 🔥 Desabilitar busca automática - só via handleBuscarReclamacoes
     queryFn: async () => {
       console.log('🔍 Buscando reclamações...', { selectedAccountIds, filters });
@@ -375,8 +378,8 @@ export function ReclamacoesPage() {
 
   // 🚫 CANCELAR BUSCA
   const handleCancelarBusca = () => {
-    // Cancelar query do React Query
-    queryClient.cancelQueries({ queryKey: ['reclamacoes', selectedAccountIds, filters] });
+    // ✅ CORREÇÃO: Usar queryKey FIXA
+    queryClient.cancelQueries({ queryKey: ['reclamacoes-cache'] });
     setIsManualSearching(false);
     
     toast({
