@@ -25,7 +25,8 @@ const STATUS_ICONS: Record<StatusAnalise, React.ReactNode> = {
   aguardando_ml: <AlertCircle className="h-4 w-4 text-orange-500" />,
   resolvido_sem_dinheiro: <CheckCircle2 className="h-4 w-4 text-green-500" />,
   resolvido_com_dinheiro: <CheckCircle2 className="h-4 w-4 text-emerald-500" />,
-  cancelado: <XCircle className="h-4 w-4 text-red-500" />
+  cancelado: <XCircle className="h-4 w-4 text-red-500" />,
+  foi_para_devolucao: <CheckCircle2 className="h-4 w-4 text-purple-500" />
 };
 
 // Classes de cores por status
@@ -35,7 +36,8 @@ const STATUS_COLORS: Record<StatusAnalise, string> = {
   aguardando_ml: "text-orange-700 dark:text-orange-300",
   resolvido_sem_dinheiro: "text-green-700 dark:text-green-300",
   resolvido_com_dinheiro: "text-emerald-700 dark:text-emerald-300",
-  cancelado: "text-red-700 dark:text-red-300"
+  cancelado: "text-red-700 dark:text-red-300",
+  foi_para_devolucao: "text-purple-700 dark:text-purple-300"
 };
 
 export const StatusAnaliseSelect = memo(function StatusAnaliseSelect({
