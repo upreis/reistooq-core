@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { ReclamacoesPagination } from '../components/ReclamacoesPagination';
+import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
 
 
 
@@ -440,6 +441,9 @@ export function ReclamacoesPage() {
                 }}
               />
             </div>
+
+            {/* 🔄 INDICADOR DE LOADING */}
+            {(loadingReclamacoes || isManualSearching) && <LoadingIndicator />}
 
             {/* Tabs: Ativas vs Histórico + Filtros */}
             <div className="px-4 md:px-6 space-y-4">
