@@ -12,6 +12,9 @@ interface VendasState {
   packs: Record<number, MLPack>;
   shippings: Record<number, MLShipping>;
   
+  // 📝 Anotações locais
+  anotacoes: Record<string, string>;
+  
   // Filters
   filters: VendasFilters;
   
@@ -29,6 +32,9 @@ interface VendasState {
   setOrders: (orders: MLOrder[], total: number) => void;
   setPacks: (packs: Record<number, MLPack>) => void;
   setShippings: (shippings: Record<number, MLShipping>) => void;
+  
+  // 📝 Anotações
+  setAnotacao: (orderId: string, anotacao: string) => void;
   
   updateFilters: (filters: Partial<VendasFilters>) => void;
   resetFilters: () => void;
@@ -68,6 +74,14 @@ export const useVendasStore = create<VendasState>((set, get) => ({
   orders: [],
   packs: {},
   shippings: {},
+  anotacoes: (() => {
+    try {
+      const stored = localStorage.getItem('vendas-anotacoes');
+      return stored ? JSON.parse(stored) : {};
+    } catch {
+      return {};
+    }
+  })(),
   filters: initialFilters,
   pagination: initialPagination,
   isLoading: false,
@@ -83,6 +97,17 @@ export const useVendasStore = create<VendasState>((set, get) => ({
   setPacks: (packs) => set({ packs }),
   
   setShippings: (shippings) => set({ shippings }),
+  
+  // 📝 Anotações
+  setAnotacao: (orderId, anotacao) => {
+    const newAnotacoes = { ...get().anotacoes, [orderId]: anotacao };
+    set({ anotacoes: newAnotacoes });
+    try {
+      localStorage.setItem('vendas-anotacoes', JSON.stringify(newAnotacoes));
+    } catch (error) {
+      console.error('Erro ao salvar anotação:', error);
+    }
+  },
   
   updateFilters: (newFilters) => set({ 
     filters: { ...get().filters, ...newFilters },

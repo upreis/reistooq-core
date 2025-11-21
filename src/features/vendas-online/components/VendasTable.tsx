@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, History } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, History, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -38,6 +38,8 @@ interface VendasTableProps {
   itemsPerPage: number;
   onPageChange: (page: number) => void;
   onStatusChange?: (orderId: string, newStatus: StatusAnalise) => void;
+  onOpenAnotacoes?: (order: MLOrder) => void;
+  anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
   columnManager?: UseColumnManagerReturn; // 🎯 FASE 3
 }
@@ -50,6 +52,8 @@ export const VendasTable = ({
   itemsPerPage,
   onPageChange,
   onStatusChange,
+  onOpenAnotacoes,
+  anotacoes,
   activeTab,
   columnManager // 🎯 CRÍTICO 1: Receber e usar columnManager
 }: VendasTableProps) => {
@@ -108,6 +112,7 @@ export const VendasTable = ({
             <TableRow>
               {/* ANÁLISE */}
               <TableHead className="min-w-[180px]">📊 Análise</TableHead>
+              <TableHead className="text-center min-w-[80px]">📝 Anotações</TableHead>
               
               {/* EMPRESA */}
               <TableHead className="min-w-[150px]">Empresa</TableHead>
@@ -198,6 +203,27 @@ export const VendasTable = ({
                       />
                     )}
                   </TableCell>
+                  
+                  {/* ANOTAÇÕES */}
+                  <TableCell className="text-center">
+                    {(() => {
+                      const hasAnotacao = anotacoes?.[order.id.toString()]?.trim().length > 0;
+                      return (
+                        <Button
+                          variant={hasAnotacao ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => onOpenAnotacoes?.(order)}
+                          className="h-8 w-8 p-0"
+                          title={hasAnotacao ? 'Ver/Editar anotações' : 'Adicionar anotações'}
+                        >
+                          <FileText className={`h-4 w-4 ${hasAnotacao ? '' : 'text-muted-foreground'}`} />
+                        </Button>
+                      );
+                    })()}
+                  </TableCell>
+                  
+                  {/* EMPRESA */}
+                  <TableCell className="font-medium">{(order as any).account_name || '-'}</TableCell>
                   
                   {/* EMPRESA */}
                   <TableCell>
