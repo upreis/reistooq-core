@@ -415,7 +415,7 @@ export const Devolucao2025Page = () => {
           </div>
 
           {/* Tabela */}
-          <div className="px-4 md:px-6 pb-24"> {/* pb-24 para espaço do rodapé */}
+          <div className="px-4 md:px-6 pb-24 mt-2"> {/* pb-24 para espaço do rodapé */}
             {isLoading && (
               <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md flex items-center gap-3">
                 <RefreshCw className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />
