@@ -54,39 +54,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState<SortingState>([]);
   
-  // ⚡ Memoizar colunas para evitar re-criação (ANTES do columnVisibility)
+  // ⚡ Memoizar colunas para evitar re-criação
   const columns = useMemo(() => 
     reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab), 
     [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
   );
   
-  // 🎯 SINCRONIZAÇÃO COMPLETA columnVisibility com columnManager
-  const columnVisibility = useMemo<VisibilityState>(() => {
-    if (!columnManager) {
-      return {};
-    }
-    
-    // 🔧 CORREÇÃO CRÍTICA: Criar visibilidade SOMENTE para colunas que existem na tabela
-    const visibility: VisibilityState = {};
-    
-    // Obter todas as colunas que realmente existem na definição da tabela
-    const realColumnIds = new Set(columns.map(col => col.id).filter(Boolean));
-    
-    // Para cada coluna REAL da tabela, definir visibilidade baseado no columnManager
-    realColumnIds.forEach(columnId => {
-      visibility[columnId] = columnManager.state.visibleColumns.has(columnId);
-    });
-    
-    console.log('✅ [ReclamacoesTable] Visibilidade SINCRONIZADA:', {
-      totalDefinitionsConfig: columnManager.definitions.length,
-      totalRealColumns: realColumnIds.size,
-      visibleCount: columnManager.state.visibleColumns.size,
-      visibleKeys: Array.from(columnManager.state.visibleColumns),
-      realColumnIds: Array.from(realColumnIds),
-    });
-    
-    return visibility;
-  }, [columnManager?.state.visibleColumns, columnManager?.definitions, columns]);
+  // 🔧 SOLUÇÃO EXTREMA: NÃO usar columnManager, apenas TanStack Table nativo
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
@@ -103,17 +78,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
       sorting,
     },
     onGlobalFilterChange: setGlobalFilter,
-    onColumnVisibilityChange: (updater) => {
-      // 🎯 FASE 3: Sincronizar mudanças de visibilidade com columnManager  
-      if (!columnManager) return;
-      
-      const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
-      const visibleKeys = Object.entries(newVisibility)
-        .filter(([_, isVisible]) => isVisible)
-        .map(([key]) => key);
-      
-      columnManager.actions.setVisibleColumns(visibleKeys);
-    },
+    onColumnVisibilityChange: setColumnVisibility,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),

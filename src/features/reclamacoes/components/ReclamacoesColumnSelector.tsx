@@ -66,68 +66,29 @@ export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector
   columnManager 
 }: ReclamacoesColumnSelectorProps) {
   
-  // 🎯 FASE 3: Usar ColumnManager se disponível, fallback para sistema antigo
-  const useNewSystem = !!columnManager;
+  // 🔧 SOLUÇÃO EXTREMA: APENAS usar sistema TanStack Table nativo
+  const allColumns = table.getAllLeafColumns();
   
-  // Sistema antigo (fallback)
-  const allColumnsOld = table.getAllLeafColumns();
-  
-  // Sistema novo (FASE 3)
-  const columnsByCategory = useMemo(() => {
-    if (!columnManager) return {};
-    
-    const grouped: Record<string, typeof columnManager.definitions> = {};
-    
-    columnManager.definitions.forEach(def => {
-      const categoryLabel = CATEGORY_LABELS[def.category] || def.category;
-      if (!grouped[categoryLabel]) {
-        grouped[categoryLabel] = [];
-      }
-      grouped[categoryLabel].push(def);
-    });
-    
-    return grouped;
-  }, [columnManager]);
-
   const handleToggleAll = useCallback((show: boolean) => {
-    if (useNewSystem && columnManager) {
-      // Sistema novo: toggle todas exceto fixas
-      const essentialKeys = columnManager.definitions
-        .filter(d => d.priority === 'essential' && ['status_analise', 'actions'].includes(d.key))
-        .map(d => d.key);
-      
-      if (show) {
-        columnManager.actions.setVisibleColumns(columnManager.definitions.map(d => d.key));
-      } else {
-        columnManager.actions.setVisibleColumns(essentialKeys);
+    allColumns.forEach(column => {
+      if (column.id !== 'status_analise' && column.id !== 'actions') {
+        column.toggleVisibility(show);
       }
-    } else {
-      // Sistema antigo (fallback)
-      allColumnsOld.forEach(column => {
-        if (column.id !== 'status_analise' && column.id !== 'actions') {
-          column.toggleVisibility(show);
-        }
-      });
-    }
-  }, [useNewSystem, columnManager, allColumnsOld]);
+    });
+  }, [allColumns]);
 
   const handleResetToDefault = useCallback(() => {
-    if (useNewSystem && columnManager) {
-      // Sistema novo: usar ação resetToDefault
-      columnManager.actions.resetToDefault();
-    } else {
-      // Sistema antigo (fallback)
-      allColumnsOld.forEach(column => {
-        if (['status_analise', 'empresa', 'claim_id', 'type', 'status', 'actions'].includes(column.id)) {
-          column.toggleVisibility(true);
-        } else if (['site_id', 'resource_id'].includes(column.id)) {
-          column.toggleVisibility(false);
-        } else {
-          column.toggleVisibility(true);
-        }
-      });
-    }
-  }, [useNewSystem, columnManager, allColumnsOld]);
+    allColumns.forEach(column => {
+      // Colunas padrão visíveis
+      const defaultVisible = [
+        'status_analise', 'anotacoes', 'account_name', 'produto', 'buyer_nickname',
+        'order_date_created', 'order_item_quantity', 'order_item_unit_price', 'order_total',
+        'claim_id', 'type', 'status', 'stage', 'date_created', 'last_updated',
+        'prazo_analise', 'amount_value', 'impacto_financeiro', 'actions', 'order_item_seller_sku'
+      ];
+      column.toggleVisibility(defaultVisible.includes(column.id));
+    });
+  }, [allColumns]);
 
   return (
     <DropdownMenu>
@@ -177,70 +138,12 @@ export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector
             Restaurar Padrão
           </Button>
           
-          {useNewSystem && columnManager && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full h-7 text-xs"
-              onClick={() => columnManager.actions.resetToEssentials()}
-            >
-              Apenas Essenciais
-            </Button>
-          )}
         </div>
 
         <DropdownMenuSeparator />
 
-        {/* 🎯 FASE 3: Renderizar com novo sistema se disponível */}
-        {useNewSystem && columnManager ? (
-          Object.entries(columnsByCategory).map(([categoryLabel, columns]) => {
-            if (columns.length === 0) return null;
-
-            return (
-              <div key={categoryLabel}>
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-medium py-1">
-                  {categoryLabel}
-                </DropdownMenuLabel>
-                {columns.map((colDef) => {
-                  const isVisible = columnManager.state.visibleColumns.has(colDef.key);
-                  const isFixed = ['status_analise', 'actions'].includes(colDef.key);
-                  
-                  return (
-                    <DropdownMenuItem
-                      key={colDef.key}
-                      className="flex items-center gap-2 cursor-pointer"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        if (!isFixed) {
-                          columnManager.actions.toggleColumn(colDef.key);
-                        }
-                      }}
-                    >
-                      <Checkbox
-                        checked={isVisible}
-                        disabled={isFixed}
-                        className="pointer-events-none"
-                      />
-                      <div className="flex-1">
-                        <span className={`text-sm ${isFixed ? 'text-muted-foreground' : ''}`}>
-                          {colDef.label}
-                          {isFixed && ' (fixo)'}
-                        </span>
-                        {colDef.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {colDef.description}
-                          </p>
-                        )}
-                      </div>
-                    </DropdownMenuItem>
-                  );
-                })}
-                <DropdownMenuSeparator />
-              </div>
-            );
-          })
-        ) : (
-          /* Sistema antigo (fallback) */
+        {/* 🔧 SISTEMA SIMPLES TANSTACK TABLE NATIVO */}
+        {(
           Object.entries({
             'Identificação': ['status_analise', 'empresa', 'anotacoes', 'claim_id', 'type', 'status', 'stage'],
             'Recurso': ['resource_id', 'resource', 'reason_id', 'reason_name', 'reason_detail'],
@@ -251,7 +154,7 @@ export const ReclamacoesColumnSelector = memo(function ReclamacoesColumnSelector
             'Outros': ['site_id', 'tem_trocas', 'tem_mediacao', 'order_id', 'order_status', 'tracking_number'],
             'Ações': ['actions']
           }).map(([groupName, columnIds]) => {
-            const groupColumns = allColumnsOld.filter(col => columnIds.includes(col.id));
+            const groupColumns = allColumns.filter(col => columnIds.includes(col.id));
             
             if (groupColumns.length === 0) return null;
 
