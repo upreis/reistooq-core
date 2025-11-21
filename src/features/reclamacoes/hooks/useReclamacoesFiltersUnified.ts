@@ -96,6 +96,12 @@ export function useReclamacoesFiltersUnified() {
     setTimeout(() => {
       isRestoringFromUrl.current = false;
     }, 0);
+
+    // 🔥 ERRO 6 CORRIGIDO: Resetar isInitialized quando componente desmonta
+    return () => {
+      setIsInitialized(false);
+      console.log('🧹 [RECLAMACOES FILTERS] Limpando estado ao desmontar');
+    };
   }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora mudanças na URL
 
   // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
