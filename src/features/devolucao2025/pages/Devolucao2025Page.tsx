@@ -36,6 +36,7 @@ import { STATUS_ATIVOS, STATUS_HISTORICO } from '../types/devolucao-analise.type
 import { differenceInBusinessDays, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
+import { Devolucao2025AnotacoesModal } from '../components/modals/Devolucao2025AnotacoesModal';
 
 export const Devolucao2025Page = () => {
   const { isSidebarCollapsed } = useSidebarUI();
@@ -79,6 +80,7 @@ export const Devolucao2025Page = () => {
   const [filtroResumo, setFiltroResumo] = useState<FiltroResumo | null>(null);
   const [isManualSearching, setIsManualSearching] = useState(false);
   const [shouldFetch, setShouldFetch] = useState(false);
+  const [selectedOrderForAnotacoes, setSelectedOrderForAnotacoes] = useState<string | null>(null);
   
   // Sincronizar dateRange com periodo quando periodo mudar
   useEffect(() => {
@@ -305,6 +307,11 @@ export const Devolucao2025Page = () => {
     console.log(`✅ Status de análise atualizado: ${orderId} → ${newStatus}`);
   }, [setAnaliseStatus]);
 
+  // Handler para abrir modal de anotações
+  const handleOpenAnotacoes = useCallback((orderId: string) => {
+    setSelectedOrderForAnotacoes(orderId);
+  }, []);
+
   // ✅ Dispara refetch quando shouldFetch é ativado
   useEffect(() => {
     if (shouldFetch && organizationId) {
@@ -438,6 +445,7 @@ export const Devolucao2025Page = () => {
                   onStatusChange={handleStatusChange}
                   anotacoes={anotacoes}
                   activeTab={activeTab}
+                  onOpenAnotacoes={handleOpenAnotacoes}
                 />
               </TabsContent>
             </Tabs>
@@ -465,6 +473,17 @@ export const Devolucao2025Page = () => {
             </div>
           )}
         </div>
+
+        {/* Modal de Anotações */}
+        {selectedOrderForAnotacoes && (
+          <Devolucao2025AnotacoesModal
+            open={!!selectedOrderForAnotacoes}
+            onOpenChange={(open) => !open && setSelectedOrderForAnotacoes(null)}
+            orderId={selectedOrderForAnotacoes}
+            currentAnotacao={anotacoes[selectedOrderForAnotacoes] || ''}
+            onSave={saveAnotacao}
+          />
+        )}
     </div>
   );
 };
