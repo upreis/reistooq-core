@@ -96,13 +96,15 @@ export function useReclamacoesFiltersUnified() {
     setTimeout(() => {
       isRestoringFromUrl.current = false;
     }, 0);
+  }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora mudanças na URL
 
-    // 🔥 ERRO 6 CORRIGIDO: Resetar isInitialized quando componente desmonta
+  // 🔥 CORREÇÃO 1: Cleanup separado - só roda no unmount real do componente
+  useEffect(() => {
     return () => {
       setIsInitialized(false);
       console.log('🧹 [RECLAMACOES FILTERS] Limpando estado ao desmontar');
     };
-  }, [persistentCache.isStateLoaded, searchParams]); // 🔥 Monitora mudanças na URL
+  }, []); // Array vazio = só roda no mount/unmount
 
   // Sincronizar com URL (apenas atualizar URL quando filtros mudarem, não carregar da URL)
   const { parseFiltersFromUrl, encodeFiltersToUrl } = useReclamacoesFiltersSync(
