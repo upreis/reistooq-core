@@ -60,15 +60,15 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     
     // Se não há filtro de colunas, retornar todas
     if (!visibleColumnKeys || visibleColumnKeys.length === 0) {
+      console.log('🔍 [ReclamacoesTable] Sem filtro - retornando todas as colunas:', allColumns.length);
       return allColumns;
     }
     
-    // Filtrar apenas colunas visíveis
-    const visibleSet = new Set(visibleColumnKeys);
+    // ✅ USAR ARRAY.INCLUDES ao invés de Set - força React detectar mudanças
     const filtered = allColumns.filter(col => {
       // Colunas sem id são sempre visíveis (actions, etc)
       if (!col.id) return true;
-      return visibleSet.has(col.id as string);
+      return visibleColumnKeys.includes(col.id as string);
     });
     
     console.log('🔍 [ReclamacoesTable] Colunas filtradas:', {
@@ -78,7 +78,7 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     });
     
     return filtered;
-  }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
+  }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys.length, visibleColumnKeys.join(',')]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
