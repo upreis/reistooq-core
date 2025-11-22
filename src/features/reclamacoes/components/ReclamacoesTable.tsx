@@ -33,8 +33,7 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
-  columnVisibility?: VisibilityState;
-  onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+  visibleColumnKeys?: string[]; // 🎯 Array de keys de colunas visíveis
   onTableReady?: (table: any) => void;
 }
 
@@ -47,20 +46,39 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   onOpenAnotacoes,
   anotacoes,
   activeTab,
-  columnVisibility = {},
-  onColumnVisibilityChange,
+  visibleColumnKeys = [],
   onTableReady
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>();
   
-  // ⚡ Memoizar colunas para evitar re-criação
-  const columns = useMemo(() => 
-    reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab), 
-    [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab]
-  );
+  // ⚡ Filtrar colunas conforme visibilidade (padrão /pedidos)
+  const columns = useMemo(() => {
+    const allColumns = reclamacoesColumns(onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab);
+    
+    // Se não há filtro de colunas, retornar todas
+    if (!visibleColumnKeys || visibleColumnKeys.length === 0) {
+      return allColumns;
+    }
+    
+    // Filtrar apenas colunas visíveis
+    const visibleSet = new Set(visibleColumnKeys);
+    const filtered = allColumns.filter(col => {
+      // Colunas sem id são sempre visíveis (actions, etc)
+      if (!col.id) return true;
+      return visibleSet.has(col.id as string);
+    });
+    
+    console.log('🔍 [ReclamacoesTable] Colunas filtradas:', {
+      total: allColumns.length,
+      visible: filtered.length,
+      visibleKeys: visibleColumnKeys
+    });
+    
+    return filtered;
+  }, [onStatusChange, onDeleteReclamacao, onOpenAnotacoes, anotacoes, activeTab, visibleColumnKeys]);
   
   const handleOpenMensagens = useCallback((claim: any) => {
     setSelectedClaim(claim);
@@ -74,11 +92,9 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     state: {
       globalFilter,
       sorting,
-      columnVisibility,
     },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
-    onColumnVisibilityChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
