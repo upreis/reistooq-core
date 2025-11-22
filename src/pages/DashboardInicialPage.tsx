@@ -10,12 +10,11 @@ const DashboardInicialContent = () => {
     <div className="space-y-6">
       {/* Conteúdo das rotas */}
       <Routes>
-        <Route index element={<Navigate to="visao-geral" replace />} />
-        <Route path="visao-geral" element={<DashboardVisaoGeral />} />
+        <Route index element={<DashboardVisaoGeral />} />
         <Route path="vendas" element={<DashboardVendas />} />
         <Route path="estoque" element={<DashboardEstoque />} />
         <Route path="analises" element={<DashboardAnalises />} />
-        <Route path="*" element={<Navigate to="visao-geral" replace />} />
+        <Route path="*" element={<Navigate to="/dashboardinicial" replace />} />
       </Routes>
     </div>
   );

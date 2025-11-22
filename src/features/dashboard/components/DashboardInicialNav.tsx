@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 const navItems = [
   {
-    path: "/dashboardinicial/visao-geral",
+    path: "/dashboardinicial",
     label: "Visão Geral",
     icon: BarChart3,
   },
