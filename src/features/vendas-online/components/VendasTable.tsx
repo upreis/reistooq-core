@@ -19,9 +19,11 @@ import {
   useReactTable,
   getCoreRowModel,
   flexRender,
+  ColumnDef,
 } from '@tanstack/react-table';
 import { MLOrder } from '../types/vendas.types';
 import { createVendasColumns } from './VendasTableColumns';
+import { mapToTableColumnIds } from '../config/column-mapping';
 import type { StatusAnalise } from '../types/venda-analise.types';
 import type { UseColumnManagerReturn } from '../types/columns.types';
 
@@ -63,18 +65,30 @@ export const VendasTable = ({
     });
   }, [onStatusChange, onOpenAnotacoes, anotacoes]);
 
-  // Filtrar colunas visíveis usando columnManager
-  const visibleColumns = useMemo(() => {
-    if (!columnManager) return columns;
+  // 🎯 SINCRONIZAÇÃO: Converter IDs do columnManager para IDs do TanStack Table
+  const columnVisibility = useMemo(() => {
+    if (!columnManager) {
+      // Sem columnManager, todas visíveis
+      return {};
+    }
     
-    const visibleKeys = new Set(columnManager.state.visibleColumns);
-    return columns.filter(col => visibleKeys.has(col.id as string));
-  }, [columns, columnManager]);
+    // Converter Set de keys do manager para IDs da tabela
+    const tableVisibleIds = mapToTableColumnIds(columnManager.state.visibleColumns);
+    
+    // Criar objeto de visibilidade
+    const visibility: Record<string, boolean> = {};
+    columns.forEach((col) => {
+      const colId = col.id as string;
+      visibility[colId] = tableVisibleIds.has(colId);
+    });
+    
+    return visibility;
+  }, [columnManager, columns]);
 
-  // Configurar TanStack Table
+  // Configurar TanStack Table com columnVisibility sincronizado
   const table = useReactTable({
     data: orders,
-    columns: visibleColumns,
+    columns: columns as ColumnDef<MLOrder>[],
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
     pageCount: totalPages,
@@ -83,6 +97,7 @@ export const VendasTable = ({
         pageIndex: currentPage - 1,
         pageSize: itemsPerPage,
       },
+      columnVisibility, // 🎯 SINCRONIZAÇÃO COM COLUMNMANAGER
     },
   });
 
@@ -143,7 +158,7 @@ export const VendasTable = ({
               })
             ) : (
               <TableRow>
-                <TableCell colSpan={visibleColumns.length} className="h-24 text-center">
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   Nenhum pedido encontrado
                 </TableCell>
               </TableRow>
