@@ -147,6 +147,9 @@ function App() {
                     {/* Vendas */}
                     <Route path="vendas-online" element={<VendasOnline />} />
                     
+                    {/* OMS */}
+                    <Route path="oms/*" element={<OMS />} />
+                    
                     {/* Devoluções */}
                     <Route path="devolucoesdevenda" element={<DevolucoesDeVenda />} />
                     
