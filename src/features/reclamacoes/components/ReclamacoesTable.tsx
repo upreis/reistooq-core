@@ -3,7 +3,7 @@
  * 🎯 FASE 3: Integrado com ColumnManager avançado
  */
 
-import { useState, useMemo, memo, useCallback } from 'react';
+import { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -11,6 +11,7 @@ import {
   getSortedRowModel,
   flexRender,
   SortingState,
+  VisibilityState,
 } from '@tanstack/react-table';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,9 @@ interface ReclamacoesTableProps {
   onOpenAnotacoes?: (claim: any) => void;
   anotacoes?: Record<string, string>;
   activeTab?: 'ativas' | 'historico';
+  columnVisibility?: VisibilityState;
+  onColumnVisibilityChange?: (visibility: VisibilityState) => void;
+  onTableReady?: (table: any) => void;
 }
 
 export const ReclamacoesTable = memo(function ReclamacoesTable({
@@ -42,7 +46,10 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
   onDeleteReclamacao,
   onOpenAnotacoes,
   anotacoes,
-  activeTab
+  activeTab,
+  columnVisibility = {},
+  onColumnVisibilityChange,
+  onTableReady
 }: ReclamacoesTableProps) {
   const [mensagensModalOpen, setMensagensModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<any | null>(null);
@@ -67,13 +74,22 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
     state: {
       globalFilter,
       sorting,
+      columnVisibility,
     },
     onGlobalFilterChange: setGlobalFilter,
     onSortingChange: setSorting,
+    onColumnVisibilityChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
   });
+
+  // 🔗 Notificar parent quando table está pronta
+  useEffect(() => {
+    if (onTableReady) {
+      onTableReady(table);
+    }
+  }, [table, onTableReady]);
 
   if (isLoading) {
     return (
