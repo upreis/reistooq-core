@@ -3,12 +3,14 @@
  * Otimizada com cache localStorage + React Query
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { differenceInBusinessDays } from 'date-fns';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useReclamacoesStorage } from '../hooks/useReclamacoesStorage';
 import { useReclamacoesFiltersUnified } from '../hooks/useReclamacoesFiltersUnified';
+import { useReclamacoesColumnManager } from '../hooks/useReclamacoesColumnManager';
+import type { VisibilityState } from '@tanstack/react-table';
 
 import { ReclamacoesFilterBar } from '../components/ReclamacoesFilterBar';
 import { ReclamacoesTable } from '../components/ReclamacoesTable';
@@ -18,6 +20,7 @@ import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAle
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
+import { ReclamacoesColumnSelector } from '../components/ReclamacoesColumnSelector';
 import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
@@ -44,6 +47,10 @@ export function ReclamacoesPage() {
   
   // 🔴 NOTIFICAÇÕES EM TEMPO REAL
   useReclamacoesRealtime(true);
+  
+  // 🎯 COLUMN MANAGER
+  const columnManager = useReclamacoesColumnManager();
+  const [tableInstance, setTableInstance] = useState<any>(null);
   
   // 🎯 FASE 2: Hook unificado de filtros (com URL sync + localStorage)
   const {
@@ -398,6 +405,25 @@ export function ReclamacoesPage() {
     });
   };
 
+  // 🔗 SINCRONIZAR COLUMN VISIBILITY COM TANSTACK TABLE
+  const columnVisibility = useMemo<VisibilityState>(() => {
+    const visibility: VisibilityState = {};
+    columnManager.definitions.forEach(col => {
+      visibility[col.key] = columnManager.state.visibleColumns.has(col.key);
+    });
+    return visibility;
+  }, [columnManager.state.visibleColumns, columnManager.definitions]);
+
+  const handleColumnVisibilityChange = useCallback((updater: any) => {
+    const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
+    const visibleKeys = Object.keys(newVisibility).filter(key => newVisibility[key]);
+    columnManager.actions.setVisibleColumns(visibleKeys);
+  }, [columnVisibility, columnManager.actions]);
+
+  const handleTableReady = useCallback((table: any) => {
+    setTableInstance(table);
+  }, []);
+
 
   // Loading state
   if (loadingAccounts) {
@@ -463,7 +489,7 @@ export function ReclamacoesPage() {
                     </TabsTrigger>
                   </TabsList>
                   
-                  {/* Filtros integrados */}
+                  {/* Filtros integrados + Seletor de Colunas */}
                   <div className="flex-1 min-w-0 flex items-center gap-3">
                     <div className="flex-1">
                       <ReclamacoesFilterBar
@@ -479,6 +505,9 @@ export function ReclamacoesPage() {
                         onCancel={handleCancelarBusca}
                       />
                     </div>
+                    
+                    {/* Seletor de Colunas */}
+                    <ReclamacoesColumnSelector />
                   </div>
                 </div>
                 
@@ -510,6 +539,9 @@ export function ReclamacoesPage() {
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
                       activeTab={activeTab}
+                      columnVisibility={columnVisibility}
+                      onColumnVisibilityChange={handleColumnVisibilityChange}
+                      onTableReady={handleTableReady}
                     />
                   </TabsContent>
                 </div>
