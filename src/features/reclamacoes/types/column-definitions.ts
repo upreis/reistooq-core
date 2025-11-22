@@ -60,6 +60,7 @@ export interface ReclamacoesColumnActions {
 
 export interface UseReclamacoesColumnManagerReturn {
   state: ReclamacoesColumnState;
+  visibleColumnKeys: string[]; // 🎯 Array de keys visíveis (conversão automática do Set)
   actions: ReclamacoesColumnActions;
   definitions: ReclamacoesColumnDefinition[];
   visibleDefinitions: ReclamacoesColumnDefinition[];
