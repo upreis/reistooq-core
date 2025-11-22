@@ -122,6 +122,7 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
   }, []);
 
   const [state, setState] = useState<ReclamacoesColumnState>(getInitialState);
+  const [updateCounter, setUpdateCounter] = useState(0); // 🔄 Força re-render
 
   // 💾 AUTO-SAVE
   useEffect(() => {
@@ -139,6 +140,7 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
       }
       return { ...prev, visibleColumns: newVisible, activeProfile: null };
     });
+    setUpdateCounter(c => c + 1); // 🔄 Força re-render
   }, []);
 
   const showColumn = useCallback((key: string) => {
@@ -312,5 +314,6 @@ export const useReclamacoesColumnManager = (): UseReclamacoesColumnManagerReturn
     definitions: RECLAMACOES_COLUMN_DEFINITIONS,
     visibleDefinitions,
     profiles,
+    updateCounter, // 🔄 Expõe contador para dependências
   };
 };
