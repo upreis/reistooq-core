@@ -411,6 +411,12 @@ export function ReclamacoesPage() {
     columnManager.definitions.forEach(col => {
       visibility[col.key] = columnManager.state.visibleColumns.has(col.key);
     });
+    console.log('🔍 [ColumnVisibility] State atualizado:', {
+      totalColumns: Object.keys(visibility).length,
+      visibleCount: Object.values(visibility).filter(Boolean).length,
+      hiddenCount: Object.values(visibility).filter(v => !v).length,
+      visibility
+    });
     return visibility;
   }, [columnManager.state.visibleColumns, columnManager.definitions]);
 
