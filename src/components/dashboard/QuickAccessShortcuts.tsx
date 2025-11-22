@@ -47,7 +47,7 @@ export const QuickAccessShortcuts = ({
         </h2>
       )}
       
-      <div className="grid grid-cols-2 gap-x-[2px] gap-y-[1.5px] sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+      <div className="flex flex-wrap gap-x-[2px] gap-y-[1.5px]">
         {displayShortcuts.map((shortcut) => (
           <button
             key={shortcut.id}
