@@ -22,7 +22,6 @@ export const RECLAMACOES_COLUMN_DEFINITIONS: ColumnConfig[] = [
   { id: 'date_created', label: 'Data Criação', group: 'Datas' },
   { id: 'last_updated', label: 'Última Atualização', group: 'Datas' },
   { id: 'prazo_analise', label: 'Prazo Análise', group: 'Datas' },
-  { id: 'resolution_date', label: 'Data da Resolução', group: 'Datas' },
   
   // Produto
   { id: 'order_item_quantity', label: 'Quantidade', group: 'Produto' },
@@ -47,6 +46,9 @@ export const RECLAMACOES_COLUMN_DEFINITIONS: ColumnConfig[] = [
   
   // Resolução
   { id: 'stage', label: 'Estágio da Reclamação', group: 'Resolução' },
+  { id: 'resolution_benefited', label: 'Resolução Beneficiada', group: 'Resolução' },
+  { id: 'resolution_reason', label: 'Razão da Resolução', group: 'Resolução' },
+  { id: 'resolution_date', label: 'Data da Resolução', group: 'Resolução' },
   
   // Metadados
   { id: 'site_id', label: 'Site ID', group: 'Metadados' },
