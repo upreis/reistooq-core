@@ -64,6 +64,7 @@ export interface UseReclamacoesColumnManagerReturn {
   definitions: ReclamacoesColumnDefinition[];
   visibleDefinitions: ReclamacoesColumnDefinition[];
   profiles: ReclamacoesColumnProfile[];
+  updateCounter: number; // 🔄 Contador para forçar re-renders
 }
 
 // 📋 TODAS AS 36 COLUNAS DISPONÍVEIS

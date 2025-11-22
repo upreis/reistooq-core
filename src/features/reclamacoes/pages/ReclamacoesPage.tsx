@@ -412,11 +412,7 @@ export function ReclamacoesPage() {
       visibility[col.key] = columnManager.state.visibleColumns.has(col.key);
     });
     return visibility;
-  }, [
-    columnManager.state.visibleColumns.size, // Força update quando Set muda
-    Array.from(columnManager.state.visibleColumns).join(','), // Força update quando valores mudam
-    columnManager.definitions
-  ]);
+  }, [columnManager.updateCounter, columnManager.definitions]); // 🔄 Usa contador para detectar mudanças
 
   const handleColumnVisibilityChange = useCallback((updater: any) => {
     const newVisibility = typeof updater === 'function' ? updater(columnVisibility) : updater;
