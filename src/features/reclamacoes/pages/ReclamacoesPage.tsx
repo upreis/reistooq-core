@@ -511,7 +511,7 @@ export function ReclamacoesPage() {
                     {/* Seletor de Colunas SIMPLES */}
                     <ReclamacoesColumnSelectorSimple
                       columns={RECLAMACOES_COLUMN_DEFINITIONS}
-                      visibleColumns={Array.from(columnManager.state.visibleColumns)}
+                      visibleColumns={columnManager.visibleColumnKeys}
                       onVisibleColumnsChange={(keys) => {
                         console.log('🎛️ [Page] onVisibleColumnsChange chamado:', keys);
                         columnManager.actions.setVisibleColumns(keys);
