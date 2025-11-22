@@ -9,7 +9,7 @@ import { ColumnDefinition, ColumnProfile } from '../types/columns.types';
 export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
   // ====== ANÁLISE ======
   {
-    key: 'analise',
+    key: 'status_analise',
     label: 'Análise',
     category: 'basic',
     priority: 'essential',
@@ -31,7 +31,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== EMPRESA ======
   {
-    key: 'empresa',
+    key: 'account_name',
     label: 'Empresa',
     category: 'basic',
     priority: 'essential',
@@ -43,7 +43,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== IDENTIFICAÇÃO ======
   {
-    key: 'id_pedido',
+    key: 'order_id',
     label: 'ID Pedido',
     category: 'basic',
     priority: 'essential',
@@ -77,7 +77,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== DATAS ======
   {
-    key: 'data_criacao',
+    key: 'date_created',
     label: 'Data Criação',
     category: 'dates',
     priority: 'important',
@@ -88,7 +88,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'ultima_atualizacao',
+    key: 'last_updated',
     label: 'Última Atualização',
     category: 'dates',
     priority: 'optional',
@@ -99,7 +99,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'validade',
+    key: 'expiration_date',
     label: 'Validade',
     category: 'dates',
     priority: 'optional',
@@ -111,7 +111,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== VALORES ======
   {
-    key: 'total',
+    key: 'total_amount',
     label: 'Total',
     category: 'financial',
     priority: 'important',
@@ -122,7 +122,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'produto',
+    key: 'paid_amount',
     label: 'Produto',
     category: 'financial',
     priority: 'optional',
@@ -133,7 +133,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'frete',
+    key: 'shipping_cost',
     label: 'Frete',
     category: 'financial',
     priority: 'optional',
@@ -144,7 +144,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'desconto',
+    key: 'discount',
     label: 'Desconto',
     category: 'financial',
     priority: 'optional',
@@ -155,7 +155,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'taxa_ml',
+    key: 'sale_fee',
     label: 'Taxa ML',
     category: 'financial',
     priority: 'optional',
@@ -168,7 +168,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== COMPRADOR ======
   {
-    key: 'id_comprador',
+    key: 'buyer_id',
     label: 'ID Comprador',
     category: 'customer',
     priority: 'optional',
@@ -178,7 +178,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
-    key: 'nome_comprador',
+    key: 'buyer_name',
     label: 'Nome Comprador',
     category: 'customer',
     priority: 'important',
@@ -190,7 +190,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== PRODUTO ======
   {
-    key: 'id_item',
+    key: 'item_id',
     label: 'ID Item',
     category: 'product',
     priority: 'optional',
@@ -200,7 +200,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
-    key: 'titulo_produto',
+    key: 'item_title',
     label: 'Título Produto',
     category: 'product',
     priority: 'important',
@@ -210,7 +210,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 250
   },
   {
-    key: 'quantidade',
+    key: 'quantity',
     label: 'Quantidade',
     category: 'product',
     priority: 'important',
@@ -221,7 +221,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     sortable: true
   },
   {
-    key: 'sku',
+    key: 'seller_sku',
     label: 'SKU',
     category: 'product',
     priority: 'important',
@@ -231,7 +231,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 200
   },
   {
-    key: 'categoria',
+    key: 'category_id',
     label: 'Categoria',
     category: 'product',
     priority: 'optional',
@@ -243,7 +243,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== PAGAMENTO ======
   {
-    key: 'status_pagamento',
+    key: 'payment_status',
     label: 'Status Pagamento',
     category: 'financial',
     priority: 'optional',
@@ -255,7 +255,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== ENVIO ======
   {
-    key: 'id_envio',
+    key: 'shipping_id',
     label: 'ID Envio',
     category: 'shipping',
     priority: 'optional',
@@ -265,7 +265,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'status_envio',
+    key: 'shipping_status',
     label: 'Status Envio',
     category: 'shipping',
     priority: 'important',
@@ -275,7 +275,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'tipo_logistico',
+    key: 'logistic_type',
     label: 'Tipo Logístico',
     category: 'shipping',
     priority: 'important',
@@ -295,7 +295,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'metodo_envio',
+    key: 'shipping_method',
     label: 'Método Envio',
     category: 'shipping',
     priority: 'optional',
@@ -305,7 +305,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
   {
-    key: 'codigo_rastreio',
+    key: 'tracking_number',
     label: 'Código Rastreio',
     category: 'shipping',
     priority: 'optional',
@@ -315,7 +315,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 200
   },
   {
-    key: 'transportadora',
+    key: 'tracking_method',
     label: 'Transportadora',
     category: 'shipping',
     priority: 'optional',
@@ -325,7 +325,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
   {
-    key: 'previsao_entrega',
+    key: 'estimated_delivery',
     label: 'Previsão Entrega',
     category: 'shipping',
     priority: 'optional',
@@ -335,7 +335,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
   {
-    key: 'historico_status',
+    key: 'status_history',
     label: 'Histórico Status',
     category: 'shipping',
     priority: 'optional',
@@ -347,7 +347,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== ENDEREÇO ======
   {
-    key: 'cidade',
+    key: 'city',
     label: 'Cidade',
     category: 'shipping',
     priority: 'optional',
@@ -357,7 +357,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
   {
-    key: 'estado',
+    key: 'state',
     label: 'Estado',
     category: 'shipping',
     priority: 'optional',
@@ -367,7 +367,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 80
   },
   {
-    key: 'cep',
+    key: 'zip_code',
     label: 'CEP',
     category: 'shipping',
     priority: 'optional',
@@ -377,7 +377,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 100
   },
   {
-    key: 'endereco',
+    key: 'address_line',
     label: 'Endereço',
     category: 'shipping',
     priority: 'optional',
@@ -389,7 +389,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== FULFILLMENT & MEDIAÇÕES ======
   {
-    key: 'fulfillment',
+    key: 'fulfilled',
     label: 'Fulfillment',
     category: 'meta',
     priority: 'optional',
@@ -399,7 +399,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'mediacoes',
+    key: 'mediations',
     label: 'Mediações',
     category: 'meta',
     priority: 'optional',
@@ -411,7 +411,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== SHIPPING EXTRA ======
   {
-    key: 'custo_frete_listado',
+    key: 'list_cost',
     label: 'Custo Frete Listado',
     category: 'financial',
     priority: 'optional',
@@ -421,7 +421,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 120
   },
   {
-    key: 'dimensoes_pacote',
+    key: 'dimensions',
     label: 'Dimensões Pacote',
     category: 'meta',
     priority: 'optional',
@@ -433,7 +433,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
 
   // ====== OUTROS ======
   {
-    key: 'tipo_pedido',
+    key: 'order_type',
     label: 'Tipo Pedido',
     category: 'basic',
     priority: 'optional',
@@ -443,7 +443,7 @@ export const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     width: 150
   },
   {
-    key: 'acoes',
+    key: 'actions',
     label: 'Ações',
     category: 'actions',
     priority: 'essential',
