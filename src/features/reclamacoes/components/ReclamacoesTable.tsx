@@ -171,19 +171,14 @@ export const ReclamacoesTable = memo(function ReclamacoesTable({
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => {
+                  const cells = row.getAllCells(); // ✅ Cache de células
                   return (
                     <TableRow key={row.id} className="hover:bg-muted/50">
-                      {columns.map((column) => {
-                        // ✅ Buscar célula pelo ID da coluna, não por índice
-                        const cell = row.getAllCells().find(c => c.column.id === column.id);
-                        return (
-                          <TableCell key={column.id || `col-${row.id}`}>
-                            {cell
-                              ? flexRender(column.cell, cell.getContext())
-                              : null}
-                          </TableCell>
-                        );
-                      })}
+                      {cells.map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </TableCell>
+                      ))}
                     </TableRow>
                   );
                 })
