@@ -248,10 +248,8 @@ export const reclamacoesColumns = (
   onDeleteReclamacao?: (claimId: string) => void,
   onOpenAnotacoes?: (claim: any) => void,
   anotacoes?: Record<string, string>,
-  activeTab?: 'ativas' | 'historico', // ✨ NOVO: Controla quais status mostrar no dropdown
-  visibleColumnIds?: string[] // ✨ IDs das colunas visíveis
-): ColumnDef<ReclamacaoRow>[] => {
-  const allColumns: ColumnDef<ReclamacaoRow>[] = [
+  activeTab?: 'ativas' | 'historico' // ✨ NOVO: Controla quais status mostrar no dropdown
+): ColumnDef<ReclamacaoRow>[] => [
   // 🎯 COLUNA DE ANÁLISE - PRIMEIRA COLUNA
   {
     id: 'status_analise',
@@ -910,11 +908,3 @@ export const reclamacoesColumns = (
     size: 80,
   }
 ];
-
-  // Filtrar colunas com base em visibleColumnIds
-  if (visibleColumnIds && visibleColumnIds.length > 0) {
-    return allColumns.filter(col => visibleColumnIds.includes(col.id as string));
-  }
-  
-  return allColumns;
-};

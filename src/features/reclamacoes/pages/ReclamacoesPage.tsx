@@ -34,8 +34,6 @@ import { useReclamacoesRealtime } from '../hooks/useReclamacoesRealtime';
 import { useSidebarUI } from '@/context/SidebarUIContext';
 import { ReclamacoesPagination } from '../components/ReclamacoesPagination';
 import { LoadingIndicator } from '@/components/pedidos/LoadingIndicator';
-import { ColumnSelector } from '@/features/devolucao2025/components/ColumnSelector';
-import { useReclamacoesColumns } from '../hooks/useReclamacoesColumns';
 
 
 
@@ -81,9 +79,6 @@ export function ReclamacoesPage() {
 
   // Estado de busca manual
   const [isManualSearching, setIsManualSearching] = useState(false);
-  
-  // 🎛️ Hook de gerenciamento de colunas visíveis
-  const { visibleColumns, setVisibleColumns, allColumns } = useReclamacoesColumns();
   
   // Constantes derivadas dos filtros unificados
   const selectedAccountIds = unifiedFilters.selectedAccounts;
@@ -484,13 +479,6 @@ export function ReclamacoesPage() {
                         onCancel={handleCancelarBusca}
                       />
                     </div>
-                    
-                    {/* 🎛️ Seletor de Colunas */}
-                    <ColumnSelector
-                      columns={allColumns}
-                      visibleColumns={visibleColumns}
-                      onVisibleColumnsChange={setVisibleColumns}
-                    />
                   </div>
                 </div>
                 
@@ -522,7 +510,6 @@ export function ReclamacoesPage() {
                       onOpenAnotacoes={handleOpenAnotacoes}
                       anotacoes={anotacoes}
                       activeTab={activeTab}
-                      visibleColumns={visibleColumns}
                     />
                   </TabsContent>
                 </div>
