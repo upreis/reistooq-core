@@ -20,7 +20,8 @@ import { ReclamacoesLifecycleAlert } from '../components/ReclamacoesLifecycleAle
 import { ReclamacoesLifecycleQuickFilter } from '../components/ReclamacoesLifecycleQuickFilter';
 import { ReclamacoesAnotacoesModal } from '../components/modals/ReclamacoesAnotacoesModal';
 import { ReclamacoesResumo } from '../components/ReclamacoesResumo';
-import { ReclamacoesColumnSelector } from '../components/ReclamacoesColumnSelector';
+import { ReclamacoesColumnSelectorSimple } from '../components/ReclamacoesColumnSelectorSimple';
+import { RECLAMACOES_COLUMN_DEFINITIONS } from '../config/reclamacoes-column-definitions';
 import { Card } from '@/components/ui/card';
 import { calcularStatusCiclo } from '../utils/reclamacaoLifecycle';
 import { Button } from '@/components/ui/button';
@@ -507,8 +508,15 @@ export function ReclamacoesPage() {
                       />
                     </div>
                     
-                    {/* Seletor de Colunas */}
-                    <ReclamacoesColumnSelector />
+                    {/* Seletor de Colunas SIMPLES */}
+                    <ReclamacoesColumnSelectorSimple
+                      columns={RECLAMACOES_COLUMN_DEFINITIONS}
+                      visibleColumns={Array.from(columnManager.state.visibleColumns)}
+                      onVisibleColumnsChange={(keys) => {
+                        console.log('🎛️ [Page] onVisibleColumnsChange chamado:', keys);
+                        columnManager.actions.setVisibleColumns(keys);
+                      }}
+                    />
                   </div>
                 </div>
                 
